@@ -856,8 +856,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "length", "blob", "nitems", FALSE, FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 	sql_create_func(sa, "octet_length", "blob", "nitems", FALSE, FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 
-	if (geomcatalogfix_get() != NULL) {
-		/* the geom module is loaded */
+	if (backend_has_module(&(int){0}, "geom")) { /* not the old version, change into check for module existence */
+		// the geom module is loaded
 		GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
 		/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
 		// TODO: The GEOMETRYA  and MBR types should actually also be part of EC_GEOM. However this requires more (bat)calc.<convert> functions.
@@ -1521,8 +1521,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 5, *t, *t, INT, INT, INT);
 	}
-	/* copyfrom fname (arg 13) */
-	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", FALSE, SCALE_FIX, 0, TABLE, 13, PTR, STR, STR, STR, STR, STR, STR, LNG, LNG, INT, INT, STR, INT, INT);
+	/* copyfrom fname (arg 12) */
+	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", FALSE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
 	f->varres = 1;
 
 	/* bincopyfrom */

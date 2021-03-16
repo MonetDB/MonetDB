@@ -1382,30 +1382,6 @@ statement ok
 INSERT INTO num_data VALUES (9, '-24926804.045047420')
 
 statement ok
-call vacuum('sys', 'num_exp_add')
-
-statement ok
-call vacuum('sys', 'num_exp_sub')
-
-statement ok
-call vacuum('sys', 'num_exp_div')
-
-statement ok
-call vacuum('sys', 'num_exp_mul')
-
-statement ok
-call vacuum('sys', 'num_exp_sqrt')
-
-statement ok
-call vacuum('sys', 'num_exp_ln')
-
-statement ok
-call vacuum('sys', 'num_exp_log10')
-
-statement ok
-call vacuum('sys', 'num_exp_power_10_ln')
-
-statement ok
 CREATE UNIQUE INDEX num_exp_add_idx ON num_exp_add (id1, id2)
 
 statement ok

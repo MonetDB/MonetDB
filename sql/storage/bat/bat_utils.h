@@ -20,7 +20,7 @@
 extern BAT *temp_descriptor(log_bid b);
 extern BAT *quick_descriptor(log_bid b);
 extern void temp_destroy(log_bid b);
-extern void temp_dup(log_bid b);
+extern log_bid temp_dup(log_bid b);
 extern log_bid temp_create(BAT *b);
 extern log_bid temp_copy(log_bid b, int temp);
 
@@ -37,7 +37,7 @@ extern BAT *ebats[MAXATOMS];
 extern log_bid ebat2real(log_bid b, oid ibase);
 extern log_bid e_bat(int type);
 extern BAT *e_BAT(int type);
-extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
+extern log_bid ebat_copy(log_bid b);
 extern int bat_utils_init(void);
 
 #endif /* BAT_UTILS_H */

@@ -18,7 +18,7 @@
 #include "optimizer_private.h"
 #include "manifold.h"
 
-/* some optimizers can only be applied once.
+/* Some optimizers can/need only be applied once.
  * The optimizer trace at the end of the MAL block
  * can be used to check for this.
  */
@@ -34,6 +34,84 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
 	}
 	return 0;
 }
+
+/*
+ * Some optimizers are interdependent (e.g. mitosis ), which
+ * requires inspection of the pipeline attached to a MAL block.
+ */
+int
+isOptimizerEnabled(MalBlkPtr mb, str opt)
+{
+	int i;
+	InstrPtr q;
+
+	for (i= mb->stop-1; i > 0; i--){
+		q= getInstrPtr(mb,i);
+		if ( q->token == ENDsymbol)
+			break;
+		if ( getModuleId(q) == optimizerRef && getFunctionId(q) == opt)
+			return 1;
+	}
+	return 0;
+}
+
+/*
+ * Optimizers leave behind information on the number of actions taken.
+ * This information can be handy to avoid steps further down the pipeline.
+ */
+int
+isOptimizerUsed(MalBlkPtr mb, str opt)
+{
+	int i, cnt;
+	char *s, *haystack;
+	InstrPtr q;
+
+	for (i= mb->stop-1; i > 0; i--){
+		q= getInstrPtr(mb,i);
+		if ( q->token == ENDsymbol)
+			break;
+		if (q && q->token == REMsymbol && getModuleId(q) == 0 && q->argc > 0){
+			//decompose the message
+			haystack = getVarConstant(mb,getArg(q,0)).val.sval;
+			if ( ! haystack)
+				continue;
+			s = strstr(haystack, opt);
+			if( !s)
+				continue;
+			s = strstr(haystack, "actions=");
+			if( s){
+				cnt = atoi(s + 8);
+				return cnt;
+			}
+		}
+	}
+	return 0;
+}
+
+/* Simple insertion statements do not require complex optimizer steps */
+int
+isSimpleSQL(MalBlkPtr mb)
+{
+        int cnt = 0;
+        int i;
+        InstrPtr p;
+
+        for(i = 0; i < mb->stop; i++) {
+                p = getInstrPtr(mb,i);
+                if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == appendRef ){
+                        cnt ++;
+                }
+		if (p && getModuleId(p) == sqlRef && getFunctionId(p) == setVariableRef ){
+                        return 1;
+                }
+		if (p && getModuleId(p) == sqlcatalogRef ){
+                        return 1;
+                }
+
+        }
+        return cnt > 0.63 * mb->stop;
+}
+
 
 /* Hypothetical, optimizers may massage the plan in such a way
  * that multiple passes are needed.
@@ -288,6 +366,7 @@ isUpdateInstruction(InstrPtr p){
 	   ( getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
 		getFunctionId(p) == deleteRef ||
+		getFunctionId(p) == claimRef ||
 		getFunctionId(p) == growRef ||
 		getFunctionId(p) == clear_tableRef ||
 		getFunctionId(p) == setVariableRef))
@@ -368,8 +447,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
 		if (getFunctionId(p) == importColumnRef) return FALSE;
-		if (getFunctionId(p) == append_execRef) return FALSE;
-		if (getFunctionId(p) == update_execRef) return FALSE;
 		return TRUE;
 	}
 	if( getModuleId(p) == mapiRef){
@@ -618,23 +695,3 @@ int isFragmentGroup(InstrPtr p){
 			));
 }
 
-/*
- * Some optimizers are interdependent (e.g. mitosis ), which
- * requires inspection of the pipeline attached to a MAL block.
- */
-int
-isOptimizerEnabled(MalBlkPtr mb, str opt)
-{
-	int i;
-	InstrPtr q;
-
-	for (i= mb->stop-1; i > 0; i--){
-		q= getInstrPtr(mb,i);
-		if ( q->token == ENDsymbol)
-			break;
-		if ( getModuleId(q) == optimizerRef &&
-			 getFunctionId(q) == opt)
-			return 1;
-	}
-	return 0;
-}

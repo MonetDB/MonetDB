@@ -3219,6 +3219,9 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 	Hash *h;
 	size_t nextlen = len + 1;
 
+	/* the from and to bats are not views */
+	assert(from->tbaseoff == 0);
+	assert(to->tbaseoff == 0);
 	if (BAThash(from) != GDK_SUCCEED)
 		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	h = from->thash;
@@ -3242,8 +3245,8 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 			for (BUN hb = HASHget(h, hash_int(h, &c));
 					hb != HASHnil(h);
 					hb = HASHgetlink(h, hb)) {
-				if (c == ((int *) from->theap.base)[hb]) {
-					c = ((int *) to->theap.base)[hb];
+				if (c == ((int *) from->theap->base)[hb]) {
+					c = ((int *) to->theap->base)[hb];
 					break;
 				}
 			}

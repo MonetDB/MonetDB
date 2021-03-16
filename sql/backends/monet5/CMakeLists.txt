@@ -21,7 +21,6 @@ set(include_sql_files
   16_tracelog
   17_temporal
   18_index
-  20_vacuum
   21_dependency_views
   22_clients
   23_skyserver

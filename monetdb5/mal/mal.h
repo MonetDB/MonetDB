@@ -117,9 +117,10 @@ typedef struct SYMDEF {
 } *Symbol, SymRecord;
 
 typedef struct VARRECORD {
-	char id[IDLENGTH];			/* use the space for the full name */
+	char name[IDLENGTH];			/* use the space for the full name */
+	char kind;				/* Could be either _, X or C to stamp the variable type */
 	malType type;				/* internal type signature */
-    bool constant:1,
+	bool constant:1,
             typevar:1,
             fixedtype:1,
             //FREE SPOT NOW:1,
@@ -148,7 +149,7 @@ typedef struct {
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
 	bit typechk;				/* type check status */
 	bte gc;						/* garbage control flags */
-	bit polymorphic;			/* complex type analysis */
+	bte polymorphic;			/* complex type analysis */
 	bit varargs;				/* variable number of arguments */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler*/

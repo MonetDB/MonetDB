@@ -362,6 +362,29 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 		DeleteCriticalSection(&(l)->lock);	\
 	} while (0)
 
+typedef struct MT_RWLock {
+	SRWLOCK lock;
+	char name[MT_NAME_LEN];
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)	{ .lock = SRWLOCK_INIT, .name = #n, }
+
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		InitializeSRWLock(&(l)->lock);			\
+		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+	 } while (0)
+
+#define MT_rwlock_destroy(l)	((void) 0)
+
+#define MT_rwlock_rdlock(l)	AcquireSRWLockShared(&(l)->lock)
+
+#define MT_rwlock_rdunlock(l)	ReleaseSRWLockShared(&(l)->lock)
+
+#define MT_rwlock_wrlock(l)	AcquireSRWLockExclusive(&(l)->lock)
+
+#define MT_rwlock_wrunlock(l)	ReleaseSRWLockExclusive(&(l)->lock)
+
 #else
 
 typedef struct MT_Lock {
@@ -423,6 +446,30 @@ typedef struct MT_Lock {
 		pthread_mutex_destroy(&(l)->lock);	\
 	} while (0)
 
+typedef struct MT_RWLock {
+	pthread_rwlock_t lock;
+	char name[MT_NAME_LEN];
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)	\
+	{ .lock = PTHREAD_RWLOCK_INITIALIZER, .name = #n, }
+
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		pthread_rwlock_init(&(l)->lock, NULL);		\
+		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+	 } while (0)
+
+#define MT_rwlock_destroy(l)	pthread_rwlock_destroy(&(l)->lock)
+
+#define MT_rwlock_rdlock(l)	pthread_rwlock_rdlock(&(l)->lock)
+
+#define MT_rwlock_rdunlock(l)	pthread_rwlock_unlock(&(l)->lock)
+
+#define MT_rwlock_wrlock(l)	pthread_rwlock_wrlock(&(l)->lock)
+
+#define MT_rwlock_wrunlock(l)	pthread_rwlock_unlock(&(l)->lock)
+
 #endif
 
 #else
@@ -443,9 +490,9 @@ typedef struct MT_Lock {
 } MT_Lock;
 
 #ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .next = (struct MT_Lock *) -1, .name = #n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .next = (struct MT_Lock *) -1, .name = #n, }
 #else
-#define MT_LOCK_INITIALIZER(n)	{ .name = #n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .name = #n, }
 #endif
 
 #define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
@@ -491,6 +538,44 @@ typedef struct MT_Lock {
 		} while (0)
 
 #define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
+
+typedef struct MT_RWLock {
+	MT_Lock lock;
+	ATOMIC_TYPE readers;
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)	\
+	{ .lock = MT_LOCK_INITIALIZER(n), .readers = ATOMIC_VAR_INIT(0), }
+
+#define MT_rwlock_init(l, n)			\
+	do {					\
+		MT_lock_init(&(l)->lock, n);	\
+		ATOMIC_INIT(&(l)->readers, 0);	\
+	 } while (0)
+
+#define MT_rwlock_destroy(l)			\
+	do {					\
+		MT_lock_destroy(&(l)->lock);	\
+		ATOMIC_DESTROY(&(l)->readers);	\
+	} while (0)
+
+#define MT_rwlock_rdlock(l)				\
+	do {						\
+		MT_lock_set(&(l)->lock);		\
+		(void) ATOMIC_INC(&(l)->readers);	\
+		MT_lock_unset(&(l)->lock);		\
+	 } while (0)
+
+#define MT_rwlock_rdunlock(l)	((void) ATOMIC_DEC(&(l)->readers))
+
+#define MT_rwlock_wrlock(l)				\
+	do {						\
+		MT_lock_set(&(l)->lock);		\
+		while (ATOMIC_GET(&(l)->readers) > 0)	\
+			MT_sleep_ms(1);			\
+	 } while (0)
+
+#define MT_rwlock_wrunlock(l)	MT_lock_unset(&(l)->lock)
 
 #endif
 

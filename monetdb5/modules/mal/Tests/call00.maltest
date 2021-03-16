@@ -27,7 +27,7 @@ m:=inspect.getSource("user","tst")
 query T rowsort
 io.print(m)
 ----
-"function user.tst(i:int, s:str):bit;\n    j:int := calc.+(i, 1:int);\n    io.print(j);\n    format:str := \"hello %s\\n\";\n    io.printf(format, s);\n    return tst:bit := true;\nend user.tst;\n"
+"function user.tst(i:int, s:str):bit;\n    j:int := calc.+(i, 1:int);\n    X_0:void := io.print(j);\n    format:str := \"hello %s\\n\";\n    X_1:void := io.printf(format, s);\n    return tst:bit := true;\nend user.tst;\n"
 
 statement ok
 language.call(m)

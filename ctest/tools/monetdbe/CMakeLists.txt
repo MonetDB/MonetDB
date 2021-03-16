@@ -20,12 +20,6 @@ target_link_libraries(example2
     monetdbe)
 add_test(run_example2 example2)
 
-add_executable(example_proxy example_proxy.c)
-target_link_libraries(example_proxy
-  PRIVATE
-    monetdb_config_header
-    monetdbe)
-
 add_executable(example_temporal example_temporal.c)
 target_link_libraries(example_temporal
   PRIVATE
@@ -70,6 +64,15 @@ target_link_libraries(example_backup
 add_test(run_example_backup example_backup)
 endif()
 
+if(NOT WIN32)
+add_executable(example_copy example_copy.c)
+target_link_libraries(example_copy
+  PRIVATE
+    monetdb_config_header
+    monetdbe)
+add_test(run_example_copy example_copy)
+endif()
+
 add_executable(example_connections example_connections.c)
 target_link_libraries(example_connections
   PRIVATE
@@ -77,12 +80,12 @@ target_link_libraries(example_connections
     monetdbe)
 add_test(run_example_connections example_connections)
 
-add_executable(example_remote example_remote.c)
-target_link_libraries(example_remote
+add_executable(example_proxy example_proxy.c)
+target_link_libraries(example_proxy
   PRIVATE
     monetdb_config_header
     monetdbe)
-add_test(run_example_remote example_remote)
+add_test(run_example_proxy example_proxy)
 
 if(WITH_CMOCKA)
   add_executable(cmocka_test cmocka_test.c test_helper.c)
@@ -94,4 +97,10 @@ if(WITH_CMOCKA)
     "${CMOCKA_LIBRARY}"
   )
   add_test(run_cmocka_test cmocka_test)
+endif()
+
+if (TESTING)
+  install(TARGETS
+    example_proxy
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()

@@ -60,9 +60,9 @@ pattern register(mod:str, fname:str, rel_stmt:str, sig:str, typ:str):int
 address RAstatement2
 comment "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)";
 
-unsafe command flush_log( ) :void
-address SQLflush_log
-comment "start flushing the write ahead log";
+#unsafe command flush_log( ) :void
+#address SQLflush_log
+#comment "start flushing the write ahead log";
 
 unsafe command hot_snapshot(tarfile:str) :void
 address SQLhot_snapshot
@@ -250,29 +250,16 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] )
-		:bat[:any_3] 
+command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAbat
 comment "Return column bat with delta's applied.";
 
-command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] ) :bat[:any_3] 
+command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAproject
 comment "Return column bat with delta's applied.";
 
-command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid] ) :bat[:oid]
-address DELTAsub
-comment "Return a single bat of selected delta.";
-
-command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
-address DELTAbat2
-comment "Return column bat with delta's applied.";
-
-command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
-address DELTAproject2
-comment "Return column bat with delta's applied.";
-
 command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]) :bat[:oid]
-address DELTAsub2
+address DELTAsub
 comment "Return a single bat of selected delta.";
 
 command project( col:bat[:oid], l:bat[:oid], r:bat[:oid]) :bat[:oid]
@@ -287,7 +274,11 @@ pattern grow(tid:bat[:oid], :any_1):int
 address mvc_grow_wrap
 comment "Resize the tid column of a declared table.";
 
-pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
+unsafe pattern claim(mvc:int, sname:str, tname:str, cnt:lng):lng
+address mvc_claim_wrap
+comment "Claims slots for appending rows.";
+
+pattern append(mvc:int, sname:str, tname:str, cname:str, offset:lng, ins:any):int
 address mvc_append_wrap
 comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";
 
@@ -354,7 +345,7 @@ address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
 unsafe pattern copy_from( t:ptr, 
-	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str, onclient:int) (:bat[:any]...)
+	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, best:int, fwf:str, onclient:int) (:bat[:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -987,18 +978,6 @@ comment "cast lng to a second_interval and check for overflow";
 pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
-
-unsafe pattern shrink(sch:str, tbl:str)
-address SQLshrink
-comment "Consolidate the deletion table over all columns using shrinking";
-
-unsafe pattern reuse(sch:str, tbl:str)
-address SQLreuse
-comment "Consolidate the deletion table over all columns reusing deleted slots";
-
-unsafe pattern vacuum(sch:str, tbl:str)
-address SQLvacuum
-comment "Choose an approach to consolidate the deletions";
 
 unsafe pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash

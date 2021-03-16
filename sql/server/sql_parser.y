@@ -406,7 +406,6 @@ int yydebug=1;
 	opt_null_string
 	opt_to_savepoint
 	opt_uescape
-	opt_user_schema_path
 	opt_using
 	opt_XML_attribute_name
 	restricted_ident
@@ -598,7 +597,6 @@ int yydebug=1;
 	opt_distinct
 	opt_escape
 	opt_grant_for
-	opt_locked
 	opt_nulls_first_last
 	opt_on_location
 	opt_with_admin
@@ -629,7 +627,7 @@ int yydebug=1;
 /* the tokens used in geom */
 %token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA 
 
-%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
+%token	USER CURRENT_USER SESSION_USER LOCAL BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION CURRENT_SCHEMA CURRENT_TIMEZONE
 %token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
@@ -665,7 +663,6 @@ int yydebug=1;
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left WITH DATA
 %left <operation> '(' ')'
-%left <sval> FILTER_FUNC 
 
 %left <operation> NOT
 %left <operation> '='
@@ -1470,17 +1467,13 @@ CREATE [ UNIQUE ] INDEX index_name
 }
 */
 
-opt_user_schema_path:
-   SCHEMA PATH string { $$ = $3; }
- |					 { $$ = NULL; }
-
 role_def:
     ROLE ident opt_grantor
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident opt_user_schema_path
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
@@ -2738,7 +2731,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2749,12 +2742,11 @@ copyfrom_stmt:
 	  append_string(l, $12);
 	  append_int(l, $13);
 	  append_int(l, $14);
-	  append_int(l, $15);
-	  append_list(l, $16);
+	  append_list(l, $15);
 	  append_int(l, $9);
 	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_locked opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2765,7 +2757,6 @@ copyfrom_stmt:
 	  append_string(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
-	  append_int(l, $14);
 	  append_list(l, NULL);
 	  append_int(l, 0);
 	  append_int(l, $10);
@@ -2884,11 +2875,6 @@ opt_escape:
 	/* empty */	{ $$ = TRUE; }		/* ESCAPE is default */
  |  	ESCAPE		{ $$ = TRUE; }
  |  	NO ESCAPE	{ $$ = FALSE; }
- ;
-
-opt_locked:
-	/* empty */	{ $$ = FALSE; }
- |  	LOCKED		{ $$ = TRUE; }
  ;
 
 opt_best_effort:
@@ -5369,7 +5355,6 @@ calc_ident:
  |  UIDENT opt_uescape
 		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
- |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word

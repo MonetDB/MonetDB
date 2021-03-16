@@ -87,8 +87,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		for (i = 0; i < ci.ncand; i++) {			\
-			x = canditer_next(&ci) - b->hseqbase;		\
+		for (i = 0; i < ncand; i++) {			\
+			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
 				dst[i] = TYPE2##_nil;			\
@@ -102,8 +102,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		for (i = 0; i < ci.ncand; i++) {			\
-			x = canditer_next(&ci) - b->hseqbase;		\
+		for (i = 0; i < ncand; i++) {			\
+			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
 				dst[i] = TYPE2##_nil;			\
@@ -120,7 +120,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -135,7 +135,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -156,7 +156,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -173,7 +173,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -198,7 +198,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -212,7 +212,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -232,7 +232,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -242,7 +242,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
 		} else {						\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -258,7 +258,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -270,7 +270,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					on_overflow;			\
 			}						\
 		} else {						\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -288,7 +288,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -314,7 +314,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ci1->ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {		\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -355,7 +355,7 @@ BATcalcnot(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x;
+	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -371,6 +371,28 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 
 	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_msk:
+		if (ci.tpe == cand_dense) {
+			const uint32_t *restrict src = Tloc(b, (ci.seq - b->hseqbase) / 32);
+			uint32_t *restrict dst = Tloc(bn, 0);
+			int bits = (ci.seq - b->hseqbase) % 32;
+			ncand = (ncand + 31) / 32;
+			if (bits == 0) {
+				for (i = 0; i < ncand; i++)
+					dst[i] = ~src[i];
+			} else {
+				for (i = 0; i < ncand; i++)
+					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
+			}
+			if (ci.ncand % 32 != 0)
+				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
+		} else {
+			for (i = 0; i < ncand; i++) {
+				x = canditer_next(&ci) - bhseqbase;
+				mskSetVal(bn, i, !mskGetVal(b, x));
+			}
+		}
+		break;
 	case TYPE_bte:
 		if (b->ttype == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
@@ -398,7 +420,7 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* NOT reverses the order, but NILs mess it up */
 	bn->tsorted = nils == 0 && b->trevsorted;
@@ -420,6 +442,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
+	case TYPE_msk:
+		ret->val.mval = !v->val.mval;
+		break;
 	case TYPE_bte:
 		if (is_bit_nil(v->val.btval))
 			ret->val.btval = bit_nil;
@@ -504,7 +529,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x;
+	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -632,7 +657,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils= 0;
 	BUN i, ncand;
-	oid x;
+	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -764,7 +789,7 @@ BATcalciszero(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x;
+	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -894,7 +919,7 @@ BATcalcsign(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x;
+	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1021,8 +1046,8 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 #define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
 		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
-		for (i = 0; i < ci.ncand; i++) {			\
-			x = canditer_next(&ci) - b->hseqbase;		\
+		for (i = 0; i < ncand; i++) {			\
+			x = canditer_next(&ci) - bhseqbase;		\
 			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
 	} while (0)
@@ -1037,6 +1062,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	struct canditer ci;
 	bit *restrict dst;
 	BUN nils = 0;
+	oid bhseqbase = b->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1084,14 +1110,17 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	case TYPE_dbl:
 		ISNIL_TYPE(dbl, notnil);
 		break;
+	case TYPE_uuid:
+		ISNIL_TYPE(uuid, notnil);
+		break;
 	default:
 	{
 		BATiter bi = bat_iterator(b);
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 		const void *nil = ATOMnilptr(b->ttype);
 
-		for (i = 0; i < ci.ncand; i++) {
-			x = canditer_next(&ci) - b->hseqbase;
+		for (i = 0; i < ncand; i++) {
+			x = canditer_next(&ci) - bhseqbase;
 			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
 		}
 		break;
@@ -1150,17 +1179,45 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
+#define MINMAX_TYPE(TYPE, OP)					\
+	do {								\
+		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {		\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
+					nils = true; \
+					tbn[i] = TYPE##_nil; \
+				} else {	\
+					tbn[i] = p1 OP p2 ? p1 : p2; \
+				}	\
+			} \
+		} else {	\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
+					nils = true; \
+					tbn[i] = TYPE##_nil; \
+				} else {	\
+					tbn[i] = p1 OP p2 ? p1 : p2; \
+				}	\
+			} \
+		}	\
+	} while (0)
+
 BAT *
 BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	const void *restrict nil;
-	BATiter b1i, b2i;
-	int (*cmp)(const void *, const void *);
+	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1173,37 +1230,117 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	if (canditer_init(&ci2, b2, s2) != ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	cmp = ATOMcompare(b1->ttype);
-	b1i = bat_iterator(b1);
-	b2i = bat_iterator(b2);
 
-	for (BUN i = 0; i < ncand; i++) {
-		oid x1 = canditer_next(&ci1) - b1->hseqbase;
-		oid x2 = canditer_next(&ci2) - b2->hseqbase;
-		const void *p1 = BUNtail(b1i, x1);
-		const void *p2 = BUNtail(b2i, x2);
-		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-			nils++;
-			p1 = nil;
-		} else if (cmp(p1, p2) > 0) {
-			p1 = p2;
+	switch (ATOMbasetype(b1->ttype)) {
+	case TYPE_bte:
+		MINMAX_TYPE(bte, <);
+		break;
+	case TYPE_sht:
+		MINMAX_TYPE(sht, <);
+		break;
+	case TYPE_int:
+		MINMAX_TYPE(int, <);
+		break;
+	case TYPE_lng:
+		MINMAX_TYPE(lng, <);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_TYPE(hge, <);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_TYPE(flt, <);
+		break;
+	case TYPE_dbl:
+		MINMAX_TYPE(dbl, <);
+		break;
+	default: {
+		const void *restrict nil = ATOMnilptr(b1->ttype);
+		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			}
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1228,18 +1365,54 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BBPreclaim(bn);
 	return NULL;
 }
+
+#define MINMAX_NONIL_TYPE(TYPE, OP)			\
+	do {								\
+		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {		\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1)) { \
+					if (is_##TYPE##_nil(p2)) { \
+						tbn[i] = TYPE##_nil; \
+						nils = true; \
+					} else { \
+						tbn[i] = p2; \
+					} \
+				} else {	\
+					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
+				}	\
+			} \
+		} else {							\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1)) { \
+					if (is_##TYPE##_nil(p2)) { \
+						tbn[i] = TYPE##_nil; \
+						nils = true; \
+					} else { \
+						tbn[i] = p2; \
+					} \
+				} else {	\
+					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
+				}	\
+			} \
+		}	\
+	} while (0)
 
 BAT *
 BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	const void *restrict nil;
-	BATiter b1i, b2i;
-	int (*cmp)(const void *, const void *);
+	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1252,41 +1425,133 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	if (canditer_init(&ci2, b2, s2) != ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	cmp = ATOMcompare(b1->ttype);
-	b1i = bat_iterator(b1);
-	b2i = bat_iterator(b2);
 
-	for (BUN i = 0; i < ncand; i++) {
-		oid x1 = canditer_next(&ci1) - b1->hseqbase;
-		oid x2 = canditer_next(&ci2) - b2->hseqbase;
-		const void *p1 = BUNtail(b1i, x1);
-		const void *p2 = BUNtail(b2i, x2);
-		if (cmp(p1, nil) == 0) {
-			if (cmp(p2, nil) == 0) {
-				/* both values are nil */
-				nils++;
+	switch (ATOMbasetype(b1->ttype)) {
+	case TYPE_bte:
+		MINMAX_NONIL_TYPE(bte, <);
+		break;
+	case TYPE_sht:
+		MINMAX_NONIL_TYPE(sht, <);
+		break;
+	case TYPE_int:
+		MINMAX_NONIL_TYPE(int, <);
+		break;
+	case TYPE_lng:
+		MINMAX_NONIL_TYPE(lng, <);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_NONIL_TYPE(hge, <);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_NONIL_TYPE(flt, <);
+		break;
+	case TYPE_dbl:
+		MINMAX_NONIL_TYPE(dbl, <);
+		break;
+	default: {
+		const void *restrict nil = ATOMnilptr(b1->ttype);
+		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			} else {
-				p1 = p2;
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
-		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) > 0) {
-			p1 = p2;
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1312,20 +1577,33 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	return NULL;
 }
 
+#define MINMAX_CST_TYPE(TYPE, OP)	\
+	do {								\
+		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
+		for (BUN i = 0; i < ncand; i++) {	\
+			oid x = canditer_next(&ci) - bhseqbase;	\
+			TYPE p1 = tb[x]; \
+			if (is_##TYPE##_nil(p1)) {	\
+				nils = true;	\
+				tbn[i] = TYPE##_nil; \
+			} else {	\
+				tbn[i] = p1 OP pp2 ? p1 : pp2; \
+			} \
+		}	\
+	} while (0)
+
 BAT *
 BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
-	BUN i;
 	struct canditer ci;
-	oid x;
-	const void *restrict nil;
-	const void *p1, *p2;
-	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	const void *p2;
+	const void *restrict nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	oid bhseqbase = b->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1335,38 +1613,79 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
-
-	nil = ATOMnilptr(b->ttype);
-	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (ncand == 0 ||
-	    cmp(p2, nil) == 0 ||
-	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+		cmp(p2, nil) == 0 ||
+		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
 		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	bi = bat_iterator(b);
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		p1 = BUNtail(bi, x);
-		if (cmp(p1, nil) == 0) {
-			nils++;
-			p1 = nil;
-		} else if (cmp(p1, p2) > 0) {
-			p1 = p2;
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+		MINMAX_CST_TYPE(bte, <);
+		break;
+	case TYPE_sht:
+		MINMAX_CST_TYPE(sht, <);
+		break;
+	case TYPE_int:
+		MINMAX_CST_TYPE(int, <);
+		break;
+	case TYPE_lng:
+		MINMAX_CST_TYPE(lng, <);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_CST_TYPE(hge, <);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_CST_TYPE(flt, <);
+		break;
+	case TYPE_dbl:
+		MINMAX_CST_TYPE(dbl, <);
+		break;
+	default: {
+		BATiter bi = bat_iterator(b);
+
+		if (ATOMvarsized(b->ttype)) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtvar(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtloc(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+				}
+				memcpy(bcast, p1, width);
+				bcast += width;
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->theap.dirty = true;
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1396,20 +1715,41 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 	return BATcalcmincst(b, v, s);
 }
 
+#define MINMAX_NONIL_CST_TYPE(TYPE, OP)	\
+	do {								\
+		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
+		if (is_##TYPE##_nil(pp2)) { \
+			for (BUN i = 0; i < ncand; i++) {	\
+				oid x = canditer_next(&ci) - bhseqbase; \
+				TYPE p1 = tb[x]; \
+				nils |= is_##TYPE##_nil(p1); \
+				tbn[i] = p1; \
+			} \
+		} else {	\
+			for (BUN i = 0; i < ncand; i++) {	\
+				oid x = canditer_next(&ci) - bhseqbase; \
+				TYPE p1 = tb[x]; \
+				if (is_##TYPE##_nil(p1)) { \
+					tbn[i] = pp2; \
+				} else { \
+					tbn[i] = p1 OP pp2 ? p1 : pp2; \
+				} \
+			} \
+		}	\
+	} while (0)
+
 BAT *
 BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
-	BUN i;
 	struct canditer ci;
-	oid x;
-	const void *restrict nil;
-	const void *p1, *p2;
-	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	const void *p2;
+	const void *restrict nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	oid bhseqbase = b->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1419,46 +1759,92 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype,
-				    nil, ncand, TRANSIENT);
+		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
 
-	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
-	    is_oid_nil(b->tseqbase) &&
-	    is_oid_nil(* (const oid *) p2))
-		return BATconstant(ci.hseq, TYPE_void,
-				   &oid_nil, ncand, TRANSIENT);
+		is_oid_nil(b->tseqbase) &&
+		is_oid_nil(* (const oid *) p2))
+		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	bi = bat_iterator(b);
-	if (cmp(p2, nil) == 0)
-		p2 = NULL;
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		p1 = BUNtail(bi, x);
-		if (p2) {
-			if (cmp(p1, nil) == 0) {
-				p1 = p2;
-			} else if (cmp(p1, p2) > 0) {
-				p1 = p2;
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+		MINMAX_NONIL_CST_TYPE(bte, <);
+		break;
+	case TYPE_sht:
+		MINMAX_NONIL_CST_TYPE(sht, <);
+		break;
+	case TYPE_int:
+		MINMAX_NONIL_CST_TYPE(int, <);
+		break;
+	case TYPE_lng:
+		MINMAX_NONIL_CST_TYPE(lng, <);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_NONIL_CST_TYPE(hge, <);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_NONIL_CST_TYPE(flt, <);
+		break;
+	case TYPE_dbl:
+		MINMAX_NONIL_CST_TYPE(dbl, <);
+		break;
+	default: {
+		BATiter bi = bat_iterator(b);
+
+		if (ATOMvarsized(b->ttype)) {
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtvar(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtvar(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			nils += cmp(p1, nil) == 0;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtloc(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtloc(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->theap.dirty = true;
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1493,12 +1879,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	const void *restrict nil;
-	BATiter b1i, b2i;
-	int (*cmp)(const void *, const void *);
+	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1511,37 +1895,117 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	if (canditer_init(&ci2, b2, s2) != ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	cmp = ATOMcompare(b1->ttype);
-	b1i = bat_iterator(b1);
-	b2i = bat_iterator(b2);
 
-	for (BUN i = 0; i < ncand; i++) {
-		oid x1 = canditer_next(&ci1) - b1->hseqbase;
-		oid x2 = canditer_next(&ci2) - b2->hseqbase;
-		const void *p1 = BUNtail(b1i, x1);
-		const void *p2 = BUNtail(b2i, x2);
-		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-			nils++;
-			p1 = nil;
-		} else if (cmp(p1, p2) < 0) {
-			p1 = p2;
+	switch (ATOMbasetype(b1->ttype)) {
+	case TYPE_bte:
+		MINMAX_TYPE(bte, >);
+		break;
+	case TYPE_sht:
+		MINMAX_TYPE(sht, >);
+		break;
+	case TYPE_int:
+		MINMAX_TYPE(int, >);
+		break;
+	case TYPE_lng:
+		MINMAX_TYPE(lng, >);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_TYPE(hge, >);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_TYPE(flt, >);
+		break;
+	case TYPE_dbl:
+		MINMAX_TYPE(dbl, >);
+		break;
+	default: {
+		const void *restrict nil = ATOMnilptr(b1->ttype);
+		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			}
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1572,12 +2036,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	const void *restrict nil;
-	BATiter b1i, b2i;
-	int (*cmp)(const void *, const void *);
+	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1590,42 +2052,137 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
-	if (canditer_init(&ci2, b2, s2) != ncand ||
-	    ci1.hseq != ci2.hseq) {
+	if (canditer_init(&ci2, b2, s2) != ncand || ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	cmp = ATOMcompare(b1->ttype);
-	b1i = bat_iterator(b1);
-	b2i = bat_iterator(b2);
 
-	for (BUN i = 0; i < ncand; i++) {
-		oid x1 = canditer_next(&ci1) - b1->hseqbase;
-		oid x2 = canditer_next(&ci2) - b2->hseqbase;
-		const void *p1, *p2;
-		p1 = BUNtail(b1i, x1);
-		p2 = BUNtail(b2i, x2);
-		if (cmp(p1, nil) == 0) {
-			if (cmp(p2, nil) == 0) {
-				/* both values are nil */
-				nils++;
+	switch (ATOMbasetype(b1->ttype)) {
+	case TYPE_bte:
+		MINMAX_NONIL_TYPE(bte, >);
+		break;
+	case TYPE_sht:
+		MINMAX_NONIL_TYPE(sht, >);
+		break;
+	case TYPE_int:
+		MINMAX_NONIL_TYPE(int, >);
+		break;
+	case TYPE_lng:
+		MINMAX_NONIL_TYPE(lng, >);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_NONIL_TYPE(hge, >);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_NONIL_TYPE(flt, >);
+		break;
+	case TYPE_dbl:
+		MINMAX_NONIL_TYPE(dbl, >);
+		break;
+	default: {
+		const void *restrict nil = ATOMnilptr(b1->ttype);
+		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
+
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtvar(b1i, x1);
+					p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			} else {
-				p1 = p2;
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtvar(b1i, x1);
+					p2 = BUNtvar(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
-		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) < 0) {
-			p1 = p2;
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtloc(b1i, x1);
+					p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtloc(b1i, x1);
+					p2 = BUNtloc(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1656,15 +2213,13 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
-	BUN i;
 	struct canditer ci;
-	oid x;
-	const void *restrict nil;
-	const void *p1, *p2;
-	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	const void *p2;
+	const void *restrict nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	oid bhseqbase = b->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1674,38 +2229,79 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
-
-	nil = ATOMnilptr(b->ttype);
-	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (ncand == 0 ||
-	    cmp(p2, nil) == 0 ||
-	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+		cmp(p2, nil) == 0 ||
+		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
 		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	bi = bat_iterator(b);
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		p1 = BUNtail(bi, x);
-		if (cmp(p1, nil) == 0) {
-			nils++;
-			p1 = nil;
-		} else if (cmp(p1, p2) < 0) {
-			p1 = p2;
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+		MINMAX_CST_TYPE(bte, >);
+		break;
+	case TYPE_sht:
+		MINMAX_CST_TYPE(sht, >);
+		break;
+	case TYPE_int:
+		MINMAX_CST_TYPE(int, >);
+		break;
+	case TYPE_lng:
+		MINMAX_CST_TYPE(lng, >);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_CST_TYPE(hge, >);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_CST_TYPE(flt, >);
+		break;
+	case TYPE_dbl:
+		MINMAX_CST_TYPE(dbl, >);
+		break;
+	default: {
+		BATiter bi = bat_iterator(b);
+
+		if (ATOMvarsized(b->ttype)) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtvar(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtloc(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+				}
+				memcpy(bcast, p1, width);
+				bcast += width;
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->theap.dirty = true;
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1740,15 +2336,13 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
-	BUN i;
 	struct canditer ci;
-	oid x;
-	const void *restrict nil;
-	const void *p1, *p2;
-	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	const void *p2;
+	const void *restrict nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	oid bhseqbase = b->hseqbase;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1758,46 +2352,93 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype,
-				    nil, ncand, TRANSIENT);
+		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
 
 	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
-	    is_oid_nil(b->tseqbase) &&
-	    is_oid_nil(* (const oid *) p2))
-		return BATconstant(ci.hseq, TYPE_void,
-				   &oid_nil, ncand, TRANSIENT);
+		is_oid_nil(b->tseqbase) &&
+		is_oid_nil(* (const oid *) p2))
+		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	bi = bat_iterator(b);
-	if (cmp(p2, nil) == 0)
-		p2 = NULL;
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		p1 = BUNtail(bi, x);
-		if (p2) {
-			if (cmp(p1, nil) == 0) {
-				p1 = p2;
-			} else if (cmp(p1, p2) < 0) {
-				p1 = p2;
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+		MINMAX_NONIL_CST_TYPE(bte, >);
+		break;
+	case TYPE_sht:
+		MINMAX_NONIL_CST_TYPE(sht, >);
+		break;
+	case TYPE_int:
+		MINMAX_NONIL_CST_TYPE(int, >);
+		break;
+	case TYPE_lng:
+		MINMAX_NONIL_CST_TYPE(lng, >);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_NONIL_CST_TYPE(hge, >);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_NONIL_CST_TYPE(flt, >);
+		break;
+	case TYPE_dbl:
+		MINMAX_NONIL_CST_TYPE(dbl, >);
+		break;
+	default: {
+		BATiter bi = bat_iterator(b);
+
+		if (ATOMvarsized(b->ttype)) {
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtvar(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtvar(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			nils += cmp(p1, nil) == 0;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtloc(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtloc(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->theap.dirty = true;
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1841,10 +2482,10 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -1860,7 +2501,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -1890,11 +2531,11 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -1912,7 +2553,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -3372,7 +4013,7 @@ static BUN
 addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	    struct canditer *restrict ci1, struct canditer *restrict ci2)
 {
-	BUN nils = 0;
+	BUN nils = 0, ncand = ci1->ncand;
 	char *s;
 	size_t slen, llen, rlen;
 	BATiter b1i, b2i;
@@ -3387,7 +4028,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	s = GDKmalloc(slen);
 	if (s == NULL)
 		return BUN_NONE;
-	for (BUN i = 0; i < ci1->ncand; i++) {
+	for (BUN i = 0; i < ncand; i++) {
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
@@ -3414,7 +4055,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		}
 	}
 	GDKfree(s);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return nils;
 
   bunins_failed:
@@ -3716,10 +4357,10 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -3735,7 +4376,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -3765,11 +4406,11 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -3787,7 +4428,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -5461,10 +6102,10 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -5481,7 +6122,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -5512,11 +6153,11 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -5535,7 +6176,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -5572,10 +6213,10 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -5591,7 +6232,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -5623,10 +6264,10 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -5642,7 +6283,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -5674,10 +6315,10 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -5697,7 +6338,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -5743,10 +6384,10 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 	oid candoff1, oid candoff2, bool abort_on_error)		\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -5767,7 +6408,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -7878,10 +8519,10 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -7905,7 +8546,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -7943,10 +8584,10 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -7976,7 +8617,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -8018,10 +8659,10 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 	oid candoff1, oid candoff2, bool abort_on_error)		\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -8051,7 +8692,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -10190,10 +10831,10 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -10211,7 +10852,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -10243,10 +10884,10 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -10265,7 +10906,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			}						\
 		}							\
 	} else {							\
-		for (BUN k = 0; k < ci1->ncand; k++) {			\
+		for (BUN k = 0; k < ncand; k++) {			\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -11599,7 +12240,7 @@ xor_typeswitchloop(const void *lft, bool incr1,
 		   oid candoff1, oid candoff2,
 		   bool nonil, const char *func)
 {
-	BUN i, j, k;
+	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
 	switch (ATOMbasetype(tp)) {
@@ -11810,7 +12451,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 		  oid candoff1, oid candoff2,
 		  bool nonil, const char *func)
 {
-	BUN i = 0, j = 0, k;
+	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
 	/* note, we don't have to check whether the result is equal to
@@ -11822,7 +12463,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			for (k = 0; k < ci1->ncand; k++) {
+			for (k = 0; k < ncand; k++) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -12038,14 +12679,14 @@ and_typeswitchloop(const void *lft, bool incr1,
 		   oid candoff1, oid candoff2,
 		   bool nonil, const char *func)
 {
-	BUN i = 0, j = 0, k;
+	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			for (k = 0; k < ci1->ncand; k++) {
+			for (k = 0; k < ncand; k++) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -12275,7 +12916,7 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
-	BUN i, j, k;
+	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
 	tp1 = ATOMbasetype(tp1);
@@ -12619,7 +13260,7 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *restrict func)
 {
-	BUN i, j, k;
+	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
 	tp1 = ATOMbasetype(tp1);
@@ -13179,7 +13820,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
 		i = j = k = 0;						\
-		for (l = 0; l < ci->ncand; l++) {			\
+		for (l = 0; l < ncand; l++) {			\
 			if (incr1)					\
 				i = canditer_next(ci) - seqbase1;	\
 			if (incr2)					\
@@ -13208,15 +13849,15 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 {
 	BAT *bn;
 	BUN nils = 0;
-	BUN i, j, k, l;
+	BUN i, j, k, l, ncand = ci->ncand;
 	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
-	bn = COLnew(ci->hseq, TYPE_bit, ci->ncand, TRANSIENT);
+	bn = COLnew(ci->hseq, TYPE_bit, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci->ncand == 0)
+	if (ncand == 0)
 		return bn;
 
 	dst = (bit *) Tloc(bn, 0);
@@ -13279,7 +13920,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 		}
 		nil = ATOMnilptr(tp);
 		i = j = k = 0;
-		for (l = 0; l < ci->ncand; l++) {
+		for (l = 0; l < ncand; l++) {
 			if (incr1)
 				i = canditer_next(ci) - seqbase1;
 			if (incr2)
@@ -13302,11 +13943,11 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 		break;
 	}
 
-	BATsetcount(bn, ci->ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci->ncand <= 1 || nils == ci->ncand;
-	bn->trevsorted = ci->ncand <= 1 || nils == ci->ncand;
-	bn->tkey = ci->ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -13594,19 +14235,20 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			l += incr2;					\
 		}							\
 	} while (0)
-#define IFTHENELSELOOP_oid()						\
-	do {								\
-		for (i = 0; i < cnt; i++) {				\
-			if (src[i] && !is_bit_nil(src[i])) {		\
-				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
-			} else {					\
-				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
-			}						\
-			k += incr1;					\
-			l += incr2;					\
-			seq1 += incr1;					\
-			seq2 += incr2;					\
-		}							\
+#define IFTHENELSELOOP_msk(TYPE)				\
+	do {							\
+		for (i = 0; i < cnt; i++) {			\
+			if (n == 32) {				\
+				n = 0;				\
+				mask = src[i / 32];		\
+			}					\
+			((TYPE *) dst)[i] = mask & (1U << n) ?	\
+				((TYPE *) col1)[k] :		\
+				((TYPE *) col2)[l];		\
+			k += incr1;				\
+			l += incr2;				\
+			n++;					\
+		}						\
 	} while (0)
 
 static BAT *
@@ -13621,7 +14263,6 @@ BATcalcifthenelse_intern(BAT *b,
 	void *restrict dst;
 	BUN i, k, l;
 	const void *p;
-	const bit *src;
 	BUN cnt = b->batCount;
 
 	/* col1 and col2 can only be NULL for void columns */
@@ -13638,74 +14279,222 @@ BATcalcifthenelse_intern(BAT *b,
 	if (cnt == 0)
 		return bn;
 
-	src = (const bit *) Tloc(b, 0);
-
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
 	if (bn->tvarsized) {
-		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == false));
-		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == false));
-		for (i = 0; i < cnt; i++) {
-			if (src[i] && !is_bit_nil(src[i])) {
-				if (heap1)
-					p = heap1 + VarHeapVal(col1, k, width1);
-				else
-					p = col1;
-			} else {
-				if (heap2)
-					p = heap2 + VarHeapVal(col2, l, width2);
-				else
-					p = col2;
+		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
+		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			const uint32_t *src = Tloc(b, 0);
+			BUN n = cnt / 32;
+			for (i = 0; i <= n; i++) {
+				BUN rem = i == n ? cnt % 32 : 32;
+				uint32_t mask = rem != 0 ? src[i] : 0;
+				for (BUN j = 0; j < rem; j++) {
+					if (mask & (1U << j)) {
+						if (heap1)
+							p = heap1 + VarHeapVal(col1, k, width1);
+						else
+							p = col1;
+					} else {
+						if (heap2)
+							p = heap2 + VarHeapVal(col2, l, width2);
+						else
+							p = col2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+						BBPreclaim(bn);
+						return NULL;
+					}
+					k += incr1;
+					l += incr2;
+				}
 			}
-			if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return NULL;
+		} else {
+			const bit *src = Tloc(b, 0);
+			for (i = 0; i < cnt; i++) {
+				if (src[i] && !is_bit_nil(src[i])) {
+					if (heap1)
+						p = heap1 + VarHeapVal(col1, k, width1);
+					else
+						p = col1;
+				} else {
+					if (heap2)
+						p = heap2 + VarHeapVal(col2, l, width2);
+					else
+						p = col2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+				k += incr1;
+				l += incr2;
 			}
-			k += incr1;
-			l += incr2;
 		}
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		if (ATOMtype(tpe) == TYPE_oid) {
-			IFTHENELSELOOP_oid();
-		} else {
-			switch (bn->twidth) {
-			case 1:
-				IFTHENELSELOOP(bte);
-				break;
-			case 2:
-				IFTHENELSELOOP(sht);
-				break;
-			case 4:
-				IFTHENELSELOOP(int);
-				break;
-			case 8:
-				IFTHENELSELOOP(lng);
-				break;
-#ifdef HAVE_HGE
-			case 16:
-				IFTHENELSELOOP(hge);
-				break;
-#endif
-			default:
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			const uint32_t *src = Tloc(b, 0);
+			uint32_t mask = 0;
+			BUN n = 32;
+			if (ATOMtype(tpe) == TYPE_oid) {
 				for (i = 0; i < cnt; i++) {
-					if (src[i] && !is_bit_nil(src[i])) {
-						p = ((const char *) col1) + k * width1;
-					} else {
-						p = ((const char *) col2) + l * width2;
+					if (n == 32) {
+						n = 0;
+						mask = src[i / 32];
 					}
-					memcpy(dst, p, bn->twidth);
-					dst = (void *) ((char *) dst + bn->twidth);
+					((oid *) dst)[i] = mask & (1U << n) ?
+						col1 ? ((oid *)col1)[k] : seq1 :
+						col2 ? ((oid *)col2)[l] : seq2;
 					k += incr1;
 					l += incr2;
+					seq1 += incr1;
+					seq2 += incr2;
+					n++;
+				}
+			} else if (ATOMstorage(tpe) == TYPE_msk) {
+				uint32_t v1, v2;
+				if (incr1) {
+					v1 = 0;
+				} else {
+					v1 = * (msk *) col1 ? ~0U : 0U;
+				}
+				if (incr2) {
+					v2 = 0;
+				} else {
+					v2 = * (msk *) col2 ? ~0U : 0U;
+				}
+				n = (cnt + 31) / 32;
+				for (i = 0; i < n; i++) {
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i];
+					((uint32_t *) dst)[i] = (src[i] & v1)
+						| (~src[i] & v2);
+				}
+			} else {
+				switch (bn->twidth) {
+				case 1:
+					IFTHENELSELOOP_msk(bte);
+					break;
+				case 2:
+					IFTHENELSELOOP_msk(sht);
+					break;
+				case 4:
+					IFTHENELSELOOP_msk(int);
+					break;
+				case 8:
+					IFTHENELSELOOP_msk(lng);
+					break;
+				case 16:
+#ifdef HAVE_HGE
+					IFTHENELSELOOP_msk(hge);
+#else
+					IFTHENELSELOOP_msk(uuid);
+#endif
+					break;
+				default:
+					for (i = 0; i < cnt; i++) {
+						if (n == 32) {
+							n = 0;
+							mask = src[i / 32];
+						}
+						if (mask & (1U << n))
+							p = ((const char *) col1) + k * width1;
+						else
+							p = ((const char *) col2) + l * width2;
+						memcpy(dst, p, bn->twidth);
+						dst = (void *) ((char *) dst + bn->twidth);
+						k += incr1;
+						l += incr2;
+						n++;
+					}
+				}
+			}
+		} else {
+			const bit *src = Tloc(b, 0);
+			if (ATOMtype(tpe) == TYPE_oid) {
+				for (i = 0; i < cnt; i++) {
+					if (src[i] && !is_bit_nil(src[i])) {
+						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
+					} else {
+						((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2;
+					}
+					k += incr1;
+					l += incr2;
+					seq1 += incr1;
+					seq2 += incr2;
+				}
+			} else if (ATOMstorage(tpe) == TYPE_msk) {
+				uint32_t v1, v2;
+				uint32_t *d = dst;
+				if (incr1) {
+					v1 = 0;
+				} else {
+					v1 = * (msk *) col1 ? ~0U : 0U;
+				}
+				if (incr2) {
+					v2 = 0;
+				} else {
+					v2 = * (msk *) col2 ? ~0U : 0U;
+				}
+				i = 0;
+				while (i < cnt) {
+					uint32_t mask = 0;
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i/32];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i/32];
+					for (int n = 0; n < 32; n++) {
+						mask |= (uint32_t) (src[i] != 0) << n;
+						if (++i == cnt)
+							break;
+					}
+					*d++ = (mask & v1) | (~mask & v2);
+				}
+			} else {
+				switch (bn->twidth) {
+				case 1:
+					IFTHENELSELOOP(bte);
+					break;
+				case 2:
+					IFTHENELSELOOP(sht);
+					break;
+				case 4:
+					IFTHENELSELOOP(int);
+					break;
+				case 8:
+					IFTHENELSELOOP(lng);
+					break;
+				case 16:
+#ifdef HAVE_HGE
+					IFTHENELSELOOP(hge);
+#else
+					IFTHENELSELOOP(uuid);
+#endif
+					break;
+				default:
+					for (i = 0; i < cnt; i++) {
+						if (src[i] && !is_bit_nil(src[i])) {
+							p = ((const char *) col1) + k * width1;
+						} else {
+							p = ((const char *) col2) + l * width2;
+						}
+						memcpy(dst, p, bn->twidth);
+						dst = (void *) ((char *) dst + bn->twidth);
+						k += incr1;
+						l += incr2;
+					}
 				}
 			}
 		}
 	}
 
 	BATsetcount(bn, cnt);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;
@@ -13926,7 +14715,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  oid candoff, uint8_t scale1, bool *reduce)	\
 {									\
-	BUN i, nils = 0;						\
+	BUN i, nils = 0, ncand = ci->ncand;						\
 	TYPE1 v;							\
 	oid x;								\
 	const TYPE1 div = (TYPE1) scales[scale1];			\
@@ -13934,7 +14723,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1) {						\
-			for (i = 0; i < ci->ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {		\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -13944,7 +14733,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					dst[i] = (TYPE2) v;		\
 			}						\
 		} else {						\
-			for (i = 0; i < ci->ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {		\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -13955,7 +14744,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -13994,12 +14783,12 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
 {									\
-	BUN i, nils = 0;						\
+	BUN i, nils = 0, ncand = ci->ncand;						\
 	oid x;								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14015,7 +14804,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
 	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14040,12 +14829,12 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
 {									\
-	BUN i, nils = 0;						\
+	BUN i, nils = 0, ncand = ci->ncand;						\
 	oid x;								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14062,7 +14851,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
 	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14104,7 +14893,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			  bool abort_on_error,				\
 			  bool *reduce)					\
 {									\
-	BUN i;								\
+	BUN i, ncand = ci->ncand;								\
 	BUN nils = 0;							\
 	TYPE1 v;							\
 	oid x;								\
@@ -14120,7 +14909,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	*reduce = div > 1;						\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1 && mul == 1) {				\
-			for (i = 0; i < ci->ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {		\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14139,7 +14928,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				}					\
 			}						\
 		} else if (div == 1) {					\
-			for (i = 0; i < ci->ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {		\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14159,7 +14948,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		} else {						\
 			/* mul == 1 */					\
-			for (i = 0; i < ci->ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {		\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14182,7 +14971,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) { \
@@ -14217,7 +15006,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  oid candoff, uint8_t scale2, uint8_t precision, \
 			  bool abort_on_error, bool *reduce)		\
 {									\
-	BUN i, nils = 0;						\
+	BUN i, nils = 0, ncand = ci->ncand;						\
 	oid x;								\
 	TYPE1 v;							\
 	const TYPE2 mul = (TYPE2) scales[scale2];			\
@@ -14227,7 +15016,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next_dense(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -14249,7 +15038,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -14280,12 +15069,12 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 		     struct canditer *restrict ci,			\
 		     oid candoff, bool *reduce)				\
 {									\
-	BUN i, nils = 0;						\
+	BUN i, nils = 0, ncand = ci->ncand;						\
 	oid x;								\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE##_nil(src[x])) {			\
 				dst[i] = bit_nil;			\
@@ -14294,13 +15083,111 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
 	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE##_nil(src[x])) {			\
 				dst[i] = bit_nil;			\
 				nils++;					\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_msk(TYPE)						\
+static BUN								\
+convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
+		     struct canditer *restrict ci,			\
+		     oid candoff, bool *reduce)				\
+{									\
+	BUN cnt = ci->ncand / 32;					\
+	BUN i, j, k;							\
+	uint32_t mask;							\
+	oid x;								\
+									\
+	*reduce = true;							\
+	k = 0;								\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < cnt; i++) {				\
+			mask = 0;					\
+			for (j = 0; j < 32; j++) {			\
+				x = canditer_next_dense(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+		cnt = ci->ncand % 32;					\
+		if (cnt > 0) {						\
+			mask = 0;					\
+			for (j = 0; j < cnt; j++) {			\
+				x = canditer_next_dense(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+	} else {							\
+		for (i = 0; i < cnt; i++) {				\
+			mask = 0;					\
+			for (j = 0; j < 32; j++) {			\
+				x = canditer_next(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+		cnt = ci->ncand % 32;					\
+		if (cnt > 0) {						\
+			mask = 0;					\
+			for (j = 0; j < cnt; j++) {			\
+				x = canditer_next(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+	}								\
+	return 0;							\
+}									\
+									\
+static BUN								\
+convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
+		   struct canditer *restrict ci,			\
+		   oid candoff, bool *reduce)				\
+{									\
+	BUN nils = 0;							\
+	BUN k, ncand = ci->ncand;								\
+									\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		uint32_t mask;						\
+		BUN i = (ci->seq - candoff) / 32;			\
+		BUN cnt = (ci->seq + ci->ncand - candoff) / 32;		\
+		BUN first = (ci->seq - candoff) % 32;			\
+		BUN rem = (ci->seq + ci->ncand - candoff) % 32;		\
+		BUN j;							\
+		k = 0;							\
+		for (; i < cnt; i++) {					\
+			mask = src[i];					\
+			for (j = first; j < 32; j++) {			\
+				dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
+				k++;					\
+			}						\
+			first = 0;					\
+		}							\
+		if (rem > first) {					\
+			mask = src[i];					\
+			for (j = first; j < rem; j++) {			\
+				dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
+				k++;					\
+			}						\
+		}							\
+	} else {							\
+		for (k = 0; k < ncand; k++) {			\
+			oid x = canditer_next(ci) - candoff;		\
+			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 		}							\
 	}								\
 	return nils;							\
@@ -14400,6 +15287,16 @@ convert2bit_impl(hge)
 convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
+convertimpl_msk(bte)
+convertimpl_msk(sht)
+convertimpl_msk(int)
+convertimpl_msk(lng)
+#ifdef HAVE_HGE
+convertimpl_msk(hge)
+#endif
+convertimpl_msk(flt)
+convertimpl_msk(dbl)
+
 static BUN
 convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 {
@@ -14408,7 +15305,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 	str dst = 0;
 	size_t len = 0;
 	BUN nils = 0;
-	BUN i;
+	BUN i, ncand = ci->ncand;
 	const void *nil = ATOMnilptr(tp);
 	const void *restrict src;
 	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
@@ -14420,7 +15317,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 		BATiter bi = bat_iterator(b);
 
 		assert(b->ttype != TYPE_void);
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(bi, x);
 			if (strNil(src))
@@ -14432,7 +15329,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 		BATiter bi = bat_iterator(b);
 
 		assert(b->ttype != TYPE_void);
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
@@ -14446,8 +15343,17 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 					goto bunins_failed;
 			}
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		for (i = 0; i < ncand; i++) {
+			const char *v;
+			x = canditer_next(ci) - candoff;
+			v = mskGetVal(b, x) ? "1" : "0";
+			if (tfastins_nocheckVAR(bn, i, v,
+						bn->twidth) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
 	} else {
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			src = Tloc(b, x);
 			if ((*atomcmp)(src, nil) == 0) {
@@ -14462,8 +15368,8 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	bn->theap.dirty = true;
-	BATsetcount(bn, ci->ncand);
+	bn->theap->dirty = true;
+	BATsetcount(bn, ncand);
 	GDKfree(dst);
 	return nils;
   bunins_failed:
@@ -14476,14 +15382,43 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		struct canditer *restrict ci,
 		oid candoff, bool abort_on_error)
 {
-	BUN nils = 0;
+	BUN nils = 0, ncand = ci->ncand;
 	const void *nil = ATOMnilptr(tp);
 	size_t len = ATOMsize(tp);
 	ssize_t l;
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
+	const char *s = NULL;
 
-	for (BUN i = 0; i < ci->ncand; i++) {
+	if (ATOMstorage(tp) == TYPE_msk) {
+		uint32_t mask = 0;
+		uint32_t *d = dst;
+		int j = 0;
+		for (BUN i = 0; i < ncand; i++) {
+			oid x = canditer_next(ci) - candoff;
+			uint32_t v;
+			s = BUNtvar(bi, x);
+			if (strcmp(s, "0") == 0)
+				v = 0;
+			else if (strcmp(s, "1") == 0)
+				v = 1;
+			else if (!abort_on_error)
+				v = 0;
+			else
+				goto conversion_failed;
+			mask |= v << j;
+			if (++j == 32) {
+				*d++ = mask;
+				j = 0;
+				mask = 0;
+			}
+		}
+		if (j > 0)
+			*d = mask;
+		return 0;
+
+	}
+	for (BUN i = 0; i < ncand; i++) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(bi, x);
 		if (strNil(s)) {
@@ -14494,21 +15429,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
-					GDKclrerr();
-					size_t sz = escapedStrlen(s, NULL, NULL, '\'');
-					char *bf = GDKmalloc(sz + 1);
-					if (bf) {
-						escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
-						GDKerror("22018!conversion of string "
-							 "'%s' to type %s failed.\n",
-							 bf, ATOMname(tp));
-						GDKfree(bf);
-					} else {
-						GDKerror("22018!conversion of string "
-							 "to type %s failed.\n",
-							 ATOMname(tp));
-					}
-					return BUN_NONE;
+					goto conversion_failed;
 				}
 				memcpy(dst, nil, len);
 			}
@@ -14519,6 +15440,28 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		dst = (void *) ((char *) dst + len);
 	}
 	return nils;
+
+  conversion_failed:
+	GDKclrerr();
+	size_t sz = 0;
+	char *bf = NULL;
+
+	if (s) {
+		sz = escapedStrlen(s, NULL, NULL, '\'');
+		bf = GDKmalloc(sz + 1);
+	}
+	if (bf) {
+		escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
+		GDKerror("22018!conversion of string "
+			 "'%s' to type %s failed.\n",
+			 bf, ATOMname(tp));
+		GDKfree(bf);
+	} else {
+		GDKerror("22018!conversion of string "
+			 "to type %s failed.\n",
+			 ATOMname(tp));
+	}
+	return BUN_NONE;
 }
 
 static BUN
@@ -14527,7 +15470,7 @@ convert_void_any(oid seq, BAT *bn,
 		 oid candoff, bool abort_on_error, bool *reduce)
 {
 	BUN nils = 0;
-	BUN i;
+	BUN i, ncand = ci->ncand;
 	int tp = bn->ttype;
 	void *restrict dst = Tloc(bn, 0);
 	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
@@ -14541,15 +15484,15 @@ convert_void_any(oid seq, BAT *bn,
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
-			if (ci->ncand > 0) {
+			if (ncand > 0) {
 				x = canditer_next(ci) - candoff;
 				((bit *) dst)[0] = x + seq != 0;
 			}
-			for (i = 1; i < ci->ncand; i++) {
+			for (i = 1; i < ncand; i++) {
 				((bit *) dst)[i] = 1;
 			}
 		} else {
-			for (i = 0; i < ci->ncand; i++) {
+			for (i = 0; i < ncand; i++) {
 				x = canditer_next(ci) - candoff;
 				if (seq + x > GDK_bte_max) {
 					if (abort_on_error)
@@ -14562,7 +15505,7 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_sht:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			if (seq + x > GDK_sht_max) {
 				if (abort_on_error)
@@ -14574,7 +15517,7 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_int:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 #if SIZEOF_OID > SIZEOF_INT
 			if (seq + x > GDK_int_max) {
@@ -14588,33 +15531,33 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_lng:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			((lng *) dst)[i] = (lng) (seq + x);
 		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			((hge *) dst)[i] = (hge) (seq + x);
 		}
 		break;
 #endif
 	case TYPE_flt:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			((flt *) dst)[i] = (flt) (seq + x);
 		}
 		break;
 	case TYPE_dbl:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			((dbl *) dst)[i] = (dbl) (seq + x);
 		}
 		break;
 	case TYPE_str:
-		for (i = 0; i < ci->ncand; i++) {
+		for (i = 0; i < ncand; i++) {
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
 				goto bunins_failed;
@@ -14628,7 +15571,7 @@ convert_void_any(oid seq, BAT *bn,
 		return BUN_NONE + 1;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return nils;
 
   bunins_failed:
@@ -14645,8 +15588,41 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 	assert(scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	assert(scale2 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	switch (ATOMbasetype(stp)) {
+	case TYPE_msk:
+		switch (ATOMbasetype(dtp)) {
+		/* case TYPE_msk not needed: it is done with the help
+		 * of BATappend */
+		case TYPE_bte:
+			return convert_bte_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_sht:
+			return convert_sht_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_int:
+			return convert_int_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_lng:
+			return convert_lng_msk(src, dst, ci, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_hge_msk(src, dst, ci, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_flt_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_dbl_msk(src, dst, ci, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
 	case TYPE_bte:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_bte(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, ci,
@@ -14707,6 +15683,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_sht:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_sht(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, ci,
@@ -14767,6 +15746,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_int:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_int(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, ci,
@@ -14828,6 +15810,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_lng:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_lng(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, ci,
@@ -14890,6 +15875,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_hge(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_hge_bit(src, dst, ci,
@@ -14941,6 +15929,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 #endif
 	case TYPE_flt:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_flt(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, ci,
@@ -14997,6 +15988,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_dbl:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_dbl(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, ci,
@@ -15099,6 +16093,22 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 			 ATOMname(b->ttype), ATOMname(tp));
 		return NULL;
 	}
+	if (ATOMstorage(tp) == TYPE_msk) {
+		if (BATtdense(b)) {
+			/* dense to msk is easy: all values 1, except
+			 * maybe the first */
+			bn = BATconstant(ci.hseq, tp, &(msk){1}, ncand,
+					 TRANSIENT);
+			if (bn && b->tseqbase == 0)
+				mskClr(bn, 0);
+			return bn;
+		} else if (b->ttype == TYPE_void) {
+			/* void-nil to msk is easy: all values 0 */
+			bn = BATconstant(ci.hseq, tp, &(msk){0}, ncand,
+					 TRANSIENT);
+			return bn;
+		}
+	}
 
 	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
@@ -15115,6 +16125,10 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 		nils = convert_str_any(b, tp, Tloc(bn, 0),
 				       &ci, b->hseqbase,
 				       abort_on_error);
+	} else if (ATOMstorage(b->ttype) == TYPE_msk &&
+		   ATOMstorage(tp) == TYPE_msk) {
+		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
+			nils = BUN_NONE + 2;
 	} else
 		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
 					      Tloc(bn, 0), tp,
@@ -15167,7 +16181,23 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 	BUN nils = 0;
 	bool reduce;
 
-	if (ret->vtype == TYPE_str) {
+	if (ret->vtype == TYPE_msk) {
+		ValRecord tmp;
+		tmp.vtype = TYPE_bit;
+		if (VARconvert(&tmp, v, abort_on_error, scale1, scale2, precision) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (is_bte_nil(tmp.val.btval)) {
+			GDKerror("22003!cannot convert nil to msk.\n");
+			nils = BUN_NONE;
+		}
+		ret->val.mval = tmp.val.btval;
+	} else if (v->vtype == TYPE_msk) {
+		ValRecord tmp;
+		tmp.vtype = TYPE_bit;
+		tmp.val.btval = v->val.mval;
+		if (VARconvert(ret, &tmp, abort_on_error, scale1, scale2, precision) != GDK_SUCCEED)
+			return GDK_FAIL;
+	} else if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
 					     ATOMnilptr(v->vtype)) == 0) {

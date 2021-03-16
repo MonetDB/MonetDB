@@ -1,17 +1,12 @@
 statement ok
-i:= 12
-
-statement ok
-_2:=55
-
-statement ok
-_3:= 23
-
-statement ok
-_5:=23
+function foo();
+X_5:=32;
+X_5:=23;
+io.print(X_5);
+end foo;
 
 query T rowsort
-io.print(_5)
+user.foo();
 ----
 23
 

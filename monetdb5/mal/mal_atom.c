@@ -110,7 +110,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'p':
 		if (idcmp("put", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomPut = (var_t (*)(Heap *, var_t *, const void *))pci->fcn;
+			BATatoms[tpe].atomPut = (var_t (*)(BAT *, var_t *, const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -138,7 +138,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'r':
 		if (idcmp("read", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomRead = (void *(*)(void *, stream *, size_t))pci->fcn;
+			BATatoms[tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}

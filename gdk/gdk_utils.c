@@ -83,7 +83,7 @@ GDKenvironment(const char *dbpath)
 		TRC_CRITICAL(GDK, "Database name too long.\n");
 		return false;
 	}
-	if (!MT_path_absolute(dbpath)) {
+	if (!GDKembedded() && !MT_path_absolute(dbpath)) {
 		TRC_CRITICAL(GDK, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}
@@ -599,11 +599,22 @@ MT_init(void)
 					/* assume "max" if not a number */
 					fclose(f);
 				}
-				/* soft limit */
+				/* soft high limit */
 				strcpy(pth + l, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					/* assume "max" if not a number */
+					fclose(f);
+				}
+				/* soft low limit */
+				strcpy(pth + l, "memory.low");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
 					success = true;
@@ -892,6 +903,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 		      "error in configure: bad value for SIZEOF_SIZE_T");
 	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG,
 		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
+	static_assert(sizeof(uuid) == 16,
+		      "sizeof(uuid) should be equal to 16");
 
 	if (first) {
 		/* some things are really only initialized once */
@@ -1762,14 +1775,14 @@ GDKversion(void)
 	return (_gdk_version_string);
 }
 
-size_t
+inline size_t
 GDKmem_cursize(void)
 {
 	/* RAM/swapmem that Monet is really using now */
 	return (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 }
 
-size_t
+inline size_t
 GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */

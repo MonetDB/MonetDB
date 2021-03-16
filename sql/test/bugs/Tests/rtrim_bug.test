@@ -73,9 +73,8 @@ query IT rowsort
 SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
 ----
 
-query IT rowsort
+statement ok
 call profiler.stoptrace()
-----
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'

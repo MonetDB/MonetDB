@@ -108,18 +108,21 @@ BLOBnull(void)
 }
 
 static void *
-BLOBread(void *A, stream *s, size_t cnt)
+BLOBread(void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	blob *a = A;
 	int len;
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1)
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
-	if ((a = GDKmalloc(len)) == NULL)
-		return NULL;
-	if (mnstr_read(s, (char *) a, len, 1) != 1) {
+	if (a == NULL || *dstlen < (size_t) len) {
+		if ((a = GDKrealloc(a, (size_t) len)) == NULL)
+			return NULL;
+		*dstlen = (size_t) len;
+	}
+	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
 		GDKfree(a);
 		return NULL;
 	}
@@ -156,16 +159,16 @@ BLOBheap(Heap *heap, size_t capacity)
 }
 
 static var_t
-BLOBput(Heap *h, var_t *bun, const void *VAL)
+BLOBput(BAT *b, var_t *bun, const void *VAL)
 {
 	const blob *val = VAL;
 	char *base = NULL;
 
-	*bun = HEAP_malloc(h, blobsize(val->nitems));
- 	base = h->base;
+	*bun = HEAP_malloc(b, blobsize(val->nitems));
+ 	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }

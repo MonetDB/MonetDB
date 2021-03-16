@@ -681,7 +681,7 @@ with check option
 statement ok
 create view v32(vc0, vc1) as (values (cast(-330282362 as bigint), ((((674023637)||(-1856487129)))<=(case -1983844154
 when 122 then 11 when 1381635703 then -367942232 when -1208650057 then 713851705 else 0.40289348 end))),
-(sql_max(((10)>>(18833)), - (-1088048958)), (not (true)) = true))
+(sql_max(((10)>>(1)), - (-1088048958)), (not (true)) = true))
 
 statement ok
 create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "isauuid"(r'0.962687263902831'))

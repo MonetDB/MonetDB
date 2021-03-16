@@ -1519,3 +1519,14 @@ prepare select count(*) over (partition by ?) from analytics
 statement ok
 drop table analytics
 
+query T rowsort
+select min(a) over () from (values (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34'), (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F35')) as a(a)
+----
+aee1a538-aca1-381b-d9f4-8c29ef3f5f34
+aee1a538-aca1-381b-d9f4-8c29ef3f5f34
+
+query T rowsort
+select min(a) over (order by a range between current row and unbounded following) from (values (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34'), (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F35')) as a(a)
+----
+aee1a538-aca1-381b-d9f4-8c29ef3f5f34
+aee1a538-aca1-381b-d9f4-8c29ef3f5f35

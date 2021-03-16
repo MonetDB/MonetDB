@@ -24,6 +24,10 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	if( isOptimizerUsed(mb, "mergetable") <= 0){
+		goto wrapup;
+	}
+
 	//if ( !optimizerIsApplied(mb,"multiplex") )
 		//return 0;
 	(void) pci;

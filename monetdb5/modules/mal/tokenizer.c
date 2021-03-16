@@ -620,7 +620,7 @@ TKNZRgetCardinality(bat *r)
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
-		cnt = (lng) BATcount(en);
+		cnt = (lng) canditer_init(&(struct canditer){0}, NULL, en);
 		BBPunfix(en->batCacheid);
 		if (BUNappend(b, &cnt, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
