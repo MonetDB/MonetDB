@@ -508,14 +508,16 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, 
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
 
-		found |= !list_empty(funcs);
-		for (node *n = funcs->h; n ; ) { /* Reduce on privileges */
-			sql_subfunc *sf = n->data;
-			node *nn = n->next;
+		if (!list_empty(funcs)) {
+			found = true;
+			for (node *n = funcs->h; n ; ) { /* Reduce on privileges */
+				sql_subfunc *sf = n->data;
+				node *nn = n->next;
 
-			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, n);
-			n = nn;
+				if (!execute_priv(sql, sf->func))
+					list_remove_node(funcs, n);
+				n = nn;
+			}
 		}
 		len = list_length(funcs);
 		if (len > 1) {
@@ -1748,14 +1750,16 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
 
-		found |= !list_empty(funcs);
-		for (node *n = funcs->h; n ; ) { /* Reduce on privileges */
-			sql_subfunc *sf = n->data;
-			node *nn = n->next;
+		if (!list_empty(funcs)) {
+			found = true;
+			for (node *n = funcs->h; n ; ) { /* Reduce on privileges */
+				sql_subfunc *sf = n->data;
+				node *nn = n->next;
 
-			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, n);
-			n = nn;
+				if (!execute_priv(sql, sf->func))
+					list_remove_node(funcs, n);
+				n = nn;
+			}
 		}
 		len = list_length(funcs);
 		if (len > 1) {
@@ -3683,32 +3687,39 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (!a) {
 			list *aggrs = sql_find_funcs(sql->sa, s, aname, list_length(exps), F_AGGR);
 
-			found |= !list_empty(funcs);
-			for (node *m = aggrs->h ; m; m = m->next) {
-				list *nexps = sa_list(sql->sa);
-				node *n, *op;
-				a = (sql_subfunc *) m->data;
-				op = a->func->ops->h;
+			if (!list_empty(aggrs)) {
+				found = true;
+				int type_misses = 0;
 
-				if (!execute_priv(sql, a->func))
-					a = NULL;
-				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
-					sql_arg *arg = op->data;
-					sql_exp *e = n->data;
+				for (node *m = aggrs->h ; m; m = m->next) {
+					list *nexps = sa_list(sql->sa);
+					node *n, *op;
+					a = (sql_subfunc *) m->data;
+					op = a->func->ops->h;
 
-					e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
-					if (!e)
+					if (!execute_priv(sql, a->func))
 						a = NULL;
-					list_append(nexps, e);
+					for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
+						sql_arg *arg = op->data;
+						sql_exp *e = n->data;
+
+						e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
+						if (!e) {
+							a = NULL;
+							type_misses++;
+						}
+						list_append(nexps, e);
+					}
+					if (a) {
+						if (list_length(nexps)) /* count(col) has |exps| != |nexps| */
+							exps = nexps;
+						/* reset error */
+						sql->session->status = 0;
+						sql->errstr[0] = '\0';
+						break;
+					}
 				}
-				if (a) {
-					if (list_length(nexps)) /* count(col) has |exps| != |nexps| */
-						exps = nexps;
-					/* reset error */
-					sql->session->status = 0;
-					sql->errstr[0] = '\0';
-					break;
-				}
+				found &= !type_misses; /* if 'a' was found but the types didn't match don't give permission error */
 			}
 		}
 	}
@@ -4920,11 +4931,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	types = exp_types(sql->sa, fargs);
 	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC, &found))) {
-		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL, &found);
-		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
+		if (!(wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL, &found))) {
 			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: %s window function '%s(%s)'", found ? "insufficient privileges for" : "no such", aname, arg_list ? arg_list : "");
 		}
+		if (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))
+			return NULL;
 	}
 
 	/* Frame */
