@@ -1605,6 +1605,7 @@ def GetBitsAndModsAndThreads(env) :
     except OSError:
         pass
     cmd.append('--dbpath=%s' % dbpath)
+    os.environ['TSTDB'] = TSTPREF
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
