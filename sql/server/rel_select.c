@@ -2765,7 +2765,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 
 			if (!check_card(card, f)) {
 				found = false; /* reset found */
-				break;
+				continue;
 			}
 			if (!f->func->vararg) {
 				sql_arg *a = f->func->ops->h->data;
@@ -2852,7 +2852,6 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 	/* handle param's early */
 	if (!t1 || !t2) {
 		f = sql_resolve_function_with_undefined_parameters(sql->sa, s, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
-		found |= f != NULL;
 		if (f && !execute_priv(sql, f->func))
 			f = NULL;
 		if (f) { /* add types using f */
@@ -3031,6 +3030,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
+				found = false;
 
 				l = ol;
 				r = or;
