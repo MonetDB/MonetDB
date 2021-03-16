@@ -37,7 +37,7 @@
 typedef struct{
 	str modname;
 	str fullname;
-	void **handle;
+	void *handle;
 } FileRecord;
 
 static FileRecord filesLoaded[MAXMODULES];
