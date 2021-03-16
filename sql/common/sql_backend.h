@@ -25,6 +25,7 @@ typedef int  (*rename_user_fptr) (ptr mvc, str olduser, str newuser);
 typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 typedef void  (*create_function) (ptr mvc, str name, sql_rel *rel, sql_table *t);
 typedef int  (*resolve_function) (ptr mvc, sql_func *f);
+typedef int  (*has_module_function) (ptr mvc, char *name);
 
 /* backing struct for this interface */
 typedef struct _backend_functions {
@@ -38,6 +39,7 @@ typedef struct _backend_functions {
 	rename_user_fptr fruser;
 	schema_user_dependencies fschuserdep;
 	resolve_function fresolve_function;
+	has_module_function fhas_module_function;
 } backend_functions;
 
 extern void backend_freecode(int clientid, const char *name);
@@ -51,6 +53,7 @@ extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid sch
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f);
+extern int	backend_has_module(ptr M, char *name);
 
 extern backend_functions be_funcs;
 

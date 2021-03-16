@@ -67,7 +67,10 @@ with tempfile.TemporaryDirectory() as farm_dir:
             node2_cur.execute("select count(*) over (), max(name) over (), min(name) over (partition by name order by name rows between 3 preceding and 2 preceding) from remote_data")
             if node2_cur.fetchall() != [(1, 'Name 1', None)]:
                 sys.stderr.write("Just row (1, 'Name 1', None) expected")
-
+            node2_cur.execute("""select case when id = 1 then 2 when id = 2 then 10 when id = 3 then 3 else 100 end, nullif(id, id), coalesce(id, id + 10, 10),
+                                        case id when 1 then 5 when 2 then 10 when 3 then 60 else 4 end, greatest(id - 7, id + 7), lead(1,1,1) over () from remote_data""")
+            if node2_cur.fetchall() != [(2, None, 1, 5, 8, 1)]:
+                sys.stderr.write("Just row (2, None, 1, 5, 8, 1) expected")
             # cleanup: shutdown the monetdb servers and remove tempdir
             node1_proc.communicate()
             node2_proc.communicate()

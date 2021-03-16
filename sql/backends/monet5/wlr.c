@@ -864,6 +864,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 	cname = *getArgReference_str(stk,pci,3);
+	lng pos = *(lng*)getArgReference_lng(stk,pci,4);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -878,7 +879,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
-	tpe= getArgType(mb,pci,4);
+	tpe= getArgType(mb,pci,5);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
 		throw(SQL,"WLRappend",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -898,7 +899,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
-		for( i = 4; i < pci->argc; i++){
+		for( i = 5; i < pci->argc; i++){
 			str val = *getArgReference_str(stk,pci,i);
 			if (BUNappend(ins, (void*) val, false) != GDK_SUCCEED) {
 				msg = createException(MAL, "WLRappend", "BUNappend failed");
@@ -909,11 +910,11 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store->storage_api.append_col(m->session->tr, c, ins, TYPE_bat);
+		store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store->storage_api.append_idx(m->session->tr, i, ins, tpe);
+			store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe);
 	}
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);

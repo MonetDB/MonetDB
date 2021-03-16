@@ -1,0 +1,31 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+
+module mask;
+
+pattern mask.mask(b:bat[:oid]):bat[:msk]
+address MSKmask
+comment "Convert a candidate list or oid list with unique elements into a bit vector";
+pattern mask.umask(b:bat[:msk]):bat[:oid]
+address MSKumask
+comment "Turn a mask back into a candidate list ";
+
+# the remainder are simply overloaded signatures. The assume that the underlying
+# structure is a candidate list. 
+command mask.select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:msk]
+address MSKselect1;
+
+command mask.select(b:bat[:any_1], s:bat[:msk], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:msk]
+address MSKselect2;
+
+command mask.select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:msk]
+address MSKselect1nil;
+
+command mask.thetaselect(b:bat[:any_1], val:any_1, op:str) :bat[:msk]
+address MSKthetaselect1;
+
+command mask.thetaselect(b:bat[:any_1], s:bat[:msk], val:any_1, op:str) :bat[:msk]
+address MSKthetaselect2;

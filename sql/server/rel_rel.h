@@ -102,7 +102,6 @@ extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *
 
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
-extern sql_rel *rel_safe_project(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f);
 extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f);
@@ -138,8 +137,6 @@ extern sql_rel *rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_f
 
 extern list *exps_exp_visitor_topdown(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
 extern list *exps_exp_visitor_bottomup(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
-
-extern int exps_have_analytics(mvc *sql, list *exps);
 
 typedef sql_rel *(*rel_rewrite_fptr)(visitor *v, sql_rel *rel);
 extern sql_rel *rel_visitor_topdown(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter);

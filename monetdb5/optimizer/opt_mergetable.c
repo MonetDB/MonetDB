@@ -319,16 +319,6 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 						freeInstruction(r);
 						return NULL;
 					}
-
-					/* remove last argument (inserts only on last part) */
-					if (k < mat[m].mi->argc-1)
-						q->argc--;
-					/* make sure to resolve again */
-					q->token = ASSIGNsymbol;
-					q->typechk = TYPE_UNKNOWN;
-					q->fcn = NULL;
-					q->blk = NULL;
-
 					getArg(q, 0) = newTmpVariable(mb, tpe);
 					getArg(q, mvar) = getArg(mat[m].mi, j);
 					getArg(q, nvar) = getArg(mat[n].mi, j);
@@ -344,7 +334,6 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 					nr++;
 					break;
 				}
-				break;			/* only in case of overlap */
 			}
 		}
 	} else {
@@ -354,16 +343,6 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 				freeInstruction(r);
 				return NULL;
 			}
-
-			/* remove last argument (inserts only on last part) */
-			if (k < mat[m].mi->argc-1)
-				q->argc--;
-			/* make sure to resolve again */
-			q->token = ASSIGNsymbol;
-			q->typechk = TYPE_UNKNOWN;
-			q->fcn = NULL;
-			q->blk = NULL;
-
 			getArg(q, 0) = newTmpVariable(mb, tpe);
 			getArg(q, mvar) = getArg(mat[m].mi, k);
 			getArg(q, nvar) = getArg(mat[n].mi, k);
@@ -492,8 +471,7 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 		}
 	}
 
-	InstrPtr *r = NULL;
-	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	InstrPtr *r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	if(!r)
 		return -1;
 	for(k=0; k < p->retc; k++) {
@@ -532,13 +510,12 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 		}
 	}
 	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, matvar[0]),  -1, -1, 1)) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, matvar[0]),  -1, -1, 0)) {
 			for(l=0; l < k; l++)
 				freeInstruction(r[l]);
 			GDKfree(r);
 			return -1;
 		}
-		pushInstruction(mb, r[k]);
 	}
 	GDKfree(r);
 	return 0;
@@ -1896,18 +1873,20 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old;
 	matlist_t ml;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
-	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars, maxvars;
+	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;//, maxvars;
 	char buf[256], *group_input;
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	if( isOptimizerUsed(mb,"mitosis") <= 0)
+		goto cleanup2;
 	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		//return 0;
 	old = mb->stmt;
 	oldtop= mb->stop;
 
 	vars = (int*) GDKmalloc(sizeof(int)* mb->vtop);
-	maxvars = mb->vtop;
+	//maxvars = mb->vtop;
 	group_input = (char*) GDKzalloc(sizeof(char)* mb->vtop);
 	if (vars == NULL || group_input == NULL){
 		if (vars)
@@ -2278,9 +2257,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if ((e=is_a_mat(getArg(p,fe), &ml)) >= 0)
 				break;
 
-		/* delta* operator have a ins bat as last argument, we move the inserts into the last delta statement, ie
-  		 * all but last need to remove one argument */
-		if (match == 3 && bats == 4 && isDelta(p) &&
+		/* delta* operator */
+		if (match == 3 && bats == 3 && isDelta(p) &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
@@ -2293,7 +2271,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			continue;
 		}
-		if (match == 4 && bats == 5 && isDelta(p) &&
+		if (match == 4 && bats == 4 && isDelta(p) &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
@@ -2308,6 +2286,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* select on insert, should use last tid only */
+#if 0
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   !ml.v[m].packed && /* not packed yet */
@@ -2321,6 +2300,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+#endif
 
 		/* select on update, with nil bat */
 		if (match == 1 && fm == 1 && isSelect(p) && p->retc == 1 &&
@@ -2368,9 +2348,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		pushInstruction(mb, cp);
 	}
 	(void) stk;
-	msg = chkTypes(cntxt->usermodule,mb, TRUE);
-	if( msg)
-		goto cleanup;
 
 	if ( mb->errors == MAL_SUCCEED) {
 		for(i=0; i<slimit; i++)
@@ -2397,6 +2374,7 @@ cleanup:
 	    if (!msg)
         	msg = chkDeclarations(mb);
     }
+cleanup2:
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);

@@ -27,6 +27,7 @@
  * by giving preference to variables that are too far
  * away in the plan from their source. It is however not
  * explored.
+ * The reorder is only executed if the mergetable produced results.
  *
  * The secondary approach is to pull instructions to the
  * head of the plan if the dataflow such permits.
@@ -210,7 +211,7 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k=0, actions =0, last=-1;
 	InstrPtr *old, *appends;
-	int limit;
+	int limit, slimit;
 	(void) cntxt;
 	(void) stk;
 	(void) p;
@@ -219,6 +220,7 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( appends == NULL)
 		return 0;
 	limit= mb->stop;
+	slimit= mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(appends);
@@ -259,6 +261,9 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for( ; i<limit; i++){
 		pushInstruction(mb,old[i]);
 	}
+	for(; i<slimit; i++)
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(appends);
 	GDKfree(old);
 	return actions;
@@ -274,7 +279,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char buf[256];
 	lng usec= GDKusec();
 	str msg = MAL_SUCCEED;
-
+	if( isOptimizerUsed(mb, "mitosis") <= 0){
+		goto wrapup;
+	}
 	(void) cntxt;
 	(void) stk;
 	dep = OPTdependencies(cntxt,mb,&uselist);
@@ -341,6 +348,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!msg)
         	msg = chkDeclarations(mb);
     	/* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
     	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
     	newComment(mb,buf);

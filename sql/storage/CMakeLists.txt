@@ -15,6 +15,7 @@ target_sources(sqlstorage
   store.c
   sql_catalog.c
   objectset.c
+  objlist.c
   store_sequence.h
   store_dependency.h
   PUBLIC

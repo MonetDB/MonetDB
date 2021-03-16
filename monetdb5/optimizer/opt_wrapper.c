@@ -40,10 +40,10 @@
 #include "opt_json.h"
 #include "opt_oltp.h"
 #include "opt_postfix.h"
+#include "opt_mask.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_parappend.h"
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
 #include "opt_querylog.h"
@@ -52,6 +52,7 @@
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
 #include "opt_volcano.h"
+#include "opt_fastpath.h"
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 
@@ -61,6 +62,8 @@ struct{
 	int calls;
 	lng timing;
 } codes[] = {
+	{"defaultfast", &OPTdefaultfastImplementation,0,0},
+	{"minimalfast", &OPTminimalfastImplementation,0,0},
 	{"aliases", &OPTaliasesImplementation,0,0},
 	{"bincopyfrom", &OPTbincopyfromImplementation,0,0},
 	{"candidates", &OPTcandidatesImplementation,0,0},
@@ -77,12 +80,12 @@ struct{
 	{"inline", &OPTinlineImplementation,0,0},
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
+	{"mask", &OPTmaskImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
-	{"parappend", &OPTparappendImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
@@ -102,7 +105,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	const char *fcnnme = "(NONE)";
 	Symbol s= NULL;
 	int i;
-	char optimizer[256];
 	str msg = MAL_SUCCEED;
 	lng clk;
 
@@ -114,7 +116,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( mb->errors)
 		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
-	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
+	fcnnme = getFunctionId(p);
 
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
@@ -122,7 +124,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			!isVarConstant(mb,getArg(p,1)) ||
 			!isVarConstant(mb,getArg(p,2))
 			)
-			throw(MAL, optimizer, SQLSTATE(42000) ILLARG_CONSTANTS);
+			throw(MAL, getFunctionId(p), SQLSTATE(42000) ILLARG_CONSTANTS);
 
 		if( stk != 0){
 			modnme= *getArgReference_str(stk,p,1);
@@ -135,28 +137,28 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL)
-			throw(MAL, optimizer, SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
+			throw(MAL, getFunctionId(p), SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED "%s.%s", modnme, fcnnme);
 		mb = s->def;
 		stk= 0;
 	} else if( p )
 		removeInstruction(mb, p);
 
 	for (i=0; codes[i].nme; i++)
-		if (strcmp(codes[i].nme, optimizer) == 0){
+		if (strcmp(codes[i].nme, getFunctionId(p)) == 0){
 			clk = GDKusec();
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
 			if (msg) {
-				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s: %s", optimizer, msg);
+				throw(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
 			}
 			break;
 		}
 	if (codes[i].nme == 0)
-		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
+		throw(MAL, fcnnme,  SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
 	if ( mb->errors)
-		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s %s", modnme, fcnnme, mb->errors);
+		throw(MAL, fcnnme, SQLSTATE(42000) PROGRAM_GENERAL "%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 

@@ -78,32 +78,6 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     tail='\n'.join(tail)
     return head + '\n' + tail, head
 
-def parse_connection_string(s: str) -> dict:
-    '''parse strings like @connection(id=con1, ...)
-    '''
-    res = dict()
-    if not (s.startswith('@connection(') and s.endswith(')')):
-        raise SQLLogicSyntaxError('invalid connection string!')
-    params = s[12:-1].split(',')
-    for p in params:
-        p = p.strip()
-        try:
-            k, v = p.split('=')
-            if k == 'id':
-                k = 'conn_id'
-            assert k in ['conn_id', 'username', 'password']
-            assert res.get(k) is None
-            res[k] = v
-        except (ValueError, AssertionError) as e:
-            raise SQLLogicSyntaxError('invalid connection paramaters definition!')
-    if len(res.keys()) > 1:
-        try:
-            assert res.get('username')
-            assert res.get('password')
-        except AssertionError as e:
-            raise SQLLogicSyntaxError('invalid connection paramaters definition, username or password missing!')
-    return res
-
 class SQLLogic:
     def __init__(self, report=None, out=sys.stdout):
         self.dbh = None
@@ -336,9 +310,14 @@ class SQLLogic:
                 elif columns[i] == 'R':
                     nrow.append('%.3f' % row[i])
                 else:
-                    raise SQLLogicSyntaxError('incorrect column type indicator')
+                    self.raise_error('incorrect column type indicator')
             ndata.append(tuple(nrow))
         return ndata
+
+    def raise_error(self, message):
+        print('Syntax error in test file, line {}:'.format(self.qline), file=self.out)
+        print(message, file=self.out)
+        raise SQLLogicSyntaxError(message)
 
     def query_error(self, query, message, exception=None, data=None):
         self.seenerr = True
@@ -586,6 +565,32 @@ class SQLLogic:
             if not line.endswith('\n'):
                 self.approve.write('\n')
 
+    def parse_connection_string(self, s: str) -> dict:
+        '''parse strings like @connection(id=con1, ...)
+        '''
+        res = dict()
+        if not (s.startswith('@connection(') and s.endswith(')')):
+            self.raise_error('invalid connection string!')
+        params = s[12:-1].split(',')
+        for p in params:
+            p = p.strip()
+            try:
+                k, v = p.split('=')
+                if k == 'id':
+                    k = 'conn_id'
+                assert k in ['conn_id', 'username', 'password']
+                assert res.get(k) is None
+                res[k] = v
+            except (ValueError, AssertionError) as e:
+                self.raise_error('invalid connection parameters definition!')
+        if len(res.keys()) > 1:
+            try:
+                assert res.get('username')
+                assert res.get('password')
+            except AssertionError as e:
+                self.raise_error('invalid connection parameters definition, username or password missing!')
+        return res
+
     def parse(self, f, approve=None):
         self.approve = approve
         self.initfile(f)
@@ -672,7 +677,7 @@ class SQLLogic:
                         break
                     query.append(line.rstrip('\n'))
                 if not line.startswith('----'):
-                    raise SQLLogicSyntaxError('---- expected')
+                    self.raise_error('---- expected')
                 line = self.readline()
                 if not line:
                     line = '\n'

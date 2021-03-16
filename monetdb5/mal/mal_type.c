@@ -42,7 +42,7 @@ getTypeName(malType tpe)
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
-			snprintf(buf, sizeof(buf), "bat[:any%c%d]",TMPMARKER,  k);
+			snprintf(buf, sizeof(buf), "bat[:any_%d]",  k);
 		else if (getBatType(tpe) == TYPE_any)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
@@ -50,8 +50,7 @@ getTypeName(malType tpe)
 		return GDKstrdup(buf);
 	}
 	if (isAnyExpression(tpe)) {
-		snprintf(buf, sizeof(buf), "any%c%d",
-				 TMPMARKER, getTypeIndex(tpe));
+		snprintf(buf, sizeof(buf), "any_%d", getTypeIndex(tpe));
 		return GDKstrdup(buf);
 	}
 	return GDKstrdup(ATOMname(tpe));
@@ -136,6 +135,10 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("lng"))
 				return TYPE_lng;
 			break;
+		case 'm':
+			if (qt("msk"))
+				return TYPE_msk;
+			break;
 		case 'p':
 			if (qt("ptr"))
 				return TYPE_ptr;
@@ -165,6 +168,8 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 		return TYPE_daytime;
 	else if (len == 9 && strncmp(nme, "timestamp", len) == 0)
 		return TYPE_timestamp;
+	else if (len == 4 && strncmp(nme, "uuid", len) == 0)
+		return TYPE_uuid;
 	for (i = TYPE_str; i < GDKatomcnt; i++)
 		if (BATatoms[i].name[0] == nme[0] &&
 			strncmp(nme, BATatoms[i].name, len) == 0 &&

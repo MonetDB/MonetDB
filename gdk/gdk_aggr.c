@@ -955,6 +955,42 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	return bn;
 }
 
+static BUN
+mskCountOnes(BAT *b, struct canditer *ci)
+{
+	BUN cnt = 0, ncand = ci->ncand;
+
+	if (ci->s == NULL && mask_cand(b))
+		return BATcount(b);
+	if (ci->tpe == cand_dense && BATcount(b) && !mask_cand(b)) {
+		const uint32_t *restrict src = Tloc(b, (ci->seq - b->hseqbase) / 32);
+		int bits = (ci->seq - b->hseqbase) % 32;
+		if (bits + ncand <= 32) {
+			if (ncand == 32)
+				return candmask_pop(src[0]);
+			return candmask_pop(src[0] & (((1U << ncand) - 1) << bits));
+		}
+		if (bits != 0) {
+			cnt = candmask_pop(src[0] & (~0U << bits));
+			src++;
+			ncand -= 32 - bits;
+		}
+		while (ncand >= 32) {
+			cnt += candmask_pop(*src);
+			src++;
+			ncand -= 32;
+		}
+		if (ncand > 0)
+			cnt += candmask_pop(*src & ((1U << ncand) - 1));
+		return cnt;
+	}
+	for (BUN i = 0; i < ci->ncand; i++) {
+		BUN x = canditer_next(ci) - b->hseqbase;
+		cnt += mskGetVal(b, x);
+	}
+	return cnt;
+}
+
 gdk_return
 BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
@@ -972,6 +1008,57 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
+	}
+	if (ATOMstorage(b->ttype) == TYPE_msk || mask_cand(b)) {
+		ncand = mskCountOnes(b, &ci);
+		switch (tp) {
+		case TYPE_bte:
+			if (ncand > GDK_bte_max) {
+				GDKerror("22003!overflow in sum aggregate.\n");
+				return GDK_FAIL;
+			}
+			* (bte *) res = (bte) ncand;
+			break;
+		case TYPE_sht:
+			if (ncand > GDK_sht_max) {
+				GDKerror("22003!overflow in sum aggregate.\n");
+				return GDK_FAIL;
+			}
+			* (sht *) res = (sht) ncand;
+			break;
+		case TYPE_int:
+#if SIZEOF_BUN > 4
+			if (ncand > GDK_int_max) {
+				GDKerror("22003!overflow in sum aggregate.\n");
+				return GDK_FAIL;
+			}
+#endif
+			* (int *) res = (int) ncand;
+			break;
+		case TYPE_lng:
+			* (lng *) res = (lng) ncand;
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			* (hge *) res = (hge) ncand;
+			break;
+#endif
+		case TYPE_flt:
+			* (flt *) res = (flt) ncand;
+			break;
+		case TYPE_dbl:
+			* (dbl *) res = (dbl) ncand;
+			break;
+		default:
+			GDKerror("type combination (sum(%s)->%s) not supported.\n",
+				 ATOMname(b->ttype), ATOMname(tp));
+			return GDK_FAIL;
+		}
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
+			  "start " OIDFMT ", count " BUNFMT " (pop count -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			  ci.seq, ci.ncand, GDKusec() - t0);
+		return GDK_SUCCEED;
 	}
 	switch (tp) {
 	case TYPE_bte:
@@ -3478,9 +3565,10 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
+		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {
@@ -3507,7 +3595,8 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				pos = ords[r];
 			}
 		} else if ((VIEWtparent(b) == 0 ||
-			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			    (/* DISABLES CODE */ (0) &&
+			     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) &&
 			   BATcheckimprints(b)) {
 			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 			int i;
@@ -3588,9 +3677,10 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
+		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {
@@ -3609,7 +3699,8 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 					pos = z;
 			}
 		} else if ((VIEWtparent(b) == 0 ||
-			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			    (/* DISABLES CODE */ (0) &&
+			     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) &&
 			   BATcheckimprints(b)) {
 			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 			int i;
@@ -3878,7 +3969,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			if (bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
-		bn->theap.dirty = true;
+		bn->theap->dirty = true;
 		BBPunfix(g->batCacheid);
 	} else {
 		BUN index, r, p = BATcount(b);
@@ -3892,9 +3983,10 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		t1 = NULL;
 
 		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
+		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {

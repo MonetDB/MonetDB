@@ -12,6 +12,6 @@
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-mal_export str OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

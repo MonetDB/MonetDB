@@ -1,5 +1,0 @@
-START TRANSACTION;
-CREATE TABLE testlz4 (a bigint, b real, c clob, d varchar(64));
-COPY INTO testlz4 FROM E'$QTSTSRCDIR/testlz4.lz4' USING DELIMITERS ',',E'\n','"' NULL AS '';
-SELECT a, b, c, d FROM testlz4 limit 1024;
-ROLLBACK;

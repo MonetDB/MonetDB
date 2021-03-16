@@ -309,11 +309,12 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
-		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		k->base.new = 1;
 
 		mvc_create_kc(sql, k, cs);
 		mvc_create_ukey_done(sql, k);
@@ -340,7 +341,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (!rt) {
 			return SQL_ERR;
-		} else if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		} else if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -371,6 +372,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		fk->k.base.new = 1;
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
 	} 	break;
@@ -504,7 +506,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
-		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
@@ -526,6 +528,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			return SQL_ERR;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		fk->k.base.new = 1;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
@@ -568,13 +571,14 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
-		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
 
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		k->base.new = 1;
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, nm);
@@ -641,12 +645,12 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	int res = SQL_OK;
 
 	(void) ss;
-	if (alter && !(isTable(t) || (isMergeTable(t) && cs_size(&t->members)==0))) {
+	if (alter && !(isTable(t) || (isMergeTable(t) && list_length(t->members)==0))) {
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
 				  isMergeTable(t)?"MERGE TABLE":
 				  isRemote(t)?"REMOTE TABLE":
 				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				  t->base.name, (isMergeTable(t) && cs_size(&t->members)) ? " while it has partitions" : "");
+				  t->base.name, (isMergeTable(t) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -663,8 +667,9 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			return SQL_ERR;
 		}
 		cs = mvc_create_column(sql, t, cname, ctype);
-		if (column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
+		if (!cs || column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
+		cs->base.new = 1;
 	}
 	return res;
 }
@@ -677,7 +682,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 	if (alter &&
 		(isView(t) ||
-		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members))) ||
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && list_length(t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
 		(partition_find_part(sql->session->tr, t, NULL) &&
 			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
@@ -726,7 +731,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				isMergeTable(t)?"MERGE TABLE":
 				isRemote(t)?"REMOTE TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name, (isMergeTable(t) && cs_size(&t->members)) ? " while it has partitions" : "");
+				t->base.name, (isMergeTable(t) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -817,7 +822,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, false)))
 			return SQL_ERR;
-		for (node *n = ot->columns.set->h; n; n = n->next) {
+		for (node *n = ol_first_node(ot->columns); n; n = n->next) {
 			sql_column *oc = n->data;
 
 			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
@@ -842,7 +847,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
-		if (cs_size(&t->columns) <= 1) {
+		if (ol_length(t->columns) <= 1) {
 			sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': table needs at least one column\n", action, cname);
 			return SQL_ERR;
 		}
@@ -858,10 +863,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(2BM37) "%s: cannot drop column '%s': there are database objects which depend on it\n", action, cname);
 			return SQL_ERR;
 		}
-		if (!drop_action  && t->keys.set) {
+		if (!drop_action  && t->keys) {
 			node *n, *m;
 
-			for (n = t->keys.set->h; n; n = n->next) {
+			for (n = ol_first_node(t->keys); n; n = n->next) {
 				sql_key *k = n->data;
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *kc = m->data;
@@ -889,6 +894,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
 			return SQL_ERR;
 		}
+		col->base.deleted = 1;
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;
@@ -916,7 +922,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			str colname = list2->h->data.sval;
 			node *n;
 			sql_class sql_ec;
-			for (n = t->columns.set->h; n ; n = n->next) {
+			for (n = ol_first_node(t->columns); n ; n = n->next) {
 				sql_column *col = n->data;
 				if (!strcmp(col->base.name, colname)) {
 					t->part.pcol = col;
@@ -1437,7 +1443,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				}
 				return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
 			}
-			if ((isMergeTable(pt) || isReplicaTable(pt)) && cs_size(&pt->members)==0)
+			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_length(pt->members)==0)
 				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 
@@ -1516,13 +1522,16 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		return res;
 
 	/* New columns need update with default values. Add one more element for new column */
-	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
+	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (ol_length(nt->columns) + 1));
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
-	if (nt->columns.nelm) {
-		list *cols = new_exp_list(sql->sa);
-		for (node *n = nt->columns.nelm; n; n = n->next) {
+
+	list *cols = new_exp_list(sql->sa);
+	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
 			sql_column *c = n->data;
+			/* handle new columns */
+			if (!c->base.new || c->base.deleted)
+				continue;
 			if (c->def) {
 				e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 			} else {
@@ -1537,11 +1546,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			assert(!updates[c->colnr]);
 			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
 			updates[c->colnr] = e;
-		}
-		res = rel_update(sql, res, r, updates, cols);
-	} else { /* new indices or keys */
-		res = rel_update(sql, res, r, updates, NULL);
 	}
+	res = rel_update(sql, res, r, updates, list_length(cols)?cols:NULL);
 	return res;
 }
 
@@ -1829,6 +1835,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* add index here */
 	i = mvc_create_idx(sql, nt, iname, itype);
+	i->base.new = 1;
 	for (n = column_list->h; n; n = n->next) {
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 
@@ -1838,7 +1845,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	}
 
 	/* new columns need update with default values */
-	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(nt->columns.set));
+	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
@@ -2298,7 +2305,7 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
-	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&ot->members) || !list_empty(ot->triggers.set))
+	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || list_length(ot->members) || ol_length(ot->triggers))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);

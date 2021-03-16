@@ -735,8 +735,9 @@ getPolyType(malType t, int *polytype)
 		return polytype[ti];
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
-	if (isaBatType(t))
-		return newBatType(tail);
+	if (isaBatType(t)) {
+		tail = newBatType(tail);
+	}
 	return tail;
 }
 

@@ -199,6 +199,9 @@ typedef int sqlid;
 
 typedef struct sql_base {
 	int flags;			/* todo change into bool new */
+	unsigned char
+		new:1,
+		deleted:1;
 	int refcnt;
 	sqlid id;
 	char *name;
@@ -217,6 +220,11 @@ typedef struct changeset {
 	struct list *dset;
 	node *nelm;
 } changeset;
+
+typedef struct objlist {
+	list *l;
+	sql_hash *h;
+} objlist;
 
 typedef void *sql_store;
 
@@ -254,20 +262,23 @@ extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_tra
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
 
+extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy);
+extern void ol_destroy(objlist *ol, sql_store store);
+extern int ol_add(objlist *ol, sql_base *data);
+extern void ol_del(objlist *ol, sql_store store, node *data);
+extern node *ol_find_name(objlist *ol, const char *name);
+extern node *ol_find_id(objlist *ol, sqlid id);
+extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
+#define ol_length(ol) (list_length(ol->l))
+#define ol_first_node(ol) (ol->l->h)
+#define ol_last_node(ol) (ol->l->t)
+
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
-extern changeset* cs_dup(changeset * cs);
 extern void cs_destroy(changeset * cs, void *data);
 extern void cs_add(changeset * cs, void *elm, int flag);
-extern void *cs_add_with_validate(changeset * cs, void *elm, void *extra, int flag, fvalidate cmp);
-extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
-extern void cs_move(changeset *from, changeset *to, void *data);
-extern void *cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp);
 extern int cs_size(changeset * cs);
-extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, sqlid id);
-extern node *cs_first_node(changeset * cs);
-extern node *cs_last_node(changeset * cs);
 
 typedef void *backend_code;
 typedef size_t backend_stack;
@@ -689,11 +700,11 @@ typedef struct sql_table {
 	int  sz;
 
 	sql_ukey *pkey;
-	changeset columns;
-	changeset idxs;
-	changeset keys;
-	changeset triggers;
-	changeset members;	/* member tables of merge/replica tables */
+	objlist *columns;
+	objlist *idxs;
+	objlist *keys;
+	objlist *triggers;
+	list *members;		/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
 	ATOMIC_PTR_TYPE data;

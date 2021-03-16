@@ -35,6 +35,74 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "sys"."t1" ("c0" INTERVAL DAY,"c1" TIME,"c3" INTERVAL DAY,"c5" TIME)
+
+statement ok
+COPY 6 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	01:00:00	345600.000	01:00:08
+NULL	02:50:32	NULL	01:00:00
+NULL	02:50:32	NULL	01:00:00
+432000.000	01:00:00	259200.000	NULL
+179900573616000.000	01:00:00	12666182976000.000	NULL
+86400.000	02:04:32	2.000	01:00:00
+
+query T rowsort
+SELECT ALL t1.c3 FROM t1 WHERE (((COALESCE(r'', r'㉁*3', r'w1ZR'))ILIKE(r'-6739257'))) = FALSE
+----
+0
+146599340
+3
+4
+NULL
+NULL
+
+statement ok
+set optimizer = 'sequential_pipe'
+
+query T python .explain.function_histogram
+EXPLAIN SELECT 1 FROM t1 WHERE (((COALESCE('b', 'a'))ILIKE('c'))) = FALSE
+----
+user.main
+1
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.bind
+1
+algebra.project
+5
+algebra.thetaselect
+2
+bat.replace
+2
+algebra.likeselect
+1
+algebra.projection
+1
+bat.pack
+5
+sql.resultSet
+1
+
+statement ok
+set optimizer = 'default_pipe'
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((COALESCE(r'', r'㉁*3', r'w1ZR'))ILIKE(r'-6739257'))) = FALSE AS INT) as count FROM t1) as res
+----
+6
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "sys"."t2" ("c0" BOOLEAN,"c2" INTEGER)
 
 statement ok
@@ -764,13 +832,13 @@ COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 
 query I rowsort
 SELECT 1 FROM t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 END, true)
----
-132 rows in the output. After getting the right result I will approve the hash
+----
+132 values hashing to 421ece02fd1d5b93ec74b250381a9e64
 
 query T rowsort
 SELECT t1.c3 FROM t2, t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0)))
 ----
-120 rows in the output. After getting the right result I will approve the hash
+120 values hashing to 879a831ae9fcb0a40db88988eb6e428b
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0))) AS INT) as count FROM t2, t0, t1) as res

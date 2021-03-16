@@ -14,6 +14,6 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-mal_export str OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

@@ -198,36 +198,13 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 				}
 				rel->l = rel_project(v->sql->sa, NULL, nexps);
 				rel->card = CARD_ATOM;
+				v->changes++;
 			}
-		}
-	}
-	return rel;
-}
-
-sql_rel *
-rel_remove_empty_select(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l) {
-		sql_rel *l = rel->l;
-		if (is_select(l->op) && !(rel_is_ref(l)) && list_empty(l->exps)) {
-			rel->l = l->l;
-			l->l = NULL;
-			rel_destroy(l);
-			v->changes++;
-		}
-	}
-	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
-		sql_rel *r = rel->r;
-		if (is_select(r->op) && !(rel_is_ref(r)) && list_empty(r->exps)) {
-			rel->r = r->l;
-			r->l = NULL;
-			rel_destroy(r);
-			v->changes++;
 		}
 	}
 	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
-	return rel;
+	return try_remove_empty_select(v, rel);
 }
 
 /* push the expression down, ie translate colum references
@@ -239,19 +216,18 @@ static sql_exp * _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 static list *
 exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 {
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	for(n = exps->h; n; n = n->next) {
+	if (list_empty(exps))
+		return exps;
+	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data, *narg = NULL;
 
 		narg = _exp_push_down(sql, arg, f, t);
 		if (!narg)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
-		append(nl, narg);
+		n->data = narg;
 	}
-	return nl;
+	return exps;
 }
 
 static sql_exp *

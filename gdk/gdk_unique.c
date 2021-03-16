@@ -155,7 +155,8 @@ BATunique(BAT *b, BAT *s)
 		   (!b->batTransient &&
 		    cnt == BATcount(b) &&
 		    BAThash(b) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
+		   (/* DISABLES CODE */ (0) &&
+		    (parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
 		BUN lo;
 		oid seq;
@@ -165,9 +166,9 @@ BATunique(BAT *b, BAT *s)
 		 * is a view on a bat that already has a hash table */
 		algomsg = "unique: existing hash";
 		seq = b->hseqbase;
-		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
 			bi = bat_iterator(b);
 			algomsg = "unique: existing parent hash";
@@ -220,7 +221,9 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		if ((hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
 		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
@@ -252,7 +255,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(hs);
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = true;

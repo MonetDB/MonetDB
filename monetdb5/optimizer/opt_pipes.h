@@ -11,13 +11,13 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export str getPipeDefinition(str name);
+extern str getPipeDefinition(str name);
 mal_export str getPipeCatalog(bat *nme, bat *def, bat *stat);
 mal_export str addPipeDefinition(Client cntxt, const char *name, const char *pipe);
 mal_export int isOptimizerPipe(const char *name);
 mal_export str addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name);
-mal_export str compileOptimizer(Client cntxt, const char *name);
-mal_export str compileAllOptimizers(Client cntxt);
+extern str compileOptimizer(Client cntxt, const char *name);
+extern str compileAllOptimizers(Client cntxt);
 mal_export void opt_pipes_reset(void);
 
 #endif

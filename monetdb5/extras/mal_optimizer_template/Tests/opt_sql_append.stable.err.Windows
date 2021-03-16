@@ -1,8 +1,0 @@
-MAPI  = monetdb@LAB03:37903
-QUERY = explain copy into ttt from '/tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: "/tmp/xyz"
-CODE  = 42000
-MAPI  = monetdb@LAB03:37903
-QUERY = explain copy into ttt from '/tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: "/tmp/xyz"
-CODE  = 42000

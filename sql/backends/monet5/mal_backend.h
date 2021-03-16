@@ -48,6 +48,7 @@ typedef struct backend {
 	int 	cur_append; /* The cur_append variable on an insert/update/delete on a partitioned table, tracks the current MAL variable holding
  				         * the total number of rows affected. */
 	int		vtop;			/* top of the variable stack before the current function */
+	int		vid;			/* old variable id top before the current function */
 	int 	join_idx;	/* number of index joins (used in rel_bin) */
 	lng 	reloptimizer;	/* timer for optimizer phase */
 
