@@ -10,6 +10,7 @@
 
 #include "rel_bin.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_psm.h"
 #include "rel_prop.h"

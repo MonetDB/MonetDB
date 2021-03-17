@@ -11,6 +11,7 @@
 #include "sql_semantic.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_prop.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
@@ -1628,7 +1629,7 @@ exps_find_prop(list *exps, rel_prop kind)
 }
 
 static sql_exp *
-rel_find_exp_and_corresponding_rel_( sql_rel *rel, sql_exp *e, sql_rel **res)
+rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 {
 	sql_exp *ne = NULL;
 
@@ -1636,7 +1637,13 @@ rel_find_exp_and_corresponding_rel_( sql_rel *rel, sql_exp *e, sql_rel **res)
 		return NULL;
 	switch(e->type) {
 	case e_column:
-		if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+		if (is_basetable(rel->op) && !rel->exps) {
+			if (e->l) {
+				if (rel_base_bind_column2_(rel, e->l, e->r))
+					ne = e;
+			} else if (rel_base_bind_column_(rel, e->r, NULL))
+				ne = e;
+		} else if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 			if (e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 			} else {
@@ -1714,7 +1721,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 }
 
 sql_exp *
-rel_find_exp( sql_rel *rel, sql_exp *e)
+rel_find_exp(sql_rel *rel, sql_exp *e)
 {
 	return rel_find_exp_and_corresponding_rel(rel, e, NULL, NULL);
 }

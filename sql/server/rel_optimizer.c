@@ -9,12 +9,14 @@
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
 #include "rel_rewriter.h"
+#include "rel_remote.h"
 #include "sql_mvc.h"
 #include "gdk_time.h"
 
@@ -73,11 +75,11 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			name = e->r;
 		}
 		if (name && !t)
-			return rel->r;
+			return rel_base_get_mergetable(rel);
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
 		node *cn;
-		sql_table *mt = rel->r;
+		sql_table *mt = rel_base_get_mergetable(rel);
 		for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
@@ -868,8 +870,8 @@ order_joins(visitor *v, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables
 		 * Should be pushed up to extra selection.
 		 * */
-		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) /*||
-		   (cje->type == e_cmp && cje->f == NULL)*/) {
+		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+		   (cje->type == e_cmp && cje->f == NULL)) {
 			l = find_one_rel(rels, cje->l);
 			r = find_one_rel(rels, cje->r);
 		}
@@ -1660,7 +1662,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 }
 
 static bool
-check_projection_on_foreignside(sql_rel *r, list *pexps, int fk_left) 
+check_projection_on_foreignside(sql_rel *r, list *pexps, int fk_left)
 {
 	/* projection columns from the foreign side */
 	if (list_empty(pexps))
@@ -4195,7 +4197,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 					sql_rel *bt = NULL;
 					sql_column *c = exp_find_column_(rel, gbe, -2, &bt);
 					/* check if key is partition key */
-					sql_table *mt = (bt)?bt->r:NULL;
+					sql_table *mt = (bt)?rel_base_get_mergetable(bt):NULL;
 					if (c && mt && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
 						v->changes++;
 						return rel_inplace_setop(v->sql, rel, ul, ur, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
@@ -4954,10 +4956,10 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 		c = exp_find_column_(rel, e->r, -1, &bt);
 	if (!c && e->f)
 		c = exp_find_column_(rel, e->f, -1, &bt);
-	if (!c || !bt || !bt->r)
+	if (!c || !bt || !rel_base_get_mergetable(bt))
 		return -1;
 	sql_table *pp = c->t;
-	sql_table *mt = bt->r;
+	sql_table *mt = rel_base_get_mergetable(bt);
 	return find_member_pos(mt->members, pp);
 }
 
@@ -4978,9 +4980,9 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	c = exp_find_column_(rel, e->l, pnr, &bt);
 	if (!c)
 		c = exp_find_column_(rel, e->r, pnr, &bt);
-	if (c && bt && bt->r) {
+	if (c && bt && rel_base_get_mergetable(bt)) {
 		sql_table *pp = c->t;
-		sql_table *mt = bt->r;
+		sql_table *mt = rel_base_get_mergetable(bt);
 		if (find_member_pos(mt->members, pp) == pnr)
 			return 1;
 	}
@@ -8835,16 +8837,38 @@ exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusi
 }
 
 static sql_rel *
-rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
+rel_rename_part(mvc *sql, sql_rel *p, sql_rel *rel, char *tname, sql_table *mt)
 {
+	sql_table *t = rel_base_table(p);
+	node *n;
+
+	assert(!p->exps);
+	p->exps = sa_list(sql->sa);
+	const char *pname = t->base.name;
+	if (isRemote(t))
+		pname = mapiuri_table(t->query, sql->sa, pname);
+	for (n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (is_intern(e) || exp_name(e)[0] == '%') /* break on tid/idxs */
+			break;
+		sql_column *c = ol_find_name(mt->columns, exp_name(e))->data;
+		sql_column *rc = ol_fetch(t->columns, c->colnr);
+		/* with name find column in merge table, with colnr find column in member */
+		e = exp_alias(sql->sa, tname, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
+		append(p->exps, e);
+	}
+	if (n) {
+		sql_exp *e = n->data;
+		if (strcmp(exp_name(e), TID) == 0) {
+			e = exp_alias(sql->sa, tname, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			append(p->exps, e);
+		}
+	}
+#if 0
 	node *n, *m;
-
-	assert(list_length(p->exps) >= ol_length(mt->columns));
-	for( n = p->exps->h, m = ol_first_node(mt->columns); n && m; n = n->next, m = m->next) {
-		sql_exp *ne = n->data;
+	for( m = ol_first_node(mt->columns); m; m = m->next) {
 		sql_column *c = m->data;
-
-		exp_setname(sql->sa, ne, tname, c->base.name);
+		append(p->exps, exp_alias(sql->sa, tname, c->base.name, pname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	if (n) /* skip TID */
 		n = n->next;
@@ -8863,7 +8887,8 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 			n = n->next;
 		}
 	}
-	p->r = mt;
+#endif
+	rel_base_set_mergetable(p, mt);
 	return p;
 }
 
@@ -8890,8 +8915,8 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 			sel = rel;
 			rel = rel->l;
 		}
-		if (is_basetable(rel->op) && rel->l) {
-			sql_table *t = rel->l;
+		if (is_basetable(rel->op) && rel_base_table(rel)) {
+			sql_table *t = rel_base_table(rel);
 
 			if (isMergeTable(t)) {
 				/* instantiate merge table */
@@ -8969,9 +8994,8 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 0))
 							continue;
 
-						prel = rel_rename_part(v->sql, prel, tname, t);
+						prel = rel_rename_part(v->sql, prel, rel, tname, t);
 
-						list_hash_clear(prel->exps);
 						exps = sa_list(v->sql->sa);
 						for (node *n = rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
 							sql_exp *e = n->data;
@@ -9231,7 +9255,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 							}
 						}
 						if (!skip) {
-							rel_set_exps(prel, exps);
+							//rel_set_exps(prel, exps);
 							append(tables, prel);
 							nrel = prel;
 						}
@@ -9255,9 +9279,11 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				}
 				if (nrel && list_length(t->members) == 1) {
 					nrel = rel_project(v->sql->sa, nrel, rel->exps);
+					/*
 				} else if (nrel) {
 					rel_set_exps(nrel, rel->exps);
-				} else { /* all children tables were pruned, create a dummy relation */
+					*/
+				} else if (!nrel) { /* all children tables were pruned, create a dummy relation */
 					list *converted = sa_list(v->sql->sa);
 					nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
 					nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
@@ -9274,8 +9300,10 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
 					sel->l = nrel;
 					sel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
+					/*
 					if (iv.changes)
 						sel = rel_visitor_bottomup(&iv, sel, &rel_push_project_up);
+						*/
 					return sel;
 				}
 				return nrel;

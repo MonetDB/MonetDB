@@ -33,7 +33,7 @@ plan select 1 from splitted where stamp = TIMESTAMP '2020-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" = timestamp(7) "2020-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 
@@ -42,7 +42,7 @@ plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIM
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" in (timestamp(7) "2000-01-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2000-02-01 00:00:00.000000" as "%3"."%3") ]
 ) [ tinyint "1" ]
 
@@ -90,7 +90,7 @@ plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2020-01-01 00:00:00' 
 ----
 project (
 | select (
-| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2020-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -183,7 +183,7 @@ plan select 1 from splitted where stamp <= TIMESTAMP '2009-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" <= timestamp(7) "2009-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 
@@ -192,7 +192,7 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' AND s
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2019-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -233,7 +233,7 @@ plan select 1 from splitted where stamp <= TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" <= timestamp(7) "2000-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 
@@ -242,7 +242,7 @@ plan select 1 from splitted where stamp is null
 ----
 project (
 | select (
-| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" * = timestamp(7) "NULL" ]
 ) [ tinyint "1" ]
 
@@ -260,7 +260,7 @@ plan select 1 from splitted where stamp > TIMESTAMP '2020-01-01 00:00:00' and st
 ----
 project (
 | select (
-| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2020-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -285,7 +285,7 @@ plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and st
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2010-01-01 00:00:00.000000" < "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -294,7 +294,7 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and s
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -376,7 +376,7 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and s
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2000-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2001-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -401,7 +401,7 @@ plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" = timestamp(7) "2010-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 
@@ -410,7 +410,7 @@ plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" = timestamp(7) "2000-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 
@@ -465,7 +465,7 @@ plan select 1 from splitted2 where stamp = 5
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."third_decade2") [ "third_decade2"."stamp" as "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" = int "5" ]
 ) [ tinyint "1" ]
 
@@ -497,7 +497,7 @@ plan select 1 from splitted2 where stamp is null
 ----
 project (
 | select (
-| | table("sys"."second_decade2") [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."second_decade2") [ "second_decade2"."stamp" as "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" * = int "NULL" ]
 ) [ tinyint "1" ]
 
@@ -537,7 +537,7 @@ plan select 1 from splitted2 where stamp in (2,1)
 ----
 project (
 | select (
-| | table("sys"."first_decade2") [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."first_decade2") [ "first_decade2"."stamp" as "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" in (int "2" as "%2"."%2", int "1" as "%3"."%3") ]
 ) [ tinyint "1" ]
 
@@ -546,7 +546,7 @@ plan select 1 from splitted2 where stamp in (4)
 ----
 project (
 | select (
-| | table("sys"."second_decade2") [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."second_decade2") [ "second_decade2"."stamp" as "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" = int "4" ]
 ) [ tinyint "1" ]
 
@@ -555,7 +555,7 @@ plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."third_decade2") [ "third_decade2"."stamp" as "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" in (int "5" as "%2"."%2", int "6" as "%3"."%3"), "splitted2"."stamp" in (int "6" as "%5"."%5", int "7" as "%6"."%6") ]
 ) [ tinyint "1" ]
 
@@ -564,7 +564,7 @@ plan select 1 from splitted2 where stamp in (5,6) and stamp > 100
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."third_decade2") [ "third_decade2"."stamp" as "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" > int "100", "splitted2"."stamp" in (int "5" as "%2"."%2", int "6" as "%3"."%3") ]
 ) [ tinyint "1" ]
 
@@ -610,7 +610,7 @@ plan select 1 from table1 where a = 10
 ----
 project (
 | select (
-| | table("sys"."another1") [ "table1"."a" ] COUNT 
+| | table("sys"."another1") [ "another1"."a" as "table1"."a" ] COUNT 
 | ) [ "table1"."a" = int "10" ]
 ) [ tinyint "1" ]
 
@@ -619,7 +619,7 @@ plan select 1 from table1 where a = 11
 ----
 project (
 | select (
-| | table("sys"."another2") [ "table1"."a" ] COUNT 
+| | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | ) [ "table1"."a" = int "11" ]
 ) [ tinyint "1" ]
 
@@ -660,7 +660,7 @@ plan select 1 from table1 where a > 10
 ----
 project (
 | select (
-| | table("sys"."another2") [ "table1"."a" ] COUNT 
+| | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | ) [ "table1"."a" > int "10" ]
 ) [ tinyint "1" ]
 
@@ -669,7 +669,7 @@ plan select 1 from table1 where a <= 10
 ----
 project (
 | select (
-| | table("sys"."another1") [ "table1"."a" ] COUNT 
+| | table("sys"."another1") [ "another1"."a" as "table1"."a" ] COUNT 
 | ) [ "table1"."a" <= int "10" ]
 ) [ tinyint "1" ]
 
@@ -678,7 +678,7 @@ plan select 1 from table1 where a between 10 and 10
 ----
 project (
 | select (
-| | table("sys"."another1") [ "table1"."a" ] COUNT 
+| | table("sys"."another1") [ "another1"."a" as "table1"."a" ] COUNT 
 | ) [ int "10" <= "table1"."a" <= int "10" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -712,7 +712,7 @@ plan select 1 from table1 where a not between 10 and 10
 ----
 project (
 | select (
-| | table("sys"."another2") [ "table1"."a" ] COUNT 
+| | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | ) [ int "10" ! <= "table1"."a" ! <= int "10" BETWEEN  ]
 ) [ tinyint "1" ]
 
