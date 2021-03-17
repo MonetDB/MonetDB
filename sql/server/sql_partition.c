@@ -188,8 +188,11 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		case e_convert: {
 			exp_find_table_columns(sql, e->l, t, cols);
 		} break;
-		case e_atom:
-			break;
+		case e_atom: {
+			if (e->f)
+				for (node *n = ((list*)e->f)->h ; n ; n = n->next)
+					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
+		} break;
 		case e_aggr:
 		case e_func: {
 			if (e->l)

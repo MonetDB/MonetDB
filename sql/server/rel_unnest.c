@@ -237,6 +237,8 @@ exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool 
 			rel_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 		break;
 	case e_atom:
+		if (e->f)
+			exps_only_freevar(query, e->f, arguments_correlated, found_one_freevar, ungrouped_cols);
 		break;
 	case e_column:
 		*arguments_correlated = 0;

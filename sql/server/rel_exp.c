@@ -1350,6 +1350,8 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		case e_atom:
 			if (e1->l && e2->l && !atom_cmp(e1->l, e2->l))
 				return 1;
+			if (e1->f && e2->f && exps_equal(e1->f, e2->f))
+				return 1;
 			break;
 		default:
 			break;
@@ -1420,28 +1422,37 @@ static int
 exp_is_complex_select( sql_exp *e )
 {
 	switch (e->type) {
-	case e_atom:
+	case e_atom: {
+		if (e->f) {
+			int r = (e->card == CARD_ATOM);
+			list *l = e->f;
+
+			if (r)
+				for (node *n = l->h; n && !r; n = n->next)
+					r |= exp_is_complex_select(n->data);
+			return r;
+		}
 		return 0;
+	}
 	case e_convert:
 		return exp_is_complex_select(e->l);
 	case e_func:
 	case e_aggr:
 	{
 		int r = (e->card == CARD_ATOM);
-		node *n;
 		list *l = e->l;
 
 		if (r && l)
-			for (n = l->h; n && !r; n = n->next)
+			for (node *n = l->h; n && !r; n = n->next)
 				r |= exp_is_complex_select(n->data);
 		return r;
 	}
+	case e_psm:
+		return 1;
 	case e_column:
 	case e_cmp:
 	default:
 		return 0;
-	case e_psm:
-		return 1;
 	}
 }
 
@@ -2263,6 +2274,8 @@ exp_has_func(sql_exp *e)
 		return 0;
 	switch (e->type) {
 	case e_atom:
+		if (e->f)
+			return exps_have_func(e->f);
 		return 0;
 	case e_convert:
 		return exp_has_func(e->l);
@@ -2316,6 +2329,9 @@ exp_has_sideeffect( sql_exp *e )
 			return 0;
 		}
 	case e_atom:
+		if (e->f)
+			return exps_has_sideeffect(e->f);
+		return 0;
 	case e_aggr:
 	case e_cmp:
 	case e_column:
@@ -2360,8 +2376,12 @@ exp_unsafe(sql_exp *e, int allow_identity)
 			return exp_unsafe(e->l, allow_identity) || exp_unsafe(e->r, allow_identity) || (e->f && exp_unsafe(e->f, allow_identity));
 		}
 	} break;
+	case e_atom: {
+		if (e->f)
+			return exps_have_unsafe(e->f, allow_identity);
+		return 0;
+	} break;
 	case e_column:
-	case e_atom:
 	case e_psm:
 		return 0;
 	}
