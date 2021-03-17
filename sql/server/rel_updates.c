@@ -11,6 +11,7 @@
 #include "rel_semantic.h"
 #include "rel_select.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_schema.h"
 #include "sql_privileges.h"
@@ -66,6 +67,20 @@ get_table(sql_rel *t)
 		return rel_ddl_table_get(t);
 	}
 	return tab;
+}
+
+static sql_rel *
+get_basetable(sql_rel *t)
+{
+	if (is_simple_project(t->op) || is_select(t->op) || is_join(t->op) || is_semi(t->op)) {
+		return get_basetable(t->l);
+	} else if (t->op == op_basetable) { /* existing base table */
+		return t;
+	} else if (t->op == op_ddl &&
+			   (t->flag == ddl_alter_table || t->flag == ddl_create_table || t->flag == ddl_create_view)) {
+		return rel_ddl_basetable_get(t);
+	}
+	return t;
 }
 
 static sql_rel *
@@ -155,6 +170,10 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
+		if (rel_base_use(sql, rt, rc->c->colnr)) {
+			/* TODO add access error */
+			return NULL;
+		}
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 		_is = exp_ref(sql, _is);
@@ -197,6 +216,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
 
@@ -265,7 +285,10 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 static sql_rel *
 rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
-	return rel_insert(query->sql, rel_basetable(query->sql, t, name), inserts);
+	sql_rel *rel = rel_basetable(query->sql, t, name);
+	rel_base_use_all(query->sql, rel);
+	rel = rewrite_basetable(query->sql, rel);
+	return rel_insert(query->sql, rel, inserts);
 }
 
 static list *
@@ -736,6 +759,10 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
+		if (rel_base_use(sql, rt, rc->c->colnr)) {
+			/* TODO add access error */
+			return NULL;
+		}
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
@@ -782,6 +809,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	rel_base_use_tid(sql, rt);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
 
@@ -849,17 +877,21 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 {
 	sql_rel *r = rel_create(sql->sa);
 	sql_table *tab = get_table(t);
+	sql_rel *bt = get_basetable(uprel);
 	const char *alias = rel_name(t);
 	node *m;
 
 	if (!r)
 		return NULL;
 
+	/* todo only add column used by indices */
 	if (tab && updates)
 		for (m = ol_first_node(tab->columns); m; m = m->next) {
 			sql_column *c = m->data;
 			sql_exp *v = updates[c->colnr];
 
+			if (!v && rel_base_use(sql, bt, c->colnr) < 0) /* not allowed */
+				continue;
 			if (ol_length(tab->idxs) && !v)
 				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 			if (v)
@@ -1058,17 +1090,12 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 		/* We have always to reduce the column visibility because of the SET clause */
 		if (!table_privs(sql, t, PRIV_SELECT)) {
-			sql_rel *nres = NULL;
-			if (!(nres = rel_reduce_on_column_privileges(sql, res, t)) && opt_where) /* on global updates the user may be able to update */
+			rel_base_disallow(res);
+			if (rel_base_has_column_privileges(sql, res) == 0 && opt_where)
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'",
 								 get_string_global_var(sql, "current_user"), tname);
-			if (!nres) {
-				res->exps = sa_list(sql->sa); /* hasn't select privilege on any column, add just TID column to the list */
-			} else {
-				res = nres; /* add TID column to the columns it has permission to */
-			}
-			list_append(res->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 		}
+		rel_base_use_tid(sql, res);
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
 			list *refs = list_append(new_exp_list(sql->sa), (char*) rel_name(res));
@@ -1146,10 +1173,11 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			sql_exp *e;
 
 			if (!table_privs(sql, t, PRIV_SELECT)) {
-				if (!(r = rel_reduce_on_column_privileges(sql, r, t)))
+				rel_base_disallow(r);
+				if (rel_base_has_column_privileges(sql, r) == 0)
 					return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'",
 									 get_string_global_var(sql, "current_user"), tname);
-				list_append(r->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+				rel_base_use_tid(sql, r);
 			}
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
@@ -1244,9 +1272,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	bt = rel_basetable(sql, t, alias ? alias : tname);
 	if (!table_privs(sql, t, PRIV_SELECT)) {
-		if (!(bt = rel_reduce_on_column_privileges(sql, bt, t)))
+		rel_base_disallow(bt);
+		if (rel_base_has_column_privileges(sql, bt) == 0)
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
 							 get_string_global_var(sql, "current_user"), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
+		rel_base_use_tid(sql, bt);
 		list_append(bt->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 	}
 	joined = table_ref(query, NULL, tref, 0, NULL);
@@ -1281,7 +1311,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
 					join_rel = rel_dup(join_rel);
 				} else {
-					join_rel = rel_crossproduct(sql->sa, joined, bt, op_join);
+					join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
@@ -1299,7 +1329,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
 					join_rel = rel_dup(join_rel);
 				} else {
-					join_rel = rel_crossproduct(sql->sa, joined, bt, op_join);
+					join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
@@ -1326,7 +1356,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
 				join_rel = rel_dup(join_rel);
 			} else {
-				join_rel = rel_crossproduct(sql->sa, joined, bt, op_join);
+				join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
 				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 					return NULL;
 				set_processed(join_rel);

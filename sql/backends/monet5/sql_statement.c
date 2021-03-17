@@ -1925,8 +1925,8 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	else
 		q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
-	q = pushBit(mb, q, FALSE);    /* nil matches */
-	q = pushBit(mb, q, TRUE);     /* clear nils */
+	q = pushBit(mb, q, FALSE);     /* nil matches */
+	q = pushBit(mb, q, TRUE);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {

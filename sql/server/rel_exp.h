@@ -127,7 +127,7 @@ extern unsigned int exp_card(sql_exp *e);
 
 extern const char *exp_find_rel_name(sql_exp *e);
 
-extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
+extern sql_exp *rel_find_exp(sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);

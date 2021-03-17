@@ -12,6 +12,7 @@
 
 #include "rel_dump.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_updates.h"
@@ -408,12 +409,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
+#if 0
 		sql_column *c = rel->r;
 
 		if (!t && c) {
 			mnstr_printf(fout, "dict(\"%s\".\"%s\")",
 						 dump_escape_ident(sql->ta, c->t->base.name), dump_escape_ident(sql->ta, c->base.name));
 		} else {
+#endif
+
 			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
 			const char *tname = t->base.name;
 
@@ -433,9 +437,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
 					dump_escape_ident(sql->ta, tname));
-		}
+	//	}
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
+		else
+			rel_base_dump_exps(fout, rel);
 	} 	break;
 	case op_table:
 		mnstr_printf(fout, "table (");
@@ -1801,9 +1807,14 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (isReplicaTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
 				rel = rel_basetable(sql, t, tname);
-				if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
-					return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
+				if (!table_privs(sql, t, PRIV_SELECT))  {
+					rel_base_disallow(rel);
+					if (rel_base_has_column_privileges(sql, rel) == 0)
+						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
+				}
+				rel_base_use_all(sql, rel);
+				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
 					return rel;

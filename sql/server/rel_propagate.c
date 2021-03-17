@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_propagate.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
@@ -28,8 +29,11 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 
 	if (isPartitionedByColumnTable(mt)) {
 		int colr = mt->part.pcol->colnr;
-		res = list_fetch((*anti_rel)->exps, colr);
-		res = exp_ref(sql, res);
+
+		res = rel_base_bind_colnr(sql, *anti_rel, colr);
+		return res;
+		//res = list_fetch((*anti_rel)->exps, colr);
+		//res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))

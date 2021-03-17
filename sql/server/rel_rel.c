@@ -8,9 +8,9 @@
 
 #include "monetdb_config.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
-#include "rel_remote.h"
 #include "rel_unnest.h"
 #include "sql_semantic.h"
 #include "sql_mvc.h"
@@ -58,6 +58,8 @@ project_unsafe(sql_rel *rel, int allow_identity)
 const char *
 rel_name( sql_rel *r )
 {
+	if (is_basetable(r->op))
+		return rel_base_name(r);
 	if (!is_project(r->op) && !is_base(r->op) && r->l)
 		return rel_name(r->l);
 	if (r->exps && list_length(r->exps)) {
@@ -264,13 +266,16 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 			*exp_has_nil = 1;
 		return r;
 	}
+	case op_basetable:
+		if (!rel->exps)
+			return rel_base_bind_column_(rel, cname, exp_has_nil);
+		/* fall through */
 	case op_union:
 	case op_except:
 	case op_inter:
 	case op_groupby:
 	case op_project:
-	case op_table:
-	case op_basetable: {
+	case op_table: {
 		sql_exp *found = NULL;
 
 		if (rel->exps)
@@ -312,6 +317,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 	if (!rel || (rel = rel_bind_column_(sql, &exp_has_nil, rel, cname, no_tname)) == NULL)
 		return NULL;
 
+	if (is_basetable(rel->op) && !rel->exps)
+		return rel_base_bind_column(sql, rel, cname, no_tname);
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
 		sql_exp *e = exps_bind_column(rel->exps, cname, NULL, NULL, no_tname);
 		if (e)
@@ -339,6 +346,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	if ((is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = NULL;
 
+		if (is_basetable(rel->op) && !rel->exps)
+			return rel_base_bind_column2(sql, rel, tname, cname);
 		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
 		if (!list_empty(rel->exps)) {
 			e = exps_bind_column2(rel->exps, tname, cname, &multi);
@@ -664,14 +673,6 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	/*
-	if (!exp_relname(e)) {
-		if (exp_name(e))
-			exp_setrelname(sql->sa, e, ++sql->label);
-		else
-			exp_label(sql->sa, e, ++sql->label);
-	}
-	*/
 	if (!exp_name(e))
 		exp_label(sql->sa, e, ++sql->label);
 	if (is_simple_project(rel->op)) {
@@ -776,90 +777,6 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		if (is_single(l))
 			set_single(rel);
 	}
-	return rel;
-}
-
-sql_rel *
-rel_basetable(mvc *sql, sql_table *t, const char *atname)
-{
-	prop *p = NULL;
-	node *cn;
-	sql_allocator *sa = sql->sa;
-	sql_rel *rel = rel_create(sa);
-	const char *tname = t->base.name;
-	if(!rel)
-		return NULL;
-
-	assert(atname);
-	rel->l = t;
-	rel->r = NULL;
-	rel->op = op_basetable;
-	rel->exps = new_exp_list(sa);
-	if(!rel->exps) {
-		rel_destroy(rel);
-		return NULL;
-	}
-
-	if (isRemote(t))
-		tname = mapiuri_table(t->query, sql->sa, tname);
-	for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
-		sql_column *c = cn->data;
-		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-
-		if (e == NULL) {
-			rel_destroy(rel);
-			return NULL;
-		}
-		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
-			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
-			p->value = c->t->pkey;
-		} else if (c->unique == 1) {
-			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
-			p->value = NULL;
-		}
-		set_basecol(e);
-		append(rel->exps, e);
-	}
-	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
-
-	if (t->idxs) {
-		for (cn = ol_first_node(t->idxs); cn; cn = cn->next) {
-			sql_exp *e;
-			sql_idx *i = cn->data;
-			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
-			char *iname = NULL;
-			int has_nils = 0;
-
-			/* do not include empty indices in the plan */
-			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
-				continue;
-
-			if (i->type == join_idx)
-				t = sql_bind_localtype("oid");
-
-			iname = sa_strconcat( sa, "%", i->base.name);
-			for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
-				sql_kc *kc = n->data;
-
-				if (kc->c->null)
-					has_nils = 1;
-			}
-			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, has_nils, 1);
-			/* index names are prefixed, to make them independent */
-			if (hash_index(i->type)) {
-				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
-				p->value = i;
-			}
-			if (i->type == join_idx) {
-				p = e->p = prop_create(sa, PROP_JOINIDX, e->p);
-				p->value = i;
-			}
-			append(rel->exps, e);
-		}
-	}
-
-	rel->card = CARD_MULTI;
-	rel->nrcols = ol_length(t->columns);
 	return rel;
 }
 
@@ -1015,6 +932,9 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	if (!rel)
 		return new_exp_list(sql->sa);
 
+	if (!tname && is_basetable(rel->op) && !is_processed(rel))
+		rel_base_use_all( sql, rel);
+
 	switch(rel->op) {
 	case op_join:
 	case op_left:
@@ -1058,6 +978,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_union:
 	case op_except:
 	case op_inter:
+		if (is_basetable(rel->op) && !rel->exps)
+			return rel_base_projection(sql, rel, intern);
 		if (rel->exps) {
 			int label = 0;
 
@@ -1148,6 +1070,12 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 
+	case op_basetable:
+		if (e->l)
+			found = (rel_base_bind_column2_(rel, e->l, e->r) != NULL);
+		else
+			found = (rel_base_bind_column_(rel, e->r, NULL) != NULL);
+		break;
 	case op_union:
 	case op_inter:
 	case op_except:
@@ -1160,7 +1088,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_groupby:
 	case op_project:
 	case op_table:
-	case op_basetable:
 		if (!rel->exps)
 			break;
 		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
@@ -1460,6 +1387,15 @@ rel_ddl_table_get(sql_rel *r)
 		atom *a = e->l;
 
 		return a->data.val.pval;
+	}
+	return NULL;
+}
+
+sql_rel *
+rel_ddl_basetable_get(sql_rel *r)
+{
+	if (r->flag == ddl_alter_table || r->flag == ddl_create_table || r->flag == ddl_create_view) {
+		return r->l;
 	}
 	return NULL;
 }

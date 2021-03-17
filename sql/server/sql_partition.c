@@ -10,6 +10,7 @@
 
 #include "sql_partition.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"

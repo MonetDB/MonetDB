@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_distribute.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
@@ -84,6 +85,21 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 	sql_table *p = find_sql_table_id(sql->session->tr, t->s, pd->member);
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
 
+	for (n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		node *n = ol_find_name(t->columns, exp_name(e));
+		if (n) {
+			sql_column *c = n->data;
+
+			rel_base_use(sql, r, c->colnr);
+		} else if (strcmp(exp_name(e), TID) == 0) {
+			rel_base_use_tid(sql, r);
+		} else {
+			assert(0);
+		}
+	}
+	rel = rewrite_basetable(sql, r);
 	for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = n->data;
 		sql_exp *ne = m->data;

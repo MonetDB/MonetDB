@@ -30,7 +30,7 @@ query T nosort
 PLAN TRUNCATE testing4 RESTRICT
 ----
 truncate continue identity, restrict(
-| table("sys"."testing4") [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ] COUNT 
+| table("sys"."testing4") [ "testing4"."%TID%" NOT NULL ] COUNT 
 )
 
 statement error
@@ -50,7 +50,7 @@ query T nosort
 PLAN TRUNCATE testing4 CASCADE
 ----
 truncate continue identity, cascade(
-| table("sys"."testing4") [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ] COUNT 
+| table("sys"."testing4") [ "testing4"."%TID%" NOT NULL ] COUNT 
 )
 
 statement ok
@@ -85,7 +85,7 @@ query T nosort
 PLAN TRUNCATE testing6
 ----
 truncate continue identity, restrict(
-| table("sys"."testing6") [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ] COUNT 
+| table("sys"."testing6") [ "testing6"."%TID%" NOT NULL ] COUNT 
 )
 
 statement ok
@@ -109,7 +109,7 @@ query T nosort
 PLAN TRUNCATE testing6 CONTINUE IDENTITY
 ----
 truncate continue identity, restrict(
-| table("sys"."testing6") [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ] COUNT 
+| table("sys"."testing6") [ "testing6"."%TID%" NOT NULL ] COUNT 
 )
 
 statement ok
@@ -133,7 +133,7 @@ query T nosort
 PLAN TRUNCATE testing6 RESTART IDENTITY
 ----
 truncate restart identity, restrict(
-| table("sys"."testing6") [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ] COUNT 
+| table("sys"."testing6") [ "testing6"."%TID%" NOT NULL ] COUNT 
 )
 
 statement ok
