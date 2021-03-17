@@ -1746,9 +1746,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	lwidth = l->twidth;
 	rwidth = r->twidth;
 
-	/* basic properties will be adjusted if necessary later on,
-	 * they were initially set by joininitresults() */
-
 	if (not_in && rci->ncand > 0 && !r->tnonil &&
 	    ((BATtvoid(l) && l->tseqbase == oid_nil) ||
 	     (BATtvoid(r) && r->tseqbase == oid_nil) ||
@@ -3522,7 +3519,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	lcnt = canditer_init(&lci, l, sl);
 	rcnt = canditer_init(&rci, r, sr);
 
-	if (lcnt == 0 || (!only_misses && !nil_on_miss && rcnt == 0)) {
+	if (lcnt == 0 || rcnt == 0) {
 		TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 			  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
