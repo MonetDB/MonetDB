@@ -299,7 +299,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DELETE",
 	 "Remove data rows from a table",
-	 "[ WITH cte_list ] DELETE FROM qname [ [AS] ident ] [ USING using_item ] [ WHERE search_condition ]",
+	 "[ WITH cte_list ] DELETE FROM qname [ [AS] ident ] [ WHERE search_condition ]",
 	 "cte_list,search_condition",
 	 NULL},
 	{"DROP AGGREGATE",
