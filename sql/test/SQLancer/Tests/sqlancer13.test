@@ -93,16 +93,13 @@ query I rowsort
 SELECT 1 FROM t2 WHERE NULL NOT IN (SELECT 1 FROM t2)
 ----
 
-
 query I rowsort
 SELECT 1 FROM t2 WHERE NULL <> ALL(SELECT 1 FROM t2)
 ----
 
-
 query T rowsort
 SELECT t0.c3 FROM t0, t2 WHERE NULLIF(t0.c3, t0.c3) <> ALL(SELECT DISTINCT '1' FROM t0)
 ----
-
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NULLIF(t0.c3, t0.c3) <> ALL(SELECT DISTINCT '1' FROM t0) AS INT) as count FROM t0, t2) as res
@@ -177,3 +174,26 @@ select ((select 1 from t1, t0)) in (2, t1.c0) from t1
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c2" BIGINT NOT NULL,"c4" DATE,CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c2"))
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" DOUBLE NOT NULL,"c2" INTERVAL DAY,CONSTRAINT "t2_c0_unique" UNIQUE ("c0"),CONSTRAINT "t2_c0_c2_unique" UNIQUE ("c0", "c2"))
+
+query I rowsort
+SELECT 1 FROM t2, t1 WHERE (t2.c0 > 4 OR false) AND 9 IN (t2.c0, t1.c2) = TRUE
+----
+
+query I rowsort
+SELECT 1 FROM t2, t1 WHERE (t2.c0 > 4 OR false) AND (CASE WHEN 9 IN (t2.c0, t1.c2) THEN TRUE END)
+----
+
+query T rowsort
+SELECT t1.c2 FROM t2, t1 WHERE (((((((((t2.c0)^(2))) NOT BETWEEN SYMMETRIC (least(t1.c2, t1.c2)) AND (4))AND(NOT (TRUE))))OR(least(FALSE, FALSE))))AND(CASE WHEN (9) NOT IN (t2.c0, t1.c2) THEN TRUE ELSE greatest(TRUE, FALSE) END))
+----
+
+statement ok
+ROLLBACK
