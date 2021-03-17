@@ -1663,7 +1663,11 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			sql_rel *rel = e->l;
 			return rel_deps(sql, rel, refs, l);
 		}
+		break;
 	case e_atom:
+		if (e->f && exp_deps(sql, e->f, refs, l) != 0)
+			return -1;
+		break;
 	case e_column:
 		break;
 	case e_convert:
@@ -2296,6 +2300,9 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	case e_column:
 		return rel_find_exp(rel, e) != NULL;
 	case e_atom:
+		if (e->f)
+			return exps_rebind_exp(sql, rel, e->f);
+		return true;
 	case e_psm:
 		return true;
 	}

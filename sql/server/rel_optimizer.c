@@ -233,8 +233,11 @@ psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
 {
 	/* only functions need fix up */
 	switch(e->type) {
-	case e_atom:
 	case e_column:
+		break;
+	case e_atom:
+		if (e->f)
+			psm_exps_properties(sql, gp, e->f);
 		break;
 	case e_convert:
 		psm_exp_properties(sql, gp, e->l);
@@ -1429,13 +1432,15 @@ exp_needs_push_down(sql_exp *e)
 	case e_convert:
 		return exp_needs_push_down(e->l);
 	case e_aggr:
-	case e_func: {
+	case e_func:
 		if (!e->l || exps_are_atoms(e->l))
 			return 0;
 		return 1;
-	} break;
-	case e_column:
 	case e_atom:
+		if (!e->f || exps_are_atoms(e->f))
+			return 0;
+		return 1;
+	case e_column:
 	default:
 		return 0;
 	}
@@ -1514,7 +1519,10 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 			v->changes++;
 		}
 	} break;
-	case e_atom:
+	case e_atom: {
+		if (e->f && (e->f = exps_push_single_func_down(v, rel, l, r, e->f, depth + 1)) == NULL)
+			return NULL;
+	} break;
 	case e_column:
 	case e_psm:
 		break;
@@ -2778,6 +2786,8 @@ exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses)
 		else
 			return exp_shares_exps(e->l, shared, uses) || exp_shares_exps(e->r, shared, uses) || (e->f && exp_shares_exps(e->f, shared, uses));
 	case e_atom:
+		if (e->f)
+			return exps_shares_exps(e->f, shared, uses);
 		return false;
 	case e_column:
 		{
@@ -4030,8 +4040,11 @@ exp_uses_exp(sql_exp *e, const char *rname, const char *name)
 
 	switch (e->type) {
 		case e_psm:
-		case e_atom:
 			break;
+		case e_atom: {
+			if (e->f)
+				return list_exps_uses_exp(e->f, rname, name);
+		} break;
 		case e_convert:
 			return exp_uses_exp(e->l, rname, name);
 		case e_column: {
@@ -6219,8 +6232,11 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 	case e_func:
 		list_split_aggr_and_project(sql, aexps, e->l);
 		return e;
-	case e_column: /* constants and columns shouldn't be rewriten */
 	case e_atom:
+		if (e->f)
+			list_split_aggr_and_project(sql, aexps, e->f);
+		return e;
+	case e_column: /* constants and columns shouldn't be rewriten */
 	case e_psm:
 		return e;
 	}
@@ -7949,8 +7965,11 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 				e->f = split_exp(sql, e->f, rel);
 		}
 		return e;
-	case e_psm:
 	case e_atom:
+		if (e->f)
+			split_exps(sql, e->f, rel);
+		return e;
+	case e_psm:
 		return e;
 	}
 	return e;
@@ -8067,8 +8086,11 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 				e->f = select_split_exp(sql, e->f, rel);
 		}
 		return e;
-	case e_psm:
 	case e_atom:
+		if (e->f)
+			select_split_exp(sql, e->f, rel);
+		return e;
+	case e_psm:
 		return e;
 	}
 	return e;

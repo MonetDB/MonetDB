@@ -476,8 +476,11 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		case e_convert: {
 			e->l = exp_change_column_table(sql, e->l, oldt, newt);
 		} break;
-		case e_atom:
-			break;
+		case e_atom: {
+			if (e->f)
+				for (node *n = ((list*)e->f)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		} break;
 		case e_aggr:
 		case e_func: {
 			if (e->l)
