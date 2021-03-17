@@ -1350,7 +1350,15 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		case e_atom:
 			if (e1->l && e2->l && !atom_cmp(e1->l, e2->l))
 				return 1;
-			if (e1->f && e2->f && exps_equal(e1->f, e2->f))
+			if (e1->f && e2->f && exp_match_list(e1->f, e2->f))
+				return 1;
+			if (e1->r && e2->r && e1->flag == e2->flag && !subtype_cmp(&e1->tpe, &e2->tpe)) {
+				sql_var_name *v1 = (sql_var_name*) e1->r, *v2 = (sql_var_name*) e2->r;
+				if (((!v1->sname && !v2->sname) || (v1->sname && v2->sname && strcmp(v1->sname, v2->sname) == 0)) &&
+					((!v1->name && !v2->name) || (v1->name && v2->name && strcmp(v1->name, v2->name) == 0)))
+					return 1;
+			}
+			if (!e1->l && !e1->r && !e1->f && !e2->l && !e2->r && !e2->f && e1->flag == e2->flag && !subtype_cmp(&e1->tpe, &e2->tpe))
 				return 1;
 			break;
 		default:
