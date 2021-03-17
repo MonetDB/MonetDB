@@ -3119,7 +3119,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->base.name;
-	int pushed = (v->cand && v->cand == sel);
+	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -3142,18 +3142,19 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	   these can generate errors (fromstr cannot) */
 	if (t->type->eclass == EC_EXTERNAL)
 		convert = t->type->sqlname;
-
-	if (t->type->eclass == EC_MONTH)
+	else if (t->type->eclass == EC_MONTH)
 		convert = "month_interval";
 	else if (t->type->eclass == EC_SEC)
 		convert = "second_interval";
+
+	no_candidates = t->type->eclass == EC_EXTERNAL && strcmp(convert, "uuid") != 0; /* uuids conversions support candidate lists */
 
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
 	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
 		q = newStmtArgs(mb, calcRef, convert, 13);
-	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && t->type->eclass == EC_EXTERNAL) {
+	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && no_candidates) {
 		int type = t->type->localtype;
 
 		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
@@ -3194,7 +3195,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
-	} else if (v->nrcols > 0 && t->type->eclass != EC_EXTERNAL) {
+	} else if (v->nrcols > 0 && !no_candidates) {
 		q = pushNil(mb, q, TYPE_bat);
 	}
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
