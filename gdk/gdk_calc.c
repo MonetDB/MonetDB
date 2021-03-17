@@ -75,19 +75,19 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		return NULL;					\
 	} while (0)
 
-#define ON_OVERFLOW(TYPE1, TYPE2, OP)				\
-	do {							\
-		GDKerror("22003!overflow in calculation "	\
-			 FMT##TYPE1 OP FMT##TYPE2 ".\n",	\
+#define ON_OVERFLOW(TYPE1, TYPE2, OP)					\
+	do {								\
+		GDKerror("22003!overflow in calculation "		\
+			 FMT##TYPE1 OP FMT##TYPE2 ".\n",		\
 			 CST##TYPE1 ((TYPE1 *)lft)[i], CST##TYPE2 ((TYPE2 *)rgt)[j]); \
-		return BUN_NONE;				\
+		return BUN_NONE;					\
 	} while (0)
 
 #define UNARY_2TYPE_FUNC(TYPE1, TYPE2, FUNC)				\
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -102,7 +102,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -120,7 +120,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -135,7 +135,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -156,7 +156,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -173,7 +173,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -198,7 +198,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -212,7 +212,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -232,7 +232,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -242,7 +242,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
 		} else {						\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -254,11 +254,11 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		}							\
 	} while (0)
 
-#define BINARY_3TYPE_FUNC_nonil_nilcheck(TYPE1, TYPE2, TYPE3, FUNC, on_overflow)	\
+#define BINARY_3TYPE_FUNC_nonil_nilcheck(TYPE1, TYPE2, TYPE3, FUNC, on_overflow) \
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -270,7 +270,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					on_overflow;			\
 			}						\
 		} else {						\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -288,7 +288,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -314,7 +314,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		} else {						\
-			for (k = 0; k < ncand; k++) {		\
+			for (k = 0; k < ncand; k++) {			\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -1046,7 +1046,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 #define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
 		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(&ci) - bhseqbase;		\
 			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
@@ -1179,34 +1179,34 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
-#define MINMAX_TYPE(TYPE, OP)					\
+#define MINMAX_TYPE(TYPE, OP)						\
 	do {								\
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {		\
-			for (BUN i = 0; i < ncand; i++) { \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
+			for (BUN i = 0; i < ncand; i++) {		\
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
 				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
-					nils = true; \
-					tbn[i] = TYPE##_nil; \
-				} else {	\
-					tbn[i] = p1 OP p2 ? p1 : p2; \
-				}	\
-			} \
-		} else {	\
-			for (BUN i = 0; i < ncand; i++) { \
+					nils = true;			\
+					tbn[i] = TYPE##_nil;		\
+				} else {				\
+					tbn[i] = p1 OP p2 ? p1 : p2;	\
+				}					\
+			}						\
+		} else {						\
+			for (BUN i = 0; i < ncand; i++) {		\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
 				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
-					nils = true; \
-					tbn[i] = TYPE##_nil; \
-				} else {	\
-					tbn[i] = p1 OP p2 ? p1 : p2; \
-				}	\
-			} \
-		}	\
+					nils = true;			\
+					tbn[i] = TYPE##_nil;		\
+				} else {				\
+					tbn[i] = p1 OP p2 ? p1 : p2;	\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -1366,42 +1366,42 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	return NULL;
 }
 
-#define MINMAX_NONIL_TYPE(TYPE, OP)			\
+#define MINMAX_NONIL_TYPE(TYPE, OP)					\
 	do {								\
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {		\
-			for (BUN i = 0; i < ncand; i++) { \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
+			for (BUN i = 0; i < ncand; i++) {		\
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
-				if (is_##TYPE##_nil(p1)) { \
-					if (is_##TYPE##_nil(p2)) { \
-						tbn[i] = TYPE##_nil; \
-						nils = true; \
-					} else { \
-						tbn[i] = p2; \
-					} \
-				} else {	\
+				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
+				if (is_##TYPE##_nil(p1)) {		\
+					if (is_##TYPE##_nil(p2)) {	\
+						tbn[i] = TYPE##_nil;	\
+						nils = true;		\
+					} else {			\
+						tbn[i] = p2;		\
+					}				\
+				} else {				\
 					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
-				}	\
-			} \
-		} else {							\
-			for (BUN i = 0; i < ncand; i++) { \
+				}					\
+			}						\
+		} else {						\
+			for (BUN i = 0; i < ncand; i++) {		\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
-				if (is_##TYPE##_nil(p1)) { \
-					if (is_##TYPE##_nil(p2)) { \
-						tbn[i] = TYPE##_nil; \
-						nils = true; \
-					} else { \
-						tbn[i] = p2; \
-					} \
-				} else {	\
+				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
+				if (is_##TYPE##_nil(p1)) {		\
+					if (is_##TYPE##_nil(p2)) {	\
+						tbn[i] = TYPE##_nil;	\
+						nils = true;		\
+					} else {			\
+						tbn[i] = p2;		\
+					}				\
+				} else {				\
 					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
-				}	\
-			} \
-		}	\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -1577,19 +1577,19 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	return NULL;
 }
 
-#define MINMAX_CST_TYPE(TYPE, OP)	\
+#define MINMAX_CST_TYPE(TYPE, OP)					\
 	do {								\
 		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
-		for (BUN i = 0; i < ncand; i++) {	\
-			oid x = canditer_next(&ci) - bhseqbase;	\
-			TYPE p1 = tb[x]; \
-			if (is_##TYPE##_nil(p1)) {	\
-				nils = true;	\
-				tbn[i] = TYPE##_nil; \
-			} else {	\
-				tbn[i] = p1 OP pp2 ? p1 : pp2; \
-			} \
-		}	\
+		for (BUN i = 0; i < ncand; i++) {			\
+			oid x = canditer_next(&ci) - bhseqbase;		\
+			TYPE p1 = tb[x];				\
+			if (is_##TYPE##_nil(p1)) {			\
+				nils = true;				\
+				tbn[i] = TYPE##_nil;			\
+			} else {					\
+				tbn[i] = p1 OP pp2 ? p1 : pp2;		\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -1715,27 +1715,27 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 	return BATcalcmincst(b, v, s);
 }
 
-#define MINMAX_NONIL_CST_TYPE(TYPE, OP)	\
+#define MINMAX_NONIL_CST_TYPE(TYPE, OP)					\
 	do {								\
 		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
-		if (is_##TYPE##_nil(pp2)) { \
-			for (BUN i = 0; i < ncand; i++) {	\
+		if (is_##TYPE##_nil(pp2)) {				\
+			for (BUN i = 0; i < ncand; i++) {		\
 				oid x = canditer_next(&ci) - bhseqbase; \
-				TYPE p1 = tb[x]; \
-				nils |= is_##TYPE##_nil(p1); \
-				tbn[i] = p1; \
-			} \
-		} else {	\
-			for (BUN i = 0; i < ncand; i++) {	\
+				TYPE p1 = tb[x];			\
+				nils |= is_##TYPE##_nil(p1);		\
+				tbn[i] = p1;				\
+			}						\
+		} else {						\
+			for (BUN i = 0; i < ncand; i++) {		\
 				oid x = canditer_next(&ci) - bhseqbase; \
-				TYPE p1 = tb[x]; \
-				if (is_##TYPE##_nil(p1)) { \
-					tbn[i] = pp2; \
-				} else { \
-					tbn[i] = p1 OP pp2 ? p1 : pp2; \
-				} \
-			} \
-		}	\
+				TYPE p1 = tb[x];			\
+				if (is_##TYPE##_nil(p1)) {		\
+					tbn[i] = pp2;			\
+				} else {				\
+					tbn[i] = p1 OP pp2 ? p1 : pp2;	\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -2482,7 +2482,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -2505,7 +2505,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
-				j = canditer_next(ci2) - candoff2; \
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -2531,7 +2531,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
@@ -4357,7 +4357,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -4406,7 +4406,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
@@ -6102,7 +6102,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -6153,7 +6153,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
@@ -6213,7 +6213,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -6264,7 +6264,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -6315,7 +6315,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -6384,7 +6384,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 	oid candoff1, oid candoff2, bool abort_on_error)		\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -6404,7 +6404,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				nils++;					\
 			} else {					\
 				double m = lft[i] * rgt[j];		\
-				dst[k] = (TYPE3) rounddbl(m);	\
+				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
 	} else {							\
@@ -8519,7 +8519,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -8584,7 +8584,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -8659,7 +8659,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 	oid candoff1, oid candoff2, bool abort_on_error)		\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -10831,7 +10831,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -10884,7 +10884,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
-	BUN i = 0, j = 0, ncand = ci1->ncand;						\
+	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
@@ -13820,7 +13820,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
 		i = j = k = 0;						\
-		for (l = 0; l < ncand; l++) {			\
+		for (l = 0; l < ncand; l++) {				\
 			if (incr1)					\
 				i = canditer_next(ci) - seqbase1;	\
 			if (incr2)					\
@@ -14715,7 +14715,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  oid candoff, uint8_t scale1, bool *reduce)	\
 {									\
-	BUN i, nils = 0, ncand = ci->ncand;						\
+	BUN i, nils = 0, ncand = ci->ncand;				\
 	TYPE1 v;							\
 	oid x;								\
 	const TYPE1 div = (TYPE1) scales[scale1];			\
@@ -14723,7 +14723,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1) {						\
-			for (i = 0; i < ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14733,7 +14733,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					dst[i] = (TYPE2) v;		\
 			}						\
 		} else {						\
-			for (i = 0; i < ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14744,7 +14744,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -14783,12 +14783,12 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
 {									\
-	BUN i, nils = 0, ncand = ci->ncand;						\
+	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14804,7 +14804,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14829,12 +14829,12 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
 {									\
-	BUN i, nils = 0, ncand = ci->ncand;						\
+	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14851,7 +14851,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -14893,7 +14893,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			  bool abort_on_error,				\
 			  bool *reduce)					\
 {									\
-	BUN i, ncand = ci->ncand;								\
+	BUN i, ncand = ci->ncand;					\
 	BUN nils = 0;							\
 	TYPE1 v;							\
 	oid x;								\
@@ -14909,7 +14909,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	*reduce = div > 1;						\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1 && mul == 1) {				\
-			for (i = 0; i < ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14928,7 +14928,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				}					\
 			}						\
 		} else if (div == 1) {					\
-			for (i = 0; i < ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14948,7 +14948,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		} else {						\
 			/* mul == 1 */					\
-			for (i = 0; i < ncand; i++) {		\
+			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -14971,10 +14971,10 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
-			if (is_##TYPE1##_nil(v)) { \
+			if (is_##TYPE1##_nil(v)) {			\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
@@ -15006,7 +15006,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  oid candoff, uint8_t scale2, uint8_t precision, \
 			  bool abort_on_error, bool *reduce)		\
 {									\
-	BUN i, nils = 0, ncand = ci->ncand;						\
+	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
 	TYPE1 v;							\
 	const TYPE2 mul = (TYPE2) scales[scale2];			\
@@ -15016,7 +15016,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next_dense(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15038,7 +15038,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {			\
+		for (i = 0; i < ncand; i++) {				\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15063,36 +15063,36 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	return nils;							\
 }
 
-#define convert2bit_impl(TYPE)						\
-static BUN								\
-convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
-		     struct canditer *restrict ci,			\
-		     oid candoff, bool *reduce)				\
-{									\
-	BUN i, nils = 0, ncand = ci->ncand;						\
-	oid x;								\
-									\
-	*reduce = true;							\
-	if (ci->tpe == cand_dense) {					\
+#define convert2bit_impl(TYPE)					\
+static BUN							\
+convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,	\
+		     struct canditer *restrict ci,		\
+		     oid candoff, bool *reduce)			\
+{								\
+	BUN i, nils = 0, ncand = ci->ncand;			\
+	oid x;							\
+								\
+	*reduce = true;						\
+	if (ci->tpe == cand_dense) {				\
 		for (i = 0; i < ncand; i++) {			\
-			x = canditer_next_dense(ci) - candoff;		\
-			if (is_##TYPE##_nil(src[x])) {			\
-				dst[i] = bit_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (bit) (src[x] != 0);		\
-		}							\
-	} else {							\
+			x = canditer_next_dense(ci) - candoff;	\
+			if (is_##TYPE##_nil(src[x])) {		\
+				dst[i] = bit_nil;		\
+				nils++;				\
+			} else					\
+				dst[i] = (bit) (src[x] != 0);	\
+		}						\
+	} else {						\
 		for (i = 0; i < ncand; i++) {			\
-			x = canditer_next(ci) - candoff;		\
-			if (is_##TYPE##_nil(src[x])) {			\
-				dst[i] = bit_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (bit) (src[x] != 0);		\
-		}							\
-	}								\
-	return nils;							\
+			x = canditer_next(ci) - candoff;	\
+			if (is_##TYPE##_nil(src[x])) {		\
+				dst[i] = bit_nil;		\
+				nils++;				\
+			} else					\
+				dst[i] = (bit) (src[x] != 0);	\
+		}						\
+	}							\
+	return nils;						\
 }
 
 #define convertimpl_msk(TYPE)						\
@@ -15158,7 +15158,7 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 		   oid candoff, bool *reduce)				\
 {									\
 	BUN nils = 0;							\
-	BUN k, ncand = ci->ncand;								\
+	BUN k, ncand = ci->ncand;					\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
@@ -15185,7 +15185,7 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 			}						\
 		}							\
 	} else {							\
-		for (k = 0; k < ncand; k++) {			\
+		for (k = 0; k < ncand; k++) {				\
 			oid x = canditer_next(ci) - candoff;		\
 			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 		}							\
