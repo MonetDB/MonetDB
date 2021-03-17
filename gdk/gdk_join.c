@@ -1773,14 +1773,23 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BAT *r2 = r2p ? *r2p : NULL;
 
 	if (l->tsorted || l->trevsorted) {
-		/* determine opportunistic scan window for l */
-		for (nl = lci->ncand, lscan = 4; nl > 0; lscan++)
-			nl >>= 1;
 		equal_order = (l->tsorted && r->tsorted) ||
 			(l->trevsorted && r->trevsorted &&
 			 !BATtvoid(l) && !BATtvoid(r));
 		lordering = l->tsorted && (r->tsorted || !equal_order) ? 1 : -1;
 		rordering = equal_order ? lordering : -lordering;
+		if (!l->tnonil && !nil_matches && !nil_on_miss) {
+			nl = binsearch(NULL, 0, l->ttype, lvals, lvars, lwidth, 0, BATcount(l), nil, lordering, 1);
+			nl = canditer_search(lci, nl + l->hseqbase, true);
+			if (l->tsorted) {
+				canditer_setidx(lci, nl);
+			} else if (l->trevsorted) {
+				lci->ncand = nl;
+			}
+		}
+		/* determine opportunistic scan window for l */
+		for (nl = lci->ncand, lscan = 4; nl > 0; lscan++)
+			nl >>= 1;
 	} else {
 		/* if l not sorted, we will always use binary search
 		 * on r */
@@ -2242,7 +2251,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				/* keyness or r2 can only be assured
 				 * as long as matched values are
 				 * ordered */
-				int ord = rordering * cmp(prev, v);
+				int ord = rordering * cmp(prev, v ? v : nil);
 				if (ord < 0) {
 					/* previous value in l was
 					 * less than current */
@@ -2266,7 +2275,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					}
 				}
 			}
-			prev = v;
+			prev = v ? v : nil;
 		}
 		if (BATcount(r1) > 0) {
 			/* a new, higher value will be inserted into
