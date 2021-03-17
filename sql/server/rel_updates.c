@@ -1099,17 +1099,22 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
 			list *refs = list_append(new_exp_list(sql->sa), (char*) rel_name(res));
+			sql_rel *tables = NULL;
 
 			for (dnode *n = fl->h; n && res; n = n->next) {
 				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0, refs);
 
-				if (fnd)
-					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+				if (!fnd)
+					return NULL;
+				if (fnd && tables)
+					tables = rel_crossproduct(sql->sa, tables, fnd, op_join);
 				else
-					res = fnd;
+					tables = fnd;
 			}
-			if (!res)
+			if (!tables)
 				return NULL;
+			res = rel_crossproduct(sql->sa, res, tables, op_join);
+			set_single(res);
 		}
 		if (opt_where) {
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
