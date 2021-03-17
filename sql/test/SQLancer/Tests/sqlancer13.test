@@ -197,3 +197,19 @@ SELECT t1.c2 FROM t2, t1 WHERE (((((((((t2.c0)^(2))) NOT BETWEEN SYMMETRIC (leas
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c7" TINYINT NOT NULL,"c6" UUID,"c5" TIMESTAMP,"c4" BIGINT)
+
+statement ok
+INSERT INTO "sys"."t2" VALUES (8, NULL, NULL, NULL)
+
+query I rowsort
+SELECT 1 FROM t2 JOIN (SELECT 2) AS sub0 (c0) ON (CASE WHEN CAST(2 AS BOOLEAN) THEN NULL END <> t2.c6)
+----
+
+statement ok
+ROLLBACK
