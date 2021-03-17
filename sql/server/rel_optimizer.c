@@ -1332,7 +1332,19 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 		break;
 	}
-	case e_atom:
+	case e_atom: {
+		list *l = e->f, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_rename(sql, l, f, t);
+			if (!nl)
+				return NULL;
+		}
+		ne = exp_values(sql->sa, nl);
+		break;
+	}
 	case e_psm:
 		return e;
 	}
@@ -2290,7 +2302,19 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 		return exp_propagate(sql->sa, ne, e);
 	}
-	case e_atom:
+	case e_atom: {
+		list *l = e->f, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_push_down_prj(sql, l, f, t);
+			if (!nl)
+				return NULL;
+		}
+		ne = exp_values(sql->sa, nl);
+		return exp_propagate(sql->sa, ne, e);
+	}
 	case e_psm:
 		if (e->type == e_atom && e->f) /* value list */
 			return NULL;
@@ -6289,7 +6313,18 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 		else
 			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}
-	case e_atom:
+	case e_atom: {
+		list *l = e->f, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_use_consts(sql, l, consts);
+			if (!nl)
+				return NULL;
+		}
+		return exp_values(sql->sa, nl);
+	}
 	case e_psm:
 		return e;
 	}
