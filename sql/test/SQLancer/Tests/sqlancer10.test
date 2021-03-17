@@ -71,8 +71,6 @@ sql.mvc
 1
 sql.tid
 1
-sql.bind
-1
 algebra.project
 5
 algebra.thetaselect
@@ -252,11 +250,9 @@ query T rowsort
 SELECT t2.c1 FROM t0, t2 WHERE CAST(t0.c2 AS char(32)) > t2.c1
 ----
 
-
 query R rowsort
 SELECT t2.c4 FROM t0, t2 WHERE ((CAST(t0.c2 AS char(32)))>(CASE WHEN TRUE THEN t2.c1 END))
 ----
-
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(((CAST(t0.c2 AS char(32)))>(CASE WHEN TRUE THEN t2.c1 END)) AS INT) as count FROM t0, t2) as res
@@ -281,7 +277,6 @@ INSERT INTO "t1" VALUES (NULL, ''),(NULL, 'E5E0'),(NULL, '396B34AC'),(NULL, '68A
 query T rowsort
 select case t0.c1 = any(select 2 from t1) when false then 'a' when true then 'b' end from t0
 ----
-
 
 statement ok
 ROLLBACK
@@ -387,7 +382,7 @@ PLAN SELECT (SELECT c0 FROM t0) FROM t0
 ----
 project (
 | single left outer join (
-| | table("sys"."t0") [ "t0"."c0" NOT NULL ] COUNT ,
+| | table("sys"."t0") [ "t0"."%TID%" NOT NULL ] COUNT ,
 | | project (
 | | | table("sys"."t0") [ "t0"."c0" NOT NULL ] COUNT 
 | | ) [ "t0"."c0" NOT NULL as "%1"."%1" ]
@@ -471,19 +466,19 @@ TRUE
 statement ok
 ROLLBACK
 
-query I rowsort
+query R rowsort
 SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL
 ----
-0
+0.000
 
-query I rowsort
+query R rowsort
 SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL HAVING ((SELECT TRUE)) = FALSE
 UNION ALL
 SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL HAVING NOT (((SELECT TRUE)) = FALSE)
 UNION ALL
 SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL HAVING (((SELECT TRUE)) = FALSE) IS NULL
 ----
-0
+0.000
 
 statement ok
 START TRANSACTION
@@ -521,7 +516,6 @@ WHERE FALSE) UNION DISTINCT (SELECT 0.9873177792769359 FROM t1 AS l1t1, t2 AS l1
 GROUP BY CAST(least(-973138727, '1') AS BIGINT)
 ----
 
-
 statement ok
 ROLLBACK
 
@@ -552,11 +546,9 @@ query I rowsort
 SELECT 1 FROM t2, t1 GROUP BY (SELECT 1 FROM t2 AS l1t2 WHERE FALSE) HAVING ((count(*))>=((SELECT DISTINCT 3 FROM t1 AS l2t1 WHERE FALSE)))
 ----
 
-
 query I rowsort
 SELECT 1 FROM t2, t1 GROUP BY (SELECT 1 FROM t2 AS l1t2 WHERE FALSE) HAVING NOT (((count(*))>=((SELECT DISTINCT 3 FROM t1 AS l2t1 WHERE FALSE))))
 ----
-
 
 query I rowsort
 SELECT 1 FROM t2, t1 GROUP BY (SELECT 1 FROM t2 AS l1t2 WHERE FALSE) HAVING (((count(*))>=((SELECT DISTINCT 3 FROM t1 AS l2t1 WHERE FALSE)))) IS NULL
@@ -578,7 +570,6 @@ INSERT INTO "t2" VALUES (0), (5), (-463833803)
 query I rowsort
 select 1 from t2 where 8 = any(select 0.8673676855585512601720665770699270069599151611328125 from t2) and (values (true))
 ----
-
 
 statement ok
 ROLLBACK
@@ -758,14 +749,12 @@ query I rowsort
 SELECT 1 FROM t1 RIGHT OUTER JOIN (SELECT 2) AS sub0 ON least((SELECT true WHERE FALSE), true) WHERE NOT EXISTS ((SELECT 'b' WHERE FALSE) UNION ALL (SELECT 'a'))
 ----
 
-
-query T rowsort
+query I rowsort
 SELECT ALL t1.c1 FROM t0, t1 RIGHT OUTER JOIN ((SELECT DISTINCT ((least(6, 529595761))-(least(4, 1032827696))), least(-859534381, 0.01807380825433357873777140412130393087863922119140625)
 FROM t0, t1 WHERE t0.c1 GROUP BY t1.c3) EXCEPT ALL (SELECT ALL - (COALESCE(2, 0.78330755, 0.6467953977457632230851913845981471240520477294921875, 1)), - (0.24474563528854787) FROM t0, t1 WHERE t1.c3)) AS sub0 ON 
 least(((SELECT ALL l2t0.c1 FROM t0 AS l2t0, t2 AS l2t2, t1 AS l2t1 WHERE FALSE) UNION ALL (SELECT DISTINCT l2t0.c1 FROM t0 AS l2t0 WHERE l2t0.c1)), (t1.c3) BETWEEN ASYMMETRIC (t1.c1) AND (t1.c1)) WHERE
 NOT EXISTS ((SELECT DISTINCT NULLIF('0.9825037007815074', 'sqR]&'), 20 WHERE FALSE) UNION ALL (SELECT DISTINCT NULLIF(l1t0.c3, l1t0.c3), - (4) FROM t0 AS l1t0 WHERE l1t0.c1))
 ----
-
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS ((SELECT DISTINCT NULLIF('0.9825037007815074', 'sqR]&'), 20 WHERE FALSE) UNION ALL (SELECT DISTINCT NULLIF(l1t0.c3, l1t0.c3), - (4) FROM
@@ -835,7 +824,7 @@ SELECT 1 FROM t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c
 ----
 132 values hashing to 421ece02fd1d5b93ec74b250381a9e64
 
-query T rowsort
+query R rowsort
 SELECT t1.c3 FROM t2, t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0)))
 ----
 120 values hashing to 879a831ae9fcb0a40db88988eb6e428b
