@@ -239,12 +239,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	n = BATcount(b1);													\
-	if (n != BATcount(b2)) {											\
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  "inputs not the same size");								\
-		goto bailout;													\
-	}																	\
 	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\

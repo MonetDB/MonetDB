@@ -937,10 +937,6 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (BATcount(left) != BATcount(right)) {
-		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
-	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(ls = BATdescriptor(*sid1))) ||
 		(sid2 && !is_bat_nil(*sid2) && !(rs = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
