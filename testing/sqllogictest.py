@@ -754,3 +754,5 @@ if __name__ == '__main__':
         except BrokenPipeError:
             break
     sql.close()
+    if sql.seenerr:
+        sys.exit(1)
