@@ -1,5 +1,6 @@
 #include "monetdb_config.h"
 #include "copybinary.h"
+#include "copybinary_support.h"
 
 void gen_timestamps(FILE *f, bool byteswap, long nrecs);
 
