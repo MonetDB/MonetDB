@@ -37,3 +37,14 @@ UPDATE t1 SET c2 = TIME '01:00:00' WHERE t1.c2 + CASE 1 WHEN 2 THEN INTERVAL '3'
 statement ok
 DROP TABLE t1
 
+statement ok
+CREATE TABLE t1(c1 boolean, c2 tinyint)
+
+statement ok
+INSERT INTO t1(c2) VALUES(6), (2)
+
+statement error
+ALTER TABLE t1 ALTER c1 SET NOT NULL
+
+statement ok
+DROP TABLE t1
