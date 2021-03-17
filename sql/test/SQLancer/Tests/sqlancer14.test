@@ -48,3 +48,36 @@ ALTER TABLE t1 ALTER c1 SET NOT NULL
 
 statement ok
 DROP TABLE t1
+
+statement ok
+CREATE TABLE t0(c0 boolean, c1 boolean, c2 INTERVAL SECOND)
+
+statement ok
+CREATE TABLE t1(c0 boolean, c1 boolean, c2 INTERVAL SECOND)
+
+statement ok
+ALTER TABLE t1 DROP c2
+
+statement ok
+ALTER TABLE t1 ADD COLUMN c2 bigint
+
+statement ok
+ALTER TABLE t0 DROP c2
+
+statement ok
+ALTER TABLE t1 ADD PRIMARY KEY(c2)
+
+statement ok
+ALTER TABLE t0 ADD COLUMN c2 int
+
+statement ok
+ALTER TABLE t0 ADD FOREIGN KEY (c2) REFERENCES t1(c2) MATCH SIMPLE
+
+statement ok
+UPDATE t1 SET c2 = 9 WHERE t1.c2 BETWEEN 9 AND 2
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
