@@ -21,6 +21,9 @@ stderr of test 'update-from-count.Bug-7079` in directory 'sql/test/BugTracker-20
 # 10:42:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-72939" "--port=36380"
 # 10:42:14 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-611992/.s.monetdb.32403
+QUERY = update testme set a = "y".a from testme "y", testme "z";
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 10:42:14 >  
 # 10:42:14 >  "Done."

@@ -26,8 +26,6 @@ stdout of test 'update-from-count.Bug-7079` in directory 'sql/test/BugTracker-20
 #CREATE TABLE testme (a int, b varchar(32));
 #insert into testme values (1, 'a'), (2, 'b'), (3, 'c');
 [ 3	]
-#update testme set a = "y".a from testme "y", testme "z";
-[ 3	]
 #ROLLBACK;
 
 # 10:42:14 >  
