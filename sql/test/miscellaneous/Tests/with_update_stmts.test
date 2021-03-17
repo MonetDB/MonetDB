@@ -37,13 +37,9 @@ a
 2
 a
 
-statement error
-with "v1" as (select 1 as "c1")
-     delete from "testme" where "testme"."aa" = "v1"."c1"
-
 statement ok
 with "v1" as (select 1 as "c1")
-     delete from "testme" using "v1" where "testme"."aa" = "v1"."c1"
+     delete from "testme" where "testme"."aa" in (select "c1" from "v1")
 
 statement error
 with "v1" as (select 0 as "c1")
@@ -52,10 +48,6 @@ with "v1" as (select 0 as "c1")
 statement error
 with "v1" as (select 0 as "c1")
      delete from "testme" where "testme"."aa" = "v1"."c1"
-
-statement ok
-with "v1" as (select 0 as "c1")
-     delete from "testme" using "v1" where "testme"."aa" = "v1"."c1"
 
 query IT rowsort
 select "aa", "bb" from "testme"
@@ -69,7 +61,7 @@ with "v1" as (select 2 as "c1")
 
 statement ok
 with "v1" as (select 2 as "c1")
-     update "testme" set "aa" = 3 from "v1" where "testme"."aa" = "v1"."c1"
+     update "testme" set "aa" = 3 where "testme"."aa" in (select "c1" from "v1")
 
 query IT rowsort
 select "aa", "bb" from "testme"
@@ -90,9 +82,6 @@ select "aa", "bb" from "testme"
 zzz
 3
 a
-
-statement ok
-delete from "testme" using "testme" "y", "testme" "z";
 
 statement ok
 drop table "testme"

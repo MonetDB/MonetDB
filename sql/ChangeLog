@@ -5,14 +5,9 @@
 - Use of CTEs inside UPDATE and DELETE statements are now more
   restrict. Previously they could be used without any extra specification
   in the query (eg. with "v1"("c1") as (...) delete from "t"
-  where "t"."c1" = "v1"."c1"), however this is not conformant with the
+  where "t"."c1" = "v1"."c1"), however this was not conformant with the
   SQL standard. In order to use them, they must be specified in the FROM
-  clause in UPDATE statments or the newly added USING clause in DELETE
-  statments:
-  [ WITH cte_list ] DELETE FROM table [ [AS] alias ]
-  [ USING using_item ] [ WHERE search_condition ]
-  The above example should be rewritten as: with "v1"("c1") as (...)
-  delete from "t" using "v1" where "t"."c1" = "v1"."c1"
+  clause in UPDATE statments or inside a subquery.
 
 * Mon Nov 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added 'schema path' property to user, specifying a list of schemas
