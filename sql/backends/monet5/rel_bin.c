@@ -4703,6 +4703,8 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 			nulls = 1;
 		}
 		col = stmt_col(be, fc->c, rows, rows->partition);
+		if (!upd || (upd = check_types(be, &fc->c->type, upd, type_equal)) == NULL)
+			return NULL;
 		list_append(lje, upd);
 		list_append(rje, col);
 	}
