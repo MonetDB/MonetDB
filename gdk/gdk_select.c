@@ -339,10 +339,22 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		assert(imprints);					\
 		*algo = parent ? "parent imprints select " #TEST " (canditer_next" #ISDENSE ")" : "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
-		case 8:  checkMINMAX(8, TYPE); impsmask(ISDENSE,TEST,8); break; \
-		case 16: checkMINMAX(16, TYPE); impsmask(ISDENSE,TEST,16); break; \
-		case 32: checkMINMAX(32, TYPE); impsmask(ISDENSE,TEST,32); break; \
-		case 64: checkMINMAX(64, TYPE); impsmask(ISDENSE,TEST,64); break; \
+		case 8:							\
+			checkMINMAX(8, TYPE);				\
+			impsmask(ISDENSE,TEST,8);			\
+			break;						\
+		case 16:						\
+			checkMINMAX(16, TYPE);				\
+			impsmask(ISDENSE,TEST,16);			\
+			break;						\
+		case 32:						\
+			checkMINMAX(32, TYPE);				\
+			impsmask(ISDENSE,TEST,32);			\
+			break;						\
+		case 64:						\
+			checkMINMAX(64, TYPE);				\
+			impsmask(ISDENSE,TEST,64);			\
+			break;						\
 		default: assert(0); break;				\
 		}							\
 	} while (false)

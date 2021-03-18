@@ -21,89 +21,91 @@
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 
-#define BINSIZE(B, FUNC, T) do {		\
-	switch (B) {				\
+#define BINSIZE(B, FUNC, T) \
+	do {					\
+		switch (B) {			\
 		case 8: FUNC(T,8); break;	\
 		case 16: FUNC(T,16); break;	\
 		case 32: FUNC(T,32); break;	\
 		case 64: FUNC(T,64); break;	\
 		default: assert(0); break;	\
-	}					\
-} while (0)
+		}				\
+	} while (0)
 
 
 #define GETBIN(Z,X,B)				\
-do {						\
-	int _i;					\
-	Z = 0;					\
-	for (_i = 1; _i < B; _i++)		\
-		Z += ((X) >= bins[_i]);		\
-} while (0)
+	do {					\
+		int _i;				\
+		Z = 0;				\
+		for (_i = 1; _i < B; _i++)	\
+			Z += ((X) >= bins[_i]);	\
+	} while (0)
 
 
 #define IMPS_CREATE(TYPE,B)						\
-do {									\
-	uint##B##_t mask, prvmask;					\
-	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
-	const TYPE *restrict col = (TYPE *) Tloc(b, 0);			\
-	const TYPE *restrict bins = (TYPE *) inbins;			\
-	const BUN page = IMPS_PAGE / sizeof(TYPE);			\
-	prvmask = 0;							\
-	for (i = 0; i < b->batCount; ) {				\
-		const BUN lim = MIN(i + page, b->batCount);		\
-		/* new mask */						\
-		mask = 0;						\
-		/* build mask for all BUNs in one PAGE */		\
-		for ( ; i < lim; i++) {					\
-			register const TYPE val = col[i];		\
-			GETBIN(bin,val,B);				\
-			mask = IMPSsetBit(B,mask,bin);			\
-			if (!is_##TYPE##_nil(val)) { /* do not count nils */ \
-				if (!cnt_bins[bin]++) {			\
-					min_bins[bin] = max_bins[bin] = i; \
-				} else {				\
-					if (val < col[min_bins[bin]])	\
-						min_bins[bin] = i;	\
-					if (val > col[max_bins[bin]])	\
-						max_bins[bin] = i;	\
+	do {								\
+		uint##B##_t mask, prvmask;				\
+		uint##B##_t *restrict im = (uint##B##_t *) imps;	\
+		const TYPE *restrict col = (TYPE *) Tloc(b, 0);		\
+		const TYPE *restrict bins = (TYPE *) inbins;		\
+		const BUN page = IMPS_PAGE / sizeof(TYPE);		\
+		prvmask = 0;						\
+		for (i = 0; i < b->batCount; ) {			\
+			const BUN lim = MIN(i + page, b->batCount);	\
+			/* new mask */					\
+			mask = 0;					\
+			/* build mask for all BUNs in one PAGE */	\
+			for ( ; i < lim; i++) {				\
+				const TYPE val = col[i];		\
+				GETBIN(bin,val,B);			\
+				mask = IMPSsetBit(B,mask,bin);		\
+				if (!is_##TYPE##_nil(val)) { /* do not count nils */ \
+					if (!cnt_bins[bin]++) {		\
+						/* first in the bin */	\
+						min_bins[bin] = max_bins[bin] = i; \
+					} else {			\
+						if (val < col[min_bins[bin]]) \
+							min_bins[bin] = i; \
+						if (val > col[max_bins[bin]]) \
+							max_bins[bin] = i; \
+					}				\
 				}					\
 			}						\
-		}							\
-		/* same mask as previous and enough count to add */	\
-		if ((prvmask == mask) && (dcnt > 0) &&			\
-		    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
-			/* not a repeat header */			\
-			if (!dict[dcnt-1].repeat) {			\
-				/* if compressed */			\
-				if (dict[dcnt-1].cnt > 1) {		\
-					/* uncompress last */		\
-					dict[dcnt-1].cnt--;		\
-					/* new header */		\
+			/* same mask as previous and enough count to add */ \
+			if ((prvmask == mask) && (dcnt > 0) &&		\
+			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
+				/* not a repeat header */		\
+				if (!dict[dcnt-1].repeat) {		\
+					/* if compressed */		\
+					if (dict[dcnt-1].cnt > 1) {	\
+						/* uncompress last */	\
+						dict[dcnt-1].cnt--;	\
+						/* new header */	\
+						dict[dcnt].cnt = 1;	\
+						dict[dcnt].flags = 0;	\
+						dcnt++;			\
+					}				\
+					/* set repeat */		\
+					dict[dcnt-1].repeat = 1;	\
+				}					\
+				/* increase cnt */			\
+				dict[dcnt-1].cnt++;			\
+			} else { /* new mask (or run out of header count) */ \
+				prvmask=mask;				\
+				im[icnt] = mask;			\
+				icnt++;					\
+				if ((dcnt > 0) && !(dict[dcnt-1].repeat) && \
+				    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) { \
+					dict[dcnt-1].cnt++;		\
+				} else {				\
 					dict[dcnt].cnt = 1;		\
+					dict[dcnt].repeat = 0;		\
 					dict[dcnt].flags = 0;		\
 					dcnt++;				\
 				}					\
-				/* set repeat */			\
-				dict[dcnt-1].repeat = 1;		\
-			}						\
-			/* increase cnt */				\
-			dict[dcnt-1].cnt++;				\
-		} else { /* new mask (or run out of header count) */	\
-			prvmask=mask;					\
-			im[icnt] = mask;				\
-			icnt++;						\
-			if ((dcnt > 0) && !(dict[dcnt-1].repeat) &&	\
-			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
-				dict[dcnt-1].cnt++;			\
-			} else {					\
-				dict[dcnt].cnt = 1;			\
-				dict[dcnt].repeat = 0;			\
-				dict[dcnt].flags = 0;			\
-				dcnt++;					\
 			}						\
 		}							\
-	}								\
-} while (0)
+	} while (0)
 
 static void
 imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
@@ -162,25 +164,25 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 #endif
 
 #define FILL_HISTOGRAM(TYPE)						\
-do {									\
-	BUN k;								\
-	TYPE *restrict s = (TYPE *) Tloc(s4, 0);			\
-	TYPE *restrict h = imprints->bins;				\
-	if (cnt < 64-1) {						\
-		TYPE max = GDK_##TYPE##_max;				\
-		for (k = 0; k < cnt; k++)				\
-			h[k] = s[k];					\
-		while (k < (BUN) imprints->bits)			\
-			h[k++] = max;					\
-		CLRMEM();						\
-	} else {							\
-		double y, ystep = (double) cnt / (64 - 1);		\
-		for (k = 0, y = 0; (BUN) y < cnt; y += ystep, k++)	\
-			h[k] = s[(BUN) y];				\
-		if (k == 64 - 1) /* there is one left */		\
-			h[k] = s[cnt - 1];				\
-	}								\
-} while (0)
+	do {								\
+		BUN k;							\
+		TYPE *restrict s = (TYPE *) Tloc(s4, 0);		\
+		TYPE *restrict h = imprints->bins;			\
+		if (cnt < 64-1) {					\
+			TYPE max = GDK_##TYPE##_max;			\
+			for (k = 0; k < cnt; k++)			\
+				h[k] = s[k];				\
+			while (k < (BUN) imprints->bits)		\
+				h[k++] = max;				\
+			CLRMEM();					\
+		} else {						\
+			double y, ystep = (double) cnt / (64 - 1);	\
+			for (k = 0, y = 0; (BUN) y < cnt; y += ystep, k++) \
+				h[k] = s[(BUN) y];			\
+			if (k == 64 - 1) /* there is one left */	\
+				h[k] = s[cnt - 1];			\
+		}							\
+	} while (0)
 
 /* Check whether we have imprints on b (and return true if we do).  It
  * may be that the imprints were made persistent, but we hadn't seen
@@ -556,10 +558,10 @@ BATimprints(BAT *b)
 }
 
 #define getbin(TYPE,B)				\
-do {						\
-	register const TYPE val = * (TYPE *) v;	\
-	GETBIN(ret,val,B);			\
-} while (0)
+	do {					\
+		const TYPE val = * (TYPE *) v;	\
+		GETBIN(ret,val,B);		\
+	} while (0)
 
 int
 IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict v)
@@ -567,50 +569,43 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 	int ret = -1;
 
 	switch (tpe) {
-	case TYPE_bte:
-	{
+	case TYPE_bte: {
 		const bte *restrict bins = (bte *) inbins;
 		BINSIZE(bits, getbin, bte);
-	}
 		break;
-	case TYPE_sht:
-	{
+	}
+	case TYPE_sht: {
 		const sht *restrict bins = (sht *) inbins;
 		BINSIZE(bits, getbin, sht);
-	}
 		break;
-	case TYPE_int:
-	{
+	}
+	case TYPE_int: {
 		const int *restrict bins = (int *) inbins;
 		BINSIZE(bits, getbin, int);
-	}
 		break;
-	case TYPE_lng:
-	{
+	}
+	case TYPE_lng: {
 		const lng *restrict bins = (lng *) inbins;
 		BINSIZE(bits, getbin, lng);
-	}
 		break;
+	}
 #ifdef HAVE_HGE
-	case TYPE_hge:
-	{
+	case TYPE_hge: {
 		const hge *restrict bins = (hge *) inbins;
 		BINSIZE(bits, getbin, hge);
-	}
 		break;
+	}
 #endif
-	case TYPE_flt:
-	{
+	case TYPE_flt: {
 		const flt *restrict bins = (flt *) inbins;
 		BINSIZE(bits, getbin, flt);
-	}
 		break;
-	case TYPE_dbl:
-	{
+	}
+	case TYPE_dbl: {
 		const dbl *restrict bins = (dbl *) inbins;
 		BINSIZE(bits, getbin, dbl);
-	}
 		break;
+	}
 	default:
 		assert(0);
 		(void) inbins;
