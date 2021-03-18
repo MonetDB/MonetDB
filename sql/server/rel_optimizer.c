@@ -887,8 +887,8 @@ order_joins(visitor *v, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables
 		 * Should be pushed up to extra selection.
 		 * */
-		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) /*||
-		   (cje->type == e_cmp && cje->f == NULL)*/) {
+		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+		   (cje->type == e_cmp && cje->f == NULL)) {
 			l = find_one_rel(rels, cje->l);
 			r = find_one_rel(rels, cje->r);
 		}
@@ -1798,7 +1798,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 }
 
 static bool
-check_projection_on_foreignside(sql_rel *r, list *pexps, int fk_left) 
+check_projection_on_foreignside(sql_rel *r, list *pexps, int fk_left)
 {
 	/* projection columns from the foreign side */
 	if (list_empty(pexps))
