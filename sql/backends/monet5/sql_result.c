@@ -235,8 +235,8 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	return (ssize_t) (s - *buf);
 }
 
-static int
-STRwidth(const char *s)
+static inline int
+STRwidth(const char *restrict s)
 {
 	int len = 0;
 	int c;
@@ -616,7 +616,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		int slen;
 
 		s = c->data;
-		slen = str_utf8_length((str) s);
+		slen = strNil(s) ? int_nil : UTF8_strlen(s);
 		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
 			len = STRwidth(c->data);
 			if (len > (ssize_t) col->type.digits)

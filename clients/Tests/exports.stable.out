@@ -1350,7 +1350,6 @@ const char *stoptraceRef;
 void strAfterCall(ValPtr v, ValPtr bak);
 void strBeforeCall(ValPtr v, ValPtr bak);
 const char *strRef;
-int str_utf8_length(str s);
 const char *streamsRef;
 const char *subavgRef;
 const char *subcountRef;

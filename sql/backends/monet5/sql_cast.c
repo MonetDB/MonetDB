@@ -175,7 +175,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (from_str) {
 		r = (str) p;
-		if (!strNil(r) && digits > 0 && str_utf8_length(r) > digits)
+		if (digits > 0 && !strNil(r) && UTF8_strlen(r) > digits)
 			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
 		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
@@ -195,9 +195,9 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define SQLstr_cast_str(v, len) \
-	if (len > 0 && str_utf8_length(v) > len) { \
-		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len); \
+#define SQLstr_cast_str(v, digits) \
+	if (digits > 0 && UTF8_strlen(v) > digits) { \
+		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits); \
 		goto bailout; \
 	}
 

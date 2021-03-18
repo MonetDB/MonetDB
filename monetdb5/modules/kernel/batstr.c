@@ -76,7 +76,7 @@ str_prefix(str *buf, size_t *buflen, str s, int l)
 }
 
 static str
-do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(str))
+do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char *restrict))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
@@ -142,13 +142,13 @@ bailout:
 static str
 STRbatLength(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_int(cntxt, mb, stk, pci, "batstr.length", str_length);
+	return do_batstr_int(cntxt, mb, stk, pci, "batstr.length", UTF8_strlen);
 }
 
 static str
 STRbatBytes(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_int(cntxt, mb, stk, pci, "batstr.bytes", str_nbytes);
+	return do_batstr_int(cntxt, mb, stk, pci, "batstr.bytes", str_strlen);
 }
 
 static str

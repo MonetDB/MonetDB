@@ -2903,38 +2903,6 @@ struct UTF8_lower_upper {
 static BAT *UTF8_toUpperFrom = NULL, *UTF8_toUpperTo = NULL,
 	*UTF8_toLowerFrom = NULL, *UTF8_toLowerTo = NULL;
 
-#ifndef NDEBUG
-static void
-UTF8_assert(const char *s)
-{
-	int c;
-
-	if (s == NULL)
-		return;
-	if (*s == '\200' && s[1] == '\0')
-		return;					/* str_nil */
-	while ((c = *s++) != '\0') {
-		if ((c & 0x80) == 0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xE0) == 0xC0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF0) == 0xE0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF8) == 0xF0)
-			continue;
-		assert(0);
-	}
-}
-#else
-#define UTF8_assert(s)		((void) 0)
-#endif
-
 static str
 STRprelude(void *ret)
 {
@@ -3106,22 +3074,6 @@ STRepilogue(void *ret)
 #define UTF8_CHARLEN(UC) \
 	((UC) <= 0x7F ? 1 : (UC) <= 0x7FF ? 2 : (UC) <= 0xFFFF ? 3 : 4)
 //	(1 + ((UC) > 0x7F) + ((UC) > 0x7FF) + ((UC) > 0xFFFF))
-
-static inline size_t
-UTF8_strlen(const char *s) /* This function assumes, s is never nil */
-{
-	size_t pos = 0;
-
-	UTF8_assert(s);
-	assert(!strNil(s));
-
-	while (*s) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	return pos;
-}
 
 static inline int
 UTF8_strpos(const char *s, const char *end)
@@ -3347,45 +3299,23 @@ STRtostr(str *res, const str *src)
 	return MAL_SUCCEED;
 }
 
-int
-str_length(str s)
-{
-	size_t l = UTF8_strlen(s);
-	assert(l < INT_MAX);
-	if (l > INT_MAX)
-		l = INT_MAX;
-	return (int) l;
-}
-
 static str
 STRLength(int *res, const str *arg1)
 {
 	str s = *arg1;
 
-	*res = strNil(s) ? int_nil : str_length(s);
+	*res = strNil(s) ? int_nil : UTF8_strlen(s);
 	return MAL_SUCCEED;
 }
 
-int
-str_utf8_length(str s)
-{
-	return strNil(s) ? int_nil : str_length(s);
-}
 
-int
-str_nbytes(str s)
-{
-	size_t l = strlen(s);
-	assert(l < INT_MAX);
-	return (int) l;
-}
 
 static str
 STRBytes(int *res, const str *arg1)
 {
 	str s = *arg1;
 
-	*res = strNil(s) ? int_nil : str_nbytes(s);
+	*res = strNil(s) ? int_nil : str_strlen(s);
 	return MAL_SUCCEED;
 }
 
@@ -3393,10 +3323,7 @@ str
 str_tail(str *buf, size_t *buflen, str s, int off)
 {
 	if (off < 0) {
-		size_t len = UTF8_strlen(s);
-
-		assert(len <= INT_MAX);
-		off += (int) len;
+		off += UTF8_strlen(s);
 		if (off < 0)
 			off = 0;
 	}
@@ -3440,11 +3367,7 @@ str_Sub_String(str *buf, size_t *buflen, str s, int off, int l)
 	size_t len;
 
 	if (off < 0) {
-		len = UTF8_strlen(s);
-		assert(len <= INT_MAX);
-		if (len > INT_MAX)
-			len = INT_MAX;
-		off += (int) len;
+		off += UTF8_strlen(s);
 		if (off < 0) {
 			l += off;
 			off = 0;
@@ -4148,7 +4071,7 @@ pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left,
 	if (len < 0)
 		len = 0;
 
-	slen = UTF8_strlen(s);
+	slen = (size_t) UTF8_strlen(s);
 	if (slen > (size_t) len) {
 		/* truncate */
 		pad = UTF8_strtail(s, len);
@@ -4159,7 +4082,7 @@ pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left,
 		return MAL_SUCCEED;
 	}
 
-	padlen = UTF8_strlen(pad);
+	padlen = (size_t) UTF8_strlen(pad);
 	if (slen == (size_t) len || padlen == 0) {
 		/* nothing to do (no padding if there is no pad string) */
 		slen = strlen(s) + 1;
@@ -4598,18 +4521,19 @@ str
 str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
 {
 	str v;
-	size_t l1 = UTF8_strlen(s), nextlen;
+	int l1 = UTF8_strlen(s);
+	size_t nextlen;
 
 	if (l < 0)
 		throw(MAL, "str.insert", SQLSTATE(42000) "The number of characters for insert function must be non negative");
 	if (strt < 0) {
-		if ((size_t) -strt <= l1)
-			strt = (int) (l1 + strt);
+		if (-strt <= l1)
+			strt = l1 + strt;
 		else
 			strt = 0;
 	}
-	if ((size_t) strt > l1)
-		strt = (int) l1;
+	if (strt > l1)
+		strt = l1;
 
 	nextlen = strlen(s) + strlen(s2) + 1;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, "str.insert");
@@ -4617,7 +4541,7 @@ str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
 	if (strt > 0)
 		v = UTF8_strncpy(v, s, strt);
 	strcpy(v, s2);
-	if (strt + l < (int) l1)
+	if (strt + l < l1)
 		strcat(v, UTF8_offset((char *)s, strt + l));
 	return MAL_SUCCEED;
 }
