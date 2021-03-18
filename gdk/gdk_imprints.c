@@ -233,8 +233,7 @@ BATcheckimprints(BAT *b)
 					    st.st_size >= (off_t) (imprints->imprints.size =
 								   imprints->imprints.free =
 								   64 * b->twidth +
-								   64 * 2 * SIZEOF_OID +
-								   64 * SIZEOF_BUN +
+								   64 * 3 * SIZEOF_BUN +
 								   pages * ((bte) hdata[0] / 8) +
 								   hdata[2] * sizeof(cchdc_t) +
 								   sizeof(uint64_t) /* padding for alignment */
@@ -458,8 +457,7 @@ BATimprints(BAT *b)
 		    HEAPalloc(&imprints->imprints,
 			      IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T + /* extra info */
 			      64 * b->twidth + /* bins */
-			      64 * 2 * SIZEOF_OID + /* {min,max}_bins */
-			      64 * SIZEOF_BUN +	    /* cnt_bins */
+			      64 * 3 * SIZEOF_BUN + /* {min,max,cnt}_bins */
 			      pages * (imprints->bits / 8) + /* imps */
 			      sizeof(uint64_t) + /* padding for alignment */
 			      pages * sizeof(cchdc_t), /* dict */
