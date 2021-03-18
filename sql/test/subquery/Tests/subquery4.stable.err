@@ -254,11 +254,11 @@ ERROR = !CALL: subqueries not allowed inside CALL statements
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17674/.s.monetdb.33889
 QUERY = SELECT row_number(1) OVER () FROM integers i1; --error, row_number(int) doesn't exist
-ERROR = !SELECT: window function 'row_number(any)' not found
+ERROR = !SELECT: no such window function 'row_number(any)'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17674/.s.monetdb.33889
 QUERY = SELECT ntile(1,1) OVER () FROM integers i1; --error, ntile(int,int) doesn't exist
-ERROR = !SELECT: window function 'ntile(any, tinyint)' not found
+ERROR = !SELECT: no such window function 'ntile(any, tinyint)'
 CODE  = 42000
 
 # 15:41:18 >  

@@ -1,0 +1,34 @@
+stdout of test 'update-from-count.Bug-7079` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 10:42:13 >  
+# 10:42:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=36380" "--set" "mapi_usock=/var/tmp/mtest-72939/.s.monetdb.36380" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_c=true"
+# 10:42:13 >  
+
+# MonetDB 5 server v11.39.14 (hg id: 6f2834d3a3a1)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2021', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.493 GiB available main-memory of which we use 12.627 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2021 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:36380/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-72939/.s.monetdb.36380
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 10:42:14 >  
+# 10:42:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-72939" "--port=36380"
+# 10:42:14 >  
+
+#START TRANSACTION;
+#CREATE TABLE testme (a int, b varchar(32));
+#insert into testme values (1, 'a'), (2, 'b'), (3, 'c');
+[ 3	]
+#ROLLBACK;
+
+# 10:42:14 >  
+# 10:42:14 >  "Done."
+# 10:42:14 >  
+
