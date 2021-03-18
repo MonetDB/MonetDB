@@ -396,6 +396,32 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 	return r;
 }
 
+static InstrPtr
+mat_assign(MalBlkPtr mb, InstrPtr p, matlist_t *ml)
+{
+	InstrPtr r = NULL;
+	mat_t *mat = ml->v;
+
+	for(int i = 0; i<p->retc; i++) {
+		int res = is_a_mat(getArg(p,i), ml);
+		int m = is_a_mat(getArg(p,p->retc+i), ml);
+		assert(res<0 && m >= 0);
+
+		if((r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc)) == NULL)
+			return NULL;
+		getArg(r, 0) = getArg(p,i);
+		for(int k=1; k < mat[m].mi->argc; k++) {
+			/* reuse inputs of old mat */
+			r = addArgument(mb, r, getArg(mat[m].mi, k));
+			(void)setPartnr(ml, -1, getArg(mat[m].mi, k), k);
+		}
+		if (mat_add(ml, r, mat_none, getFunctionId(p))) {
+			freeInstruction(r);
+			return NULL;
+		}
+	}
+	return r;
+}
 
 static InstrPtr
 mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
@@ -405,6 +431,8 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n = 0;
 	InstrPtr r = NULL, q;
 	mat_t *mat = ml->v;
+
+	assert(!is_assign);
 
 	assert (p->retc == 1);
 
@@ -2222,6 +2250,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   	n=is_a_mat(getArg(p,2), &ml);
 			o=is_a_mat(getArg(p,3), &ml);
 			if(mat_setop(mb, p, &ml, m, n, o)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+
+		if (match == p->retc && p->argc == (p->retc*2) && getFunctionId(p) == NULL) {
+			if ((r = mat_assign(mb, p, &ml)) == NULL) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
