@@ -2432,33 +2432,36 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 						}
 					} else {
 						if (l->card != CARD_ATOM || !exp_is_atom(l)) {
-							left_reference += rel_find_exp(rel->l, l) != NULL;
-							right_reference += rel_find_exp(rel->r, l) != NULL;
+							left_reference |= rel_find_exp(rel->l, l) != NULL;
+							right_reference |= rel_find_exp(rel->r, l) != NULL;
 						}
 						if (r->card != CARD_ATOM || !exp_is_atom(r)) {
-							left_reference += rel_find_exp(rel->l, r) != NULL;
-							right_reference += rel_find_exp(rel->r, r) != NULL;
+							left_reference |= rel_find_exp(rel->l, r) != NULL;
+							right_reference |= rel_find_exp(rel->r, r) != NULL;
 						}
 					}
 				} else if (flag == cmp_filter) {
 					list *l = e->l, *r = e->r;
+					int ll = 0, lr = 0, rl = 0, rr = 0;
 
 					for (node *n = l->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
 						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-							left_reference += rel_find_exp(rel->l, ee) != NULL;
-							right_reference += rel_find_exp(rel->r, ee) != NULL;
+							ll |= rel_find_exp(rel->l, ee) != NULL;
+							rl |= rel_find_exp(rel->r, ee) != NULL;
 						}
 					}
 					for (node *n = r->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
 						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-							left_reference += rel_find_exp(rel->l, ee) != NULL;
-							right_reference += rel_find_exp(rel->r, ee) != NULL;
+							lr |= rel_find_exp(rel->l, ee) != NULL;
+							rr |= rel_find_exp(rel->r, ee) != NULL;
 						}
 					}
+					if ((ll && !lr && !rl && rr) || (!ll && lr && rl && !rr))
+						right_reference = left_reference = 1;
 				}
 			}
 			if (left_reference && right_reference) {
