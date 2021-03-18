@@ -201,6 +201,13 @@ dofsum(const void *restrict values, oid seqb,
 	BUN nils = 0;
 	volatile flt f;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	/* we only deal with the two floating point types */
 	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
 	assert(tp2 == TYPE_flt || tp2 == TYPE_dbl);
@@ -230,6 +237,8 @@ dofsum(const void *restrict values, oid seqb,
 		}
 	}
 	while (ncand > 0) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		ncand--;
 		listi = canditer_next(ci) - seqb;
 		grp = gids ? gids[listi] : 0;
@@ -451,6 +460,8 @@ dofsum(const void *restrict values, oid seqb,
 			if (nonil) {					\
 				*seen = ncand > 0;			\
 				for (i = 0; i < ncand && nils == 0; i++) { \
+					GDK_CHECK_TIMEOUT(timeoffset, counter,\
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 					x = vals[ci->seq + i - seqb];	\
 					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
@@ -460,6 +471,8 @@ dofsum(const void *restrict values, oid seqb,
 			} else {					\
 				bool seenval = false;			\
 				for (i = 0; i < ncand && nils == 0; i++) { \
+					GDK_CHECK_TIMEOUT(timeoffset, counter,\
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
@@ -485,6 +498,8 @@ dofsum(const void *restrict values, oid seqb,
 			*algo = "sum: with candidates, no groups";	\
 			sum = 0;					\
 			for (i = 0; i < ncand && nils == 0; i++) {	\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
@@ -505,6 +520,8 @@ dofsum(const void *restrict values, oid seqb,
 			/* multiple groups, no candidate list */	\
 			*algo = "sum: no candidates, with groups";	\
 			for (i = 0; i < ncand; i++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
@@ -536,6 +553,8 @@ dofsum(const void *restrict values, oid seqb,
 			/* multiple groups, with candidate list */	\
 			*algo = "sum: with candidates, with groups";	\
 			while (ncand > 0) {				\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 				ncand--;				\
 				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
@@ -580,12 +599,16 @@ dofsum(const void *restrict values, oid seqb,
 				*algo = "sum: no candidates, no groups, no nils, no overflow"; \
 				*seen = ncand > 0;			\
 				for (i = 0; i < ncand && nils == 0; i++) { \
+					GDK_CHECK_TIMEOUT(timeoffset, counter,\
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 					sum += vals[ci->seq + i - seqb]; \
 				}					\
 			} else {					\
 				bool seenval = false;			\
 				*algo = "sum: no candidates, no groups, no overflow"; \
 				for (i = 0; i < ncand && nils == 0; i++) { \
+					GDK_CHECK_TIMEOUT(timeoffset, counter,\
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
@@ -608,6 +631,8 @@ dofsum(const void *restrict values, oid seqb,
 			*algo = "sum: with candidates, no groups, no overflow"; \
 			sum = 0;					\
 			for (i = 0; i < ncand && nils == 0; i++) {	\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
@@ -626,6 +651,8 @@ dofsum(const void *restrict values, oid seqb,
 			if (nonil) {					\
 				*algo = "sum: no candidates, with groups, no nils, no overflow"; \
 				for (i = 0; i < ncand; i++) {		\
+					GDK_CHECK_TIMEOUT(timeoffset, counter,\
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
 						gid = gids ? gids[i] - min : (oid) i; \
@@ -641,6 +668,8 @@ dofsum(const void *restrict values, oid seqb,
 			} else {					\
 				*algo = "sum: no candidates, with groups, no overflow"; \
 				for (i = 0; i < ncand; i++) {		\
+					GDK_CHECK_TIMEOUT(timeoffset, counter,\
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
 						gid = gids ? gids[i] - min : (oid) i; \
@@ -667,6 +696,8 @@ dofsum(const void *restrict values, oid seqb,
 			/* multiple groups, with candidate list */	\
 			*algo = "sum: with candidates, with groups, no overflow"; \
 			while (ncand > 0) {				\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 				ncand--;				\
 				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
@@ -705,6 +736,13 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	BUN i;
 	oid gid;
 	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	switch (tp2) {
 	case TYPE_flt:
@@ -875,6 +913,10 @@ dosum(const void *restrict values, bool nonil, oid seqb,
   overflow:
 	GDKfree(seen);
 	GDKerror("22003!overflow in sum aggregate.\n");
+	return BUN_NONE;
+
+  bailout:
+	GDKfree(seen);
 	return BUN_NONE;
 }
 
