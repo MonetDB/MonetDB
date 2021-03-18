@@ -242,3 +242,26 @@ DROP TABLE t0
 
 statement ok
 DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" DOUBLE,"c1" BOOLEAN NOT NULL,"c3" SMALLINT NOT NULL,"c4" CHARACTER LARGE OBJECT NOT NULL,"c5" VARCHAR(15) NOT NULL,"c6" BIGINT,
+	CONSTRAINT "t1_c1_c4_c5_c3_pkey" PRIMARY KEY ("c1", "c4", "c5", "c3"),CONSTRAINT "t1_c1_c0_unique" UNIQUE ("c1", "c0"),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"),
+	CONSTRAINT "t1_c3_c0_c1_c5_c4_unique" UNIQUE ("c3", "c0", "c1", "c5", "c4"))
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" VARCHAR(407)  NOT NULL,"c2" CHARACTER LARGE OBJECT,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_unique" UNIQUE ("c0"))
+
+statement ok
+CREATE FUNCTION mystringudf(a clob, b clob) RETURNS INT RETURN a || b
+
+statement ok
+MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON TRUE WHEN MATCHED THEN UPDATE SET c2 = mystringudf('1', '2')
+
+statement ok
+MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON NOT (greatest(FALSE, TRUE)) WHEN MATCHED THEN UPDATE SET c0 = r'', c2 = (ifthenelse(((-1.2422299E8)<=(6)), CAST(6 AS STRING), mystringudf(r'', r'833481730')))
+
+statement ok
+ROLLBACK
