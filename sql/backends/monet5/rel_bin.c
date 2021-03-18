@@ -30,7 +30,7 @@ static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *gr
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
-static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
+static stmt *check_types(backend *be, sql_subtype *fromtype, stmt *s, check_type tpe);
 
 static void
 clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
@@ -1603,52 +1603,43 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 	return -1;
 }
 
-/* check_types tries to match the ct type with the type of s if they don't
+/* check_types tries to match the t type with the type of s if they don't
  * match s is converted. Returns NULL on failure.
  */
 static stmt *
-check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
+check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 {
 	mvc *sql = be->mvc;
-	int c = 0;
-	sql_subtype *t = NULL, *st = NULL;
+	int c, err = 0;
+	sql_subtype *fromtype = tail_type(s);
 
- 	st = tail_type(s);
-	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
+	if ((!fromtype || !fromtype->type) && stmt_set_type_param(sql, t, s) == 0)
 		return s;
-	} else if (!st) {
+	if (!fromtype)
 		return sql_error(sql, 02, SQLSTATE(42000) "statement has no type information");
-	}
 
-	/* check if the types are the same */
-	if (t && subtype_cmp(t, ct) != 0) {
-		t = NULL;
-	}
-
-	if (!t) {	/* try to convert if needed */
-		if (EC_INTERVAL(st->type->eclass) && (ct->type->eclass == EC_NUM || ct->type->eclass == EC_POS) && ct->digits < st->digits) {
-			s = NULL; /* conversion from interval to num depends on the number of digits */
+	if (fromtype && subtype_cmp(t, fromtype) != 0) {
+		if (EC_INTERVAL(fromtype->type->eclass) && (t->type->eclass == EC_NUM || t->type->eclass == EC_POS) && t->digits < fromtype->digits) {
+			err = 1; /* conversion from interval to num depends on the number of digits */
 		} else {
-			c = sql_type_convert(st->type->eclass, ct->type->eclass);
+			c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
 			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) {
-				s = NULL;
+				err = 1;
 			} else {
-				s = stmt_convert(be, s, NULL, st, ct);
+				s = stmt_convert(be, s, NULL, fromtype, t);
 			}
 		}
 	}
-	if (!s) {
-		stmt *res = sql_error(
-			sql, 03,
-			SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
-			st->type->sqlname,
-			st->digits,
-			st->scale,
-			st->type->base.name,
-			ct->type->sqlname,
-			ct->digits,
-			ct->scale,
-			ct->type->base.name
+	if (err) {
+		stmt *res = sql_error(sql, 03, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
+			fromtype->type->sqlname,
+			fromtype->digits,
+			fromtype->scale,
+			fromtype->type->base.name,
+			t->type->sqlname,
+			t->digits,
+			t->scale,
+			t->type->base.name
 		);
 		return res;
 	}
@@ -5309,8 +5300,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 #endif
-	if (!sql_update_triggers(be, t, tids, updates, 0))
+	if (!sql_update_triggers(be, t, tids, updates, 0)) {
+		if (sql->cascade_action)
+			sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
 
 /* apply the update */
 	for (m = rel->exps->h; m; m = m->next) {
@@ -5321,8 +5315,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
 	}
 
-	if (cascade_updates(be, t, tids, updates))
+	if (cascade_updates(be, t, tids, updates)) {
+		if (sql->cascade_action)
+			sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
+	}
 
 /* after */
 #if 0
@@ -5333,8 +5330,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 #endif
-	if (!sql_update_triggers(be, t, tids, updates, 1))
+	if (!sql_update_triggers(be, t, tids, updates, 1)) {
+		if (sql->cascade_action)
+			sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
 
 	if (ddl) {
 		list_prepend(l, ddl);

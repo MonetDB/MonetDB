@@ -81,3 +81,15 @@ DROP TABLE t0
 
 statement ok
 DROP TABLE t1
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" UUID, CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t2" ("c0"))
+
+statement ok
+update t2 set c0 = uuid 'ABeCdDdd-80Cd-D26A-2a77-aAabE4C2caeA' where least(9 in (2, 3), case false when true then false end)
+
+statement ok
+update t2 set c0 = uuid 'ABeCdDdd-80Cd-D26A-2a77-aAabE4C2caeA' where least(9 in (2, 3), case false when true then false end)
+
+statement ok
+DROP TABLE t2
