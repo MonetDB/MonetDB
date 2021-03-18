@@ -316,8 +316,8 @@ bailout:
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = b->tkey;
-		dst->tsorted = b->tsorted;
-		dst->trevsorted = b->trevsorted;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
@@ -406,8 +406,8 @@ bailout:
 		dst->tnil = nils;
 		dst->tnonil = !nils;
 		dst->tkey = b->tkey;
-		dst->tsorted = b->tsorted;
-		dst->trevsorted = b->trevsorted;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
