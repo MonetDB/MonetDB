@@ -1731,6 +1731,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		if (avgs == NULL)					\
 			goto alloc_fail;				\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -1768,6 +1770,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -1812,6 +1816,13 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
