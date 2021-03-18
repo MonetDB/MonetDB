@@ -267,52 +267,6 @@ statement ok
 ROLLBACK
 
 statement ok
-START TRANSACTION
-
-statement ok
-CREATE TABLE "sys"."t0" (
-	"c2" UUID          NOT NULL,
-	"c3" SMALLINT,
-	CONSTRAINT "t0_c2_unique" UNIQUE ("c2")
-)
-
-statement ok
-CREATE TABLE "sys"."t1" (
-	"c2" DOUBLE        NOT NULL,
-	CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c2"),
-	CONSTRAINT "t1_c2_unique" UNIQUE ("c2"),
-	CONSTRAINT "t1_c2_fkey" FOREIGN KEY ("c2") REFERENCES "sys"."t1" ("c2")
-)
-
-statement ok
-CREATE TABLE "sys"."t2" (
-	"c2" INTEGER       NOT NULL,
-	CONSTRAINT "t2_c2_pkey" PRIMARY KEY ("c2"),
-	CONSTRAINT "t2_c2_unique" UNIQUE ("c2")
-)
-
-statement ok
-COPY 10 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-3
--268352476
-1
-6
-8
-4
-0
--1
-1498232900
-26
-
-query I rowsort
-SELECT min(ALL least(t0.c3, 5)) FROM t2, t0, t1 WHERE (+ (t1.c2)) BETWEEN ASYMMETRIC (NULLIF(3, t2.c2)) AND ("second"(INTERVAL '2139020636' SECOND)) GROUP BY sqrt(t1.c2), "epoch_ms"(DATE '1970-01-12')
-----
-
-statement ok
-ROLLBACK
-
-statement ok
 CREATE TABLE t1(c2 DOUBLE PRECISION)
 
 statement ok
