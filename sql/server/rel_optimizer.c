@@ -8174,6 +8174,21 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 	return rel;
 }
 
+static int
+is_numeric_upcast(sql_exp *e)
+{
+	if (is_convert(e->type)) {
+		sql_subtype *f = exp_fromtype(e);
+		sql_subtype *t = exp_totype(e);
+
+		if (f->type->eclass == t->type->eclass && EC_COMPUTE(f->type->eclass)) {
+			if (f->type->localtype < t->type->localtype)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static list *
 exp_merge_range(visitor *v, list *exps)
 {
@@ -8239,36 +8254,42 @@ exp_merge_range(visitor *v, list *exps)
 					sql_exp *ne, *t;
 					int swap = 0, lt = 0, gt = 0;
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
+					int c_re = is_numeric_upcast(re), c_rf = is_numeric_upcast(rf);
+					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf), c;
 
 					/* both swapped ? */
-					if (exp_match_exp(re, rf)) {
+					if (exp_match_exp(c_re?re->l:re, c_rf?rf->l:rf)) {
 						t = re;
 						re = le;
 						le = t;
+						c = c_re; c_re = c_le; c_le = c;
 						ef = swap_compare(ef);
 						t = rf;
 						rf = lf;
 						lf = t;
+						c = c_rf; c_rf = c_lf; c_lf = c;
 						ff = swap_compare(ff);
 					}
 
 					/* is left swapped ? */
-					if (exp_match_exp(re, lf)) {
+					if (exp_match_exp(c_re?re->l:re, c_lf?lf->l:lf)) {
 						t = re;
 						re = le;
 						le = t;
+						c = c_re; c_re = c_le; c_le = c;
 						ef = swap_compare(ef);
 					}
 
 					/* is right swapped ? */
-					if (exp_match_exp(le, rf)) {
+					if (exp_match_exp(c_le?le->l:le, c_rf?rf->l:rf)) {
 						t = rf;
 						rf = lf;
 						lf = t;
+						c = c_rf; c_rf = c_lf; c_lf = c;
 						ff = swap_compare(ff);
 					}
 
-					if (!exp_match_exp(le, lf))
+					if (!exp_match_exp(c_le?le->l:le, c_lf?lf->l:lf))
 						continue;
 
 					/* for now only   c1 <[=] x <[=] c2 */
@@ -8279,6 +8300,12 @@ exp_merge_range(visitor *v, list *exps)
 						continue;
 					if (lt && (ff == cmp_lt || ff == cmp_lte))
 						continue;
+					if (c_le) {
+						rf = exp_convert(v->sql->sa, rf, exp_subtype(rf), exp_subtype(le));
+					} else if (c_lf) {
+						le = exp_convert(v->sql->sa, le, exp_subtype(le), exp_subtype(lf));
+						re = exp_convert(v->sql->sa, re, exp_subtype(re), exp_subtype(lf));
+					}
 					if (!swap)
 						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(ef, ff));
 					else
