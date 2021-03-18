@@ -6182,7 +6182,6 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 			break;
 		case ddl_exception:
 			s = rel2bin_exception(be, rel, refs);
-			sql->type = Q_UPDATE;
 			break;
 		case ddl_create_seq:
 		case ddl_alter_seq:
