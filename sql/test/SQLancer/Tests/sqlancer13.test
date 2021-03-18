@@ -223,3 +223,22 @@ NULL
 
 statement ok
 ROLLBACK
+
+statement ok
+CREATE TABLE t0(c0 VARCHAR(128),c1 UUID)
+
+statement ok
+CREATE TABLE t2(LIKE t0)
+
+statement ok
+ALTER TABLE t2 ADD COLUMN c2 UUID
+
+query I rowsort
+SELECT 1 FROM t2, t0 WHERE CASE WHEN NULL THEN t0.c0 WHEN FALSE THEN t2.c2 END LIKE CASE WHEN FALSE THEN t0.c0 END
+----
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t2
