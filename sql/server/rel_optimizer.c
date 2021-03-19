@@ -9793,8 +9793,10 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_push_func_and_select_down(visitor *v, sql_rel *rel)
 {
-	rel = rel_push_func_down(v, rel);
-	rel = rel_push_select_down(v, rel);
+	if (rel)
+		rel = rel_push_func_down(v, rel);
+	if (rel)
+		rel = rel_push_select_down(v, rel);
 	return rel;
 }
 

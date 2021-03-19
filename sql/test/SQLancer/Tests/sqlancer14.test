@@ -287,3 +287,6 @@ True
 
 statement ok
 ROLLBACK
+
+statement error
+select 1 from (values (1),(2),(3)) x(x) where uuid '55a279B4-f52a-835C-C43c-5E0bd20fFbAB'
