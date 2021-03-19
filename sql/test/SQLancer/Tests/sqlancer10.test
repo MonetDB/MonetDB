@@ -382,7 +382,7 @@ PLAN SELECT (SELECT c0 FROM t0) FROM t0
 ----
 project (
 | single left outer join (
-| | table("sys"."t0") [ "t0"."%TID%" NOT NULL ] COUNT ,
+| | table("sys"."t0") [ "t0"."%t0_c3_c0_unique" HASHIDX  ] COUNT ,
 | | project (
 | | | table("sys"."t0") [ "t0"."c0" NOT NULL ] COUNT 
 | | ) [ "t0"."c0" NOT NULL as "%1"."%1" ]

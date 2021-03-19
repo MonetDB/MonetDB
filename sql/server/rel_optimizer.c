@@ -6801,7 +6801,8 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		}
 	}
 	/* for count/rank we need atleast one column */
-	if (subrel && !nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
+	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
+		(is_simple_project(rel->op) && project_unsafe(rel, 0))) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}
