@@ -6475,10 +6475,10 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
-		if (!l || rel_is_ref(l) || is_topn(l->op) ||
+		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
-		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op))) ||
+		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
 		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))
 			return rel;
@@ -8010,7 +8010,7 @@ rel_split_project(visitor *v, sql_rel *rel, int top)
 			rel->l = nrel;
 			/* recursively split all functions and add those to the projection list */
 			split_exps(v->sql, rel->exps, nrel);
-			if (nrel->l && !(nrel->l = rel_split_project(v, nrel->l, is_topn(rel->op)?top:0)))
+			if (nrel->l && !(nrel->l = rel_split_project(v, nrel->l, (is_topn(rel->op)||is_sample(rel->op))?top:0)))
 				return NULL;
 			return rel;
 		} else if (funcs && !top && !rel->r) {
@@ -8034,12 +8034,12 @@ rel_split_project(visitor *v, sql_rel *rel, int top)
 	if (is_set(rel->op) || is_basetable(rel->op))
 		return rel;
 	if (rel->l) {
-		rel->l = rel_split_project(v, rel->l, (is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+		rel->l = rel_split_project(v, rel->l, (is_topn(rel->op)||is_sample(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 		if (!rel->l)
 			return NULL;
 	}
 	if ((is_join(rel->op) || is_semi(rel->op)) && rel->r) {
-		rel->r = rel_split_project(v, rel->r, (is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+		rel->r = rel_split_project(v, rel->r, (is_topn(rel->op)||is_sample(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 		if (!rel->r)
 			return NULL;
 	}
@@ -8131,7 +8131,7 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 			rel->l = nrel;
 			/* recursively split all functions and add those to the projection list */
 			select_split_exps(v->sql, rel->exps, nrel);
-			if (nrel->l && !(nrel->l = rel_split_project(v, nrel->l, is_topn(rel->op)?top:0)))
+			if (nrel->l && !(nrel->l = rel_split_project(v, nrel->l, (is_topn(rel->op)||is_sample(rel->op))?top:0)))
 				return NULL;
 			return rel;
 		} else if (funcs && !top && !rel->r) {
@@ -8155,12 +8155,12 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 	if (is_set(rel->op) || is_basetable(rel->op))
 		return rel;
 	if (rel->l) {
-		rel->l = rel_split_select(v, rel->l, (is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+		rel->l = rel_split_select(v, rel->l, (is_topn(rel->op)||is_sample(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 		if (!rel->l)
 			return NULL;
 	}
 	if ((is_join(rel->op) || is_semi(rel->op)) && rel->r) {
-		rel->r = rel_split_select(v, rel->r, (is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+		rel->r = rel_split_select(v, rel->r, (is_topn(rel->op)||is_sample(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 		if (!rel->r)
 			return NULL;
 	}
