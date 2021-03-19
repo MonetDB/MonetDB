@@ -1215,6 +1215,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 			ncand--;					\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
@@ -1256,6 +1258,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		const TYPE *vals = (const TYPE *) values;		\
 		gid = 0;	/* doesn't change if gidincr == false */ \
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 			ncand--;					\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
@@ -1292,6 +1296,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		const TYPE *restrict vals = (const TYPE *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 			ncand--;					\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
@@ -1332,6 +1338,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));\
 			ncand--;					\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
@@ -1379,6 +1387,13 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
 	BUN i;
 	oid gid;
 	unsigned int *restrict seen; /* bitmask for groups that we've seen */
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -1585,6 +1600,10 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
   overflow:
 	GDKfree(seen);
 	GDKerror("22003!overflow in product aggregate.\n");
+	return BUN_NONE;
+
+  bailout:
+	GDKfree(seen);
 	return BUN_NONE;
 }
 
