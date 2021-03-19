@@ -3055,6 +3055,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					TIMEOUT_HANDLER(NULL));\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -3088,6 +3090,13 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
