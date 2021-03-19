@@ -3108,6 +3108,10 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						sql_subtype et = *exp_subtype(e);
 						/* (x*c1)*c2 -> x * (c1*c2) */
 						list *l = sa_list(sql->sa);
+
+						/* lre and re may have different types, so compute supertype */
+						if (rel_convert_types(sql, NULL, NULL, &lre, &re, 1, type_equal) < 0)
+							return NULL;
 						append(l, lre);
 						append(l, re);
 						le->l = l;
@@ -3170,7 +3174,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						/* (x+c1)+y -> (x+y) + c1 */
 						ll->h->next->data = re;
 						l->h->next->data = lre;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3178,7 +3183,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						/* (x+c1)+c2 -> (c2+c1) + x */
 						ll->h->data = re;
 						l->h->next->data = lle;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3258,7 +3264,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						l->h->next->data = lre;
 						le->f = e->f;
 						e->f = f;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3269,7 +3276,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						l->h->next->data = lle;
 						le->f = e->f;
 						e->f = f;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3278,10 +3286,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		}
 		if (l)
 			for (n = l->h; n; n = n->next)
-				n->data = exp_simplify_math(sql, n->data, changes);
+				if (!(n->data = exp_simplify_math(sql, n->data, changes)))
+					return NULL;
 	}
 	if (e->type == e_convert)
-		e->l = exp_simplify_math(sql, e->l, changes);
+		if (!(e->l = exp_simplify_math(sql, e->l, changes)))
+				return NULL;
 	return e;
 }
 
