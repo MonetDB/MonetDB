@@ -2964,6 +2964,15 @@ find_func( mvc *sql, char *name, list *exps )
 	return sql_bind_func_(sql, "sys", name, l, F_FUNC);
 }
 
+static inline int
+str_ends_with(const char *s, const char *suffix)
+{
+	size_t slen = strlen(s), suflen = strlen(suffix);
+	if (suflen > slen)
+		return 1;
+	return strncmp(s + slen - suflen, suffix, suflen);
+}
+
 static sql_exp *
 exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 {
@@ -2990,7 +2999,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 			}
 		}
-		if (!f->func->s && list_length(l) == 2 && strstr(f->func->imp, "_no_nil") != NULL) {
+		if (!f->func->s && list_length(l) == 2 && str_ends_with(f->func->imp, "_no_nil") == 0) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 
@@ -3295,7 +3304,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 static inline sql_rel *
 rel_simplify_math(visitor *v, sql_rel *rel)
 {
-	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
+	if ((is_simple_project(rel->op) || is_groupby(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
 		int needed = 0, ochanges = 0;
 
 		for (node *n = rel->exps->h; n && !needed; n = n->next) {
