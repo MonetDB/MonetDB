@@ -2038,6 +2038,15 @@ GDKrealloc(void *s, size_t size)
 	return s;
 }
 
+/* return how much memory was allocated; the argument must be a value
+ * returned by GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, or
+ * GDKstrndup */
+size_t
+GDKmallocated(const void *s)
+{
+	return ((const size_t *) s)[-1]; /* how much allocated last */
+}
+
 void
 GDKsetmallocsuccesscount(lng count)
 {

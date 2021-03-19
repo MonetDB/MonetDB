@@ -174,5 +174,5 @@ UNION
 query I rowsort
 select count(*) from dependencies where depend_type = 5
 ----
-1001
+983
 

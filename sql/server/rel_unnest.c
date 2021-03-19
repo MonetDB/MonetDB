@@ -14,8 +14,10 @@
 #include "rel_optimizer.h"
 #include "rel_prop.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
+#include "rel_remote.h"
 #include "rel_rewriter.h"
 #include "sql_query.h"
 #include "mal_errors.h" /* for SQLSTATE() */
@@ -235,6 +237,8 @@ exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool 
 			rel_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 		break;
 	case e_atom:
+		if (e->f)
+			exps_only_freevar(query, e->f, arguments_correlated, found_one_freevar, ungrouped_cols);
 		break;
 	case e_column:
 		*arguments_correlated = 0;
@@ -3599,10 +3603,12 @@ rewrite_values(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* add an dummy true projection column */
 static sql_rel *
 rel_unnest_simplify(visitor *v, sql_rel *rel)
 {
 	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
+	rel = rewrite_basetable(v->sql, rel);	/* add proper exps lists */
 	rel = rewrite_empty_project(v, rel); /* remove empty project/groupby */
 	rel = rewrite_simplify(v, rel);
 	rel = rewrite_or_exp(v, rel);

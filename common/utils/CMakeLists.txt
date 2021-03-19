@@ -173,6 +173,7 @@ install(EXPORT mstringTargets
 install(FILES
   matomic.h
   mstring.h
+  copybinary.h
   DESTINATION
   ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT

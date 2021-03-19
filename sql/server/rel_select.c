@@ -14,6 +14,7 @@
 #include "sql_decimal.h"
 #include "sql_qc.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_xml.h"
 #include "rel_dump.h"
@@ -68,6 +69,8 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 		/* fall through */
 	case op_table:
 	case op_basetable:
+		if (is_basetable(rel->op) && !rel->exps)
+			return rel_base_project_all(sql, rel, tname);
 		if (rel->exps) {
 			int rename = 0;
 			node *en;
@@ -902,7 +905,7 @@ check_is_lateral(symbol *tableref)
 	}
 }
 
-sql_rel *
+static sql_rel *
 rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
 {
 	list *exps = sa_list(sql->sa);
@@ -955,22 +958,27 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			node *n;
 			int needed = !is_simple_project(temp_table->op);
 
-			for (n = temp_table->exps->h; n && !needed; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (!exp_relname(e) || strcmp(exp_relname(e), tname) != 0)
-					needed = 1;
-			}
-
-			if (needed) {
-				list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
-
-				temp_table = rel_project(sql->sa, temp_table, exps);
-				for (n = exps->h; n; n = n->next) {
+			if (is_basetable(temp_table->op) && !temp_table->exps) {
+			   	if (strcmp(rel_base_name(temp_table), tname) != 0)
+					rel_base_rename(temp_table, tname);
+			} else {
+				for (n = temp_table->exps->h; n && !needed; n = n->next) {
 					sql_exp *e = n->data;
 
-					noninternexp_setname(sql->sa, e, tname, NULL);
-					set_basecol(e);
+					if (!exp_relname(e) || strcmp(exp_relname(e), tname) != 0)
+						needed = 1;
+				}
+
+				if (needed) {
+					list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
+
+					temp_table = rel_project(sql->sa, temp_table, exps);
+					for (n = exps->h; n; n = n->next) {
+						sql_exp *e = n->data;
+
+						noninternexp_setname(sql->sa, e, tname, NULL);
+						set_basecol(e);
+					}
 				}
 			}
 			if (allowed)
@@ -981,10 +989,13 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			node *n,*m;
 			sql_rel *rel;
 
-			if (sql->emode == m_deps)
+			if (sql->emode == m_deps) {
 				rel = rel_basetable(sql, t, tname);
-			else
+				if (!allowed)
+					rel_base_disallow(rel);
+			} else {
 				rel = rel_parse(sql, t->s, t->query, m_instantiate);
+			}
 
 			if (!rel)
 				return NULL;
@@ -1005,9 +1016,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 					set_basecol(e);
 				}
 			}
-			if (!allowed)
-				rel = rel_reduce_on_column_privileges(sql, rel, t);
-			if (!rel)
+			if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
 			return rel;
 		}
@@ -1015,8 +1024,8 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
-			res = rel_reduce_on_column_privileges(sql, res, t);
-			if (!res)
+			rel_base_disallow(res);
+			if (rel_base_has_column_privileges(sql, res) == 0)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to %s '%s.%s'", get_string_global_var(sql, "current_user"), isView(t) ? "view" : "table", t->s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */

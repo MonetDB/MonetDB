@@ -98,6 +98,7 @@ gdk_export str GDKstrdup(const char *s)
 gdk_export str GDKstrndup(const char *s, size_t n)
 	__attribute__((__malloc__))
 	__attribute__((__warn_unused_result__));
+gdk_export size_t GDKmallocated(const void *s);
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;

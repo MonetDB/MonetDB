@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_propagate.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
@@ -28,8 +29,11 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 
 	if (isPartitionedByColumnTable(mt)) {
 		int colr = mt->part.pcol->colnr;
-		res = list_fetch((*anti_rel)->exps, colr);
-		res = exp_ref(sql, res);
+
+		res = rel_base_bind_colnr(sql, *anti_rel, colr);
+		return res;
+		//res = list_fetch((*anti_rel)->exps, colr);
+		//res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
@@ -472,8 +476,11 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		case e_convert: {
 			e->l = exp_change_column_table(sql, e->l, oldt, newt);
 		} break;
-		case e_atom:
-			break;
+		case e_atom: {
+			if (e->f)
+				for (node *n = ((list*)e->f)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		} break;
 		case e_aggr:
 		case e_func: {
 			if (e->l)

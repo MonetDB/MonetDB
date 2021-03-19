@@ -101,6 +101,7 @@ typedef struct{
 		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
 		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
 		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
+		case TYPE_uuid: ManifoldLoop(uuid,__VA_ARGS__); break;			\
 		case TYPE_str:													\
 		default: {														\
 			for (;;) {													\
