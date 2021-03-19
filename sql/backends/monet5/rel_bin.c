@@ -4962,7 +4962,9 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 			upd = stmt_col(be, c->c, ftids, ftids->partition);
 		}
 
-		list_append(lje, check_types(be, &rc->c->type, upd, type_equal));
+		if (!upd || (upd = check_types(be, &rc->c->type, upd, type_equal)) == NULL)
+			return NULL;
+		list_append(lje, upd);
 		list_append(rje, stmt_col(be, rc->c, ptids, ptids->partition));
 	}
 	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, 0, 0);
@@ -5035,7 +5037,8 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 		} else if (i->type == join_idx) {
 			if (updcol < 0)
 				return NULL;
-			is = join_idx_update(be, i, rows, updates, updcol);
+			if (!(is = join_idx_update(be, i, rows, updates, updcol)))
+				return NULL;
 		}
 		if (i->key)
 			sql_update_check_key(be, updates, i->key, rows, is, updcol, l, pup);
