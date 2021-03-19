@@ -41,7 +41,7 @@ typedef struct matlist {
 	int vsize;
 } matlist_t;
 
-static mat_type_t
+static inline mat_type_t
 mat_type( mat_t *mat, int n)
 {
 	mat_type_t type = mat_none;
@@ -50,8 +50,8 @@ mat_type( mat_t *mat, int n)
 	return type;
 }
 
-static int
-is_a_mat(int idx, matlist_t *ml)
+static inline int
+is_a_mat(int idx, const matlist_t *ml)
 {
 	if (ml->vars[idx] >= 0 && !ml->v[ml->vars[idx]].packed)
 		return ml->vars[idx];
@@ -59,7 +59,7 @@ is_a_mat(int idx, matlist_t *ml)
 }
 
 static int
-nr_of_mats(InstrPtr p, matlist_t *ml)
+nr_of_mats(InstrPtr p, const matlist_t *ml)
 {
 	int j,cnt=0;
 	for(j=p->retc; j<p->argc; j++)
@@ -403,9 +403,8 @@ mat_assign(MalBlkPtr mb, InstrPtr p, matlist_t *ml)
 	mat_t *mat = ml->v;
 
 	for(int i = 0; i<p->retc; i++) {
-		int res = is_a_mat(getArg(p,i), ml);
 		int m = is_a_mat(getArg(p,p->retc+i), ml);
-		assert(res<0 && m >= 0);
+		assert(is_a_mat(getArg(p,i), ml) < 0 && m >= 0);
 
 		if((r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc)) == NULL)
 			return NULL;
