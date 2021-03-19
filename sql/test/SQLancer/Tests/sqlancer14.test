@@ -290,3 +290,29 @@ ROLLBACK
 
 statement error
 select 1 from (values (1),(2),(3)) x(x) where uuid '55a279B4-f52a-835C-C43c-5E0bd20fFbAB'
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3),"c1" DOUBLE PRECISION, CONSTRAINT "t2_c1_unique" UNIQUE ("c1"))
+
+statement ok
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.555	0.3061110021038482
+-0.570	0.17636274539499308
+0.179	0.6665201184847672
+0.000	0
+0.594	0.7878848439535873
+NULL	0.289151774384275
+12.000	1578787758
+
+query R rowsort
+select var_pop(-983102429*(0.3*t2.c0)) from t2 union all select var_pop(-983102429*(0.3*t2.c0)) from t2
+----
+1709093873140383929.03637542
+1709093873140383929.03637542
+
+statement ok
+ROLLBACK
