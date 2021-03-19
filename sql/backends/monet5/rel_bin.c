@@ -2464,7 +2464,6 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 	}
 }
 
-#define is_equi_exp(e) ((e)->flag == cmp_equal || (e)->flag == mark_in || (e)->flag == mark_notin)
 #define is_equi_exp_(e) ((e)->flag == cmp_equal || (e)->flag == mark_in)
 
 static list *
