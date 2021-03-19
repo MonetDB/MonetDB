@@ -4487,6 +4487,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -4548,6 +4550,13 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4741,6 +4750,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
 			if (gids == NULL ||				\
@@ -4790,6 +4801,14 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4943,6 +4962,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
 			if (gids == NULL ||				\
@@ -4992,6 +5013,13 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
