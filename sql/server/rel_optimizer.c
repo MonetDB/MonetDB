@@ -5428,24 +5428,36 @@ find_projection_for_join2semi(sql_rel *rel)
 	return false;
 }
 
-
 static sql_rel *
 find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
 	/* generalize possibility : we need the visitor 'step' here */
 	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
 		return NULL;
-	if (rel->op == op_join && rel->exps) {
+	if (rel->op == op_join && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
+		bool ok = false;
 
 		if (find_projection_for_join2semi(r)) {
 			*swap = false;
-			return rel;
-		}
-		if (find_projection_for_join2semi(l)) {
+			ok = true;
+		} else if (find_projection_for_join2semi(l)) {
 			*swap = true;
-			return rel;
+			ok = true;
 		}
+
+		if (ok) {
+			ok = false;
+			/* if all join expressions can be pushed down, then it cannot be rewritten into a semijoin */
+			for (node *n=rel->exps->h; n && !ok; n = n->next) {
+				sql_exp *e = n->data;
+
+				ok |= !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
+			}
+		}
+
+		if (ok)
+			return rel;
 	}
 	if (is_join(rel->op) || is_semi(rel->op)) {
 		sql_rel *c;

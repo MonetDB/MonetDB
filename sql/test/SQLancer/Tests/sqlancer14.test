@@ -136,6 +136,30 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 query T rowsort
 SELECT t1.c5 FROM t2, t1 CROSS JOIN (SELECT DISTINCT t0.c0 FROM t0) AS sub0 WHERE CASE 2 WHEN 3 THEN t2.c3 > t1.c2 ELSE TRUE END
 ----
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
 2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
 2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
 2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
@@ -184,30 +208,6 @@ SELECT t1.c5 FROM t2, t1 CROSS JOIN (SELECT DISTINCT t0.c0 FROM t0) AS sub0 WHER
 3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
 3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
 3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
-*zd \n+~U[
 
 query T rowsort
 SELECT CASE 2 WHEN 3 THEN t2.c3 > t1.c2 ELSE TRUE END FROM t2, t1 CROSS JOIN (SELECT DISTINCT t0.c0 FROM t0) AS sub0
