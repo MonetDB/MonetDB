@@ -10,6 +10,7 @@
 
 #include "sql_partition.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
@@ -187,8 +188,11 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		case e_convert: {
 			exp_find_table_columns(sql, e->l, t, cols);
 		} break;
-		case e_atom:
-			break;
+		case e_atom: {
+			if (e->f)
+				for (node *n = ((list*)e->f)->h ; n ; n = n->next)
+					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
+		} break;
 		case e_aggr:
 		case e_func: {
 			if (e->l)

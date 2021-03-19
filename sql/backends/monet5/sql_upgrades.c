@@ -2382,6 +2382,10 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			pos += snprintf(buf + pos, bufsize - pos,
 							"drop procedure sys.flush_log();\n");
 
+			/* fix up dependencies for function getproj4 (if it exists) */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"delete from sys.dependencies d where d.depend_id = (select id from sys.functions where name = 'getproj4' and schema_id = 2000) and id in (select id from sys._columns where name not in ('proj4text', 'srid'));\n");
+
 			/* 41_json.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
 							"drop function json.isobject(string);\n"

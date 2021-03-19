@@ -324,7 +324,18 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		else
 			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}
-	case e_atom:
+	case e_atom: {
+		list *l = e->f, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_push_down(sql, l, f, t);
+			if (!nl)
+				return NULL;
+		}
+		return exp_values(sql->sa, nl);
+	}
 	case e_psm:
 		return e;
 	}

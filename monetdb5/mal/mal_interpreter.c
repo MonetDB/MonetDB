@@ -643,6 +643,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (pci->fcn == NULL) {
 				ret = createException(MAL,"mal.interpreter", "address of pattern %s.%s missing", pci->modname, pci->fcnname);
 			} else {
+				TRC_DEBUG(ALGO, "calling %s.%s\n", pci->modname ? pci->modname : "<null>", pci->fcnname ? pci->fcnname : "<null>");
 				ret = (*pci->fcn)(cntxt, mb, stk, pci);
 #ifndef NDEBUG
 				if (ret == MAL_SUCCEED) {
@@ -670,6 +671,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			break;
 		case CMDcall:
+			TRC_DEBUG(ALGO, "calling %s.%s\n", pci->modname ? pci->modname : "<null>", pci->fcnname ? pci->fcnname : "<null>");
 			ret = malCommandCall(stk, pci);
 #ifndef NDEBUG
 			if (ret == MAL_SUCCEED) {

@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_trans.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_exp.h"
@@ -1517,18 +1518,22 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	}
 
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
+	sql_rel *bt = rel_ddl_basetable_get(res);
 
 	if (!isTable(nt))
 		return res;
 
 	/* New columns need update with default values. Add one more element for new column */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (ol_length(nt->columns) + 1));
+	rel_base_use_tid(sql, bt);
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 
 	list *cols = new_exp_list(sql->sa);
 	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
 			sql_column *c = n->data;
+
+			rel_base_use(sql, bt, c->colnr);
 			/* handle new columns */
 			if (!c->base.new || c->base.deleted)
 				continue;

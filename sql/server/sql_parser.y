@@ -2898,7 +2898,6 @@ string_commalist_contents:
 			{ $$ = append_string($1, $3); }
  ;
 
-
 opt_endianness:
 	/* empty */		{ $$ = endian_native; }
 	| BIG ENDIAN		{ $$ = endian_big; }

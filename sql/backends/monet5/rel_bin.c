@@ -10,6 +10,7 @@
 
 #include "rel_bin.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_psm.h"
 #include "rel_prop.h"
@@ -29,7 +30,7 @@ static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *gr
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
-static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
+static stmt *check_types(backend *be, sql_subtype *fromtype, stmt *s, check_type tpe);
 
 static void
 clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
@@ -1602,52 +1603,43 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 	return -1;
 }
 
-/* check_types tries to match the ct type with the type of s if they don't
+/* check_types tries to match the t type with the type of s if they don't
  * match s is converted. Returns NULL on failure.
  */
 static stmt *
-check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
+check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 {
 	mvc *sql = be->mvc;
-	int c = 0;
-	sql_subtype *t = NULL, *st = NULL;
+	int c, err = 0;
+	sql_subtype *fromtype = tail_type(s);
 
- 	st = tail_type(s);
-	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
+	if ((!fromtype || !fromtype->type) && stmt_set_type_param(sql, t, s) == 0)
 		return s;
-	} else if (!st) {
+	if (!fromtype)
 		return sql_error(sql, 02, SQLSTATE(42000) "statement has no type information");
-	}
 
-	/* check if the types are the same */
-	if (t && subtype_cmp(t, ct) != 0) {
-		t = NULL;
-	}
-
-	if (!t) {	/* try to convert if needed */
-		if (EC_INTERVAL(st->type->eclass) && (ct->type->eclass == EC_NUM || ct->type->eclass == EC_POS) && ct->digits < st->digits) {
-			s = NULL; /* conversion from interval to num depends on the number of digits */
+	if (fromtype && subtype_cmp(t, fromtype) != 0) {
+		if (EC_INTERVAL(fromtype->type->eclass) && (t->type->eclass == EC_NUM || t->type->eclass == EC_POS) && t->digits < fromtype->digits) {
+			err = 1; /* conversion from interval to num depends on the number of digits */
 		} else {
-			c = sql_type_convert(st->type->eclass, ct->type->eclass);
+			c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
 			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) {
-				s = NULL;
+				err = 1;
 			} else {
-				s = stmt_convert(be, s, NULL, st, ct);
+				s = stmt_convert(be, s, NULL, fromtype, t);
 			}
 		}
 	}
-	if (!s) {
-		stmt *res = sql_error(
-			sql, 03,
-			SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
-			st->type->sqlname,
-			st->digits,
-			st->scale,
-			st->type->base.name,
-			ct->type->sqlname,
-			ct->digits,
-			ct->scale,
-			ct->type->base.name
+	if (err) {
+		stmt *res = sql_error(sql, 03, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
+			fromtype->type->sqlname,
+			fromtype->digits,
+			fromtype->scale,
+			fromtype->type->base.name,
+			t->type->sqlname,
+			t->digits,
+			t->scale,
+			t->type->base.name
 		);
 		return res;
 	}
@@ -2431,33 +2423,36 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 						}
 					} else {
 						if (l->card != CARD_ATOM || !exp_is_atom(l)) {
-							left_reference += rel_find_exp(rel->l, l) != NULL;
-							right_reference += rel_find_exp(rel->r, l) != NULL;
+							left_reference |= rel_find_exp(rel->l, l) != NULL;
+							right_reference |= rel_find_exp(rel->r, l) != NULL;
 						}
 						if (r->card != CARD_ATOM || !exp_is_atom(r)) {
-							left_reference += rel_find_exp(rel->l, r) != NULL;
-							right_reference += rel_find_exp(rel->r, r) != NULL;
+							left_reference |= rel_find_exp(rel->l, r) != NULL;
+							right_reference |= rel_find_exp(rel->r, r) != NULL;
 						}
 					}
 				} else if (flag == cmp_filter) {
 					list *l = e->l, *r = e->r;
+					int ll = 0, lr = 0, rl = 0, rr = 0;
 
 					for (node *n = l->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
 						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-							left_reference += rel_find_exp(rel->l, ee) != NULL;
-							right_reference += rel_find_exp(rel->r, ee) != NULL;
+							ll |= rel_find_exp(rel->l, ee) != NULL;
+							rl |= rel_find_exp(rel->r, ee) != NULL;
 						}
 					}
 					for (node *n = r->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
 						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-							left_reference += rel_find_exp(rel->l, ee) != NULL;
-							right_reference += rel_find_exp(rel->r, ee) != NULL;
+							lr |= rel_find_exp(rel->l, ee) != NULL;
+							rr |= rel_find_exp(rel->r, ee) != NULL;
 						}
 					}
+					if ((ll && !lr && !rl && rr) || (!ll && lr && rl && !rr))
+						right_reference = left_reference = 1;
 				}
 			}
 			if (left_reference && right_reference) {
@@ -4702,6 +4697,8 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 			nulls = 1;
 		}
 		col = stmt_col(be, fc->c, rows, rows->partition);
+		if (!upd || (upd = check_types(be, &fc->c->type, upd, type_equal)) == NULL)
+			return NULL;
 		list_append(lje, upd);
 		list_append(rje, col);
 	}
@@ -4965,7 +4962,9 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 			upd = stmt_col(be, c->c, ftids, ftids->partition);
 		}
 
-		list_append(lje, check_types(be, &rc->c->type, upd, type_equal));
+		if (!upd || (upd = check_types(be, &rc->c->type, upd, type_equal)) == NULL)
+			return NULL;
+		list_append(lje, upd);
 		list_append(rje, stmt_col(be, rc->c, ptids, ptids->partition));
 	}
 	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, 0, 0);
@@ -5038,7 +5037,8 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 		} else if (i->type == join_idx) {
 			if (updcol < 0)
 				return NULL;
-			is = join_idx_update(be, i, rows, updates, updcol);
+			if (!(is = join_idx_update(be, i, rows, updates, updcol)))
+				return NULL;
 		}
 		if (i->key)
 			sql_update_check_key(be, updates, i->key, rows, is, updcol, l, pup);
@@ -5303,8 +5303,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 #endif
-	if (!sql_update_triggers(be, t, tids, updates, 0))
+	if (!sql_update_triggers(be, t, tids, updates, 0)) {
+		if (sql->cascade_action)
+			sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
 
 /* apply the update */
 	for (m = rel->exps->h; m; m = m->next) {
@@ -5315,8 +5318,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
 	}
 
-	if (cascade_updates(be, t, tids, updates))
+	if (cascade_updates(be, t, tids, updates)) {
+		if (sql->cascade_action)
+			sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
+	}
 
 /* after */
 #if 0
@@ -5327,8 +5333,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 #endif
-	if (!sql_update_triggers(be, t, tids, updates, 1))
+	if (!sql_update_triggers(be, t, tids, updates, 1)) {
+		if (sql->cascade_action)
+			sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
 
 	if (ddl) {
 		list_prepend(l, ddl);
@@ -6176,7 +6185,6 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 			break;
 		case ddl_exception:
 			s = rel2bin_exception(be, rel, refs);
-			sql->type = Q_UPDATE;
 			break;
 		case ddl_create_seq:
 		case ddl_alter_seq:

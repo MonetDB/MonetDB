@@ -93,16 +93,13 @@ query I rowsort
 SELECT 1 FROM t2 WHERE NULL NOT IN (SELECT 1 FROM t2)
 ----
 
-
 query I rowsort
 SELECT 1 FROM t2 WHERE NULL <> ALL(SELECT 1 FROM t2)
 ----
 
-
 query T rowsort
 SELECT t0.c3 FROM t0, t2 WHERE NULLIF(t0.c3, t0.c3) <> ALL(SELECT DISTINCT '1' FROM t0)
 ----
-
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NULLIF(t0.c3, t0.c3) <> ALL(SELECT DISTINCT '1' FROM t0) AS INT) as count FROM t0, t2) as res
@@ -177,3 +174,119 @@ select ((select 1 from t1, t0)) in (2, t1.c0) from t1
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c2" BIGINT NOT NULL,"c4" DATE,CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c2"))
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" DOUBLE NOT NULL,"c2" INTERVAL DAY,CONSTRAINT "t2_c0_unique" UNIQUE ("c0"),CONSTRAINT "t2_c0_c2_unique" UNIQUE ("c0", "c2"))
+
+query I rowsort
+SELECT 1 FROM t2, t1 WHERE (t2.c0 > 4 OR false) AND 9 IN (t2.c0, t1.c2) = TRUE
+----
+
+query I rowsort
+SELECT 1 FROM t2, t1 WHERE (t2.c0 > 4 OR false) AND (CASE WHEN 9 IN (t2.c0, t1.c2) THEN TRUE END)
+----
+
+query T rowsort
+SELECT t1.c2 FROM t2, t1 WHERE (((((((((t2.c0)^(2))) NOT BETWEEN SYMMETRIC (least(t1.c2, t1.c2)) AND (4))AND(NOT (TRUE))))OR(least(FALSE, FALSE))))AND(CASE WHEN (9) NOT IN (t2.c0, t1.c2) THEN TRUE ELSE greatest(TRUE, FALSE) END))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c2" INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE "sys"."t2" ("c7" TINYINT NOT NULL,"c6" UUID,"c5" TIMESTAMP,"c4" BIGINT)
+
+statement ok
+INSERT INTO "sys"."t2" VALUES (8, NULL, NULL, NULL)
+
+query I rowsort
+SELECT 1 FROM t2 JOIN (SELECT 2) AS sub0 (c0) ON (CASE WHEN CAST(2 AS BOOLEAN) THEN NULL END <> t2.c6)
+----
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(NOT ((CASE WHEN TRUE THEN FALSE END) = TRUE) AS INT) as count FROM t2 JOIN
+((SELECT ((1)/(round(0.84, 0.7281314))) FROM t0, t2 WHERE CAST(abs(t2.c7) AS BOOLEAN)) EXCEPT ALL (SELECT least("epoch_ms"(TIME '21:17:08'),
+CASE WHEN TRUE THEN ((-23)/(t2.c7)) WHEN ((r'1e500')LIKE(r'H')) THEN sql_max(2, 2) WHEN least(TRUE, FALSE) THEN ((t0.c2)%(4)) END) FROM t0, t2 WHERE FALSE)) AS sub0 ON ((CASE WHEN CAST(2 AS BOOLEAN) THEN NULL END)<>(t2.c6))) as res
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t0(c0 VARCHAR(128),c1 UUID)
+
+statement ok
+CREATE TABLE t2(LIKE t0)
+
+statement ok
+ALTER TABLE t2 ADD COLUMN c2 UUID
+
+query I rowsort
+SELECT 1 FROM t2, t0 WHERE CASE WHEN NULL THEN t0.c0 WHEN FALSE THEN t2.c2 END LIKE CASE WHEN FALSE THEN t0.c0 END
+----
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" DOUBLE,"c1" BOOLEAN NOT NULL,"c3" SMALLINT NOT NULL,"c4" CHARACTER LARGE OBJECT NOT NULL,"c5" VARCHAR(15) NOT NULL,"c6" BIGINT,
+	CONSTRAINT "t1_c1_c4_c5_c3_pkey" PRIMARY KEY ("c1", "c4", "c5", "c3"),CONSTRAINT "t1_c1_c0_unique" UNIQUE ("c1", "c0"),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"),
+	CONSTRAINT "t1_c3_c0_c1_c5_c4_unique" UNIQUE ("c3", "c0", "c1", "c5", "c4"))
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" VARCHAR(407)  NOT NULL,"c2" CHARACTER LARGE OBJECT,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_unique" UNIQUE ("c0"))
+
+statement ok
+CREATE FUNCTION mystringudf(a clob, b clob) RETURNS INT RETURN a || b
+
+statement ok
+MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON TRUE WHEN MATCHED THEN UPDATE SET c2 = mystringudf('1', '2')
+
+statement ok
+MERGE INTO t2 USING (SELECT * FROM t1) AS t1 ON NOT (greatest(FALSE, TRUE)) WHEN MATCHED THEN UPDATE SET c0 = r'', c2 = (ifthenelse(((-1.2422299E8)<=(6)), CAST(6 AS STRING), mystringudf(r'', r'833481730')))
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t1(c2 DOUBLE PRECISION)
+
+statement ok
+CREATE TABLE t2(c2 DECIMAL, c4 tinyint)
+
+statement ok
+INSERT INTO t2(c4) VALUES (89), (9), (2), (6), (2), (5), (3), (0)
+
+statement ok
+TRUNCATE t2
+
+statement ok
+INSERT INTO t2(c2) VALUES (10), (6)
+
+query I rowsort
+SELECT 1 FROM t2, t1 WHERE t1.c2 BETWEEN t2.c2 AND 10
+----
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2

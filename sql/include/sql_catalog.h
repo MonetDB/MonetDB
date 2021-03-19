@@ -272,6 +272,7 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 #define ol_length(ol) (list_length(ol->l))
 #define ol_first_node(ol) (ol->l->h)
 #define ol_last_node(ol) (ol->l->t)
+#define ol_fetch(ol,nr) (list_fetch(ol->l, nr))
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs, void *data);

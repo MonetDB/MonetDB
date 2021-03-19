@@ -12,6 +12,7 @@
 #include "rel_schema.h"
 #include "rel_select.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_updates.h"
 #include "sql_privileges.h"
@@ -437,14 +438,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			rel = rel_table(sql, ddl_create_table, "sys", t, SQL_DECLARED_TABLE);
 		} else {
 			rel = rel_basetable(sql, t, t->base.name);
-			for (node *n = rel->exps->h ; n ; n = n->next) {
-				sql_exp *e = (sql_exp *) n->data;
-
-				if (!strcmp(exp_name(e), TID)) { /* The TID column must not be in the return projection */
-					list_remove_node(rel->exps, NULL, n);
-					break;
-				}
-			}
+			rel = rel_base_add_columns(sql, rel);
 		}
 	} else { /* other cases */
 		res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
@@ -1231,6 +1225,8 @@ static sql_rel_view*
 _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
+	rel_base_use_all(sql, r);
+	r = rewrite_basetable(sql, r);
 	return stack_push_rel_view(sql, tname, r);
 }
 
@@ -1254,6 +1250,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
+	int8_t old_useviews = sql->use_views;
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1365,9 +1362,11 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
+	sql->use_views = 1; /* leave the 'use_views' hack to where it belongs */
 	sql->session->schema = ss;
 	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
 	sql->session->schema = old_schema;
+	sql->use_views = old_useviews;
 	if (!sq) {
 		if (!instantiate)
 			stack_pop_frame(sql);
