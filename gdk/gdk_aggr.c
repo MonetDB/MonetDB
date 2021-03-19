@@ -3777,7 +3777,8 @@ static BAT *
 doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		   bool skip_nils, bool abort_on_error, bool average)
 {
-	bool freeb = false, freeg = false;
+	BAT *origb = b;
+	BAT *origg = g;
 	oid min, max;
 	BUN ngrp;
 	BUN nils = 0;
@@ -3844,12 +3845,10 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		b = BATproject(s, b);
 		if (b == NULL)
 			return NULL;
-		freeb = true;
 		if (g) {
 			g = BATproject(s, g);
 			if (g == NULL)
 				goto bunins_failed;
-			freeg = true;
 		}
 	}
 
@@ -3869,27 +3868,25 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			else
 				bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
-			if (freeb)
+			if (b != origb)
 				BBPunfix(b->batCacheid);
-			if (freeg)
+			if (g != origg)
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, false) != GDK_SUCCEED)
 			goto bunins_failed;
-		if (freeg)
+		if (g != origg)
 			BBPunfix(g->batCacheid);
 		g = t1;
-		freeg = true;
 
 		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false, false) != GDK_SUCCEED) {
 			BBPunfix(t2->batCacheid);
 			goto bunins_failed;
 		}
-		if (freeb)
+		if (b != origb)
 			BBPunfix(b->batCacheid);
 		b = t1;
-		freeb = true;
 		BBPunfix(t2->batCacheid);
 
 		if (average)
@@ -4064,7 +4061,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			goto bunins_failed;
 	}
 
-	if (freeb)
+	if (b != origb)
 		BBPunfix(b->batCacheid);
 
 	bn->tkey = BATcount(bn) <= 1;
@@ -4076,15 +4073,15 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  ",quantile=%g,average=%s -> " ALGOOPTBATFMT
 		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOBATPAR(origb), ALGOOPTBATPAR(origg), ALGOOPTBATPAR(e),
 		  ALGOOPTBATPAR(s), quantile, average ? "true" : "false",
 		  ALGOOPTBATPAR(bn), ci.seq, ncand, GDKusec() - t0);
 	return bn;
 
   bunins_failed:
-	if (freeb)
+	if (b && b != origb)
 		BBPunfix(b->batCacheid);
-	if (freeg)
+	if (g && g != origg)
 		BBPunfix(g->batCacheid);
 	if (bn)
 		BBPunfix(bn->batCacheid);
