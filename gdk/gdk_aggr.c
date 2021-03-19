@@ -3271,6 +3271,8 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 		if (ngrp == cnt) {					\
 			/* single element groups */			\
 			while (ncand > 0) {				\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						TIMEOUT_HANDLER(BUN_NONE));\
 				ncand--;				\
 				i = canditer_next(ci) - b->hseqbase;	\
 				if (!skip_nils ||			\
@@ -3282,6 +3284,8 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 		} else {						\
 			gid = 0; /* in case gids == NULL */		\
 			while (ncand > 0) {				\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,\
+						TIMEOUT_HANDLER(BUN_NONE));\
 				ncand--;				\
 				i = canditer_next(ci) - b->hseqbase;	\
 				if (gids == NULL ||			\
@@ -3317,6 +3321,13 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	BATiter bi;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	nils = ngrp;
 	for (i = 0; i < ngrp; i++)
@@ -3366,6 +3377,8 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		if (gdense) {
 			/* single element groups */
 			while (ncand > 0) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						TIMEOUT_HANDLER(BUN_NONE));
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
@@ -3377,6 +3390,8 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		} else {
 			gid = 0; /* in case gids == NULL */
 			while (ncand > 0) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						TIMEOUT_HANDLER(BUN_NONE));
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
@@ -3421,6 +3436,13 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	BATiter bi;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	nils = ngrp;
 	for (i = 0; i < ngrp; i++)
@@ -3470,6 +3492,8 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		if (gdense) {
 			/* single element groups */
 			while (ncand > 0) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						TIMEOUT_HANDLER(BUN_NONE));
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
@@ -3481,6 +3505,8 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		} else {
 			gid = 0; /* in case gids == NULL */
 			while (ncand > 0) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						TIMEOUT_HANDLER(BUN_NONE));
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
