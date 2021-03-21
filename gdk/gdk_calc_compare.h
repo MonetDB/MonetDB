@@ -833,7 +833,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 		return NULL;
 	}
 	if (ncand == 0)
-		return COLnew(b1->hseqbase, TYPE_TPE, 0, TRANSIENT);
+		return COLnew(ci1.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	if (BATtvoid(b1) && BATtvoid(b2) && ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		TPE res;
