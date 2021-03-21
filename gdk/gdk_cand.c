@@ -405,7 +405,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	assert(ci != NULL);
 
 	if (s == NULL) {
-		if (b == NULL || BATcount(b) == 0) {
+		if (b == NULL) {
 			/* trivially empty candidate list */
 			*ci = (struct canditer) {
 				.tpe = cand_dense,
