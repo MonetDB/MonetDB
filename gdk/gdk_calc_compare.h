@@ -884,7 +884,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return COLnew(b->hseqbase, TYPE_TPE, 0, TRANSIENT);
+		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	return BATcalcop_intern(b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
 				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
@@ -921,7 +921,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return COLnew(b->hseqbase, TYPE_TPE, 0, TRANSIENT);
+		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
 
 	return BATcalcop_intern(VALptr(v),
 				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
