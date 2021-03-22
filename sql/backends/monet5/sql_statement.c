@@ -3257,7 +3257,8 @@ stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
-	r->cand = op1->cand;
+	if (!r->cand)
+		r->cand = op1->cand;
 	return r;
 }
 

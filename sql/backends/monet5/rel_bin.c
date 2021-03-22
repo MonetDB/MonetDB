@@ -1028,7 +1028,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 
 				if (en->next) {
 					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
-					ncond = stmt_unop(be, es, NULL, a); /*TODO sql/test/coalesce failing for passing 'nsel' here */
+					ncond = stmt_unop(be, es, NULL, a);
 					if (ncond->nrcols == 0) {
 						stmt *l = bin_find_smallest_column(be, left);
 						if (nsel && l)
