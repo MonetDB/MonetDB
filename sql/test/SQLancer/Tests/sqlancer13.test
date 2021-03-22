@@ -290,3 +290,25 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t2
+
+statement ok
+CREATE TABLE t1(c0 UUID)
+
+statement ok
+CREATE TABLE t2(c0 integer)
+
+statement ok
+INSERT INTO t1(c0) VALUES(UUID '7FF36D5B-dB28-0fDB-9ea8-c574aE686E0e'), (UUID 'EAfDd2f4-CAaE-BBc0-54AA-8E3A4B978434')
+
+statement ok
+DELETE FROM t1
+
+query I rowsort
+SELECT 1 FROM t2, t1 WHERE UUID 'da9eBfcb-C2eA-416F-F8a9-F49b2aB1FCb8' BETWEEN t1.c0 AND (CASE WHEN FALSE THEN t1.c0 WHEN FALSE THEN UUID 'D2aFBA26-0f86-c893-B0C1-1Cd1DdC9aadE' END)
+----
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2
