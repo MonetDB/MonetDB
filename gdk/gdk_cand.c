@@ -434,6 +434,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		/* candidate list for empty BAT or empty candidate list */
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
+			.hseq = s->hseqbase,
 			.s = s,
 		};
 		return 0;
