@@ -173,13 +173,13 @@ canditer_next(struct canditer *ci)
 
 gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
 gdk_export oid canditer_peek(struct canditer *ci);
-gdk_export oid canditer_last(struct canditer *ci);
+gdk_export oid canditer_last(const struct canditer *ci);
 gdk_export oid canditer_prev(struct canditer *ci);
 gdk_export oid canditer_peekprev(struct canditer *ci);
-gdk_export oid canditer_idx(struct canditer *ci, BUN p);
+gdk_export oid canditer_idx(const struct canditer *ci, BUN p);
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
-gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
+gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next);
 static inline bool
 canditer_contains(struct canditer *ci, oid o)
 {
@@ -197,11 +197,11 @@ canditer_contains(struct canditer *ci, oid o)
 	}
 	return canditer_search(ci, o, false) != BUN_NONE;
 }
-gdk_export oid canditer_mask_next(struct canditer *ci, oid o, bool next);
-gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
-gdk_export BAT *canditer_sliceval(struct canditer *ci, oid lo, oid hi);
-gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
-gdk_export BAT *canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
+gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next);
+gdk_export BAT *canditer_slice(const struct canditer *ci, BUN lo, BUN hi);
+gdk_export BAT *canditer_sliceval(const struct canditer *ci, oid lo, oid hi);
+gdk_export BAT *canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
+gdk_export BAT *canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
 gdk_export BAT *BATnegcands(BUN nr, BAT *odels);
 gdk_export BAT *BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected);
 gdk_export BAT *BATunmask(BAT *b);
