@@ -197,6 +197,7 @@ canditer_contains(struct canditer *ci, oid o)
 	}
 	return canditer_search(ci, o, false) != BUN_NONE;
 }
+gdk_export oid canditer_mask_next(struct canditer *ci, oid o, bool next);
 gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_sliceval(struct canditer *ci, oid lo, oid hi);
 gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
