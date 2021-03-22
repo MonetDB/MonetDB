@@ -3268,7 +3268,8 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	list_append(ops, op1);
 	list_append(ops, op2);
 	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
-	r->cand = op1->cand?op1->cand:op2->cand;
+	if (!r->cand)
+		r->cand = op1->cand?op1->cand:op2->cand;
 	return r;
 }
 
