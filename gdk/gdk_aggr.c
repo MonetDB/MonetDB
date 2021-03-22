@@ -4257,6 +4257,8 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	do {						\
 		TYPE x;					\
 		for (i = 0; i < cnt; i++) {		\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					TIMEOUT_HANDLER(dbl_nil));\
 			x = ((const TYPE *) values)[i];	\
 			if (is_##TYPE##_nil(x))		\
 				continue;		\
@@ -4276,6 +4278,13 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	dbl mean = 0;
 	dbl m2 = 0;
 	dbl delta;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	switch (tp) {
 	case TYPE_bte:
@@ -4374,6 +4383,8 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 	do {								\
 		TYPE x, y;						\
 		for (i = 0; i < cnt; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					TIMEOUT_HANDLER(dbl_nil));\
 			x = ((const TYPE *) v1)[i];			\
 			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
@@ -4394,6 +4405,14 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 {
 	BUN n = 0, i;
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 
 	switch (tp) {
 	case TYPE_bte:
@@ -4461,6 +4480,8 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 	do {								\
 		TYPE x, y;						\
 		for (i = 0; i < cnt; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					TIMEOUT_HANDLER(dbl_nil));\
 			x = ((const TYPE *) v1)[i];			\
 			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
@@ -4487,6 +4508,13 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	const void *v1 = (const void *) Tloc(b1, 0), *v2 = (const void *) Tloc(b2, 0);
 	int tp = b1->ttype;
 	lng t0 = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
