@@ -328,3 +328,20 @@ SELECT 1 FROM t2 JOIN (VALUES (0.54), (1.2)) AS sub0 ON ((t2.c0) IN (8)) BETWEEN
 
 statement ok
 DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c4" DOUBLE NOT NULL)
+
+statement ok
+insert into t0(c4) values(power(1770290607, case when greatest(false, true) then cast(5 as real) end)), (-1.722544153E9)
+
+statement ok
+INSERT INTO t0(c4) VALUES(power(1770290607, CASE WHEN (UUID 'aE792C3f-21e0-323f-1C8A-DfBD3aB655CF') IN (UUID 'b30E22a2-3d7A-1003-BEB6-F9dE845bEAd1',
+UUID '6E391a40-3Fc6-F594-036D-737eCaDC937c') THEN CAST(r'jV㋕<2H' AS REAL) WHEN greatest(FALSE, TRUE) THEN CAST(5 AS REAL) WHEN NOT (TRUE)
+THEN + (3) WHEN NOT (TRUE) THEN least(5, 0.5809714) WHEN NOT (TRUE) THEN ((0.022229422)*(1666367947)) END)), (-1.722544153E9)
+
+statement ok
+ROLLBACK
