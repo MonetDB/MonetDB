@@ -806,6 +806,45 @@ canditer_peekprev(struct canditer *ci)
 	return o;
 }
 
+/* if o is a candidate, return it, else return the next candidate from
+ * the cand_mask iterator ci after (if next is set) or before (if next
+ * is unset) o; if there are no more candidates, return oid_nil */
+oid
+canditer_mask_next(struct canditer *ci, oid o, bool next)
+{
+	if (o < ci->mskoff)
+		return next ? ci->mskoff + ci->firstbit : oid_nil;
+	o -= ci->mskoff;
+	BUN p = o / 32;
+	o %= 32;
+	if (p >= ci->nvals || (p == ci->nvals - 1 && o >= ci->lastbit))
+		return next ? oid_nil : canditer_last(ci);
+	if (next) {
+		while ((ci->mask[p] & (1U << o)) == 0) {
+			if (++o == 32) {
+				o = 0;
+				if (++p == ci->nvals)
+					return oid_nil;
+			}
+		}
+		if (p == ci->nvals - 1 && o >= ci->lastbit)
+			return oid_nil;
+	} else {
+		while ((ci->mask[p] & (1U << o)) == 0) {
+			if (o == 0) {
+				o = 31;
+				if (p == 0)
+					return oid_nil;
+			} else {
+				o--;
+			}
+		}
+		if (p == 0 && o < ci->firstbit)
+			return oid_nil;
+	}
+	return ci->mskoff + 32 * p + o;
+}
+
 /* return the last candidate */
 oid
 canditer_last(struct canditer *ci)

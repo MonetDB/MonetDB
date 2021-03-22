@@ -449,7 +449,7 @@ ssize_t bteToStr(str *dst, size_t *len, const bte *src, bool external);
 const bte bte_nil;
 oid canditer_idx(struct canditer *ci, BUN p);
 BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
-oid canditer_last(struct canditer *ci);
+oid canditer_last(const struct canditer *ci);
 oid canditer_peek(struct canditer *ci);
 oid canditer_peekprev(struct canditer *ci);
 oid canditer_prev(struct canditer *ci);
