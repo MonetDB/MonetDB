@@ -253,6 +253,67 @@ gdk_return VIEWreset(BAT *b)
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
+/* calculate the integer 2 logarithm (i.e. position of highest set
+ * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
+ * 0x8 to 0xF give 4, etc.) */
+static inline unsigned
+ilog2(BUN x)
+{
+	if (x == 0)
+		return 0;
+#if defined(__GNUC__)
+#if SIZEOF_BUN == 8
+	return (unsigned) (64 - __builtin_clzll((unsigned long long) x));
+#else
+	return (unsigned) (32 - __builtin_clz((unsigned) x));
+#endif
+#elif defined(_MSC_VER)
+	unsigned long n;
+	if (
+#if SIZEOF_BUN == 8
+		_BitScanReverse64(&n, (unsigned __int64) x)
+#else
+		_BitScanReverse(&n, (unsigned long) x)
+#endif
+		)
+		return (unsigned) n + 1;
+	else
+		return 0;
+#else
+	unsigned n = 0;
+	BUN y;
+
+	/* use a "binary search" method */
+#if SIZEOF_BUN == 8
+	if ((y = x >> 32) != 0) {
+		x = y;
+		n += 32;
+	}
+#endif
+	if ((y = x >> 16) != 0) {
+		x = y;
+		n += 16;
+	}
+	if ((y = x >> 8) != 0) {
+		x = y;
+		n += 8;
+	}
+	if ((y = x >> 4) != 0) {
+		x = y;
+		n += 4;
+	}
+	if ((y = x >> 2) != 0) {
+		x = y;
+		n += 2;
+	}
+	if ((y = x >> 1) != 0) {
+		x = y;
+		n += 1;
+	}
+	return n + (x != 0);
+#endif
+}
+
 /* some macros to help print info about BATs when using ALGODEBUG */
 #define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)							\

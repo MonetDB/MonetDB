@@ -1806,8 +1806,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 		}
 		/* determine opportunistic scan window for l */
-		for (nl = lci->ncand, lscan = 4; nl > 0; lscan++)
-			nl >>= 1;
+		lscan = 4 + ilog2(lci->ncand);
 	} else {
 		/* if l not sorted, we will always use binary search
 		 * on r */
@@ -1819,8 +1818,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	/* determine opportunistic scan window for r; if l is not
 	 * sorted this is only used to find range of equal values */
-	for (nl = rci->ncand, rscan = 4; nl > 0; rscan++)
-		nl >>= 1;
+	rscan = 4 + ilog2(rci->ncand);
 
 	if (!equal_order) {
 		/* we go through r backwards */
