@@ -168,7 +168,6 @@
 
 #define ICONV_CONST
 #define FLEXIBLE_ARRAY_MEMBER
-#define HAVE_CBRT 1
 #define ENABLE_MAPI 1
 #define HAVE_MAPI 1
 // End Section: monetdb configure defines

@@ -367,54 +367,6 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 	return CMDscienceBINARY(stk, pci, FUNC##f, FUNC, "batmmath." #FUNC); \
 }
 
-#define scienceNotImpl(FUNC)											\
-static str																\
-CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
-{																		\
-	(void) cntxt;														\
-	(void) mb;															\
-	(void) stk;															\
-	(void) pci;															\
-																		\
-	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);			\
-}
-
-static double
-cot(double x)
-{
-	return 1 / tan(x);
-}
-
-static float
-cotf(float x)
-{
-	return (float) (1 / tan(x));
-}
-
-static double
-radians(double x)
-{
-	return x * (M_PI / 180.0);
-}
-
-static float
-radiansf(float x)
-{
-	return (float) (x * (M_PI / 180.0));
-}
-
-static double
-degrees(double x)
-{
-	return x * (180.0 / M_PI);
-}
-
-static float
-degreesf(float x)
-{
-	return (float) (x * (180.0 / M_PI));
-}
-
 static str
 CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -486,11 +438,7 @@ scienceImpl(log)
 scienceImpl(log10)
 scienceImpl(log2)
 scienceImpl(sqrt)
-#ifdef HAVE_CBRT
 scienceImpl(cbrt)
-#else
-scienceNotImpl(cbrt)
-#endif
 scienceImpl(ceil)
 scienceImpl(fabs)
 scienceImpl(floor)
