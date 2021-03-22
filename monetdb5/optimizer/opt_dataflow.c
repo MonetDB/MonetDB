@@ -327,33 +327,58 @@ wrapup:
 }
 
 
+
+static stream *
+open_trace_stream(void)
+{
+	char path[4096];
+	stream *s = NULL;
+
+	do {
+
+		char *tst_trace_dir = getenv("JOERITRACE");
+		if (!tst_trace_dir)
+			break;
+
+		long t = time(NULL);
+		int p = getpid();
+		sprintf(path, "%s/trace.%ld.%d.log", tst_trace_dir, t, p);
+
+		s = open_wastream(path);
+	} while (0);
+
+	return s;
+}
+
 str
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int list_flags = LIST_MAL_ALL | LIST_MAL_NOCOMMENTS;
-	stream *before = open_wastream("a0");
-	stream *after = open_wastream("a1");
+	static stream *s = NULL;
+	static MT_Lock lock = MT_LOCK_INITIALIZER(lock);
 
-	if (before == NULL) {
-		return createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) "Couldn't open a0: %s", mnstr_peek_error(NULL));
+	MT_lock_set(&lock);
+
+	if (s == NULL)
+		s = open_trace_stream();
+
+	if (s) {
+		printFunction(s, mb, stk, list_flags);
+		mnstr_printf(s, "\n\n--\n\n");
+		mnstr_flush(s, MNSTR_FLUSH_ALL);
 	}
-	if (after == NULL) {
-		return createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) "Couldn't open a1: %s", mnstr_peek_error(NULL));
-	}
-
-	printFunction(before, mb, stk, list_flags);
-	mnstr_flush(before, MNSTR_FLUSH_ALL);
-
 	str msg = OPTdataflowImplementation_wrapped(cntxt, mb, stk, p);
 
-	if (msg != MAL_SUCCEED) {
-		mnstr_printf(after, "ERROR: %s\n", msg);
+	if (s) {
+		if (msg != MAL_SUCCEED) {
+			mnstr_printf(s, "ERROR: %s\n", msg);
+		}
+		printFunction(s, mb, stk, list_flags);
+		mnstr_printf(s, "\n\n------\n\n");
+		mnstr_flush(s, MNSTR_FLUSH_ALL);
 	}
-	printFunction(after, mb, stk, list_flags);
-	mnstr_flush(after, MNSTR_FLUSH_ALL);
 
-	close_stream(before);
-	close_stream(after);
+	MT_lock_unset(&lock);
 
 	return msg;
 }
