@@ -3608,14 +3608,22 @@ static sql_rel *
 rel_unnest_simplify(visitor *v, sql_rel *rel)
 {
 	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
-	rel = rewrite_basetable(v->sql, rel);	/* add proper exps lists */
-	rel = rewrite_empty_project(v, rel); /* remove empty project/groupby */
-	rel = rewrite_simplify(v, rel);
-	rel = rewrite_or_exp(v, rel);
-	rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
-	rel = rewrite_aggregates(v, rel);
-	rel = rewrite_outer2inner_union(v, rel);
-	rel = rewrite_values(v, rel);
+	if (rel)
+		rel = rewrite_basetable(v->sql, rel);	/* add proper exps lists */
+	if (rel)
+		rel = rewrite_empty_project(v, rel); /* remove empty project/groupby */
+	if (rel)
+		rel = rewrite_simplify(v, rel);
+	if (rel)
+		rel = rewrite_or_exp(v, rel);
+	if (rel)
+		rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
+	if (rel)
+		rel = rewrite_aggregates(v, rel);
+	if (rel)
+		rel = rewrite_outer2inner_union(v, rel);
+	if (rel)
+		rel = rewrite_values(v, rel);
 	return rel;
 }
 
@@ -3623,27 +3631,36 @@ static sql_rel *
 rel_unnest_projects(visitor *v, sql_rel *rel)
 {
 	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
-	rel = rewrite_reset_used(v, rel);
-	rel = rewrite_remove_xp(v, rel);	/* remove crossproducts with project [ atom ] */
-	rel = rewrite_groupings(v, rel);	/* transform group combinations into union of group relations */
+	if (rel)
+		rel = rewrite_reset_used(v, rel);
+	if (rel)
+		rel = rewrite_remove_xp(v, rel);	/* remove crossproducts with project [ atom ] */
+	if (rel)
+		rel = rewrite_groupings(v, rel);	/* transform group combinations into union of group relations */
 	return rel;
 }
 
 static sql_rel *
 rel_unnest_comparison_rewriters(visitor *v, sql_rel *rel)
 {
-	rel = rewrite_join2semi(v, rel);	/* where possible convert anyequal functions into marks */
-	rel = rewrite_compare_exp(v, rel);	/* only allow for e_cmp in selects and  handling */
-	rel = rewrite_remove_xp_project(v, rel);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
-	rel = rewrite_simplify(v, rel);		/* as expressions got merged before, lets try to simplify again */
+	if (rel)
+		rel = rewrite_join2semi(v, rel);	/* where possible convert anyequal functions into marks */
+	if (rel)
+		rel = rewrite_compare_exp(v, rel);	/* only allow for e_cmp in selects and  handling */
+	if (rel)
+		rel = rewrite_remove_xp_project(v, rel);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
+	if (rel)
+		rel = rewrite_simplify(v, rel);		/* as expressions got merged before, lets try to simplify again */
 	return rel;
 }
 
 static sql_exp *
 rel_simplify_exp_and_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	e = rewrite_simplify_exp(v, rel, e, depth);
-	e = rewrite_rank(v, rel, e, depth);
+	if (e)
+		e = rewrite_simplify_exp(v, rel, e, depth);
+	if (e)
+		e = rewrite_rank(v, rel, e, depth);
 	return e;
 }
 

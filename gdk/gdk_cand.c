@@ -375,7 +375,7 @@ binsearchcand(const oid *cand, BUN hi, oid o)
 /* count number of 1 bits in ci->mask between bit positions lo
  * (inclusive) and hi (not inclusive) */
 static BUN
-count_mask_bits(struct canditer *ci, BUN lo, BUN hi)
+count_mask_bits(const struct canditer *ci, BUN lo, BUN hi)
 {
 	BUN n;
 	assert(lo <= hi);
@@ -405,7 +405,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	assert(ci != NULL);
 
 	if (s == NULL) {
-		if (b == NULL || BATcount(b) == 0) {
+		if (b == NULL) {
 			/* trivially empty candidate list */
 			*ci = (struct canditer) {
 				.tpe = cand_dense,
@@ -434,6 +434,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		/* candidate list for empty BAT or empty candidate list */
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
+			.hseq = s->hseqbase,
 			.s = s,
 		};
 		return 0;
@@ -805,9 +806,48 @@ canditer_peekprev(struct canditer *ci)
 	return o;
 }
 
+/* if o is a candidate, return it, else return the next candidate from
+ * the cand_mask iterator ci after (if next is set) or before (if next
+ * is unset) o; if there are no more candidates, return oid_nil */
+oid
+canditer_mask_next(const struct canditer *ci, oid o, bool next)
+{
+	if (o < ci->mskoff)
+		return next ? ci->mskoff + ci->firstbit : oid_nil;
+	o -= ci->mskoff;
+	BUN p = o / 32;
+	o %= 32;
+	if (p >= ci->nvals || (p == ci->nvals - 1 && o >= ci->lastbit))
+		return next ? oid_nil : canditer_last(ci);
+	if (next) {
+		while ((ci->mask[p] & (1U << o)) == 0) {
+			if (++o == 32) {
+				o = 0;
+				if (++p == ci->nvals)
+					return oid_nil;
+			}
+		}
+		if (p == ci->nvals - 1 && o >= ci->lastbit)
+			return oid_nil;
+	} else {
+		while ((ci->mask[p] & (1U << o)) == 0) {
+			if (o == 0) {
+				o = 31;
+				if (p == 0)
+					return oid_nil;
+			} else {
+				o--;
+			}
+		}
+		if (p == 0 && o < ci->firstbit)
+			return oid_nil;
+	}
+	return ci->mskoff + 32 * p + o;
+}
+
 /* return the last candidate */
 oid
-canditer_last(struct canditer *ci)
+canditer_last(const struct canditer *ci)
 {
 	if (ci->ncand == 0)
 		return oid_nil;
@@ -830,7 +870,7 @@ canditer_last(struct canditer *ci)
 
 /* return the candidate at the given index */
 oid
-canditer_idx(struct canditer *ci, BUN p)
+canditer_idx(const struct canditer *ci, BUN p)
 {
 	if (p >= ci->ncand)
 		return oid_nil;
@@ -944,7 +984,7 @@ canditer_reset(struct canditer *ci)
  * not occur, if next is set, return index of next larger candidate,
  * if next is not set, return BUN_NONE */
 BUN
-canditer_search(struct canditer *ci, oid o, bool next)
+canditer_search(const struct canditer *ci, oid o, bool next)
 {
 	BUN p;
 
@@ -990,7 +1030,7 @@ canditer_search(struct canditer *ci, oid o, bool next)
 }
 
 static BAT *
-canditer_sliceval_mask(struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
+canditer_sliceval_mask(const struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
 		       oid lo2, oid hi2, BUN cnt2)
 {
 	assert(cnt2 == 0 || !is_oid_nil(lo2));
@@ -1047,7 +1087,7 @@ canditer_sliceval_mask(struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
  * BATslice, the hseqbase of the returned BAT is 0; note for cand_mask
  * candidate iterators, the BUN values refer to number of 1 bits */
 BAT *
-canditer_slice(struct canditer *ci, BUN lo, BUN hi)
+canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 {
 	BAT *bn;
 	oid o;
@@ -1112,7 +1152,7 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 /* like the above, except the bounds are given by values instead of
  * indexes */
 BAT *
-canditer_sliceval(struct canditer *ci, oid lo, oid hi)
+canditer_sliceval(const struct canditer *ci, oid lo, oid hi)
 {
 	if (ci->tpe != cand_mask) {
 		return canditer_slice(
@@ -1127,7 +1167,7 @@ canditer_sliceval(struct canditer *ci, oid lo, oid hi)
 
 /* return the combination of two slices */
 BAT *
-canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
+canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 {
 	BAT *bn;
 	oid o;
@@ -1221,7 +1261,7 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 }
 
 BAT *
-canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2)
+canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2)
 {
 	if (ci->tpe != cand_mask) {
 		return canditer_slice2(

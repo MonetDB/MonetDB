@@ -18,6 +18,107 @@
 #include "gdk_private.h"
 #include "gdk_imprints.h"
 
+/*
+ * The imprints heap consists of five parts:
+ * - header
+ * - bins
+ * - stats
+ * - imps
+ * - dict
+ *
+ * The header consists of four size_t values `size_t hdata[4]':
+ * - hdata[0] = (1 << 16) | (IMPRINTS_VERSION << 8) | (uint8_t) imprints->bits
+ * - hdata[1] = imprints->impcnt
+ * - hdata[2] = imprints->dictcnt
+ * - hdata[3] = BATcount(b)
+ * The first word of the header includes a version number in case the
+ * format changes, and a bit to indicate that the data was synced to disk.
+ * This bit is the last thing written, so if it is set when reading back
+ * the imprints heap, the data is complete.  The fourth word is the size of
+ * the BAT for which the imprints were created.  If this size differs from
+ * the size of the BAT at the time of reading the imprints back from disk,
+ * the imprints are not usable.
+ *
+ * The bins area starts immediately after the header.  It consists of 64
+ * values in the domain of the BAT `TYPE bins[64]'.
+ *
+ * The stats area starts immediately after the bins area.  It consists of
+ * three times an array of 64 64 (32) bit integers `BUN stats[3][64]'.  The
+ * three arrays represent respectively min, max, and cnt for each of the 64
+ * bins, so stats can be seen as `BUN min_bins[64]; BUN max_bins[64]; BUN
+ * cnt_bins[64];'.  The min and max values are positions of the smallest
+ * and largest non-nil value in the corresponding bin.
+ *
+ * The imps area starts immediately after the stats area.  It consists of
+ * one mask per "page" of the input BAT indicating in which bins the values
+ * in that page fall.  The size of the mask is given by imprints->bits.
+ * The list of masks may be run-length compressed, see the dict area.  A
+ * "page" is 64 bytes worth of values, so the number of values depends on
+ * the type of the value.
+ *
+ * The dict area starts immediately after the imps area.  It consists of
+ * one cchdc_t value per "page" of the input.  The precise use is described
+ * below.
+ *
+ * There are up to 64 bins into which values are sorted.  The number of
+ * bins depends on the number of unique values in the input BAT (actually
+ * on the number of unique values in a random sample of 2048 values of the
+ * input BAT) and is 8, 16, 32, or 64.  The number of bits in the mask is
+ * stored in imprints->bits.  The boundaries of the bins are dynamically
+ * determined when the imprints are created and stored in the bins array.
+ * In fact, bins[n] contains the lower boundary of the n-th bin (0 <= n <
+ * N, N the number of bins).  The value of bins[0] is not actually used:
+ * all values smaller than bins[1] are sorted into this bin, including NIL.
+ * The boundaries are simply computed by stepping with large steps through
+ * the sorted sample and taking 63 (or 31, 15, 7) equally spaced values
+ * from there.
+ *
+ * Once the appropriate bin n is determined for a particular value v
+ * (bins[n] <= v < bins[n+1]), a bitmask can be constructed for the value
+ * as ((uintN_t)1 << n) where N is the number of bits that are used for the
+ * bitmasks and n is the number of the bin (0 <= n < N).
+ *
+ * The input BAT is divided into "pages" where a page is 64 bytes.  This
+ * means the number of rows in a page depends on the size of the values: 64
+ * for byte-sized values down to 4 for hugeint (128 bit) values.  For each
+ * page, a bitmask is created which is the imprint for that page.  The
+ * bitmask has a bit set for each bin into which a value inside the page
+ * falls.  These bitmasks (imprints) are stored in the imprints->imps
+ * array, but with a twist, see below.
+ *
+ * The imprints->dict array is an array of cchdc_t values.  A cchdc_t value
+ * consists of a bit .repeat and a 24-bit value .cnt.  The sum of the .cnt
+ * values is equal to the total number of pages in the input BAT.  If the
+ * .repeat value is 0, there are .cnt consecutive imprint bitmasks in the
+ * imprints->imps array, each for one page.  If the .repeat value is 1,
+ * there is a single imprint bitmask in the imprints->imps array which is
+ * valid for the next .cnt pages.  In this way a run-length encoding
+ * compression scheme is implemented for imprints.
+ *
+ * Imprints are used for range selects, i.e. finding all rows in a BAT
+ * whose value is inside some given range, or alternatively, all rows in a
+ * BAT whose value is outside some given range (anti select).
+ *
+ * A range necessarily covers one or more consecutive bins.  A bit mask is
+ * created for all bins that fall fully inside the range being selected (in
+ * gdk_select.c called "innermask"), and a bit mask is created for all bins
+ * that fall fully or partially inside the range (called "mask" in
+ * gdk_select.c).  Note that for an "anti" select, i.e. a select which
+ * matches everything except a given range, the bits in the bit masks are
+ * not consecutive.
+ *
+ * We then go through the imps table.  All pages where the only set bits
+ * are also set in "innermask" can be blindly added to the result: all
+ * values fall inside the range.  All pages where none of the set bits are
+ * also set in "mask" can be blindly skipped: no value falls inside the
+ * range.  For the remaining pages, we scan the page and check each
+ * individual value to see whether it is selected.
+ *
+ * Extra speed up is achieved by the run-length encoding of the imps table.
+ * If a mask is in the category of fully inside the range or fully outside,
+ * the complete set of pages can be added/skipped in one go.
+ */
+
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 

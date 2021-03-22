@@ -9,6 +9,8 @@
 #include "monetdb_config.h"
 #include "sql_mem.h"
 
+#define SA_BLOCK (64*1024)
+
 sql_ref *
 sql_ref_init(sql_ref *r)
 {
@@ -30,10 +32,59 @@ sql_ref_dec(sql_ref *r)
 	return (--r->refcnt);
 }
 
+typedef struct freed_t {
+	struct freed_t *n;
+	size_t sz;
+} freed_t;
 
-#define SA_BLOCK (64*1024)
+static void
+sa_destroy_freelist( freed_t *f )
+{
+	while(f) {
+		freed_t *n = f->n;
+		GDKfree(f);
+		f = n;
+	}
+}
 
-sql_allocator *sa_create(sql_allocator *pa)
+static void
+sa_free(sql_allocator *pa, void *blk)
+{
+	assert(!pa->pa);
+	size_t i;
+
+	for(i = 0; i < pa->nr; i++) {
+		if (pa->blks[i] == blk)
+			break;
+	}
+	assert (i < pa->nr);
+	for (; i < pa->nr-1; i++)
+		pa->blks[i] = pa->blks[i+1];
+	pa->nr--;
+
+	size_t sz = GDKmallocated(blk);
+	if (sz > (SA_BLOCK + 32)) {
+		_DELETE(blk);
+	} else {
+		freed_t *f = blk;
+		f->n = pa->freelist;
+
+		pa->freelist = f;
+	}
+}
+
+static void *
+sa_use_freed(sql_allocator *pa, size_t sz)
+{
+	(void)sz;
+
+	freed_t *f = pa->freelist;
+	pa->freelist = f->n;
+	return f;
+}
+
+sql_allocator *
+sa_create(sql_allocator *pa)
 {
 	sql_allocator *sa = (pa)?SA_NEW(pa, sql_allocator):MNEW(sql_allocator);
 	if (sa == NULL)
@@ -43,6 +94,7 @@ sql_allocator *sa_create(sql_allocator *pa)
 	sa->size = 64;
 	sa->nr = 1;
 	sa->blks = pa?SA_NEW_ARRAY(pa, char*, sa->size):NEW_ARRAY(char*, sa->size);
+	sa->freelist = NULL;
 	if (sa->blks == NULL) {
 		if (!pa)
 			_DELETE(sa);
@@ -68,6 +120,8 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	for (i = 1; i<sa->nr; i++) {
 		if (!sa->pa)
 			_DELETE(sa->blks[i]);
+		else
+			sa_free(sa->pa, sa->blks[i]);
 	}
 	sa->nr = 1;
 	sa->used = 0;
@@ -77,7 +131,8 @@ sql_allocator *sa_reset( sql_allocator *sa )
 
 #undef sa_realloc
 #undef sa_alloc
-void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+void *
+sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -87,14 +142,17 @@ void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 }
 
 #define round16(sz) ((sz+15)&~15)
-void *sa_alloc( sql_allocator *sa, size_t sz )
+void *
+sa_alloc( sql_allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
 	if (sz > (SA_BLOCK-sa->used)) {
 		if (sa->pa)
 			r = SA_NEW_ARRAY(sa->pa,char,(sz > SA_BLOCK ? sz : SA_BLOCK));
-	    else
+	    else if (sz <= SA_BLOCK && sa->freelist) {
+			r = sa_use_freed(sa, sz > SA_BLOCK ? sz : SA_BLOCK);
+		} else
 			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
 		if (r == NULL) {
 			if (sa->eb.enabled)
@@ -152,6 +210,7 @@ void sa_destroy( sql_allocator *sa )
 	if (sa->pa)
 		return;
 
+	sa_destroy_freelist(sa->freelist);
 	for (size_t i = 0; i<sa->nr; i++) {
 		GDKfree(sa->blks[i]);
 	}
