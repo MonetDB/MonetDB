@@ -1731,9 +1731,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	int lordering, rordering;
 	oid lv;
 	BUN i, j;		/* counters */
-	bool lskipped = false;	/* whether we skipped values in l */
 	oid lval = oid_nil, rval = oid_nil; /* temporary space to point v to */
 	struct canditer llci, rrci;
+	struct canditer *mlci, xlci;
+	struct canditer *mrci, xrci;
 
 	if (lci->tpe == cand_dense && lci->ncand == BATcount(l) &&
 	    rci->tpe == cand_dense && rci->ncand == BATcount(r) &&
@@ -1772,7 +1773,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		canditer_init(&llci, NULL, l);
 		lvals = NULL;
 	} else {
-		lvals = Tloc(l, 0);
+		lvals = Tloc(l, 0);			      /* non NULL */
 		llci = (struct canditer) {.tpe = cand_dense}; /* not used */
 	}
 	rrci = (struct canditer) {.tpe = cand_dense};
@@ -1826,6 +1827,23 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BAT *r1 = *r1p;
 	BAT *r2 = r2p ? *r2p : NULL;
 
+	if (lci->tpe == cand_mask) {
+		mlci = lci;
+		canditer_init(&xlci, l, NULL);
+		lci = &xlci;
+	} else {
+		mlci = NULL;
+		xlci = (struct canditer) {.tpe = cand_dense}; /* not used */
+	}
+	if (rci->tpe == cand_mask) {
+		mrci = rci;
+		canditer_init(&xrci, r, NULL);
+		rci = &xrci;
+	} else {
+		mrci = NULL;
+		xrci = (struct canditer) {.tpe = cand_dense}; /* not used */
+	}
+
 	if (l->tsorted || l->trevsorted) {
 		equal_order = (l->tsorted && r->tsorted) ||
 			(l->trevsorted && r->trevsorted &&
@@ -1842,8 +1860,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 		}
 		/* determine opportunistic scan window for l */
-		for (nl = lci->ncand, lscan = 4; nl > 0; lscan++)
-			nl >>= 1;
+		lscan = 4 + ilog2(lci->ncand);
 	} else {
 		/* if l not sorted, we will always use binary search
 		 * on r */
@@ -1855,8 +1872,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	/* determine opportunistic scan window for r; if l is not
 	 * sorted this is only used to find range of equal values */
-	for (nl = rci->ncand, rscan = 4; nl > 0; rscan++)
-		nl >>= 1;
+	rscan = 4 + ilog2(rci->ncand);
 
 	if (!equal_order) {
 		/* we go through r backwards */
@@ -1925,12 +1941,18 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (equal_order) {
 				if (rci->next == rci->ncand)
 					v = NULL; /* no more values */
-				else
+				else if (mrci) {
+					oid rv = canditer_mask_next(mrci, canditer_peek(rci), true);
+					v = rv == oid_nil ? NULL : VALUE(r, rv - r->hseqbase);
+				} else
 					v = VALUE(r, canditer_peek(rci) - r->hseqbase);
 			} else {
 				if (rci->next == 0)
 					v = NULL; /* no more values */
-				else
+				else if (mrci) {
+					oid rv = canditer_mask_next(mrci, canditer_peekprev(rci), false);
+					v = rv == oid_nil ? NULL : VALUE(r, rv - r->hseqbase);
+				} else
 					v = VALUE(r, canditer_peekprev(rci) - r->hseqbase);
 			}
 			/* here, v points to next value in r, or if
@@ -1955,6 +1977,13 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 							nlx -= lci->next;
 						}
 					}
+					if (mlci) {
+						lv = canditer_mask_next(mlci, lci->seq + lci->next + nlx, true);
+						if (lv == oid_nil)
+							nlx = lci->ncand - lci->next;
+						else
+							nlx = lv - lci->seq - lci->next;
+					}
 					if (lci->next + nlx == lci->ncand)
 						v = NULL;
 				}
@@ -1963,13 +1992,12 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				if (only_misses) {
 					if (maybeextend(r1, r2, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
-					lskipped |= nlx > 1 && lci->tpe != cand_dense;
 					while (nlx > 0) {
-						APPEND(r1, canditer_next(lci));
+						lv = canditer_next(lci);
+						if (mlci == NULL || canditer_contains(mlci, lv))
+							APPEND(r1, lv);
 						nlx--;
 					}
-					if (lskipped)
-						r1->tseqbase = oid_nil;
 					if (r1->trevsorted && BATcount(r1) > 1)
 						r1->trevsorted = false;
 				} else if (nil_on_miss) {
@@ -1983,18 +2011,17 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					}
 					if (maybeextend(r1, r2, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
-					lskipped |= nlx > 1 && lci->tpe != cand_dense;
 					while (nlx > 0) {
-						APPEND(r1, canditer_next(lci));
-						APPEND(r2, oid_nil);
+						lv = canditer_next(lci);
+						if (mlci == NULL || canditer_contains(mlci, lv)) {
+							APPEND(r1, lv);
+							APPEND(r2, oid_nil);
+						}
 						nlx--;
 					}
-					if (lskipped)
-						r1->tseqbase = oid_nil;
 					if (r1->trevsorted && BATcount(r1) > 1)
 						r1->trevsorted = false;
 				} else {
-					lskipped = BATcount(r1) > 0;
 					canditer_setidx(lci, lci->next + nlx);
 				}
 			}
@@ -2017,7 +2044,14 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		 * l is actually sorted (lscan > 0). */
 		nl = 1;		/* we'll match (at least) one in l */
 		nr = 0;		/* maybe we won't match anything in r */
-		v = VALUE(l, canditer_peek(lci) - l->hseqbase);
+		lv = canditer_peek(lci);
+		if (mlci) {
+			lv = canditer_mask_next(mlci, lv, true);
+			if (lv == oid_nil)
+				break;
+			canditer_setidx(lci, canditer_search(lci, lv, true));
+		}
+		v = VALUE(l, lv - l->hseqbase);
 		if (l->tkey) {
 			/* if l is key, there is a single value */
 		} else if (lscan > 0 &&
@@ -2223,7 +2257,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					 * in r */
 					break;
 				}
-				lskipped = BATcount(r1) > 0;
 				canditer_setidx(lci, lci->next + nl);
 				continue;
 			}
@@ -2243,7 +2276,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			goto bailout;
 		} else if (only_misses) {
 			/* we had a match, so we're not interested */
-			lskipped = BATcount(r1) > 0;
 			canditer_setidx(lci, lci->next + nl);
 			continue;
 		} else {
@@ -2253,11 +2285,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				 * value */
 				nr = 1;
 			}
-		}
-		if (canditer_idx(lci, lci->next + nl - 1) - canditer_idx(lci, lci->next) != nl - 1) {
-			/* not all values in the range are
-			 * candidates */
-			lskipped = true;
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
@@ -2284,7 +2311,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			 * in l will be repeated multiple times: hence
 			 * r1 is not key and not dense */
 			r1->tkey = false;
-			r1->tseqbase = oid_nil;
 			if (r2) {
 				/* multiple different values will be
 				 * inserted in r2 (in order), so not
@@ -2350,20 +2376,19 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					r2->tseqbase = oid_nil;
 				}
 			}
-			/* if there is a left candidate list, it may
-			 * be that the next value added isn't
-			 * consecutive with the last one */
-			if (lskipped ||
-			    ((oid *) r1->theap->base)[r1->batCount - 1] + 1 != canditer_peek(lci))
-				r1->tseqbase = oid_nil;
 		}
 
 		/* insert values: first the left output */
+		BUN nladded = 0;
 		for (i = 0; i < nl; i++) {
 			lv = canditer_next(lci);
-			for (j = 0; j < nr; j++)
-				APPEND(r1, lv);
+			if (mlci == NULL || canditer_contains(mlci, lv)) {
+				nladded++;
+				for (j = 0; j < nr; j++)
+					APPEND(r1, lv);
+			}
 		}
+		nl = nladded;
 		/* then the right output, various different ways of
 		 * doing it */
 		if (r2 == NULL) {
@@ -2402,20 +2427,15 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
 	r1->tseqbase = oid_nil;
+	if (r1->tkey)
+		r1 = virtualize(r1);
 	if (r2) {
 		BATsetcount(r2, BATcount(r2));
 		assert(BATcount(r1) == BATcount(r2));
 		r2->tseqbase = oid_nil;
-	}
-	if (BATcount(r1) > 0) {
-		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap->base)[0];
-		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap->base)[0];
-	} else {
-		r1->tseqbase = 0;
-		if (r2) {
-			r2->tseqbase = 0;
+		if (BATcount(r2) <= 1) {
+			r2->tkey = true;
+			r2 = virtualize(r2);
 		}
 	}
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","

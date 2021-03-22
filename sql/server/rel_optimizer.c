@@ -421,12 +421,14 @@ exp_count(int *cnt, sql_exp *e)
 		case cmp_lt:
 		case cmp_lte:
 			*cnt += 6;
+#if 0
 			if (e->l) {
 				sql_exp *l = e->l;
 				sql_subtype *t = exp_subtype(l);
 				if (EC_TEMP(t->type->eclass)) /* give preference too temporal ranges */
 					*cnt += 200;
 			}
+#endif
 			if (e->f){ /* range */
 				*cnt += 6;
 				return 12;
@@ -3108,6 +3110,10 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						sql_subtype et = *exp_subtype(e);
 						/* (x*c1)*c2 -> x * (c1*c2) */
 						list *l = sa_list(sql->sa);
+
+						/* lre and re may have different types, so compute supertype */
+						if (rel_convert_types(sql, NULL, NULL, &lre, &re, 1, type_equal) < 0)
+							return NULL;
 						append(l, lre);
 						append(l, re);
 						le->l = l;
@@ -3170,7 +3176,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						/* (x+c1)+y -> (x+y) + c1 */
 						ll->h->next->data = re;
 						l->h->next->data = lre;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3178,7 +3185,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						/* (x+c1)+c2 -> (c2+c1) + x */
 						ll->h->data = re;
 						l->h->next->data = lle;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3258,7 +3266,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						l->h->next->data = lre;
 						le->f = e->f;
 						e->f = f;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3269,7 +3278,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						l->h->next->data = lle;
 						le->f = e->f;
 						e->f = f;
-						l->h->data = exp_simplify_math(sql, le, changes);
+						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+							return NULL;
 						(*changes)++;
 						return e;
 					}
@@ -3278,10 +3288,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		}
 		if (l)
 			for (n = l->h; n; n = n->next)
-				n->data = exp_simplify_math(sql, n->data, changes);
+				if (!(n->data = exp_simplify_math(sql, n->data, changes)))
+					return NULL;
 	}
 	if (e->type == e_convert)
-		e->l = exp_simplify_math(sql, e->l, changes);
+		if (!(e->l = exp_simplify_math(sql, e->l, changes)))
+				return NULL;
 	return e;
 }
 
@@ -5428,24 +5440,36 @@ find_projection_for_join2semi(sql_rel *rel)
 	return false;
 }
 
-
 static sql_rel *
 find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
 	/* generalize possibility : we need the visitor 'step' here */
 	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
 		return NULL;
-	if (rel->op == op_join && rel->exps) {
+	if (rel->op == op_join && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
+		bool ok = false;
 
 		if (find_projection_for_join2semi(r)) {
 			*swap = false;
-			return rel;
-		}
-		if (find_projection_for_join2semi(l)) {
+			ok = true;
+		} else if (find_projection_for_join2semi(l)) {
 			*swap = true;
-			return rel;
+			ok = true;
 		}
+
+		if (ok) {
+			ok = false;
+			/* if all join expressions can be pushed down, then it cannot be rewritten into a semijoin */
+			for (node *n=rel->exps->h; n && !ok; n = n->next) {
+				sql_exp *e = n->data;
+
+				ok |= !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
+			}
+		}
+
+		if (ok)
+			return rel;
 	}
 	if (is_join(rel->op) || is_semi(rel->op)) {
 		sql_rel *c;
@@ -6801,7 +6825,8 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		}
 	}
 	/* for count/rank we need atleast one column */
-	if (subrel && !nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
+	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
+		(is_simple_project(rel->op) && project_unsafe(rel, 0))) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}
@@ -9780,8 +9805,10 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_push_func_and_select_down(visitor *v, sql_rel *rel)
 {
-	rel = rel_push_func_down(v, rel);
-	rel = rel_push_select_down(v, rel);
+	if (rel)
+		rel = rel_push_func_down(v, rel);
+	if (rel)
+		rel = rel_push_select_down(v, rel);
 	return rel;
 }
 

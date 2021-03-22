@@ -348,7 +348,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	struct canditer ci;
 	oid off;
 	bool nils = false;
-	char buf[UUID_STRLEN + 2], **pbuf = (char **) &buf;
+	char buf[UUID_STRLEN + 2], *pbuf = buf;
 	size_t l = sizeof(buf);
 	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
 
@@ -373,7 +373,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next_dense(&ci) - off);
 			uuid v = vals[p];
 
-			if (conv(pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
+			if (conv(&pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk", GDK_EXCEPTION);
 				goto bailout;
 			}
@@ -388,7 +388,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next(&ci) - off);
 			uuid v = vals[p];
 
-			if (conv(pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
+			if (conv(&pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk", GDK_EXCEPTION);
 				goto bailout;
 			}
