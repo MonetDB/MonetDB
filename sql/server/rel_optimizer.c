@@ -5460,11 +5460,12 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 
 		if (ok) {
 			ok = false;
-			/* if all join expressions can be pushed down, then it cannot be rewritten into a semijoin */
+			/* if all join expressions can be pushed down or have function calls, then it cannot be rewritten into a semijoin */
 			for (node *n=rel->exps->h; n && !ok; n = n->next) {
 				sql_exp *e = n->data;
 
-				ok |= !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
+				ok |= e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) &&
+					  !exp_has_func(e) && !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
 			}
 		}
 
