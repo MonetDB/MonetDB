@@ -2918,6 +2918,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		/* first try to calculate the sum of all values into a */ \
 		/* lng/hge */						\
 		while (ncand > 0) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					TIMEOUT_HANDLER(GDK_FAIL));\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			x = ((const TYPE *) src)[i];			\
@@ -2981,6 +2983,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		double a = 0;					\
 		TYPE x;						\
 		while (ncand > 0) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,\
+					TIMEOUT_HANDLER(GDK_FAIL));\
 			ncand--;				\
 			i = canditer_next(&ci) - b->hseqbase;	\
 			x = ((const TYPE *) src)[i];		\
@@ -3007,6 +3011,13 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	/* these two needed for ADD_WITH_CHECK macro */
 	bool abort_on_error = true;
 	BUN nils = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	ncand = canditer_init(&ci, b, s);
 
