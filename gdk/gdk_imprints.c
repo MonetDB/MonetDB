@@ -53,7 +53,7 @@
  * one mask per "page" of the input BAT indicating in which bins the values
  * in that page fall.  The size of the mask is given by imprints->bits.
  * The list of masks may be run-length compressed, see the dict area.  A
- * “page” is 64 bytes worth of values, so the number of values depends on
+ * "page" is 64 bytes worth of values, so the number of values depends on
  * the type of the value.
  *
  * The dict area starts immediately after the imps area.  It consists of
