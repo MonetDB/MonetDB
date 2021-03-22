@@ -312,3 +312,19 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t2
+
+statement ok
+CREATE TABLE t2(c0 int, c2 boolean)
+
+statement ok
+INSERT INTO t2(c2, c0) VALUES (false, -2)
+
+statement ok
+DELETE FROM t2
+
+query I rowsort
+SELECT 1 FROM t2 JOIN (VALUES (0.54), (1.2)) AS sub0 ON ((t2.c0) IN (8)) BETWEEN t2.c2 AND TRUE
+----
+
+statement ok
+DROP TABLE t2
