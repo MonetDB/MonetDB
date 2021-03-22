@@ -3913,6 +3913,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	(void) abort_on_error;
 	lng t0 = 0;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (average) {
@@ -4023,6 +4030,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		/* for each group (r and p are the beginning and end
 		 * of the current group, respectively) */
 		for (r = 0, q = BATcount(g); r < q; r = p) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			BUN qindex;
 			prev = grps[r];
 			/* search for end of current group (grps is
