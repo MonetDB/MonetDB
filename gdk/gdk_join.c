@@ -3164,10 +3164,12 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 #endif
 			rcost += BATcount(r) * 2.0;
 	}
-	if (rci->ncand != BATcount(r)) {
+	if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
 		/* instead of using the hash on r (cost in rcost), we
 		 * can build a new hash on r taking the candidate list
-		 * into account */
+		 * into account; don't do this for masked candidate
+		 * since the searching of the candidate list
+		 * (canditer_idx) will kill us */
 		double rccost;
 		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
 		if (prop) {
