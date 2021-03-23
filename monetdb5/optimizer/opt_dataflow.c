@@ -49,14 +49,32 @@ typedef char *States;
 #define setState(S,P,K,F)  ( assert(getArg(P,K) < vlimit), (S)[getArg(P,K)] |= F)
 #define getState(S,P,K)  ((S)[getArg(P,K)])
 
+typedef enum {
+	no_region,
+	singleton_region, // only ever a single statement
+	dataflow_region,  // statements without side effects, in parallel
+	existing_region,  // existing barrier..exit region, copied as-is
+} region_type;
+
+typedef struct {
+	region_type type;
+	union {
+		struct {
+			int level;  // level of nesting
+		} existing_region;
+	} st;
+} region_state;
+
 static int
-simpleFlow(InstrPtr *old, int start, int last)
+simpleFlow(InstrPtr *old, int start, int last, region_state *state)
 {
 	int i, j, k, simple = TRUE;
 	InstrPtr p = NULL, q;
 
 	/* ignore trivial blocks */
 	if ( last - start == 1)
+		return TRUE;
+	if ( state->type == existing_region )
 		return TRUE;
 	/* skip sequence of simple arithmetic first */
 	for( ; simple && start < last; start++)
@@ -149,6 +167,60 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 	return top;
 }
 
+static bool
+checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_state *state)
+{
+	switch (state->type) {
+		case singleton_region:
+			return true;
+		case dataflow_region:
+			return dataflowBreakpoint(cntxt, mb, p, states);
+		case existing_region:
+			if (state->st.existing_region.level == 0) {
+				// previous statement ended the region
+				return true;
+			}
+			if (blockStart(p)) {
+				state->st.existing_region.level += 1;
+			} else if (blockExit(p)) {
+				state->st.existing_region.level -= 1;
+			}
+			return false;
+		default:
+			// serious corruption has occurred.
+			assert(0 && "corrupted region_type");
+			abort();
+	}
+	assert(0 && "unreachable");
+	return true;
+}
+
+static void
+decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, region_state *state)
+{
+	(void) cntxt;
+
+	if (blockStart(p)) {
+		state->type = existing_region;
+		state->st.existing_region.level = 1;
+	} else if (p->token == ENDsymbol) {
+		state->type = existing_region;
+	} else if (p->barrier) {
+		state->type = singleton_region;
+	} else if (isUnsafeFunction(p)) {
+		state->type = singleton_region;
+	} else if (hasSideEffects(mb, p, false)) {
+		state->type = singleton_region;
+	} else if (isMultiplex(p)) {
+		state->type = singleton_region;
+	} else {
+		// turn this into dataflow_region, if you dare
+		(void)42;
+		state->type = singleton_region;
+	}
+}
+
+
 /* dataflow blocks are transparent, because they are always
    executed, either sequentially or in parallel */
 
@@ -156,14 +228,37 @@ static str
 OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	volatile int interesting_banana = 0;
-	int i,j,k, start=1, slimit, breakpoint, actions=0, simple = TRUE;
+	int i,j,k, start, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
 	InstrPtr *sink = NULL, *old = NULL, q;
 	int limit, vlimit, top = 0;
 	States states;
 	char  buf[256];
+	region_state state = { singleton_region };
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+
+
+	do {
+		if (mb->stop < 2)
+			break;
+		InstrPtr p = mb->stmt[1];
+
+		if (p->argc < 2)
+			break;
+
+		if (p->modname != querylogRef || p->fcnname != defineRef)
+			break;
+
+		const char *txt = getVarConstant(mb, getArg(p,1)).val.sval;
+		if (strstr(txt, "value / 2") != 0)
+			interesting_banana = 1;
+	} while (0);
+
+	// if (!interesting_banana)
+	// 	return MAL_SUCCEED;
+
+
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
@@ -186,22 +281,6 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	setVariableScope(mb);
 
-	do {
-		if (mb->stop < 2)
-			break;
-		InstrPtr p = mb->stmt[1];
-
-		if (p->argc < 2)
-			break;
-
-		if (p->modname != querylogRef || p->fcnname != defineRef)
-			break;
-
-		const char *txt = getVarConstant(mb, getArg(p,1)).val.sval;
-		if (strstr(txt, "value / 2") != 0)
-			interesting_banana = 1;
-	} while (0);
-
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
@@ -210,16 +289,17 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		actions = -1;
 		goto wrapup;
 	}
-	pushInstruction(mb,old[0]);
 
 	/* inject new dataflow barriers using a single pass through the program */
+	start = 0;
+	state.type = singleton_region;
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		assert(p);
-		breakpoint = dataflowBreakpoint(cntxt, mb, p ,states);
+		breakpoint = checkBreakpoint(cntxt, mb, p, states, &state);
 		if ( breakpoint ){
 			/* close previous flow block */
-			simple = simpleFlow(old,start,i);
+			simple = simpleFlow(old,start,i, &state);
 
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
@@ -254,37 +334,14 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 						pushInstruction(mb,old[i]);
 				break;
 			}
-			// implicitly a new flow block starts unless we have a hard side-effect
+
+			// Start a new region
 			memset((char*) states, 0, vlimit * sizeof(char));
 			top = 0;
-			if ( p->token == ENDsymbol  || (hasSideEffects(mb,p,FALSE) && !blockStart(p)) || isMultiplex(p)){
-				start = i+1;
-				pushInstruction(mb,p);
-				continue;
-			}
 			start = i;
+			decideRegionType(cntxt, mb, p, &state);
 		}
 
-		if (blockStart(p)){
-			/* barrier blocks are kept out of the dataflow */
-			/* assumes that barrier entry/exit pairs are correct. */
-			/* A refinement is parallelize within a barrier block */
-			int copy= 1;
-			pushInstruction(mb,p);
-			for ( i++; i<limit; i++) {
-				p = old[i];
-				pushInstruction(mb,p);
-
-				if (blockStart(p))
-					copy++;
-				if (blockExit(p)) {
-					copy--;
-					if ( copy == 0) break;
-				}
-			}
-			// reset admin
-			start = i+1;
-		}
 		// remember you assigned/read variables
 		for ( k = 0; k < p->retc; k++)
 			setState(states, p, k, VARWRITE);
@@ -299,6 +356,7 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				setState(states, p ,k, VARREAD);
 		}
 	}
+
 	/* take the remainder as is */
 	for (; i<slimit; i++)
 		if (old[i])
@@ -331,22 +389,19 @@ wrapup:
 static stream *
 open_trace_stream(void)
 {
-	char path[4096];
+	char path[4096] = {0};
 	stream *s = NULL;
 
-	do {
-
-		char *tst_trace_dir = getenv("JOERITRACE");
-		if (!tst_trace_dir)
-			break;
-
+	char *tst_trace_dir = getenv("JOERITRACE");
+	if (tst_trace_dir) {
 		long t = time(NULL);
 		int p = getpid();
 		sprintf(path, "%s/trace.%ld.%d.log", tst_trace_dir, t, p);
+	} else {
+		strcpy(path, "a");
+	}
 
-		s = open_wastream(path);
-	} while (0);
-
+	s = open_wastream(path);
 	return s;
 }
 
