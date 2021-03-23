@@ -242,6 +242,10 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			break;
 		InstrPtr p = mb->stmt[1];
 
+		if (strcmp("joeri", mb->stmt[0]->fcnname) == 0) {
+			interesting_banana = 1;
+		}
+
 		if (p->argc < 2)
 			break;
 
