@@ -413,3 +413,8 @@ select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from 
 
 statement ok
 ROLLBACK
+
+query T rowsort
+select round((0.5296678069272354)*(0.10385499803600118), -8)
+----
+0E-33
