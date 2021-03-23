@@ -487,3 +487,95 @@ select cast(sum(count) as bigint) from (select cast((("concat"(t0.c1, t0.c1))not
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c2" CHAR(478) NOT NULL,CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t0_c2_unique" UNIQUE ("c2"))
+
+statement ok
+COPY 34 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"0.5674989590909305"
+"*"
+""
+"Zu4Bmo孥흢"
+"0.26528947469340614"
+"LvuGwY"
+"㟚"
+"i"
+"-2080035418"
+"0.48394748670656496"
+"403902031"
+"-436959214"
+"k*nd\015>"
+"P"
+"-0.557532"
+",^"
+"9"
+"3"
+"᳀"
+"{Y0uzQ*"
+"1405379655"
+"꼱,"
+"Ml|t"
+">"
+"o5jbd-H"
+"X8par"
+"Z6\t8"
+"-1542018934"
+"-112082496"
+"0.5111159857154056"
+"0"
+"F6km?\015zO1"
+"\tVoL^HW/摇"
+"L䶍"
+
+statement ok
+CREATE TABLE "sys"."t1" ("c2" SMALLINT NOT NULL,CONSTRAINT "t1_c2_unique" UNIQUE ("c2"))
+
+statement ok
+COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0
+5
+1
+
+query T rowsort
+SELECT t0.c2 FROM t0, t1 WHERE ((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2)))
+----
+
+query I rowsort
+SELECT CAST(((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2))) AS INT) as count FROM t0, t1
+----
+102 values hashing to a98471bd784fc82e6e3165302bc0080a
+
+query T rowsort
+SELECT t1.c2 > 10 + 0.3607000614109831 FROM t1
+----
+False
+False
+False
+
+query T rowsort
+SELECT t1.c2 > 10 + 0.3611111111 FROM t1
+----
+False
+False
+False
+
+query T rowsort
+SELECT t1.c2 > 10 + 0.361111111 FROM t1
+----
+False
+False
+False
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2))) AS INT) as count FROM t0, t1) as res
+----
+0
+
+statement ok
+ROLLBACK
