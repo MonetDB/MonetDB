@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
+#include "rel_select.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
 #include "rel_rewriter.h"
@@ -3107,27 +3108,25 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
-						sql_subtype et = *exp_subtype(e);
 						/* (x*c1)*c2 -> x * (c1*c2) */
-						list *l = sa_list(sql->sa);
+						sql_exp *ne = NULL;
 
-						/* lre and re may have different types, so compute supertype */
-						if (rel_convert_types(sql, NULL, NULL, &lre, &re, 1, type_equal) < 0)
-							return NULL;
-						append(l, lre);
-						append(l, re);
-						le->l = l;
-						le->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
-						exp_sum_scales(le->f, lre, re);
-						l = e->l;
-						l->h->data = lle;
-						l->h->next->data = le;
-						e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
-						exp_sum_scales(e->f, lle, le);
-						if (subtype_cmp(&et, exp_subtype(e)) != 0)
-							e = exp_convert(sql->sa, e, exp_subtype(e), &et);
+						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value))) {
+							sql->session->status = 0;
+							sql->errstr[0] = '\0';
+							return e; /* error, fallback to original expression */
+						}
+						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value))) {
+							sql->session->status = 0;
+							sql->errstr[0] = '\0';
+							return e; /* error, fallback to original expression */
+						}
+						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
 						(*changes)++;
-						return e;
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
+						return ne;
 					}
 				}
 			}

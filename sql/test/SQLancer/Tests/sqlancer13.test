@@ -392,3 +392,24 @@ SELECT 1 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2 WHERE t2.
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c3" BOOLEAN)
+
+query T rowsort
+select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+union all
+select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+----
+
+query T rowsort
+select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+union all
+select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+----
+
+statement ok
+ROLLBACK
