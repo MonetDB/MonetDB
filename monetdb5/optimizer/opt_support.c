@@ -594,7 +594,7 @@ inline int isSubJoin(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 
-	return (l >= 7 && strcmp(func+l-7,"join") == 0);
+	return (l >= 4 && strcmp(func+l-4,"join") == 0);
 }
 
 inline int isMultiplex(InstrPtr p)
