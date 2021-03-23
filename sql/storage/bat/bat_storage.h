@@ -19,7 +19,6 @@ typedef struct column_storage {
 	int uvbid;		/* bat with values of updates */
 	bool cleared;
 	bool alter;		/* set when the delta is created for an alter statement */
-	bool rollbacked;
 	size_t cnt;		/* number of tuples (excluding? the deletes) */
 	size_t ucnt;	/* number of updates */
 	ulng ts;		/* version timestamp */
@@ -33,12 +32,13 @@ typedef struct sql_delta {
 typedef struct segment {
 	BUN start;
 	BUN end;
-	bool deleted;	/* we need to keep a dense segment set, 0 - enf of last segemnt,
+	bool deleted;	/* we need to keep a dense segment set, 0 - end of last segemnt,
 					   some segments maybe deleted */
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
 	ulng oldts;		/* keep previous ts, for rollbacks */
 	struct segment *next;	/* usualy one should be enough */
+	struct segment *prev;	/* used in destruction list */
 } segment;
 
 /* container structure too allow sharing this structure */
