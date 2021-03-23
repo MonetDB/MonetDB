@@ -418,3 +418,18 @@ query T rowsort
 select round((0.5296678069272354)*(0.10385499803600118), -8)
 ----
 0E-33
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" BOOLEAN,"c2" BOOLEAN,CONSTRAINT "t0_c2_c0_unique" UNIQUE ("c2", "c0"),CONSTRAINT "t0_c2_c0_fkey" FOREIGN KEY ("c2", "c0") REFERENCES "t0" ("c2", "c0"))
+
+statement ok
+CREATE TABLE "t1" ("c4" CHARACTER LARGE OBJECT)
+
+statement ok
+UPDATE t0 SET c0 = t0.c2 FROM t1 WHERE CAST(t1.c4 AS BOOLEAN)
+
+statement ok
+ROLLBACK
