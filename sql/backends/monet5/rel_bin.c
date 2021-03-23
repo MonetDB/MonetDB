@@ -4627,9 +4627,6 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 			if (updates && updates[c->c->colnr]) {
 				upd = updates[c->c->colnr];
-			} else if (updates && updcol >= 0) {
-				assert(0);
-				upd = stmt_col(be, c->c, tids, tids->partition);
 			} else { /* created idx/key using alter */
 				upd = stmt_col(be, c->c, tids, tids->partition);
 			}
