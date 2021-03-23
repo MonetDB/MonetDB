@@ -14,7 +14,7 @@
  * index. NOTE: we alloc the link list as a parallel array to the BUN
  * array; hence the hash link array has the same size as
  * BATcapacity(b) (not BATcount(b)). This allows us in the BUN insert
- * and delete to assume that there is hash space iff there is BUN
+ * and delete to assume that there is hash space if there is BUN
  * space.
  *
  * The hash mask size is a power of two, so we can do bitwise AND on
@@ -685,6 +685,8 @@ BAThashsync(void *arg)
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
 		for (; p < cnt1; p++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			if (hget == hnil) {				\
@@ -710,6 +712,8 @@ BAThashsync(void *arg)
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
 		for (; p < ci->ncand; p++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == hnil;			\
@@ -750,6 +754,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 
@@ -882,6 +893,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			break;
 		default:
 			for (; p < cnt1; p++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
@@ -956,6 +969,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	default:
 		for (; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -993,6 +1008,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		HASHcollisions(b, h, __func__);
 	}
 	return h;
+
+  bailout:
+	GDKfree(h);
+	return NULL;
 }
 
 gdk_return
