@@ -36,8 +36,6 @@ struct sqlstore;
 /* builtin functions have ids less than this */
 #define FUNC_OIDS 2000
 
-//extern sql_trans *gtrans;
-
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
 typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
@@ -192,18 +190,6 @@ typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
-/*
--- gtrans_update push ibats and ubats
--- returns LOG_OK, LOG_ERR
-*/
-typedef int (*gtrans_update_fptr) (sql_trans *tr);
-
-/*
--- handle deletes
--- returns LOG_OK, LOG_ERR
-*/
-typedef int (*cleanup_fptr) ();
-
 /* backing struct for this interface */
 typedef struct store_functions {
 
@@ -250,8 +236,6 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
-	cleanup_fptr cleanup;
-
 } store_functions;
 
 typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
