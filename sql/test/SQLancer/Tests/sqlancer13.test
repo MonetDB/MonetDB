@@ -433,3 +433,57 @@ UPDATE t0 SET c0 = t0.c2 FROM t1 WHERE CAST(t1.c4 AS BOOLEAN)
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c1" CHARACTER LARGE OBJECT,"c2" BOOLEAN NOT NULL,CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),CONSTRAINT "t0_c1_c2_unique" UNIQUE ("c1", "c2"))
+
+statement ok
+COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"v"	false
+"0.5984453937840536"	true
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c1" REAL,"c3" DECIMAL(18,3),
+	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 25 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+""	0.25307873	NULL
+"false"	-2.6924675e+08	NULL
+"-579379537"	1	NULL
+"0"	0.5760949	NULL
+"1778035546"	-9.342304e+08	NULL
+"0.39176894283958363"	0.63520056	NULL
+"8"	NULL	NULL
+"nr"	NULL	NULL
+"true"	-1.8958627e+09	NULL
+"P啕O"	4	NULL
+"FALSE"	1	NULL
+"1365951424"	0.026853533	NULL
+"w"	NULL	NULL
+"ỬJ}j6"	NULL	NULL
+"-2002788279"	0.135553	NULL
+"6"	0.28696647	0.667
+"5"	1.4837969e+09	0.290
+"g"	NULL	NULL
+"럟Kx"	0.061084658	1.587
+"zx별Z"	7	0.000
+"[ә8|蜼j"	NULL	0.863
+"-1061609345"	8.999999	0.535
+"죸?Zm5dMv"	0.4159582	0.146
+"-269246755"	-0.62566406	7.531
+"\tyT"	0.6758237	-0.366
+
+query I rowsort
+select cast(sum(count) as bigint) from (select cast((("concat"(t0.c1, t0.c1))not ilike(nullif(r'O', substr(t0.c1, 3, 1807556376)))) as int) as count from t1, t0) as res
+----
+50
+
+statement ok
+ROLLBACK
