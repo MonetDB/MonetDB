@@ -27,8 +27,6 @@ typedef struct global_props {
 		has_mergetable:1;
 } global_props;
 
-static sql_subfunc *find_func(mvc *sql, char *name, list *exps);
-
 static int
 find_member_pos(list *l, sql_table *t)
 {
@@ -1617,7 +1615,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		sql_rel *gbl, *gbr;		/* Group By */
 		sql_rel *cp;			/* Cross Product */
 		sql_subfunc *mult;
-		list *args;
+		list *args, *types;
 		sql_rel *srel;
 
 		oce = rel->exps->h->data;
@@ -1651,9 +1649,12 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 			append(args, cnt);
 		}
 
-		mult = find_func(v->sql, "sql_mul", args);
 		cp = rel_crossproduct(v->sql->sa, gbl, gbr, op_join);
 
+		types = sa_list(v->sql->sa);
+		for(node *n = args->h; n; n = n->next)
+			list_append(types, exp_subtype(n->data));
+		mult = sql_bind_func_(v->sql, "sys", "sql_mul", types, F_FUNC);
 		nce = exp_op(v->sql->sa, args, mult);
 		if (exp_name(oce))
 			exp_prop_alias(v->sql->sa, nce, oce);
@@ -2940,17 +2941,6 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_subfunc *
-find_func( mvc *sql, char *name, list *exps )
-{
-	list * l = sa_list(sql->sa);
-	node *n;
-
-	for(n = exps->h; n; n = n->next)
-		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql, "sys", name, l, F_FUNC);
-}
-
 static inline int
 str_ends_with(const char *s, const char *suffix)
 {
@@ -3924,14 +3914,18 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->f && re->f && /* merge ranges */
 				   le->flag == re->flag && le->flag <= cmp_lt) {
-				sql_subfunc *min = sql_bind_func(sql, "sys", "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
-				sql_subfunc *max = sql_bind_func(sql, "sys", "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
-				sql_exp *mine, *maxe;
+				sql_exp *mine = NULL, *maxe = NULL;
 
-				if (!min || !max)
+				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value))) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
 					continue;
-				mine = exp_binop(sql->sa, le->r, re->r, min);
-				maxe = exp_binop(sql->sa, le->f, re->f, max);
+				}
+				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value))) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					continue;
+				}
 				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
 				lmerged = false;
 			}
@@ -8479,6 +8473,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 						atom *a;
 
 						if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
+							sql_exp *arg1, *arg2;
 #ifdef HAVE_HGE
 							hge val = 1;
 #else
@@ -8490,19 +8485,21 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 
 							scale -= rs;
 
-							args = new_exp_list(v->sql->sa);
 							while(scale > 0) {
 								scale--;
 								val *= 10;
 							}
-							append(args, re);
+							arg1 = re;
 #ifdef HAVE_HGE
-							append(args, exp_atom_hge(v->sql->sa, val));
+							arg2 = exp_atom_hge(v->sql->sa, val);
 #else
-							append(args, exp_atom_lng(v->sql->sa, val));
+							arg2 = exp_atom_lng(v->sql->sa, val);
 #endif
-							f = find_func(v->sql, "scale_down", args);
-							nre = exp_op(v->sql->sa, args, f);
+							if (!(nre = rel_binop_(v->sql, NULL, arg1, arg2, "sys", "scale_down", card_value))) {
+								v->sql->session->status = 0;
+								v->sql->errstr[0] = '\0';
+								continue;
+							}
 							e = exp_compare(v->sql->sa, le->l, nre, e->flag);
 							v->changes++;
 						}
