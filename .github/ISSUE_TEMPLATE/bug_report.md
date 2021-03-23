@@ -11,9 +11,9 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Create a setting with minimal input for an external user to demonstrate him the buggy behavior.
-This includes the relevant part of the database  schema description.
-Performance trace of the roque query (using the TRACE command)
+Create a setting with minimal input for an external user to demonstrate the buggy behavior.
+This includes the relevant part of the database schema description.
+Performance trace of the rogue query (using the TRACE command)
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
