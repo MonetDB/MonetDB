@@ -1835,6 +1835,8 @@ BATPCREnotilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
 				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
 		for (p = 0; p < ci.ncand; p++) {								\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
 			o = canditer_next(&ci);										\
 			r = (BUN) (o - off);										\
 			v = BUNtvar(bi, r);											\
@@ -1854,6 +1856,8 @@ BATPCREnotilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
 				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
 		while (p < q) {													\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
 			v = BUNtvar(bi, p-off);										\
 			if (TEST) {													\
 				o = (oid) p;											\
@@ -1889,6 +1893,13 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	const char *v;
 	str msg = MAL_SUCCEED;
 	struct canditer ci;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	canditer_init(&ci, b, s);
 
@@ -1949,6 +1960,14 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 	uint32_t *wpat = NULL;
 	str msg = MAL_SUCCEED;
 	struct canditer ci;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 
 	canditer_init(&ci, b, s);
 
@@ -2135,6 +2154,8 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
 	do { \
 		for (BUN ri = 0; ri < rci.ncand; ri++) { \
+			GDK_CHECK_TIMEOUT(timeoffset, counter, \
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			ro = canditer_next(&rci); \
 			vr = VALUE(r, ro - r->hseqbase); \
 			nl = 0; \
@@ -2243,6 +2264,13 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 	regex_t pcrere = (regex_t) {0};
 	void *pcreex = NULL;
 #endif
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
