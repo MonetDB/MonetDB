@@ -304,9 +304,7 @@ round_body(TYPE v, int d, int s, int r)
 
 	assert(!ISNIL(TYPE)(v));
 
-	if (-r > d) {
-		res = 0;
-	} else if (r > 0 && r < s) {
+	if (r > 0 && r < s) {
 		int dff = s - r;
 		BIG rnd = scales[dff] >> 1;
 		BIG lres;
@@ -315,15 +313,19 @@ round_body(TYPE v, int d, int s, int r)
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
 		res = (TYPE) lres;
-	} else if (r <= 0 && -r + s > 0) {
+	} else if (r <= 0 && -r > -s) {
 		int dff = -r + s;
-		BIG rnd = scales[dff] >> 1;
-		BIG lres;
-		if (v > 0)
-			lres = ((v + rnd) / scales[dff]) * scales[dff];
-		else
-			lres = ((v - rnd) / scales[dff]) * scales[dff];
-		res = (TYPE) lres;
+		if (dff > d) {
+			res = 0;
+		} else {
+			BIG rnd = scales[dff] >> 1;
+			BIG lres;
+			if (v > 0)
+				lres = ((v + rnd) / scales[dff]) * scales[dff];
+			else
+				lres = ((v - rnd) / scales[dff]) * scales[dff];
+			res = (TYPE) lres;
+		}
 	} else {
 		res = v;
 	}
