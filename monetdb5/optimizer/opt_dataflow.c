@@ -214,9 +214,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, region_state *state)
 	} else if (isMultiplex(p)) {
 		state->type = singleton_region;
 	} else {
-		// turn this into dataflow_region, if you dare
-		(void)42;
-		state->type = singleton_region;
+		state->type = dataflow_region;
 	}
 }
 
