@@ -2051,6 +2051,22 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		bats = nr_of_bats(mb, p);
 		nilbats = nr_of_nilbats(mb, p);
 
+		/* left joins can match at isMatJoinOp, so run this check beforehand */
+		if (match > 0 && isMatLeftJoinOp(p) && p->argc >= 5 && p->retc == 2 &&
+			(match == 1 || match == 2) && bats+nilbats == 4) {
+		   	m = is_a_mat(getArg(p,p->retc), &ml);
+		   	o = is_a_mat(getArg(p,p->retc+2), &ml);
+
+			if ((match == 1 && m >= 0) || (match == 2 && m >= 0 && o >= 0)) {
+				if(mat_join2(mb, p, &ml, m, -1, o, -1)) {
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+				actions++;
+				continue;
+			}
+		}
+
 		/* (l,r) Join (L, R, ..)
 		 * 2 -> (l,r) equi/theta joins (l,r)
 		 * 3 -> (l,r) range-joins (l,r1,r2)
@@ -2075,20 +2091,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			actions++;
 			continue;
-		}
-		if (match > 0 && isMatLeftJoinOp(p) && p->argc >= 5 && p->retc == 2 &&
-				(match == 1 || match == 2) && bats+nilbats == 4) {
-		   	m = is_a_mat(getArg(p,p->retc), &ml);
-		   	o = is_a_mat(getArg(p,p->retc+2), &ml);
-
-			if ((match == 1 && m >= 0) || (match == 2 && m >= 0 && o >= 0)) {
-				if(mat_join2(mb, p, &ml, m, -1, o, -1)) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto cleanup;
-				}
-				actions++;
-				continue;
-			}
 		}
 		/*
 		 * Aggregate handling is a prime target for optimization.
