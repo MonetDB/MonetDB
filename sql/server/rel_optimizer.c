@@ -1542,6 +1542,7 @@ static inline sql_rel *
 rel_push_func_down(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_joinop(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
+		int changes = v->changes;
 		sql_rel *l = rel->l, *r = rel->r;
 
 		/* only push down when is useful */
@@ -1549,6 +1550,8 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			return rel;
 		if (exps_can_push_func(rel->exps, rel) && exps_need_push_down(rel->exps) && !exps_push_single_func_down(v, rel, rel->exps, 0))
 			return NULL;
+		if (v->changes > changes) /* once we get a better join order, we can try to remove this projection */
+			return rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 	}
 	if (is_simple_project(rel->op) && rel->l && rel->exps) {
 		sql_rel *pl = rel->l;
