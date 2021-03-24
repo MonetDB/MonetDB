@@ -2036,7 +2036,6 @@ store_manager(sqlstore *store)
 
 		if (GDKexiting())
 			break;
-		store->storage_api.cleanup();
 		flusher_new_cycle();
 		MT_thread_setworking("sleeping");
 		TRC_DEBUG(SQL_STORE, "Store flusher done\n");

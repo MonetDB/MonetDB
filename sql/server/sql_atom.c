@@ -1200,7 +1200,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			else if (a->data.vtype == TYPE_lng) {
 				if ((hge) GDK_lng_min > (hge) a->data.val.lval * mul || (hge) a->data.val.lval * mul > (hge) GDK_lng_max)
 					return 0;
-				a->data.val.ival *= (int) mul;
+				a->data.val.lval *= (lng) mul;
 			}
 			else if (a->data.vtype == TYPE_int) {
 				if ((hge) GDK_int_min > (hge) a->data.val.ival * mul || (hge) a->data.val.ival * mul > (hge) GDK_int_max)

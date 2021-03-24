@@ -3817,17 +3817,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 bailout:
 	GDKfree(buf);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		bn->theap->dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
 	unfix_inputs(2, b, bs);
 	return msg;
 }

@@ -60,16 +60,33 @@ unlock_table(sqlstore *store, sqlid id)
 	MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
-static void
-destroy_segs(segment *s)
+static int
+tc_gc_seg( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	if (!s)
-		return;
-	while(s) {
-		segment *n = s->next;
-		_DELETE(s);
-		s = n;
+	(void)Store; (void)commit_ts;
+	segment *s = change->data;
+
+	if (s->ts <= oldest) {
+		while(s) {
+			segment *n = s->prev;
+			_DELETE(s);
+			s = n;
+		}
+		return 1;
 	}
+	return LOG_OK;
+}
+
+static void
+mark4destroy(segment *s, sql_change *c, ulng commit_ts)
+{
+	/* we can only be accessed by anything older then commit_ts */
+	if (c->cleanup == &tc_gc_seg)
+		s->prev = c->data;
+	else
+		c->cleanup = &tc_gc_seg;
+	c->data = s;
+	s->ts = commit_ts;
 }
 
 static segment *
@@ -84,6 +101,7 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 		n->deleted = false;
 		n->start = 0;
 		n->next = NULL;
+		n->prev = NULL;
 		if (o) {
 			n->start = o->end;
 			o->next = n;
@@ -108,6 +126,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 	assert(tr);
 	if (!n)
 		return NULL;
+	n->prev = NULL;
 
 	n->oldts = 0;
 	if (o->ts == tr->tid) {
@@ -152,6 +171,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 	n = (segment*)GDKmalloc(sizeof(segment));
 	if (!n)
 		return NULL;
+	n->prev = NULL;
 	n->ts = oo->ts;
 	n->oldts = oo->oldts;
 	n->deleted = oo->deleted;
@@ -165,8 +185,8 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 	return o;
 }
 
-static segment *
-rollback_segments(segments *segs, sql_trans *tr, ulng oldest)
+static void
+rollback_segments(segments *segs, sql_trans *tr, sql_change *change, ulng oldest)
 {
 	segment *cur = segs->h, *seg = NULL;
 	for (; cur; cur = cur->next) {
@@ -182,21 +202,19 @@ rollback_segments(segments *segs, sql_trans *tr, ulng oldest)
 				/* merge with previous */
 				seg->end = cur->end;
 				seg->next = cur->next;
-				cur->next = NULL;
 				if (cur == segs->t)
 					segs->t = seg;
-				destroy_segs(cur);
+				mark4destroy(cur, change, oldest/* TODO somehow get current timestamp*/);
 				cur = seg;
 			} else {
 				seg = cur; /* begin of new merge */
 			}
 		}
 	}
-	return cur;
 }
 
-static segment *
-merge_segments(segments *segs, sql_trans *tr, ulng commit_ts, ulng oldest)
+static void
+merge_segments(segments *segs, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	segment *cur = segs->h, *seg = NULL;
 	for (; cur; cur = cur->next) {
@@ -211,17 +229,15 @@ merge_segments(segments *segs, sql_trans *tr, ulng commit_ts, ulng oldest)
 				/* merge with previous */
 				seg->end = cur->end;
 				seg->next = cur->next;
-				cur->next = NULL;
 				if (cur == segs->t)
 					segs->t = seg;
-				destroy_segs(cur);
+				mark4destroy(cur, change, commit_ts);
 				cur = seg;
 			} else {
 				seg = cur; /* begin of new merge */
 			}
 		}
 	}
-	return cur;
 }
 
 static int
@@ -2009,8 +2025,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		return ok;
 	if(!isTempTable(t)) {
 		storage *dbat = ATOMIC_PTR_GET(&t->data);
-		segment *s = merge_segments(dbat->segs, tr, commit_ts, oldest);
-		(void)s;
+		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
 		assert(dbat->cs.ts == tr->tid);
 		dbat->cs.ts = commit_ts;
 		if (ok == LOG_OK) {
@@ -2030,7 +2045,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			t->base.flags = 0;
 		}
 	}
-			t->base.flags = 0;
+	t->base.flags = 0;
 	return ok;
 }
 
@@ -2105,13 +2120,6 @@ log_destroy_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	return log_destroy_idx_(tr, (sql_idx*)change->obj);
 }
 
-
-static int
-cleanup(void)
-{
-	int ok = LOG_OK;
-	return ok;
-}
 
 static int
 destroy_del(sqlstore *store, sql_table *t)
@@ -2474,6 +2482,7 @@ tr_merge_storage(sql_trans *tr, storage *tdb)
 	int ok = tr_merge_cs(tr, &tdb->cs);
 
 	if (tdb->next) {
+		assert(0);
 		ok = destroy_storage(tdb->next);
 		tdb->next = NULL;
 	}
@@ -2556,6 +2565,22 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 }
 
 static int
+tc_gc_rollbacked( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	(void)commit_ts;
+	sqlstore *store = Store;
+
+	sql_delta *d = (sql_delta*)change->data;
+	if (d->cs.ts < oldest) {
+		destroy_delta(d, false);
+		return 1;
+	}
+	if (d->cs.ts > TRANSACTION_ID_BASE)
+		d->cs.ts = store_get_timestamp(store) + 1;
+	return 0;
+}
+
+static int
 commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
@@ -2577,8 +2602,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			ATOMIC_PTR_SET(&c->data, d->next);
 		else
 			o->next = d->next;
-		d->next = NULL;
-		d->cs.rollbacked = true;
+		change->cleanup = &tc_gc_rollbacked;
 	} else if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
@@ -2657,8 +2681,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			ATOMIC_PTR_SET(&i->data, d->next);
 		else
 			o->next = d->next;
-		d->next = NULL;
-		d->cs.rollbacked = true;
+		change->cleanup = &tc_gc_rollbacked;
 	} else if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
@@ -2682,6 +2705,7 @@ static storage *
 savepoint_commit_storage( storage *dbat, ulng commit_ts)
 {
 	if (dbat && dbat->cs.ts == commit_ts && dbat->next) {
+		assert(0);
 		storage *od = dbat->next;
 		if (od->cs.ts == commit_ts) {
 			storage t = *od, *n = od->next;
@@ -2746,17 +2770,14 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	}
 	lock_table(tr->store, t->base.id);
 	if (!commit_ts) { /* rollback */
-		segment *s = rollback_segments(dbat->segs, tr, oldest);
-		(void)s;
+		rollback_segments(dbat->segs, tr, change, oldest);
 	} else if (ok == LOG_OK && !tr->parent) {
 		storage *d = dbat;
-		segment *s = merge_segments(dbat->segs, tr, commit_ts, oldest);
-		(void)s;
+		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
 			ok = tr_merge_storage(tr, dbat);
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
-		segment *s = merge_segments(dbat->segs, tr, commit_ts, oldest);
-		(void)s;
+		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
 		ATOMIC_PTR_SET(&t->data, savepoint_commit_storage(dbat, commit_ts));
 	}
 	unlock_table(tr->store, t->base.id);
@@ -2767,7 +2788,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 static int
 tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	sqlstore *store = Store;
+	(void)Store;
 	sql_column *c = (sql_column*)change->obj;
 
 	/* savepoint commit (did it merge ?) */
@@ -2776,15 +2797,6 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
-	if (d->cs.rollbacked) {
-		if (d->cs.ts < oldest) {
-			destroy_delta(d, false);
-			return 1;
-		}
-		if (d->cs.ts > TRANSACTION_ID_BASE)
-			d->cs.ts = store_get_timestamp(store) + 1;
-		return 0;
-	}
 	if (d->next) {
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
@@ -2798,25 +2810,15 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 static int
 tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	sqlstore *store = Store;
+	(void)Store;
 	sql_idx *i = (sql_idx*)change->obj;
 
-	(void)store;
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&i->data) != change->data || isTempTable(i->t)) /* data is freed by commit */
 		return 1;
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
-	if (d->cs.rollbacked) {
-		if (d->cs.ts < oldest) {
-			destroy_delta(d, false);
-			return 1;
-		}
-		if (d->cs.ts > TRANSACTION_ID_BASE)
-			d->cs.ts = store_get_timestamp(store) + 1;
-		return 0;
-	}
 	if (d->next) {
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
@@ -3078,8 +3080,6 @@ bat_storage_init( store_functions *sf)
 	sf->log_destroy_del = &log_destroy_del;
 
 	sf->clear_table = &clear_table;
-
-	sf->cleanup = &cleanup;
 }
 
 #if 0
