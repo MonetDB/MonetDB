@@ -253,9 +253,9 @@ sqlBreakpoint(MalBlkPtr mb, InstrPtr *first, InstrPtr *p)
 	str my_tname = get_sql_tname(mb, instr);
 	str my_cname = get_sql_cname(mb, instr);
 	for (InstrPtr *q = first; q < p; q++) {
-		str sname = get_sql_sname(mb, *q);
-		if (strcmp(my_sname, sname) != 0) {
-			// different sname, no conflict
+		str cname = get_sql_cname(mb, *q);
+		if (strcmp(my_cname, cname) != 0) {
+			// different cname, no conflict
 			continue;
 		}
 		str tname = get_sql_tname(mb, *q);
@@ -263,9 +263,9 @@ sqlBreakpoint(MalBlkPtr mb, InstrPtr *first, InstrPtr *p)
 			// different tname, no conflict
 			continue;
 		}
-		str cname = get_sql_cname(mb, *q);
-		if (strcmp(my_cname, cname) != 0) {
-			// different cname, no conflict
+		str sname = get_sql_sname(mb, *q);
+		if (strcmp(my_sname, sname) != 0) {
+			// different sname, no conflict
 			continue;
 		}
 		// Found a statement in the region that works on the same column so this is a breakpoint
