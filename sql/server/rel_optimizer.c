@@ -420,14 +420,12 @@ exp_count(int *cnt, sql_exp *e)
 		case cmp_lt:
 		case cmp_lte:
 			*cnt += 6;
-#if 0
 			if (e->l) {
 				sql_exp *l = e->l;
 				sql_subtype *t = exp_subtype(l);
 				if (EC_TEMP(t->type->eclass)) /* give preference too temporal ranges */
-					*cnt += 200;
+					*cnt += 2;
 			}
-#endif
 			if (e->f){ /* range */
 				*cnt += 6;
 				return 12;
