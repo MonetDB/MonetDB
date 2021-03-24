@@ -25,28 +25,16 @@ isCorrectInline(MalBlkPtr mb){
 }
 
 
-static bool OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
+static bool
+OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
+{
 	Symbol s;
 	str mod,fcn;
 
 	mod = VALget(&getVar(mb, getArg(p, p->retc+0))->value);
 	fcn = VALget(&getVar(mb, getArg(p, p->retc+1))->value);
-	//if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
-	if( (s= findSymbolInModule(getModule(putName(mod)), putName(fcn))) ==0 )
+	if ((s = findSymbolInModule(getModule(putName(mod)), putName(fcn))) == 0)
 		return false;
-	if (s->def == mb)			/* avoid infinite recursion */
-		return false;
-	/*
-	 * Before we decide to propagate the inline request
-	 * to the multiplex operation, we check some basic properties
-	 * of the target function. Moreover, we apply the inline optimizer
-	 * to the target function as well.
-	 * This code should be protected against overflow due to recursive calls.
-	 * In general, this is a hard problem. For now, we just expand.
-	 */
-	MT_lock_set(&mal_contextLock);
-	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
-	MT_lock_unset(&mal_contextLock);
 	return s->def->inlineProp;
 }
 
@@ -73,7 +61,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * They are produced by SQL compiler.
 			 */
 			if (isMultiplex(q)) {
-				 OPTinlineMultiplex(cntxt,mb,q);
+				 OPTinlineMultiplex(mb,q);
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
