@@ -1498,6 +1498,7 @@ BATunmask(BAT *b)
 		if (n == 0) {
 			/* didn't need it after all */
 			HEAPfree(dels, true);
+			GDKfree(dels);
 		} else {
 			ATOMIC_INIT(&dels->refs, 1);
 			bn->tvheap = dels;
