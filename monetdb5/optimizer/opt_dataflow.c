@@ -307,7 +307,7 @@ checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p, States
 }
 
 static void
-decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, region_state *state)
+decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_state *state)
 {
 	(void) cntxt;
 
@@ -323,6 +323,16 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, region_state *state)
 		state->type = singleton_region;
 	} else if (isUnsafeFunction(p)) {
 		state->type = singleton_region;
+	} else if (
+		isUpdateInstruction(p)
+		&& getModuleId(p) != sqlRef
+		&& (getState(states, p, p->retc) & (VARREAD | VARBLOCK)) == 0
+	) {
+		// Special case. Unless they're from the sql module, instructions with
+		// names like 'append', 'update', 'delete', 'grow', etc., are expected
+		// to express their side effects as data dependencies, for example,
+		//     X5 := bat.append(X_5, ...)
+		state->type = dataflow_region;
 	} else if (hasSideEffects(mb, p, false)) {
 		state->type = singleton_region;
 	} else if (isMultiplex(p)) {
@@ -456,7 +466,7 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			memset((char*) states, 0, vlimit * sizeof(char));
 			top = 0;
 			start = i;
-			decideRegionType(cntxt, mb, p, &state);
+			decideRegionType(cntxt, mb, p, states, &state);
 		}
 
 		// remember you assigned/read variables
