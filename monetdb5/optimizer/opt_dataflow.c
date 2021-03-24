@@ -200,7 +200,7 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 {
 	if (p->modname != sqlRef)
 		return false;
-	if (p->fcnname != appendRef) //  && p->fcnname != updateRef)
+	if (p->fcnname != appendRef && p->fcnname != updateRef)
 		return false;
 
 	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,7, arg("",int),
