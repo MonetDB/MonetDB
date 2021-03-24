@@ -792,9 +792,7 @@ BATprojectchain(BAT **bats)
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
 		if (b->ttype == TYPE_msk || mask_cand(b)) {
-			BAT *nb = b;
-
-			if ((b = BATunmask(nb)) == NULL) {
+			if ((b = BATunmask(b)) == NULL) {
 				goto bunins_failed;
 			}
 			tobedeleted[ndelete++] = b;

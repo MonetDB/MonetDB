@@ -1384,22 +1384,21 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	if (selected) {
-		memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+		if (nr <= BATcount(masked))
+			memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+		else
+			memcpy(r, Tloc(masked, 0), (BATcount(masked) + 31) / 32 * sizeof(uint32_t));
 	} else {
 		const uint32_t *s = (const uint32_t *) Tloc(masked, 0);
-		BUN nmask_ = (BATcount(masked) + 31)/32;
+		BUN nmask_ = (BATcount(masked) + 31) / 32;
 		for (BUN i = 0; i < nmask_; i++)
 			r[i] = ~s[i];
 	}
 	if (nr > BATcount(masked)) {
-		BUN rest = BATcount(masked)&31, nmask_ = (BATcount(masked)+31)/32, nrest = nr;
-		int v = 0;
-		if (nmask_ > nmask)
-			nrest = 32-rest;
-
-		for (BUN j = rest; j < nrest; j++)
-			v |= 1U<<j;
-		r[nmask_ -1] |= v;
+		BUN rest = BATcount(masked) & 31;
+		BUN nmask_ = (BATcount(masked) + 31) / 32;
+		if (rest > 0)
+			r[nmask_ -1] |= ((1U << (32 - rest)) - 1) << rest;
 		for (BUN j = nmask_; j < nmask; j++)
 			r[j] = ~0;
 	}
@@ -1432,71 +1431,126 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
     	return bn;
 }
 
+/* convert a masked candidate list to a positive or negative candidate list */
 BAT *
 BATunmask(BAT *b)
 {
-	BAT *bn = COLnew(0, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-
 //	assert(!mask_cand(b) || CCAND(b)->mask); /* todo handle negmask case */
 	BUN cnt;
 	uint32_t rem;
 	uint32_t val;
 	const uint32_t *src;
-	oid *dst = (oid *) Tloc(bn, 0);
+	oid *dst;
 	BUN n = 0;
 	oid hseq = b->hseqbase;
+	bool negcand = false;
 
 	if (mask_cand(b)) {
 		cnt = ccand_free(b) / sizeof(uint32_t);
 		rem = 0;
 		src = (const uint32_t *) ccand_first(b);
 		hseq -= (oid) CCAND(b)->firstbit;
+		/* create negative candidate list if more than half the
+		 * bits are set */
+		negcand = BATcount(b) > cnt * 16;
 	} else {
 		cnt = BATcount(b) / 32;
 		rem = BATcount(b) % 32;
 		src = (const uint32_t *) Tloc(b, 0);
 	}
-	for (BUN p = 0; p < cnt; p++) {
-		if ((val = src[p]) == 0)
-			continue;
-		for (uint32_t i = 0; i < 32; i++) {
-			if (val & (1U << i)) {
-				if (n == BATcapacity(bn)) {
-					BATsetcount(bn, n);
-					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
-						BBPreclaim(bn);
-						return NULL;
-					}
-					dst = (oid *) Tloc(bn, 0);
+	BAT *bn;
+
+	if (negcand) {
+		bn = COLnew(b->hseqbase, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		Heap *dels;
+		if ((dels = GDKzalloc(sizeof(Heap))) == NULL ||
+		    strconcat_len(dels->filename, sizeof(dels->filename),
+				  BBP_physical(bn->batCacheid), ".theap",
+				  NULL) >= sizeof(dels->filename) ||
+		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
+						  varheap)) == -1 ||
+		    HEAPalloc(dels,
+			      cnt * 32 - BATcount(b)
+			      + sizeof(ccand_t) / sizeof(oid),
+			      sizeof(oid), 0) != GDK_SUCCEED) {
+			GDKfree(dels);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		dels->parentid = bn->batCacheid;
+		* (ccand_t *) dels->base = (ccand_t) {
+			.type = CAND_NEGOID,
+		};
+		dst = (oid *) (dels->base + sizeof(ccand_t));
+		for (BUN p = 0, v = 0; p < cnt; p++, v += 32) {
+			if ((val = src[p]) == ~UINT32_C(0))
+				continue;
+			for (uint32_t i = 0; i < 32; i++) {
+				if ((val & (1U << i)) == 0) {
+					if (v + i >= b->batCount + n)
+						break;
+					dst[n++] = hseq + v + i;
 				}
-				dst[n++] = hseq + p * 32 + i;
 			}
 		}
-	}
-	/* the last partial mask word */
-	if (rem > 0 && (val = src[cnt]) != 0) {
-		for (uint32_t i = 0; i < rem; i++) {
-			if (val & (1U << i)) {
-				if (n == BATcapacity(bn)) {
-					BATsetcount(bn, n);
-					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
-						BBPreclaim(bn);
-						return NULL;
+		if (n == 0) {
+			/* didn't need it after all */
+			HEAPfree(dels, true);
+		} else {
+			ATOMIC_INIT(&dels->refs, 1);
+			bn->tvheap = dels;
+			bn->tvheap->free = sizeof(ccand_t) + n * sizeof(oid);
+		}
+		BATsetcount(bn, BATcount(b));
+		bn->tseqbase = hseq;
+	} else {
+		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		dst = (oid *) Tloc(bn, 0);
+		for (BUN p = 0; p < cnt; p++) {
+			if ((val = src[p]) == 0)
+				continue;
+			for (uint32_t i = 0; i < 32; i++) {
+				if (val & (1U << i)) {
+					if (n == BATcapacity(bn)) {
+						BATsetcount(bn, n);
+						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
+							BBPreclaim(bn);
+							return NULL;
+						}
+						dst = (oid *) Tloc(bn, 0);
 					}
-					dst = (oid *) Tloc(bn, 0);
+					dst[n++] = hseq + p * 32 + i;
 				}
-				dst[n++] = hseq + cnt * 32 + i;
 			}
 		}
+		/* the last partial mask word */
+		if (rem > 0 && (val = src[cnt]) != 0) {
+			for (uint32_t i = 0; i < rem; i++) {
+				if (val & (1U << i)) {
+					if (n == BATcapacity(bn)) {
+						BATsetcount(bn, n);
+						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
+							BBPreclaim(bn);
+							return NULL;
+						}
+						dst = (oid *) Tloc(bn, 0);
+					}
+					dst[n++] = hseq + cnt * 32 + i;
+				}
+			}
+		}
+		BATsetcount(bn, n);
 	}
-	BATsetcount(bn, n);
-	bn->hseqbase = b->hseqbase;
 	bn->tkey = true;
 	bn->tsorted = true;
 	bn->trevsorted = n <= 1;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
+	return bn;
 }
