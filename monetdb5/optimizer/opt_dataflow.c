@@ -54,6 +54,7 @@ typedef enum {
 	singleton_region, // only ever a single statement
 	dataflow_region,  // statements without side effects, in parallel
 	existing_region,  // existing barrier..exit region, copied as-is
+	sql_region,       // region of nonconflicting sql.append/sql.updates only
 } region_type;
 
 typedef struct {
@@ -167,25 +168,135 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 	return top;
 }
 
-static bool
-checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_state *state)
+
+static str
+get_str_arg(MalBlkPtr mb, InstrPtr p, int argno)
 {
+	int var = getArg(p, argno);
+	return getVarConstant(mb, var).val.sval;
+}
+
+static str
+get_sql_sname(MalBlkPtr mb, InstrPtr p)
+{
+	return get_str_arg(mb, p, 2);
+}
+
+static str
+get_sql_tname(MalBlkPtr mb, InstrPtr p)
+{
+	return get_str_arg(mb, p, 3);
+}
+
+static str
+get_sql_cname(MalBlkPtr mb, InstrPtr p)
+{
+	return get_str_arg(mb, p, 4);
+}
+
+
+static bool
+isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
+{
+	if (p->modname != sqlRef)
+		return false;
+	if (p->fcnname != appendRef) //  && p->fcnname != updateRef)
+		return false;
+
+	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,7, arg("",int),
+	//              arg("mvc",int
+	//              arg("sname",str
+	//              arg("tname",str
+	//              arg("cname",str
+	//              arg("offset",lng
+	//              argany("ins",0))),
+
+ 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int
+	//              arg("mvc",int),
+	//              arg("sname",str
+	//              arg("tname",str
+	//              arg("cname",str
+	//              argany("rids",0
+	//              argany("upd",0))
+
+	if (p->argc != 7)
+		return false;
+
+	int mvc_var = getArg(p, 1);
+	if (getVarType(mb, mvc_var) != TYPE_int)
+		return false;
+
+	int sname_var = getArg(p, 2);
+	if (getVarType(mb, sname_var) != TYPE_str || !isVarConstant(mb, sname_var))
+		return false;
+
+	int tname_var = getArg(p, 3);
+	if (getVarType(mb, tname_var) != TYPE_str || !isVarConstant(mb, tname_var))
+		return false;
+
+	int cname_var = getArg(p, 4);
+	if (getVarType(mb, cname_var) != TYPE_str || !isVarConstant(mb, cname_var))
+		return false;
+
+	return true;
+}
+
+static bool
+sqlBreakpoint(MalBlkPtr mb, InstrPtr *first, InstrPtr *p)
+{
+	InstrPtr instr = *p;
+	if (!isSqlAppendUpdate(mb, instr))
+		return true;
+
+	str my_sname = get_sql_sname(mb, instr);
+	str my_tname = get_sql_tname(mb, instr);
+	str my_cname = get_sql_cname(mb, instr);
+	for (InstrPtr *q = first; q < p; q++) {
+		str sname = get_sql_sname(mb, *q);
+		if (strcmp(my_sname, sname) != 0) {
+			// different sname, no conflict
+			continue;
+		}
+		str tname = get_sql_tname(mb, *q);
+		if (strcmp(my_tname, tname) != 0) {
+			// different tname, no conflict
+			continue;
+		}
+		str cname = get_sql_cname(mb, *q);
+		if (strcmp(my_cname, cname) != 0) {
+			// different cname, no conflict
+			continue;
+		}
+		// Found a statement in the region that works on the same column so this is a breakpoint
+		return true;
+	}
+
+	// None of the statements in the region works on this column so no breakpoint necessary
+	return false;
+}
+
+static bool
+checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p, States states, region_state *state)
+{
+	InstrPtr instr = *p;
 	switch (state->type) {
 		case singleton_region:
 			return true;
 		case dataflow_region:
-			return dataflowBreakpoint(cntxt, mb, p, states);
+			return dataflowBreakpoint(cntxt, mb, instr, states);
 		case existing_region:
 			if (state->st.existing_region.level == 0) {
 				// previous statement ended the region
 				return true;
 			}
-			if (blockStart(p)) {
+			if (blockStart(instr)) {
 				state->st.existing_region.level += 1;
-			} else if (blockExit(p)) {
+			} else if (blockExit(instr)) {
 				state->st.existing_region.level -= 1;
 			}
 			return false;
+		case sql_region:
+			return sqlBreakpoint(mb, first, p);
 		default:
 			// serious corruption has occurred.
 			assert(0 && "corrupted region_type");
@@ -200,11 +311,14 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, region_state *state)
 {
 	(void) cntxt;
 
+	state->type = no_region;
 	if (blockStart(p)) {
 		state->type = existing_region;
 		state->st.existing_region.level = 1;
 	} else if (p->token == ENDsymbol) {
 		state->type = existing_region;
+	} else if (isSqlAppendUpdate(mb,p)) {
+		state->type = sql_region;
 	} else if (p->barrier) {
 		state->type = singleton_region;
 	} else if (isUnsafeFunction(p)) {
@@ -216,6 +330,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, region_state *state)
 	} else {
 		state->type = dataflow_region;
 	}
+	assert(state->type != no_region);
 }
 
 
@@ -298,7 +413,7 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		assert(p);
-		breakpoint = checkBreakpoint(cntxt, mb, p, states, &state);
+		breakpoint = checkBreakpoint(cntxt, mb, &old[start], &old[i], states, &state);
 		if ( breakpoint ){
 			/* close previous flow block */
 			simple = simpleFlow(old,start,i, &state);
