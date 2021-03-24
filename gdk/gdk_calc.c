@@ -14197,6 +14197,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	do {								\
 		i = j = k = 0;						\
 		for (l = 0; l < ncand; l++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			if (incr1)					\
 				i = canditer_next(ci) - seqbase1;	\
 			if (incr2)					\
@@ -14229,6 +14231,13 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	bn = COLnew(ci->hseq, TYPE_bit, ncand, TRANSIENT);
 	if (bn == NULL)
@@ -14297,6 +14306,8 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 		nil = ATOMnilptr(tp);
 		i = j = k = 0;
 		for (l = 0; l < ncand; l++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			if (incr1)
 				i = canditer_next(ci) - seqbase1;
 			if (incr2)
@@ -14328,6 +14339,9 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	bn->tnonil = nils == 0;
 
 	return bn;
+bailout:
+	BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 BAT *
