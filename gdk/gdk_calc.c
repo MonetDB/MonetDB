@@ -125,6 +125,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -140,6 +141,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -161,6 +163,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -178,6 +181,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -203,6 +207,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -217,6 +222,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -237,6 +243,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -247,6 +254,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -263,6 +271,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -275,6 +284,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -293,6 +303,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -319,6 +330,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ncand; k++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -12570,6 +12582,13 @@ xor_typeswitchloop(const void *lft, bool incr1,
 	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
@@ -12781,6 +12800,13 @@ or_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	/* note, we don't have to check whether the result is equal to
 	 * NIL when using bitwise OR: there is only a single bit set in
 	 * NIL, which means that at least one of the operands must have
@@ -12791,6 +12817,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
 			for (k = 0; k < ncand; k++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -13009,11 +13036,19 @@ and_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
 			for (k = 0; k < ncand; k++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -13245,6 +13280,13 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 {
 	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -13589,6 +13631,13 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 {
 	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);

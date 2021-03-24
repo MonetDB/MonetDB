@@ -25,12 +25,20 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	switch (tp1) {
 	case TYPE_void: {
 		assert(incr1);
 		assert(tp2 == TYPE_oid || incr2); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
 		for (k = 0; k < ncand; k++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			TPE res;
 			i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -631,6 +639,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		if (tp2 == TYPE_void) {
 			oid v = * (const oid *) rgt;
 			for (k = 0; k < ncand; k++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				j = canditer_next(ci2) - candoff2;
@@ -677,6 +686,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		if (tp1 != tp2)
 			goto unsupported;
 		for (k = 0; k < ncand; k++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -728,6 +738,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
 		for (k = 0; k < ncand; k++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
