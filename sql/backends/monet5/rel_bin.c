@@ -3296,9 +3296,9 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
-		sel = sub->cand;
 		if (!sub)
 			return NULL;
+		sel = sub->cand;
 		sub = row2cols(be, sub);
 	}
 	if (!sub && !predicate)
