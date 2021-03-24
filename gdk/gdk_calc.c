@@ -14616,6 +14616,8 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			if (src[i] && !is_bit_nil(src[i])) {		\
 				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
 			} else {					\
@@ -14628,6 +14630,8 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 #define IFTHENELSELOOP_msk(TYPE)				\
 	do {							\
 		for (i = 0; i < cnt; i++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			if (n == 32) {				\
 				n = 0;				\
 				mask = src[i / 32];		\
@@ -14655,6 +14659,13 @@ BATcalcifthenelse_intern(BAT *b,
 	const void *p;
 	BUN cnt = b->batCount;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	/* col1 and col2 can only be NULL for void columns */
 	assert(col1 != NULL || ATOMtype(tpe) == TYPE_oid);
 	assert(col2 != NULL || ATOMtype(tpe) == TYPE_oid);
@@ -14678,6 +14689,8 @@ BATcalcifthenelse_intern(BAT *b,
 			const uint32_t *src = Tloc(b, 0);
 			BUN n = cnt / 32;
 			for (i = 0; i <= n; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
 				for (BUN j = 0; j < rem; j++) {
@@ -14703,6 +14716,8 @@ BATcalcifthenelse_intern(BAT *b,
 		} else {
 			const bit *src = Tloc(b, 0);
 			for (i = 0; i < cnt; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				if (src[i] && !is_bit_nil(src[i])) {
 					if (heap1)
 						p = heap1 + VarHeapVal(col1, k, width1);
@@ -14731,6 +14746,8 @@ BATcalcifthenelse_intern(BAT *b,
 			BUN n = 32;
 			if (ATOMtype(tpe) == TYPE_oid) {
 				for (i = 0; i < cnt; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					if (n == 32) {
 						n = 0;
 						mask = src[i / 32];
@@ -14758,6 +14775,8 @@ BATcalcifthenelse_intern(BAT *b,
 				}
 				n = (cnt + 31) / 32;
 				for (i = 0; i < n; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					if (incr1)
 						v1 = ((uint32_t *) col1)[i];
 					if (incr2)
@@ -14788,6 +14807,8 @@ BATcalcifthenelse_intern(BAT *b,
 					break;
 				default:
 					for (i = 0; i < cnt; i++) {
+						GDK_CHECK_TIMEOUT(timeoffset, counter,
+								GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 						if (n == 32) {
 							n = 0;
 							mask = src[i / 32];
@@ -14808,6 +14829,8 @@ BATcalcifthenelse_intern(BAT *b,
 			const bit *src = Tloc(b, 0);
 			if (ATOMtype(tpe) == TYPE_oid) {
 				for (i = 0; i < cnt; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					if (src[i] && !is_bit_nil(src[i])) {
 						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
 					} else {
@@ -14833,6 +14856,8 @@ BATcalcifthenelse_intern(BAT *b,
 				}
 				i = 0;
 				while (i < cnt) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					uint32_t mask = 0;
 					if (incr1)
 						v1 = ((uint32_t *) col1)[i/32];
@@ -14868,6 +14893,8 @@ BATcalcifthenelse_intern(BAT *b,
 					break;
 				default:
 					for (i = 0; i < cnt; i++) {
+						GDK_CHECK_TIMEOUT(timeoffset, counter,
+								GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 						if (src[i] && !is_bit_nil(src[i])) {
 							p = ((const char *) col1) + k * width1;
 						} else {
@@ -14893,6 +14920,10 @@ BATcalcifthenelse_intern(BAT *b,
 	bn->tnonil = nonil1 && nonil2;
 
 	return bn;
+bailout:
+	BBPreclaim(bn);
+	return NULL;
+
 }
 
 BAT *
