@@ -88,6 +88,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -103,6 +105,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -358,6 +362,13 @@ BATcalcnot(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -379,15 +390,21 @@ BATcalcnot(BAT *b, BAT *s)
 			ncand = (ncand + 31) / 32;
 			if (bits == 0) {
 				for (i = 0; i < ncand; i++)
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					dst[i] = ~src[i];
 			} else {
 				for (i = 0; i < ncand; i++)
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
 			}
 			if (ci.ncand % 32 != 0)
 				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
 		} else {
 			for (i = 0; i < ncand; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				x = canditer_next(&ci) - bhseqbase;
 				mskSetVal(bn, i, !mskGetVal(b, x));
 			}
@@ -435,6 +452,10 @@ BATcalcnot(BAT *b, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+
+bailout:
+	BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 gdk_return
@@ -532,6 +553,14 @@ BATcalcnegate(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -589,6 +618,9 @@ BATcalcnegate(BAT *b, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+bailout:
+	BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 gdk_return
@@ -660,6 +692,14 @@ BATcalcabsolute(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -719,6 +759,9 @@ BATcalcabsolute(BAT *b, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+bailout:
+	BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 gdk_return
@@ -792,6 +835,13 @@ BATcalciszero(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -848,6 +898,9 @@ BATcalciszero(BAT *b, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+bailout:
+	BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 gdk_return
@@ -922,6 +975,13 @@ BATcalcsign(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -981,6 +1041,9 @@ BATcalcsign(BAT *b, BAT *s)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+bailout:
+	BBPunfix(bn->batCacheid);
+	return NULL;
 }
 
 gdk_return
@@ -1047,6 +1110,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 	do {								\
 		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(NULL)); \
 			x = canditer_next(&ci) - bhseqbase;		\
 			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
@@ -1063,6 +1127,13 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	bit *restrict dst;
 	BUN nils = 0;
 	oid bhseqbase = b->hseqbase;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1120,6 +1191,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		const void *nil = ATOMnilptr(b->ttype);
 
 		for (i = 0; i < ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(NULL));
 			x = canditer_next(&ci) - bhseqbase;
 			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
 		}
@@ -1184,6 +1256,8 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
 			for (BUN i = 0; i < ncand; i++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1196,6 +1270,8 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 			}						\
 		} else {						\
 			for (BUN i = 0; i < ncand; i++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1218,6 +1294,13 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BUN ncand;
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1271,6 +1354,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1286,6 +1371,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1305,6 +1392,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1320,6 +1409,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1371,6 +1462,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
 			for (BUN i = 0; i < ncand; i++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1387,6 +1480,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			}						\
 		} else {						\
 			for (BUN i = 0; i < ncand; i++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1413,6 +1508,13 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BUN ncand;
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1466,6 +1568,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1485,6 +1589,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1508,6 +1614,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1527,6 +1635,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1581,6 +1691,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	do {								\
 		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
 		for (BUN i = 0; i < ncand; i++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 			oid x = canditer_next(&ci) - bhseqbase;		\
 			TYPE p1 = tb[x];				\
 			if (is_##TYPE##_nil(p1)) {			\
@@ -1604,6 +1716,13 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	const void *restrict nil = ATOMnilptr(b->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1653,6 +1772,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 
 		if (ATOMvarsized(b->ttype)) {
 			for (BUN i = 0; i < ncand; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -1668,6 +1789,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			for (BUN i = 0; i < ncand; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -1720,6 +1843,8 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
 		if (is_##TYPE##_nil(pp2)) {				\
 			for (BUN i = 0; i < ncand; i++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 				oid x = canditer_next(&ci) - bhseqbase; \
 				TYPE p1 = tb[x];			\
 				nils |= is_##TYPE##_nil(p1);		\
@@ -1727,6 +1852,8 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 			}						\
 		} else {						\
 			for (BUN i = 0; i < ncand; i++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 				oid x = canditer_next(&ci) - bhseqbase; \
 				TYPE p1 = tb[x];			\
 				if (is_##TYPE##_nil(p1)) {		\
@@ -1750,6 +1877,13 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	const void *restrict nil = ATOMnilptr(b->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1803,6 +1937,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		if (ATOMvarsized(b->ttype)) {
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
@@ -1811,6 +1947,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
@@ -1823,6 +1961,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			uint16_t width = bn->twidth;
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
@@ -1831,6 +1971,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
@@ -1884,6 +2026,13 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
@@ -1936,6 +2085,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1951,6 +2102,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1970,6 +2123,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1985,6 +2140,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -2041,6 +2198,13 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
@@ -2093,6 +2257,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2113,6 +2279,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2137,6 +2305,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2157,6 +2327,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2221,6 +2393,13 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -2269,6 +2448,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 
 		if (ATOMvarsized(b->ttype)) {
 			for (BUN i = 0; i < ncand; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -2284,6 +2465,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			for (BUN i = 0; i < ncand; i++) {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -2344,6 +2527,13 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -2397,6 +2587,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		if (ATOMvarsized(b->ttype)) {
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
@@ -2405,6 +2597,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
@@ -2417,6 +2611,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			uint16_t width = bn->twidth;
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
@@ -2425,6 +2621,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				}
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
+					GDK_CHECK_TIMEOUT(timeoffset, counter,
+							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
