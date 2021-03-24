@@ -51,8 +51,8 @@ typedef char *States;
 
 typedef enum {
 	no_region,
-	singleton_region, // only ever a single statement
-	dataflow_region,  // statements without side effects, in parallel
+	singleton_region, // always a single statement
+	dataflow_region,  // statements without or with controlled side effects, in parallel
 	existing_region,  // existing barrier..exit region, copied as-is
 	sql_region,       // region of nonconflicting sql.append/sql.updates only
 } region_type;
@@ -76,6 +76,7 @@ simpleFlow(InstrPtr *old, int start, int last, region_state *state)
 	if ( last - start == 1)
 		return TRUE;
 	if ( state->type == existing_region )
+		// don't add additional barriers and garbage collection around existing region.
 		return TRUE;
 	/* skip sequence of simple arithmetic first */
 	for( ; simple && start < last; start++)
@@ -281,12 +282,13 @@ checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p, States
 	InstrPtr instr = *p;
 	switch (state->type) {
 		case singleton_region:
+			// by definition
 			return true;
 		case dataflow_region:
 			return dataflowBreakpoint(cntxt, mb, instr, states);
 		case existing_region:
 			if (state->st.existing_region.level == 0) {
-				// previous statement ended the region
+				// previous statement ended the region so we break here
 				return true;
 			}
 			if (blockStart(instr)) {
