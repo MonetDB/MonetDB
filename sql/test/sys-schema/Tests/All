@@ -11,6 +11,9 @@ HAVE_NETCDF?netcdf_tables_checks
 
 HAVE_FITS&HAVE_GEOM&HAVE_SHP&HAVE_NETCDF?systemfunctions
 
+webExamplesLogicalFunctionsOperators
+webExamplesComparisonFunctionsOperators
+
 utilities
 
 HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables
