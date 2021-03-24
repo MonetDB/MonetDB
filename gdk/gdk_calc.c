@@ -2681,9 +2681,16 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -2700,6 +2707,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -2731,9 +2739,16 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -2752,6 +2767,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -4217,6 +4233,13 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	BATiter b1i, b2i;
 	oid candoff1, candoff2;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
 	candoff1 = b1 ? b1->hseqbase : 0;
 	candoff2 = b2 ? b2->hseqbase : 0;
@@ -4227,6 +4250,8 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	if (s == NULL)
 		return BUN_NONE;
 	for (BUN i = 0; i < ncand; i++) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
@@ -4556,9 +4581,16 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -4575,6 +4607,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -4606,9 +4639,16 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -4627,6 +4667,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
