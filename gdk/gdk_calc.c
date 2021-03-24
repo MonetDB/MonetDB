@@ -11143,9 +11143,16 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -11164,6 +11171,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -11196,9 +11204,16 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -11218,6 +11233,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ncand; k++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
