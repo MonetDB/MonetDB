@@ -2519,7 +2519,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!lsq && !is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
-				if (is_select(rel->op)) {
+				if (depth == 0 && is_select(rel->op)) {
 					v->changes++;
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
 				} else {

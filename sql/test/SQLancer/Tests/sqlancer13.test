@@ -345,3 +345,287 @@ THEN + (3) WHEN NOT (TRUE) THEN least(5, 0.5809714) WHEN NOT (TRUE) THEN ((0.022
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DOUBLE PRECISION NOT NULL,"c2" VARCHAR(64))
+
+statement ok
+INSERT INTO "t0" VALUES (-0, ''),(0.9006985362687353, '-698480774'),(0.48543984754620684, 'w(冒'),(3.9612322048489266, '8'),(0.5616282788859702, NULL),
+(3.6391771849823393, NULL),(9, NULL),(2, NULL),(0.1798248731156511, '2')
+
+statement ok
+CREATE TABLE "t1" ("c0" DOUBLE PRECISION)
+
+statement ok
+INSERT INTO "t1" VALUES (0.6521791858367552),(0.08122328703285808),(NULL),(0.346309674594371),(-172200039.77765536),(1)
+
+statement ok
+CREATE TABLE "t2" ("c1" DOUBLE PRECISION,"c2" BOOLEAN,"c3" BOOLEAN,CONSTRAINT "t2_c1_unique" UNIQUE ("c1"))
+
+statement ok
+INSERT INTO "t2" VALUES (0.7020559018817172, false, NULL),(0.6236223127320935, false, false),(7, true, true),(NULL, true, true)
+
+query I rowsort
+SELECT 1 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2 WHERE t2.c2) AS sub0
+----
+108 values hashing to ff26cf0928970b7e2ae36570fa1cf383
+
+query I rowsort
+SELECT SUM(agg0) FROM (SELECT 1 as agg0 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2 
+WHERE t2.c2) AS sub0 WHERE ('Bw') NOT IN (least(t0.c2, t0.c2), CAST(t1.c0 AS VARCHAR(64)))
+UNION ALL
+SELECT 1 as agg0 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2
+WHERE t2.c2) AS sub0 WHERE NOT (('Bw') NOT IN (least(t0.c2, t0.c2), CAST(t1.c0 AS VARCHAR(64))))
+UNION ALL
+SELECT 1 as agg0 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2
+WHERE t2.c2) AS sub0 WHERE (('Bw') NOT IN (least(t0.c2, t0.c2), CAST(t1.c0 AS VARCHAR(64)))) IS NULL) as asdf
+----
+108
+
+query I rowsort
+SELECT 1 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2 WHERE t2.c2) AS sub0 WHERE (('Bw') NOT IN (least(t0.c2, t0.c2), CAST(t1.c0 AS VARCHAR(64)))) IS NULL
+----
+58 values hashing to 8fdc0683e1f7f9ff9590af46dca75282
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c3" BOOLEAN)
+
+query T rowsort
+select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+union all
+select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+----
+
+query T rowsort
+select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+union all
+select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+----
+
+statement ok
+ROLLBACK
+
+query T rowsort
+select round((0.5296678069272354)*(0.10385499803600118), -8)
+----
+0E-33
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" BOOLEAN,"c2" BOOLEAN,CONSTRAINT "t0_c2_c0_unique" UNIQUE ("c2", "c0"),CONSTRAINT "t0_c2_c0_fkey" FOREIGN KEY ("c2", "c0") REFERENCES "t0" ("c2", "c0"))
+
+statement ok
+CREATE TABLE "t1" ("c4" CHARACTER LARGE OBJECT)
+
+statement ok
+UPDATE t0 SET c0 = t0.c2 FROM t1 WHERE CAST(t1.c4 AS BOOLEAN)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c1" CHARACTER LARGE OBJECT,"c2" BOOLEAN NOT NULL,CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),CONSTRAINT "t0_c1_c2_unique" UNIQUE ("c1", "c2"))
+
+statement ok
+COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"v"	false
+"0.5984453937840536"	true
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c1" REAL,"c3" DECIMAL(18,3),
+	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 25 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+""	0.25307873	NULL
+"false"	-2.6924675e+08	NULL
+"-579379537"	1	NULL
+"0"	0.5760949	NULL
+"1778035546"	-9.342304e+08	NULL
+"0.39176894283958363"	0.63520056	NULL
+"8"	NULL	NULL
+"nr"	NULL	NULL
+"true"	-1.8958627e+09	NULL
+"P啕O"	4	NULL
+"FALSE"	1	NULL
+"1365951424"	0.026853533	NULL
+"w"	NULL	NULL
+"ỬJ}j6"	NULL	NULL
+"-2002788279"	0.135553	NULL
+"6"	0.28696647	0.667
+"5"	1.4837969e+09	0.290
+"g"	NULL	NULL
+"럟Kx"	0.061084658	1.587
+"zx별Z"	7	0.000
+"[ә8|蜼j"	NULL	0.863
+"-1061609345"	8.999999	0.535
+"죸?Zm5dMv"	0.4159582	0.146
+"-269246755"	-0.62566406	7.531
+"\tyT"	0.6758237	-0.366
+
+query I rowsort
+select cast(sum(count) as bigint) from (select cast((("concat"(t0.c1, t0.c1))not ilike(nullif(r'O', substr(t0.c1, 3, 1807556376)))) as int) as count from t1, t0) as res
+----
+50
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c2" CHAR(478) NOT NULL,CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t0_c2_unique" UNIQUE ("c2"))
+
+statement ok
+COPY 34 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"0.5674989590909305"
+"*"
+""
+"Zu4Bmo孥흢"
+"0.26528947469340614"
+"LvuGwY"
+"㟚"
+"i"
+"-2080035418"
+"0.48394748670656496"
+"403902031"
+"-436959214"
+"k*nd\015>"
+"P"
+"-0.557532"
+",^"
+"9"
+"3"
+"᳀"
+"{Y0uzQ*"
+"1405379655"
+"꼱,"
+"Ml|t"
+">"
+"o5jbd-H"
+"X8par"
+"Z6\t8"
+"-1542018934"
+"-112082496"
+"0.5111159857154056"
+"0"
+"F6km?\015zO1"
+"\tVoL^HW/摇"
+"L䶍"
+
+statement ok
+CREATE TABLE "sys"."t1" ("c2" SMALLINT NOT NULL,CONSTRAINT "t1_c2_unique" UNIQUE ("c2"))
+
+statement ok
+COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0
+5
+1
+
+query T rowsort
+SELECT t0.c2 FROM t0, t1 WHERE ((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2)))
+----
+
+query I rowsort
+SELECT CAST(((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2))) AS INT) as count FROM t0, t1
+----
+102 values hashing to a98471bd784fc82e6e3165302bc0080a
+
+query T rowsort
+SELECT t1.c2 > 10 + 0.3607000614109831 FROM t1
+----
+False
+False
+False
+
+query T rowsort
+SELECT t1.c2 > 10 + 0.3611111111 FROM t1
+----
+False
+False
+False
+
+query T rowsort
+SELECT t1.c2 > 10 + 0.361111111 FROM t1
+----
+False
+False
+False
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2))) AS INT) as count FROM t0, t1) as res
+----
+0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" TINYINT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1
+2
+-7
+9
+7
+6
+0
+
+statement ok
+CREATE TABLE "sys"."t2" ("c2" UUID NOT NULL,CONSTRAINT "t2_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t2_c2_unique" UNIQUE ("c2"))
+
+statement ok
+COPY 9 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+5d2afc8a-c83e-1d00-c578-3c51f8da86db
+1eb55e78-39e5-bde9-2aba-fe71a903ffcf
+20f96ff1-8c3d-3db9-fb48-7c48e5fca4a7
+9a7a5e6f-eab3-2353-cbc6-45c1e4bf8944
+619bd7bb-bc92-3a8b-c63e-cdb5630c5f9b
+4bad7ebd-7f57-afdd-246e-3b600d7a9daf
+cdd9b65e-3ebb-f4e6-2f13-a11b4ffd6db1
+bebfb44f-1cfc-905c-fd0e-0e5feeb39d4d
+15aaa8c9-16c4-40d6-cdd1-a19be9d2add7
+
+query I rowsort
+SELECT 1 FROM t0 WHERE t0.c0 BETWEEN 0 AND NULL
+----
+
+query T rowsort
+SELECT t2.c2 FROM t0, t2 WHERE (- (t0.c0)) BETWEEN ASYMMETRIC (CAST(0.49579459740908504716827565061976201832294464111328125 AS TINYINT)) AND (CASE WHEN FALSE THEN t0.c0 END)
+----
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((- (t0.c0)) BETWEEN ASYMMETRIC (CAST(0.49579459740908504716827565061976201832294464111328125 AS TINYINT)) AND 
+(CASE WHEN FALSE THEN t0.c0 END) AS INT) as count FROM t0, t2) as res
+----
+0
+
+statement ok
+ROLLBACK

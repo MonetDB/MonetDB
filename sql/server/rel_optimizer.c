@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
+#include "rel_select.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
 #include "rel_rewriter.h"
@@ -25,8 +26,6 @@ typedef struct global_props {
 	uint8_t
 		has_mergetable:1;
 } global_props;
-
-static sql_subfunc *find_func(mvc *sql, char *name, list *exps);
 
 static int
 find_member_pos(list *l, sql_table *t)
@@ -1616,7 +1615,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		sql_rel *gbl, *gbr;		/* Group By */
 		sql_rel *cp;			/* Cross Product */
 		sql_subfunc *mult;
-		list *args;
+		list *args, *types;
 		sql_rel *srel;
 
 		oce = rel->exps->h->data;
@@ -1650,9 +1649,12 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 			append(args, cnt);
 		}
 
-		mult = find_func(v->sql, "sql_mul", args);
 		cp = rel_crossproduct(v->sql->sa, gbl, gbr, op_join);
 
+		types = sa_list(v->sql->sa);
+		for(node *n = args->h; n; n = n->next)
+			list_append(types, exp_subtype(n->data));
+		mult = sql_bind_func_(v->sql, "sys", "sql_mul", types, F_FUNC);
 		nce = exp_op(v->sql->sa, args, mult);
 		if (exp_name(oce))
 			exp_prop_alias(v->sql->sa, nce, oce);
@@ -2939,17 +2941,6 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_subfunc *
-find_func( mvc *sql, char *name, list *exps )
-{
-	list * l = sa_list(sql->sa);
-	node *n;
-
-	for(n = exps->h; n; n = n->next)
-		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql, "sys", name, l, F_FUNC);
-}
-
 static inline int
 str_ends_with(const char *s, const char *suffix)
 {
@@ -3107,27 +3098,25 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
-						sql_subtype et = *exp_subtype(e);
 						/* (x*c1)*c2 -> x * (c1*c2) */
-						list *l = sa_list(sql->sa);
+						sql_exp *ne = NULL;
 
-						/* lre and re may have different types, so compute supertype */
-						if (rel_convert_types(sql, NULL, NULL, &lre, &re, 1, type_equal) < 0)
-							return NULL;
-						append(l, lre);
-						append(l, re);
-						le->l = l;
-						le->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
-						exp_sum_scales(le->f, lre, re);
-						l = e->l;
-						l->h->data = lle;
-						l->h->next->data = le;
-						e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
-						exp_sum_scales(e->f, lle, le);
-						if (subtype_cmp(&et, exp_subtype(e)) != 0)
-							e = exp_convert(sql->sa, e, exp_subtype(e), &et);
+						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value))) {
+							sql->session->status = 0;
+							sql->errstr[0] = '\0';
+							return e; /* error, fallback to original expression */
+						}
+						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value))) {
+							sql->session->status = 0;
+							sql->errstr[0] = '\0';
+							return e; /* error, fallback to original expression */
+						}
+						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
 						(*changes)++;
-						return e;
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
+						return ne;
 					}
 				}
 			}
@@ -3925,14 +3914,18 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->f && re->f && /* merge ranges */
 				   le->flag == re->flag && le->flag <= cmp_lt) {
-				sql_subfunc *min = sql_bind_func(sql, "sys", "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
-				sql_subfunc *max = sql_bind_func(sql, "sys", "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
-				sql_exp *mine, *maxe;
+				sql_exp *mine = NULL, *maxe = NULL;
 
-				if (!min || !max)
+				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value))) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
 					continue;
-				mine = exp_binop(sql->sa, le->r, re->r, min);
-				maxe = exp_binop(sql->sa, le->f, re->f, max);
+				}
+				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value))) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					continue;
+				}
 				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
 				lmerged = false;
 			}
@@ -5460,11 +5453,12 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 
 		if (ok) {
 			ok = false;
-			/* if all join expressions can be pushed down, then it cannot be rewritten into a semijoin */
+			/* if all join expressions can be pushed down or have function calls, then it cannot be rewritten into a semijoin */
 			for (node *n=rel->exps->h; n && !ok; n = n->next) {
 				sql_exp *e = n->data;
 
-				ok |= !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
+				ok |= e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) &&
+					  !exp_has_func(e) && !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
 			}
 		}
 
@@ -8479,6 +8473,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 						atom *a;
 
 						if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
+							sql_exp *arg1, *arg2;
 #ifdef HAVE_HGE
 							hge val = 1;
 #else
@@ -8490,19 +8485,21 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 
 							scale -= rs;
 
-							args = new_exp_list(v->sql->sa);
 							while(scale > 0) {
 								scale--;
 								val *= 10;
 							}
-							append(args, re);
+							arg1 = re;
 #ifdef HAVE_HGE
-							append(args, exp_atom_hge(v->sql->sa, val));
+							arg2 = exp_atom_hge(v->sql->sa, val);
 #else
-							append(args, exp_atom_lng(v->sql->sa, val));
+							arg2 = exp_atom_lng(v->sql->sa, val);
 #endif
-							f = find_func(v->sql, "scale_down", args);
-							nre = exp_op(v->sql->sa, args, f);
+							if (!(nre = rel_binop_(v->sql, NULL, arg1, arg2, "sys", "scale_down", card_value))) {
+								v->sql->session->status = 0;
+								v->sql->errstr[0] = '\0';
+								continue;
+							}
 							e = exp_compare(v->sql->sa, le->l, nre, e->flag);
 							v->changes++;
 						}

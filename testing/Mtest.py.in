@@ -552,16 +552,22 @@ class Timer:
     # timeout of 0 as no timeout
     def __init__(self, interval, function, args):
         self.timer = None
-        if interval > 0:
-            self.timer = threading.Timer(interval, function, args = args)
+        self.function = function
+        self.args = args
+        self.interval = interval
+
+    def settimeout(self, interval):
+        self.interval = interval
 
     def start(self):
-        if self.timer is not None:
+        if self.timer is None and self.interval > 0:
+            self.timer = threading.Timer(self.interval, self.function, args=self.args)
             self.timer.start()
 
     def cancel(self):
         if self.timer is not None:
             self.timer.cancel()
+            self.timer = None
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
@@ -2666,7 +2672,8 @@ class ServerClass:
         proc.killed = False
         proc.onechild = True
         t = Timer(self.timeout, killProc, args = [proc, self.errfile, self.cmd])
-        t.start()
+        if self.timeout > 0:
+            t.start()
         self.proc = proc
         self.timer = t
 
@@ -2891,6 +2898,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     Srvr.append('--dbextra=:memory:')
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
+            else:
+                PSRVR.timer.settimeout(TIMEOUT)
+                PSRVR.timer.start()
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3008,6 +3018,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         ClntOut.close()
         ClntErr.close()
     finally:
+        if PSRVR is not None:
+            PSRVR.timer.cancel()
         if SERVER in ["MAL", "SQL"] and pSrvr is not None:
             if PSRVR is None and pSrvr.started:
                 pSrvr.terminate()
