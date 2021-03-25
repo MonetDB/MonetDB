@@ -689,3 +689,81 @@ DELETE FROM t1 WHERE (4) NOT IN (0.819259032863937308732715791848022490739822387
 
 statement ok
 DROP TABLE t1
+
+statement ok
+CREATE TABLE t0(c0 BLOB, c1 tinyint)
+
+statement ok
+CREATE TABLE t1(LIKE t0)
+
+statement ok
+CREATE TABLE t2(LIKE t1)
+
+statement ok
+ALTER TABLE t1 ADD COLUMN c3 CLOB
+
+statement ok
+INSERT INTO t0(c0) VALUES(BLOB '48A9F0'), (BLOB 'b0'), (BLOB ''), (BLOB ''), (BLOB 'c0'), (BLOB '278fBAb660'), (BLOB 'BEFbb0'), (BLOB '2cDce0'), (BLOB 'd0'), (BLOB 'a0'),
+(BLOB '3bCeE0'), (BLOB '1F4aeF'), (BLOB '6BCfC200'), (BLOB '40'), (BLOB 'a0aE92C0'), (BLOB 'ea'), (BLOB ''), (BLOB 'd0')
+
+statement ok
+DELETE FROM t0
+
+statement ok
+INSERT INTO t0(c0) VALUES(BLOB 'f0'), (BLOB ''), (BLOB 'C7c1Ffda'), (BLOB 'Fc46fbB0'), (BLOB 'F4b71E00'), (BLOB '9B'), (BLOB 'd8e0')
+
+statement ok
+INSERT INTO t1(c3) VALUES('c-#'), ('0.383799472247898')
+
+statement ok
+INSERT INTO t0(c0) VALUES(BLOB ''), (BLOB 'bEB52EFd'), (BLOB '3e7A0a90'), (BLOB '70'), (BLOB 'aDC0'), (BLOB 'B0'), (BLOB 'A0'), (BLOB 'a8c3ebA0'), (BLOB '43aB7AfFe0'), (BLOB '90')
+
+statement ok
+INSERT INTO t2(c0) VALUES(BLOB '050aC56fd0')
+
+query T rowsort
+SELECT '' >= t1.c3 FROM t0, t1, t2
+----
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2
+
+statement ok
+DROP TABLE t3
