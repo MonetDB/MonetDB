@@ -324,7 +324,9 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			VALset(&a->data, a->data.vtype, p);
 			SA_VALcopy(sa, &a->data, &a->data);
 			if (tpe->type->eclass == EC_TIME && tpe->digits <= 7) {
-				int diff = 6-(tpe->digits-1);
+				unsigned int diff = 6-(tpe->digits-1);
+
+				assert(diff < MAX_SCALE);
 #ifdef HAVE_HGE
 				hge d = scales[diff];
 #else
