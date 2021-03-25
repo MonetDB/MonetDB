@@ -1290,12 +1290,30 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 
 	if (i->ttype == TYPE_msk || mask_cand(i))
 		i = BATunmask(i);
-	/* assume order oid bat */
 	if (BATcount(i)) {
 		if (BATtdense(i)) {
 			size_t start = i->tseqbase;
 			size_t cnt = BATcount(i);
 			ok = delete_range(tr, s, start, cnt);
+		} else if (complex_cand(i)) {
+			struct canditer ci;
+			oid f = 0, l = 0, cur = 0;
+
+			canditer_init(&ci, NULL, i);
+			cur = f = canditer_next(&ci);
+			if (!is_oid_nil(f)) {
+				for(l = canditer_next(&ci); !is_oid_nil(l) && ok == LOG_OK; l = canditer_next(&ci)) {
+					if (cur+1 == l) {
+						cur++;
+						continue;
+					}
+					if (delete_range(tr, s, f, cur-f) == LOG_ERR)
+						ok = LOG_ERR;
+					f = cur = l;
+				}
+				if (ok == LOG_OK && delete_range(tr, s, f, cur-f) == LOG_ERR)
+					ok = LOG_ERR;
+			}
 		} else {
 			assert(BATtordered(i));
 			BUN icnt = BATcount(i);
@@ -1321,10 +1339,10 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 		}
 	}
-	if (ok == LOG_ERR)
-		return LOG_ERR;
 	if (i != oi)
 		bat_destroy(i);
+	if (ok == LOG_ERR)
+		return LOG_ERR;
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return ok;
