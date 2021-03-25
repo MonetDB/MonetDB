@@ -312,9 +312,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_func: {
 		list *l = e->l, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down(sql, l, f, t);
 			if (!nl)
 				return NULL;
@@ -327,14 +325,13 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down(sql, l, f, t);
 			if (!nl)
 				return NULL;
+			return exp_values(sql->sa, nl);
 		}
-		return exp_values(sql->sa, nl);
+		return exp_copy(sql, e);
 	}
 	case e_psm:
 		return e;

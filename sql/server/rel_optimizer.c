@@ -1321,9 +1321,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_func: {
 		list *l = e->l, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_rename(sql, l, f, t);
 			if (!nl)
 				return NULL;
@@ -1337,14 +1335,14 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_rename(sql, l, f, t);
 			if (!nl)
 				return NULL;
+			ne = exp_values(sql->sa, nl);
+		} else {
+			ne = exp_copy(sql, e);
 		}
-		ne = exp_values(sql->sa, nl);
 		break;
 	}
 	case e_psm:
@@ -2286,9 +2284,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 		if (e->type == e_func && exp_unsafe(e,0))
 			return NULL;
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down_prj(sql, l, f, t);
 			if (!nl)
 				return NULL;
@@ -2302,14 +2298,14 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down_prj(sql, l, f, t);
 			if (!nl)
 				return NULL;
+			ne = exp_values(sql->sa, nl);
+		} else {
+			ne = exp_copy(sql, e);
 		}
-		ne = exp_values(sql->sa, nl);
 		return exp_propagate(sql->sa, ne, e);
 	}
 	case e_psm:
@@ -6328,9 +6324,7 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	case e_func: {
 		list *l = e->l, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_use_consts(sql, l, consts);
 			if (!nl)
 				return NULL;
@@ -6343,14 +6337,14 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_use_consts(sql, l, consts);
 			if (!nl)
 				return NULL;
+			return exp_values(sql->sa, nl);
+		} else {
+			return exp_copy(sql, e);
 		}
-		return exp_values(sql->sa, nl);
 	}
 	case e_psm:
 		return e;
