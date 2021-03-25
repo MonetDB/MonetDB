@@ -14,6 +14,7 @@ HAVE_FITS&HAVE_GEOM&HAVE_SHP&HAVE_NETCDF?systemfunctions
 webExamplesLogicalFunctionsOperators
 webExamplesComparisonFunctionsOperators
 webExamplesCastFunctionsOperators
+webExamplesMathematicalFunctionsOperators
 
 utilities
 
