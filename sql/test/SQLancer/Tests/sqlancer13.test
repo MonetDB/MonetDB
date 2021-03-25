@@ -614,7 +614,48 @@ bebfb44f-1cfc-905c-fd0e-0e5feeb39d4d
 15aaa8c9-16c4-40d6-cdd1-a19be9d2add7
 
 query I rowsort
-SELECT 1 FROM t0 WHERE t0.c0 BETWEEN 0 AND NULL
+SELECT t0.c0 FROM t0 WHERE t0.c0 BETWEEN 0 AND 0
+----
+0
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 BETWEEN 0 AND NULL
+----
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 BETWEEN NULL AND 0
+----
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 BETWEEN NULL AND NULL
+----
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 0
+----
+-7
+1
+2
+6
+7
+9
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND NULL
+----
+-7
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN NULL AND 0
+----
+1
+2
+6
+7
+9
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN NULL AND NULL
 ----
 
 query T rowsort
