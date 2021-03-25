@@ -285,14 +285,14 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 {
 	BAT *b, *s = NULL, *bn;
 	const void *nilptr;
-	bit nanti = *anti;
+	bit nanti = *anti, nli = *li, nhi = *hi;
 
 	if (!*unknown)
 		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
 
-	if ((*li != 0 && *li != 1) ||
-		(*hi != 0 && *hi != 1) ||
-		(*anti != 0 && *anti != 1)) {
+	if ((nli != 0 && nli != 1) ||
+		(nhi != 0 && nhi != 1) ||
+		(nanti != 0 && nanti != 1)) {
 		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -306,13 +306,17 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	derefStr(b, high);
 	/* here we don't need open ended parts with nil */
 	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0)
+	if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
 		low = high;
-	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
+		nli = 0;
+	}
+	if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
 		high = low;
+		nhi = 0;
+	}
 	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
 		nanti = !nanti;
-	bn = BATselect(b, s, low, high, *li, *hi, nanti);
+	bn = BATselect(b, s, low, high, nli, nhi, nanti);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
