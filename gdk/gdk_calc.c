@@ -15140,11 +15140,18 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	TYPE1 v;							\
 	oid x;								\
 	const TYPE1 div = (TYPE1) scales[scale1];			\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1) {						\
 			for (i = 0; i < ncand; i++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -15166,6 +15173,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 		}							\
 	} else {							\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15206,10 +15214,17 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 {									\
 	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15226,6 +15241,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		}							\
 	} else {							\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15252,10 +15268,17 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 {									\
 	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15273,6 +15296,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		}							\
 	} else {							\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15323,6 +15347,12 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	const TYPE2 min = GDK_##TYPE2##_min / mul;			\
 	const TYPE2 max = GDK_##TYPE2##_max / mul;			\
 	const TYPE2 prec = (TYPE2) scales[precision] / mul;		\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	assert(div == 1 || mul == 1);					\
 	assert(div >= 1 && mul >= 1);					\
@@ -15331,6 +15361,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1 && mul == 1) {				\
 			for (i = 0; i < ncand; i++) {			\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -15393,6 +15424,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 		}							\
 	} else {							\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15434,10 +15466,17 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	const TYPE2 min = GDK_##TYPE2##_min;				\
 	const TYPE2 max = GDK_##TYPE2##_max;				\
 	const TYPE2 prec = (TYPE2) scales[precision];			\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next_dense(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15460,6 +15499,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 		}							\
 	} else {							\
 		for (i = 0; i < ncand; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15492,10 +15532,17 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,	\
 {								\
 	BUN i, nils = 0, ncand = ci->ncand;			\
 	oid x;							\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 								\
 	*reduce = true;						\
 	if (ci->tpe == cand_dense) {				\
 		for (i = 0; i < ncand; i++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next_dense(ci) - candoff;	\
 			if (is_##TYPE##_nil(src[x])) {		\
 				dst[i] = bit_nil;		\
@@ -15505,6 +15552,7 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,	\
 		}						\
 	} else {						\
 		for (i = 0; i < ncand; i++) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			x = canditer_next(ci) - candoff;	\
 			if (is_##TYPE##_nil(src[x])) {		\
 				dst[i] = bit_nil;		\
@@ -15526,11 +15574,18 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 	BUN i, j, k;							\
 	uint32_t mask;							\
 	oid x;								\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	*reduce = true;							\
 	k = 0;								\
 	if (ci->tpe == cand_dense) {					\
 		for (i = 0; i < cnt; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
@@ -15551,6 +15606,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 		}							\
 	} else {							\
 		for (i = 0; i < cnt; i++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next(ci) - candoff;	\
@@ -15580,6 +15636,12 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 {									\
 	BUN nils = 0;							\
 	BUN k, ncand = ci->ncand;					\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
@@ -15591,6 +15653,7 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 		BUN j;							\
 		k = 0;							\
 		for (; i < cnt; i++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			mask = src[i];					\
 			for (j = first; j < 32; j++) {			\
 				dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
@@ -15607,6 +15670,7 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 		}							\
 	} else {							\
 		for (k = 0; k < ncand; k++) {				\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			oid x = canditer_next(ci) - candoff;		\
 			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 		}							\
