@@ -1,0 +1,12 @@
+stderr of test 'webExamplesLogicalFunctionsOperators` in directory 'sql/test/sys-schema` itself:
+
+
+# 19:06:39 >  
+# 19:06:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-99424" "--port=31998"
+# 19:06:39 >  
+
+
+# 19:06:39 >  
+# 19:06:39 >  "Done."
+# 19:06:39 >  
+

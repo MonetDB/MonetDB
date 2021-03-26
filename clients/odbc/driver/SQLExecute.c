@@ -228,6 +228,8 @@ ODBCInitResult(ODBCStmt *stmt)
 		s = mapi_get_type(hdl, i);
 		if (s == NULL)	/* shouldn't happen */
 			s = "";
+		if (!stmt->Dbc->allow_hugeint && strcmp(s, "hugeint") == 0)
+			s = "bigint";
 		if (rec->sql_desc_type_name)
 			free(rec->sql_desc_type_name);
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);

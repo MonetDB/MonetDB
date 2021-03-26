@@ -1,0 +1,753 @@
+stdout of test 'webExamplesComparisonFunctionsOperators` in directory 'sql/test/sys-schema` itself:
+
+
+# 19:42:47 >  
+# 19:42:47 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-103725" "--port=35313"
+# 19:42:47 >  
+
+#SELECT 5 = 5 as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT NULL = NULL as nul;
+% . # table_name
+% nul # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 5 > 5 as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT NULL > NULL as nul;
+% . # table_name
+% nul # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 5 IS NULL as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT NULL IS NULL as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 5 IS NOT NULL as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT NULL IS NOT NULL as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select 2 < 5 as t1, 2 > 5 as f1;
+% .,	. # table_name
+% t1,	f1 # name
+% boolean,	boolean # type
+% 5,	5 # length
+[ true,	false	]
+#select 2 <= 5 as t1, 2 >= 5 as f1;
+% .,	. # table_name
+% t1,	f1 # name
+% boolean,	boolean # type
+% 5,	5 # length
+[ true,	false	]
+#select 2 = 5 as f1, 2 <> 5 as t1;
+% .,	. # table_name
+% f1,	t1 # name
+% boolean,	boolean # type
+% 5,	5 # length
+[ false,	true	]
+#select "<"('aa', 'ab') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select ">"('aa', 'ab') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select "<="('aa', 'ab') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select ">="('aa', 'ab') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select "="('aa', 'ab') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select "<>"('aa', 'ab') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select ifthenelse(('a' = 'b'), 1, 2) as two;
+% . # table_name
+% two # name
+% tinyint # type
+% 1 # length
+[ 2	]
+#explain
+#select ifthenelse(('aa' IS NULL), cast('b' as varchar(2)), 'aa') as aa;
+% . # table_name
+% aa # name
+% varchar # type
+% 2 # length
+[ "aa"	]
+#select coalesce('aa', 'b') as aa;
+% . # table_name
+% aa # name
+% char # type
+% 2 # length
+[ "aa"	]
+#drop table if exists t6933;
+#create table t6933 (i int, c varchar(8));
+#insert into t6933 values (1, 'aa1'), (2, null), (null, 'bb2'), (null, null);
+[ 4	]
+#select i, c, coalesce(i, 2*3) as "ifnull(i,2*3)", coalesce(c, 'has null') as "ifnull(i,'x')", coalesce(i, c) as "ifnull(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	.,	.,	. # table_name
+% i,	c,	"ifnull(i,2*3)",	"ifnull(i,'x')",	"ifnull(i,c)" # name
+% int,	varchar,	int,	varchar,	varchar # type
+% 1,	3,	1,	8,	3 # length
+[ 1,	"aa1",	1,	"aa1",	"1"	]
+[ 2,	NULL,	2,	"has null",	"2"	]
+[ NULL,	"bb2",	6,	"bb2",	"bb2"	]
+[ NULL,	NULL,	6,	"has null",	NULL	]
+#select i, c, coalesce(i, 2*3) as "coalesce(i,2*3)", coalesce(c, 'has null') as "coalesce(i,'x')", coalesce(i, c) as "coalesce(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	.,	.,	. # table_name
+% i,	c,	"coalesce(i,2*3)",	"coalesce(i,'x')",	"coalesce(i,c)" # name
+% int,	varchar,	int,	varchar,	varchar # type
+% 1,	3,	1,	8,	3 # length
+[ 1,	"aa1",	1,	"aa1",	"1"	]
+[ 2,	NULL,	2,	"has null",	"2"	]
+[ NULL,	"bb2",	6,	"bb2",	"bb2"	]
+[ NULL,	NULL,	6,	"has null",	NULL	]
+#select c, i, coalesce(c, i) as "ifnull(c,i)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% c,	i,	"ifnull(c,i)" # name
+% varchar,	int,	varchar # type
+% 3,	1,	3 # length
+[ "aa1",	1,	"aa1"	]
+[ NULL,	2,	"2"	]
+[ "bb2",	NULL,	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select c, i, coalesce(c, cast(i as char)) as "ifnull(c,i)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% c,	i,	"ifnull(c,i)" # name
+% varchar,	int,	varchar # type
+% 3,	1,	3 # length
+[ "aa1",	1,	"aa1"	]
+[ NULL,	2,	"2"	]
+[ "bb2",	NULL,	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select i, c, coalesce(i, c) as "ifnull(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% i,	c,	"ifnull(i,c)" # name
+% int,	varchar,	varchar # type
+% 1,	3,	3 # length
+[ 1,	"aa1",	"1"	]
+[ 2,	NULL,	"2"	]
+[ NULL,	"bb2",	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select i, c, case when i IS NULL then c else i end as "ifnull(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% i,	c,	"ifnull(i,c)" # name
+% int,	varchar,	varchar # type
+% 1,	3,	3 # length
+[ 1,	"aa1",	"1"	]
+[ 2,	NULL,	"2"	]
+[ NULL,	"bb2",	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select i, c, case when i IS NULL then c else i end as "ifnull(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% i,	c,	"ifnull(i,c)" # name
+% int,	varchar,	varchar # type
+% 1,	3,	3 # length
+[ 1,	"aa1",	"1"	]
+[ 2,	NULL,	"2"	]
+[ NULL,	"bb2",	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select i, c, case when i IS NULL then c else cast(i as char) end as "ifnull(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% i,	c,	"ifnull(i,c)" # name
+% int,	varchar,	varchar # type
+% 1,	3,	3 # length
+[ 1,	"aa1",	"1"	]
+[ 2,	NULL,	"2"	]
+[ NULL,	"bb2",	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select i, c, case when i IS NULL then c else cast(i as char) end as "ifnull(i,c)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% i,	c,	"ifnull(i,c)" # name
+% int,	varchar,	varchar # type
+% 1,	3,	3 # length
+[ 1,	"aa1",	"1"	]
+[ 2,	NULL,	"2"	]
+[ NULL,	"bb2",	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select c, i, case when c IS NULL then i else c end as "ifnull(c,i)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% c,	i,	"ifnull(c,i)" # name
+% varchar,	int,	varchar # type
+% 3,	1,	3 # length
+[ "aa1",	1,	"aa1"	]
+[ NULL,	2,	"2"	]
+[ "bb2",	NULL,	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#select c, i, case when c IS NULL then i else c end as "ifnull(c,i)" from t6933;
+% sys.t6933,	sys.t6933,	. # table_name
+% c,	i,	"ifnull(c,i)" # name
+% varchar,	int,	varchar # type
+% 3,	1,	3 # length
+[ "aa1",	1,	"aa1"	]
+[ NULL,	2,	"2"	]
+[ "bb2",	NULL,	"bb2"	]
+[ NULL,	NULL,	NULL	]
+#drop table if exists t6933;
+#select isnull('aa') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '%b%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_b%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_b_') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_c_') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('%b%', 'abc') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('_b%', 'abc') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('_b_', 'abc') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('_c_', 'abc') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '%b%c', '%') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '_b%c', '%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_b_', '%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_c_', '%') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '%b%', '_') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_b%', '_') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '%b%', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_b%', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_b_', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_c_', '#') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('ab#c', '%b%', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('ab#c', '_b%', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('ab#c', '_b_', '#') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('ab#c', '_c_', '#') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '%b#%', '#') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '_b#%', '#') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('a_bc', '_#_b_', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('abc', '_c#_', '#') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('aabbccdd', '%bc\\_d%', '\\') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('aabbccdd', '%bc_d%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_like('aabbccdd', '%bc\\_d%', '\\') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '%B%') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '_B%') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_like('abc', '_B_') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_ilike('abc', '%B%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_ilike('abc', '_B%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_ilike('abc', '_B_') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_ilike('abc', '_C_') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select not_ilike('a_bc', '_#_B_', '#') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_ilike('aabbccdd', '%bc_d%') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not_ilike('aabbccdd', '%bc\\_d%', '\\') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select "like"('aabbccdd', '%bc_d%') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select "ilike"('aabbccdd', '%bc_d%') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select sql_exists('abc') as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select sql_not_exists('abc') as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select coalesce(1, 'b', null);
+% .%3 # table_name
+% %3 # name
+% char # type
+% 1 # length
+[ "1"	]
+#select coalesce('b', null, 2);
+% .%3 # table_name
+% %3 # name
+% char # type
+% 1 # length
+[ "b"	]
+#select coalesce(null, 2, 'b');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 1 # length
+[ "2"	]
+#select coalesce(null, 2, 'b', 4);
+% .%3 # table_name
+% %3 # name
+% char # type
+% 1 # length
+[ "2"	]
+#select coalesce(null, 'b', 4);
+% .%3 # table_name
+% %3 # name
+% char # type
+% 1 # length
+[ "b"	]
+#select coalesce('ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select coalesce(null, 'ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select coalesce(null, null, 'ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select coalesce(null, null, null, 'ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select coalesce(null, null, null, null, 'ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select coalesce(null, null, null, null, null, 'ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select coalesce(null, null, null, null, null, null, 'ac', 'dc');
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select nullif('ac', 'dc');
+% .%2 # table_name
+% %2 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select nullif('ac', 'dc');
+% .%2 # table_name
+% %2 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select CASE WHEN 'ac' = 'dc' THEN NULL ELSE 'ac' END;
+% .%3 # table_name
+% %3 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select nullif(null, 'dc');
+% .%2 # table_name
+% %2 # name
+% char # type
+% 0 # length
+[ NULL	]
+#select CASE WHEN null = 'dc' THEN NULL ELSE null END;
+% .%2 # table_name
+% %2 # name
+% smallint # type
+% 1 # length
+[ NULL	]
+#select nullif('ac', null);
+% .%2 # table_name
+% %2 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select CASE WHEN 'ac' = null THEN NULL ELSE 'ac' END;
+% .%2 # table_name
+% %2 # name
+% char # type
+% 2 # length
+[ "ac"	]
+#select nullif(null, null);
+% .%2 # table_name
+% %2 # name
+% smallint # type
+% 1 # length
+[ NULL	]
+#select CASE WHEN null = null THEN NULL ELSE null END;
+% .%2 # table_name
+% %2 # name
+% smallint # type
+% 1 # length
+[ NULL	]
+#select nullif('ac', 'ac');
+% .%2 # table_name
+% %2 # name
+% char # type
+% 2 # length
+[ NULL	]
+#select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END;
+% .%3 # table_name
+% %3 # name
+% char # type
+% 0 # length
+[ NULL	]
+#select nullif(9, 9);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#select CASE WHEN 9 = 9 THEN NULL ELSE 9 END;
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#plan select nullif(null, null);
+% .plan # table_name
+% rel # name
+% clob # type
+% 54 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."nullif"(smallint "NULL", smallint "NULL") ]
+#plan select CASE WHEN null = null THEN NULL ELSE null END;
+% .plan # table_name
+% rel # name
+% clob # type
+% 21 # length
+project (
+|  [ boolean "true" ]
+) [ smallint "NULL" ]
+#plan select nullif('ac', 'ac');
+% .plan # table_name
+% rel # name
+% clob # type
+% 48 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
+#plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END;
+% .plan # table_name
+% rel # name
+% clob # type
+% 96 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."ifthenelse"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
+#plan select nullif(9, 9);
+% .plan # table_name
+% rel # name
+% clob # type
+% 46 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."nullif"(tinyint "9", tinyint "9") ]
+#plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END;
+% .plan # table_name
+% rel # name
+% clob # type
+% 99 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."ifthenelse"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
+#select 'db' between 'abc' and 'db' as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select 'db' not between 'abc' and 'db' as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select not 'db' between 'abc' and 'db' as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select 'db' between SYMMETRIC 'abc' and 'db' as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select 'db' between SYMMETRIC 'db' and 'abc' as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+#select 'db' not between SYMMETRIC 'abc' and 'db' as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select 'db' not between SYMMETRIC 'db' and 'abc' as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select 'a' IS NULL as fals;
+% . # table_name
+% fals # name
+% boolean # type
+% 5 # length
+[ false	]
+#select 'a' IS NOT NULL as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
+
+# 19:42:47 >  
+# 19:42:47 >  "Done."
+# 19:42:47 >  
+

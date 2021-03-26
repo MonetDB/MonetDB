@@ -1,0 +1,78 @@
+stderr of test 'webExamplesMathematicalFunctionsOperators` in directory 'sql/test/sys-schema` itself:
+
+
+# 20:12:27 >  
+# 20:12:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15053" "--port=37993"
+# 20:12:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select |/ 25.0 ;
+ERROR = !syntax error, unexpected '|' in: "select |"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select ||/ 27.0 ;
+ERROR = !syntax error, unexpected CONCATSTRING in: "select ||"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select 5! ;
+ERROR = !Unexpected symbol (!)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select !! 5 ;
+ERROR = !Unexpected symbol (!)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select @ -5.0 ;
+ERROR = !syntax error, unexpected AT in: "select @"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15925/.s.monetdb.39524
+QUERY = SELECT 10 DIV 5;
+ERROR = !syntax error, unexpected sqlINT, expecting SCOLON in: "select 10 div 5"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
+QUERY = select div(9,4);
+ERROR = !SELECT: no such binary operator 'div(tinyint,tinyint)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select div(9,4.0);
+ERROR = !SELECT: no such binary operator 'div(tinyint,decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select div(9.0,4.0);
+ERROR = !SELECT: no such binary operator 'div(decimal,decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select sys.div(9,4);
+ERROR = !SELECT: no such binary operator 'div(tinyint,tinyint)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select sys.div(9.0,4.0);
+ERROR = !SELECT: no such binary operator 'div(decimal,decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-16502/.s.monetdb.34587
+QUERY = select random();
+ERROR = !SELECT: no such operator 'random'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select round(41.538);
+ERROR = !SELECT: no such unary operator 'round(decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
+QUERY = select scale_up(13, 3.0);
+ERROR = !overflow in calculation 30*13.
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
+QUERY = select atan2(1.0, 2.0);
+ERROR = !SELECT: no such binary operator 'atan2(decimal,decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
+QUERY = select rotate_xor_hash(1, 1, '1') ;
+ERROR = !TypeException:user.main[7]:'calc.rotate_xor_hash' undefined in:     X_4532:str := calc.rotate_xor_hash(X_4526:lng, X_4528:int, X_4530:str);
+MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
+QUERY = select rotate_xor_hash(cast(1 as bigint), cast(1 as int), '1') ;
+ERROR = !TypeException:user.main[7]:'calc.rotate_xor_hash' undefined in:     X_4553:str := calc.rotate_xor_hash(X_4547:lng, X_4549:int, X_4551:str);
+
+# 20:17:21 >  
+# 20:17:21 >  "Done."
+# 20:17:21 >  
+

@@ -1,0 +1,535 @@
+stdout of test 'webExamplesMathematicalFunctionsOperators` in directory 'sql/test/sys-schema` itself:
+
+
+# 21:22:20 >  
+# 21:22:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23356" "--port=32491"
+# 21:22:20 >  
+
+#select 2 + 3 as add23, 2 - 3 as sub23, 2 * 3 as mul23, 5 / 2 as div52, 5.0 / 2 as div502, 5 % 4 as mod54;
+% .,	.,	.,	.,	.,	. # table_name
+% add23,	sub23,	mul23,	div52,	div502,	mod54 # name
+% tinyint,	tinyint,	tinyint,	tinyint,	decimal,	tinyint # type
+% 1,	2,	1,	1,	7,	1 # length
+[ 5,	-1,	6,	2,	2.500,	1	]
+#select 2 ^ 3 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#plan select 2 ^ 3 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 56 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
+#select 2.0 ^ 3.0 ;
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 4 # length
+[ 1.0	]
+#plan select 2.0 ^ 3.0 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 68 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
+#select 91 & 15 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 11	]
+#select 32 | 3 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 35	]
+#select 17 # 5 ;   -- note # 5 ; is treated as comment hence only select 17 is executed.
+#;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 17	]
+#select 17 ^ 5 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 20	]
+#plan select 17 ^ 5 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 57 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."bit_xor"(tinyint "17", tinyint "5") NOT NULL ]
+#select 2 ^ 3 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#plan select 2 ^ 3 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 56 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
+#select ~1 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ -2	]
+#plan select ~1 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 43 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."bit_not"(tinyint "1") NOT NULL ]
+#select 1 << 4 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 16	]
+#plan select 1 << 4 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 55 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."left_shift"(tinyint "1", int "4") NOT NULL ]
+#select left_shift(1, 4) ;	-- 16
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 16	]
+#select 8 >> 2 ;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 2	]
+#plan select 8 >> 2 ;
+% .plan # table_name
+% rel # name
+% clob # type
+% 56 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."right_shift"(tinyint "8", int "2") NOT NULL ]
+#select right_shift(16, 2) ;	-- 4
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 4	]
+#select abs(-17.4);
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 6 # length
+[ 17.4	]
+#select bit_and(91, 15), bit_not(1), bit_or(32, 3), bit_xor(17, 5);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% tinyint,	tinyint,	tinyint,	tinyint # type
+% 2,	2,	2,	2 # length
+[ 11,	-2,	35,	20	]
+#select cbrt(2.0);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.25992105	]
+#select sys.cbrt(2.0);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.25992105	]
+#select cbrt(27);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 3	]
+#select ceil(-42.8), ceiling(-95.3), ceil(-42), ceiling(-95);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ -42,	-95,	-42,	-95	]
+#select ceil(42.8), ceiling(95.3), ceil(42), ceiling(95);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 43,	96,	42,	95	]
+#select floor(-42.8), floor(-95.3), floor(-42), floor(-95);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ -43,	-96,	-42,	-95	]
+#select floor(42.8), floor(95.3), floor(42), floor(95);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 42,	95,	42,	95	]
+#select degrees(0.5);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 28.64788976	]
+#select sys.degrees(0.5);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 28.64788976	]
+#select degrees(2);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 114.591559	]
+#select sys.degrees(2);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 114.591559	]
+#select degrees(pi());
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 180	]
+#select radians(45.0);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 0.7853981634	]
+#select sys.radians(45.0);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 0.7853981634	]
+#select radians(180);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 3.141592654	]
+#select sys.degrees(sys.radians(45));
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 45	]
+#select sys.radians(sys.degrees(2));
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 2	]
+#select exp(1), exp(10), exp(1.00), exp(10.00);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 2.718281828,	22026.46579,	2.718281828,	22026.46579	]
+#select right_shift(8, 2);	-- 2
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 2	]
+#select sql_min(1.2, 5), least(1.2, 5), sql_max(1.2, 5), greatest(1.2, 5);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% decimal,	decimal,	decimal,	decimal # type
+% 4,	4,	4,	4 # length
+[ 1.2,	1.2,	5.0,	5.0	]
+#select log(2.0), ln(2), log(64.0, 2), log(2, 64.0), log10(100.0), log2(64.0);
+% .%2,	.%3,	.%4,	.%5,	.%6,	.%7 # table_name
+% %2,	%3,	%4,	%5,	%6,	%7 # name
+% double,	double,	double,	double,	double,	double # type
+% 24,	24,	24,	24,	24,	24 # length
+[ 0.6931471806,	0.6931471806,	0.1666666667,	6,	2,	6	]
+#select mod(5.0, 2.1);	-- 0.8
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 4 # length
+[ 0.8	]
+#select pi();	-- 3.141592653589793
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 3.141592654	]
+#select power(2, 5), power(2, 31);	-- 32.0	2.147483648E9
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% double,	double # type
+% 24,	24 # length
+[ 32,	2147483648	]
+#select 2144156907 / 2147483648;	-- 0
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#plan select CAST(RAND() as float) / 2147483648;
+% .plan # table_name
+% rel # name
+% clob # type
+% 79 # length
+project (
+|  [ boolean "true" ]
+) [ "sys"."sql_div"(double["sys"."rand"()] as "%1"."%1", double "2147483648") ]
+#select rand(0);	-- 1868859049
+% .%2 # table_name
+% %2 # name
+% int # type
+% 10 # length
+[ 1868859049	]
+#select rand(1);	-- 847553797
+% .%2 # table_name
+% %2 # name
+% int # type
+% 9 # length
+[ 847553797	]
+#select rand(2);	-- 543032001
+% .%2 # table_name
+% %2 # name
+% int # type
+% 9 # length
+[ 543032001	]
+#select rand(-5);	-- 1345532277
+% .%2 # table_name
+% %2 # name
+% int # type
+% 10 # length
+[ 1345532277	]
+#select right_shift(16, 2), right_shift(8.0, 2), right_shift(8.2, 2);
+% .%2,	.%3,	.%4 # table_name
+% %2,	%3,	%4 # name
+% tinyint,	decimal,	decimal # type
+% 1,	4,	4 # length
+[ 4,	0.2,	0.2	]
+#select round(41.538, 2);		-- 41.540
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 7 # length
+[ 41.540	]
+#select round(42.4382e0, 2);	-- 42.44
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 42.44	]
+#select scale_down(100, 3), scale_down(100.0, 3), scale_down(100, 6), scale_down(100.0, 6);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% tinyint,	decimal,	tinyint,	decimal # type
+% 2,	6,	2,	6 # length
+[ 33,	3.3,	17,	1.7	]
+#select scale_up(13, 3);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 2 # length
+[ 39	]
+#select scale_up(13.0, 3);
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 5 # length
+[ 390	]
+#select sign(-8.4), sign(-0), sign(+0), sign(+8.4);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% tinyint,	tinyint,	tinyint,	tinyint # type
+% 2,	1,	1,	1 # length
+[ -1,	0,	0,	1	]
+#select sql_add(2, 3.4), sql_sub(5, 7);
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% decimal,	tinyint # type
+% 4,	2 # length
+[ 5.4,	-2	]
+#select sql_div(3.4, 2), sql_mul(1.2, 5);
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% decimal,	decimal # type
+% 7,	6 # length
+[ 1.700,	6.00	]
+#select sql_max(1.2, 5), sql_min(1.2, 5);
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% decimal,	decimal # type
+% 4,	4 # length
+[ 5.0,	1.2	]
+#select sql_max(1.2, sql_max(3.3, 5));
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 4 # length
+[ 5.0	]
+#select sql_min(1.2, sql_min(3.3, 5));
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 4 # length
+[ 1.2	]
+#select sql_neg(-2.5), sql_neg(2.5);
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% decimal,	decimal # type
+% 4,	4 # length
+[ 2.5,	-2.5	]
+#select sqrt(2.0);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.414213562	]
+#select sqrt(64);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 8	]
+#select sys.alpha(5.0, 1.2);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.204584479	]
+#select sys.fuse(2, 6);		-- 518
+% .%2 # table_name
+% %2 # name
+% smallint # type
+% 3 # length
+[ 518	]
+#select sys.fuse(256 , 1);	-- 16777217
+% .%2 # table_name
+% %2 # name
+% int # type
+% 8 # length
+[ 16777217	]
+#select sys.ms_round(1.2359, 2, 0);	-- 1.24
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.24	]
+#select sys.ms_trunc(1.2359, 0);	-- 1.0
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1	]
+#select sys.ms_trunc(1.2359, 2);	-- 1.23
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.23	]
+#select sys.ms_trunc(1.2359, 3);	-- 1.235
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 1.235	]
+#select acos(0.54), acos(0.25);	-- 1.000359217,	1.318116072
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% double,	double # type
+% 24,	24 # length
+[ 1.000359217,	1.318116072	]
+#select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0);	-- 1.570796327,	0.7853981634,	0.463647609,	0.463647609
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 1.570796327,	0.7853981634,	0.463647609,	0.463647609	]
+#select cos(12.2), cosh(3.0), cot(16.0);	-- 0.9336336441,	10.067662,	3.326323196
+% .%2,	.%3,	.%4 # table_name
+% %2,	%3,	%4 # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0.9336336441,	10.067662,	3.326323196	]
+#select degrees(0.5), radians(45);	-- 28.64788976	0.7853981634
+% .%2,	.%3 # table_name
+% %2,	%3 # name
+% double,	double # type
+% 24,	24 # length
+[ 28.64788976,	0.7853981634	]
+#select pi();	-- 3.141592653589793
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 3.141592654	]
+#select sin(1.4), sin(2), sinh(0), sinh(1.4);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 0.98544973,	0.9092974268,	0,	1.904301501	]
+#select tan(1.4), tan(2), tanh(0), tanh(1.4);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 5.797883715,	-2.185039863,	0,	0.8853516482	]
+#create sequence tst20210325;
+#select get_value_for('sys', 'tst20210325');
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#select next_value_for('sys', 'tst20210325');
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#select get_value_for('sys', 'tst20210325');
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#drop sequence tst20210325;
+
+# 21:22:20 >  
+# 21:22:20 >  "Done."
+# 21:22:20 >  
+
