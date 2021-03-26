@@ -694,13 +694,10 @@ statement ok
 CREATE TABLE t0(c0 BLOB, c1 tinyint)
 
 statement ok
-CREATE TABLE t1(LIKE t0)
+CREATE TABLE t1(c0 BLOB, c1 tinyint, c3 CLOB)
 
 statement ok
-CREATE TABLE t2(LIKE t1)
-
-statement ok
-ALTER TABLE t1 ADD COLUMN c3 CLOB
+CREATE TABLE t2(c0 BLOB, c1 tinyint)
 
 statement ok
 INSERT INTO t0(c0) VALUES(BLOB '48A9F0'), (BLOB 'b0'), (BLOB ''), (BLOB ''), (BLOB 'c0'), (BLOB '278fBAb660'), (BLOB 'BEFbb0'), (BLOB '2cDce0'), (BLOB 'd0'), (BLOB 'a0'),
@@ -760,10 +757,10 @@ False
 False
 
 statement ok
+DROP TABLE t0
+
+statement ok
 DROP TABLE t1
 
 statement ok
 DROP TABLE t2
-
-statement ok
-DROP TABLE t3
