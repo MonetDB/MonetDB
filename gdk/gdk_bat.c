@@ -1339,6 +1339,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		return GDK_FAIL;
 	}
 	val = BUNtail(bi, p);	/* old value */
+	if (ATOMcmp(b->ttype, val, t) == 0)
+		return GDK_SUCCEED; /* nothing to do */
 	if (b->tnil &&
 	    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
 	    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
