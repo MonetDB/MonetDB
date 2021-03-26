@@ -24,8 +24,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -35,7 +33,9 @@ sql.bind
 algebra.projection
 2
 algebra.sort
-2
+1
+bat.pack
+5
 sql.resultSet
 1
 

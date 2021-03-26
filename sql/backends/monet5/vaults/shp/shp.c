@@ -306,6 +306,7 @@ finish:
 
 static str
 SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool partial) {
+	size_t pos = 0;
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
 	char *sch_name = "sys";
@@ -538,8 +539,9 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	}
 
 	/* finalise the BATs */
+	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
 	for(i = 0; i < colsNum; i++) {
-		if (store->storage_api.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat) != LOG_OK) {
+		if (store->storage_api.append_col(m->session->tr, cols[i], pos, colsBAT[i], TYPE_bat) != LOG_OK) {
 			msg = createException(MAL, "shp.import", SQLSTATE(38000) "Geos append column failed");
 			goto unfree4;
 		}
@@ -564,6 +566,7 @@ final:
 #if 0
 str
 SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	size_t pos = 0;
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
 	char *sch_name = "sys";
@@ -765,8 +768,9 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 
 	/* finalise the BATs */
+	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
 	for(i = 0; i < colsNum; i++) {
-		if (store->storage_api.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat) != LOG_OK) {
+		if (store->storage_api.append_col(m->session->tr, cols[i], pos, colsBAT[i], TYPE_bat) != LOG_OK) {
 			msg = createException(MAL, "shp.import", SQLSTATE(38000) "append_col failed");
 			goto bailout;
 		}

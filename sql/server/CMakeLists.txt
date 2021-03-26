@@ -42,6 +42,7 @@ target_sources(sqlserver
   rel_prop.c
   rel_exp.c
   rel_rel.c
+  rel_basetable.c
   rel_rewriter.c
   rel_unnest.c
   rel_optimizer.c
@@ -55,6 +56,7 @@ target_sources(sqlserver
   rel_xml.c
   rel_dump.c
   rel_dump.h rel_exp.h rel_rel.h
+  rel_basetable.h
   rel_unnest.h
   rel_optimizer.h
   rel_statistics.h

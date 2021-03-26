@@ -38,6 +38,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (OPTisAlias(p))
 			break;
 	}
+	if( i == limit){
+		goto wrapup;
+	}
 	k = i;
 	if( i < limit){
 		alias= (int*) GDKzalloc(sizeof(int)* mb->vtop);
@@ -78,7 +81,8 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	//	msg = chkFlow(mb);
 	// if ( msg == MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment
+wrapup:
+	/* keep all actions taken as a post block comment
 	 * and update statics */
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);

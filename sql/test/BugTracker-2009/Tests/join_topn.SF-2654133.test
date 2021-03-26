@@ -13,7 +13,7 @@ insert into x (n,s) values (3, 'three')
 query ITITIIIIIIT rowsort
 select * from tables, x limit 10
 ----
-110 values hashing to 2faefebbb355462edfd0a7afbaa5759c
+110 values hashing to 17b3d6b6cff6dabb7f2bd47081ddea7d
 
 statement ok
 drop table x cascade

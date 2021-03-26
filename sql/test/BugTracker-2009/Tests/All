@@ -58,7 +58,7 @@ temporary_table_leftover.SF-2779437
 temporary_table_leftover.SF-2734713
 multi-column_join_with_expression.SF-2783279
 BOM.SF-2787813
-lost_update.SF-2790020
+#lost_update.SF-2790020
 temp_table_fail_leaves_data.SF-2793286
 having_min_crash.SF-2795951
 insert_type_exception.SF-2789976

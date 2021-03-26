@@ -161,11 +161,7 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 
 	rid = store->table_api.column_find_row(tr, dep_id, &id, dep_dep_type, &dtype, NULL);
 	if (!is_oid_nil(rid)) {
-		int r, *v = store->table_api.column_find_value(tr, dep_dep_id, rid);
-
-		r = *v;
-		_DELETE(v);
-		return r;
+		return store->table_api.column_find_sqlid(tr, dep_dep_id, rid);
 	} else {
 		return -1;
 	}

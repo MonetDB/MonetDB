@@ -421,12 +421,10 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		anti = 0;
 	}
 	if (cand) {
-		o1 = canditer_search(&ci, o1, true);
-		o2 = canditer_search(&ci, o2, true);
 		if (anti) {
-			bn = canditer_slice2(&ci, 0, o1, o2, ci.ncand);
+			bn = canditer_slice2val(&ci, oid_nil, o1, o2, oid_nil);
 		} else {
-			bn = canditer_slice(&ci, o1, o2);
+			bn = canditer_sliceval(&ci, o1, o2);
 		}
 		BBPunfix(cand->batCacheid);
 		if (bn == NULL)

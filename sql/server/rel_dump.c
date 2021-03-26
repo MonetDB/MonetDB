@@ -12,6 +12,7 @@
 
 #include "rel_dump.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_updates.h"
@@ -408,12 +409,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
+#if 0
 		sql_column *c = rel->r;
 
 		if (!t && c) {
 			mnstr_printf(fout, "dict(\"%s\".\"%s\")",
 						 dump_escape_ident(sql->ta, c->t->base.name), dump_escape_ident(sql->ta, c->base.name));
 		} else {
+#endif
+
 			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
 			const char *tname = t->base.name;
 
@@ -433,9 +437,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
 					dump_escape_ident(sql->ta, tname));
-		}
+	//	}
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
+		else
+			rel_base_dump_exps(fout, rel);
 	} 	break;
 	case op_table:
 		mnstr_printf(fout, "table (");
@@ -1043,7 +1049,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				}
 
 				if (!(f = sql_bind_func_(sql, "sys", fname, tl, F_FILT)))
-					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
 				if (!execute_priv(sql, f->func))
 					return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'\n", fname);
 				return exp_filter(sql->sa, lexps, rexps, f, anti);
@@ -1075,7 +1081,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			}
 			convertIdent(tname);
 			if (!(tpe = sql_bind_subtype(sql->sa, tname, d, s)))
-				return sql_error(sql, -1, SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tname, d, s);
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tname, d, s);
 			skipWS(r, pos);
 			*e = old;
 			if (r[*pos] == '[') { /* convert */
@@ -1103,7 +1109,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		tname = b;
 		convertIdent(tname);
 		if (!(tpe = sql_bind_subtype(sql->sa, tname, 0, 0)))
-			return sql_error(sql, -1, SQLSTATE(42000) "SQL type %s not found\n", tname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
 		st = readString(r,pos);
 		if (st && strcmp(st, "NULL") == 0)
 			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
@@ -1147,7 +1153,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		convertIdent(tname);
 		s = mvc_bind_schema(sql, tname);
 		if (tname && !s)
-			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s not found\n", tname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Schema %s not found\n", tname);
 		if (grp) {
 			if (exps && exps->h) {
 				list *ops = sa_list(sql->sa);
@@ -1158,7 +1164,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				a = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
 			}
 			if (!a)
-				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
 			if (!execute_priv(sql, a->func))
 				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate: no privilege to call aggregate '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
@@ -1166,63 +1172,73 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				set_zero_if_empty(exp);
 		} else {
 			int nops = list_length(exps);
-			list *ops = sa_list(sql->sa);
-			for( n = exps->h; n; n = n->next)
-				append(ops, exp_subtype(n->data));
+			if (!strcmp(tname, "sys") && (!strcmp(cname, "ifthenelse") || !strcmp(cname, "casewhen") || !strcmp(cname, "coalesce") || !strcmp(cname, "nullif"))) {
+				/* these functions are bound on a different way */
+				if ((f = sql_find_func(sql, NULL, cname, !strcmp(cname, "ifthenelse") ? 3 : 2, F_FUNC, NULL))) {
+					if (!execute_priv(sql, f->func))
+						return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
+					sql_exp *res = exps->t->data;
+					sql_subtype *restype = exp_subtype(res);
+					f->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
+				}
+			} else {
+				list *ops = sa_list(sql->sa);
+				for( n = exps->h; n; n = n->next)
+					append(ops, exp_subtype(n->data));
 
-			f = sql_bind_func_(sql, tname, cname, ops, F_FUNC);
-			if (!f) {
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
-			}
-			if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-				list_remove_node(ops, NULL, ops->t);
-				list_remove_node(ops, NULL, ops->t);
-				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
-			}
-			if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-				for (int i = 0 ; i < 3 ; i++)
+				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC);
+				if (!f) {
+					sql->session->status = 0; /* if the function was not found clean the error */
+					sql->errstr[0] = '\0';
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+				}
+				if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
+					sql->session->status = 0; /* if the function was not found clean the error */
+					sql->errstr[0] = '\0';
 					list_remove_node(ops, NULL, ops->t);
-				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
-			}
+					list_remove_node(ops, NULL, ops->t);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+				}
+				if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
+					sql->session->status = 0; /* if the function was not found clean the error */
+					sql->errstr[0] = '\0';
+					for (int i = 0 ; i < 3 ; i++)
+						list_remove_node(ops, NULL, ops->t);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+				}
 
-			if (f && !execute_priv(sql, f->func))
-				return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
-			/* fix scale of mul function, other type casts are explicit */
-			if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
-				sql_arg *ares = f->func->res->h->data;
+				if (f && !execute_priv(sql, f->func))
+					return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
+				/* fix scale of mul function, other type casts are explicit */
+				if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
+					sql_arg *ares = f->func->res->h->data;
 
-				if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+					if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+						sql_subtype *res = f->res->h->data;
+						sql_subtype *lt = ops->h->data;
+						sql_subtype *rt = ops->h->next->data;
+
+						res->digits = lt->digits;
+						res->scale = lt->scale + rt->scale;
+					}
+				}
+				/* fix scale of div function */
+				if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
+					sql_arg *ares = f->func->res->h->data;
+
+					if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
 					sql_subtype *res = f->res->h->data;
-					sql_subtype *lt = ops->h->data;
-					sql_subtype *rt = ops->h->next->data;
+						sql_subtype *lt = ops->h->data;
+						sql_subtype *rt = ops->h->next->data;
 
-					res->digits = lt->digits;
-					res->scale = lt->scale + rt->scale;
+						res->scale = lt->scale - rt->scale;
+					}
 				}
 			}
-			/* fix scale of div function */
-			if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
-				sql_arg *ares = f->func->res->h->data;
-
-				if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
-					sql_subtype *res = f->res->h->data;
-					sql_subtype *lt = ops->h->data;
-					sql_subtype *rt = ops->h->next->data;
-
-					res->scale = lt->scale - rt->scale;
-				}
-			}
-
 			if (f)
 				exp = exp_op(sql->sa, list_empty(exps) ? NULL : exps, f);
 			else
-				return sql_error(sql, -1, SQLSTATE(42000) "Function '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, nops);
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Function '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, nops);
 		}
 	}
 
@@ -1441,7 +1457,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sym = 1;
 			}
 			if (e->type == e_cmp) {
-				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
+				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag & ~(CMP_SYMMETRIC|CMP_BETWEEN)));
 				if (sym)
 					ne->flag |= CMP_SYMMETRIC;
 				if (between)
@@ -1661,7 +1677,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				sql_column *c = mvc_bind_column(sql, t, cname);
 
 				if (!c)
-					return sql_error(sql, -1, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", t->base.name, cname);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", t->base.name, cname);
 				if (!(e = update_check_column(sql, t, c, e, rrel, c->base.name, "UPDATE")))
 					return NULL;
 			}
@@ -1807,9 +1823,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				(*pos)++;
 				skipWS(r, pos);
 				if (!(s = mvc_bind_schema(sql, sname)))
-					return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
 				if (!(t = mvc_bind_table(sql, s, tname)))
-					return sql_error(sql, -1, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 				if (isMergeTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
 				if (isRemote(t))
@@ -1817,9 +1833,14 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (isReplicaTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
 				rel = rel_basetable(sql, t, tname);
-				if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
-					return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
+				if (!table_privs(sql, t, PRIV_SELECT))  {
+					rel_base_disallow(rel);
+					if (rel_base_has_column_privileges(sql, rel) == 0)
+						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
+				}
+				rel_base_use_all(sql, rel);
+				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
 					return rel;

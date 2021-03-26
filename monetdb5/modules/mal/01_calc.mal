@@ -5120,6 +5120,10 @@ pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1
 address CALCswitchbit
 comment "If VALUE is true return MIDDLE else RIGHT";
 
+pattern ifthenelse(b:msk,t:any_1,f:any_1):any_1
+address CALCswitchbit
+comment "If VALUE is true return MIDDLE else RIGHT";
+
 command length(s:str) :int
 address CMDstrlength
 comment "Length of STRING";

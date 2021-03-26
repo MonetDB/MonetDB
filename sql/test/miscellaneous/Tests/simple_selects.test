@@ -200,6 +200,13 @@ select cast(b as interval second) from x
 statement error
 select cast(b as interval month) from x
 
+query TTT rowsort
+select cast(blob 'AA' as char(2)), cast(blob 'BB' as varchar(2)), cast(blob 'CC' as clob)
+----
+AA
+BB
+CC
+
 statement ok
 drop table x
 
@@ -674,6 +681,18 @@ select ifthenelse(false, 'abc', 'abcd'), ifthenelse(false, 1.23, 12.3)
 ----
 abcd
 12.300
+
+query T rowsort
+select sql_min(a, uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F36') from (values (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34'), (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F35')) as a(a)
+----
+aee1a538-aca1-381b-d9f4-8c29ef3f5f34
+aee1a538-aca1-381b-d9f4-8c29ef3f5f35
+
+query T rowsort
+select sql_max(a, b) from (values (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34', uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F36'), (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F35', uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F37')) as a(a,b)
+----
+aee1a538-aca1-381b-d9f4-8c29ef3f5f36
+aee1a538-aca1-381b-d9f4-8c29ef3f5f37
 
 statement ok
 start transaction

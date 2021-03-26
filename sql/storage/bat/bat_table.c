@@ -12,136 +12,56 @@
 #include "bat_storage.h"
 
 static BAT *
-_delta_cands(sql_trans *tr, sql_table *t)
-{
-	sqlstore *store = tr->store;
-	sql_column *c = t->columns.set->h->data;
-	/* create void,void bat with length and oid's set */
-	size_t nr = store->storage_api.count_col(tr, c, 1);
-	BAT *tids = BATdense(0, 0, (BUN) nr);
-
-	if (!tids)
-		return NULL;
-
-	if (store->storage_api.count_del(tr, t)) {
-		BAT *d, *diff = NULL;
-
-		if ((d = store->storage_api.bind_del(tr, t, RD_INS)) != NULL) {
-			diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
-			bat_destroy(d);
-		}
-		bat_destroy(tids);
-		tids = diff;
-	}
-	return tids;
-}
-
-static BAT *
 delta_cands(sql_trans *tr, sql_table *t)
 {
 	sqlstore *store = tr->store;
-	sql_dbat *d;
-	BAT *tids;
+	BAT *cands = store->storage_api.bind_cands(tr, t, 1, 0);
 
-	d = ATOMIC_PTR_GET(&t->data);
-	if (!store->initialized && d->cached)
-		return temp_descriptor(d->cached->batCacheid);
-	tids = _delta_cands(tr, t);
-	if (!store->initialized && !d->cached) /* only cache during catalog loading */
-		d->cached = temp_descriptor(tids->batCacheid);
-	return tids;
+	if (cands && (cands->ttype == TYPE_msk || mask_cand(cands))) {
+		BAT *ncands = BATunmask(cands);
+		BBPreclaim(cands);
+		cands = ncands;
+	}
+	return cands;
 }
 
 static BAT *
-delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
+full_column(sql_trans *tr, sql_column *c)
 {
 	/* return full normalized column bat
 	 * 	b := b.copy()
-		b := b.append(i);
 		b := b.replace(u);
 	*/
-	sqlstore *store = tr->store;
-	BAT *r, *b, *ui, *uv, *i = temp_descriptor(bat->ibid);
-	int needcopy = 1;
+	BAT *b, *ui, *uv;
+	sql_delta *bat = col_timestamp_delta(tr, c);
 
-	if (!i)
-		return NULL;
-	r = i;
-	if (is_new)
-		return r;
-	b = temp_descriptor(bat->bid);
-	if (!b) {
-		b = i;
-	} else {
-		if (BATcount(i)) {
-			r = COLcopy(b, b->ttype, true, TRANSIENT);
-			bat_destroy(b);
-			if (r == NULL) {
-				bat_destroy(i);
-				return NULL;
-			}
-			b = r;
-			if (BATappend(b, i, NULL, true) != GDK_SUCCEED) {
-				bat_destroy(b);
-				bat_destroy(i);
-				return NULL;
-			}
-			needcopy = 0;
-		}
-		bat_destroy(i);
-	}
-	if (bat->uibid && bat->ucnt) {
-		ui = temp_descriptor(bat->uibid);
-		uv = temp_descriptor(bat->uvbid);
+	b = temp_descriptor(bat->cs.bid);
+	if (b && bat->cs.uibid && bat->cs.ucnt) {
+		ui = temp_descriptor(bat->cs.uibid);
+		uv = temp_descriptor(bat->cs.uvbid);
 		if (ui && BATcount(ui)) {
-			if (needcopy) {
-				r = COLcopy(b, b->ttype, true, TRANSIENT);
-				bat_destroy(b);
-				b = r;
-				if(b == NULL) {
-					bat_destroy(ui);
-					bat_destroy(uv);
-					return NULL;
-				}
-			}
-			if (BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
-				bat_destroy(ui);
-				bat_destroy(uv);
-				bat_destroy(b);
+			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT);
+
+			bat_destroy(b);
+			b = r;
+	    	if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
+				if (b) BBPunfix(b->batCacheid);
+				if (ui) BBPunfix(ui->batCacheid);
+				if (uv) BBPunfix(uv->batCacheid);
 				return NULL;
 			}
 		}
 		bat_destroy(ui);
 		bat_destroy(uv);
 	}
-	(void)c;
-	if (!store->initialized && !bat->cached)
-		bat->cached = b;
 	return b;
-}
-
-static BAT *
-delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
-{
-	sqlstore *store = tr->store;
-	if (!store->initialized && bat->cached)
-		return bat->cached;
-	return delta_full_bat_( tr, c, bat, is_new);
-}
-
-static BAT *
-full_column(sql_trans *tr, sql_column *c)
-{
-	return delta_full_bat(tr, c, col_timestamp_delta(tr, c), isNew(c->t));
 }
 
 static void
 full_destroy(sql_column *c, BAT *b)
 {
-	sql_delta *d = ATOMIC_PTR_GET(&c->data);
-	assert(d);
-	if (d->cached != b)
-		bat_destroy(b);
+	(void)c;
+	bat_destroy(b);
 }
 
 static oid
@@ -223,50 +143,61 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	return res;
 }
 
-static sqlid
-column_find_sqlid(sql_trans *tr, sql_column *c, oid rid)
+#define column_find_tpe(TPE) \
+static TPE \
+column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
+{ \
+	BUN q = BUN_NONE; \
+	BAT *b; \
+	TPE res = -1; \
+ \
+	b = full_column(tr, c); \
+	if (b) { \
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b)) \
+			q = BUN_NONE; \
+		else \
+			q = rid - b->hseqbase; \
+	} \
+	if (q != BUN_NONE) { \
+		BATiter bi = bat_iterator(b); \
+		res = *(TPE*)BUNtail(bi, q); \
+	} \
+	full_destroy(c, b); \
+	return res; \
+}
+
+column_find_tpe(sqlid)
+column_find_tpe(bte)
+column_find_tpe(sht)
+column_find_tpe(int)
+column_find_tpe(lng)
+
+static str
+column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 {
 	BUN q = BUN_NONE;
-	BAT *b;
-	sqlid res = -1;
+	BAT **b = (BAT**) cbat;
+	str res = NULL;
 
-	b = full_column(tr, c);
-	if (b) {
-		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+	*b = full_column(tr, c);
+	if (*b) {
+		if (rid < (*b)->hseqbase || rid >= (*b)->hseqbase + BATcount(*b))
 			q = BUN_NONE;
 		else
-			q = rid - b->hseqbase;
+			q = rid - (*b)->hseqbase;
 	}
 	if (q != BUN_NONE) {
-		BATiter bi = bat_iterator(b);
-
-		res = *(sqlid*)BUNtail(bi, q);
+		BATiter bi = bat_iterator(*b);
+		res = (str) BUNtvar(bi, q);
 	}
-	full_destroy(c, b);
 	return res;
 }
 
-static sqlid
-column_find_int(sql_trans *tr, sql_column *c, oid rid)
+static void
+column_find_string_end(ptr cbat)
 {
-	BUN q = BUN_NONE;
-	BAT *b;
-	int res = -1;
-
-	b = full_column(tr, c);
-	if (b) {
-		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
-			q = BUN_NONE;
-		else
-			q = rid - b->hseqbase;
-	}
-	if (q != BUN_NONE) {
-		BATiter bi = bat_iterator(b);
-
-		res = *(int*)BUNtail(bi, q);
-	}
-	full_destroy(c, b);
-	return res;
+	BAT *b = (BAT*) cbat;
+	full_destroy(NULL, b);
 }
 
 static int
@@ -283,18 +214,19 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 {
 	sqlstore *store = tr->store;
 	va_list va;
-	node *n = cs_first_node(&t->columns);
+	node *n = ol_first_node(t->columns);
 	void *val = NULL;
 	int cnt = 0;
 	int ok = LOG_OK;
 
 	va_start(va, t);
+	size_t offset = store->storage_api.claim_tab(tr, t, 1);
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store->storage_api.append_col(tr, c, val, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -304,7 +236,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	va_end(va);
 	if (n) {
 		// This part of the code should never get reached
-		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
+		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, ol_length(t->columns), cnt);
 		assert(0);
 		return LOG_ERR;
 	}
@@ -419,6 +351,16 @@ static oid
 rids_next(rids *r)
 {
 	if (r->cur < BATcount((BAT *) r->data)) {
+		BAT *t = r->data;
+
+		if (t && (t->ttype == TYPE_msk || mask_cand(t))) {
+			r->data = BATunmask(t);
+			if (!r->data) {
+				r->data = t;
+				return oid_nil;
+			}
+			bat_destroy(t);
+		}
 		return BUNtoid((BAT *) r->data, r->cur++);
 	}
 	return oid_nil;
@@ -646,22 +588,24 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	BAT *tids = delta_cands(tr, t);
 	BAT **cols;
 	node *n;
+	size_t cnt = 0;
 
 	if (!tids)
 		return SQL_ERR;
-	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
+	cnt = BATcount(tids);
+	cols = NEW_ARRAY(BAT*, ol_length(t->columns));
 	if (!cols) {
 		bat_destroy(tids);
 		return SQL_ERR;
 	}
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *v = store->storage_api.bind_col(tr, c, RDONLY);
 
 		if (v == NULL ||
 		    (cols[c->colnr] = BATproject(tids, v)) == NULL) {
 			BBPunfix(tids->batCacheid);
-			for (n = t->columns.set->h; n; n = n->next) {
+			for (n = ol_first_node(t->columns); n; n = n->next) {
 				if (n->data == c)
 					break;
 				bat_destroy(cols[((sql_column *) n->data)->colnr]);
@@ -674,11 +618,13 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	}
 	BBPunfix(tids->batCacheid);
 	sql_trans_clear_table(tr, t);
-	for (n = t->columns.set->h; n; n = n->next) {
+	size_t offset = store->storage_api.claim_tab(tr, t, cnt);
+	assert(offset == 0);
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		int ok;
 
-		ok = store->storage_api.append_col(tr, c, cols[c->colnr], TYPE_bat);
+		ok = store->storage_api.append_col(tr, c, offset, cols[c->colnr], TYPE_bat);
 		BBPunfix(cols[c->colnr]->batCacheid);
 		if (ok != LOG_OK) {
 			for (n = n->next; n; n = n->next) {
@@ -699,8 +645,12 @@ bat_table_init( table_functions *tf )
 	tf->column_find_row = column_find_row;
 	tf->column_find_value = column_find_value;
 	tf->column_find_sqlid = column_find_sqlid;
+	tf->column_find_bte = column_find_bte;
+	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
-
+	tf->column_find_lng = column_find_lng;
+	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
+	tf->column_find_string_end = column_find_string_end; /* don't forget to call this function to unfix the bat descriptor! */
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;

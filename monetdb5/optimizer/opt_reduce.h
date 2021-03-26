@@ -12,6 +12,6 @@
 #include "opt_support.h"
 #include "mal_instruction.h"
 
-mal_export str OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

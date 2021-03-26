@@ -2,20 +2,6 @@ statement ok
 set optimizer = 'sequential_pipe'
 
 statement ok
--- 3	  o
---	  |  o|
--- 2	+-+-+ |
---	| | | |
--- 1	| o-+-o
---	|   |
--- 0	+---+
---
---	0 1 2 3
---
--- boxes are specified by two points, given by four floats x1,y1,x2,y2
--- DROP TABLE BOX_TBL
-
-statement ok
 CREATE TABLE BOX_TBL (f1 mbr)
 
 statement ok

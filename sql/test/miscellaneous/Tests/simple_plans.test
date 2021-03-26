@@ -199,8 +199,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -213,6 +211,8 @@ algebra.rangejoin
 1
 algebra.project
 1
+bat.pack
+5
 sql.resultSet
 1
 
@@ -223,8 +223,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -239,6 +237,8 @@ algebra.rangejoin
 1
 algebra.project
 1
+bat.pack
+5
 sql.resultSet
 1
 
@@ -249,8 +249,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -263,6 +261,8 @@ algebra.project
 2
 algebra.rangejoin
 1
+bat.pack
+5
 sql.resultSet
 1
 
@@ -273,8 +273,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -289,8 +287,11 @@ algebra.likejoin
 1
 algebra.project
 1
+bat.pack
+5
 sql.resultSet
 1
+
 
 query T python .explain.function_with_more_than_one_result_bat
 EXPLAIN SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
@@ -454,6 +455,31 @@ select i, j from integers where i = j or (i is null and j is null)
 ----
 NULL
 NULL
+
+# (x*c1)*c2 -> x * (c1*c2)
+query T nosort
+plan select (34*another_t.col1)*3 from another_t
+----
+project (
+| table("sys"."another_t") [ "another_t"."col1" ] COUNT 
+) [ "sys"."sql_mul"("another_t"."col1", "sys"."sql_mul"(tinyint "34", tinyint "3") NOT NULL) ]
+
+# testing rel_push_count_down optimizer
+query T nosort
+plan select count(*) from another_t t1, another_t t2
+----
+project (
+| project (
+| | crossproduct (
+| | | group by (
+| | | | table("sys"."another_t") [ "another_t"."%TID%" NOT NULL as "t1"."%TID%" ] COUNT 
+| | | ) [  ] [ "sys"."count"() NOT NULL as "%2"."%2" ],
+| | | group by (
+| | | | table("sys"."another_t") [ "another_t"."%TID%" NOT NULL as "t2"."%TID%" ] COUNT 
+| | | ) [  ] [ "sys"."count"() NOT NULL as "%3"."%3" ]
+| | ) [  ]
+| ) [ "sys"."sql_mul"("%2"."%2" NOT NULL, "%3"."%3" NOT NULL) NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
 statement ok
 rollback

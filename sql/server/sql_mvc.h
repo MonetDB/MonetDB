@@ -150,6 +150,7 @@ typedef struct mvc {
 	unsigned int label;	/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
 	list *schema_path; /* schema search path for object lookup */
+	uintptr_t sp;
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
@@ -159,7 +160,6 @@ extern sql_store mvc_init(sql_allocator *pa, int debug, store_type store, int ro
 extern void mvc_exit(sql_store store);
 
 extern void mvc_logmanager(sql_store store);
-extern void mvc_idlemanager(sql_store store);
 
 extern mvc *mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws);
 extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);
@@ -308,5 +308,16 @@ extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ c
 	__attribute__((__format__(__printf__, 3, 4)));
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
+
+static inline int mvc_highwater(mvc *sql)
+{
+	int l = 0, rc = 0;
+	uintptr_t c = (uintptr_t) (&l);
+
+	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
+	if (diff > THREAD_STACK_SIZE - 280 * 1024)
+		rc = 1;
+	return rc;
+}
 
 #endif /*_SQL_MVC_H*/

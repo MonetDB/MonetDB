@@ -65,7 +65,7 @@ plan UPDATE fluxz
               )
 ----
 update(
-| table("sys"."fluxz") [ "fluxz"."runcat" NOT NULL, "fluxz"."filter" NOT NULL, "fluxz"."f_datapoints" NOT NULL, "fluxz"."active" NOT NULL, "fluxz"."avg_flux" NOT NULL, "fluxz"."avg_fluxsq" NOT NULL, "fluxz"."avg_w" NOT NULL, "fluxz"."avg_wflux" NOT NULL, "fluxz"."avg_wfluxsq" NOT NULL, "fluxz"."avg_dec_zone_deg" NOT NULL, "fluxz"."%TID%" NOT NULL ] COUNT 
+| table("sys"."fluxz") [ "fluxz"."%TID%" NOT NULL ] COUNT 
 | single project (
 | | single left outer join (
 | | | semijoin (

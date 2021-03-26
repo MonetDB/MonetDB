@@ -28,12 +28,6 @@ enum heaptype {
 	orderidxheap
 };
 
-#ifdef GDKLIBRARY_OLDDATE
-int cvtdate(int n)
-	__attribute__((__const__))
-	__attribute__((__visibility__("hidden")));
-#endif
-
 gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -75,6 +69,8 @@ gdk_return BAThashsave(BAT *b, bool dosync)
 gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
+	__attribute__((__visibility__("hidden")));
+bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
@@ -124,9 +120,6 @@ BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict val
 BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
-	__attribute__((__visibility__("hidden")));
-gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
@@ -181,7 +174,7 @@ BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPcopy(Heap *dst, Heap *src)
@@ -190,6 +183,8 @@ gdk_return HEAPcopy(Heap *dst, Heap *src)
 gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
+	__attribute__((__visibility__("hidden")));
+Heap *HEAPgrow(const Heap *old, size_t size)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
@@ -237,9 +232,9 @@ void strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
-var_t strPut(Heap *h, var_t *dst, const char *v)
+var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
-str strRead(str a, stream *s, size_t cnt)
+str strRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 	__attribute__((__visibility__("hidden")));
@@ -256,6 +251,67 @@ gdk_return VIEWreset(BAT *b)
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
+/* calculate the integer 2 logarithm (i.e. position of highest set
+ * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
+ * 0x8 to 0xF give 4, etc.) */
+static inline unsigned
+ilog2(BUN x)
+{
+	if (x == 0)
+		return 0;
+#if defined(__GNUC__)
+#if SIZEOF_BUN == 8
+	return (unsigned) (64 - __builtin_clzll((unsigned long long) x));
+#else
+	return (unsigned) (32 - __builtin_clz((unsigned) x));
+#endif
+#elif defined(_MSC_VER)
+	unsigned long n;
+	if (
+#if SIZEOF_BUN == 8
+		_BitScanReverse64(&n, (unsigned __int64) x)
+#else
+		_BitScanReverse(&n, (unsigned long) x)
+#endif
+		)
+		return (unsigned) n + 1;
+	else
+		return 0;
+#else
+	unsigned n = 0;
+	BUN y;
+
+	/* use a "binary search" method */
+#if SIZEOF_BUN == 8
+	if ((y = x >> 32) != 0) {
+		x = y;
+		n += 32;
+	}
+#endif
+	if ((y = x >> 16) != 0) {
+		x = y;
+		n += 16;
+	}
+	if ((y = x >> 8) != 0) {
+		x = y;
+		n += 8;
+	}
+	if ((y = x >> 4) != 0) {
+		x = y;
+		n += 4;
+	}
+	if ((y = x >> 2) != 0) {
+		x = y;
+		n += 2;
+	}
+	if ((y = x >> 1) != 0) {
+		x = y;
+		n += 1;
+	}
+	return n + (x != 0);
+#endif
+}
+
 /* some macros to help print info about BATs when using ALGODEBUG */
 #define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)							\
@@ -263,7 +319,7 @@ BAT *virtualize(BAT *bn)
 	BATcount(b),							\
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
-	!b->batTransient ? "P" : b->theap.parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
+	!b->batTransient ? "P" : b->theap->parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
@@ -271,7 +327,7 @@ BAT *virtualize(BAT *bn)
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
-	b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
+	b->timprints ? "I" : b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
@@ -283,7 +339,7 @@ BAT *virtualize(BAT *bn)
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
-	b ? !b->batTransient ? "P" : b->theap.parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
@@ -291,7 +347,7 @@ BAT *virtualize(BAT *bn)
 	b && b->tnonil ? "N" : "",					\
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\
-	b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
+	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63

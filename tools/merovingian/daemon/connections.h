@@ -11,7 +11,7 @@
 
 #include "merovingian.h"
 
-err openConnectionIP(int *socks, bool udp, bool use_ipv6, const char *bindaddr, unsigned short port, FILE *log);
+err openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port, FILE *log);
 err openConnectionUNIX(int *ret, const char *path, int mode, FILE *log);
 
 #endif

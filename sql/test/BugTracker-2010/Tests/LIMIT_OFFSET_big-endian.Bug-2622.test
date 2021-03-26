@@ -116,7 +116,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -140,7 +140,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -166,7 +166,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -192,7 +192,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -218,7 +218,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -244,13 +244,13 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
 2
 algebra.sort
-3
+1
 bat.pack
 5
 sql.resultSet
@@ -270,13 +270,13 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
 3
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -298,7 +298,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -306,7 +306,7 @@ algebra.projection
 algebra.firstn
 1
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -328,7 +328,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -336,7 +336,7 @@ algebra.projection
 algebra.firstn
 1
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -358,7 +358,7 @@ sql.tid
 sql.bind
 1
 sql.emptybind
-2
+1
 sql.delta
 1
 algebra.projection
@@ -366,7 +366,7 @@ algebra.projection
 algebra.firstn
 1
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -439,3 +439,5 @@ query I rowsort
 statement ok
 drop table oblo
 
+statement ok
+set optimizer = 'default_pipe'

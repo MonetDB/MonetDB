@@ -11,6 +11,8 @@
 
 #include "monetdb_config.h"
 
+#define MONETDBE_VERSION 1.0.0
+
 #ifdef __cplusplus
 extern "C" {
 #endif

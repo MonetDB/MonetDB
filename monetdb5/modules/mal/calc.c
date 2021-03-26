@@ -577,7 +577,9 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ptr p;
 	ptr retval = getArgReference(stk, pci, 0);
-	bit b = *getArgReference_bit(stk, pci, 1);
+	bit b = stk->stk[getArg(pci, 1)].vtype == TYPE_msk
+		? (bit) *getArgReference_msk(stk, pci, 1)
+		: *getArgReference_bit(stk, pci, 1);
 	int t1 = getArgType(mb, pci, 2);
 	int t2 = getArgType(mb, pci, 3);
 
@@ -1644,6 +1646,10 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",hge))),
  pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",hge))),
  pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",hge))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",msk))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",msk),batarg("s",oid))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",bte))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
@@ -3255,6 +3261,26 @@ mel_func calc_init_funcs[] = {
  command("calc", "ptr", CMDvarCONVERTptr, false, "Cast VALUE to ptr", args(1,2, arg("",ptr),arg("v",ptr))),
  pattern("calc", "ifthenelse", CALCswitchbit, false, "If VALUE is true return MIDDLE else RIGHT", args(1,4, argany("",1),arg("b",bit),argany("t",1),argany("f",1))),
  command("calc", "length", CMDstrlength, false, "Length of STRING", args(1,2, arg("",int),arg("s",str))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",msk))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",msk),batarg("s",oid))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",msk))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",msk),batarg("s",oid))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",msk))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",msk),batarg("s",oid))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",msk))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",msk),batarg("s",oid))),
+ pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",bte))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),

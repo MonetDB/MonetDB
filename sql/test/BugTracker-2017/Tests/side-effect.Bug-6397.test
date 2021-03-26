@@ -30,14 +30,14 @@ sql.my_generate_series
 2
 aggr.count
 2
-bat.pack
-5
 bat.single
 2
 algebra.crossproduct
 1
 algebra.projection
 2
+bat.pack
+5
 sql.resultSet
 1
 

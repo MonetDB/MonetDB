@@ -9,11 +9,11 @@
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
-mal_export str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
-mal_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-mal_export str OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
+extern int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
+extern str OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif /* _MAL_MACRO_H_ */

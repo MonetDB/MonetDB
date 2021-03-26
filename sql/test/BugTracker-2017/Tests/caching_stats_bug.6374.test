@@ -42,7 +42,7 @@ PLAN select count(*) from mt where i >= 5 and i < 100
 project (
 | group by (
 | | select (
-| | | table("sys"."sub2") [ "mt"."i" ] COUNT 
+| | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ] COUNT 
 | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]

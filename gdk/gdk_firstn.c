@@ -226,7 +226,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 		/* trivial: return all candidates */
 		if (lastp)
 			*lastp = 0;
-		bn = canditer_slice(&ci, 0, cnt);
+		bn = canditer_slice(&ci, 0, ci.ncand);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (trivial -- " LLFMT " usec)\n",
@@ -370,8 +370,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 	 * off with the first n elements when doing a firstn-ascending
 	 * and to start off with the last n elements when doing a
 	 * firstn-descending so that most values that we look at after
-	 * this will be skipped. */
-	if (asc) {
+	 * this will be skipped.  However, when using a bitmask
+	 * candidate list, the manipulation of the canditer structure
+	 * doesn't work like this, so we still work from the
+	 * beginning. */
+	if (asc || ci.tpe == cand_mask) {
 		for (i = 0; i < n; i++)
 			oids[i] = canditer_next(&ci);
 	} else {

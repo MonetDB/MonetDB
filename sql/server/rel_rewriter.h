@@ -25,7 +25,19 @@ typedef struct global_props {
 
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 extern sql_rel *rewrite_simplify(visitor *v, sql_rel *rel);
-extern sql_rel *rel_remove_empty_select(visitor *v, sql_rel *rel);
+
+static inline sql_rel *
+try_remove_empty_select(visitor *v, sql_rel *rel)
+{
+	if (is_select(rel->op) && !(rel_is_ref(rel)) && list_empty(rel->exps)) {
+		sql_rel *l = rel->l;
+		rel->l = NULL;
+		rel_destroy(rel);
+		v->changes++;
+		rel = l;
+	}
+	return rel;
+}
 
 extern sql_exp *exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 

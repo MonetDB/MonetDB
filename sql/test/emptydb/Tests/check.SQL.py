@@ -72,7 +72,7 @@ out = r'''
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas
-select 'sys.schemas', name, authorization, owner, system from sys.schemas order by name;
+select 'sys.schemas', s.name, a1.name as authorization, a2.name as owner, system from sys.schemas s left outer join sys.auths a1 on s.authorization = a1.id left outer join sys.auths a2 on s.owner = a2.id order by s.name;
 -- _tables
 select 'sys._tables', s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
@@ -139,7 +139,7 @@ select 'sys.idxs', t.name, i.name, it.index_type_name from sys.idxs i left outer
 -- keys
 select 'sys.keys', t.name, k.name, kt.key_type_name, k2.name, k.action from sys.keys k left outer join sys.keys k2 on k.rkey = k2.id left outer join sys._tables t on k.table_id = t.id left outer join sys.key_types kt on k.type = kt.key_type_id order by t.name, k.name;
 -- objects
-select 'sys.objects', name, nr from sys.objects order by name, nr;
+select 'sys.objects', o.name, case when nr < 2000 then cast(nr as string) else s1.name || '.' || t1.name end as nr, s2.name || '.' || t2.name as sub from sys.objects o left outer join sys._tables t1 on o.nr = t1.id left outer join sys.schemas s1 on t1.schema_id = s1.id left outer join sys._tables t2 on o.sub = t2.id left outer join sys.schemas s2 on t2.schema_id = s2.id order by name, nr, sub;
 -- privileges
 --  schemas
 select 'default schema of user', s.name, u.name from sys.schemas s, sys.users u where s.id = u.default_schema order by s.name, u.name;
@@ -148,7 +148,7 @@ select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grant
 --  columns
 select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
 --  functions
-select 'grant on function', f.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys.functions f, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by f.name, a.name;
+select 'grant on function', s.name, f.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys.functions f left outer join sys.schemas s on f.schema_id = s.id, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by s.name, f.name, a.name;
 -- sequences
 select 'sys.sequences', s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
 -- statistics (expect empty)

@@ -20,6 +20,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_pipes.h"
+#include "opt_support.h"
 #include "mal_client.h"
 #include "mal_instruction.h"
 #include "mal_function.h"
@@ -45,13 +46,16 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",
+	 "stable", NULL, 1},
+	{"minimal_fast",
+	 "optimizer.minimalfast()",
 	 "stable", NULL, 1},
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
@@ -76,7 +80,6 @@ static struct PIPELINES {
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.parappend();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -90,11 +93,15 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "stable", NULL, 1},
+	{"default_fast",
+	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
 /*
  * Optimistic concurreny control in general leads to more transaction failures
@@ -114,7 +121,6 @@ static struct PIPELINES {
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.parappend();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -128,6 +134,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -152,7 +159,6 @@ static struct PIPELINES {
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.parappend();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -167,6 +173,7 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -196,7 +203,6 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.parappend();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -210,6 +216,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -239,7 +246,6 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.parappend();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -252,6 +258,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -408,7 +415,11 @@ validatePipe(MalBlkPtr mb)
 	if (mb == NULL )
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizer mal block\n");
 	p = getInstrPtr(mb,1);
-	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
+
+	if (getFunctionId(p) && (idcmp(getFunctionId(p), "defaultfast") == 0 || (idcmp(getFunctionId(p), "minimalfast") == 0)))
+		return MAL_SUCCEED;
+
+	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline") != 0)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
 
 	for (i = 1; i < mb->stop - 1; i++){
@@ -527,15 +538,25 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 	InstrPtr p,q;
 	str msg = MAL_SUCCEED;
 
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(pipes[i].name, name) == 0)
-			break;
+	if (strcmp(name, "default_fast") == 0 && isSimpleSQL(mb)){
+		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
+			if (strcmp(pipes[i].name, "minimal_fast") == 0)
+				break;
+	} else {
+		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
+			if (strcmp(pipes[i].name, name) == 0)
+				break;
+	}
 
 	if (i == MAXOPTPIPES)
 		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) "Out of slots");
 
-	if (pipes[i].mb == NULL)
-		msg = compileOptimizer(cntxt, name);
+	if (pipes[i].mb == NULL){
+		if (strcmp(name, "default_fast") == 0  && isSimpleSQL(mb))
+			msg = compileOptimizer(cntxt, name);
+		else
+			msg = compileOptimizer(cntxt, "minimal_fast");
+	}
 
 	if (pipes[i].mb && pipes[i].mb->stop) {
 		for (j = 1; j < pipes[i].mb->stop - 1; j++) {
@@ -547,7 +568,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			typeChecker(cntxt->usermodule, mb, p, j, FALSE);
+			// Not needed at this place typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}
