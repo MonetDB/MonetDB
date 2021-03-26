@@ -11,6 +11,4 @@
 
 #include "gdk.h"
 
-mal_export int TYPE_uuid;
-
 #endif /* UUID_H */

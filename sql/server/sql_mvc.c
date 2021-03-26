@@ -403,12 +403,6 @@ mvc_logmanager(sql_store store)
 	store_manager(store);
 }
 
-void
-mvc_idlemanager(sql_store store)
-{
-	idle_manager(store);
-}
-
 int
 mvc_status(mvc *m)
 {
@@ -736,6 +730,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->pa = pa;
 	m->sa = NULL;
 	m->ta = sa_create(m->pa);
+	m->sp = (uintptr_t)(&m);
 
 	m->params = NULL;
 	m->sizeframes = MAXPARAMS;
@@ -950,7 +945,7 @@ mvc_bind_column(mvc *m, sql_table *t, const char *cname)
 static sql_column *
 first_column(sql_table *t)
 {
-	node *n = cs_first_node(&t->columns);
+	node *n = ol_first_node(t->columns);
 
 	if (n)
 		return n->data;
@@ -1007,8 +1002,8 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 	sql_key *res = NULL;
 	int len = list_length(colnames);
 
-	if (cs_size(&t->keys))
-		for (cur = t->keys.set->h; cur; cur = cur->next) {
+	if (ol_length(t->keys))
+		for (cur = ol_first_node(t->keys); cur; cur = cur->next) {
 			node *cc;
 			sql_key *k = cur->data;
 

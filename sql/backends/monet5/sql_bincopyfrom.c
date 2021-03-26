@@ -16,6 +16,7 @@
 #include "mal_backend.h"
 #include "mal_interpreter.h"
 #include "copybinary.h"
+#include "copybinary_support.h"
 
 #define bailout(...) do { \
 		msg = createException(MAL, "sql.importColumn", SQLSTATE(42000) __VA_ARGS__); \

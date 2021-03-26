@@ -36,9 +36,10 @@ class TestClient1(threading.Thread):
             if next_action == 0:
                 self._cursor.execute('INSERT INTO tbl1;')
             elif next_action == 1:
-                self._cursor.execute('SELECT col1 FROM tbl1;')
-                if self._cursor.fetchall() != vals[vals_i]:
-                    sys.stderr.write("Expected %s" % str(vals[vals_i]))
+                self._cursor.execute('SELECT col1 FROM tbl1 ORDER BY col1;')
+                a = self._cursor.fetchall()
+                if a != vals[vals_i]:
+                    sys.stderr.write("Error on TestClient1, expected %s got %s\n" % (str(vals[vals_i]), str(a)))
                 vals_i += 1
             elif next_action == 2:
                 self._cursor.execute("""
@@ -73,9 +74,10 @@ class TestClient2(threading.Thread):
             if next_action == 0:
                 self._cursor.execute('INSERT INTO tbl2;')
             elif next_action == 1:
-                self._cursor.execute('SELECT col2 FROM tbl2;')
-                if self._cursor.fetchall() != vals[vals_i]:
-                    sys.stderr.write("Expected %s" % str(vals[vals_i]))
+                self._cursor.execute('SELECT col2 FROM tbl2 ORDER BY col2;')
+                a = self._cursor.fetchall()
+                if a != vals[vals_i]:
+                    sys.stderr.write("Error on TestClient2, expected %s got %s\n" % (str(vals[vals_i]), str(a)))
                 vals_i += 1
             elif next_action == 2:
                 self._cursor.execute("""

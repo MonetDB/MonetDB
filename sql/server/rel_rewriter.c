@@ -11,6 +11,7 @@
 #include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_basetable.h"
 #include "mal_errors.h" /* for SQLSTATE() */
 
 /* simplify expressions, such as not(not(x)) */
@@ -198,36 +199,13 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 				}
 				rel->l = rel_project(v->sql->sa, NULL, nexps);
 				rel->card = CARD_ATOM;
+				v->changes++;
 			}
-		}
-	}
-	return rel;
-}
-
-sql_rel *
-rel_remove_empty_select(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l) {
-		sql_rel *l = rel->l;
-		if (is_select(l->op) && !(rel_is_ref(l)) && list_empty(l->exps)) {
-			rel->l = l->l;
-			l->l = NULL;
-			rel_destroy(l);
-			v->changes++;
-		}
-	}
-	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
-		sql_rel *r = rel->r;
-		if (is_select(r->op) && !(rel_is_ref(r)) && list_empty(r->exps)) {
-			rel->r = r->l;
-			r->l = NULL;
-			rel_destroy(r);
-			v->changes++;
 		}
 	}
 	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
-	return rel;
+	return try_remove_empty_select(v, rel);
 }
 
 /* push the expression down, ie translate colum references
@@ -239,19 +217,18 @@ static sql_exp * _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 static list *
 exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 {
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	for(n = exps->h; n; n = n->next) {
+	if (list_empty(exps))
+		return exps;
+	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data, *narg = NULL;
 
 		narg = _exp_push_down(sql, arg, f, t);
 		if (!narg)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
-		append(nl, narg);
+		n->data = narg;
 	}
-	return nl;
+	return exps;
 }
 
 static sql_exp *
@@ -336,9 +313,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_func: {
 		list *l = e->l, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down(sql, l, f, t);
 			if (!nl)
 				return NULL;
@@ -348,7 +323,17 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		else
 			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}
-	case e_atom:
+	case e_atom: {
+		list *l = e->f, *nl = NULL;
+
+		if (!list_empty(l)) {
+			nl = exps_push_down(sql, l, f, t);
+			if (!nl)
+				return NULL;
+			return exp_values(sql->sa, nl);
+		}
+		return exp_copy(sql, e);
+	}
 	case e_psm:
 		return e;
 	}
@@ -376,8 +361,11 @@ psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
 {
 	/* only functions need fix up */
 	switch(e->type) {
-	case e_atom:
 	case e_column:
+		break;
+	case e_atom:
+		if (e->f)
+			psm_exps_properties(sql, gp, e->f);
 		break;
 	case e_convert:
 		psm_exp_properties(sql, gp, e->l);
@@ -419,9 +407,11 @@ psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
 static void
 psm_exps_properties(mvc *sql, global_props *gp, list *exps)
 {
+	node *n;
+
 	if (!exps)
 		return;
-	for (node *n = exps->h; n; n = n->next)
+	for (n = exps->h; n; n = n->next)
 		psm_exp_properties(sql, gp, n->data);
 }
 
@@ -434,11 +424,19 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	gp->cnt[(int)rel->op]++;
 	switch (rel->op) {
 	case op_basetable:
-		break;
-	case op_table:
-		if (rel->l && rel->flag != TRIGGER_WRAPPER)
+	case op_table: {
+		if (!find_prop(rel->p, PROP_COUNT))
+			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+		if (is_basetable(rel->op)) {
+			sql_table *t = (sql_table *) rel->l;
+			sql_part *pt;
+
+			/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
+			gp->has_mergetable |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
+		}
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER)
 			rel_properties(sql, gp, rel->l);
-		break;
+	} break;
 	case op_join:
 	case op_left:
 	case op_right:
@@ -482,40 +480,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 		}
 		break;
 	}
-
-	switch (rel->op) {
-	case op_basetable:
-	case op_table:
-		if (!find_prop(rel->p, PROP_COUNT))
-			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
-		break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-
-	case op_semi:
-	case op_anti:
-
-	case op_union:
-	case op_inter:
-	case op_except:
-		break;
-
-	case op_project:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-	case op_select:
-		break;
-
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_ddl:
-		break;
-	}
 }
 
 int
@@ -542,7 +506,7 @@ find_member_pos(list *l, sql_table *t)
 
 /* currently we only find simple column expressions */
 void *
-name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt)
+name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
 {
 	sql_exp *alias = NULL;
 	sql_column *c = NULL;
@@ -565,29 +529,29 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			name = e->r;
 		}
 		if (name && !t)
-			return rel->r;
+			return rel_base_get_mergetable(rel);
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
 		node *cn;
-		sql_table *mt = rel->r;
-		for (cn = t->columns.set->h; cn; cn = cn->next) {
+		sql_table *mt = rel_base_get_mergetable(rel);
+		for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
 				if (bt)
 					*bt = rel;
 				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members.set, c->t) == pnr))
+					find_member_pos(mt->members, c->t) == pnr))
 					return c;
 			}
 		}
-		if (t->idxs.set)
-		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+		if (t->idxs)
+		for (cn = ol_first_node(t->idxs); cn; cn = cn->next) {
 			sql_idx *i = cn->data;
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				if (bt)
 					*bt = rel;
 				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members.set, i->t) == pnr)) {
+					find_member_pos(mt->members, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}

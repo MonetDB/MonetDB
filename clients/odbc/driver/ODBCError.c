@@ -239,11 +239,12 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 		return &malloc_error;
 	}
 
+	*error = (ODBCError) {
+		.nativeErrorCode = nativeCode,
+	};
+
 	if (SQLState) {
 		strcpy_len(error->sqlState, SQLState, sizeof(error->sqlState));
-	} else {
-		/* initialize it with nulls */
-		memset(error->sqlState, 0, sizeof(error->sqlState));
 	}
 
 	if (msg) {
@@ -258,14 +259,9 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 		/* remove trailing newlines */
 		len = strlen(error->message);
 		while (len > 0 && error->message[len - 1] == '\n') {
-			error->message[len - 1] = 0;
-			len--;
+			error->message[--len] = 0;
 		}
-	} else {
-		error->message = NULL;
 	}
-	error->nativeErrorCode = nativeCode;
-	error->next = NULL;
 
 	return error;
 }

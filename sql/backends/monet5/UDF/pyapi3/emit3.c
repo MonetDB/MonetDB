@@ -204,7 +204,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					// insert NULL values up until the current entry
 					for (ai = 0; ai < self->nvals; ai++) {
 						if (BUNappend(self->cols[self->ncols].b,
-									  ATOMnil(self->cols[self->ncols].b->ttype),
+									  ATOMnilptr(self->cols[self->ncols].b->ttype),
 									  false) != GDK_SUCCEED) {
 							msg = GDKstrdup("BUNappend failed.");
 							goto wrapup;
@@ -368,7 +368,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			}
 			for (ai = 0; ai < (size_t)el_count; ai++) {
 				if (BUNappend(self->cols[i].b,
-							  ATOMnil(self->cols[i].b->ttype),
+							  ATOMnilptr(self->cols[i].b->ttype),
 							  false) != GDK_SUCCEED) {
 					goto wrapup;
 				}

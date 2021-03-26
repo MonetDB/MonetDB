@@ -21,7 +21,7 @@ stdout of test 'analytics20` in directory 'sql/test/analytics` itself:
 [ "bigint",	64,	0,	"",	"%1",	"%1"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  0(2);
-% sys.%1 # table_name
+% .%1 # table_name
 % %1 # name
 % bigint # type
 % 1 # length

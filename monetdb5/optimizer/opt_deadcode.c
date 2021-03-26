@@ -57,12 +57,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( p == 0)
 			continue; //left behind by others?
 
-	/* catched by the hasSideEffects
-		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef ){
-			varused[getArg(p,0)]++; // force keeping
-			continue;
-		}
-*/
 		if ( getModuleId(p) == batRef && isUpdateInstruction(p) && !p->barrier){
 			/* bat.append and friends are intermediates that need not be retained
 			 * unless they are not used outside of an update */
@@ -110,17 +104,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				freeInstruction(p);
 				actions ++;
 			}
-			/* Enable when bugTracker-2012/Tests/mal_errors survives it
-			if ( getModuleId(p) == groupRef && p->retc == 3 && varused[getArg(p,2)] == 0 &&
-				(getFunctionId(p) == groupRef ||
-				 getFunctionId(p) == subgroupRef ||
-				 getFunctionId(p) == groupdoneRef ||
-				 getFunctionId(p) == subgroupdoneRef)){
-				// remove the histogram unless needed
-				delArgument(p,2);
-				actions++;
-			}
-			*/
 		}
 	}
 	for(; i<slimit; i++)
@@ -128,13 +111,12 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			freeInstruction(old[i]);
     /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
-    //if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if (!msg)
-		msg = chkFlow(mb);
+        // no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);
+    if( actions > 0){
+	msg = chkFlow(mb);
         if (!msg)
         	msg = chkDeclarations(mb);
-    //}
+    }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);

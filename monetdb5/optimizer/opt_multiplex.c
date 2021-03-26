@@ -17,7 +17,7 @@
  * The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
  * structure:
  *
- * 	resB:= bat.new(A1);
+ * 	resB:= bat.new(restype, A1);
  * barrier (h,t1):= iterator.new(A1);
  * 	t2:= algebra.fetch(A2,h)
  * 	...
@@ -41,8 +41,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tt;
 	int bat = (getModuleId(pci) == batmalRef) ;
 
-	//if ( optimizerIsApplied(mb,"multiplex"))
-		//return 0;
 	(void) cntxt;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {
@@ -93,13 +91,15 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* resB := new(refBat) */
 	for (i = 0; i < pci->retc; i++) {
-		q = newFcnCall(mb, batRef, newRef);
+		q = newFcnCallArgs(mb, batRef, newRef, 2);
 		resB[i] = getArg(q, 0);
 
 		tt = getBatType(getArgType(mb, pci, i));
 
 		setVarType(mb, getArg(q, 0), newBatType(tt));
 		q = pushType(mb, q, tt);
+		q = pushArgument(mb, q, iter);
+		assert(q->argc==3);
 	}
 
 	/* barrier (h,r) := iterator.new(refBat); */
@@ -185,7 +185,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 {
-	//MalBlkPtr mb= cntxt->curprg->def;
 	int i, doit=0;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
@@ -221,6 +220,15 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	(void) stk;
 	(void) pci;
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb,i);
+		if (isMultiplex(p)) {
+			break;
+		}
+	}
+	if( i == mb->stop){
+		goto wrapup;
+	}
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -264,6 +272,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (!msg)
         	msg = chkDeclarations(mb);
     }
+wrapup:
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);

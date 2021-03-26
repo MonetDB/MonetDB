@@ -40,20 +40,6 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	return ht;
 }
 
-sql_hash_e*
-hash_add(sql_hash *h, int key, void *value)
-{
-	sql_hash_e *e = (h->sa)?SA_ZNEW(h->sa, sql_hash_e):ZNEW(sql_hash_e);
-
-	if (e == NULL)
-		return NULL;
-	e->chain = h->buckets[key&(h->size-1)];
-	h->buckets[key&(h->size-1)] = e;
-	e->key = key;
-	e->value = value;
-	return e;
-}
-
 void
 hash_del(sql_hash *h, int key, void *value)
 {
@@ -68,12 +54,16 @@ hash_del(sql_hash *h, int key, void *value)
 			p->chain = e->chain;
 		else
 			h->buckets[key&(h->size-1)] = e->chain;
+		if(!h->sa)
+			_DELETE(e);
 	}
 }
 
 void
 hash_destroy(sql_hash *h) /* this code should be called for hash tables created outside SQL allocators only! */
 {
+	if (h == NULL || h->sa)
+		return;
 	for (int i = 0; i < h->size; i++) {
 		sql_hash_e *e = h->buckets[i], *c = NULL;
 
@@ -91,19 +81,3 @@ hash_destroy(sql_hash *h) /* this code should be called for hash tables created 
 	_DELETE(h);
 }
 
-unsigned int
-hash_key(const char *k)
-{
-	unsigned int h = 0;
-
-	while (*k) {
-		h += *k;
-		h += (h << 10);
-		h ^= (h >> 6);
-		k++;
-	}
-	h += (h << 3);
-	h ^= (h >> 11);
-	h += (h << 15);
-	return h;
-}

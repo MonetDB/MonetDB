@@ -622,8 +622,12 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 		/* The following optimizations can only be applied after propagating the statistics to rel->exps */
 		if (is_groupby(rel->op) && rel->exps)
 			rel->exps = rel_simplify_count(v, rel);
-		if ((is_join(rel->op) || is_select(rel->op)) && rel->exps)
+		if ((is_join(rel->op) || is_select(rel->op)) && rel->exps) {
+			int changes = v->changes;
 			rel->exps = rel_prune_predicates(v, rel);
+			if (v->changes > changes)
+				rel = rewrite_simplify(v, rel);
+		}
 		break;
 	/*These relations are less important for now
 	case op_table:

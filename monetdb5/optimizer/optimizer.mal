@@ -284,3 +284,19 @@ address OPTwrapper;
 pattern optimizer.postfix(mod:str, fcn:str):str
 address OPTwrapper
 comment "Postfix the plan,e.g. pushing projections";
+
+#opt_minimalfast.mal
+
+pattern optimizer.minimalfast():str
+address OPTwrapper;
+pattern optimizer.minimalfast(mod:str, fcn:str):str
+address OPTwrapper
+comment "Combined optimizer pipeline";
+
+#opt_defaultfast.mal
+
+pattern optimizer.defaultfast():str
+address OPTwrapper;
+pattern optimizer.defaultfast(mod:str, fcn:str):str
+address OPTwrapper
+comment "Combined optimizer pipeline";

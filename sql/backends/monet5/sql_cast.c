@@ -78,7 +78,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 				msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
+			nils |= strNil(v);
 		}
 	} else {
 		for (BUN i = 0; i < q; i++) {
@@ -91,26 +91,26 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 				msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
+			nils |= strNil(v);
 		}
 	}
 
 bailout:
 	GDKfree(r);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = BATcount(dst) <= 1;
+		dst->tkey = b->tkey;
 		dst->tsorted = BATcount(dst) <= 1;
 		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -175,7 +175,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (from_str) {
 		r = (str) p;
-		if (!strNil(r) && digits > 0 && str_utf8_length(r) > digits)
+		if (digits > 0 && !strNil(r) && UTF8_strlen(r) > digits)
 			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
 		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
@@ -195,9 +195,9 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define SQLstr_cast_str(v, len) \
-	if (len > 0 && str_utf8_length(v) > len) { \
-		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len); \
+#define SQLstr_cast_str(v, digits) \
+	if (digits > 0 && UTF8_strlen(v) > digits) { \
+		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits); \
 		goto bailout; \
 	}
 
@@ -330,20 +330,20 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 bailout:
 	GDKfree(r);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
-		dst->tkey = BATcount(dst) <= 1;
-		dst->tsorted = BATcount(dst) <= 1;
-		dst->trevsorted = BATcount(dst) <= 1;
+		dst->tkey = from_str ? b->tkey : BATcount(dst) <= 1;
+		dst->tsorted = from_str ? b->tsorted : BATcount(dst) <= 1;
+		dst->trevsorted = from_str ? b->trevsorted : BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
 	} else if (dst)
 		BBPreclaim(dst);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 

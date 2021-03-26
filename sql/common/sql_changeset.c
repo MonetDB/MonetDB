@@ -41,31 +41,6 @@ cs_add(changeset * cs, void *elm, int flags)
 		cs->nelm = cs->set->t;
 }
 
-void *
-cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp)
-{
-	return list_transverse_with_validate(cs->set, elm, extra, cmp);
-}
-
-void *
-cs_add_with_validate(changeset * cs, void *elm, void *extra, int flags, fvalidate cmp)
-{
-	void* res = NULL;
-	if (!cs->set)
-		cs->set = list_new(cs->sa, cs->destroy);
-	if((res = list_append_with_validate(cs->set, elm, extra, cmp)) != NULL)
-		return res;
-	if (newFlagSet(flags) && !cs->nelm)
-		cs->nelm = cs->set->t;
-	return res;
-}
-
-void
-cs_add_before(changeset * cs, node *n, void *elm)
-{
-	list_append_before(cs->set, n, elm);
-}
-
 void
 cs_del(changeset * cs, void *gdata, node *elm, int flags)
 {
@@ -80,14 +55,6 @@ cs_del(changeset * cs, void *gdata, node *elm, int flags)
 	}
 }
 
-void
-cs_move(changeset *from, changeset *to, void *data)
-{
-	if (!to->set)
-		to->set = list_new(to->sa, to->destroy);
-	list_move_data(from->set, to->set, data);
-}
-
 int
 cs_size(changeset * cs)
 {
@@ -96,14 +63,3 @@ cs_size(changeset * cs)
 	return 0;
 }
 
-node *
-cs_first_node(changeset * cs)
-{
-	return cs->set->h;
-}
-
-node *
-cs_last_node(changeset * cs)
-{
-	return cs->set->t;
-}

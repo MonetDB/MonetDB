@@ -570,7 +570,7 @@ BKCgetSize(lng *tot, const bat *bid){
 	size = sizeof (bat);
 	if ( !isVIEW(b)) {
 		BUN cnt = BATcapacity(b);
-		size += ROUND_UP(b->theap.free, blksize);
+		size += ROUND_UP(b->theap->free, blksize);
 		if (b->tvheap)
 			size += ROUND_UP(b->tvheap->free, blksize);
 		if (b->thash)
@@ -655,6 +655,9 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 	case BBPRENAME_LONG:
 		GDKclrerr();
 		throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": name too long: '%s'", t);
+	case BBPRENAME_MEMORY:
+		GDKclrerr();
+		throw(MAL, "bat.setName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	case BBPRENAME_ALREADY:
 		GDKclrerr();
 		/* fall through */

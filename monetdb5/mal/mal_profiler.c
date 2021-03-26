@@ -396,7 +396,6 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 			}
 			if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
 				return;
-			// if (!logadd(&logbuf, ",\"used\":%d", isVarUsed(mb,getArg(pci,j)))) return;
 			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return;
 			if (!logadd(&logbuf, "}"))
 				return;

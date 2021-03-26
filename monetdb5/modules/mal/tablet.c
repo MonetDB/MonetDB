@@ -52,16 +52,12 @@ static MT_Lock errorlock = MT_LOCK_INITIALIZER(errorlock);
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
-	BAT *b = COLnew(0, adt, BATTINY, PERSISTENT);
+	BAT *b = COLnew(0, adt, nr, PERSISTENT);
 
 	/* check for correct structures */
 	if (b == NULL)
 		return NULL;
 	if (BATsetaccess(b, BAT_APPEND) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		return NULL;
-	}
-	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
 	}
@@ -822,13 +818,15 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		fmt->c->tnonil = false;
 	} else {
 		if (task->escape) {
-			char *data = GDKmalloc(strlen(s) + 1);
+			size_t slen = strlen(s) + 1;
+			char *data = slen <= sizeof(buf) ? buf : GDKmalloc(strlen(s) + 1);
 			if (data == NULL ||
 				GDKstrFromStr((unsigned char *) data, (unsigned char *) s, strlen(s)) < 0)
 				adt = NULL;
 			else
 				adt = fmt->frstr(fmt, fmt->adt, data);
-			GDKfree(data);
+			if (data != buf)
+				GDKfree(data);
 		} else
 			adt = fmt->frstr(fmt, fmt->adt, s);
 	}
@@ -942,7 +940,7 @@ SQLworker_column(READERtask *task, int col)
 		}
 	}
 	BATsetcount(fmt[col].c, BATcount(fmt[col].c));
-	fmt[col].c->theap.dirty |= BATcount(fmt[col].c) > 0;
+	fmt[col].c->theap->dirty |= BATcount(fmt[col].c) > 0;
 
 	return 0;
 }

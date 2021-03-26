@@ -61,7 +61,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				}
 
 			} else
-				sprintf(msg+len, "%s", v->id);
+				sprintf(msg+len, "%s", getVarName(mb, getArg(p,k)));
 			if (k < p->argc - 1)
 				strcat(msg,",");
 			len = strlen(msg);

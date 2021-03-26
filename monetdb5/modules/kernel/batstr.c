@@ -49,7 +49,7 @@ finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
+		bn->theap->dirty = true;
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);
@@ -76,7 +76,7 @@ str_prefix(str *buf, size_t *buflen, str s, int l)
 }
 
 static str
-do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(str))
+do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char *restrict))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
@@ -142,13 +142,13 @@ bailout:
 static str
 STRbatLength(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_int(cntxt, mb, stk, pci, "batstr.length", str_length);
+	return do_batstr_int(cntxt, mb, stk, pci, "batstr.length", UTF8_strlen);
 }
 
 static str
 STRbatBytes(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_int(cntxt, mb, stk, pci, "batstr.bytes", str_nbytes);
+	return do_batstr_int(cntxt, mb, stk, pci, "batstr.bytes", str_strlen);
 }
 
 static str
@@ -935,10 +935,6 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	}
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*n))) {
 		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (BATcount(left) != BATcount(right)) {
-		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(ls = BATdescriptor(*sid1))) ||
@@ -3821,17 +3817,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 bailout:
 	GDKfree(buf);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
 	unfix_inputs(2, b, bs);
 	return msg;
 }

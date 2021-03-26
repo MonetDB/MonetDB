@@ -49,11 +49,12 @@ temp_destroy(log_bid b)
 		BBPrelease(b);
 }
 
-void
+log_bid
 temp_dup(log_bid b)
 {
 	if (b)
 		BBPretain(b);
+	return b;
 }
 
 log_bid
@@ -78,7 +79,7 @@ temp_copy(log_bid b, int temp)
 		if (!c)
 			return BID_NIL;
 		bat_set_access(c, BAT_READ);
-		BATcommit(c);
+		BATcommit(c, BUN_NONE);
 	} else {
 		c = bat_new(o->ttype, COLSIZE, PERSISTENT);
 		if (!c)
@@ -143,7 +144,7 @@ e_BAT(int type)
 }
 
 log_bid
-ebat_copy(log_bid b, oid ibase, int temp)
+ebat_copy(log_bid b)
 {
 	/* make a copy of b */
 	BAT *o = temp_descriptor(b);
@@ -154,16 +155,18 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		return BID_NIL;
 	if (!ebats[o->ttype]) {
 		ebats[o->ttype] = bat_new(o->ttype, 0, TRANSIENT);
-		if (!ebats[o->ttype])
+		if (!ebats[o->ttype]) {
+			bat_destroy(o);
 			return BID_NIL;
+		}
 	}
 
-	if (!temp) {
+	if (BATcount(o)) {
 		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		if (!c)
 			return BID_NIL;
-		BAThseqbase(c, ibase );
-		BATcommit(c);
+		BAThseqbase(c, 0);
+		BATcommit(c, BUN_NONE);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);
 		bat_destroy(c);

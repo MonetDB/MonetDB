@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_propagate.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
@@ -28,8 +29,11 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 
 	if (isPartitionedByColumnTable(mt)) {
 		int colr = mt->part.pcol->colnr;
-		res = list_fetch((*anti_rel)->exps, colr);
-		res = exp_ref(sql, res);
+
+		res = rel_base_bind_colnr(sql, *anti_rel, colr);
+		return res;
+		//res = list_fetch((*anti_rel)->exps, colr);
+		//res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
@@ -55,7 +59,7 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 		rel->r = rel_project(sql->sa, rel->r, l);
 		set_processed((sql_rel*)rel->r);
 		inserts = ((sql_rel*)(rel->r))->l;
-		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
+		for (node *n = ol_first_node(t->columns), *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
@@ -81,7 +85,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		inserts = (*anti_rel)->l;
 		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
-		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
+		for (node *n = ol_first_node(t->columns), *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
@@ -472,8 +476,11 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		case e_convert: {
 			e->l = exp_change_column_table(sql, e->l, oldt, newt);
 		} break;
-		case e_atom:
-			break;
+		case e_atom: {
+			if (e->f)
+				for (node *n = ((list*)e->f)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		} break;
 		case e_aggr:
 		case e_func: {
 			if (e->l)
@@ -521,9 +528,11 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 	if (!rel)
 		return NULL;
 
-	if (rel->exps)
+	if (rel->exps) {
 		for (node *n = rel->exps->h ; n ; n = n->next)
 			n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		list_hash_clear(rel->exps);
+	}
 
 	switch (rel->op) {
 		case op_basetable:
@@ -595,7 +604,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
@@ -629,7 +638,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
@@ -699,7 +708,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	}
 	anti_le = rel_generate_anti_insert_expression(sql, &anti_rel, t);
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1 = NULL, *dup = NULL;
@@ -1074,7 +1083,7 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 			}
 		}
 		if (isMergeTable(t)) {
-			assert(cs_size(&t->members));
+			assert(list_length(t->members));
 			if (is_delete(propagate->op) || is_truncate(propagate->op)) { /* propagate deletions to the partitions */
 				rel = rel_propagate_delete(sql, rel, t, changes);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {

@@ -35,7 +35,7 @@ mal_export str TRNsubcommit(bit *ret, bat *bid);
 str
 TRNglobal_sync(bit *ret)
 {
-	*ret = BBPsync(getBBPsize(), NULL) == GDK_SUCCEED;
+	*ret = BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED;
 	return MAL_SUCCEED;
 }
 
@@ -120,7 +120,7 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			throw(MAL, "transaction.commit", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		BATcommit(b);
+		BATcommit(b, BUN_NONE);
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;

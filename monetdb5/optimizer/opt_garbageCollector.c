@@ -22,16 +22,20 @@
  *
  * The life time of such BATs is forcefully terminated after the block exit.
  */
+
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, vlimit;
+	int i, limit;
 	InstrPtr p;
 	int actions = 0;
 	char buf[1024];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+#ifndef NDEBUG
+	int j;
 	int *used;
+#endif
 
 	(void) pci;
 	(void) stk;
@@ -40,20 +44,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	limit = mb->stop;
 
-
-	/* variables get their name from the position */
-	/* rename all temporaries for ease of variable table interpretation */
-	/* this code should not be necessary is variables always keep their position */
-	for( i = 0; i < mb->vtop; i++) {
-		//strcpy(buf, getVarName(mb,i));
-		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
-			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-		else
-		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
-			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
-		//if(strcmp(buf, getVarName(mb,i)) )
-			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
-	}
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
@@ -71,8 +61,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
-	vlimit = mb->vtop;
+#ifndef NDEBUG
+	int vlimit = mb->vtop;
 	used = (int *) GDKzalloc(vlimit * sizeof(int));
+#endif
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = getInstrPtr(mb, i);
@@ -80,22 +72,27 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-		if ( i > 0 && getModuleId(p) != languageRef && getModuleId(p) != querylogRef && getModuleId(p) != sqlRef && !p->barrier)
+#ifndef NDEBUG
+		if ( i > 1 && getModuleId(p) != languageRef && getModuleId(p) != querylogRef && getModuleId(p) != sqlRef && !p->barrier)
 			for( j=0; j< p->retc; j++)
 				used[getArg(p,j)] = i;
 		if ( getModuleId(p) != languageRef && getFunctionId(p) != passRef){
 			for(j= p->retc ; j< p->argc; j++)
 				used[getArg(p,j)] = 0;
 			}
+#endif
 		if ( p->token == ENDsymbol)
 			break;
 	}
 
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
+#ifndef NDEBUG
 		GDKfree(used);
+#endif
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
+#ifndef NDEBUG
 	/* Leave a message behind when we have created variables and not used them */
 	for(i=0; i< vlimit; i++)
 	if( used[i]){
@@ -103,11 +100,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if( p){
 			str msg = instruction2str(mb, NULL, p, LIST_MAL_ALL);
 			snprintf(buf,1024,"Unused variable %s: %s", getVarName(mb, i), msg);
-			newComment(mb,buf);
 			GDKfree(msg);
+			newComment(mb,buf);
 		}
 	}
 	GDKfree(used);
+#endif
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 
 	/* leave a consistent scope admin behind */

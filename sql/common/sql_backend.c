@@ -105,3 +105,11 @@ backend_resolve_function(ptr M, sql_func *f)
 		return be_funcs.fresolve_function(M, f);
 	return 0;
 }
+
+int
+backend_has_module(ptr M, char *name)
+{
+	if (be_funcs.fhas_module_function != NULL)
+		return be_funcs.fhas_module_function(M, name);
+	return 0;
+}

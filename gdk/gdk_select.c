@@ -32,6 +32,12 @@ BAT *
 virtualize(BAT *bn)
 {
 	/* input must be a valid candidate list or NULL */
+	if(bn && ((bn->ttype != TYPE_void && bn->ttype != TYPE_oid) || !bn->tkey || !bn->tsorted)) {
+		fprintf(stderr, "#bn type %d nil %d key %d sorted %d\n",
+				bn->ttype, is_oid_nil(bn->tseqbase),
+				bn->tkey, bn->tsorted);
+		fflush(stderr);
+	}
 	assert(bn == NULL ||
 	       (((bn->ttype == TYPE_void && !is_oid_nil(bn->tseqbase)) ||
 		 bn->ttype == TYPE_oid) &&
@@ -51,15 +57,25 @@ virtualize(BAT *bn)
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, 0);
 		if (VIEWtparent(bn)) {
-			BBPunshare(VIEWtparent(bn));
-			BBPunfix(VIEWtparent(bn));
-			bn->theap.parentid = 0;
-			bn->theap.base = NULL;
+			Heap *h = GDKmalloc(sizeof(Heap));
+			bat bid = VIEWtparent(bn);
+			if (h == NULL) {
+				BBPunfix(bn->batCacheid);
+				return NULL;
+			}
+			*h = *bn->theap;
+			h->parentid = bn->batCacheid;
+			h->base = NULL;
+			ATOMIC_INIT(&h->refs, 1);
+			HEAPdecref(bn->theap, false);
+			bn->theap = h;
+			BBPunshare(bid);
+			BBPunfix(bid);
 		} else {
-			HEAPfree(&bn->theap, true);
+			HEAPfree(bn->theap, true);
 		}
-		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
-		bn->theap.size = 0;
+		bn->theap->storage = bn->theap->newstorage = STORE_MEM;
+		bn->theap->size = 0;
 		bn->ttype = TYPE_void;
 		bn->tvarsized = true;
 		bn->twidth = 0;
@@ -102,7 +118,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			  "for hash\n",
 			  ALGOBATPAR(b),
 			  ALGOBATPAR(b2));
-		d = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+		d = b->tbaseoff - b2->tbaseoff;
 		l += d;
 		h += d;
 		b = b2;
@@ -339,10 +355,22 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		assert(imprints);					\
 		*algo = parent ? "parent imprints select " #TEST " (canditer_next" #ISDENSE ")" : "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
-		case 8:  checkMINMAX(8, TYPE); impsmask(ISDENSE,TEST,8); break; \
-		case 16: checkMINMAX(16, TYPE); impsmask(ISDENSE,TEST,16); break; \
-		case 32: checkMINMAX(32, TYPE); impsmask(ISDENSE,TEST,32); break; \
-		case 64: checkMINMAX(64, TYPE); impsmask(ISDENSE,TEST,64); break; \
+		case 8:							\
+			checkMINMAX(8, TYPE);				\
+			impsmask(ISDENSE,TEST,8);			\
+			break;						\
+		case 16:						\
+			checkMINMAX(16, TYPE);				\
+			impsmask(ISDENSE,TEST,16);			\
+			break;						\
+		case 32:						\
+			checkMINMAX(32, TYPE);				\
+			impsmask(ISDENSE,TEST,32);			\
+			break;						\
+		case 64:						\
+			checkMINMAX(64, TYPE);				\
+			impsmask(ISDENSE,TEST,64);			\
+			break;						\
 		default: assert(0); break;				\
 		}							\
 	} while (false)
@@ -466,7 +494,7 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	if (use_imprints && (parent = VIEWtparent(b))) {		\
+	if (use_imprints && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b))) {		\
 		BAT *pbat = BBPdescriptor(parent);			\
 		assert(pbat);						\
 		basesrc = (const TYPE *) Tloc(pbat, 0);			\
@@ -786,45 +814,6 @@ scanselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	return bn;
 }
 
-/* calculate the integer 2 logarithm (i.e. position of highest set
- * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
- * 0x8 to 0xF give 4, etc.) */
-static unsigned
-ilog2(BUN x)
-{
-	unsigned n = 0;
-	BUN y;
-
-	/* use a "binary search" method */
-#if SIZEOF_BUN == 8
-	if ((y = x >> 32) != 0) {
-		x = y;
-		n += 32;
-	}
-#endif
-	if ((y = x >> 16) != 0) {
-		x = y;
-		n += 16;
-	}
-	if ((y = x >> 8) != 0) {
-		x = y;
-		n += 8;
-	}
-	if ((y = x >> 4) != 0) {
-		x = y;
-		n += 4;
-	}
-	if ((y = x >> 2) != 0) {
-		x = y;
-		n += 2;
-	}
-	if ((y = x >> 1) != 0) {
-		x = y;
-		n += 1;
-	}
-	return n + (x != 0);
-}
-
 /* Normalize the variables li, hi, lval, hval, possibly changing anti
  * in the process.  This works for all (and only) numeric types.
  *
@@ -1047,7 +1036,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (s && !BATtordered(s)) {
+	if (s && s->ttype != TYPE_msk && !BATtordered(s)) {
 		GDKerror("invalid argument: s must be sorted.\n");
 		return NULL;
 	}
@@ -1328,7 +1317,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 (!b->batTransient &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2));
-	if (equi && !hash && parent != 0) {
+	if (/* DISABLES CODE */ (0) && equi && !hash && parent != 0) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
 		 * does not occur, or if it is cheaper to check the
@@ -1359,10 +1348,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !(b->tsorted || b->trevsorted) &&
 	    ci.tpe == cand_dense &&
 	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) &&
+	     (/* DISABLES CODE */ (0) &&
+	      VIEWtparent(b) &&
 	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
 		BAT *view = NULL;
-		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
+		if (/* DISABLES CODE */ (0) && VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
 			b = BBPdescriptor(VIEWtparent(b));
 		}
@@ -1373,7 +1363,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			use_orderidx = true;
 			if (view) {
 				poidx = true; /* using parent oidx */
-				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
+				vwo = (lng) (view->tbaseoff - b->tbaseoff);
 				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
 				vwh = vwl + canditer_last(&ci) - ci.seq;
 				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
@@ -1477,26 +1467,26 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (b->tsorted) {
 				BUN first = SORTfndlast(b, nil);
 				/* match: [first..low) + [high..last) */
-				bn = canditer_slice2(&ci,
-						     canditer_search(&ci, first + b->hseqbase, true),
-						     canditer_search(&ci, low + b->hseqbase, true),
-						     canditer_search(&ci, high + b->hseqbase, true),
-						     ci.ncand);
+				bn = canditer_slice2val(&ci,
+							first + b->hseqbase,
+							low + b->hseqbase,
+							high + b->hseqbase,
+							oid_nil);
 			} else {
 				BUN last = SORTfndfirst(b, nil);
 				/* match: [first..low) + [high..last) */
-				bn = canditer_slice2(&ci,
-						     0,
-						     canditer_search(&ci, low + b->hseqbase, true),
-						     canditer_search(&ci, high + b->hseqbase, true),
-						     canditer_search(&ci, last + b->hseqbase, true));
+				bn = canditer_slice2val(&ci,
+							oid_nil,
+							low + b->hseqbase,
+							high + b->hseqbase,
+							last + b->hseqbase);
 			}
 		} else {
 			if (b->tsorted || b->trevsorted) {
 				/* match: [low..high) */
-				bn = canditer_slice(&ci,
-						    canditer_search(&ci, low + b->hseqbase, true),
-						    canditer_search(&ci, high + b->hseqbase, true));
+				bn = canditer_sliceval(&ci,
+						       low + b->hseqbase,
+						       high + b->hseqbase);
 			} else {
 				BUN i;
 				BUN cnt = 0;
@@ -1647,7 +1637,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bool use_imprints = !equi &&
 			!b->tvarsized &&
 			(!b->batTransient ||
-			 (parent != 0 &&
+			 (/* DISABLES CODE */ (0) &&
+			  parent != 0 &&
 			  (tmp = BBPquickdesc(parent, false)) != NULL &&
 			  !tmp->batTransient));
 		bn = scanselect(b, &ci, bn, tl, th, li, hi, equi, anti,
@@ -1778,7 +1769,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	oid ro;
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which output column is sorted */
-	BAT *tmp;
+	BAT *tmp = NULL;
 	bool use_orderidx = false;
 	const char *algo = NULL;
 
@@ -1829,9 +1820,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	}
 
 	if (!BATordered(l) && !BATordered_rev(l) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
+	    (BATcheckorderidx(l) || (/* DISABLES CODE */ (0) && VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
 		use_orderidx = true;
-		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
+		if (/* DISABLES CODE */ (0) && VIEWtparent(l) && !BATcheckorderidx(l)) {
 			l = BBPdescriptor(VIEWtparent(l));
 		}
 	}
@@ -1958,11 +1949,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	} else if (!anti && !symmetric &&
 		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
-		    (VIEWtparent(l) != 0 &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(l) != 0 &&
 		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
+		(void) tmp;	/* void cast because of disabled code */
 		/* implementation using imprints on left column
 		 *
 		 * we use imprints if we can (the type is right for

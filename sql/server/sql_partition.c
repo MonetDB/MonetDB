@@ -10,6 +10,7 @@
 
 #include "sql_partition.h"
 #include "rel_rel.h"
+#include "rel_basetable.h"
 #include "rel_exp.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
@@ -187,8 +188,11 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		case e_convert: {
 			exp_find_table_columns(sql, e->l, t, cols);
 		} break;
-		case e_atom:
-			break;
+		case e_atom: {
+			if (e->f)
+				for (node *n = ((list*)e->f)->h ; n ; n = n->next)
+					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
+		} break;
 		case e_aggr:
 		case e_func: {
 			if (e->l)
@@ -314,8 +318,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
 
-	if (localtype != TYPE_str && mt->members.set && cs_size(&mt->members)) {
-		for (node *n = mt->members.set->h; n; n = n->next) {
+	if (localtype != TYPE_str && mt->members && list_length(mt->members)) {
+		for (node *n = mt->members->h; n; n = n->next) {
 			sql_part *p = n->data;
 
 			if (isListPartitionTable(mt)) {
