@@ -4,3 +4,5 @@ sys_user_statistics
 sys_queue_multisessions
 timeout_cross
 timeout_join
+timeout_aggr
+timeout_select
