@@ -1765,7 +1765,8 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			fp = NULL;
 			goto error;
 		}
-		readlogs = true;
+		if (fp)
+			readlogs = true;
 		fp = NULL;
 
 		if (lg->catalog_bid == NULL && lg->catalog_id == NULL && lg->dcatalog == NULL) {
