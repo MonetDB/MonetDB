@@ -165,11 +165,15 @@ void GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+void HASHappend(BAT *b, BUN i, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHins(BAT *b, BUN i, const void *v)
+void HASHdelete(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
+void HASHinsert(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
