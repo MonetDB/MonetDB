@@ -30,19 +30,26 @@ with tempfile.TemporaryDirectory() as farm_dir:
         node1_cur.execute("CREATE TABLE mytest (toc_no String null,mesure_de int null)")
         node1_cur.execute("insert into mytest values('A000000009', 20201006), ('A000000010', 20201007), ('A000000011', 20201008), ('A000000012', 20201009), ('A000000013', 20201010), ('A000000014', 20201011), ('A000000015', 20201012), ('A000000016', 20201013)")
         node1_cur.execute("select toc_no, mesure_de from mytest")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000009', 20201006), ('A000000010', 20201007), ('A000000011', 20201008), ('A000000012', 20201009), ('A000000013', 20201010), ('A000000014', 20201011), ('A000000015', 20201012), ('A000000016', 20201013)]:
+            sys.stderr.write("[('A000000009', 20201006), ('A000000010', 20201007), ('A000000011', 20201008), ('A000000012', 20201009), ('A000000013', 20201010), ('A000000014', 20201011), ('A000000015', 20201012), ('A000000016', 20201013)] expected")
         node1_cur.execute("select toc_no, mesure_de from mytest where mesure_de >= 20201001 and mesure_de < 20201011 order by mesure_de desc")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)]:
+            sys.stderr.write("[('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
         node1_cur.execute("select toc_no, mesure_de from mytest where mesure_de > 20201006 and mesure_de <= 20201011 order by mesure_de desc")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)]:
+            sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)] expected")
         node1_cur.execute("select toc_no, mesure_de from mytest where mesure_de > 20201006 and mesure_de < 20201011 order by mesure_de desc")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)]:
+            sys.stderr.write("[('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)] expected")
         node1_cur.execute("select toc_no, mesure_de from mytest where mesure_de >= 20201006 and mesure_de <= 20201011 order by mesure_de desc")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)]:
+            sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
         node1_cur.execute("select toc_no, mesure_de from mytest where mesure_de > 20201007 and mesure_de < 20201011 order by mesure_de desc")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008)]:
+            sys.stderr.write("[('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008)] expected")
         node1_cur.execute("select toc_no, mesure_de from mytest where mesure_de BETWEEN 20201001 and 20201011 order by mesure_de desc")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)]:
+            sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
 
         node2_port = freeport()
         with process.server(mapiport=node2_port, dbname='node2',
@@ -54,23 +61,27 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
             node2_cur.execute("CREATE REMOTE TABLE mytest (toc_no String null,mesure_de int null) on 'mapi:monetdb://localhost:{}/node1/sys/mytest'".format(node1_port))
             node2_cur.execute("select toc_no, mesure_de from mytest")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000009', 20201006), ('A000000010', 20201007), ('A000000011', 20201008), ('A000000012', 20201009), ('A000000013', 20201010), ('A000000014', 20201011), ('A000000015', 20201012), ('A000000016', 20201013)]:
+                sys.stderr.write("[('A000000009', 20201006), ('A000000010', 20201007), ('A000000011', 20201008), ('A000000012', 20201009), ('A000000013', 20201010), ('A000000014', 20201011), ('A000000015', 20201012), ('A000000016', 20201013)] expected")
             node2_cur.execute("select toc_no, mesure_de from mytest where mesure_de >= 20201001 and mesure_de < 20201011 order by mesure_de desc")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)]:
+                sys.stderr.write("[('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
             node2_cur.execute("select toc_no, mesure_de from mytest where mesure_de > 20201006 and mesure_de <= 20201011 order by mesure_de desc")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)]:
+                sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)] expected")
             node2_cur.execute("select toc_no, mesure_de from mytest where mesure_de > 20201006 and mesure_de < 20201011 order by mesure_de desc")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)]:
+                sys.stderr.write("[('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007)] expected")
             node2_cur.execute("select toc_no, mesure_de from mytest where mesure_de >= 20201006 and mesure_de <= 20201011 order by mesure_de desc")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)]:
+                sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
             node2_cur.execute("select toc_no, mesure_de from mytest where mesure_de > 20201007 and mesure_de < 20201011 order by mesure_de desc")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008)]:
+                sys.stderr.write("[('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008)] expected")
             node2_cur.execute("select toc_no, mesure_de from mytest where mesure_de BETWEEN 20201001 and 20201011 order by mesure_de desc")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)]:
+                sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
-            out, err = node1_proc.communicate()
-            sys.stderr.write(err)
-
-            out, err = node2_proc.communicate()
-            sys.stderr.write(err)
+            node1_proc.communicate()
+            node2_proc.communicate()
