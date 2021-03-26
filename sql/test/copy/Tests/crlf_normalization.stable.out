@@ -1,0 +1,12 @@
+stdout of test 'crlf_normalization` in directory 'sql/test/copy` itself:
+
+
+# 16:11:40 >  
+# 16:11:40 >  "/usr/bin/python3" "crlf_normalization.SQL.py" "crlf_normalization"
+# 16:11:40 >  
+
+
+# 16:11:40 >  
+# 16:11:40 >  "Done."
+# 16:11:40 >  
+
