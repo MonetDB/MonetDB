@@ -1185,7 +1185,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		if (rc != GDK_SUCCEED)
 			return rc;
 		if (b->thash) {
-			HASHins(b, p, t);
+			HASHappend(b, p, t);
 		}
 		p++;
 	}
@@ -1349,7 +1349,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		 * clear it */
 		b->tnil = false;
 	}
-	HASHdestroy(b);
+	HASHdelete(b, p, val);	/* first delete old value from hash */
 	if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
 		PROPrec *prop;
 
@@ -1485,6 +1485,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			break;
 		}
 	}
+
+	HASHinsert(b, p, t);	/* insert new value into hash */
 
 	tt = b->ttype;
 	prv = p > 0 ? p - 1 : BUN_NONE;
