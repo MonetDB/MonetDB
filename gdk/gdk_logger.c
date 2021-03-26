@@ -1356,7 +1356,7 @@ bm_subcommit(logger *lg)
 	sizes[i] = 0;
 	n[i++] = 0;		/* n[0] is not used */
 	bids = (const log_bid *) Tloc(catalog_bid, 0);
-	if (lg->catalog_cnt)
+	if (!LOG_DISABLED(lg) && lg->catalog_cnt)
 		cnts = (const lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (const lng *) Tloc(lg->catalog_lid, 0);
@@ -1980,6 +1980,11 @@ logger_destroy(logger *lg)
 		logged_range *n = p->next;
 		GDKfree(p);
 		p = n;
+	}
+	if (LOG_DISABLED(lg)) {
+		lg->saved_id = lg->id;
+		lg->saved_tid = lg->tid;
+		logger_commit(lg);
 	}
 	if (lg->catalog_bid) {
 		logger_lock(lg);
