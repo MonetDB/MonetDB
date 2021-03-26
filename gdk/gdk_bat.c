@@ -1181,12 +1181,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
 			(void *) ((char *) values + i * Tsize(b));
 		setcolprops(b, t);
-		gdk_return rc = bunfastapp_nocheck(b, b->batCount, t, Tsize(b));
+		gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
 		if (rc != GDK_SUCCEED)
 			return rc;
 		if (b->thash) {
 			HASHins(b, p, t);
 		}
+		p++;
 	}
 
 	if (b->thash)
