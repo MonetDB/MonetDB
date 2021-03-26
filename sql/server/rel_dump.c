@@ -1406,7 +1406,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sym = 1;
 			}
 			if (e->type == e_cmp) {
-				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
+				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag & ~(CMP_SYMMETRIC|CMP_BETWEEN)));
 				if (sym)
 					ne->flag |= CMP_SYMMETRIC;
 				if (between)
