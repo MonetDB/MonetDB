@@ -2577,10 +2577,14 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 
 				if (sq) {
+					sql_rel *l = NULL;
 					operator_type op = op_join;
 					(void)rewrite_inner(sql, rel, lsq, &op);
 					if (is_left(op))
 						reset_has_nil(le);
+					l = rel->l;
+					if (l && on_right && !is_join(l->op))
+						on_right = 0;
 				}
 				if (rsq) {
 					if (on_right) {
