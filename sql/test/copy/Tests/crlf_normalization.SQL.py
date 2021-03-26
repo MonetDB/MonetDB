@@ -18,10 +18,10 @@ def testdata(prefix,line_sep):
     name = f.name
     f.write(text)
     f.close()
-    return name
+    return name, text
 
 def run_test(name, data_delimiter, copy_delimiter):
-    file_name = testdata(name, data_delimiter)
+    file_name, test_data = testdata(name, data_delimiter)
     script = f"""
     DROP TABLE IF EXISTS foo;
     CREATE TABLE foo(i INT, t TEXT);
@@ -35,12 +35,13 @@ def run_test(name, data_delimiter, copy_delimiter):
         expected = "[3]\n[1,3]\n[3,3]\n[5,5]"
         if reduced != expected:
             print("TEST: ", name, file=sys.stderr)
-            print("\nDELIMITER: ", repr(data_delimiter), sep='', file=sys.stderr)
+            print("\nLINE DELIMITER: ", repr(data_delimiter), sep='', file=sys.stderr)
+            print("\nFILE CONTENTS: ", repr(test_data), sep='', file=sys.stderr)
             print("\nSCRIPT:\n", script, sep='', file=sys.stderr)
             print("\nEXPECTED:\n", expected, sep='', file=sys.stderr)
             print("\nGOT:\n", reduced, sep='', file=sys.stderr)
-            print("\nFULL OUTPUT:\n", out, sep='', file=sys.stderr)
             print("\nFULL STDERR:\n", err, sep='', file=sys.stderr)
+            print("\nFULL OUTPUT:\n", out, sep='', file=sys.stderr)
             raise SystemExit("Test failed")
     os.remove(file_name)
 
@@ -55,25 +56,3 @@ run_test("dos_as_unix", "\r\n", r"\n")
 
 # Load unix endings while asking for dos endings
 run_test("unix_as_dos", "\n", r"\r\n")
-
-
-# # As super user, create users and schemas owned by these users.
-# with process.client('sql',
-#                     stdin = open(os.path.join(os.getenv('TSTSRCDIR'),
-#                                               'comment-auth-superuser.sql')),
-#                     stdout = process.PIPE, stderr = process.PIPE,
-#                     log = True) as c:
-#     out, err = c.communicate()
-#     sys.stdout.write(out)
-#     sys.stderr.write(err)
-
-# # As one of the users, check that we can only comment on our own objects.
-# with process.client('sql',
-#                     user='user_a', passwd='user_a',
-#                     stdin = open(os.path.join(os.getenv('TSTSRCDIR'),
-#                                               'comment-auth-a.sql')),
-#                     stdout = process.PIPE, stderr = process.PIPE,
-#                     log = True) as c:
-#     out, err = c.communicate()
-#     sys.stdout.write(out)
-#     sys.stderr.write(err)
