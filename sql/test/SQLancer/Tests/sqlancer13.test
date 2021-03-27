@@ -400,24 +400,24 @@ statement ok
 CREATE TABLE "sys"."t1" ("c3" BOOLEAN)
 
 query T rowsort
-select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 union all
-select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 ----
 
 query T rowsort
-select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 union all
-select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 ----
 
 statement ok
 ROLLBACK
 
 query T rowsort
-select round((0.5296678069272354)*(0.10385499803600118), -8)
+select round((0.52)*(0.10), -8)
 ----
-0E-33
+0.0000
 
 statement ok
 START TRANSACTION
