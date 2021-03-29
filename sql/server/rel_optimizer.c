@@ -9713,8 +9713,6 @@ rel_optimize_select_and_joins_bottomup(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_unions_bottomup(visitor *v, sql_rel *rel)
 {
-	if (!is_union(rel->op))
-		return rel;
 	rel = rel_remove_union_partitions(v, rel);
 	rel = rel_merge_union(v, rel);
 	return rel;
