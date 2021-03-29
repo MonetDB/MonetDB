@@ -391,8 +391,10 @@ INSERT INTO "t1" VALUES (NULL, 1, NULL, NULL),(NULL, 7, NULL, NULL),(NULL, 6, NU
 statement ok
 CREATE TABLE "t2"("c0" INT)
 
-statement ok
+query I rowsort
 SELECT 1 FROM t0 NATURAL JOIN (SELECT t1.c0, (SELECT t1.c4 FROM t2, t1) FROM t1) AS sub0
+----
+1
 
 statement ok
 ROLLBACK
