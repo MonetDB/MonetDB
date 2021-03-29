@@ -1081,8 +1081,8 @@ HASHprobe(const Hash *h, const void *v)
 	}
 }
 
-static void
-HASHins_locked(BAT *b, BUN i, const void *v)
+static inline void
+HASHappend_locked(BAT *b, BUN i, const void *v)
 {
 	Hash *h = b->thash;
 	if (h == NULL) {
@@ -1093,6 +1093,7 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 		doHASHdestroy(b, h);
 		return;
 	}
+	assert(i * h->width == h->heaplink.free);
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
 		return;
@@ -1115,12 +1116,11 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 	BUN hb = HASHget(h, c);
 	BUN hb2;
 	BATiter bi = bat_iterator(b);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	for (hb2 = hb;
 	     hb2 != HASHnil(h);
 	     hb2 = HASHgetlink(h, hb2)) {
-		if (ATOMcmp(h->type,
-			    v,
-			    BUNtail(bi, hb2)) == 0)
+		if (atomcmp(v, BUNtail(bi, hb2)) == 0)
 			break;
 	}
 	h->nheads += hb == HASHnil(h);
@@ -1132,10 +1132,153 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 }
 
 void
-HASHins(BAT *b, BUN i, const void *v)
+HASHappend(BAT *b, BUN i, const void *v)
 {
 	MT_lock_set(&b->batIdxLock);
-	HASHins_locked(b, i, v);
+	HASHappend_locked(b, i, v);
+	MT_lock_unset(&b->batIdxLock);
+}
+
+/* insert value v at position p into the hash table of b */
+static inline void
+HASHinsert_locked(BAT *b, BUN p, const void *v)
+{
+	Hash *h = b->thash;
+	if (h == NULL) {
+		return;
+	}
+	if (h == (Hash *) 1) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	assert(p * h->width < h->heaplink.free);
+	BUN c = HASHprobe(h, v);
+	BUN hb = HASHget(h, c);
+	BATiter bi = bat_iterator(b);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	if (hb == h->nil || hb < p) {
+		/* bucket is empty, or bucket is used by lower numbered
+		 * position */
+		h->heaplink.dirty = true;
+		h->heapbckt.dirty = true;
+		HASHputlink(h, p, hb);
+		HASHput(h, c, p);
+		if (hb == h->nil) {
+			h->nheads++;
+		} else {
+			do {
+				if (atomcmp(v, BUNtail(bi, hb)) == 0) {
+					/* found another row with the
+					 * same value, so don't
+					 * increment nunique */
+					return;
+				}
+				hb = HASHgetlink(h, hb);
+			} while (hb != h->nil);
+		}
+		/* this is a new value */
+		h->nunique++;
+		return;
+	}
+	bool seen = false;
+	for (;;) {
+		if (!seen)
+			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
+		BUN hb2 = HASHgetlink(h, hb);
+		if (hb2 == h->nil || hb2 < p) {
+			h->heaplink.dirty = true;
+			HASHputlink(h, p, hb2);
+			HASHputlink(h, hb, p);
+			while (!seen && hb2 != h->nil) {
+				seen = atomcmp(v, BUNtail(bi, hb2)) == 0;
+				hb2 = HASHgetlink(h, hb2);
+			}
+			if (!seen)
+				h->nunique++;
+			return;
+		}
+		hb = hb2;
+	}
+}
+
+void
+HASHinsert(BAT *b, BUN p, const void *v)
+{
+	MT_lock_set(&b->batIdxLock);
+	HASHinsert_locked(b, p, v);
+	MT_lock_unset(&b->batIdxLock);
+}
+
+/* delete value v at position p from the hash table of b */
+static inline void
+HASHdelete_locked(BAT *b, BUN p, const void *v)
+{
+	Hash *h = b->thash;
+	if (h == NULL) {
+		return;
+	}
+	if (h == (Hash *) 1) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	assert(p * h->width < h->heaplink.free);
+	BUN c = HASHprobe(h, v);
+	BUN hb = HASHget(h, c);
+	BATiter bi = bat_iterator(b);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	if (hb == p) {
+		BUN hb2 = HASHgetlink(h, p);
+		h->heaplink.dirty = true;
+		h->heapbckt.dirty = true;
+		HASHput(h, c, hb2);
+		HASHputlink(h, p, h->nil);
+		if (hb2 == h->nil) {
+			h->nheads--;
+		} else {
+			do {
+				if (atomcmp(v, BUNtail(bi, hb2)) == 0) {
+					/* found another row with the
+					 * same value, so don't
+					 * decrement nunique below */
+					return;
+				}
+				hb2 = HASHgetlink(h, hb2);
+			} while (hb2 != h->nil);
+		}
+		/* no rows found with the same value, so number of
+		 * unique values is one lower */
+		h->nunique--;
+		return;
+	}
+	bool seen = false;
+	for (;;) {
+		if (!seen)
+			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
+		BUN hb2 = HASHgetlink(h, hb);
+		assert(hb2 != h->nil);
+		if (hb2 == p) {
+			for (hb2 = HASHgetlink(h, hb2);
+			     !seen && hb2 != h->nil;
+			     hb2 = HASHgetlink(h, hb2))
+				seen = atomcmp(v, BUNtail(bi, hb2)) == 0;
+			break;
+		}
+		hb = hb2;
+	}
+	h->heaplink.dirty = true;
+	HASHputlink(h, hb, HASHgetlink(h, p));
+	HASHputlink(h, p, h->nil);
+	if (!seen)
+		h->nunique--;
+}
+
+void
+HASHdelete(BAT *b, BUN p, const void *v)
+{
+	MT_lock_set(&b->batIdxLock);
+	HASHdelete_locked(b, p, v);
 	MT_lock_unset(&b->batIdxLock);
 }
 

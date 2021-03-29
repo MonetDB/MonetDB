@@ -623,7 +623,8 @@ AUTHchangeUsername(Client cntxt, const char *olduser, const char *newuser)
 		throw(MAL, "changeUsername", "user '%s' already exists", newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	if (BUNinplace(user, p, newuser, true) != GDK_SUCCEED)
+	assert(user->hseqbase == 0);
+	if (BUNreplace(user, p, newuser, true) != GDK_SUCCEED)
 		throw(MAL, "changeUsername", GDK_EXCEPTION);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -675,7 +676,8 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 
 	/* ok, just overwrite the password field for this user */
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
+	assert(pass->hseqbase == 0);
+	if (BUNreplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(INVCRED, "changePassword", GDK_EXCEPTION);
 	}
@@ -729,7 +731,8 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
+	assert(pass->hseqbase == 0);
+	if (BUNreplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(MAL, "setPassword", GDK_EXCEPTION);
 	}

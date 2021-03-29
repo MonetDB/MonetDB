@@ -2857,9 +2857,9 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
 		} else if (subcommit) {
-			/* if subcommit, wqe may need to move an
+			/* if subcommit, we may need to move an
 			 * already made backup from BAKDIR to
-			 * SUBSIR */
+			 * SUBDIR */
 			if (file_exists(h->farmid, BAKDIR, nme, extnew))
 				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, extnew);
 			else if (file_exists(h->farmid, BAKDIR, nme, ext))
@@ -3036,11 +3036,10 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		 * succeeded, so no changing of ret after this
 		 * call anymore */
 
-		if (MT_rename(bakdir, deldir) < 0)
-			ret = GDK_FAIL;
-		if (ret != GDK_SUCCEED &&
-		    GDKremovedir(0, DELDIR) == GDK_SUCCEED && /* maybe there was an old deldir */
-		    MT_rename(bakdir, deldir) < 0)
+		if (MT_rename(bakdir, deldir) < 0 &&
+		    /* maybe there was an old deldir, so remove and try again */
+		    (GDKremovedir(0, DELDIR) != GDK_SUCCEED ||
+		     MT_rename(bakdir, deldir) < 0))
 			ret = GDK_FAIL;
 		if (ret != GDK_SUCCEED)
 			GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, deldir);

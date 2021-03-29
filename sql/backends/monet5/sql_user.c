@@ -178,8 +178,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	user_id = store_next_oid(m->session->tr->store);
 	db_user_info = find_sql_table(m->session->tr, s, "db_user_info");
 	auths = find_sql_table(m->session->tr, s, "auths");
-	store->table_api.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id, schema_path);
-	store->table_api.table_insert(m->session->tr, auths, &user_id, user, &grantorid);
+	store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path);
+	store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid);
 	return NULL;
 }
 
@@ -307,7 +307,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	assert(schema_id >= 0);
 
 	sqlstore *store = m->session->tr->store;
-	store->table_api.table_insert(m->session->tr, uinfo, "monetdb", "MonetDB Admin", &schema_id, default_schema_path);
+	char *username = "monetdb";
+	char *fullname = "MonetDB Admin";
+	char *schema_path = default_schema_path;
+	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path);
 }
 
 static int

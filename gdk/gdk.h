@@ -959,14 +959,14 @@ gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 gdk_export gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATdel(BAT *b, BAT *d)
 	__attribute__((__warn_unused_result__));
 
-gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 

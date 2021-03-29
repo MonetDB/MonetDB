@@ -55,6 +55,7 @@ typedef struct tODBCDRIVERDBC {
 	char *dbname;		/* Database Name or NULL */
 	bool Connected;		/* whether we are connecte to a server */
 	bool has_comment;	/* whether the server has sys.comments */
+	bool allow_hugeint;	/* whether the application deals with HUGEINT */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
 	SQLUINTEGER sql_attr_connection_timeout;

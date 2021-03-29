@@ -623,7 +623,7 @@ findVariableLength(MalBlkPtr mb, const char *name, int len)
 	int i;
 
 	for (i = mb->vtop - 1; i >= 0; i--) {
-		const char *s = mb->var[i].name; 
+		const char *s = mb->var[i].name;
 
 		if (s && strncmp(name, s, len) == 0 && s[len] == 0)
 			return i;
@@ -780,7 +780,7 @@ getVarName(MalBlkPtr mb, int idx)
 	char *s = mb->var[idx].name;
 	if( getVarKind(mb,idx) == 0)
 		setVarKind(mb,idx, REFMARKER);
-	
+
 	if( *s &&  s[1] != '_' && (s[0] != 'X' && s[0] != 'C'))
 		return s;
 	if ( *s == 0)
@@ -798,16 +798,18 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
 		return -1;
 	}
-	if (makeVarSpace(mb))
+	if (makeVarSpace(mb)) {
+		assert(0);
 		/* no space for a new variable */
 		return -1;
+	}
 	n = mb->vtop;
 	if( name == 0 || len == 0){
 		mb->var[n].name[0] = 0;
 	} else {
 		/* avoid calling strcpy_len since we're not interested in the
 		 * source length, and that may be very large */
-		char *nme = mb->var[n].name;  
+		char *nme = mb->var[n].name;
 		for (size_t i = 0; i < len; i++)
 			nme[i] = name[i];
 		nme[len] = 0;

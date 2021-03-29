@@ -1634,7 +1634,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			// have new remark but found none so insert row
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
-			ok = store->table_api.table_insert(tx, comments, &objid, remark);
+			ok = store->table_api.table_insert(tx, comments, &objid, &remark);
 		}
 	} else {
 		if (!is_oid_nil(rid)) {

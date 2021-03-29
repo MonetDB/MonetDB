@@ -1498,12 +1498,13 @@ BATunmask(BAT *b)
 		if (n == 0) {
 			/* didn't need it after all */
 			HEAPfree(dels, true);
+			GDKfree(dels);
 		} else {
 			ATOMIC_INIT(&dels->refs, 1);
 			bn->tvheap = dels;
 			bn->tvheap->free = sizeof(ccand_t) + n * sizeof(oid);
 		}
-		BATsetcount(bn, BATcount(b));
+		BATsetcount(bn, n=BATcount(b));
 		bn->tseqbase = hseq;
 	} else {
 		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
