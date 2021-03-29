@@ -1170,7 +1170,14 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	if (BATcount(b) + count > BATcapacity(b)) {
-		gdk_return rc = BATextend(b, BATgrows(b));
+		/* if needed space exceeds a normal growth extend just
+		 * with what's needed */
+		BUN ncap = BATcount(b) + count;
+		BUN grows = BATgrows(b);
+
+		if (ncap > grows)
+			grows = ncap;
+		gdk_return rc = BATextend(b, grows);
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}
