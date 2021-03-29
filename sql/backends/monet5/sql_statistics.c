@@ -307,7 +307,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						GDKfree(minval);
 						throw(SQL, "analyze", "delete failed");
 					}
-					if (store->table_api.table_insert(tr, sysstats, &c->base.id, c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, minval, maxval, &sorted, &revsorted) != LOG_OK) {
+					if (store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted) != LOG_OK) {
 						GDKfree(maxval);
 						GDKfree(minval);
 						throw(SQL, "analyze", "insert failed");

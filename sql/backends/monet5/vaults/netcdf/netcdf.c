@@ -863,7 +863,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	size_t pos = store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat));
-	store->storage_api.append_col(m->session->tr, col, pos, vbat, TYPE_bat);
+	store->storage_api.append_col(m->session->tr, col, pos, vbat, TYPE_bat, 0);
 	BBPunfix(vbatid);
 	BBPrelease(vbatid);
 	vbat = NULL;
@@ -884,7 +884,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		pos = store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(dimbat));
-		store->storage_api.append_col(m->session->tr, col, pos, dimbat, TYPE_bat);
+		store->storage_api.append_col(m->session->tr, col, pos, dimbat, TYPE_bat, 0);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
 		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;

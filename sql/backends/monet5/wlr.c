@@ -910,11 +910,11 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat);
+		store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat, 1);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe);
+			store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1);
 	}
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
