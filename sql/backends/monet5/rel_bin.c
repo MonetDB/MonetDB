@@ -2393,7 +2393,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 	if (!list_empty(rel->exps)) {
 		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			int left_reference = 0, right_reference = 0;
+			int can_join = 0;
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
 			/* ToDo how about atom expressions? */
@@ -2419,17 +2419,21 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 						    (rl && !ll &&
 						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
 						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcl1+nrcl2) <= 1)) {
-							left_reference = right_reference = 1;
+							can_join = 1;
 						}
 					} else {
+						int ll = 0, lr = 0, rl = 0, rr = 0;
+
 						if (l->card != CARD_ATOM || !exp_is_atom(l)) {
-							left_reference |= rel_find_exp(rel->l, l) != NULL;
-							right_reference |= rel_find_exp(rel->r, l) != NULL;
+							ll |= rel_find_exp(rel->l, l) != NULL;
+							rl |= rel_find_exp(rel->r, l) != NULL;
 						}
 						if (r->card != CARD_ATOM || !exp_is_atom(r)) {
-							left_reference |= rel_find_exp(rel->l, r) != NULL;
-							right_reference |= rel_find_exp(rel->r, r) != NULL;
+							lr |= rel_find_exp(rel->l, r) != NULL;
+							rr |= rel_find_exp(rel->r, r) != NULL;
 						}
+						if ((ll && !lr && !rl && rr) || (!ll && lr && rl && !rr))
+							can_join = 1;
 					}
 				} else if (flag == cmp_filter) {
 					list *l = e->l, *r = e->r;
@@ -2452,10 +2456,10 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 						}
 					}
 					if ((ll && !lr && !rl && rr) || (!ll && lr && rl && !rr))
-						right_reference = left_reference = 1;
+						can_join = 1;
 				}
 			}
-			if (left_reference && right_reference) {
+			if (can_join) {
 				append(joinable, e);
 			} else {
 				append(not_joinable, e);
