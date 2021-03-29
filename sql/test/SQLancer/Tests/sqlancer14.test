@@ -342,7 +342,20 @@ statement ok
 INSERT INTO "t0" VALUES (0.418),(0.000),(3.109),(9.000),(0.972),(1.000),(0.442),(4.141),(8.000)
 
 query T rowsort
-SELECT (VALUES (FALSE = ALL((SELECT TRUE FROM t0) INTERSECT (SELECT TRUE FROM t0)))) FROM t0;
+SELECT (VALUES (FALSE = ALL(SELECT TRUE FROM t0))) FROM t0
+----
+False
+False
+False
+False
+False
+False
+False
+False
+False
+
+query T rowsort
+SELECT (VALUES (FALSE = ALL((SELECT TRUE FROM t0) INTERSECT (SELECT TRUE FROM t0)))) FROM t0
 ----
 False
 False
