@@ -274,7 +274,8 @@ log_read_seq(logger *lg, logformat *l)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
+		assert(lg->seqs_val->hseqbase == 0);
+		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
 			return LOG_ERR;
 	} else {
 		if (p != BUN_NONE) {
@@ -516,7 +517,8 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
-			if (ocnt < cnt && BUNinplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED)
+			assert(lg->catalog_cnt->hseqbase == 0);
+			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 	}
@@ -2528,7 +2530,8 @@ log_sequence(logger *lg, int seq, lng val)
 	logger_lock(lg);
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
+		assert(lg->seqs_val->hseqbase == 0);
+		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2629,7 +2632,8 @@ logger_del_bat(logger *lg, log_bid bid)
 	}
 
 	pos = (oid) p;
-	if (BUNinplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
+	assert(lg->catalog_lid->hseqbase == 0);
+	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return BUNappend(lg->dcatalog, &pos, false);
 }

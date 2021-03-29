@@ -362,7 +362,8 @@ log_read_seq(old_logger *lg, logformat *l)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
+		assert(lg->seqs_val->hseqbase == 0);
+		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
 			return LOG_ERR;
 	} else {
 		if (p != BUN_NONE) {
@@ -821,7 +822,8 @@ la_bat_use(old_logger *lg, logaction *la)
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 	    p >= lg->snapshots_bid->batInserted) {
-		if (BUNinplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
+		assert(lg->snapshots_tid->hseqbase == 0);
+		if (BUNreplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
 			goto bailout;
 	} else {
 		if (p != BUN_NONE) {
