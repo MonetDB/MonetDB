@@ -9868,9 +9868,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (level <= 1 && gp.cnt[op_project])
 		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
 
-	if (gp.cnt[op_union])
-		rel = rel_visitor_topdown(&v, rel, &rel_optimize_unions_topdown);
-
 	if (gp.cnt[op_groupby] || gp.cnt[op_project] || gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except])
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_projections);
 
@@ -9894,6 +9891,9 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	   because pushing down select expressions makes rel_join_order more difficult */
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_select_and_joins_topdown);
+
+	if (gp.cnt[op_union])
+		rel = rel_visitor_topdown(&v, rel, &rel_optimize_unions_topdown);
 
 	/* Remove unused expressions */
 	if (level <= 0)
