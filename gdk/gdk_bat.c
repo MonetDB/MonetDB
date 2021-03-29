@@ -1326,7 +1326,7 @@ BUNdelete(BAT *b, oid o)
  * be saved explicitly.
  */
 static gdk_return
-BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force)
+BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force, bool autoincr)
 {
 	BUN last = BUNlast(b) - 1;
 	BATiter bi = bat_iterator(b);
@@ -1341,7 +1341,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		return GDK_FAIL;
 	}
 	for (BUN i = 0; i < count; i++) {
-		BUN p = positions[i] - b->hseqbase;
+		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
 		const void *t = b->ttype && b->tvarsized ?
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + i * Tsize(b));
@@ -1549,8 +1549,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	return GDK_SUCCEED;
 }
 
-/* very much like void_inplace, except this materializes a void tail
- * column if necessarry */
+/* Replace multiple values given by their positions with the given values. */
 gdk_return
 BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force)
 {
@@ -1559,7 +1558,20 @@ BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	if (b->ttype == TYPE_void && BATmaterialize(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	return BUNinplacemulti(b, positions, values, count, force);
+	return BUNinplacemulti(b, positions, values, count, force, false);
+}
+
+/* Replace multiple values starting from a given position with the given
+ * values. */
+gdk_return
+BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN count, bool force)
+{
+	BATcheck(b, GDK_FAIL);
+
+	if (b->ttype == TYPE_void && BATmaterialize(b) != GDK_SUCCEED)
+		return GDK_FAIL;
+
+	return BUNinplacemulti(b, &position, values, count, force, true);
 }
 
 gdk_return
@@ -1580,7 +1592,7 @@ void_inplace(BAT *b, oid id, const void *val, bool force)
 	}
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
-	return BUNinplacemulti(b, &id, b->ttype && b->tvarsized ? (const void *) &val : (const void *) val, 1, force);
+	return BUNinplacemulti(b, &id, b->ttype && b->tvarsized ? (const void *) &val : (const void *) val, 1, force, false);
 }
 
 /*

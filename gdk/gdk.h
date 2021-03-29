@@ -961,6 +961,8 @@ gdk_export gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN count, bool force)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
 	__attribute__((__warn_unused_result__));
