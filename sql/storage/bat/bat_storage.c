@@ -1148,15 +1148,17 @@ delta_append_val( sql_delta *bat, size_t offset, void *i, size_t cnt )
 	if(b == NULL)
 		return LOG_ERR;
 
-	if (BATcount(b) > offset){
-		assert(cnt == 1);
-		if (ATOMvarsized(b->ttype))
-			i = *(ptr *) i;
-		if (BUNreplace(b, offset, i, true) != GDK_SUCCEED) {
+	BUN bcnt = BATcount(b);
+	if (bcnt > offset){
+		size_t ccnt = ((offset+cnt) > bcnt)? (bcnt - offset):cnt;
+		if (BUNreplacemultiincr(b, offset, i, ccnt, true) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
 		}
-	} else {
+		cnt -= ccnt;
+		offset += ccnt;
+	}
+	if (cnt) {
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
 			lng i, d = offset - BATcount(b);
