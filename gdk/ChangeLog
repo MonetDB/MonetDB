@@ -1,6 +1,13 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Mon Mar 29 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented new function BUNreplacemulti to replace multiple values
+  in a BAT in one go.
+- Removed function BUNinplace, just use BUNreplace, and check whether
+  the BAT argument is of type TYPE_void before calling if you don't
+  want to materialize.
+
 * Mon Mar 15 2021 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented a function BUNappendmulti which appends an array of values
   to a BAT.  It is a generalization of the function BUNappend.

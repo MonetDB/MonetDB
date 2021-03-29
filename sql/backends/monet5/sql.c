@@ -1666,7 +1666,7 @@ str
 mvc_append_column(sql_trans *t, sql_column *c, size_t pos, BAT *ins)
 {
 	sqlstore *store = t->store;
-	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat);
+	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat, 0);
 	if (res != LOG_OK)
 		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
 	return MAL_SUCCEED;
@@ -1740,7 +1740,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
-	if (ATOMextern(tpe))
+	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
 	if ( tpe == TYPE_bat)
 		b =  (BAT*) ins;
@@ -1760,11 +1760,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		if (store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe) != LOG_OK)
+		if (store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe, 1) != LOG_OK)
 			err = 1;
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i && store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe) != LOG_OK)
+		if (i && store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1) != LOG_OK)
 			err = 1;
 	}
 	if (err)

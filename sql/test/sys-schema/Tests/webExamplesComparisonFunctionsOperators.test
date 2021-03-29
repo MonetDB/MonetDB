@@ -1,0 +1,829 @@
+query T rowsort
+SELECT 5 = 5 as tru
+----
+True
+
+query T rowsort
+SELECT NULL = NULL as nul
+----
+NULL
+
+query T rowsort
+SELECT 5 > 5 as fals
+----
+False
+
+query T rowsort
+SELECT NULL > NULL as nul
+----
+NULL
+
+query T rowsort
+SELECT 5 IS NULL as fals
+----
+False
+
+query T rowsort
+SELECT NULL IS NULL as tru
+----
+True
+
+query T rowsort
+SELECT 5 IS NOT NULL as tru
+----
+True
+
+query T rowsort
+SELECT NULL IS NOT NULL as fals
+----
+False
+
+query TT rowsort
+select 2 < 5 as t1, 2 > 5 as f1
+----
+True
+False
+
+query TT rowsort
+select 2 <= 5 as t1, 2 >= 5 as f1
+----
+True
+False
+
+query TT rowsort
+select 2 = 5 as f1, 2 <> 5 as t1
+----
+False
+True
+
+statement error
+select 2 != 5 as t1
+
+query T rowsort
+select "<"('aa', 'ab') as tru
+----
+True
+
+query T rowsort
+select ">"('aa', 'ab') as fals
+----
+False
+
+query T rowsort
+select "<="('aa', 'ab') as tru
+----
+True
+
+query T rowsort
+select ">="('aa', 'ab') as fals
+----
+False
+
+query T rowsort
+select "="('aa', 'ab') as fals
+----
+False
+
+query T rowsort
+select "<>"('aa', 'ab') as tru
+----
+True
+
+query T rowsort
+select "between"('ab', 'aa', 'ac', false, false, false, false, false) as tru
+----
+True
+
+statement error
+select "between"('ab', 'aa', 'ac') as tru
+
+statement error
+select "in"('aa', 'ab') as tru
+
+query I rowsort
+select ifthenelse(('a' = 'b'), 1, 2) as two
+----
+2
+
+statement error
+select ifnull('aa', 'b') as aa
+
+query T rowsort
+select ifthenelse(('aa' IS NULL), cast('b' as varchar(2)), 'aa') as aa
+----
+aa
+
+query T rowsort
+select coalesce('aa', 'b') as aa
+----
+aa
+
+statement error
+select ifnull('aa', 'b') as aa
+
+statement error
+select ifnull(null, 'b') as b
+
+statement error
+select ifnull(null, null) as nul
+
+statement error
+select ifnull('aa', null) as nul
+
+statement error
+select ifnull(true, null) as nul
+
+statement ok
+drop table if exists t6933
+
+statement ok
+create table t6933 (i int, c varchar(8))
+
+statement ok
+insert into t6933 values (1, 'aa1'), (2, null), (null, 'bb2'), (null, null)
+
+statement error
+select i, c, ifnull(i, 2*3) as "ifnull(i,2*3)", ifnull(c, 'has null') as "ifnull(i,'x')", ifnull(i, c) as "ifnull(i,c)" from t6933
+
+statement error
+select c, i, ifnull(c, i) as "ifnull(c,i)" from t6933
+
+statement error
+select c, i, ifnull(c, cast(i as char)) as "ifnull(c,i)" from t6933
+
+query ITITT rowsort
+select i, c, coalesce(i, 2*3) as "ifnull(i,2*3)", coalesce(c, 'has null') as "ifnull(i,'x')", coalesce(i, c) as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+aa1
+1
+2
+NULL
+2
+has null
+2
+NULL
+NULL
+6
+has null
+NULL
+NULL
+bb2
+6
+bb2
+bb2
+
+query ITITT rowsort
+select i, c, coalesce(i, 2*3) as "coalesce(i,2*3)", coalesce(c, 'has null') as "coalesce(i,'x')", coalesce(i, c) as "coalesce(i,c)" from t6933
+----
+1
+aa1
+1
+aa1
+1
+2
+NULL
+2
+has null
+2
+NULL
+NULL
+6
+has null
+NULL
+NULL
+bb2
+6
+bb2
+bb2
+
+query TIT rowsort
+select c, i, coalesce(c, i) as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+query TIT rowsort
+select c, i, coalesce(c, cast(i as char)) as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+query ITT rowsort
+select i, c, coalesce(i, c) as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+2
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+bb2
+bb2
+
+query ITT rowsort
+select i, c, case when i IS NULL then c else i end as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+2
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+bb2
+bb2
+
+query ITT rowsort
+select i, c, case when i IS NULL then c else i end as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+2
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+bb2
+bb2
+
+query ITT rowsort
+select i, c, case when i IS NULL then c else cast(i as char) end as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+2
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+bb2
+bb2
+
+query ITT rowsort
+select i, c, case when i IS NULL then c else cast(i as char) end as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+2
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+bb2
+bb2
+
+query TIT rowsort
+select c, i, case when c IS NULL then i else c end as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+query TIT rowsort
+select c, i, case when c IS NULL then i else c end as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+statement ok
+drop table if exists t6933
+
+query T rowsort
+select isnull('aa') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '%b%') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_b%') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_b_') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_c_') as tru
+----
+True
+
+query T rowsort
+select not_like('%b%', 'abc') as tru
+----
+True
+
+query T rowsort
+select not_like('_b%', 'abc') as tru
+----
+True
+
+query T rowsort
+select not_like('_b_', 'abc') as tru
+----
+True
+
+query T rowsort
+select not_like('_c_', 'abc') as tru
+----
+True
+
+statement error
+select not_like('abc', '%b%', '%') as fals
+
+query T rowsort
+select not_like('abc', '%b%c', '%') as tru
+----
+True
+
+statement error
+select not_like('abc', '_b%', '%') as fals
+
+query T rowsort
+select not_like('abc', '_b%c', '%') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_b_', '%') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_c_', '%') as tru
+----
+True
+
+query T rowsort
+select not_like('abc', '%b%', '_') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_b%', '_') as tru
+----
+True
+
+statement error
+select not_like('abc', '_b_', '_') as tru
+
+statement error
+select not_like('abc', '_c_', '_') as tru
+
+query T rowsort
+select not_like('abc', '%b%', '#') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_b%', '#') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_b_', '#') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_c_', '#') as tru
+----
+True
+
+query T rowsort
+select not_like('ab#c', '%b%', '#') as fals
+----
+False
+
+query T rowsort
+select not_like('ab#c', '_b%', '#') as fals
+----
+False
+
+query T rowsort
+select not_like('ab#c', '_b_', '#') as tru
+----
+True
+
+query T rowsort
+select not_like('ab#c', '_c_', '#') as tru
+----
+True
+
+query T rowsort
+select not_like('abc', '%b#%', '#') as tru
+----
+True
+
+query T rowsort
+select not_like('abc', '_b#%', '#') as tru
+----
+True
+
+query T rowsort
+select not_like('a_bc', '_#_b_', '#') as fals
+----
+False
+
+query T rowsort
+select not_like('abc', '_c#_', '#') as tru
+----
+True
+
+query T rowsort
+select not_like('aabbccdd', '%bc\\_d%', '\\') as tru
+----
+True
+
+query T rowsort
+select not_like('aabbccdd', '%bc_d%') as fals
+----
+False
+
+query T rowsort
+select not_like('aabbccdd', '%bc\\_d%', '\\') as tru
+----
+True
+
+query T rowsort
+select not_like('abc', '%B%') as tru
+----
+True
+
+query T rowsort
+select not_like('abc', '_B%') as tru
+----
+True
+
+query T rowsort
+select not_like('abc', '_B_') as tru
+----
+True
+
+query T rowsort
+select not_ilike('abc', '%B%') as fals
+----
+False
+
+query T rowsort
+select not_ilike('abc', '_B%') as fals
+----
+False
+
+query T rowsort
+select not_ilike('abc', '_B_') as fals
+----
+False
+
+query T rowsort
+select not_ilike('abc', '_C_') as tru
+----
+True
+
+query T rowsort
+select not_ilike('a_bc', '_#_B_', '#') as fals
+----
+False
+
+query T rowsort
+select not_ilike('aabbccdd', '%bc_d%') as fals
+----
+False
+
+query T rowsort
+select not_ilike('aabbccdd', '%bc\\_d%', '\\') as tru
+----
+True
+
+statement error
+select like('aabbccdd', '%bc_d%') as tru
+
+query T rowsort
+select "like"('aabbccdd', '%bc_d%') as tru
+----
+True
+
+query T rowsort
+select "ilike"('aabbccdd', '%bc_d%') as tru
+----
+True
+
+query T rowsort
+select sql_exists('abc') as tru
+----
+True
+
+query T rowsort
+select sql_not_exists('abc') as fals
+----
+False
+
+query T rowsort
+select coalesce(1, 'b', null)
+----
+1
+
+query T rowsort
+select coalesce('b', null, 2)
+----
+b
+
+query T rowsort
+select coalesce(null, 2, 'b')
+----
+2
+
+query T rowsort
+select coalesce(null, 2, 'b', 4)
+----
+2
+
+query T rowsort
+select coalesce(null, 'b', 4)
+----
+b
+
+query T rowsort
+select coalesce('ac', 'dc')
+----
+ac
+
+query T rowsort
+select coalesce(null, 'ac', 'dc')
+----
+ac
+
+query T rowsort
+select coalesce(null, null, 'ac', 'dc')
+----
+ac
+
+query T rowsort
+select coalesce(null, null, null, 'ac', 'dc')
+----
+ac
+
+query T rowsort
+select coalesce(null, null, null, null, 'ac', 'dc')
+----
+ac
+
+query T rowsort
+select coalesce(null, null, null, null, null, 'ac', 'dc')
+----
+ac
+
+query T rowsort
+select coalesce(null, null, null, null, null, null, 'ac', 'dc')
+----
+ac
+
+statement error
+select nullif('dc')
+
+query T rowsort
+select nullif('ac', 'dc')
+----
+ac
+
+statement error
+select nullif('ac', 'dc', 'de')
+
+query T rowsort
+select nullif('ac', 'dc')
+----
+ac
+
+query T rowsort
+select CASE WHEN 'ac' = 'dc' THEN NULL ELSE 'ac' END
+----
+ac
+
+query T rowsort
+select nullif(null, 'dc')
+----
+NULL
+
+query I rowsort
+select CASE WHEN null = 'dc' THEN NULL ELSE null END
+----
+NULL
+
+query T rowsort
+select nullif('ac', null)
+----
+ac
+
+query T rowsort
+select CASE WHEN 'ac' = null THEN NULL ELSE 'ac' END
+----
+ac
+
+query I rowsort
+select nullif(null, null)
+----
+NULL
+
+query I rowsort
+select CASE WHEN null = null THEN NULL ELSE null END
+----
+NULL
+
+query T rowsort
+select nullif('ac', 'ac')
+----
+NULL
+
+query T rowsort
+select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
+----
+NULL
+
+query I rowsort
+select nullif(9, 9)
+----
+NULL
+
+query I rowsort
+select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
+----
+NULL
+
+query T rowsort
+plan select nullif(null, null)
+----
+) [ "sys"."nullif"(smallint "NULL", smallint "NULL") ]
+project (
+|  [ boolean "true" ]
+
+query T rowsort
+plan select CASE WHEN null = null THEN NULL ELSE null END
+----
+) [ "sys"."ifthenelse"(boolean "NULL", smallint "NULL", smallint "NULL") ]
+project (
+|  [ boolean "true" ]
+
+query T rowsort
+plan select nullif('ac', 'ac')
+----
+) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
+project (
+|  [ boolean "true" ]
+
+query T rowsort
+plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
+----
+) [ "sys"."ifthenelse"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
+project (
+|  [ boolean "true" ]
+
+query T rowsort
+plan select nullif(9, 9)
+----
+) [ "sys"."nullif"(tinyint "9", tinyint "9") ]
+project (
+|  [ boolean "true" ]
+
+query T rowsort
+plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
+----
+) [ "sys"."ifthenelse"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
+project (
+|  [ boolean "true" ]
+
+query T rowsort
+select 'db' between 'abc' and 'db' as tru
+----
+True
+
+query T rowsort
+select 'db' not between 'abc' and 'db' as fals
+----
+False
+
+query T rowsort
+select not 'db' between 'abc' and 'db' as fals
+----
+False
+
+query T rowsort
+select 'db' between SYMMETRIC 'abc' and 'db' as tru
+----
+True
+
+query T rowsort
+select 'db' between SYMMETRIC 'db' and 'abc' as tru
+----
+True
+
+query T rowsort
+select 'db' not between SYMMETRIC 'abc' and 'db' as fals
+----
+False
+
+query T rowsort
+select 'db' not between SYMMETRIC 'db' and 'abc' as fals
+----
+False
+
+statement error
+select 'a' IS DISTINCT FROM 'b' as tru
+
+query T rowsort
+select 'a' IS NULL as fals
+----
+False
+
+query T rowsort
+select 'a' IS NOT NULL as tru
+----
+True
+
+statement error
+select 'a' ISNULL as fals
+
+statement error
+select 'a' ISNOTNULL as tru
+
+statement error
+select ('a' = 'b') IS TRUE
+
+statement error
+select ('a' = 'b') IS NOT TRUE
+
+statement error
+select ('a' = 'b') IS FALSE
+
+statement error
+select ('a' = 'b') IS NOT FALSE
+
+statement error
+select ('a' = 'b') IS UNKNOWN
+
+statement error
+select ('a' = 'b') IS NOT UNKNOWN
+
+

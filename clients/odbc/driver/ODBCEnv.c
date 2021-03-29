@@ -48,11 +48,9 @@ newODBCEnv(void)
 	if (env == NULL)
 		return NULL;
 
-	env->Error = NULL;
-	env->RetrievedErrors = 0;
-	env->FirstDbc = NULL;
-	env->Type = ODBC_ENV_MAGIC_NR;
-	env->sql_attr_odbc_version = 0;
+	*env = (ODBCEnv) {
+		.Type = ODBC_ENV_MAGIC_NR,
+	};
 
 	return env;
 }

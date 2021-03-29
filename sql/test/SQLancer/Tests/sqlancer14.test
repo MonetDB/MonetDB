@@ -331,3 +331,41 @@ INSERT INTO t0(c3) VALUES(TRUE), ((VALUES (-409412573)) = ANY(SELECT ALL (VALUES
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DECIMAL(18,3) NOT NULL)
+
+statement ok
+INSERT INTO "t0" VALUES (0.418),(0.000),(3.109),(9.000),(0.972),(1.000),(0.442),(4.141),(8.000)
+
+query T rowsort
+SELECT (VALUES (FALSE = ALL(SELECT TRUE FROM t0))) FROM t0
+----
+False
+False
+False
+False
+False
+False
+False
+False
+False
+
+query T rowsort
+SELECT (VALUES (FALSE = ALL((SELECT TRUE FROM t0) INTERSECT (SELECT TRUE FROM t0)))) FROM t0
+----
+False
+False
+False
+False
+False
+False
+False
+False
+False
+
+statement ok
+ROLLBACK

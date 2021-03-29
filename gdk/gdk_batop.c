@@ -374,7 +374,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	b->theap->dirty = true;
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHins(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
+		HASHappend(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	return GDK_SUCCEED;
       bunins_failed:
@@ -458,7 +458,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
-			HASHins(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
+			HASHappend(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
 		}
 		return GDK_SUCCEED;
 	}
@@ -494,7 +494,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (b->thash)
-			HASHins(b, r, t);
+			HASHappend(b, r, t);
 		r++;
 	}
 	b->theap->dirty = true;
@@ -895,7 +895,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			       Tloc(n, ci.seq - hseq),
 			       cnt * Tsize(n));
 			for (BUN i = 0; b->thash && i < cnt; i++) {
-				HASHins(b, r, Tloc(b, r));
+				HASHappend(b, r, Tloc(b, r));
 				r++;
 			}
 			BATsetcount(b, BATcount(b) + cnt);
@@ -909,7 +909,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED)
 					return GDK_FAIL;
 				if (b->thash)
-					HASHins(b, r, t);
+					HASHappend(b, r, t);
 				r++;
 			}
 		}

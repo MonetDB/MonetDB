@@ -224,8 +224,8 @@ gdk_return BUNappend(BAT *b, const void *right, bool force) __attribute__((__war
 gdk_return BUNappendmulti(BAT *b, const void *values, BUN count, bool force) __attribute__((__warn_unused_result__));
 gdk_return BUNdelete(BAT *b, oid o) __attribute__((__warn_unused_result__));
 BUN BUNfnd(BAT *b, const void *right);
-gdk_return BUNinplace(BAT *b, BUN p, const void *right, bool force) __attribute__((__warn_unused_result__));
 gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force) __attribute__((__warn_unused_result__));
+gdk_return BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force) __attribute__((__warn_unused_result__));
 BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role) __attribute__((__warn_unused_result__));
 size_t GDK_mem_maxsize;

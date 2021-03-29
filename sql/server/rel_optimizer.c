@@ -420,14 +420,12 @@ exp_count(int *cnt, sql_exp *e)
 		case cmp_lt:
 		case cmp_lte:
 			*cnt += 6;
-#if 0
 			if (e->l) {
 				sql_exp *l = e->l;
 				sql_subtype *t = exp_subtype(l);
 				if (EC_TEMP(t->type->eclass)) /* give preference too temporal ranges */
-					*cnt += 200;
+					*cnt += 90;
 			}
-#endif
 			if (e->f){ /* range */
 				*cnt += 6;
 				return 12;
@@ -1323,9 +1321,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_func: {
 		list *l = e->l, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_rename(sql, l, f, t);
 			if (!nl)
 				return NULL;
@@ -1339,14 +1335,14 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_rename(sql, l, f, t);
 			if (!nl)
 				return NULL;
+			ne = exp_values(sql->sa, nl);
+		} else {
+			ne = exp_copy(sql, e);
 		}
-		ne = exp_values(sql->sa, nl);
 		break;
 	}
 	case e_psm:
@@ -1542,6 +1538,7 @@ static inline sql_rel *
 rel_push_func_down(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_joinop(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
+		int changes = v->changes;
 		sql_rel *l = rel->l, *r = rel->r;
 
 		/* only push down when is useful */
@@ -1549,6 +1546,8 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			return rel;
 		if (exps_can_push_func(rel->exps, rel) && exps_need_push_down(rel->exps) && !exps_push_single_func_down(v, rel, rel->exps, 0))
 			return NULL;
+		if (v->changes > changes) /* once we get a better join order, we can try to remove this projection */
+			return rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 	}
 	if (is_simple_project(rel->op) && rel->l && rel->exps) {
 		sql_rel *pl = rel->l;
@@ -2285,9 +2284,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 		if (e->type == e_func && exp_unsafe(e,0))
 			return NULL;
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down_prj(sql, l, f, t);
 			if (!nl)
 				return NULL;
@@ -2301,14 +2298,14 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_push_down_prj(sql, l, f, t);
 			if (!nl)
 				return NULL;
+			ne = exp_values(sql->sa, nl);
+		} else {
+			ne = exp_copy(sql, e);
 		}
-		ne = exp_values(sql->sa, nl);
 		return exp_propagate(sql->sa, ne, e);
 	}
 	case e_psm:
@@ -5457,8 +5454,7 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 			for (node *n=rel->exps->h; n && !ok; n = n->next) {
 				sql_exp *e = n->data;
 
-				ok |= e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) &&
-					  !exp_has_func(e) && !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
+				ok |= e->type == e_cmp && e->flag != cmp_or && !exp_has_func(e) && !rel_has_cmp_exp(l, e) && !rel_has_cmp_exp(r, e);
 			}
 		}
 
@@ -6328,9 +6324,7 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	case e_func: {
 		list *l = e->l, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_use_consts(sql, l, consts);
 			if (!nl)
 				return NULL;
@@ -6343,14 +6337,14 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	case e_atom: {
 		list *l = e->f, *nl = NULL;
 
-		if (!l) {
-			return e;
-		} else {
+		if (!list_empty(l)) {
 			nl = exps_use_consts(sql, l, consts);
 			if (!nl)
 				return NULL;
+			return exp_values(sql->sa, nl);
+		} else {
+			return exp_copy(sql, e);
 		}
-		return exp_values(sql->sa, nl);
 	}
 	case e_psm:
 		return e;
