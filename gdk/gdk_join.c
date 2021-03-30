@@ -2433,7 +2433,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE v;							\
 		if (!hash_cand) {					\
 			MT_rwlock_rdlock(&r->batIdxLock);		\
-			locked = true;					\
+			locked = true;	/* in case we abandon */	\
+			hsh = r->thash;	/* re-initialize inside lock */	\
 		}							\
 		while (lci->next < lci->ncand) {			\
 			lo = canditer_next(lci);			\
@@ -2462,7 +2463,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						break;			\
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
-				hsh = r->thash;				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2479,7 +2479,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					}				\
 				}					\
 			} else {					\
-				hsh = r->thash;				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
