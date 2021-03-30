@@ -1496,7 +1496,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	char *tname = qname_schema_object(qname);
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
-	const char *rsep = seps->h->next->data.sval;
+	char *rsep = seps->h->next->data.sval; // not const, might need adjusting
 	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
 	const char *ns = (null_string)?null_string:"null";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
@@ -1506,10 +1506,15 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
-	if (strstr(rsep, "\r\n") != NULL)
+	if (strcmp(rsep, "\r\n") == 0) {
+		// silently fix it
+		rsep[0] = '\n';
+		rsep[1] = '\0';
+	} else if (strstr(rsep, "\r\n") != NULL) {
 		return sql_error(sql, 02, SQLSTATE(42000)
 				"COPY INTO: record separator contains '\\r\\n' but "
-				"in the input stream, '\\r\\n' is being normalized into '\\n'");
+				"that will never match, use '\\n' instead");
+	}
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
