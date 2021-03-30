@@ -1260,6 +1260,7 @@ BUNdelete(BAT *b, oid o)
 	}
 	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
 		return GDK_FAIL;
+	HASHdelete(b, p, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
@@ -1269,11 +1270,17 @@ BUNdelete(BAT *b, oid o)
 		    BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			mskSetVal(b, p, mskGetVal(b, BUNlast(b) - 1));
+			msk mval = mskGetVal(b, BUNlast(b) - 1);
+			HASHdelete(b, BUNlast(b) - 1, &mval);
+			mskSetVal(b, p, mval);
 			/* don't leave garbage */
 			mskClr(b, BUNlast(b) - 1);
+			HASHinsert(b, p, &mval);
 		} else {
-			memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
+			val = Tloc(b, BUNlast(b) - 1);
+			HASHdelete(b, BUNlast(b) - 1, val);
+			memcpy(Tloc(b, p), val, Tsize(b));
+			HASHinsert(b, p, val);
 		}
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
@@ -1296,7 +1303,6 @@ BUNdelete(BAT *b, oid o)
 	}
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	HASHdestroy(b);
 	BATrmprop(b, GDK_NUNIQUE);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 #if 0		/* enable if we have more properties than just min/max */
