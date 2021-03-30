@@ -302,8 +302,8 @@ This package contains the files needed to develop with the
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Requires(post): unixODBC
-Requires(postun): unixODBC
+Requires(post): %{_bindir}/odbcinst
+Requires(postun): %{_bindir}/odbcinst
 
 %description client-odbc
 MonetDB is a database management system that is developed from a
