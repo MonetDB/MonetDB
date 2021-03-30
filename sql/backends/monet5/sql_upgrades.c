@@ -2402,7 +2402,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			pos += snprintf(buf + pos, bufsize - pos,
 					"ALTER TABLE sys.keywords SET READ WRITE;\n"
 					"DELETE FROM sys.keywords where keyword = 'STREAM';\n"
-					"INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN');\n"
+					"INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN'), ('CURRENT_SCHEMA'), ('CURRENT_TIMEZONE'), ('IMPRINTS'), ('ORDERED'), ('PATH'), ('ROLE'), ('ROW'), ('VALUE');\n"
 					"ALTER TABLE sys.table_types SET READ WRITE;\n"
 					"DELETE FROM sys.table_types where table_type_id = 4;\n"
 					"ALTER TABLE sys.function_types SET READ WRITE;\n"
