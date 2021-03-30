@@ -7,11 +7,11 @@ stderr of test 'webExamplesMathematicalFunctionsOperators` in directory 'sql/tes
 
 MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
 QUERY = select |/ 25.0 ;
-ERROR = !syntax error, unexpected '|' in: "select |"
+ERROR = !syntax error in: "select |"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
 QUERY = select ||/ 27.0 ;
-ERROR = !syntax error, unexpected CONCATSTRING in: "select ||"
+ERROR = !syntax error in: "select ||"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
 QUERY = select 5! ;
@@ -23,11 +23,11 @@ ERROR = !Unexpected symbol (!)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-15053/.s.monetdb.37993
 QUERY = select @ -5.0 ;
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-15925/.s.monetdb.39524
 QUERY = SELECT 10 DIV 5;
-ERROR = !syntax error, unexpected sqlINT, expecting SCOLON in: "select 10 div 5"
+ERROR = !syntax error in: "select 10 div 5"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
 QUERY = select div(9,4);
@@ -65,12 +65,6 @@ MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
 QUERY = select atan2(1.0, 2.0);
 ERROR = !SELECT: no such binary operator 'atan2(decimal,decimal)'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
-QUERY = select rotate_xor_hash(1, 1, '1') ;
-ERROR = !TypeException:user.main[7]:'calc.rotate_xor_hash' undefined in:     X_4532:str := calc.rotate_xor_hash(X_4526:lng, X_4528:int, X_4530:str);
-MAPI  = (monetdb) /var/tmp/mtest-20677/.s.monetdb.33795
-QUERY = select rotate_xor_hash(cast(1 as bigint), cast(1 as int), '1') ;
-ERROR = !TypeException:user.main[7]:'calc.rotate_xor_hash' undefined in:     X_4553:str := calc.rotate_xor_hash(X_4547:lng, X_4549:int, X_4551:str);
 
 # 20:17:21 >  
 # 20:17:21 >  "Done."

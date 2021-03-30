@@ -107,6 +107,12 @@ stdout of test 'webExamplesComparisonFunctionsOperators` in directory 'sql/test/
 % boolean # type
 % 5 # length
 [ true	]
+#select "between"('ab', 'aa', 'ac', false, false, false, false, false) as tru;
+% . # table_name
+% tru # name
+% boolean # type
+% 5 # length
+[ true	]
 #select ifthenelse(('a' = 'b'), 1, 2) as two;
 % . # table_name
 % two # name
