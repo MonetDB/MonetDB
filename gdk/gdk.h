@@ -772,7 +772,7 @@ typedef struct BAT {
 	COLrec T;		/* column info */
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 
-	MT_Lock batIdxLock;	/* lock to manipulate indexes */
+	MT_RWLock batIdxLock;	/* lock to manipulate indexes */
 } BAT;
 
 typedef struct BATiter {
