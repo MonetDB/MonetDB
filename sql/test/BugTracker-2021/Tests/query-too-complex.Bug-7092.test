@@ -1,3 +1,4 @@
+statement ok
 create table test (
   dkey int,
   col1 int,
@@ -7,8 +8,9 @@ create table test (
   col5 int,
   col6 int,
   col7 int
-);
+)
 
+statement ok
 SELECT SUM(test.dkey), test.dkey
   FROM test
  WHERE ((test.col4 NOT IN (13))
@@ -86984,6 +86986,7 @@ SELECT SUM(test.dkey), test.dkey
 		 AND (test.col3 = 24)
 		 AND (test.col5 = 67)
 		 AND (test.col6 = 451893))))
- GROUP BY test.dkey;
+ GROUP BY test.dkey
 
-drop table if exists test;
+statement ok
+drop table if exists test
