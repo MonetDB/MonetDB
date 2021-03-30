@@ -70,12 +70,15 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BUN p;
 
 	if (BAThash(b) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&b->batIdxLock);
 		HASHloop_str(bi, b->thash, p, part) {
 			if (BUNtoid(bidx, p) == *prv) {
+				MT_rwlock_rdunlock(&b->batIdxLock);
 				*prv = (oid) p;
 				return TRUE;
 			}
 		}
+		MT_rwlock_rdunlock(&b->batIdxLock);
 	} else {
 		/* hash failed, slow scan */
 		BUN q;

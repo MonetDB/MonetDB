@@ -289,10 +289,12 @@ mix_uuid(uuid u)
 		BUN _i;							\
 		(x) = BUN_NONE;						\
 		if (BAThash((y).b) == GDK_SUCCEED) {			\
+			MT_rwlock_rdlock(&(y).b->batIdxLock);		\
 			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+			MT_rwlock_rdunlock(&(y).b->batIdxLock);		\
 		} else							\
 			goto hashfnd_failed;				\
 	} while (0)
@@ -301,10 +303,12 @@ mix_uuid(uuid u)
 		BUN _i;						\
 		(x) = BUN_NONE;					\
 		if (BAThash((y).b) == GDK_SUCCEED) {		\
+			MT_rwlock_rdlock(&(y).b->batIdxLock);	\
 			HASHloop((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;			\
 				break;				\
 			}					\
+			MT_rwlock_rdunlock(&(y).b->batIdxLock);	\
 		} else						\
 			goto hashfnd_failed;			\
 	} while (0)
@@ -313,10 +317,12 @@ mix_uuid(uuid u)
 		BUN _i;							\
 		(x) = BUN_NONE;						\
 		if (BAThash((y).b) == GDK_SUCCEED) {			\
+			MT_rwlock_rdlock(&(y).b->batIdxLock);		\
 			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
+			MT_rwlock_rdunlock(&(y).b->batIdxLock);		\
 		} else							\
 			goto hashfnd_failed;				\
 	} while (0)

@@ -1835,12 +1835,12 @@ BATordered(BAT *b)
 	if (b->tnosorted > 0 || !ATOMlinear(b->ttype))
 		return false;
 
-	/* In order that multiple threads don't scan the same BAT at
-	 * the same time (happens a lot with mitosis/mergetable), we
-	 * use a lock.  We reuse the hash lock for this, not because
-	 * this scanning interferes with hashes, but because it's
-	 * there, and not so likely to be used at the same time. */
-	MT_lock_set(&b->batIdxLock);
+	/* In order that multiple threads don't scan the same BAT at the
+	 * same time (happens a lot with mitosis/mergetable), we use a
+	 * lock.  We reuse the theaplock lock for this, not because this
+	 * scanning interferes with heap reference counting, but because
+	 * it's there, and not so likely to be used at the same time. */
+	MT_lock_set(&b->theaplock);
 	if (!b->tsorted && b->tnosorted == 0) {
 		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
@@ -1907,7 +1907,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return b->tsorted;
 }
 
@@ -1953,7 +1953,7 @@ BATordered_rev(BAT *b)
 		return is_oid_nil(b->tseqbase);
 	if (BATtdense(b) || b->tnorevsorted > 0)
 		return false;
-	MT_lock_set(&b->batIdxLock);
+	MT_lock_set(&b->theaplock);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
@@ -1997,7 +1997,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return b->trevsorted;
 }
 
@@ -2204,7 +2204,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	mkorderidx = (g == NULL && !reverse && !nilslast && pb != NULL && (order || !pb->batTransient));
 	if (g == NULL && !reverse && !nilslast &&
 	    pb != NULL && !BATcheckorderidx(pb)) {
-		MT_lock_set(&pb->batIdxLock);
+		MT_rwlock_wrlock(&pb->batIdxLock);
 		if (pb->torderidx == NULL) {
 			/* no index created while waiting for lock */
 			if (mkorderidx) /* keep lock when going to create */
@@ -2214,7 +2214,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			mkorderidx = false;
 		}
 		if (!orderidxlock)
-			MT_lock_unset(&pb->batIdxLock);
+			MT_rwlock_wrunlock(&pb->batIdxLock);
 	} else {
 		mkorderidx = false;
 	}
@@ -2441,7 +2441,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				GDKfree(m);
 			}
 			if (orderidxlock)
-				MT_lock_unset(&pb->batIdxLock);
+				MT_rwlock_wrunlock(&pb->batIdxLock);
 			goto error;
 		}
 		bn->tsorted = !reverse && !nilslast;
@@ -2464,7 +2464,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 	}
 	if (orderidxlock)
-		MT_lock_unset(&pb->batIdxLock);
+		MT_rwlock_wrunlock(&pb->batIdxLock);
 	bn->theap->dirty = true;
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
@@ -2723,7 +2723,7 @@ BATgetprop(BAT *b, enum prop_t idx)
 {
 	PROPrec *p;
 
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	p = BATgetprop_nolock(b, idx);
 	if (p == NULL) {
 		/* if looking for the min/max value, we may be able to
@@ -2747,7 +2747,7 @@ BATgetprop(BAT *b, enum prop_t idx)
 			break;
 		}
 	}
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 	return p;
 }
 
@@ -2755,18 +2755,18 @@ PROPrec *
 BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	PROPrec *p;
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	p = BATsetprop_nolock(b, idx, type, v);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 	return p;
 }
 
 void
 BATrmprop(BAT *b, enum prop_t idx)
 {
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	BATrmprop_nolock(b, idx);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 }
 
 
