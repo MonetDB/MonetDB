@@ -81,6 +81,8 @@ gdk_return BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
+void BATrmprop_nolock(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 PROPrec *BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)

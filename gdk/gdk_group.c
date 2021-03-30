@@ -768,10 +768,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
-	if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+	MT_rwlock_rdlock(&b->batIdxLock);
+	if (b->thash && b->thash != (Hash *) 1)
+		maxgrps = b->thash->nunique;
+	else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
 		maxgrps = prop->v.val.oval;
 	else
 		maxgrps = cnt / 10;
+	MT_rwlock_rdunlock(&b->batIdxLock);
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))

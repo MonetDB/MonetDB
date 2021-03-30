@@ -236,6 +236,7 @@ BATmaterialize(BAT *b)
 			x[p++] = t++;
 	}
 	BATsetcount(b, b->batCount);
+	BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
 
 	return GDK_SUCCEED;
 }
