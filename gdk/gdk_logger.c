@@ -116,9 +116,12 @@ find_type(logger *lg, int tpe)
 
 	/* type should be there !*/
 	if (BAThash(lg->type_nr) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->batIdxLock);
 		HASHloop_int(cni, cni.b->thash, p, &tpe) {
+			MT_rwlock_rdunlock(&cni.b->batIdxLock);
 			return res[p];
 		}
+		MT_rwlock_rdunlock(&cni.b->batIdxLock);
 	}
 	return -1;
 }
@@ -132,9 +135,12 @@ find_type_nr(logger *lg, bte tpe)
 
 	/* type should be there !*/
 	if (BAThash(lg->type_id) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->batIdxLock);
 		HASHloop_bte(cni, cni.b->thash, p, &tpe) {
+			MT_rwlock_rdunlock(&cni.b->batIdxLock);
 			return res[p];
 		}
+		MT_rwlock_rdunlock(&cni.b->batIdxLock);
 	}
 	return -1;
 }
@@ -148,11 +154,15 @@ log_find(BAT *b, BAT *d, int val)
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->batIdxLock);
 		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
-			if (BUNfnd(d, &pos) == BUN_NONE)
+			if (BUNfnd(d, &pos) == BUN_NONE) {
+				MT_rwlock_rdunlock(&cni.b->batIdxLock);
 				return p;
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->batIdxLock);
 	} else {		/* unlikely: BAThash failed */
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
@@ -175,11 +185,15 @@ internal_find_bat(logger *lg, log_id id)
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->batIdxLock);
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			oid pos = p;
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+				MT_rwlock_rdunlock(&cni.b->batIdxLock);
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->batIdxLock);
 	}
 	return 0;
 }
@@ -515,12 +529,16 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->batIdxLock);
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
 			assert(lg->catalog_cnt->hseqbase == 0);
-			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED)
+			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
+				MT_rwlock_rdunlock(&cni.b->batIdxLock);
 				return GDK_FAIL;
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->batIdxLock);
 	}
 	return GDK_SUCCEED;
 

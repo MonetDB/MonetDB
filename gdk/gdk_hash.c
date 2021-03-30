@@ -429,7 +429,7 @@ BATcheckhash(BAT *b)
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
-		MT_lock_set(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->batIdxLock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
@@ -536,7 +536,7 @@ BATcheckhash(BAT *b)
 								b->thash = h;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
-								MT_lock_unset(&b->batIdxLock);
+								MT_rwlock_wrunlock(&b->batIdxLock);
 								return true;
 							}
 							/* if h->nil==h->nbucket
@@ -568,7 +568,7 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		MT_lock_unset(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
 	if (ret)
@@ -655,9 +655,9 @@ BAThashsync(void *arg)
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very
 	 * unlikely that that is the case, so we don't */
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_rdlock(&b->batIdxLock);
 	BAThashsave(b, true);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_rdunlock(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
 #endif
@@ -1021,12 +1021,12 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
 		if ((b->thash = BAThash_impl(b, &ci, "thash")) == NULL) {
-			MT_lock_unset(&b->batIdxLock);
+			MT_rwlock_wrunlock(&b->batIdxLock);
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
@@ -1035,7 +1035,7 @@ BAThash(BAT *b)
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_lock_unset(&b->batIdxLock);
+			MT_rwlock_wrunlock(&b->batIdxLock);
 			if (MT_create_thread(&tid, BAThashsync, b,
 					     MT_THR_DETACHED,
 					     name) < 0) {
@@ -1048,7 +1048,7 @@ BAThash(BAT *b)
 					"NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 	return GDK_SUCCEED;
 }
 
@@ -1134,9 +1134,9 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 void
 HASHappend(BAT *b, BUN i, const void *v)
 {
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	HASHappend_locked(b, i, v);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 }
 
 /* insert value v at position p into the hash table of b */
@@ -1205,9 +1205,9 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 void
 HASHinsert(BAT *b, BUN p, const void *v)
 {
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	HASHinsert_locked(b, p, v);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 }
 
 /* delete value v at position p from the hash table of b */
@@ -1277,9 +1277,9 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 void
 HASHdelete(BAT *b, BUN p, const void *v)
 {
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->batIdxLock);
 	HASHdelete_locked(b, p, v);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->batIdxLock);
 }
 
 BUN
@@ -1302,10 +1302,10 @@ HASHdestroy(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *hs;
-		MT_lock_set(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->batIdxLock);
 		hs = b->thash;
 		b->thash = NULL;
-		MT_lock_unset(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->batIdxLock);
 		doHASHdestroy(b, hs);
 	}
 }
@@ -1315,7 +1315,7 @@ HASHfree(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *h;
-		MT_lock_set(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->batIdxLock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {
 			bool rmheap = h->heaplink.dirty || h->heapbckt.dirty;
 			TRC_DEBUG(ACCELERATOR, ALGOBATFMT " free hash %s\n",
@@ -1327,7 +1327,7 @@ HASHfree(BAT *b)
 			HEAPfree(&h->heaplink, rmheap);
 			GDKfree(h);
 		}
-		MT_lock_unset(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->batIdxLock);
 	}
 }
 
