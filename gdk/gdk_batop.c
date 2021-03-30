@@ -931,6 +931,10 @@ BATdel(BAT *b, BAT *d)
 	assert(d->tkey);
 	if (BATcount(d) == 0)
 		return GDK_SUCCEED;
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	HASHdestroy(b);
+	PROPdestroy(b);
 	if (BATtdense(d)) {
 		oid o = d->tseqbase;
 		BUN c = BATcount(d);
@@ -1053,7 +1057,6 @@ BATdel(BAT *b, BAT *d)
 	/* not sure about these anymore */
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
-	PROPdestroy(b);
 
 	return GDK_SUCCEED;
 }
@@ -1095,7 +1098,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		return GDK_SUCCEED;
 	}
 
-	HASHdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
@@ -1182,6 +1184,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 					minprop = NULL;
 				}
 			}
+			HASHdelete(b, updid, old);
 
 			var_t d;
 			switch (b->twidth) {
@@ -1224,8 +1227,10 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				break;
 #endif
 			}
+			HASHinsert(b, updid, new);
 		}
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		HASHdestroy(b);	/* hash doesn't make sense for msk */
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
 			oid updid = BUNtoid(p, i);
 
@@ -1261,6 +1266,10 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		 * there are no nils in b afterward if there weren't
 		 * any in either b or n to begin with */
 		b->tnonil &= n->tnonil;
+		if (b->thash != NULL && b->thash != (Hash *) 1) {
+			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
+				HASHdelete(b, i, Tloc(b, i));
+		}
 		if (n->ttype == TYPE_void) {
 			assert(b->ttype == TYPE_oid);
 			oid *o = Tloc(b, updid);
@@ -1328,6 +1337,10 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 			memcpy(Tloc(b, updid), Tloc(n, 0),
 			       BATcount(p) * b->twidth);
+		}
+		if (b->thash != NULL && b->thash != (Hash *) 1) {
+			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
+				HASHinsert(b, i, Tloc(b, i));
 		}
 		if (BATcount(p) == BATcount(b)) {
 			/* if we replaced all values of b by values
@@ -1422,6 +1435,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				}
 			}
 
+			HASHdelete(b, updid, old);
 			switch (b->twidth) {
 			case 1:
 				((bte *) b->theap->base)[updid] = * (bte *) new;
@@ -1446,6 +1460,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				memcpy(BUNtloc(bi, updid), new, ATOMsize(b->ttype));
 				break;
 			}
+			HASHinsert(b, updid, new);
 		}
 	}
 	TRC_DEBUG(ALGO,
