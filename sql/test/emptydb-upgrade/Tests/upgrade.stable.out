@@ -3626,7 +3626,7 @@ grant execute on function json.isvalid(json) to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'json') and name = 'isvalid';
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords where keyword = 'STREAM';
-INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN');
+INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN'), ('CURRENT_SCHEMA'), ('CURRENT_TIMEZONE'), ('IMPRINTS'), ('ORDERED'), ('PATH'), ('ROLE'), ('ROW'), ('VALUE');
 ALTER TABLE sys.table_types SET READ WRITE;
 DELETE FROM sys.table_types where table_type_id = 4;
 ALTER TABLE sys.function_types SET READ WRITE;
