@@ -139,7 +139,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		int tp1, tp2 = getArgType(mb, pci, part_offset + 5);
-		void *limit = NULL;
+		ptr limit = NULL;
 		bool is_a_bat;
 
 		res = getArgReference_bat(stk, pci, 0);
@@ -734,7 +734,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		int tp2 = 0;
-		void *ntile = NULL;
+		ptr ntile = NULL;
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {

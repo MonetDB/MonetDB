@@ -147,6 +147,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
+	MT_rwlock_rdlock(&b->batIdxLock);
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
@@ -170,6 +171,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			cnt++;
 		}
 	}
+	MT_rwlock_rdunlock(&b->batIdxLock);
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -1359,7 +1361,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 (!b->batTransient &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2));
-	if (/* DISABLES CODE */ (0) && equi && !hash && parent != 0) {
+	if (equi && !hash && parent != 0) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
 		 * does not occur, or if it is cheaper to check the

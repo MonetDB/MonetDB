@@ -2488,6 +2488,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *rvals = Tloc(r, 0);				\
 		TYPE *lvals = Tloc(l, 0);				\
 		TYPE v;							\
+		if (!hash_cand) {					\
+			MT_rwlock_rdlock(&r->batIdxLock);		\
+			locked = true;					\
+		}							\
 		while (lci->next < lci->ncand) {			\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 			lo = canditer_next(lci);			\
@@ -2500,6 +2504,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					continue;			\
 				}					\
 			} else if (hash_cand) {				\
+				/* private hash: no locks */		\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2515,6 +2520,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						break;			\
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
+				hsh = r->thash;				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2531,6 +2537,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					}				\
 				}					\
 			} else {					\
+				hsh = r->thash;				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2588,6 +2595,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)		\
 				r1->trevsorted = false;			\
 		}							\
+		if (!hash_cand) {					\
+			locked = false;					\
+			MT_rwlock_rdunlock(&r->batIdxLock);		\
+		}							\
 	} while (0)
 
 /* Implementation of join using a hash lookup of values in the right
@@ -2617,6 +2628,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
 	Hash *restrict hsh = NULL;
+	bool locked = false;
 
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
@@ -2934,6 +2946,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	return GDK_SUCCEED;
 
   bailout:
+	if (locked)
+		MT_rwlock_rdunlock(&r->batIdxLock);
 	if (hash_cand && hsh) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
@@ -3228,7 +3242,7 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (!(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap->dirty || GDKinmemory(r->theap->farmid))
+		if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 #endif
 			rcost += BATcount(r) * 2.0;
 	}
@@ -3625,14 +3639,18 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r1p = NULL;
 	if (r2p)
 		*r2p = NULL;
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
+
+	lcnt = canditer_init(&lci, l, sl);
+	rcnt = canditer_init(&rci, r, sr);
+
+	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b)) {
 			l = b;
 		}
 	}
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
+	if ((parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b)) {
@@ -3659,9 +3677,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		rc = GDK_FAIL;
 		goto doreturn;
 	}
-
-	lcnt = canditer_init(&lci, l, sl);
-	rcnt = canditer_init(&rci, r, sr);
 
 	if (lcnt == 0 || rcnt == 0) {
 		TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
@@ -3962,13 +3977,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
+
+	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b))
 			l = b;
 	}
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
+	if ((parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b))
@@ -3989,9 +4007,6 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	} else {
 		BBPfix(r->batCacheid);
 	}
-
-	canditer_init(&lci, l, sl);
-	canditer_init(&rci, r, sr);
 
 	*r1p = NULL;
 	if (r2p)
