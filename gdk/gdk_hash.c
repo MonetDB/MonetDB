@@ -398,8 +398,6 @@ HASHgrowbucket(BAT *b)
 			HASHput(h, old, HASHnil(h));
 		else
 			HASHputlink(h, lold, HASHnil(h));
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
-				  &(oid){h->nbucket});
 	}
 	TRC_DEBUG_IF(ACCELERATOR) if (h->nbucket > onbucket) {
 		TRC_DEBUG_ENDIF(ACCELERATOR, ALGOBATFMT " " BUNFMT
@@ -523,16 +521,6 @@ BATcheckhash(BAT *b)
 								h->heapbckt.parentid = b->batCacheid;
 								h->heaplink.dirty = false;
 								h->heapbckt.dirty = false;
-								BATsetprop_nolock(
-									b,
-									GDK_HASH_BUCKETS,
-									TYPE_oid,
-									&(oid){h->nbucket});
-								BATsetprop_nolock(
-									b,
-									GDK_NUNIQUE,
-									TYPE_oid,
-									&(oid){h->nunique});
 								b->thash = h;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
@@ -976,8 +964,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	if (!hascand) {
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){h->nbucket});
-		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){h->nunique});
+		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
+		BATrmprop_nolock(b, GDK_NUNIQUE);
 	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;

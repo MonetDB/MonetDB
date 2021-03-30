@@ -3184,14 +3184,18 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		 * since the searching of the candidate list
 		 * (canditer_idx) will kill us */
 		double rccost;
-		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * chains */
-			rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		if (rhash && !prhash) {
+			rccost = (double) BATcount(r) / r->thash->nheads;
 		} else {
-			/* guess number of unique value and work with that */
-			rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+			PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+			if (prop) {
+				/* we know number of unique values, assume some
+				 * chains */
+				rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+			} else {
+				/* guess number of unique value and work with that */
+				rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+			}
 		}
 		rccost *= lci->ncand;
 		rccost += rci->ncand * 2.0; /* cost of building the hash */

@@ -763,19 +763,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			BATrmprop(b, GDK_MIN_POS);
 		}
 	}
-	BATrmprop(b, GDK_NUNIQUE);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
-#if 0		/* enable if we have more properties than just min/max */
-	do {
-		for (prop = b->tprops; prop; prop = prop->next)
-			if (prop->id != GDK_MAX_VALUE &&
-			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_BUCKETS) {
-				BATrmprop(b, prop->id);
-				break;
-			}
-	} while (prop);
-#endif
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
@@ -915,8 +903,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		b->theap->dirty = true;
 	}
-	if (b->thash)
-		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
 
   doreturn:
 	TRC_DEBUG(ALGO, "b=%s,n=" ALGOBATFMT ",s=" ALGOOPTBATFMT
@@ -1112,7 +1098,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	HASHdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
-	BATrmprop(b, GDK_NUNIQUE);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 
 	b->tsorted = b->trevsorted = false;
@@ -2666,7 +2651,7 @@ BATgetprop_nolock(BAT *b, enum prop_t idx)
 	return p;
 }
 
-static void
+void
 BATrmprop_nolock(BAT *b, enum prop_t idx)
 {
 	PROPrec *prop = b->tprops, *prev = NULL;
