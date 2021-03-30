@@ -1,0 +1,29 @@
+stderr of test 'query-too-complex.Bug-7092` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 13:41:41 >  
+# 13:41:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=30023" "--set" "mapi_usock=/var/tmp/mtest-3211375/.s.monetdb.30023" "--forcemito" "--dbpath=/export/scratch1/home/zhang/monetdb/mdb-nst/Oct2020/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 13:41:41 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/home/zhang/monetdb/mdb-nst/Oct2020/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_listenaddr = all
+# cmdline opt 	mapi_port = 30023
+# cmdline opt 	mapi_usock = /var/tmp/mtest-3211375/.s.monetdb.30023
+# cmdline opt 	gdk_dbpath = /export/scratch1/home/zhang/monetdb/mdb-nst/Oct2020/var/MonetDB/mTests_sql_test_BugTracker-2021
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_c = true
+#2021-03-30 13:41:45: client2: createExceptionInternal: !ERROR: ParseException:SQLparser:42000!Query too complex: running out of stack space
+
+# 13:41:43 >  
+# 13:41:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3211375" "--port=30023"
+# 13:41:43 >  
+
+# 13:41:45 >  
+# 13:41:45 >  "Done."
+# 13:41:45 >  
+
