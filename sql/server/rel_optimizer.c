@@ -1248,14 +1248,8 @@ exps_rename(mvc *sql, list *l, sql_rel *f, sql_rel *t)
 {
 	if (list_empty(l))
 		return l;
-	for(node *n=l->h; n; n=n->next) {
-		sql_exp *arg = n->data;
-
-		arg = exp_rename(sql, arg, f, t);
-		if (!arg)
-			return NULL;
-		n->data = arg;
-	}
+	for (node *n=l->h; n; n=n->next)
+		n->data = exp_rename(sql, n->data, f, t);
 	return l;
 }
 
@@ -1263,7 +1257,7 @@ exps_rename(mvc *sql, list *l, sql_rel *f, sql_rel *t)
 static sql_exp *
 exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
-	sql_exp *ne = NULL, *l, *r, *r2;
+	sql_exp *ne = NULL;
 
 	switch(e->type) {
 	case e_column:
@@ -1280,77 +1274,41 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r, 0, 1);
-		sql->session->status = 0;
-		sql->errstr[0] = 0;
-		if (!e && exp_is_atom(ne))
-			return ne;
-		return exp_ref(sql ,e);
+		if (!e) {
+			sql->session->status = 0;
+			sql->errstr[0] = 0;
+			if (exp_is_atom(ne))
+				return ne;
+		}
+		return exp_ref(sql, e);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			list *l = exps_rename(sql, e->l, f, t);
-			list *r = exps_rename(sql, e->r, f, t);
-			if (l && r) {
-				if (e->flag == cmp_filter)
-					ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
-				else
-					ne = exp_or(sql->sa, l, r, is_anti(e));
-			}
+			e->l = exps_rename(sql, e->l, f, t);
+			e->r = exps_rename(sql, e->r, f, t);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			sql_exp *l = exp_rename(sql, e->l, f, t);
-			list *r = exps_rename(sql, e->r, f, t);
-			if (l && r)
-				ne = exp_in(sql->sa, l, r, e->flag);
+			e->l = exp_rename(sql, e->l, f, t);
+			e->r = exps_rename(sql, e->r, f, t);
 		} else {
-			l = exp_rename(sql, e->l, f, t);
-			r = exp_rename(sql, e->r, f, t);
-			if (e->f) {
-				r2 = exp_rename(sql, e->f, f, t);
-				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
-			} else if (l && r) {
-				ne = exp_compare(sql->sa, l, r, e->flag);
-			}
+			e->l = exp_rename(sql, e->l, f, t);
+			e->r = exp_rename(sql, e->r, f, t);
+			if (e->f)
+				e->f = exp_rename(sql, e->f, f, t);
 		}
 		break;
 	case e_convert:
-		l = exp_rename(sql, e->l, f, t);
-		if (l)
-			ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		e->l = exp_rename(sql, e->l, f, t);
 		break;
 	case e_aggr:
-	case e_func: {
-		list *l = e->l, *nl = NULL;
-
-		if (!list_empty(l)) {
-			nl = exps_rename(sql, l, f, t);
-			if (!nl)
-				return NULL;
-		}
-		if (e->type == e_func)
-			ne = exp_op(sql->sa, nl, e->f);
-		else
-			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+	case e_func:
+		e->l = exps_rename(sql, e->l, f, t);
 		break;
-	}
-	case e_atom: {
-		list *l = e->f, *nl = NULL;
-
-		if (!list_empty(l)) {
-			nl = exps_rename(sql, l, f, t);
-			if (!nl)
-				return NULL;
-			ne = exp_values(sql->sa, nl);
-		} else {
-			ne = exp_copy(sql, e);
-		}
+	case e_atom:
+		e->f = exps_rename(sql, e->f, f, t);
 		break;
-	}
 	case e_psm:
-		return e;
+		break;
 	}
-	if (!ne)
-		return NULL;
-	return exp_propagate(sql->sa, ne, e);
+	return e;
 }
 
 static int
@@ -6594,11 +6552,13 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			/* rewrite rel from rel->l into rel->l->l */
 			if (rel->exps) {
 				for (n = rel->exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
+					sql_exp *e = n->data, *ne;
 
-					e = exp_rename(v->sql, e, l, l->l);
-					assert(e);
-					n->data = e;
+					ne = exp_rename(v->sql, e, l, l->l);
+					assert(ne);
+					if (ne != e && exp_name(e))
+						exp_propagate(v->sql->sa, ne, e);
+					n->data = ne;
 				}
 			}
 			rel->l = l->l;
@@ -6609,11 +6569,13 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			/* rewrite rel from rel->r into rel->r->l */
 			if (rel->exps) {
 				for (n = rel->exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
+					sql_exp *e = n->data, *ne;
 
-					e = exp_rename(v->sql, e, r, r->l);
-					assert(e);
-					n->data = e;
+					ne = exp_rename(v->sql, e, r, r->l);
+					assert(ne);
+					if (ne != e && exp_name(e))
+						exp_propagate(v->sql->sa, ne, e);
+					n->data = ne;
 				}
 			}
 			rel->r = r->l;
