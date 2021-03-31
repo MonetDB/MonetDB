@@ -450,7 +450,7 @@ typedef bool msk;
 typedef int8_t bit;
 typedef int8_t bte;
 typedef int16_t sht;
-typedef int64_t lng;
+/* typedef int64_t lng; -- defined in gdk_system.h */
 typedef uint64_t ulng;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
