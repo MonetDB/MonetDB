@@ -61,6 +61,8 @@ PROPrec *BATgetprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
+PROPrec *BATgetprop_try(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));

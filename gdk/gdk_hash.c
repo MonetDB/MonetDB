@@ -427,7 +427,7 @@ BATcheckhash(BAT *b)
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
-		MT_rwlock_wrlock(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->thashlock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
@@ -524,7 +524,7 @@ BATcheckhash(BAT *b)
 								b->thash = h;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
-								MT_rwlock_wrunlock(&b->batIdxLock);
+								MT_rwlock_wrunlock(&b->thashlock);
 								return true;
 							}
 							/* if h->nil==h->nbucket
@@ -556,7 +556,7 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	ret = b->thash != NULL;
 	if (ret)
@@ -643,9 +643,9 @@ BAThashsync(void *arg)
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very
 	 * unlikely that that is the case, so we don't */
-	MT_rwlock_rdlock(&b->batIdxLock);
+	MT_rwlock_rdlock(&b->thashlock);
 	BAThashsave(b, true);
-	MT_rwlock_rdunlock(&b->batIdxLock);
+	MT_rwlock_rdunlock(&b->thashlock);
 	BBPunfix(b->batCacheid);
 }
 #endif
@@ -797,10 +797,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
+ 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_NUNIQUE)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval * 8 / 7;
- 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
+ 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_HASH_BUCKETS)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
 		maxmask = HASHmask(ci->ncand);
@@ -990,12 +990,12 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->thashlock);
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
 		if ((b->thash = BAThash_impl(b, &ci, "thash")) == NULL) {
-			MT_rwlock_wrunlock(&b->batIdxLock);
+			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
@@ -1004,7 +1004,7 @@ BAThash(BAT *b)
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_rwlock_wrunlock(&b->batIdxLock);
+			MT_rwlock_wrunlock(&b->thashlock);
 			if (MT_create_thread(&tid, BAThashsync, b,
 					     MT_THR_DETACHED,
 					     name) < 0) {
@@ -1017,7 +1017,7 @@ BAThash(BAT *b)
 					"NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
 }
 
@@ -1103,9 +1103,9 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 void
 HASHappend(BAT *b, BUN i, const void *v)
 {
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->thashlock);
 	HASHappend_locked(b, i, v);
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->thashlock);
 }
 
 /* insert value v at position p into the hash table of b */
@@ -1174,9 +1174,9 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 void
 HASHinsert(BAT *b, BUN p, const void *v)
 {
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->thashlock);
 	HASHinsert_locked(b, p, v);
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->thashlock);
 }
 
 /* delete value v at position p from the hash table of b */
@@ -1246,9 +1246,9 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 void
 HASHdelete(BAT *b, BUN p, const void *v)
 {
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->thashlock);
 	HASHdelete_locked(b, p, v);
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->thashlock);
 }
 
 BUN
@@ -1271,10 +1271,10 @@ HASHdestroy(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *hs;
-		MT_rwlock_wrlock(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->thashlock);
 		hs = b->thash;
 		b->thash = NULL;
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->thashlock);
 		doHASHdestroy(b, hs);
 	}
 }
@@ -1284,7 +1284,7 @@ HASHfree(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *h;
-		MT_rwlock_wrlock(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->thashlock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {
 			bool rmheap = h->heaplink.dirty || h->heapbckt.dirty;
 			TRC_DEBUG(ACCELERATOR, ALGOBATFMT " free hash %s\n",
@@ -1296,7 +1296,7 @@ HASHfree(BAT *b)
 			HEAPfree(&h->heaplink, rmheap);
 			GDKfree(h);
 		}
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 }
 

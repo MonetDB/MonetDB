@@ -142,7 +142,8 @@ VIEWcreate(oid seq, BAT *b)
 		}
 		HEAPdecref(bn->theap, false);
 		MT_lock_destroy(&bn->theaplock);
-		MT_rwlock_destroy(&bn->batIdxLock);
+		MT_lock_destroy(&bn->batIdxLock);
+		MT_rwlock_destroy(&bn->thashlock);
 		GDKfree(bn);
 		return NULL;
 	}

@@ -23,7 +23,7 @@ BATidxsync(void *arg)
 	const char *failed = " failed";
 
 
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_lock_set(&b->batIdxLock);
 	if ((hp = b->torderidx) != NULL) {
 		if (HEAPsave(hp, hp->filename, NULL, true) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
@@ -61,7 +61,7 @@ BATidxsync(void *arg)
 				  BATgetId(b), GDKusec() - t0, failed);
 		}
 	}
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_lock_unset(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
 #endif
@@ -81,7 +81,7 @@ BATcheckorderidx(BAT *b)
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */
 		assert(!GDKinmemory(b->theap->farmid));
-		MT_rwlock_wrlock(&b->batIdxLock);
+		MT_lock_set(&b->batIdxLock);
 		if (b->torderidx == (Heap *) 1) {
 			Heap *hp;
 			const char *nme = BBP_physical(b->batCacheid);
@@ -113,7 +113,7 @@ BATcheckorderidx(BAT *b)
 						close(fd);
 						b->torderidx = hp;
 						TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
-						MT_rwlock_wrunlock(&b->batIdxLock);
+						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
 					close(fd);
@@ -124,7 +124,7 @@ BATcheckorderidx(BAT *b)
 			GDKfree(hp);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->torderidx != NULL;
 	if(ret)
@@ -205,11 +205,11 @@ BATorderidx(BAT *b, bool stable)
 		} else {
 			/* BATsort quite possibly already created the
 			 * order index, but just to be sure... */
-			MT_rwlock_wrlock(&b->batIdxLock);
+			MT_lock_set(&b->batIdxLock);
 			if (b->torderidx == NULL) {
 				Heap *m;
 				if ((m = createOIDXheap(b, stable)) == NULL) {
-					MT_rwlock_wrunlock(&b->batIdxLock);
+					MT_lock_unset(&b->batIdxLock);
 					return GDK_FAIL;
 				}
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
@@ -217,7 +217,7 @@ BATorderidx(BAT *b, bool stable)
 				b->batDirtydesc = true;
 				persistOIDX(b);
 			}
-			MT_rwlock_wrunlock(&b->batIdxLock);
+			MT_lock_unset(&b->batIdxLock);
 		}
 		BBPunfix(on->batCacheid);
 	}
@@ -359,9 +359,9 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ACCELERATOR, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_lock_set(&b->batIdxLock);
 	if (b->torderidx) {
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_lock_unset(&b->batIdxLock);
 		return GDK_SUCCEED;
 	}
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
@@ -370,7 +370,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
 		GDKfree(m);
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_lock_unset(&b->batIdxLock);
 		return GDK_FAIL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
@@ -425,7 +425,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			assert(0);
 			HEAPfree(m, true);
 			GDKfree(m);
-			MT_rwlock_wrunlock(&b->batIdxLock);
+			MT_lock_unset(&b->batIdxLock);
 			return GDK_FAIL;
 		}
 
@@ -441,7 +441,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			GDKfree(q);
 			HEAPfree(m, true);
 			GDKfree(m);
-			MT_rwlock_wrunlock(&b->batIdxLock);
+			MT_lock_unset(&b->batIdxLock);
 			return GDK_FAIL;
 		}
 		for (i = 0; i < n_ar; i++) {
@@ -490,7 +490,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 #endif
 
 	b->batDirtydesc = true;
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_lock_unset(&b->batIdxLock);
 	return GDK_SUCCEED;
 }
 
@@ -500,7 +500,7 @@ OIDXfree(BAT *b)
 	if (b && b->torderidx) {
 		Heap *hp;
 
-		MT_rwlock_wrlock(&b->batIdxLock);
+		MT_lock_set(&b->batIdxLock);
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
 			if (GDKinmemory(b->theap->farmid)) {
 				b->torderidx = NULL;
@@ -511,7 +511,7 @@ OIDXfree(BAT *b)
 			}
 			GDKfree(hp);
 		}
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_lock_unset(&b->batIdxLock);
 	}
 }
 
@@ -521,10 +521,10 @@ OIDXdestroy(BAT *b)
 	if (b && b->torderidx) {
 		Heap *hp;
 
-		MT_rwlock_wrlock(&b->batIdxLock);
+		MT_lock_set(&b->batIdxLock);
 		hp = b->torderidx;
 		b->torderidx = NULL;
-		MT_rwlock_wrunlock(&b->batIdxLock);
+		MT_lock_unset(&b->batIdxLock);
 		if (hp == (Heap *) 1) {
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, orderidxheap),
 				  BATDIR,

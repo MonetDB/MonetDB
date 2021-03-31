@@ -140,7 +140,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
-	MT_rwlock_rdlock(&b->batIdxLock);
+	MT_rwlock_rdlock(&b->thashlock);
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
@@ -160,7 +160,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			cnt++;
 		}
 	}
-	MT_rwlock_rdunlock(&b->batIdxLock);
+	MT_rwlock_rdunlock(&b->thashlock);
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {

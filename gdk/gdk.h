@@ -771,8 +771,8 @@ typedef struct BAT {
 	/* dynamic column properties */
 	COLrec T;		/* column info */
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
-
-	MT_RWLock batIdxLock;	/* lock to manipulate indexes */
+	MT_RWLock thashlock;	/* lock specifically for hash management */
+	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 } BAT;
 
 typedef struct BATiter {

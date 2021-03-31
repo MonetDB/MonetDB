@@ -2204,7 +2204,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	mkorderidx = (g == NULL && !reverse && !nilslast && pb != NULL && (order || !pb->batTransient));
 	if (g == NULL && !reverse && !nilslast &&
 	    pb != NULL && !BATcheckorderidx(pb)) {
-		MT_rwlock_wrlock(&pb->batIdxLock);
+		MT_lock_set(&pb->batIdxLock);
 		if (pb->torderidx == NULL) {
 			/* no index created while waiting for lock */
 			if (mkorderidx) /* keep lock when going to create */
@@ -2214,7 +2214,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			mkorderidx = false;
 		}
 		if (!orderidxlock)
-			MT_rwlock_wrunlock(&pb->batIdxLock);
+			MT_lock_unset(&pb->batIdxLock);
 	} else {
 		mkorderidx = false;
 	}
@@ -2441,7 +2441,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				GDKfree(m);
 			}
 			if (orderidxlock)
-				MT_rwlock_wrunlock(&pb->batIdxLock);
+				MT_lock_unset(&pb->batIdxLock);
 			goto error;
 		}
 		bn->tsorted = !reverse && !nilslast;
@@ -2464,7 +2464,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 	}
 	if (orderidxlock)
-		MT_rwlock_wrunlock(&pb->batIdxLock);
+		MT_lock_unset(&pb->batIdxLock);
 	bn->theap->dirty = true;
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
@@ -2719,11 +2719,22 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 }
 
 PROPrec *
+BATgetprop_try(BAT *b, enum prop_t idx)
+{
+	PROPrec *p = NULL;
+	if (MT_lock_try(&b->batIdxLock)) {
+		p = BATgetprop_nolock(b, idx);
+		MT_lock_unset(&b->batIdxLock);
+	}
+	return p;
+}
+
+PROPrec *
 BATgetprop(BAT *b, enum prop_t idx)
 {
 	PROPrec *p;
 
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_lock_set(&b->batIdxLock);
 	p = BATgetprop_nolock(b, idx);
 	if (p == NULL) {
 		/* if looking for the min/max value, we may be able to
@@ -2747,7 +2758,7 @@ BATgetprop(BAT *b, enum prop_t idx)
 			break;
 		}
 	}
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_lock_unset(&b->batIdxLock);
 	return p;
 }
 
@@ -2755,18 +2766,18 @@ PROPrec *
 BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	PROPrec *p;
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_lock_set(&b->batIdxLock);
 	p = BATsetprop_nolock(b, idx, type, v);
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_lock_unset(&b->batIdxLock);
 	return p;
 }
 
 void
 BATrmprop(BAT *b, enum prop_t idx)
 {
-	MT_rwlock_wrlock(&b->batIdxLock);
+	MT_lock_set(&b->batIdxLock);
 	BATrmprop_nolock(b, idx);
-	MT_rwlock_wrunlock(&b->batIdxLock);
+	MT_lock_unset(&b->batIdxLock);
 }
 
 
