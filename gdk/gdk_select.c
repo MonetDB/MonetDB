@@ -1333,6 +1333,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+		/* create a hash on the parent bat (and use it) if it is
+		 * the same size as the view and it is persistent */
+		if (!phash &&
+		    !tmp->batTransient &&
+		    BATcount(tmp) == BATcount(b) &&
+		    BAThash(tmp) == GDK_SUCCEED)
+			hash = phash = true;
 	}
 
 	/* make sure tsorted and trevsorted flags are set */
