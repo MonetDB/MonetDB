@@ -78,12 +78,12 @@ BATunique(BAT *b, BAT *s)
 
 	BUN initsize = 1024;
 	if (s == NULL) {
-		MT_rwlock_rdlock(&b->batIdxLock);
+		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash != NULL && b->thash != (Hash *) 1)
 			initsize = b->thash->nunique;
 		else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
 			initsize = prop->v.val.oval;
-		MT_rwlock_rdunlock(&b->batIdxLock);
+		MT_rwlock_rdunlock(&b->thashlock);
 	}
 	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);
 	if (bn == NULL)

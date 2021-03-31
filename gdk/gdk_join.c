@@ -2432,7 +2432,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *lvals = Tloc(l, 0);				\
 		TYPE v;							\
 		if (!hash_cand) {					\
-			MT_rwlock_rdlock(&r->batIdxLock);		\
+			MT_rwlock_rdlock(&r->thashlock);		\
 			locked = true;	/* in case we abandon */	\
 			hsh = r->thash;	/* re-initialize inside lock */	\
 		}							\
@@ -2538,7 +2538,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}							\
 		if (!hash_cand) {					\
 			locked = false;					\
-			MT_rwlock_rdunlock(&r->batIdxLock);		\
+			MT_rwlock_rdunlock(&r->thashlock);		\
 		}							\
 	} while (0)
 
@@ -2717,7 +2717,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		break;
 	default:
 		if (!hash_cand) {
-			MT_rwlock_rdlock(&r->batIdxLock);
+			MT_rwlock_rdlock(&r->thashlock);
 			locked = true;	/* in case we abandon */
 			hsh = r->thash;	/* re-initialize inside lock */
 		}
@@ -2827,7 +2827,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		if (!hash_cand) {
 			locked = false;
-			MT_rwlock_rdunlock(&r->batIdxLock);
+			MT_rwlock_rdunlock(&r->thashlock);
 		}
 		break;
 	}
@@ -2887,7 +2887,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
   bailout:
 	if (locked)
-		MT_rwlock_rdunlock(&r->batIdxLock);
+		MT_rwlock_rdunlock(&r->thashlock);
 	if (hash_cand && hsh) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);

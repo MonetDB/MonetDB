@@ -142,7 +142,9 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
 	MT_lock_init(&bn->theaplock, name);
 	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
-	MT_rwlock_init(&bn->batIdxLock, name);
+	MT_lock_init(&bn->batIdxLock, name);
+	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
+	MT_rwlock_init(&bn->thashlock, name);
 	bn->batDirtydesc = true;
 	return bn;
       bailout:
@@ -247,7 +249,8 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	if (bn->tvheap)
 		HEAPdecref(bn->tvheap, true);
 	MT_lock_destroy(&bn->theaplock);
-	MT_rwlock_destroy(&bn->batIdxLock);
+	MT_lock_destroy(&bn->batIdxLock);
+	MT_rwlock_destroy(&bn->thashlock);
 	GDKfree(bn);
 	return NULL;
 }
@@ -635,7 +638,8 @@ BATdestroy(BAT *b)
 	GDKfree(b->tvheap);
 	PROPdestroy(b);
 	MT_lock_destroy(&b->theaplock);
-	MT_rwlock_destroy(&b->batIdxLock);
+	MT_lock_destroy(&b->batIdxLock);
+	MT_rwlock_destroy(&b->thashlock);
 	GDKfree(b->theap);
 	GDKfree(b);
 }

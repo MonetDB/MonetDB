@@ -84,15 +84,15 @@ AUTHfindUser(const char *username)
 	BUN p;
 
 	if (BAThash(user) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&user->batIdxLock);
+		MT_rwlock_rdlock(&user->thashlock);
 		HASHloop_str(cni, cni.b->thash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&user->batIdxLock);
+				MT_rwlock_rdunlock(&user->thashlock);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&user->batIdxLock);
+		MT_rwlock_rdunlock(&user->thashlock);
 	}
 	return BUN_NONE;
 }
@@ -1031,15 +1031,15 @@ lookupRemoteTableKey(const char *key)
 	assert(rt_deleted);
 
 	if (BAThash(rt_key) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&cni.b->batIdxLock);
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_str(cni, cni.b->thash, p, key) {
 			oid pos = p;
 			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&cni.b->batIdxLock);
+				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&cni.b->batIdxLock);
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 
 	return BUN_NONE;
