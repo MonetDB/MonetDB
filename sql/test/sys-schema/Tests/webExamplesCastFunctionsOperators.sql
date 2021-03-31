@@ -36,7 +36,7 @@ select convert('e31960fb-dc8b-452d-ab30-b342723e756a' , uuid);
 -- using prefix operators
 select x'abcd';
 select blob 'abcd';
-select clob 'abcde';	-- this fails on Oct2020
+select clob 'abcde';	-- we dont support this at the moment
 select cast('abcde' as clob);
 select inet '192.168.1.5/24';
 select json '{"a":[1,2,4]}';

@@ -528,18 +528,6 @@ project (
 % 1 # length
 [ 2	]
 #drop sequence tst20210325;
-#select rotate_xor_hash(1, 1, '1') ;
-% .%2 # table_name
-% %2 # name
-% bigint # type
-% 11 # length
-[ 15039430859	]
-#select rotate_xor_hash(cast(1 as bigint), cast(1 as int), '1') ;
-% .%2 # table_name
-% %2 # name
-% bigint # type
-% 11 # length
-[ 15039430859	]
 
 # 21:22:20 >  
 # 21:22:20 >  "Done."

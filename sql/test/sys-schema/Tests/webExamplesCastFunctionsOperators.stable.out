@@ -191,12 +191,6 @@ stdout of test 'webExamplesCastFunctionsOperators` in directory 'sql/test/sys-sc
 % blob # type
 % 0 # length
 [ ABCD	]
-#select clob 'abcde';
-% .%2 # table_name
-% %2 # name
-% clob # type
-% 5 # length
-[ "abcde"	]
 #select cast('abcde' as clob);
 % .%2 # table_name
 % %2 # name

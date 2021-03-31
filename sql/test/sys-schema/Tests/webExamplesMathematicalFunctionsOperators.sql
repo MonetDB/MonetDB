@@ -232,14 +232,3 @@ select next_value_for('sys', 'tst20210325');
 select get_value_for('sys', 'tst20210325');
 -- 2
 drop sequence tst20210325;
-
--- rotate_xor_hash(arg_1 bigint, arg_2 int, arg_3 any)
-select rotate_xor_hash(1, 1, '1') ;
--- in Oct2020: Error: TypeException:user.main[7]:'calc.rotate_xor_hash' undefined in:     X_1320374:str := calc.rotate_xor_hash(X_1320368:lng, X_1320370:int, X_1320372:str);
--- Error: TypeException:user.s2272_0[8]:'calc.rotate_xor_hash' undefined in:     X_9:bte := calc.rotate_xor_hash(X_5:lng, X_7:int, X_8:bte);
--- Error: TypeException:user.s1802_0[8]:'calc.rotate_xor_hash' undefined in:     X_9:str := calc.rotate_xor_hash(X_5:lng, X_7:int, X_8:str);
-select rotate_xor_hash(cast(1 as bigint), cast(1 as int), '1') ;
--- 2154528971 on Oct2020
--- 2154528971 on Jun2020
--- 15039430859
-
