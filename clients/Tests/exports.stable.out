@@ -146,6 +146,7 @@ BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool ab
 BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 BUN BATgrows(BAT *b);
+BUN BATguess_uniques(BAT *b, struct canditer *ci);
 gdk_return BAThash(BAT *b);
 void BAThseqbase(BAT *b, oid o);
 gdk_return BATimprints(BAT *b);
