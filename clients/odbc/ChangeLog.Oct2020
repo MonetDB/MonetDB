@@ -1,0 +1,20 @@
+# ChangeLog file for odbc
+# This file is updated with Maddlog
+
+* Wed Mar 31 2021 Sjoerd Mullender <sjoerd@acm.org>
+- When connecting using a DSN (Data Source Name), information about the
+  data source is retrieved from the ODBC.INI file.  Now we also get the
+  location of the LOGFILE from this file.  The logfile can be used to
+  log all calls to the MonetDB ODBC driver to a file which can be used
+  for debugging.
+
+* Thu Mar 25 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The ODBC driver now only passes on information about HUGEINT columns
+  as HUGEINT when the application has indicated interest by querying
+  about the SQL_HUGEINT extension type using the SQLGetTypeInfo
+  function or by specifying the type in a call to SQLSetDescField.
+  Otherwise the driver silently translates the HUGEINT type to BIGINT.
+  This means that most application will see BIGINT columns when the
+  server produced a HUGEINT column and only give an error if the value
+  in the HUGEINT column didn't fit into a BIGINT.
+

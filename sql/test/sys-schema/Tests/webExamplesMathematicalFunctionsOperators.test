@@ -558,14 +558,3 @@ select get_value_for('sys', 'tst20210325')
 statement ok
 drop sequence tst20210325
 
-query I rowsort
-select rotate_xor_hash(1, 1, '1') 
-----
-15039430859
-
-query I rowsort
-select rotate_xor_hash(cast(1 as bigint), cast(1 as int), '1') 
-----
-15039430859
-
-
