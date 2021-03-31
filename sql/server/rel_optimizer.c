@@ -4591,25 +4591,20 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		set_processed(jr);
 		for (n = exps->h; n;) {
 			node *next = n->next;
-			sql_exp *e = n->data, *ne = NULL;
+			sql_exp *e = n->data;
 
-			if (left)
-				ne = exp_push_down(v->sql, e, jl, jl);
-			if (ne && ne != e) {
+			if (left && exp_push_down(v->sql, e, jl)) {
 				if (!is_select(jl->op) || rel_is_ref(jl))
 					r->l = jl = rel_select(v->sql->sa, jl, NULL);
-				rel_select_add_exp(v->sql->sa, jl, ne);
+				rel_select_add_exp(v->sql->sa, jl, e);
 				list_remove_node(exps, NULL, n);
 				v->changes++;
-			} else if (right) {
-				ne = exp_push_down(v->sql, e, jr, jr);
-				if (ne && ne != e) {
-					if (!is_select(jr->op) || rel_is_ref(jr))
-						r->r = jr = rel_select(v->sql->sa, jr, NULL);
-					rel_select_add_exp(v->sql->sa, jr, ne);
-					list_remove_node(exps, NULL, n);
-					v->changes++;
-				}
+			} else if (right && exp_push_down(v->sql, e, jr)) {
+				if (!is_select(jr->op) || rel_is_ref(jr))
+					r->r = jr = rel_select(v->sql->sa, jr, NULL);
+				rel_select_add_exp(v->sql->sa, jr, e);
+				list_remove_node(exps, NULL, n);
+				v->changes++;
 			}
 			n = next;
 		}

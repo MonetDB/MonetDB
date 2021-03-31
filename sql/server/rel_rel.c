@@ -1137,21 +1137,15 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
 	int left = r->op == op_join || r->op == op_left;
 	int right = r->op == op_join || r->op == op_right;
 	int done = 0;
-	sql_exp *ne = NULL;
 
 	assert(is_select(rel->op));
 	if (!is_full(r->op) && !is_single(r)) {
-		if (left)
-			ne = exp_push_down(sql, e, jl, jl);
-		if (ne && ne != e) {
+		if (left && exp_push_down(sql, e, jl)) {
 			done = 1;
-			r->l = jl = rel_select_add_exp(sql->sa, jl, ne);
-		} else if (right) {
-			ne = exp_push_down(sql, e, jr, jr);
-			if (ne && ne != e) {
-				done = 1;
-				r->r = jr = rel_select_add_exp(sql->sa, jr, ne);
-			}
+			r->l = jl = rel_select_add_exp(sql->sa, jl, e);
+		} else if (right && exp_push_down(sql, e, jr)) {
+			done = 1;
+			r->r = jr = rel_select_add_exp(sql->sa, jr, e);
 		}
 	}
 	if (!done)

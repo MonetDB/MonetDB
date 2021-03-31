@@ -207,142 +207,66 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 	return try_remove_empty_select(v, rel);
 }
 
-/* push the expression down, ie translate colum references
-	from relation f into expression of relation t
-*/
+/* push the expression down, ie check if relation r references it */
 
-static sql_exp * _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
+static bool _exp_push_down(mvc *sql, sql_exp *e, sql_rel *r);
 
-static list *
-exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
+static bool
+exps_push_down(mvc *sql, list *exps, sql_rel *r)
 {
 	if (list_empty(exps))
-		return exps;
-	for(node *n = exps->h; n; n = n->next) {
-		sql_exp *arg = n->data, *narg = NULL;
-
-		narg = _exp_push_down(sql, arg, f, t);
-		if (!narg)
-			return NULL;
-		narg = exp_propagate(sql->sa, narg, arg);
-		n->data = narg;
-	}
-	return exps;
+		return true;
+	for (node *n = exps->h; n; n = n->next)
+		if (!_exp_push_down(sql,  n->data, r))
+			return false;
+	return true;
 }
 
-static sql_exp *
-_exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
+static bool
+_exp_push_down(mvc *sql, sql_exp *e, sql_rel *r)
 {
-	sql_exp *oe = e;
-	sql_exp *ne = NULL, *l, *r, *r2;
+	sql_exp *ne = NULL;
 
 	switch(e->type) {
 	case e_column:
 		if (e->l) {
-			ne = rel_bind_column2(sql, f, e->l, e->r, 0);
-			/* if relation name matches expressions relation name, find column based on column name alone */
+			ne = rel_bind_column2(sql, r, e->l, e->r, 0);
+		} else {
+			ne = rel_bind_column(sql, r, e->r, 0, 1);
 		}
-		if (!ne && !e->l)
-			ne = rel_bind_column(sql, f, e->r, 0, 1);
-		if (!ne || ne->type != e_column)
-			return NULL;
-		e = NULL;
-		if (ne->l && ne->r)
-			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
-		if (!e && ne->r && !ne->l)
-			e = rel_bind_column(sql, t, ne->r, 0, 1);
-		sql->session->status = 0;
-		sql->errstr[0] = 0;
-		if (e && oe)
-			e = exp_propagate(sql->sa, e, oe);
-		/* if the upper exp was an alias, keep this */
-		if (e && exp_relname(ne))
-			exp_prop_alias(sql->sa, e, ne);
-		return e;
+		if (!ne) {
+			sql->session->status = 0;
+			sql->errstr[0] = 0;
+			return false;
+		}
+		if (ne->type != e_column)
+			return false;
+		return true;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			list *l, *r;
-
-			l = exps_push_down(sql, e->l, f, t);
-			if (!l)
-				return NULL;
-			r = exps_push_down(sql, e->r, f, t);
-			if (!r)
-				return NULL;
-			if (e->flag == cmp_filter)
-				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			return exp_or(sql->sa, l, r, is_anti(e));
+			return exps_push_down(sql, e->l, r) && exps_push_down(sql, e->r, r);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			list *r;
-
-			l = _exp_push_down(sql, e->l, f, t);
-			if (!l)
-				return NULL;
-			r = exps_push_down(sql, e->r, f, t);
-			if (!r)
-				return NULL;
-			return exp_in(sql->sa, l, r, e->flag);
+			return _exp_push_down(sql, e->l, r) && exps_push_down(sql, e->r, r);
 		} else {
-			l = _exp_push_down(sql, e->l, f, t);
-			if (!l)
-				return NULL;
-			r = _exp_push_down(sql, e->r, f, t);
-			if (!r)
-				return NULL;
-			if (e->f) {
-				r2 = _exp_push_down(sql, e->f, f, t);
-				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
-			} else if (l && r) {
-				if (l->card < r->card)
-					ne = exp_compare(sql->sa, r, l, swap_compare((comp_type)e->flag));
-				else
-					ne = exp_compare(sql->sa, l, r, e->flag);
-			}
+			return _exp_push_down(sql, e->l, r) && _exp_push_down(sql, e->r, r) && (!e->f || _exp_push_down(sql, e->f, r));
 		}
-		if (!ne)
-			return NULL;
-		return exp_propagate(sql->sa, ne, e);
 	case e_convert:
-		l = _exp_push_down(sql, e->l, f, t);
-		if (l)
-			return exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
-		return NULL;
+		return _exp_push_down(sql, e->l, r);
 	case e_aggr:
-	case e_func: {
-		list *l = e->l, *nl = NULL;
-
-		if (!list_empty(l)) {
-			nl = exps_push_down(sql, l, f, t);
-			if (!nl)
-				return NULL;
-		}
-		if (e->type == e_func)
-			return exp_op(sql->sa, nl, e->f);
-		else
-			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
-	}
-	case e_atom: {
-		list *l = e->f, *nl = NULL;
-
-		if (!list_empty(l)) {
-			nl = exps_push_down(sql, l, f, t);
-			if (!nl)
-				return NULL;
-			return exp_values(sql->sa, nl);
-		}
-		return exp_copy(sql, e);
-	}
+	case e_func:
+		return exps_push_down(sql, e->l, r);
+	case e_atom:
+		return exps_push_down(sql, e->f, r); /* for atom lists (ie e->f) validate the list, otherwise it can be always pushed */
 	case e_psm:
-		return e;
+		return false;
 	}
-	return NULL;
+	return false;
 }
 
-sql_exp *
-exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
+bool
+exp_push_down(mvc *sql, sql_exp *e, sql_rel *r)
 {
-	return _exp_push_down(sql, e, f, t);
+	return _exp_push_down(sql, e, r);
 }
 
 sql_rel *
