@@ -25,6 +25,16 @@
 					rb[i] = np[i];			\
 				}			\
 			}					\
+		} else if (npbit) {					\
+			for (; i < cnt; i++) {	\
+				TPE next = bp[i]; \
+				if (next != prev) {		\
+					rb[i] = TRUE;		\
+					prev = next;		\
+				} else {	\
+					rb[i] = npb;			\
+				}			\
+			}					\
 		} else {					\
 			for (; i < cnt; i++) {		\
 				TPE next = bp[i]; \
@@ -52,6 +62,16 @@
 					rb[i] = np[i];			\
 				}			\
 			}						\
+		} else if (npbit) {						\
+			for (; i < cnt; i++) {		\
+				TPE next = bp[i]; \
+				if (next != prev && (!is_##TPE##_nil(next) || !is_##TPE##_nil(prev))) { \
+					rb[i] = TRUE;			\
+					prev = next;			\
+				} else {	\
+					rb[i] = npb;			\
+				}			\
+			}						\
 		} else {						\
 			for (; i < cnt; i++) {			\
 				TPE next = bp[i]; \
@@ -66,10 +86,10 @@
 	} while (0)
 
 gdk_return
-GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
+GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 {
 	BUN i = 0, cnt = BATcount(b);
-	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
+	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) Tloc(p, 0) : NULL, npb = npbit ? *npbit : 0;
 
 	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
@@ -110,6 +130,15 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		if (np) {
 			for (i = 0; i < cnt; i++) {
 				rb[i] = np[i];
+				next = BUNtail(it, i);
+				if (atomcmp(v, next) != 0) {
+					rb[i] = TRUE;
+					v = next;
+				}
+			}
+		} else if (npbit) {
+			for (i = 0; i < cnt; i++) {
+				rb[i] = npb;
 				next = BUNtail(it, i);
 				if (atomcmp(v, next) != 0) {
 					rb[i] = TRUE;
