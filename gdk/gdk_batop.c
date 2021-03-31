@@ -136,7 +136,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				return GDK_FAIL;
 			}
 		}
-		if (toff == ~(size_t) 0 && cnt > 1024) {
+		if (toff == ~(size_t) 0 && cnt > 1024 && b->tvheap->free >= n->tvheap->free) {
 			/* If b and n aren't sharing their string
 			 * heaps, we try to determine whether to copy
 			 * n's whole string heap to the end of b's, or
