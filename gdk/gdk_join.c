@@ -3131,6 +3131,17 @@ guess_uniques(BAT *b, struct canditer *ci)
 	return B;
 }
 
+BUN
+BATguess_uniques(BAT *b, struct canditer *ci)
+{
+	struct canditer lci;
+	if (ci == NULL) {
+		canditer_init(&lci, b, NULL);
+		ci = &lci;
+	}
+	return (BUN) guess_uniques(b, ci);
+}
+
 /* estimate the cost of doing a hashjoin with a hash on r; return value
  * is the estimated cost, the last three arguments receive some extra
  * information */
