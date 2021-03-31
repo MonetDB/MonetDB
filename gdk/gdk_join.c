@@ -2716,6 +2716,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
+		if (!hash_cand) {
+			MT_rwlock_rdlock(&r->batIdxLock);
+			locked = true;	/* in case we abandon */
+			hsh = r->thash;	/* re-initialize inside lock */
+		}
 		while (lci->next < lci->ncand) {
 			lo = canditer_next(lci);
 			if (BATtvoid(l)) {
@@ -2819,6 +2824,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
+		}
+		if (!hash_cand) {
+			locked = false;
+			MT_rwlock_rdunlock(&r->batIdxLock);
 		}
 		break;
 	}
