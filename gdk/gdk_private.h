@@ -327,7 +327,7 @@ ilog2(BUN x)
 	BATcount(b),							\
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
-	!b->batTransient ? "P" : b->theap->parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
+	!b->batTransient ? "P" : b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
@@ -347,7 +347,7 @@ ilog2(BUN x)
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
-	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
