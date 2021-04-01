@@ -207,68 +207,6 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 	return try_remove_empty_select(v, rel);
 }
 
-/* push the expression down, ie check if relation r references it */
-
-static bool _exp_push_down(mvc *sql, sql_exp *e, sql_rel *r);
-
-static bool
-exps_push_down(mvc *sql, list *exps, sql_rel *r)
-{
-	if (list_empty(exps))
-		return true;
-	for (node *n = exps->h; n; n = n->next)
-		if (!_exp_push_down(sql,  n->data, r))
-			return false;
-	return true;
-}
-
-static bool
-_exp_push_down(mvc *sql, sql_exp *e, sql_rel *r)
-{
-	sql_exp *ne = NULL;
-
-	switch(e->type) {
-	case e_column:
-		if (e->l) {
-			ne = rel_bind_column2(sql, r, e->l, e->r, 0);
-		} else {
-			ne = rel_bind_column(sql, r, e->r, 0, 1);
-		}
-		if (!ne) {
-			sql->session->status = 0;
-			sql->errstr[0] = 0;
-			return false;
-		}
-		if (ne->type != e_column)
-			return false;
-		return true;
-	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return exps_push_down(sql, e->l, r) && exps_push_down(sql, e->r, r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return _exp_push_down(sql, e->l, r) && exps_push_down(sql, e->r, r);
-		} else {
-			return _exp_push_down(sql, e->l, r) && _exp_push_down(sql, e->r, r) && (!e->f || _exp_push_down(sql, e->f, r));
-		}
-	case e_convert:
-		return _exp_push_down(sql, e->l, r);
-	case e_aggr:
-	case e_func:
-		return exps_push_down(sql, e->l, r);
-	case e_atom:
-		return exps_push_down(sql, e->f, r); /* for atom lists (ie e->f) validate the list, otherwise it can be always pushed */
-	case e_psm:
-		return false;
-	}
-	return false;
-}
-
-bool
-exp_push_down(mvc *sql, sql_exp *e, sql_rel *r)
-{
-	return _exp_push_down(sql, e, r);
-}
-
 sql_rel *
 rewrite_reset_used(visitor *v, sql_rel *rel)
 {
