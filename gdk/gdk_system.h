@@ -370,10 +370,12 @@ typedef struct MT_RWLock {
 #define MT_rwlock_destroy(l)	((void) 0)
 
 #define MT_rwlock_rdlock(l)	AcquireSRWLockShared(&(l)->lock)
+#define MT_rwlock_rdtry(l)	TryAcquireSRWLockShared(&(l)->lock)
 
 #define MT_rwlock_rdunlock(l)	ReleaseSRWLockShared(&(l)->lock)
 
 #define MT_rwlock_wrlock(l)	AcquireSRWLockExclusive(&(l)->lock)
+#define MT_rwlock_wrtry(l)	TryAcquireSRWLockExclusive(&(l)->lock)
 
 #define MT_rwlock_wrunlock(l)	ReleaseSRWLockExclusive(&(l)->lock)
 
@@ -455,10 +457,12 @@ typedef struct MT_RWLock {
 #define MT_rwlock_destroy(l)	pthread_rwlock_destroy(&(l)->lock)
 
 #define MT_rwlock_rdlock(l)	pthread_rwlock_rdlock(&(l)->lock)
+#define MT_rwlock_rdtry(l)	(pthread_rwlock_tryrdlock(&(l)->lock) == 0)
 
 #define MT_rwlock_rdunlock(l)	pthread_rwlock_unlock(&(l)->lock)
 
 #define MT_rwlock_wrlock(l)	pthread_rwlock_wrlock(&(l)->lock)
+#define MT_rwlock_wrtry(l)	(pthread_rwlock_trywrlock(&(l)->lock) == 0)
 
 #define MT_rwlock_wrunlock(l)	pthread_rwlock_unlock(&(l)->lock)
 

@@ -990,7 +990,29 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
-	MT_rwlock_wrlock(&b->thashlock);
+	for (;;) {
+		/* If multiple threads simultaneously try to build a
+		 * hash on a bat, e.g. in order to perform a join, it
+		 * may happen that one thread succeeds in obtaining the
+		 * write lock, then builds the hash, releases the lock,
+		 * acquires the read lock, and performs the join.  The
+		 * other threads may then still be attempting to acquire
+		 * the write lock.  But now they have to wait until the
+		 * read lock is released, which can be quite a long
+		 * time.  Especially if a second thread goes through the
+		 * same process as the first. */
+		if (MT_rwlock_wrtry(&b->thashlock))
+			break;
+		MT_sleep_ms(1);
+		if (MT_rwlock_rdtry(&b->thashlock)) {
+			if (b->thash != NULL && b->thash != (Hash *) 1) {
+				MT_rwlock_rdunlock(&b->thashlock);
+				return GDK_SUCCEED;
+			}
+			MT_rwlock_rdunlock(&b->thashlock);
+		}
+	}
+	/* we have the write lock */
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
