@@ -4909,8 +4909,10 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			return rel;
 		if (right && is_left(lop))
 			return rel;
-		nsexps = exps_copy(v->sql, rel->exps);
-		njexps = exps_copy(v->sql, l->exps);
+		nsexps = rel->exps;
+		rel->exps = NULL; /* prepare to delete relation */
+		njexps = l->exps;
+		l->exps = NULL;
 		if (left)
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), rel_dup(r), op);
 		else
