@@ -4551,13 +4551,13 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			node *next = n->next;
 			sql_exp *e = n->data;
 
-			if (left && exp_push_down(v->sql, e, jl)) {
+			if (left && rel_rebind_exp(v->sql, jl, e)) {
 				if (!is_select(jl->op) || rel_is_ref(jl))
 					r->l = jl = rel_select(v->sql->sa, jl, NULL);
 				rel_select_add_exp(v->sql->sa, jl, e);
 				list_remove_node(exps, NULL, n);
 				v->changes++;
-			} else if (right && exp_push_down(v->sql, e, jr)) {
+			} else if (right && rel_rebind_exp(v->sql, jr, e)) {
 				if (!is_select(jr->op) || rel_is_ref(jr))
 					r->r = jr = rel_select(v->sql->sa, jr, NULL);
 				rel_select_add_exp(v->sql->sa, jr, e);
