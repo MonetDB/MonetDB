@@ -1219,7 +1219,7 @@ sqltypeinit( sql_allocator *sa)
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "sql_neg", "calc", "-", TRUE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "sql_neg", "calc", "-", FALSE, FALSE, INOUT, 0, *t, 1, *t);
 		sql_create_func(sa, "abs", "calc", "abs", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
 		sql_create_func(sa, "sign", "calc", "sign", FALSE, FALSE, SCALE_NONE, 0, BTE, 1, *t);
 		/* scale fixing for intervals */
