@@ -1091,8 +1091,12 @@ SQLworker(void *arg)
 					if (SQLload_parse_line(task, j) < 0) {
 						task->errorcnt++;
 						// early break unless best effort
-						if (!task->besteffort)
+						if (!task->besteffort) {
+							for (j++; j < task->top[task->cur] && j < piece * (task->id +1); j++)
+								for (i = 0; i < task->as->nr_attrs; i++)
+									task->fields[i][j] = NULL;
 							break;
+						}
 					}
 				}
 			task->wtime = GDKusec() - t0;
