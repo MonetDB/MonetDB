@@ -173,11 +173,11 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 
 /* BATsample implements sampling for BATs */
 BAT *
-BATsample_with_seed(BAT *b, BUN n, unsigned seed)
+BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 {
 	random_state_engine rse;
 
-	init_random_state_engine(rse, (uint64_t) seed);
+	init_random_state_engine(rse, seed);
 
 	return do_batsample(b, n, rse, NULL);
 }

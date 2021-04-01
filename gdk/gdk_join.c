@@ -3118,9 +3118,9 @@ guess_uniques(BAT *b, struct canditer *ci)
 				  ALGOBATPAR(b));
 			return p->v.val.dval;
 		}
-		s1 = BATsample(b, 1000);
+		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
-		BAT *s2 = BATsample(ci->s, 1000);
+		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
