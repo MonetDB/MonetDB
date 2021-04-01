@@ -1342,9 +1342,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hash = phash = true;
 	}
 
-	/* make sure tsorted and trevsorted flags are set */
-	(void) BATordered(b);
-	(void) BATordered_rev(b);
+	if (hash && (phash || b->thash)) {
+		/* make sure tsorted and trevsorted flags are set, but
+		 * we only need to know if we're not yet sure that we're
+		 * going for the hash (i.e. it already exists) */
+		(void) BATordered(b);
+		(void) BATordered_rev(b);
+	}
 
 	/* If there is an order index or it is a view and the parent
 	 * has an ordered index, and the bat is not tsorted or
