@@ -561,6 +561,15 @@ typedef struct MT_RWLock {
 		(void) ATOMIC_INC(&(l)->readers);	\
 		MT_lock_unset(&(l)->lock);		\
 	 } while (0)
+static inline bool
+MT_rwlock_rdtry(MT_RWLock *l)
+{
+	if (!MT_lock_try(l))
+		return false;
+	(void) ATOMIC_INC(&(l)->readers);
+	MT_lock_unset(&(l)->lock);
+	return true;
+}
 
 #define MT_rwlock_rdunlock(l)	((void) ATOMIC_DEC(&(l)->readers))
 
@@ -570,6 +579,17 @@ typedef struct MT_RWLock {
 		while (ATOMIC_GET(&(l)->readers) > 0)	\
 			MT_sleep_ms(1);			\
 	 } while (0)
+static inline bool
+MT_rwlock_wrtry(MT_RWLock *l)
+{
+	if (!MT_lock_try(l))
+		return false;
+	if (ATOMIC_GET(&l->readers) > 0) {
+		MT_lock_unset(l);
+		return false;
+	}
+	return true;
+}
 
 #define MT_rwlock_wrunlock(l)	MT_lock_unset(&(l)->lock)
 
