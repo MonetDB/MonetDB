@@ -60,7 +60,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( !q) {
 			continue;
 		}
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) != tidRef) {
+		if ( getModuleId(q) == sqlRef && getFunctionId(q) != tidRef) {
 			continue;
 		}
 		if( hasSideEffects(mb, q, 1) )
