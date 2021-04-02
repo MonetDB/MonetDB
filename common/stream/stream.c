@@ -150,6 +150,7 @@ static const char *mnstr_error_kind_description(mnstr_error_kind kind);
 int
 mnstr_init(bool embedded)
 {
+	(void) embedded;
 	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 
 	if (ATOMIC_TAS(&inited))
@@ -159,15 +160,11 @@ mnstr_init(bool embedded)
 		return -1;
 
 #ifdef NATIVE_WIN32
-	if (!embedded) {
-		WSADATA w;
-
-		if (WSAStartup(0x0101, &w) != 0)
-			return -1;
-	}
-#else
-	(void)embedded;
+	WSADATA w;
+	if (WSAStartup(0x0101, &w) != 0)
+		return -1;
 #endif
+
 	return 0;
 }
 
