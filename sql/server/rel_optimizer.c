@@ -848,6 +848,7 @@ order_joins(visitor *v, list *rels, list *exps)
 	node *djn;
 	list *sdje, *n_rels = sa_list(v->sql->sa);
 	int fnd = 0;
+	unsigned int rsingle;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
 	sdje = find_fk(v->sql, rels, exps);
@@ -894,7 +895,11 @@ order_joins(visitor *v, list *rels, list *exps)
 	   	   and a list of (simple) relations, there are no outer joins
 	   	   involved, we can simply do a crossproduct here.
 	 	 */
+		rsingle = r->single;
+		reset_single(r);
 		top = rel_crossproduct(v->sql->sa, l, r, op_join);
+		if (rsingle)
+			set_single(r);
 		rel_join_add_exp(v->sql->sa, top, cje);
 
 		/* all other join expressions on these 2 relations */
@@ -959,7 +964,11 @@ order_joins(visitor *v, list *rels, list *exps)
 				append(n_rels, r);
 
 				/* create a join using the current expression */
+				rsingle = r->single;
+				reset_single(r);
 				top = rel_crossproduct(v->sql->sa, top, r, op_join);
+				if (rsingle)
+					set_single(r);
 				rel_join_add_exp(v->sql->sa, top, cje);
 
 				/* all join expressions on these tables */
@@ -988,10 +997,16 @@ order_joins(visitor *v, list *rels, list *exps)
 	if (list_length(rels)) { /* more relations */
 		node *n;
 		for(n=rels->h; n; n = n->next) {
-			if (top)
-				top = rel_crossproduct(v->sql->sa, top, n->data, op_join);
-			else
-				top = n->data;
+			sql_rel *nr = n->data;
+
+			if (top) {
+				rsingle = nr->single;
+				reset_single(nr);
+				top = rel_crossproduct(v->sql->sa, top, nr, op_join);
+				if (rsingle)
+					set_single(nr);
+			} else
+				top = nr;
 		}
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
@@ -1084,8 +1099,11 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 				}
 				/* with this expression find other relation */
 				if (je && (l = find_rel(rels, je->l)) != NULL) {
+					unsigned int rsingle = r->single;
+					reset_single(r);
 					sql_rel *nr = rel_crossproduct(sql->sa, l, r, op_join);
-
+					if (rsingle)
+						set_single(r);
 					rel_join_add_exp(sql->sa, nr, je);
 					list_append(rels, nr);
 					list_remove_data(rels, NULL, l);
