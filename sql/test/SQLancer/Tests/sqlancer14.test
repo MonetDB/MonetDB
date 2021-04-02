@@ -398,3 +398,46 @@ SELECT 1 FROM t0 NATURAL JOIN (SELECT t1.c0, (SELECT t1.c4 FROM t2, t1) FROM t1)
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" VARCHAR(32))
+
+statement ok
+INSERT INTO "t0" VALUES ('ixJiA'),(''),('~O'),('I'),('sdasd'),('%')
+
+statement ok
+CREATE TABLE "t2" ("c0" VARCHAR(32))
+
+statement ok
+INSERT INTO "t2" VALUES ('-dsdaZ'),('0.7715351394637016'),('sdsd'),('D'),('dsads')
+
+query T rowsort
+SELECT min(1) FROM t2
+----
+1
+
+query I rowsort
+SELECT 1 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
+----
+1
+1
+1
+1
+1
+
+query T rowsort
+SELECT MIN(agg0) FROM (
+SELECT min(1) as agg0 FROM t2 WHERE (SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')
+UNION ALL
+SELECT min(1) as agg0 FROM t2 WHERE NOT ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select ''))
+UNION ALL
+SELECT min(1) as agg0 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
+) as asdf
+----
+1
+
+statement ok
+ROLLBACK
