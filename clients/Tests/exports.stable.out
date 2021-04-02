@@ -1453,7 +1453,7 @@ int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p);
 int mnstr_fsync(stream *s);
 buffer *mnstr_get_buffer(stream *s);
 bool mnstr_get_swapbytes(const stream *s);
-int mnstr_init(bool embedded);
+int mnstr_init(void);
 int mnstr_isalive(const stream *s);
 bool mnstr_isbinary(const stream *s);
 char *mnstr_name(const stream *s);
