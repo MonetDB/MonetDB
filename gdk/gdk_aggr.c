@@ -69,10 +69,11 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 
 	if (b == NULL)
 		return "b must exist";
+	*ncand = canditer_init(ci, b, s);
 	if (g) {
-		if (BATcount(b) != BATcount(g) ||
-		    (BATcount(b) != 0 && b->hseqbase != g->hseqbase))
-			return "b and g must be aligned";
+		if (ci->ncand != BATcount(g) ||
+		    (ci->ncand != 0 && ci->seq != g->hseqbase))
+			return "b with s and g must be aligned";
 		assert(BATttype(g) == TYPE_oid);
 	}
 	if (g == NULL) {
@@ -132,8 +133,6 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	*minp = min;
 	*maxp = max;
 	*ngrpp = ngrp;
-
-	*ncand = canditer_init(ci, b, s);
 
 	return NULL;
 }

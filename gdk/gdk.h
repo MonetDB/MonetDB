@@ -787,8 +787,8 @@ typedef struct BAT {
 	/* dynamic column properties */
 	COLrec T;		/* column info */
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
-
-	MT_Lock batIdxLock;	/* lock to manipulate indexes */
+	MT_RWLock thashlock;	/* lock specifically for hash management */
+	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 } BAT;
 
 typedef struct BATiter {
@@ -975,14 +975,16 @@ gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 gdk_export gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BUNreplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN count, bool force)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATdel(BAT *b, BAT *d)
 	__attribute__((__warn_unused_result__));
 
-gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 
@@ -2172,6 +2174,7 @@ gdk_export BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 gdk_export BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in, BUN estimate);
 gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__((__warn_unused_result__));
+gdk_export BUN BATguess_uniques(BAT *b, struct canditer *ci);
 gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
@@ -2205,7 +2208,7 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
  *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
-gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
+gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
 /*
  *

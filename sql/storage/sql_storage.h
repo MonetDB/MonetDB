@@ -129,8 +129,8 @@ typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, 
 /*
 -- append/update to columns and indices
 */
-typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, size_t offset, void *d, int t);
-typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, size_t offset, void *d, int t);
+typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, size_t offset, void *d, int t, size_t cnt);
+typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, size_t offset, void *d, int t, size_t cnt);
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 

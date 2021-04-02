@@ -2431,6 +2431,11 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *rvals = Tloc(r, 0);				\
 		TYPE *lvals = Tloc(l, 0);				\
 		TYPE v;							\
+		if (!hash_cand) {					\
+			MT_rwlock_rdlock(&r->thashlock);		\
+			locked = true;	/* in case we abandon */	\
+			hsh = r->thash;	/* re-initialize inside lock */	\
+		}							\
 		while (lci->next < lci->ncand) {			\
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
@@ -2442,6 +2447,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					continue;			\
 				}					\
 			} else if (hash_cand) {				\
+				/* private hash: no locks */		\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2530,6 +2536,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)		\
 				r1->trevsorted = false;			\
 		}							\
+		if (!hash_cand) {					\
+			locked = false;					\
+			MT_rwlock_rdunlock(&r->thashlock);		\
+		}							\
 	} while (0)
 
 /* Implementation of join using a hash lookup of values in the right
@@ -2559,6 +2569,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
 	Hash *restrict hsh = NULL;
+	bool locked = false;
 
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
@@ -2705,6 +2716,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
+		if (!hash_cand) {
+			MT_rwlock_rdlock(&r->thashlock);
+			locked = true;	/* in case we abandon */
+			hsh = r->thash;	/* re-initialize inside lock */
+		}
 		while (lci->next < lci->ncand) {
 			lo = canditer_next(lci);
 			if (BATtvoid(l)) {
@@ -2809,6 +2825,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
+		if (!hash_cand) {
+			locked = false;
+			MT_rwlock_rdunlock(&r->thashlock);
+		}
 		break;
 	}
 	if (hash_cand) {
@@ -2866,6 +2886,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	return GDK_SUCCEED;
 
   bailout:
+	if (locked)
+		MT_rwlock_rdunlock(&r->thashlock);
 	if (hash_cand && hsh) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
@@ -3096,9 +3118,9 @@ guess_uniques(BAT *b, struct canditer *ci)
 				  ALGOBATPAR(b));
 			return p->v.val.dval;
 		}
-		s1 = BATsample(b, 1000);
+		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
-		BAT *s2 = BATsample(ci->s, 1000);
+		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
@@ -3116,6 +3138,17 @@ guess_uniques(BAT *b, struct canditer *ci)
 		BATsetprop(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &B);
 	}
 	return B;
+}
+
+BUN
+BATguess_uniques(BAT *b, struct canditer *ci)
+{
+	struct canditer lci;
+	if (ci == NULL) {
+		canditer_init(&lci, b, NULL);
+		ci = &lci;
+	}
+	return (BUN) guess_uniques(b, ci);
 }
 
 /* estimate the cost of doing a hashjoin with a hash on r; return value
@@ -3160,7 +3193,7 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (!(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap->dirty || GDKinmemory(r->theap->farmid))
+		if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 #endif
 			rcost += BATcount(r) * 2.0;
 	}
@@ -3171,14 +3204,18 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		 * since the searching of the candidate list
 		 * (canditer_idx) will kill us */
 		double rccost;
-		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * chains */
-			rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		if (rhash && !prhash) {
+			rccost = (double) BATcount(r) / r->thash->nheads;
 		} else {
-			/* guess number of unique value and work with that */
-			rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+			PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+			if (prop) {
+				/* we know number of unique values, assume some
+				 * chains */
+				rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+			} else {
+				/* guess number of unique value and work with that */
+				rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+			}
 		}
 		rccost *= lci->ncand;
 		rccost += rci->ncand * 2.0; /* cost of building the hash */
@@ -3548,14 +3585,18 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r1p = NULL;
 	if (r2p)
 		*r2p = NULL;
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
+
+	lcnt = canditer_init(&lci, l, sl);
+	rcnt = canditer_init(&rci, r, sr);
+
+	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b)) {
 			l = b;
 		}
 	}
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
+	if ((parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b)) {
@@ -3582,9 +3623,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		rc = GDK_FAIL;
 		goto doreturn;
 	}
-
-	lcnt = canditer_init(&lci, l, sl);
-	rcnt = canditer_init(&rci, r, sr);
 
 	if (lcnt == 0 || rcnt == 0) {
 		TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
@@ -3885,13 +3923,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
+
+	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b))
 			l = b;
 	}
-	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
+	if ((parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b))
@@ -3912,9 +3953,6 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	} else {
 		BBPfix(r->batCacheid);
 	}
-
-	canditer_init(&lci, l, sl);
-	canditer_init(&rci, r, sr);
 
 	*r1p = NULL;
 	if (r2p)

@@ -350,7 +350,7 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 	if (!is_oid_nil(store->table_api.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		return false;
 
-	store->table_api.table_insert(m->session->tr, auths, &id, auth, &grantor);
+	store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor);
 	return true;
 }
 

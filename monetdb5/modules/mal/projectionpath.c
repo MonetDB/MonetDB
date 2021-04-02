@@ -45,7 +45,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( b)
 		BBPkeepref( *r = b->batCacheid);
 	else
-		throw(MAL, "algebra.projectionpath", INTERNAL_OBJ_CREATE);
+		throw(MAL, "algebra.projectionpath", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

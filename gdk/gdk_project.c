@@ -742,6 +742,7 @@ BATprojectchain(BAT **bats)
 	struct ba {
 		BAT *b;
 		oid hlo;
+		oid hhi;
 		BUN cnt;
 		oid *t;
 		struct canditer ci; /* used if .ci.s != NULL */
@@ -800,6 +801,7 @@ BATprojectchain(BAT **bats)
 		ba[n] = (struct ba) {
 			.b = b,
 			.hlo = b->hseqbase,
+			.hhi = b->hseqbase + b->batCount,
 			.cnt = b->batCount,
 			.t = (oid *) Tloc(b, 0),
 		};
@@ -849,7 +851,7 @@ BATprojectchain(BAT **bats)
 					bn->tnil = true;
 					break;
 				}
-				if (o < ba[i].hlo || o >= ba[i].hlo + ba[i].cnt) {
+				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
 					goto bunins_failed;
 				}
@@ -876,7 +878,7 @@ BATprojectchain(BAT **bats)
 					bn->tnil = true;
 					break;
 				}
-				if (o < ba[i].hlo || o >= ba[i].hlo + ba[i].cnt) {
+				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
 					goto bunins_failed;
 				}
@@ -887,7 +889,7 @@ BATprojectchain(BAT **bats)
 				assert(!stringtrick);
 				bn->tnil = true;
 				v = nil;
-			} else if (o < ba[n].hlo || o >= ba[n].hlo + ba[n].cnt) {
+			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
 				goto bunins_failed;
 			} else {
@@ -927,7 +929,7 @@ BATprojectchain(BAT **bats)
 					bn->tnil = true;
 					break;
 				}
-				if (o < ba[i].hlo || o >= ba[i].hlo + ba[i].cnt) {
+				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
 					goto bunins_failed;
 				}
@@ -937,7 +939,7 @@ BATprojectchain(BAT **bats)
 			if (is_oid_nil(o)) {
 				bn->tnil = true;
 				v = nil;
-			} else if (o < ba[n].hlo || o >= ba[n].hlo + ba[n].cnt) {
+			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
 				goto bunins_failed;
 			} else {

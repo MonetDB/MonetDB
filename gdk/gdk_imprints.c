@@ -509,7 +509,7 @@ BATimprints(BAT *b)
 							   imprintsheap);
 
 #define SMP_SIZE 2048
-		s1 = BATsample(b, SMP_SIZE);
+		s1 = BATsample_with_seed(b, SMP_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 		if (s1 == NULL) {
 			GDKfree(imprints);
 			return GDK_FAIL;

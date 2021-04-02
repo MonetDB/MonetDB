@@ -1668,7 +1668,7 @@ str
 mvc_append_column(sql_trans *t, sql_column *c, size_t pos, BAT *ins)
 {
 	sqlstore *store = t->store;
-	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat);
+	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat, 0);
 	if (res != LOG_OK)
 		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
 	return MAL_SUCCEED;
@@ -1742,7 +1742,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
-	if (ATOMextern(tpe))
+	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
 	if ( tpe == TYPE_bat)
 		b =  (BAT*) ins;
@@ -1762,11 +1762,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		if (store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe) != LOG_OK)
+		if (store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe, 1) != LOG_OK)
 			err = 1;
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i && store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe) != LOG_OK)
+		if (i && store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1) != LOG_OK)
 			err = 1;
 	}
 	if (err)
@@ -4864,10 +4864,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "setVariable", setVariable, true, "Set the value of a session variable", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("varname",str),argany("value",1))),
  pattern("sql", "getVariable", getVariable, false, "Get the value of a session variable", args(1,4, argany("",1),arg("mvc",int),arg("sname",str),arg("varname",str))),
  pattern("sql", "logfile", mvc_logfile, true, "Enable/disable saving the sql statement traces", args(1,2, arg("",void),arg("filename",str))),
- pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("batsql", "next_value", mvc_bat_next_value, true, "return the next value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
- pattern("batsql", "next_value", mvc_bat_next_value, true, "return the next value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),
- pattern("batsql", "next_value", mvc_bat_next_value, true, "return the next value of sequences", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
+ pattern("sql", "next_value", mvc_next_value, false, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value", mvc_bat_next_value, false, "return the next value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value", mvc_bat_next_value, false, "return the next value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),
+ pattern("batsql", "next_value", mvc_bat_next_value, false, "return the next value of sequences", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
  pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),

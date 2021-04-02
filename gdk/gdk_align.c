@@ -143,6 +143,7 @@ VIEWcreate(oid seq, BAT *b)
 		HEAPdecref(bn->theap, false);
 		MT_lock_destroy(&bn->theaplock);
 		MT_lock_destroy(&bn->batIdxLock);
+		MT_rwlock_destroy(&bn->thashlock);
 		GDKfree(bn);
 		return NULL;
 	}
@@ -236,6 +237,7 @@ BATmaterialize(BAT *b)
 			x[p++] = t++;
 	}
 	BATsetcount(b, b->batCount);
+	BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
 
 	return GDK_SUCCEED;
 }

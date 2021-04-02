@@ -153,10 +153,8 @@ select blob 'abcd'
 ----
 ABCD
 
-statement ok
+statement error
 select clob 'abcde'
-----
-abcde
 
 query T rowsort
 select cast('abcde' as clob)
