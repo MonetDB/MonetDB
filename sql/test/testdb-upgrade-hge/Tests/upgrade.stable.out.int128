@@ -1048,7 +1048,7 @@ insert into sys.functions values (284, 'sql_add', '+', 'calc', 0, 1, false, fals
 insert into sys.args values (9181, 284, 'res_0', 'month_interval', 3, 0, 0, 0);
 insert into sys.args values (9182, 284, 'arg_1', 'month_interval', 3, 0, 1, 1);
 insert into sys.args values (9183, 284, 'arg_2', 'month_interval', 3, 0, 1, 2);
-insert into sys.functions values (285, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, true);
+insert into sys.functions values (285, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9184, 285, 'res_0', 'month_interval', 3, 0, 0, 0);
 insert into sys.args values (9185, 285, 'arg_1', 'month_interval', 3, 0, 1, 1);
 insert into sys.functions values (286, 'abs', 'abs', 'calc', 0, 1, false, false, false, 2000, true, false);
@@ -1073,7 +1073,7 @@ insert into sys.functions values (291, 'sql_add', '+', 'calc', 0, 1, false, fals
 insert into sys.args values (9199, 291, 'res_0', 'day_interval', 4, 0, 0, 0);
 insert into sys.args values (9200, 291, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.args values (9201, 291, 'arg_2', 'day_interval', 4, 0, 1, 2);
-insert into sys.functions values (292, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, true);
+insert into sys.functions values (292, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9202, 292, 'res_0', 'day_interval', 4, 0, 0, 0);
 insert into sys.args values (9203, 292, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (293, 'abs', 'abs', 'calc', 0, 1, false, false, false, 2000, true, false);
@@ -1098,7 +1098,7 @@ insert into sys.functions values (298, 'sql_add', '+', 'calc', 0, 1, false, fals
 insert into sys.args values (9217, 298, 'res_0', 'sec_interval', 13, 0, 0, 0);
 insert into sys.args values (9218, 298, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.args values (9219, 298, 'arg_2', 'sec_interval', 13, 0, 1, 2);
-insert into sys.functions values (299, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, true);
+insert into sys.functions values (299, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9220, 299, 'res_0', 'sec_interval', 13, 0, 0, 0);
 insert into sys.args values (9221, 299, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (300, 'abs', 'abs', 'calc', 0, 1, false, false, false, 2000, true, false);
