@@ -139,13 +139,11 @@ MKEYrotate(lng *res, const lng *val, const int *n)
 static str
 MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	lng *res;
-	ptr val;
+	lng *res = getArgReference_lng(stk,p,0);
+	ptr val = getArgReference(stk,p,1);
 	int tpe = getArgType(mb,p,1);
 
 	(void) cntxt;
-	res= getArgReference_lng(stk,p,0);
-	val= getArgReference(stk,p,1);
 	switch (ATOMstorage(tpe)) {
 	case TYPE_void:
 		*res = lng_nil; /* It can be called from SQL */
@@ -288,7 +286,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int lbit = *getArgReference_int(stk, p, 2);
 	int rbit = (int) sizeof(lng) * 8 - lbit;
 	int tpe = getArgType(mb, p, 3);
-	ptr *pval = getArgReference(stk, p, 3);
+	ptr pval = getArgReference(stk, p, 3);
 	ulng val;
 
 	(void) cntxt;
@@ -443,7 +441,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bat *hid = getArgReference_bat(stk, p, 1);
 	int lbit = *getArgReference_int(stk, p, 2);
 	int tpe = getArgType(mb, p, 3);
-	ptr *pval = getArgReference(stk, p, 3);
+	ptr pval = getArgReference(stk, p, 3);
 	BAT *hb, *bn;
 	int rbit = (int) sizeof(lng) * 8 - lbit;
 	ulng *r;
@@ -497,8 +495,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	h = (const ulng *) Tloc(hb, 0);
 
 	while (n-- > 0) {
-			*r++ = GDK_ROTATE(*h, lbit, rbit) ^ val;
-			h++;
+		*r++ = GDK_ROTATE(*h, lbit, rbit) ^ val;
+		h++;
 	}
 
 	if (bn->batCount <= 1) {

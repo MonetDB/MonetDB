@@ -116,9 +116,12 @@ find_type(logger *lg, int tpe)
 
 	/* type should be there !*/
 	if (BAThash(lg->type_nr) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &tpe) {
+			MT_rwlock_rdunlock(&cni.b->thashlock);
 			return res[p];
 		}
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return -1;
 }
@@ -132,9 +135,12 @@ find_type_nr(logger *lg, bte tpe)
 
 	/* type should be there !*/
 	if (BAThash(lg->type_id) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_bte(cni, cni.b->thash, p, &tpe) {
+			MT_rwlock_rdunlock(&cni.b->thashlock);
 			return res[p];
 		}
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return -1;
 }
@@ -148,11 +154,15 @@ log_find(BAT *b, BAT *d, int val)
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
-			if (BUNfnd(d, &pos) == BUN_NONE)
+			if (BUNfnd(d, &pos) == BUN_NONE) {
+				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return p;
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	} else {		/* unlikely: BAThash failed */
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
@@ -175,11 +185,15 @@ internal_find_bat(logger *lg, log_id id)
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			oid pos = p;
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return 0;
 }
@@ -274,7 +288,8 @@ log_read_seq(logger *lg, logformat *l)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
+		assert(lg->seqs_val->hseqbase == 0);
+		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
 			return LOG_ERR;
 	} else {
 		if (p != BUN_NONE) {
@@ -514,11 +529,16 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &id) {
 			lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
-			if (ocnt < cnt && BUNinplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED)
+			assert(lg->catalog_cnt->hseqbase == 0);
+			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
+				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return GDK_FAIL;
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	return GDK_SUCCEED;
 
@@ -2528,7 +2548,8 @@ log_sequence(logger *lg, int seq, lng val)
 	logger_lock(lg);
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
+		assert(lg->seqs_val->hseqbase == 0);
+		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2629,7 +2650,8 @@ logger_del_bat(logger *lg, log_bid bid)
 	}
 
 	pos = (oid) p;
-	if (BUNinplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
+	assert(lg->catalog_lid->hseqbase == 0);
+	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return BUNappend(lg->dcatalog, &pos, false);
 }

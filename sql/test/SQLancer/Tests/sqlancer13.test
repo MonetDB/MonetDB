@@ -400,24 +400,24 @@ statement ok
 CREATE TABLE "sys"."t1" ("c3" BOOLEAN)
 
 query T rowsort
-select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 union all
-select (345*(case when t1.c3 then 0 else 578153020054067.9 end))*3 from t1
+select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 ----
 
 query T rowsort
-select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 union all
-select (1118551465*(case when t1.c3 then 0 else 0.5781530200540679 end))*3 from t1
+select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 ----
 
 statement ok
 ROLLBACK
 
 query T rowsort
-select round((0.5296678069272354)*(0.10385499803600118), -8)
+select round((0.52)*(0.10), -8)
 ----
-0E-33
+0.0000
 
 statement ok
 START TRANSACTION
@@ -764,3 +764,45 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c1" BIGINT NOT NULL,"c5" BINARY LARGE OBJECT,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t0_c5_unique" UNIQUE ("c5"))
+
+statement ok
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1150662203	
+-1997528658	8BBD50
+8	B4
+20	E4FCBC9E10
+0	D0
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c2" CHARACTER LARGE OBJECT,"c3" DECIMAL(18,3) NOT NULL,"c5" CHARACTER LARGE OBJECT NOT NULL,
+	"c6" CHAR(175),"c7" DOUBLE,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"sIm&S"	NULL	0.383	"xvᝅ〯p]"	"0.8474899180729288"	0.39434750848770694
+"uꑳ䍴HnkZf"	NULL	0.453	"357028814"	"葬L*鴎k"	NULL
+"\t멥U\015W"	NULL	0.842	"XJ"	NULL	NULL
+")\006x+okyG"	"U"	0.033	"G&"	"8Zc"	NULL
+"0"	"p-J"	0.033	""	"2006489952"	NULL
+"0.6387965642930552"	">*"	0.899	"I8NdU3M"	"dH/"	0.68878347
+"-1798514093"	NULL	0.265	"Q"	"wGy1y_9.x"	0.9869141021920103
+""	NULL	0.459	"꺦"	"l"	3.1323088
+
+query I rowsort
+select 1 from t1, t0 where (case when false then t1.c3 else 6 end) <= (case when false then t0.c1 when true then t1.c7 end)
+----
+
+query I rowsort
+select t0.c1 from t1, t0 where ((case when false then t1.c3 else 6 end)<=(case when false then 9 when false then t0.c1 when true then t1.c7 else 5 end))
+----
+
+statement ok
+ROLLBACK

@@ -226,7 +226,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype, 1);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -624,7 +624,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 		sql_column *c = n->data;
 		int ok;
 
-		ok = store->storage_api.append_col(tr, c, offset, cols[c->colnr], TYPE_bat);
+		ok = store->storage_api.append_col(tr, c, offset, cols[c->colnr], TYPE_bat, 0);
 		BBPunfix(cols[c->colnr]->batCacheid);
 		if (ok != LOG_OK) {
 			for (n = n->next; n; n = n->next) {

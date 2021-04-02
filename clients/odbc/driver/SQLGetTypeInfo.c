@@ -1148,6 +1148,10 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 		assert(t == types || t->data_type >= (t-1)->data_type);
 		if (DataType != SQL_ALL_TYPES && DataType != t->data_type)
 			continue;
+		if (DataType == SQL_ALL_TYPES &&
+		    t->data_type == SQL_HUGEINT &&
+		    !stmt->Dbc->allow_hugeint)
+			continue;
 		if (first) {
 			/* specify column types in first set of values */
 			i += snprintf(query + i, sizeof(query) - i,
