@@ -3023,7 +3023,9 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (!exp_is_rel(ie)) { /* exists over a constant or a single value */
 				le = exp_atom_bool(v->sql->sa, is_exists(sf)?1:0);
-				if (exp_name(e))
+				if (depth == 0 && is_select(rel->op))
+					le = exp_compare(v->sql->sa, le, exp_atom_bool(v->sql->sa, 1), cmp_equal);
+				else if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
 				v->changes++;
 				return le;
@@ -3076,7 +3078,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				operator_type op = is_exists(sf)?op_semi:op_anti;
 				(void)rewrite_inner(v->sql, rel, sq, &op);
 				v->changes++;
-				return exp_atom_bool(v->sql->sa, 1);
+				return exp_compare(v->sql->sa, exp_atom_bool(v->sql->sa, 1), exp_atom_bool(v->sql->sa, 1), cmp_equal);
 			}
 			v->changes++;
 			return le;
