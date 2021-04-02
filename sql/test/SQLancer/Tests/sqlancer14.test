@@ -403,6 +403,22 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t1" ("c0" DOUBLE PRECISION)
+
+statement ok
+INSERT INTO "t1" VALUES (0.5491550453086529), (0.07482309364658168), (928354548)
+
+query I rowsort
+select t1.c0 from t1 where exists (select 1) and 3 = any(values (2))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c0" VARCHAR(32))
 
 statement ok
