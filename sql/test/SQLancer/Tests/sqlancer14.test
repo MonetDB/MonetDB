@@ -420,6 +420,15 @@ SELECT min(1) FROM t2
 1
 
 query I rowsort
+SELECT 1 FROM t2 WHERE ((SELECT 1 WHERE FALSE) = ANY(SELECT 2)) IS NULL
+----
+1
+1
+1
+1
+1
+
+query I rowsort
 SELECT 1 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
 ----
 1
