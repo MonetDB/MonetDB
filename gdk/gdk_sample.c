@@ -30,9 +30,14 @@
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
-	oid o;
-	struct oidtreenode *left;
-	struct oidtreenode *right;
+	union {
+		struct {	/* use as a binary tree */
+			oid o;
+			struct oidtreenode *left;
+			struct oidtreenode *right;
+		};
+		uint64_t r;	/* temporary storage for random numbers */
+	};
 };
 
 static int
@@ -136,11 +141,11 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 		if (lock) {
 			MT_lock_set(lock);
 			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].o = next(rse);
+				tree[rescnt].r = next(rse);
 			MT_lock_unset(lock);
 		} else {
 			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].o = next(rse);
+				tree[rescnt].r = next(rse);
 		}
 
 		/* while we do not have enough sample OIDs yet */
@@ -154,12 +159,12 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 					if (lock)
 						MT_lock_set(lock);
 					for (rnd = rescnt; rnd < n; rnd++)
-						tree[rnd].o = next(rse);
+						tree[rnd].r = next(rse);
 					if (lock)
 						MT_lock_unset(lock);
 					rnd = rescnt;
 				}
-				candoid = minoid + tree[rnd++].o % cnt;
+				candoid = minoid + tree[rnd++].r % cnt;
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
