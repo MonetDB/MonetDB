@@ -148,9 +148,8 @@ get_tl_error_buf(void)
 static const char *mnstr_error_kind_description(mnstr_error_kind kind);
 
 int
-mnstr_init(bool embedded)
+mnstr_init(void)
 {
-	(void) embedded;
 	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 
 	if (ATOMIC_TAS(&inited))
