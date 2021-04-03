@@ -4723,26 +4723,21 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
  * ->
  * {semi}join( A, groupby( semijoin(B,A) [gbe == A.x] ) [gbe][aggrs] ) [ gbe == A.x ]
  */
-
 static inline sql_rel *
 rel_push_join_down(visitor *v, sql_rel *rel)
 {
-	list *exps = NULL;
-
 	if (!rel_is_ref(rel) && ((is_left(rel->op) || rel->op == op_join || is_semi(rel->op)) && rel->l && rel->exps)) {
 		sql_rel *gb = rel->r, *ogb = gb, *l = NULL, *rell = rel->l;
 
-		if (gb->op == op_project)
+		if (is_simple_project(gb->op) && !rel_is_ref(gb))
 			gb = gb->l;
 
-		if (rel_is_ref(rell))
+		if (rel_is_ref(rell) || !gb || rel_is_ref(gb))
 			return rel;
 
-		exps = rel->exps;
-		if (gb && gb->op == op_groupby && gb->r && list_length(gb->r)) {
-			list *jes = new_exp_list(v->sql->sa);
+		if (is_groupby(gb->op) && gb->r && list_length(gb->r)) {
+			list *exps = rel->exps, *jes = new_exp_list(v->sql->sa), *gbes = gb->r;
 			node *n, *m;
-			list *gbes = gb->r;
 			/* find out if all group by expressions are used in the join */
 			for(n = gbes->h; n; n = n->next) {
 				sql_exp *gbe = n->data;
