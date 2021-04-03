@@ -327,7 +327,7 @@ statement ok
 INSERT INTO t0(c3) VALUES ((VALUES (3)) = ANY(SELECT 2 FROM t0 WHERE t0.c3))
 
 statement ok
-INSERT INTO t0(c3) VALUES(TRUE), ((VALUES (-409412573)) = ANY(SELECT ALL (VALUES (0.87714195), (NULL)) FROM t0 AS l1t0 WHERE l1t0.c3));
+INSERT INTO t0(c3) VALUES(TRUE), ((VALUES (-409412573)) = ANY(SELECT ALL (VALUES (0.87714195), (NULL)) FROM t0 AS l1t0 WHERE l1t0.c3))
 
 statement ok
 ROLLBACK
@@ -410,6 +410,19 @@ INSERT INTO "t1" VALUES (0.5491550453086529), (0.07482309364658168), (928354548)
 
 query I rowsort
 select t1.c0 from t1 where exists (select 1) and 3 = any(values (2))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" DECIMAL(18,3) NOT NULL)
+
+query T rowsort
+SELECT t1.c2 FROM t1 LEFT OUTER JOIN (SELECT 3 = ANY((SELECT 1) INTERSECT (SELECT 2))) AS sub0 ON (VALUES (FALSE))
 ----
 
 statement ok
