@@ -488,3 +488,65 @@ query I rowsort
 SELECT (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
 ----
 NULL
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" TIME)
+
+statement ok
+INSERT INTO "t1" VALUES (TIME '01:00:00'),(TIME '01:00:00'),(TIME '01:00:00'),(TIME '11:35:52'),(TIME '10:13:05'),(TIME '01:00:00'),(TIME '01:00:00'),
+(TIME '01:00:00'),(TIME '01:00:00'),(TIME '17:04:15'),(TIME '01:00:00'),(TIME '01:00:00'),(TIME '10:13:05'),(TIME '22:32:15')
+
+statement ok
+CREATE TABLE "t2" ("c0" UUID,"c2" CHAR(32),"c4" INTERVAL SECOND,"c7" UUID,"c6" INTERVAL DAY)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE EXISTS (SELECT (SELECT 1 FROM t2, t1))
+----
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+10:13:05
+10:13:05
+11:35:52
+17:04:15
+22:32:15
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT 1 FROM t2, t1) AS INT) as count FROM t1) as res
+----
+0
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT (SELECT 1 FROM t2, t1)) AS INT) as count FROM t1) as res
+----
+14
+
+query T rowsort
+SELECT EXISTS (SELECT (SELECT 1 FROM t2, t1)) FROM t1
+----
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+
+statement ok
+ROLLBACK
