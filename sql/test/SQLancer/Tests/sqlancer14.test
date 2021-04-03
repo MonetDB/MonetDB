@@ -479,3 +479,12 @@ SELECT min(1) as agg0 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE)
 
 statement ok
 ROLLBACK
+
+query I rowsort
+SELECT 1 WHERE (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
+----
+
+query I rowsort
+SELECT (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
+----
+NULL
