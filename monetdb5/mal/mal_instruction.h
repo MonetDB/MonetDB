@@ -145,6 +145,7 @@ mal_export int prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
+mal_export void removeMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
 mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, const char *name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);

@@ -1441,18 +1441,16 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
 	str oldprompt= cntxt->prompt;
 	int oldtrace = cntxt->itrace;
-	int oldhist = cntxt->curprg->def->keephistory;
 	str msg;
 
 	cntxt->itrace = 'n';
-	cntxt->curprg->def->keephistory = TRUE;
 
 	msg = runMAL(cntxt, mb, 0, 0);
 
-	cntxt->curprg->def->keephistory = oldhist;
 	cntxt->prompt =oldprompt;
 	cntxt->itrace = oldtrace;
 	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
+	removeMalBlkHistory(mb);
 	return msg;
 }
 
