@@ -2944,7 +2944,7 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			/* If the left relation cannot hold the comparison it cannot be pushed to the semi(anti)-join
 			   For now I guess only comparisons or anyequal func can appear here */
 			assert((is_func(e->type) && is_anyequal_func(sf)) || e->type == e_cmp);
-			if ((is_func(e->type) && is_anyequal_func(sf)) || !rel_has_cmp_exp(j->l, e)) {
+			if ((is_func(e->type) && is_anyequal_func(sf)) || !rel_rebind_exp(v->sql, j->l, e)) {
 				if (e->type == e_cmp) {
 					append(j->exps, e);
 				} else {

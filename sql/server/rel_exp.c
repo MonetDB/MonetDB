@@ -1546,21 +1546,6 @@ rel_has_all_exps(sql_rel *rel, list *exps)
 	return 1;
 }
 
-int
-rel_has_cmp_exp(sql_rel *rel, sql_exp *e)
-{
-	if (e->type == e_cmp) {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return rel_has_all_exps(rel, e->l) && rel_has_all_exps(rel, e->r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return rel_has_exp(rel, e->l) == 0 && rel_has_all_exps(rel, e->r);
-		} else {
-			return rel_has_exp(rel, e->l) == 0 && rel_has_exp(rel, e->r) == 0 && (!e->f || rel_has_exp(rel, e->f) == 0);
-		}
-	}
-	return 0;
-}
-
 sql_rel *
 find_rel(list *rels, sql_exp *e)
 {
