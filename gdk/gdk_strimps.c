@@ -287,7 +287,7 @@ create_header(BAT *b)
  *
  * TODO: Should this be inlined somehow? (probably yes)
  */
-static uint8_t
+static int8_t
 lookup_index(StrimpHeader *h, DataPair n)
 {
 	size_t i;
@@ -309,12 +309,13 @@ static uint64_t
 GDKstrimp_make_bitstring(const str s, StrimpHeader *h)
 {
 	uint64_t ret = 0;
-	uint8_t pair_idx;
+	int8_t pair_idx;
 	char *it;
 
 	for(it = s; *it != 0 && *(it+1) != 0; it++) {
 		pair_idx = lookup_index(h, pairToIndex(*it, *(it+1)));
 		if (pair_idx >= 0)
+			assert(pair_idx < STRIMP_HEADER_SIZE);
 			ret |= 0x1 << pair_idx;
 	}
 
@@ -323,7 +324,7 @@ GDKstrimp_make_bitstring(const str s, StrimpHeader *h)
 
 /* Create the heap for a string imprint. Returns NULL on failure. */
 static Heap *
-createStrimpheap(BAT *b, StrimpHeader *h)
+create_strimp_heap(BAT *b, StrimpHeader *h)
 {
 	Heap *r = NULL;
 	uint64_t *d;
@@ -374,7 +375,7 @@ GDKstrimp_create_strimp(BAT *b)
 		return GDK_FAIL;
 	}
 
-	if ((h = createStrimpheap(b, head)) == NULL) {
+	if ((h = create_strimp_heap(b, head)) == NULL) {
 		GDKfree(head);
 		return GDK_FAIL;
 	}
