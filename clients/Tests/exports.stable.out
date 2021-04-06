@@ -1278,6 +1278,7 @@ const char *remapRef;
 const char *remoteRef;
 void removeInstruction(MalBlkPtr mb, InstrPtr p);
 void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
+void removeMalBlkHistory(MalBlkPtr mb);
 void renameVariables(MalBlkPtr mb);
 const char *rename_columnRef;
 const char *rename_schemaRef;
