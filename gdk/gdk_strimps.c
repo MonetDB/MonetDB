@@ -16,17 +16,33 @@
  * - a 64 bit mask for each item in the BAT that encodes the presence or
  *   absence of each element of the header in the specific item.
  *
- * A string imprint is stored in a new Heap in the BAT.
+ * A string imprint is stored in a new Heap in the BAT, aligned in 8
+ * byte (64 bit) words.
  *
- * In the current (byte pair) implementation the first 136 bytes
- * (i.e. the first 17 64 bit quantities) in the Heap are as follows:
+ * The first 64 bit word describes how the header of the strimp is
+ * encoded. The most significant byte (v in the schematic below) is the
+ * version number. The second (np) is the number of pairs in the
+ * header. The third (b/p) is the number of bytes per pair if each pair
+ * is encoded using a constant number of bytes or 0 if it is utf-8. The
+ * next 2 bytes (hs) is the size of the header in bytes. The last 3
+ * bytes needed to align to the 8 byte boundary should be zero, and are
+ * reserved for future use.
  *
- * |                       Version Number                      |   -----
- * | byte pair 01 | byte pair 02 | byte pair 03 | byte pair 04 |     |
- * | byte pair 05 | byte pair 06 | byte pair 07 | byte pair 08 |     |  17 64 bit quantities
- * [...]                                                             |
- * | byte pair 61 | byte pair 62 | byte pair 63 | byte pair 64 |   -----
+ * In the current implementation we use 64 byte pairs for the header, so
  *
+ * np  == 64
+ * b/p == 2
+ * hs  == 128
+ *
+ * The actual header follows. If it ends before an 8 byte boundary it
+ * is padded with zeros.
+ *
+ * |  v   |  np   |  b/p |      hs      |     reserved         |  8bytes
+ * |                                                           |        ---
+ *                         Strimp Header                                 |
+ * |                                                           |  hs bytes + padding
+ * |                                                           |         |
+ * |                                                           |        ---
  * The bitmasks for each string in the BAT follow after this.
  *
  * Strimp creation goes as follows:
