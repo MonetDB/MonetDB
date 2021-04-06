@@ -760,7 +760,12 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
 
+		int single = is_single(r);
+		reset_single(r);
+		sql_rel *or = r;
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
+		if (single)
+			set_single(or);
 		r->op = op_join;
 		move_join_exps(sql, rel, r);
 		set_dependent(r);
@@ -2595,8 +2600,10 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rsq) {
 					if (on_right) {
 						sql_rel *join = rel->l; /* the introduced join */
-						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_join);
+						join->r = rel_crossproduct(sql->sa, join->r, rsq, depth?op_right:op_join);
 						set_dependent(join);
+						if (depth)
+							reset_has_nil(le);
 					} else {
 						operator_type op = !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti;
 						(void)rewrite_inner(sql, rel, rsq, &op);

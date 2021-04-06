@@ -5215,8 +5215,9 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
 				e = exp_values(query->sql->sa, r->exps);
 			} else {
-				e = r->exps->h->data;
-				if (rel && *rel && !exp_has_rel(e)) {
+				sql_exp *ne = r->exps->h->data;
+				if (rel && *rel && !exp_has_rel(ne)) {
+					e = ne;
 					rel_bind_var(query->sql, *rel, e);
 					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
 						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
