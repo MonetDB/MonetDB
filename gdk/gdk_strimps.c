@@ -60,10 +60,10 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+#if 0
 /* This counts how many unicode codepoints the given string
  * contains.
  */
-#if 0
 static size_t
 GDKstrimp_strlen(const uint8_t *s)
 {
@@ -251,7 +251,7 @@ make_header(StrimpHeader *h, uint64_t* hist, size_t hist_size)
 	}
 
 	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
-		TRC_DEBUG(ALGO, "%u %u: %lu", indexToPair1(h->bytepairs[i]), indexToPair2(h->bytepairs[i]), max_counts[i]);
+		TRC_DEBUG(ALGO, "0x%x 0x%x: %lu", indexToPair1(h->bytepairs[i]), indexToPair2(h->bytepairs[i]), max_counts[i]);
 	}
 
 	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
@@ -283,7 +283,7 @@ create_header(BAT *b)
  *
  * h[i] == p
  *
- * Returns 0 if p is not in h.
+ * Returns -1 if p is not in h.
  *
  * TODO: Should this be inlined somehow? (probably yes)
  */
@@ -295,7 +295,7 @@ lookup_index(StrimpHeader *h, DataPair n)
 		if(h->bytepairs[i] == n)
 			return i;
 
-	return 0;
+	return -1;
 }
 
 
@@ -314,7 +314,8 @@ GDKstrimp_make_bitstring(const str s, StrimpHeader *h)
 
 	for(it = s; *it != 0 && *(it+1) != 0; it++) {
 		pair_idx = lookup_index(h, pairToIndex(*it, *(it+1)));
-		ret |= 0x1 << pair_idx;
+		if (pair_idx >= 0)
+			ret |= 0x1 << pair_idx;
 	}
 
 	return ret;
