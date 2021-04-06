@@ -20,7 +20,7 @@
  * byte (64 bit) words.
  *
  * The first 64 bit word describes how the header of the strimp is
- * encoded. The most significant byte (v in the schematic below) is the
+ * encoded. The least significant byte (v in the schematic below) is the
  * version number. The second (np) is the number of pairs in the
  * header. The third (b/p) is the number of bytes per pair if each pair
  * is encoded using a constant number of bytes or 0 if it is utf-8. The
@@ -205,22 +205,23 @@ GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins
 	return GDK_SUCCEED;
 }
 
-/* Given a histogram find the indices of the 64 largest counts.
+/* Given a histogram find the indices of the STRIMP_HEADER_SIZE largest
+ * counts.
  *
  * We make one scan of histogram and every time we find a count that is
- * greater than the current minimum of the 64, we bubble it up in the
- * header until we find a count that is greater. We carry the index in
- * the histogram because this is the information we are actually
- * interested in keeping.
+ * greater than the current minimum of the STRIMP_HEADER_SIZE, we bubble
+ * it up in the header until we find a count that is greater. We carry
+ * the index in the histogram because this is the information we are
+ * actually interested in keeping.
  *
- * At the end of this process we have the indices of 64 largest counts
- * in the histogram. This process is O(n) in time since we are doing
- * constant work (at most 63 comparisons and swaps) for each item in the
- * histogram and as such is (theoretically) more efficient than sorting
- * (O(nlog n))and taking the 64 largest elements. This depends on the
- * size of the histogram n. For some small n sorting might be more
- * efficient, but for such inputs the difference should not be
- * noticeable.
+ * At the end of this process we have the indices of STRIMP_HEADER_SIZE
+ * largest counts in the histogram. This process is O(n) in time since
+ * we are doing constant work (at most 63 comparisons and swaps) for
+ * each item in the histogram and as such is (theoretically) more
+ * efficient than sorting (O(nlog n))and taking the STRIMP_HEADER_SIZE
+ * largest elements. This depends on the size of the histogram n. For
+ * some small n sorting might be more efficient, but for such inputs the
+ * difference should not be noticeable.
  *
  * In the current implementation each index is a DataPair value that is
  * constructed by pairToIndex from 2 consecutive bytes in the input.
@@ -328,6 +329,9 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 {
 	Heap *r = NULL;
 	uint64_t *d;
+	uint64_t descriptor;
+	uint8_t npairs, bytes_per_pair;
+	uint16_t hsize;
 	size_t i,j;
 	const char *nme;
 
@@ -342,7 +346,17 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 	}
 	r->free = STRIMP_OFFSET * sizeof(uint64_t);
 
+	npairs = STRIMP_HEADER_SIZE;
+	bytes_per_pair = 2;	/* Bytepair implementation */
+	hsize = sizeof(h->bytepairs);
+
+	assert(bytes_per_pair == 0 || npairs*bytes_per_pair == hsize);
+
+	descriptor = 0;
+	descriptor =  STRIMP_VERSION | npairs << 8 | bytes_per_pair << 16 | hsize << 24;
+
 	d = (uint64_t *)r->base;
+	*d++ = descriptor;
 	/* This loop assumes that we are working with byte pairs
 	 * (i.e. the type of the header is uint16_t). TODO: generalize.
 	 */
@@ -352,7 +366,14 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 			*d <<= 16;
 			*d |= h->bytepairs[i + j];
 		}
+		d++;
 	}
+#ifndef NDEBUG
+	FILE *fp = fopen("/tmp/foo.strimp", "wb");
+	fwrite(r->base, sizeof(uint64_t), STRIMP_HEADER_SIZE/4 + 1, fp);
+	fclose(fp);
+#endif
+
 	return r;
 }
 
