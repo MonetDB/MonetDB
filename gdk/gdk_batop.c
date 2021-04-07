@@ -66,7 +66,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 #if SIZEOF_VAR_T == 8
 	unsigned int tiv;	/* tail value-as-int */
 #endif
-	var_t v;		/* value */
+	var_t v = GDK_VAROFFSET; /* value */
 	size_t off;		/* offset within n's string heap */
 	BUN cnt = ci->ncand;
 	BUN oldcnt = BATcount(b);
@@ -80,9 +80,9 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
 	tp = NULL;
-	if ((!GDK_ELIMDOUBLES(b->tvheap) || oldcnt == 0) &&
-	    !GDK_ELIMDOUBLES(n->tvheap) &&
-	    b->tvheap->hashash == n->tvheap->hashash) {
+	if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
+			    !GDK_ELIMDOUBLES(n->tvheap) &&
+			    b->tvheap->hashash == n->tvheap->hashash)) {
 		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
@@ -128,6 +128,12 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				MT_lock_unset(&n->theaplock);
 				b->batDirtydesc = true;
 				toff = 0;
+				v = n->twidth == 1 ? GDK_VAROFFSET + 1 :
+					n->twidth == 2 ? GDK_VAROFFSET + (1 << 9) :
+#if SIZEOF_VAR_T == 8
+					n->twidth != 4 ? (var_t) 1 << 33 :
+#endif
+					(var_t) 1 << 17;
 			} else if (b->tvheap->parentid == n->tvheap->parentid &&
 				   ci->tpe == cand_dense) {
 				toff = 0;
@@ -135,6 +141,25 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				   unshare_varsized_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
+		} else if (oldcnt == 0) {
+			v = n->twidth == 1 ? GDK_VAROFFSET + 1 :
+				n->twidth == 2 ? GDK_VAROFFSET + (1 << 9) :
+#if SIZEOF_VAR_T == 8
+				n->twidth != 4 ? (var_t) 1 << 33 :
+#endif
+				(var_t) 1 << 17;
+			if (b->tvheap->size < n->tvheap->free) {
+				Heap *h = HEAPgrow(b->tvheap, n->tvheap->free);
+				if (h == NULL)
+					return GDK_FAIL;
+				MT_lock_set(&b->theaplock);
+				HEAPdecref(b->tvheap, false);
+				b->tvheap = h;
+				MT_lock_unset(&b->theaplock);
+			}
+			memcpy(b->tvheap->base, n->tvheap->base, n->tvheap->free);
+			b->tvheap->free = n->tvheap->free;
+			toff = 0;
 		}
 		if (toff == ~(size_t) 0 && cnt > 1024 && b->tvheap->free >= n->tvheap->free) {
 			/* If b and n aren't sharing their string
@@ -196,9 +221,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		return GDK_FAIL;
 
 	/* make sure there is (vertical) space in the offset heap, we
-	 * may have to widen the heap later */
-	if (GDKupgradevarheap(b, (var_t) b->tvheap->size, BATcount(b) + cnt,
-			      false) != GDK_SUCCEED)
+	 * may also widen if v was set to some limit above */
+	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (toff == 0 && n->twidth == b->twidth && ci->tpe == cand_dense) {

@@ -179,6 +179,55 @@ BATsetdims(BAT *b)
 	b->tvarsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
 
+const char *
+gettailname(const BAT *b)
+{
+	if (b->ttype != TYPE_str)
+		return "tail";
+	switch (b->twidth) {
+	case 1:
+		return "tail1";
+	case 2:
+		return "tail2";
+#if SIZEOF_VAR_T == 8
+	case 4:
+		return "tail4";
+#endif
+	default:
+		return "tail";
+	}
+}
+
+void
+settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
+{
+	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
+		      ".tail", NULL);
+	if (tt == TYPE_str) {
+		switch (width) {
+		case 1:
+			strconcat_len(tail->filename,
+				      sizeof(tail->filename), physnme,
+				      ".tail1", NULL);
+			break;
+		case 2:
+			strconcat_len(tail->filename,
+				      sizeof(tail->filename), physnme,
+				      ".tail2", NULL);
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			strconcat_len(tail->filename,
+				      sizeof(tail->filename), physnme,
+				      ".tail4", NULL);
+			break;
+#endif
+		default:
+			break;
+		}
+	}
+}
+
 /*
  * @- BAT allocation
  * Allocate BUN heap and variable-size atomheaps (see e.g. strHeap).
@@ -223,14 +272,12 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
+	else if (tt == TYPE_str)
+		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
 		goto bailout;
-	}
-	if (bn->theap->storage == STORE_MMAP) {
-		bn->twidth = ATOMsize(bn->ttype);
-		bn->tshift = ATOMelmshift(Tsize(bn));
 	}
 
 	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
@@ -680,8 +727,9 @@ BATdestroy(BAT *b)
 static void
 heapmove(Heap *dst, Heap *src)
 {
-	HEAPfree(dst, false);
-	/* copy all fields of src except filename and refs */
+	HEAPfree(dst, strcmp(dst->filename, src->filename) != 0);
+	/* copy all fields of src except refs */
+	strcpy_len(dst->filename, src->filename, sizeof(dst->filename));
 	dst->free = src->free;
 	dst->size = src->size;
 	dst->base = src->base;
@@ -808,9 +856,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				.farmid = BBPselectfarm(role, b->ttype, varheap),
 				.parentid = bn->batCacheid,
 			};
-			strconcat_len(bthp.filename, sizeof(bthp.filename),
-				      BBP_physical(bn->batCacheid),
-				      ".tail", NULL);
+			settailname(&bthp, BBP_physical(bn->batCacheid),
+				    bn->ttype, bn->twidth);
 			strconcat_len(thp.filename, sizeof(thp.filename),
 				      BBP_physical(bn->batCacheid),
 				      ".theap", NULL);

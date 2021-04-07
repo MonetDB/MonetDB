@@ -494,8 +494,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap->free = (size_t) free;
 	b->theap->size = (size_t) size;
 	b->theap->base = NULL;
-	strconcat_len(b->theap->filename, sizeof(b->theap->filename),
-		      filename, ".tail", NULL);
+	settailname(b->theap, filename, t, width);
 	b->theap->storage = (storage_t) storage;
 	b->theap->newstorage = (storage_t) storage;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
@@ -729,8 +728,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 /* check that the necessary files for all BATs exist and are large
  * enough */
 static gdk_return
-BBPcheckbats(void)
+BBPcheckbats(unsigned bbpversion)
 {
+	(void) bbpversion;
 	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
 		struct stat statb;
 		BAT *b;
@@ -744,11 +744,34 @@ BBPcheckbats(void)
 			/* no files needed */
 			continue;
 		}
-		path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
+		path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
 		if (path == NULL)
 			return GDK_FAIL;
-		if (MT_stat(path, &statb) < 0) {
-			GDKsyserror("BBPcheckbats: cannot stat file %s (expected size %zu)\n",
+#ifdef GDKLIBRARY_TAILN
+		/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
+		 * exist with either name .tail1 (etc) or .tail, if <=
+		 * GDKLIBRARY_TAILN, only with .tail */
+		char tailsave = 0;
+		size_t taillen = 0;
+		if (b->ttype == TYPE_str &&
+		    b->twidth < SIZEOF_VAR_T) {
+			/* old version: .tail, not .tail1, .tail2, .tail4 */
+			taillen = strlen(path) - 1;
+			tailsave = path[taillen];
+			path[taillen] = 0;
+		}
+#endif
+		if (MT_stat(path, &statb) < 0
+#ifdef GDKLIBRARY_TAILN
+		    && bbpversion > GDKLIBRARY_TAILN
+		    && b->ttype == TYPE_str
+		    && b->twidth < SIZEOF_VAR_T
+		    && (path[taillen] = tailsave) != 0
+		    && MT_stat(path, &statb) < 0
+#endif
+			) {
+
+			GDKsyserror("cannot stat file %s (expected size %zu)\n",
 				    path, b->theap->free);
 			GDKfree(path);
 			return GDK_FAIL;
@@ -764,7 +787,7 @@ BBPcheckbats(void)
 			if (path == NULL)
 				return GDK_FAIL;
 			if (MT_stat(path, &statb) < 0) {
-				GDKsyserror("BBPcheckbats: cannot stat file %s\n",
+				GDKsyserror("cannot stat file %s\n",
 					    path);
 				GDKfree(path);
 				return GDK_FAIL;
@@ -805,6 +828,7 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_TAILN &&
 	    bbpversion != GDKLIBRARY_MINMAX_POS) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
@@ -958,6 +982,30 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 	return GDK_FAIL;
 }
 
+#ifdef GDKLIBRARY_TAILN
+static gdk_return
+movestrbats(void)
+{
+	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
+		BAT *b = BBP_desc(bid);
+		if (b == NULL) {
+			/* not a valid BAT */
+			continue;
+		}
+		if (b->ttype != TYPE_str || b->twidth == SIZEOF_VAR_T)
+			continue;
+		char *oldpath = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
+		char *newpath = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
+		int ret = MT_rename(oldpath, newpath);
+		GDKfree(oldpath);
+		GDKfree(newpath);
+		if (ret < 0)
+			return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+#endif
+
 gdk_return
 BBPinit(void)
 {
@@ -1032,7 +1080,7 @@ BBPinit(void)
 			if (MT_stat(backupbbpdirstr, &st) < 0) {
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
-				TRC_DEBUG(IO_, "initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
+				TRC_DEBUG(IO_, "initializing BBP.\n");
 				if (BBPdir(0, NULL, NULL, LL_CONSTANT(0), LL_CONSTANT(0)) != GDK_SUCCEED) {
 					GDKfree(bbpdirstr);
 					GDKfree(backupbbpdirstr);
@@ -1085,7 +1133,7 @@ BBPinit(void)
 		return GDK_FAIL;
 	}
 
-	if (BBPcheckbats() != GDK_SUCCEED)
+	if (BBPcheckbats(bbpversion) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
@@ -1112,6 +1160,19 @@ BBPinit(void)
 		TRC_CRITICAL(GDK, "TMcommit failed\n");
 		return GDK_FAIL;
 	}
+#ifdef GDKLIBRARY_TAILN
+	/* we rename the offset heaps after the above commit: in this
+	 * version we accept both the old and new names, but we want to
+	 * convert so that future versions only have the new name */
+	if (bbpversion <= GDKLIBRARY_TAILN) {
+		/* note, if renaming fails, nothing is lost: a next
+		 * invocation will just try again; an older version of
+		 * mserver will not work because of the TMcommit
+		 * above */
+		if (movestrbats() != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
 	return GDK_SUCCEED;
 
   bailout:
@@ -1294,7 +1355,7 @@ BBPdir_header(FILE *f, int n, lng logno, lng transid)
 #endif
 		    SIZEOF_LNG, n, logno, transid) < 0 ||
 	    ferror(f)) {
-		GDKsyserror("BBPdir_header: Writing BBP.dir header failed\n");
+		GDKsyserror("Writing BBP.dir header failed\n");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1334,7 +1395,7 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 	}
 	/* third line contains BBPsize */
 	if (sscanf(buf, "BBPsize=%d", &n) != 1) {
-		GDKerror("BBPdir: cannot read BBPsize in backup BBP.dir.");
+		GDKerror("cannot read BBPsize in backup BBP.dir.");
 		goto bailout;
 	}
 	if (n < (bat) ATOMIC_GET(&BBPsize))
@@ -1342,7 +1403,7 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 	/* fourth line contains BBPinfo */
 	if (fgets(buf, sizeof(buf), obbpf) == NULL ||
 	    sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &ologno, &otransid) != 2) {
-		GDKerror("BBPdir: cannot read BBPinfo in backup BBP.dir.");
+		GDKerror("cannot read BBPinfo in backup BBP.dir.");
 		goto bailout;
 	}
 
@@ -1385,7 +1446,7 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 			while (j < cnt && subcommit[j] == i);
 		} else {
 			if (fprintf(nbbpf, "%s", buf) < 0) {
-				GDKsyserror("BBPdir_subcommit: Copying BBP.dir entry failed\n");
+				GDKsyserror("Copying BBP.dir entry failed\n");
 				goto bailout;
 			}
 			TRC_DEBUG(IO_, "%s", buf);
@@ -1403,11 +1464,11 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 	     && fsync(fileno(nbbpf)) < 0
 #endif
 		    )) {
-		GDKsyserror("BBPdir_subcommit: Syncing BBP.dir file failed\n");
+		GDKsyserror("Syncing BBP.dir file failed\n");
 		goto bailout;
 	}
 	if (fclose(nbbpf) == EOF) {
-		GDKsyserror("BBPdir_subcommit: Closing BBP.dir file failed\n");
+		GDKsyserror("Closing BBP.dir file failed\n");
 		goto bailout;
 	}
 
@@ -1461,11 +1522,11 @@ BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tra
 	     && fsync(fileno(fp)) < 0
 #endif
 		    )) {
-		GDKsyserror("BBPdir: Syncing BBP.dir file failed\n");
+		GDKsyserror("Syncing BBP.dir file failed\n");
 		goto bailout;
 	}
 	if (fclose(fp) == EOF) {
-		GDKsyserror("BBPdir: Closing BBP.dir file failed\n");
+		GDKsyserror("Closing BBP.dir file failed\n");
 		return GDK_FAIL;
 	}
 
@@ -2819,13 +2880,40 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	  Heap *h, bool dirty, bool subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
+	char extnew[16];
+	bool istail = strncmp(ext, "tail", 4) == 0;
 
 	/* direct mmap is unprotected (readonly usage, or has WAL
 	 * protection); however, if we're backing up for subcommit
 	 * and a backup already exists in the main backup directory
 	 * (see GDKupgradevarheap), move the file */
-	if (subcommit && file_exists(h->farmid, BAKDIR, nme, ext)) {
-		if (file_move(h->farmid, BAKDIR, SUBDIR, nme, ext) != GDK_SUCCEED)
+	if (subcommit) {
+		strcpy_len(extnew, ext, sizeof(extnew));
+		char *p = extnew + strlen(extnew) - 1;
+		if (*p == 'l') {
+			p++;
+			p[1] = 0;
+		}
+		bool exists;
+		for (;;) {
+			exists = file_exists(h->farmid, BAKDIR, nme, extnew);
+			if (exists)
+				break;
+			if (!istail)
+				break;
+			if (*p == '1')
+				break;
+			if (*p == '2')
+				*p = '1';
+#if SIZEOF_VAR_T == 8
+			else if (*p != '4')
+				*p = '4';
+#endif
+			else
+				*p = '2';
+		}
+		if (exists &&
+		    file_move(h->farmid, BAKDIR, SUBDIR, nme, extnew) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	if (h->storage != STORE_MMAP) {
@@ -2838,19 +2926,72 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		 * X.new files (after a crash). To protect against
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
-		char extnew[16];
 		gdk_return mvret = GDK_SUCCEED;
+		bool exists;
+
+		if (istail) {
+			exists = file_exists(h->farmid, BAKDIR, nme, "tail.new") ||
+#if SIZEOF_VAR_T == 8
+				file_exists(h->farmid, BAKDIR, nme, "tail4.new") ||
+#endif
+				file_exists(h->farmid, BAKDIR, nme, "tail2.new") ||
+				file_exists(h->farmid, BAKDIR, nme, "tail1.new") ||
+				file_exists(h->farmid, BAKDIR, nme, "tail") ||
+#if SIZEOF_VAR_T == 8
+				file_exists(h->farmid, BAKDIR, nme, "tail4") ||
+#endif
+				file_exists(h->farmid, BAKDIR, nme, "tail2") ||
+				file_exists(h->farmid, BAKDIR, nme, "tail1");
+		} else {
+			exists = file_exists(h->farmid, BAKDIR, nme, "theap.new") ||
+				file_exists(h->farmid, BAKDIR, nme, "theap");
+		}
 
 		strconcat_len(extnew, sizeof(extnew), ext, ".new", NULL);
-		if (dirty &&
-		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
-		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
+		if (dirty && !exists) {
 			/* if the heap is dirty and there is no heap
 			 * file (with or without .new extension) in
 			 * the BAKDIR, move the heap (preferably with
 			 * .new extension) to the correct backup
 			 * directory */
-			if (file_exists(h->farmid, srcdir, nme, extnew))
+			if (istail) {
+				if (file_exists(h->farmid, srcdir, nme, "tail.new"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail.new");
+#if SIZEOF_VAR_T == 8
+				else if (file_exists(h->farmid, srcdir, nme, "tail4.new"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail4.new");
+#endif
+				else if (file_exists(h->farmid, srcdir, nme, "tail2.new"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail2.new");
+				else if (file_exists(h->farmid, srcdir, nme, "tail1.new"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail1.new");
+				else if (file_exists(h->farmid, srcdir, nme, "tail"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail");
+#if SIZEOF_VAR_T == 8
+				else if (file_exists(h->farmid, srcdir, nme, "tail4"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail4");
+#endif
+				else if (file_exists(h->farmid, srcdir, nme, "tail2"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail2");
+				else if (file_exists(h->farmid, srcdir, nme, "tail1"))
+					mvret = heap_move(h, srcdir,
+							  subcommit ? SUBDIR : BAKDIR,
+							  nme, "tail1");
+			} else if (file_exists(h->farmid, srcdir, nme, extnew))
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, extnew);
@@ -2919,7 +3060,7 @@ BBPbackup(BAT *b, bool subcommit)
 	srcdir[s - srcdir] = 0;
 
 	if (b->ttype != TYPE_void &&
-	    do_backup(srcdir, nme, "tail", b->theap,
+	    do_backup(srcdir, nme, gettailname(b), b->theap,
 		      b->batDirtydesc || b->theap->dirty,
 		      subcommit) != GDK_SUCCEED)
 		goto fail;
@@ -2981,13 +3122,13 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				char o[10];
 				char *f;
 				snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
-				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "tail");
+				f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
 				if (f == NULL) {
 					ret = GDK_FAIL;
 					goto bailout;
 				}
 				if (MT_access(f, F_OK) == 0)
-					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "tail");
+					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, gettailname(b));
 				GDKfree(f);
 				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
 				if (f == NULL) {
@@ -3044,7 +3185,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		     MT_rename(bakdir, deldir) < 0))
 			ret = GDK_FAIL;
 		if (ret != GDK_SUCCEED)
-			GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, deldir);
+			GDKsyserror("rename(%s,%s) failed.\n", bakdir, deldir);
 		TRC_DEBUG(IO_, "rename %s %s = %d\n", bakdir, deldir, (int) ret);
 	}
 
@@ -3249,7 +3390,7 @@ BBPrecover(int farmid)
 
 	if (ret == GDK_SUCCEED) {
 		if (MT_rmdir(bakdirpath) < 0) {
-			GDKsyserror("BBPrecover: cannot remove directory %s\n", bakdirpath);
+			GDKsyserror("cannot remove directory %s\n", bakdirpath);
 			ret = GDK_FAIL;
 		}
 		TRC_DEBUG(IO_, "rmdir %s = %d\n", bakdirpath, (int) ret);
@@ -3395,7 +3536,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			/* found a file with too long a name
 			   (i.e. unknown); stop pruning in this
 			   subdir */
-			fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			fprintf(stderr, "unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		strncpy(dst, dent->d_name, dstlen);
@@ -3462,12 +3603,12 @@ BBPdiskscan(const char *parent, size_t baseoff)
 		if (!ok) {
 			/* found an unknown file; stop pruning in this
 			 * subdir */
-			fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			fprintf(stderr, "unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		if (delete) {
 			if (MT_remove(fullname) != 0 && errno != ENOENT) {
-				GDKsyserror("BBPdiskscan: remove(%s)", fullname);
+				GDKsyserror("remove(%s)", fullname);
 				continue;
 			}
 			TRC_DEBUG(IO_, "remove(%s) = 0\n", fullname);
