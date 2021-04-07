@@ -127,7 +127,7 @@ extern unsigned int exp_card(sql_exp *e);
 
 extern const char *exp_find_rel_name(sql_exp *e);
 
-extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
+extern sql_exp *rel_find_exp(sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
@@ -162,6 +162,7 @@ extern sql_exp *exp_rel_update_exp(mvc *sql, sql_exp *e);
 extern sql_exp *exp_rel_label(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
+extern int exps_have_unsafe(list *exps, int allow_identity);
 extern int exp_unsafe(sql_exp *e, int allow_identity);
 extern int exp_has_sideeffect(sql_exp *e);
 
@@ -173,8 +174,6 @@ extern int rel_has_exp(sql_rel *rel, sql_exp *e);
 extern int rel_has_exps(sql_rel *rel, list *e);
 /* return 1 when the relation contains all of the passed expressions else 0 */
 extern int rel_has_all_exps(sql_rel *rel, list *e);
-/* return 1 when the relation contains the expression else 0 */
-extern int rel_has_cmp_exp(sql_rel *rel, sql_exp *e);
 
 extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);

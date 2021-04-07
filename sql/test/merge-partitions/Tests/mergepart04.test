@@ -24,7 +24,7 @@ INSERT INTO anothertest VALUES (4, 'wrong')
 statement ok
 ROLLBACK
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtest2 VALUES (-1, 'hello')
 
 query I rowsort
@@ -43,7 +43,7 @@ SELECT COUNT(*) from value_partitions
 statement ok
 ALTER TABLE anothertest DROP TABLE subtest2
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtest2 VALUES (-5, 'oh no')
 
 statement error

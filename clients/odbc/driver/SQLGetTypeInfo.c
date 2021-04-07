@@ -1057,7 +1057,6 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	case SQL_VARBINARY:
 	case SQL_LONGVARBINARY:
 	case SQL_BIGINT:
-	case SQL_HUGEINT:
 	case SQL_TINYINT:
 	case SQL_BIT:
 	case SQL_WCHAR:
@@ -1077,6 +1076,12 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	case SQL_INTERVAL_HOUR_TO_MINUTE:
 	case SQL_INTERVAL_HOUR_TO_SECOND:
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		break;
+
+	case SQL_HUGEINT:
+		/* the application shows interest in HUGEINT, so now we
+		 * enable it */
+		stmt->Dbc->allow_hugeint = true;
 		break;
 
 	/* some pre ODBC 3.0 data types which can be mapped to ODBC
@@ -1142,6 +1147,10 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
 		assert(t == types || t->data_type >= (t-1)->data_type);
 		if (DataType != SQL_ALL_TYPES && DataType != t->data_type)
+			continue;
+		if (DataType == SQL_ALL_TYPES &&
+		    t->data_type == SQL_HUGEINT &&
+		    !stmt->Dbc->allow_hugeint)
 			continue;
 		if (first) {
 			/* specify column types in first set of values */

@@ -6,7 +6,7 @@ query T nosort
 ----
 project (
 | group by (
-| | table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| | table("sys"."fk") [ "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ] COUNT 
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 

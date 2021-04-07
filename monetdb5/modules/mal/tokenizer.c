@@ -70,12 +70,15 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BUN p;
 
 	if (BAThash(b) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&b->thashlock);
 		HASHloop_str(bi, b->thash, p, part) {
 			if (BUNtoid(bidx, p) == *prv) {
+				MT_rwlock_rdunlock(&b->thashlock);
 				*prv = (oid) p;
 				return TRUE;
 			}
 		}
+		MT_rwlock_rdunlock(&b->thashlock);
 	} else {
 		/* hash failed, slow scan */
 		BUN q;
@@ -620,7 +623,7 @@ TKNZRgetCardinality(bat *r)
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
-		cnt = (lng) BATcount(en);
+		cnt = (lng) canditer_init(&(struct canditer){0}, NULL, en);
 		BBPunfix(en->batCacheid);
 		if (BUNappend(b, &cnt, false) != GDK_SUCCEED) {
 			BBPreclaim(b);

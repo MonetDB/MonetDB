@@ -59,20 +59,22 @@ update t_4_1 set "name" = 'mo' where "id" = 10
 query IT rowsort
 select * from t_4_1
 ----
+10
+mo
+20
+monet
 0
 update_old_row_statement
 1
 update_new_row_statement
-10
-mo
 2
 update_statement
-20
-monet
 3
 update_row
 5
 update_when_row_true
+7
+update_when_row_false
 
 statement ok
 delete from t_4_1 where "id" >-1

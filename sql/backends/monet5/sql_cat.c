@@ -62,16 +62,11 @@ table_has_updates(sql_trans *tr, sql_table *t)
 	int cnt = 0;
 	sqlstore *store = tr->store;
 
-	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
+	for ( n = ol_first_node(t->columns); !cnt && n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *b = store->storage_api.bind_col(tr, c, RD_UPD_ID);
-		if ( b == 0)
-			return -1;
-		cnt |= BATcount(b) > 0;
-		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
-		    t->persistence == SQL_PERSIST && !t->commit_action)
-			cnt |= store->storage_api.count_col(tr, c, 0) > 0;
-		BBPunfix(b->batCacheid);
+
+		size_t upd = store->storage_api.count_col( tr, c, 2/* count updates */);
+		cnt |= upd > 0;
 	}
 	return cnt;
 }
@@ -81,9 +76,9 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 {
 	node *n, *m, *nn, *mm;
 
-	if (cs_size(&nt->columns) != cs_size(&nnt->columns))
+	if (ol_length(nt->columns) != ol_length(nnt->columns))
 		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table doesn't match %s definition", errtable, errtable);
-	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
+	for (n = ol_first_node(nt->columns), m = ol_first_node(nnt->columns); n && m; n = n->next, m = m->next) {
 		sql_column *nc = n->data;
 		sql_column *mc = m->data;
 
@@ -97,10 +92,10 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 		}
 	}
 	if (isNonPartitionedTable(nt)) {
-		if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
+		if (ol_length(nt->idxs) != ol_length(nnt->idxs))
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index doesn't match %s definition", errtable, errtable);
-		if (cs_size(&nt->idxs))
-			for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
+		if (ol_length(nt->idxs))
+			for (n = ol_first_node(nt->idxs), m = ol_first_node(nnt->idxs); n && m; n = n->next, m = m->next) {
 				sql_idx *ni = n->data;
 				sql_idx *mi = m->data;
 
@@ -108,10 +103,10 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
 			}
 	} else { //for partitioned tables we allow indexes but the key set must be exactly the same
-		if (cs_size(&nt->keys) != cs_size(&nnt->keys))
+		if (ol_length(nt->keys) != ol_length(nnt->keys))
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key doesn't match %s definition", errtable, errtable);
-		if (cs_size(&nt->keys))
-			for (n = nt->keys.set->h, m = nnt->keys.set->h; n && m; n = n->next, m = m->next) {
+		if (ol_length(nt->keys))
+			for (n = ol_first_node(nt->keys), m = ol_first_node(nnt->keys); n && m; n = n->next, m = m->next) {
 				sql_key *ni = n->data;
 				sql_key *mi = m->data;
 
@@ -158,7 +153,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 	if (!update && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	node *n = members_find_child_id(rmt->members.set, rpt->base.id);
+	node *n = members_find_child_id(rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
 	if (isDeclaredTable(rpt))
@@ -426,7 +421,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	const char *errtable = TABLE_TYPE_DESCRIPTION(mt->type, mt->properties);
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	if (!(n = members_find_child_id(mt->members.set, pt->base.id)))
+	if (!(n = members_find_child_id(mt->members, pt->base.id)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	if (sql_trans_del_table(sql->session->tr, mt, pt, drop_action))
@@ -555,8 +550,8 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
 		throw(SQL,"sql.drop_table", SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
-	if (!drop_action && t->keys.set) {
-		for (node *n = t->keys.set->h; n; n = n->next) {
+	if (!drop_action && t->keys) {
+		for (node *n = ol_first_node(t->keys); n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
@@ -624,7 +619,7 @@ drop_key(mvc *sql, char *sname, char *tname, char *kname, int drop_action)
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		throw(SQL,"sql.drop_key", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", tname);
-	if (!(n = list_find_name(t->keys.set, kname)))
+	if (!(n = ol_find_name(t->keys, kname)))
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: no such constraint '%s'", kname);
 	key = n->data;
 	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
@@ -884,33 +879,33 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
 	/* First check if all the changes are allowed */
-	if (t->idxs.set) {
+	if (t->idxs) {
 		/* only one pkey */
 		if (nt->pkey) {
-			for (n = t->idxs.nelm; n; n = n->next) {
+			for (n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *i = n->data;
+				if (!i->base.new || i->base.deleted)
+					continue;
 				if (i->key && i->key->type == pkey)
 					throw(SQL,"sql.alter_table", SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
 		}
 	}
 
-	/* check for changes */
-	if (t->columns.dset)
-		for (n = t->columns.dset->h; n; n = n->next) {
-			/* propagate alter table .. drop column */
-			sql_column *c = n->data;
-			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
-			if (mvc_drop_column(sql, nt, nc, c->drop_action))
-				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	/* check for changes on current cols */
-	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 
 		/* null or default value changes */
 		sql_column *c = n->data;
-		sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 
+		if (c->base.new)
+			break;
+
+		sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
+		if (c->base.deleted) {
+			if (mvc_drop_column(sql, nt, nc, c->drop_action))
+				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			continue;
+		}
 		if (c->null != nc->null && isTable(nt)) {
 			if (c->null && nt->pkey) { /* check for primary keys based on this column */
 				node *m;
@@ -943,25 +938,33 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
+	/* handle new columns */
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
 
+		if (c->base.deleted) /* skip */
+			continue;
 		if (mvc_copy_column(sql, nt, c) == NULL)
 			throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create column %s.%s", c->t->base.name, c->base.name);
 	}
-	if (t->idxs.set) {
+	if (t->idxs) {
 		/* alter drop index */
-		if (t->idxs.dset)
-			for (n = t->idxs.dset->h; n; n = n->next) {
+		if (t->idxs)
+			for (n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *i = n->data;
+				if (i->base.new || !i->base.deleted)
+					continue;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
 				if (mvc_drop_idx(sql, s, ni))
 					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		/* alter add index */
-		for (n = t->idxs.nelm; n; n = n->next) {
+		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+
+			if (!i->base.new || i->base.deleted)
+				continue;
 
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
@@ -987,24 +990,25 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create index %s.%s", i->t->base.name, i->base.name);
 		}
 	}
-	if (t->keys.set) {
+	if (t->keys) {
 		/* alter drop key */
-		if (t->keys.dset)
-			for (n = t->keys.dset->h; n; n = n->next) {
-				sql_key *k = n->data;
+		for (n = ol_first_node(t->keys); n; n = n->next) {
+			sql_key *k = n->data;
+
+			if ((!k->base.new && !k->base.deleted) || (k->base.new && k->base.deleted))
+				continue;
+			if (k->base.deleted) {
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
 				if (nk) {
 					if (mvc_drop_key(sql, s, nk, k->drop_action))
 						throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
+			} else { /* new */
+				str err;
+				if ((err = sql_partition_validate_key(sql, t, k, "ALTER")))
+					return err;
+				mvc_copy_key(sql, nt, k);
 			}
-		/* alter add key */
-		for (n = t->keys.nelm; n; n = n->next) {
-			sql_key *k = n->data;
-			str err;
-			if ((err = sql_partition_validate_key(sql, t, k, "ALTER")))
-				return err;
-			mvc_copy_key(sql, nt, k);
 		}
 	}
 	return MAL_SUCCEED;
@@ -1630,7 +1634,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			// have new remark but found none so insert row
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
-			ok = store->table_api.table_insert(tx, comments, &objid, remark);
+			ok = store->table_api.table_insert(tx, comments, &objid, &remark);
 		}
 	} else {
 		if (!is_oid_nil(rid)) {
@@ -1729,7 +1733,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
 		if (isDeclaredTable(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
-		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&t->members) || !list_empty(t->triggers.set))
+		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || list_length(t->members) || ol_length(t->triggers))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (!(s = mvc_bind_schema(sql, nschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);

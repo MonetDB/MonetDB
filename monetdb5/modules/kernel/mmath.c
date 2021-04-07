@@ -23,9 +23,41 @@
 #include <fenv.h>
 #include "mmath_private.h"
 
-#define cot(x)				(1 / tan(x))
-#define radians(x)			((x) * (M_PI / 180.0))
-#define degrees(x)			((x) * (180.0 / M_PI))
+double
+cot(double x)
+{
+	return 1.0 / tan(x);
+}
+
+float
+cotf(float x)
+{
+	return 1.0f / tanf(x);
+}
+
+double
+radians(double x)
+{
+	return x * (M_PI / 180.0);
+}
+
+float
+radiansf(float x)
+{
+	return x * (M_PIF / 180.0f);
+}
+
+double
+degrees(double x)
+{
+	return x * (180.0 / M_PI);
+}
+
+float
+degreesf(float x)
+{
+	return x * (180.0f / M_PIF);
+}
 
 double
 logbs(double base, double x)
@@ -49,16 +81,15 @@ logbsf(float base, float x)
 
 #define unopbaseM5(NAME, FUNC, TYPE)								\
 static str															\
-MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
+MATHunary##NAME##TYPE(TYPE *res, const TYPE *a)						\
 {																	\
 	if (is_##TYPE##_nil(*a)) {										\
 		*res = TYPE##_nil;											\
 	} else {														\
-		double a1 = *a, r;											\
 		int e = 0, ex = 0;											\
 		errno = 0;													\
 		feclearexcept(FE_ALL_EXCEPT);								\
-		r = FUNC(a1);												\
+		*res = FUNC(*a);											\
 		if ((e = errno) != 0 ||										\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 							   FE_OVERFLOW)) != 0) {				\
@@ -73,14 +104,13 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 				err = "Invalid result";								\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
 		}															\
-		*res = (TYPE) r;											\
 	}																\
 	return MAL_SUCCEED;												\
 }
 
 #define unopM5(NAME, FUNC)						\
 	unopbaseM5(NAME, FUNC, dbl)					\
-	unopbaseM5(NAME, FUNC, flt)
+	unopbaseM5(NAME, FUNC##f, flt)
 
 #define binopbaseM5(NAME, FUNC, TYPE)								\
 static str															\
@@ -89,11 +119,10 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
 		*res = TYPE##_nil;											\
 	} else {														\
-		double r1, a1 = *a, b1 = *b;								\
 		int e = 0, ex = 0;											\
 		errno = 0;													\
 		feclearexcept(FE_ALL_EXCEPT);								\
-		r1 = FUNC(a1, b1);											\
+		*res = FUNC(*a, *b);										\
 		if ((e = errno) != 0 ||										\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 							   FE_OVERFLOW)) != 0) {				\
@@ -108,30 +137,13 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 				err = "Invalid result";								\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
 		}															\
-		*res= (TYPE) r1;											\
 	}																\
 	return MAL_SUCCEED;												\
 }
 
-#define unopM5NOT(NAME, FUNC)									\
-static str														\
-MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
-{																\
-	(void)res;	\
-	(void)a;	\
-	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
-}																\
-static str														\
-MATHunary##NAME##flt(flt *res , const flt *a)					\
-{																\
-	(void)res;	\
-	(void)a;	\
-	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
-}
-
 #define binopM5(NAME, FUNC)						\
   binopbaseM5(NAME, FUNC, dbl)					\
-  binopbaseM5(NAME, FUNC, flt)
+  binopbaseM5(NAME, FUNC##f, flt)
 
 #define roundM5(TYPE)											\
 static str														\
@@ -178,14 +190,7 @@ unopM5(_LOG,log)
 unopM5(_LOG10,log10)
 unopM5(_LOG2,log2)
 unopM5(_SQRT,sqrt)
-
-
-#ifdef HAVE_CBRT
 unopM5(_CBRT,cbrt)
-#else
-unopM5NOT(_CBRT,cbrt)
-#endif
-
 unopM5(_CEIL,ceil)
 unopM5(_FLOOR,floor)
 

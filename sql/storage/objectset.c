@@ -46,17 +46,11 @@ typedef struct versionhead  {
     objectversion* ov;
 } versionhead ;
 
-typedef struct RW_lock { //readers-writer lock
-	int reader_cnt;
-	MT_Lock readers_lock;
-	MT_Lock general_lock;
-} RW_lock;
-
 typedef struct objectset {
 	int refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
-	RW_lock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
+	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
 	versionhead  *name_based_t;
 	versionhead  *id_based_h;
@@ -78,33 +72,25 @@ os_id_key(versionhead  *n)
 static inline void
 lock_reader(objectset* os)
 {
-	MT_lock_set(&os->rw_lock.readers_lock);
-	if (1 == ++os->rw_lock.reader_cnt) {
-		MT_lock_set(&os->rw_lock.general_lock);
-	}
-	MT_lock_unset(&os->rw_lock.readers_lock);
+	MT_rwlock_rdlock(&os->rw_lock);
 }
 
 static inline void
 unlock_reader(objectset* os)
 {
-	MT_lock_set(&os->rw_lock.readers_lock);
-	if (0 == --os->rw_lock.reader_cnt) {
-		MT_lock_unset(&os->rw_lock.general_lock);
-	}
-	MT_lock_unset(&os->rw_lock.readers_lock);
+	MT_rwlock_rdunlock(&os->rw_lock);
 }
 
 static inline void
 lock_writer(objectset* os)
 {
-	MT_lock_set(&os->rw_lock.general_lock);
+	MT_rwlock_wrlock(&os->rw_lock);
 }
 
 static inline void
 unlock_writer(objectset* os)
 {
-	MT_lock_unset(&os->rw_lock.general_lock);
+	MT_rwlock_wrunlock(&os->rw_lock);
 }
 
 static bte os_atmc_get_state(objectversion *ov) {
@@ -167,6 +153,8 @@ hash_delete(sql_hash *h, void *data)
 			h->buckets[key&(h->size-1)] = p->chain;
 		else
 			e->chain = p->chain;
+		if (!h->sa)
+			_DELETE(p);
 	}
 }
 
@@ -262,7 +250,7 @@ node_create(sql_allocator *sa, objectversion *ov)
 	return n;
 }
 
-static int
+static inline int
 os_name_key(versionhead  *n)
 {
 	return hash_key(n->ov->b->name);
@@ -272,7 +260,7 @@ static objectset *
 os_append_node_name(objectset *os, versionhead  *n)
 {
 	lock_writer(os);
-	if ((!os->name_map || os->name_map->size*16 < os->name_based_cnt) && os->name_based_cnt > HASH_MIN_SIZE && os->sa) {
+	if ((!os->name_map || os->name_map->size*16 < os->name_based_cnt) && os->name_based_cnt > HASH_MIN_SIZE) {
 		hash_destroy(os->name_map);
 		os->name_map = hash_new(os->sa, os->name_based_cnt, (fkeyvalue)& os_name_key);
 		if (os->name_map == NULL) {
@@ -638,8 +626,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 		.unique = unique
 	};
 	os->destroy = destroy;
-	MT_lock_init(&os->rw_lock.readers_lock, "sa_readers_lock");
-	MT_lock_init(&os->rw_lock.general_lock, "sa_general_lock");
+	MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
 
 	return os;
 }
@@ -656,8 +643,7 @@ os_destroy(objectset *os, sql_store store)
 {
 	if (--os->refcnt > 0)
 		return;
-	MT_lock_destroy(&os->rw_lock.readers_lock);
-	MT_lock_destroy(&os->rw_lock.general_lock);
+	MT_rwlock_destroy(&os->rw_lock);
 	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;

@@ -892,6 +892,19 @@ cleanup:
 }
 
 int
+monet5_has_module(ptr M, char *module)
+{
+	Client c;
+	int clientID = *(int*) M;
+	c = MCgetClient(clientID);
+
+	Module m = findModule(c->usermodule, putName(module));
+	if (m && m != c->usermodule)
+		return 1;
+	return 0;
+}
+
+int
 monet5_resolve_function(ptr M, sql_func *f)
 {
 	Client c;

@@ -80,7 +80,7 @@ BATcheckorderidx(BAT *b)
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */
-		assert(!GDKinmemory(b->theap.farmid));
+		assert(!GDKinmemory(b->theap->farmid));
 		MT_lock_set(&b->batIdxLock);
 		if (b->torderidx == (Heap *) 1) {
 			Heap *hp;
@@ -140,12 +140,12 @@ createOIDXheap(BAT *b, bool stable)
 	oid *restrict mv;
 	const char *nme;
 
-	nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+	nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
-	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
+	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
 		GDKfree(m);
 		return NULL;
 	}
@@ -165,8 +165,8 @@ persistOIDX(BAT *b)
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount &&
-	    !b->theap.dirty &&
-	    !GDKinmemory(b->theap.farmid)) {
+	    !b->theap->dirty &&
+	    !GDKinmemory(b->theap->farmid)) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
 		char name[MT_NAME_LEN];
@@ -368,7 +368,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
-	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
+	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
 		GDKfree(m);
 		MT_lock_unset(&b->batIdxLock);
 		return GDK_FAIL;
@@ -502,7 +502,7 @@ OIDXfree(BAT *b)
 
 		MT_lock_set(&b->batIdxLock);
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
-			if (GDKinmemory(b->theap.farmid)) {
+			if (GDKinmemory(b->theap->farmid)) {
 				b->torderidx = NULL;
 				HEAPfree(hp, true);
 			} else {

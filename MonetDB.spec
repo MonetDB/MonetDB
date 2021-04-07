@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Oct2020-SP3/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Oct2020-SP4/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -302,8 +302,8 @@ This package contains the files needed to develop with the
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Requires(post): unixODBC
-Requires(postun): unixODBC
+Requires(post): %{_bindir}/odbcinst
+Requires(postun): %{_bindir}/odbcinst
 
 %description client-odbc
 MonetDB is a database management system that is developed from a
@@ -828,6 +828,48 @@ else
 fi
 
 %changelog
+* Fri Apr 02 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.15-20210402
+- Rebuilt.
+- GH#6786: function json.isvalid(js json) is not useful, could be removed
+- GH#7016: Database crashes when use similarity function on a table with
+  more than 200k records
+- GH#7037: Clearer err msg for ALTER USER with insufficient privileges
+- GH#7042: AddressSanitizer:DEADLYSIGNAL in Oct2020/gdk/gdk_tracer.c:494
+- GH#7050: file descriptor leak when forward=redirect
+- GH#7057: ODBC driver installer on Windows is missing some DLLs
+- GH#7058: MonetDBe: COPY INTO csv file does not produce any output
+- GH#7059: MonetDBe: 'reverse' C UDF crashes
+- GH#7061: Have bulk load support combined gzip files
+- GH#7064: Temporary hashes created in hash and unique logic should try to
+  use transient data farm first
+- GH#7066: percent_rank function with wrong results
+- GH#7070: double free error when running MonetDBe Example
+- GH#7076: mserver5 ignores memory.low from cgroups v2
+- GH#7077: Oct2020: new default privileges not effectively communicated
+- GH#7083: MonetDBe C++ Compiling Error
+- GH#7085: Mitosis and filter functions
+- GH#7087: SIGSEGV caused by error in subquery's function being ignored by
+  top-level query
+- GH#7089: Data consistency problem of query results in the latest release
+  of Monetdb (Remote Table)
+
+* Wed Mar 31 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.15-20210402
+- odbc: When connecting using a DSN (Data Source Name), information about the
+  data source is retrieved from the ODBC.INI file.  Now we also get the
+  location of the LOGFILE from this file.  The logfile can be used to
+  log all calls to the MonetDB ODBC driver to a file which can be used
+  for debugging.
+
+* Thu Mar 25 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.15-20210402
+- odbc: The ODBC driver now only passes on information about HUGEINT columns
+  as HUGEINT when the application has indicated interest by querying
+  about the SQL_HUGEINT extension type using the SQLGetTypeInfo
+  function or by specifying the type in a call to SQLSetDescField.
+  Otherwise the driver silently translates the HUGEINT type to BIGINT.
+  This means that most application will see BIGINT columns when the
+  server produced a HUGEINT column and only give an error if the value
+  in the HUGEINT column didn't fit into a BIGINT.
+
 * Thu Feb 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.13-20210211
 - Rebuilt.
 - GH#7049: Implement DISTINCT for GROUP_CONCAT

@@ -29,6 +29,7 @@ mal_export int isLoopBarrier(MalBlkPtr mb, int pc);
 mal_export int getBlockExit(MalBlkPtr mb,int pc);
 mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 mal_export void setVariableScope(MalBlkPtr mb);
+mal_export void renameVariables(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk, int flg);

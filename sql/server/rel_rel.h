@@ -49,10 +49,6 @@
 #define is_psm_call(X)         ((X & psm_call) == psm_call)
 #define is_sql_or(X)           ((X & sql_or) == sql_or)
 
-#define is_updateble(rel) \
-	(rel->op == op_basetable || \
-	(rel->op == op_ddl && (rel->flag == ddl_create_table || rel->flag == ddl_alter_table)))
-
 extern void rel_set_exps(sql_rel *rel, list *exps);
 extern int project_unsafe(sql_rel *rel, int allow_identity);
 extern const char *rel_name( sql_rel *r );
@@ -91,7 +87,6 @@ extern void rel_join_add_exp(sql_allocator *sa, sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
-extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
 extern sql_rel *rel_project_exp(sql_allocator *sa, sql_exp *e);
@@ -102,13 +97,10 @@ extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *
 
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
-extern sql_rel *rel_safe_project(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f);
 extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f);
 extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps);
-
-extern sql_table *rel_ddl_table_get(sql_rel *r);
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
@@ -138,8 +130,6 @@ extern sql_rel *rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_f
 
 extern list *exps_exp_visitor_topdown(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
 extern list *exps_exp_visitor_bottomup(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
-
-extern int exps_have_analytics(mvc *sql, list *exps);
 
 typedef sql_rel *(*rel_rewrite_fptr)(visitor *v, sql_rel *rel);
 extern sql_rel *rel_visitor_topdown(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter);

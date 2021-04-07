@@ -418,7 +418,7 @@ wrapup:
 
 #define CreateNullMask(tpe)                                                    \
 	{                                                                          \
-		tpe *bat_ptr = (tpe *)b->theap.base;                                   \
+		tpe *bat_ptr = (tpe *)b->theap->base + b->tbaseoff;                    \
 		for (j = 0; j < count; j++) {                                          \
 			mask_data[j] = is_##tpe##_nil(bat_ptr[j]);                         \
 			found_nil |= mask_data[j];                                         \

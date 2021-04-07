@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Mar 16 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Use of CTEs inside UPDATE and DELETE statements are now more
+  restrict. Previously they could be used without any extra specification
+  in the query (eg. with "v1"("c1") as (...) delete from "t"
+  where "t"."c1" = "v1"."c1"), however this was not conformant with the
+  SQL standard. In order to use them, they must be specified in the FROM
+  clause in UPDATE statments or inside a subquery.
+
 * Mon Nov 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added 'schema path' property to user, specifying a list of schemas
   to be searched on to find SQL objects such as tables and

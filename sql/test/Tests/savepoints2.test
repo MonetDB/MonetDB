@@ -72,12 +72,12 @@ select * from savepointtest
 8
 9
 
-statement error 42000!ROLLBACK TO SAVEPOINT: no such savepoint: 'name1'
+statement error
 rollback to savepoint name1
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement error
 select * from savepointtest
 
-statement error 40000!COMMIT: transaction is aborted, will ROLLBACK instead
+statement error
 commit
 

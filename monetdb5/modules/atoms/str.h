@@ -32,7 +32,62 @@
 		} \
 	} while (0)
 
-mal_export int str_utf8_length(str s); /* this function looks for NULL values of s, returning int_nil on those */
+#ifndef NDEBUG
+static void
+UTF8_assert(const char *restrict s)
+{
+	int c;
+
+	if (s == NULL)
+		return;
+	if (*s == '\200' && s[1] == '\0')
+		return;					/* str_nil */
+	while ((c = *s++) != '\0') {
+		if ((c & 0x80) == 0)
+			continue;
+		if ((*s++ & 0xC0) != 0x80)
+			assert(0);
+		if ((c & 0xE0) == 0xC0)
+			continue;
+		if ((*s++ & 0xC0) != 0x80)
+			assert(0);
+		if ((c & 0xF0) == 0xE0)
+			continue;
+		if ((*s++ & 0xC0) != 0x80)
+			assert(0);
+		if ((c & 0xF8) == 0xF0)
+			continue;
+		assert(0);
+	}
+}
+#else
+#define UTF8_assert(s)		((void) 0)
+#endif
+
+static inline int
+UTF8_strlen(const char *restrict s) /* This function assumes, s is never nil */
+{
+	size_t pos = 0;
+
+	UTF8_assert(s);
+	assert(!strNil(s));
+
+	while (*s) {
+		/* just count leading bytes of encoded code points; only works
+		 * for correctly encoded UTF-8 */
+		pos += (*s++ & 0xC0) != 0x80;
+	}
+	assert(pos < INT_MAX);
+	return (int) pos;
+}
+
+static inline int
+str_strlen(const char *restrict s)  /* This function assumes, s is never nil */
+{
+	size_t pos = strlen(s);
+	assert(pos < INT_MAX);
+	return (int) pos;
+}
 
 mal_export bool batstr_func_has_candidates(const char *func);
 
@@ -41,11 +96,6 @@ mal_export bool batstr_func_has_candidates(const char *func);
    follows this pattern. */
 
 /* Warning, the following functions don't test for NULL values, that's resposibility from the caller */
-
-extern int str_length(str s)
-__attribute__((__visibility__("hidden")));
-extern int str_nbytes(str s)
-__attribute__((__visibility__("hidden")));
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c)
 __attribute__((__visibility__("hidden")));

@@ -335,12 +335,12 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 	size_t i,j;
 	const char *nme;
 
-	nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+	nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	if ((r = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (r->farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
 	    strconcat_len(r->filename, sizeof(r->filename),
 			  nme, ".strimp", NULL) >= sizeof(r->filename) ||
-	    HEAPalloc(r, BATcount(b) + STRIMP_OFFSET, sizeof(uint64_t)) != GDK_SUCCEED)	{
+	    HEAPalloc(r, BATcount(b) + STRIMP_OFFSET, sizeof(uint64_t), 0) != GDK_SUCCEED) {
 		GDKfree(r);
 		return NULL;
 	}

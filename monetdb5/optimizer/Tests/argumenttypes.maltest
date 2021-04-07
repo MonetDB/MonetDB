@@ -1,8 +1,11 @@
 statement ok
-X:bat[:int] := bat.new(nil:int)
+function foo();
+X:bat[:int] := bat.new(nil:int);
+(X_115:bat[:int], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:int], false:bit, false:bit, false:bit);
+end foo;
 
 statement ok
-(X_115:bat[:int], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:int], false:bit, false:bit, false:bit)
+foo()
 
 statement error
 (X_115:bat[:lng], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:lng], false:bit, false:bit, false:bit)

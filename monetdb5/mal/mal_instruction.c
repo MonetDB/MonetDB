@@ -237,8 +237,10 @@ freeMalBlk(MalBlkPtr mb)
 	GDKfree(mb->var);
 	mb->var = 0;
 
-	if (mb->history)
+	if (mb->history){
 		freeMalBlk(mb->history);
+		mb->history = NULL;
+	}
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	if (mb->help)
@@ -358,6 +360,16 @@ addtoMalBlkHistory(MalBlkPtr mb)
 				;
 			h->history = cpy;
 		}
+	}
+}
+
+void
+removeMalBlkHistory(MalBlkPtr mb)
+{
+	if(mb->history){
+		removeMalBlkHistory(mb->history);
+		freeMalBlk(mb->history);
+		mb->history = NULL;
 	}
 }
 
@@ -623,7 +635,7 @@ findVariableLength(MalBlkPtr mb, const char *name, int len)
 	int i;
 
 	for (i = mb->vtop - 1; i >= 0; i--) {
-		const char *s = getVarName(mb, i);
+		const char *s = mb->var[i].name;
 
 		if (s && strncmp(name, s, len) == 0 && s[len] == 0)
 			return i;
@@ -773,31 +785,51 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 	clrVarCleanup(mb, n);
 }
 
+
+char *
+getVarName(MalBlkPtr mb, int idx)
+{
+	char *s = mb->var[idx].name;
+	if( getVarKind(mb,idx) == 0)
+		setVarKind(mb,idx, REFMARKER);
+
+	if( *s &&  s[1] != '_' && (s[0] != 'X' && s[0] != 'C'))
+		return s;
+	if ( *s == 0)
+		(void) snprintf(s, IDLENGTH,"%c_%d", getVarKind(mb, idx), mb->vid++);
+	return s;
+}
+
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
+	int kind = REFMARKER;
 
 	if( len >= IDLENGTH){
 		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
 		return -1;
 	}
-	if (makeVarSpace(mb))
+	if (makeVarSpace(mb)) {
+		assert(0);
 		/* no space for a new variable */
 		return -1;
+	}
 	n = mb->vtop;
 	if( name == 0 || len == 0){
-		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+		mb->var[n].name[0] = 0;
 	} else {
 		/* avoid calling strcpy_len since we're not interested in the
 		 * source length, and that may be very large */
-		char *nme = getVarName(mb,n);
+		char *nme = mb->var[n].name;
 		for (size_t i = 0; i < len; i++)
 			nme[i] = name[i];
 		nme[len] = 0;
+		kind = nme[0];
 	}
 
 	mb->vtop++;
+	setVarKind(mb, n, kind);
 	setVariableType(mb, n, type);
 	return n;
 }
@@ -809,8 +841,12 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	int res;
 	if (isVarConstant(mb, x))
 		res = cpyConstant(tm, getVar(mb, x));
-	else
-		res = newVariable(tm, getVarName(mb, x), strlen(getVarName(mb,x)), getVarType(mb, x));
+	else {
+		res = newTmpVariable(tm, getVarType(mb, x));
+		if( *mb->var[x].name)
+			strcpy(tm->var[x].name, mb->var[x].name);
+		//res = newVariable(tm, getVarName(mb, x), strlen(getVarName(mb,x)), getVarType(mb, x));
+	}
 	if (res < 0)
 		return res;
 	if (isVarFixed(mb, x))
@@ -824,6 +860,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
 	getVarSTC(tm,x) = getVarSTC(mb,x);
+	setVarKind(tm,x, getVarKind(mb,x));
 	return res;
 }
 
@@ -926,9 +963,11 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	}
 	/* rename the temporary variable */
 	mb->vid = 0;
+/* Obsolete, name generation is postponed until needed
 	for( i =0; i< cnt; i++)
 	if( isTmpVar(mb,i))
-        (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+		(void) snprintf(getVarName(mb,i), IDLENGTH,"%c_%d", getVarKind(mb,i), mb->vid++);
+*/
 
 	GDKfree(alias);
 	mb->vtop = cnt;
@@ -1041,11 +1080,12 @@ fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 	k = mb->vtop - depth;
 	if (k < 0)
 		k = 0;
-	for (i=k; i < mb->vtop - 1; i++)
-	if (getVar(mb,i) && isVarConstant(mb,i)){
+	for (i=k; i < mb->vtop - 1; i++){
 		VarPtr v = getVar(mb, i);
-		if (v && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
-			return i;
+		if (v->constant){
+			if (v && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
+				return i;
+		}
 	}
 	return -1;
 }

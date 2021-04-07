@@ -23,3 +23,72 @@ bigint
 statement ok
 ROLLBACK
 
+statement ok
+create schema myschema
+
+statement ok
+create table myschema.mygroyp(code varchar(10),amount int)
+
+statement ok
+insert into myschema.mygroyp(code,amount)values('a',1),('a',2),('b',3),('b',4)
+
+query TI rowsort
+select code, cast(sum(amount) as bigint) as eind from myschema.mygroyp group by code
+----
+a
+3
+b
+7
+
+statement ok
+create view myschema.mygroypview as select code, cast(sum(amount) as bigint) as eind from myschema.mygroyp group by code
+
+query TI rowsort
+select * from myschema.mygroypview
+----
+a
+3
+b
+7
+
+query TI rowsort
+select code, eind from myschema.mygroypview
+----
+a
+3
+b
+7
+
+query T rowsort
+select code from myschema.mygroypview
+----
+a
+b
+
+query I rowsort
+select eind from myschema.mygroypview
+----
+3
+7
+
+query TI rowsort
+select code, cast(sum(eind) as bigint) from myschema.mygroypview group by code
+----
+a
+3
+b
+7
+
+statement error
+select code, cast(sum(eind) as bigint) from myschema.mygroypview
+
+statement error
+create view myschema.ups as select code, sum(amount) as eind from myschema.mygroyp
+
+statement error
+create view myschema.ups as select code, amount as eind from myschema.mygroyp group by code
+
+statement ok
+drop schema myschema cascade
+
+

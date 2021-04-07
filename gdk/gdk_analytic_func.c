@@ -221,11 +221,22 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_FIRST_FIXED(dbl);
 		break;
 	default:{
-		for (; k < cnt; k++) {
-			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, start[k]) : nil;
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
-				return GDK_FAIL;
-			has_nils |= atomcmp(curval, nil) == 0;
+		if (ATOMvarsized(tpe)) {
+			for (; k < cnt; k++) {
+				const void *curval = (end[k] > start[k]) ? BUNtvar(bpi, start[k]) : nil;
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+					return GDK_FAIL;
+				has_nils |= atomcmp(curval, nil) == 0;
+			}
+		} else {
+			uint16_t width = r->twidth;
+			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
+			for (; k < cnt; k++) {
+				const void *curval = (end[k] > start[k]) ? BUNtloc(bpi, start[k]) : nil;
+				memcpy(rcast, curval, width);
+				rcast += width;
+				has_nils |= atomcmp(curval, nil) == 0;
+			}
 		}
 	}
 	}
@@ -281,11 +292,22 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_LAST_FIXED(dbl);
 		break;
 	default:{
-		for (; k < cnt; k++) {
-			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, end[k] - 1) : nil;
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
-				return GDK_FAIL;
-			has_nils |= atomcmp(curval, nil) == 0;
+		if (ATOMvarsized(tpe)) {
+			for (; k < cnt; k++) {
+				const void *curval = (end[k] > start[k]) ? BUNtvar(bpi, end[k] - 1) : nil;
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+					return GDK_FAIL;
+				has_nils |= atomcmp(curval, nil) == 0;
+			}
+		} else {
+			uint16_t width = r->twidth;
+			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
+			for (; k < cnt; k++) {
+				const void *curval = (end[k] > start[k]) ? BUNtloc(bpi, end[k] - 1) : nil;
+				memcpy(rcast, curval, width);
+				rcast += width;
+				has_nils |= atomcmp(curval, nil) == 0;
+			}
 		}
 	}
 	}
@@ -373,18 +395,36 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 			break;
 		default:{
 			const void *curval = nil;
-			for (; k < cnt; k++) {
-				lng lnth = tp[k];
-				if (!is_lng_nil(nth) && nth <= 0) goto invalidnth;
-				if (is_lng_nil(lnth) || end[k] <= start[k] || lnth - 1 > (lng)(end[k] - start[k])) {
-					curval = (void *) nil;
-					has_nils = true;
-				} else {
-					curval = BUNtail(bpi, start[k] + (oid)(lnth - 1));
-					has_nils |= atomcmp(curval, nil) == 0;
+			if (ATOMvarsized(tpe)) {
+				for (; k < cnt; k++) {
+					lng lnth = tp[k];
+					if (!is_lng_nil(nth) && nth <= 0) goto invalidnth;
+					if (is_lng_nil(lnth) || end[k] <= start[k] || lnth - 1 > (lng)(end[k] - start[k])) {
+						curval = (void *) nil;
+						has_nils = true;
+					} else {
+						curval = BUNtvar(bpi, start[k] + (oid)(lnth - 1));
+						has_nils |= atomcmp(curval, nil) == 0;
+					}
+					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+						return GDK_FAIL;
 				}
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
-					return GDK_FAIL;
+			} else {
+				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
+				uint16_t width = r->twidth;
+				for (; k < cnt; k++) {
+					lng lnth = tp[k];
+					if (!is_lng_nil(nth) && nth <= 0) goto invalidnth;
+					if (is_lng_nil(lnth) || end[k] <= start[k] || lnth - 1 > (lng)(end[k] - start[k])) {
+						curval = (void *) nil;
+						has_nils = true;
+					} else {
+						curval = BUNtloc(bpi, start[k] + (oid)(lnth - 1));
+						has_nils |= atomcmp(curval, nil) == 0;
+					}
+					memcpy(rcast, curval, width);
+					rcast += width;
+				}
 			}
 		}
 		}
@@ -416,18 +456,38 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(dbl);
 			break;
 		default:{
-			if (is_lng_nil(nth)) {
-				has_nils = true;
-				for (; k < cnt; k++)
-					if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED)
-						return GDK_FAIL;
+			if (ATOMvarsized(tpe)) {
+				if (is_lng_nil(nth)) {
+					has_nils = true;
+					for (; k < cnt; k++)
+						if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED)
+							return GDK_FAIL;
+				} else {
+					nth--;
+					for (; k < cnt; k++) {
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(bpi, start[k] + (oid) nth) : nil;
+						if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+							return GDK_FAIL;
+						has_nils |= atomcmp(curval, nil) == 0;
+					}
+				}
 			} else {
-				nth--;
-				for (; k < cnt; k++) {
-					const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtail(bpi, start[k] + (oid) nth) : nil;
-					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
-						return GDK_FAIL;
-					has_nils |= atomcmp(curval, nil) == 0;
+				uint16_t width = r->twidth;
+				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
+				if (is_lng_nil(nth)) {
+					has_nils = true;
+					for (; k < cnt; k++) {
+						memcpy(rcast, nil, width);
+						rcast += width;
+					}
+				} else {
+					nth--;
+					for (; k < cnt; k++) {
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(bpi, start[k] + (oid) nth) : nil;
+						memcpy(rcast, curval, width);
+						rcast += width;
+						has_nils |= atomcmp(curval, nil) == 0;
+					}
 				}
 			}
 		}
@@ -821,93 +881,164 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		j = k; \
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_UNBOUNDED_TILL_CURRENT_ROW(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_UNBOUNDED_TILL_CURRENT_ROW(GT_LT)	\
 	do { \
 		const void *curval = nil;	\
-		for (; k < i;) { \
-			j = k; \
-			do {	\
-				void *next = BUNtail(bpi, k); \
+		if (ATOMvarsized(tpe)) {	\
+			for (; k < i;) { \
+				j = k; \
+				do {	\
+					void *next = BUNtvar(bpi, k); \
+					if (atomcmp(next, nil) != 0) {		\
+						if (atomcmp(curval, nil) == 0)	\
+							curval = next;		\
+						else				\
+							curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+					}					\
+					k++; \
+				} while (k < i && !op[k]);	\
+				for (; j < k; j++) \
+					if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
+						return GDK_FAIL; \
+				has_nils |= atomcmp(curval, nil) == 0;		\
+			} \
+		} else {	\
+			for (; k < i;) { \
+				j = k; \
+				do {	\
+					void *next = BUNtloc(bpi, k); \
+					if (atomcmp(next, nil) != 0) {		\
+						if (atomcmp(curval, nil) == 0)	\
+							curval = next;		\
+						else				\
+							curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+					}					\
+					k++; \
+				} while (k < i && !op[k]);	\
+				for (; j < k; j++) {	\
+					memcpy(rcast, curval, width);	\
+					rcast += width;	\
+				} \
+				has_nils |= atomcmp(curval, nil) == 0;		\
+			} \
+		}	\
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_CURRENT_ROW_TILL_UNBOUNDED(GT_LT)	\
+	do { \
+		const void *curval = nil;	\
+		l = i - 1; \
+		if (ATOMvarsized(tpe)) {	\
+			for (j = l; ; j--) { \
+				void *next = BUNtvar(bpi, j); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
 					else				\
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
-				k++; \
-			} while (k < i && !op[k]);	\
-			for (; j < k; j++) \
-				if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
-			has_nils |= atomcmp(curval, nil) == 0;		\
-		} \
-	} while (0)
-
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW_TILL_UNBOUNDED(GT_LT)	\
-	do { \
-		const void *curval = nil;	\
-		l = i - 1; \
-		for (j = l; ; j--) { \
-			void *next = BUNtail(bpi, j); \
-			if (atomcmp(next, nil) != 0) {		\
-				if (atomcmp(curval, nil) == 0)	\
-					curval = next;		\
-				else				\
-					curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
-			}					\
-			if (op[j] || j == k) {	\
-				for (; ; l--) { \
-					if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
-						return GDK_FAIL; \
-					if (l == j)	\
+				if (op[j] || j == k) {	\
+					for (; ; l--) { \
+						if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
+							return GDK_FAIL; \
+						if (l == j)	\
+							break;	\
+					} \
+					has_nils |= atomcmp(curval, nil) == 0;		\
+					if (j == k)	\
 						break;	\
-				} \
-				has_nils |= atomcmp(curval, nil) == 0;		\
-				if (j == k)	\
-					break;	\
-				l = j - 1;	\
+					l = j - 1;	\
+				}	\
+			}	\
+		} else {	\
+			for (j = l; ; j--) { \
+				void *next = BUNtloc(bpi, j); \
+				if (atomcmp(next, nil) != 0) {		\
+					if (atomcmp(curval, nil) == 0)	\
+						curval = next;		\
+					else				\
+						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+				}					\
+				if (op[j] || j == k) {	\
+					BUN x = l * width;	\
+					for (; ; l--) { \
+						memcpy(rcast + x, curval, width);	\
+						x -= width;	\
+						if (l == j)	\
+							break;	\
+					} \
+					has_nils |= atomcmp(curval, nil) == 0;		\
+					if (j == k)	\
+						break;	\
+					l = j - 1;	\
+				}	\
 			}	\
 		}	\
 		k = i; \
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_ALL_ROWS(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_ALL_ROWS(GT_LT)	\
 	do { \
 		void *curval = (void*) nil; \
-		for (j = k; j < i; j++) { \
-			void *next = BUNtail(bpi, j);	\
-			if (atomcmp(next, nil) != 0) {		\
-				if (atomcmp(curval, nil) == 0)	\
-					curval = next;		\
-				else				\
-					curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
-			}					\
-		} \
-		for (; k < i; k++) \
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
-				return GDK_FAIL; \
+		if (ATOMvarsized(tpe)) {	\
+			for (j = k; j < i; j++) { \
+				void *next = BUNtvar(bpi, j);	\
+				if (atomcmp(next, nil) != 0) {		\
+					if (atomcmp(curval, nil) == 0)	\
+						curval = next;		\
+					else				\
+						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+				}					\
+			} \
+			for (; k < i; k++) \
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+					return GDK_FAIL; \
+		} else {	\
+			for (j = k; j < i; j++) { \
+				void *next = BUNtloc(bpi, j);	\
+				if (atomcmp(next, nil) != 0) {		\
+					if (atomcmp(curval, nil) == 0)	\
+						curval = next;		\
+					else				\
+						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+				}					\
+			} \
+			for (; k < i; k++) {	\
+				memcpy(rcast, curval, width);	\
+				rcast += width;	\
+			}	\
+		}	\
 		has_nils |= atomcmp(curval, nil) == 0;		\
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_CURRENT_ROW(GT_LT)	\
 	do { \
-		for (; k < i; k++) { \
-			void *next = BUNtail(bpi, k); \
-			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
-				return GDK_FAIL; \
-			has_nils |= atomcmp(next, nil) == 0;		\
-		} \
+		if (ATOMvarsized(tpe)) {	\
+			for (; k < i; k++) { \
+				void *next = BUNtvar(bpi, k); \
+				if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
+					return GDK_FAIL; \
+				has_nils |= atomcmp(next, nil) == 0;		\
+			} \
+		} else {	\
+			for (; k < i; k++) { \
+				void *next = BUNtloc(bpi, k); \
+				memcpy(rcast, next, width);	\
+				rcast += width;	\
+				has_nils |= atomcmp(next, nil) == 0;		\
+			} \
+		}	\
 	} while (0)
 
-#define INIT_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING1, NOTHING2) \
+#define INIT_AGGREGATE_MIN_MAX_OTHERS(GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		computed = (void*) nil; \
 	} while (0)
-#define COMPUTE_LEVEL0_MIN_MAX_VARSIZED(X, GT_LT, NOTHING1, NOTHING2) \
+#define COMPUTE_LEVEL0_MIN_MAX_OTHERS(X, GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		computed = BUNtail(bpi, j + X); \
 	} while (0)
-#define COMPUTE_LEVELN_MIN_MAX_VARSIZED(VAL, GT_LT, NOTHING1, NOTHING2) \
+#define COMPUTE_LEVELN_MIN_MAX_OTHERS(VAL, GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		if (atomcmp(VAL, nil) != 0) {		\
 			if (atomcmp(computed, nil) == 0)	\
@@ -916,20 +1047,25 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				computed = atomcmp(VAL, computed) GT_LT 0 ? computed : VAL; \
 		} \
 	} while (0)
-#define FINALIZE_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING1, NOTHING2) \
+#define FINALIZE_AGGREGATE_MIN_MAX_OTHERS(GT_LT, NOTHING1, NOTHING2) \
 	do { \
-		if ((res = tfastins_nocheckVAR(r, k, computed, Tsize(r))) != GDK_SUCCEED) \
-			goto cleanup; \
+		if (ATOMvarsized(tpe)) {	\
+			if ((res = tfastins_nocheckVAR(r, k, computed, Tsize(r))) != GDK_SUCCEED) \
+				goto cleanup; \
+		} else {	\
+			memcpy(rcast, computed, width);	\
+			rcast += width;	\
+		}	\
 		has_nils |= atomcmp(computed, nil) == 0;		\
 	} while (0)
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_OTHERS(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_OTHERS(GT_LT)	\
 	do { \
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVEL0_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
+		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, FINALIZE_AGGREGATE_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
+			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, FINALIZE_AGGREGATE_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		j = k; \
 	} while (0)
 
@@ -987,7 +1123,7 @@ minmaxfixed##TPE##IMP: \
 				for (; i < cnt; i++) {			\
 				if (np[i]) 	{		\
 minmaxvarsized##IMP: \
-					ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT);	\
+					ANALYTICAL_MIN_MAX_CALC_OTHERS_##IMP(GT_LT);	\
 				} \
 				}						\
 			} 					\
@@ -1013,6 +1149,8 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
+	uint16_t width = r->twidth; \
+	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0); \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {		\

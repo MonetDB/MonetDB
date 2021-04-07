@@ -298,14 +298,11 @@ DEP_INDEX
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-366 values hashing to cccf8f0385098793ac0698438837609a
+273 values hashing to 5f62003db3521c560782b24e0f07db0d
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
 ----
-age
-trigger_test
-DEP_TRIGGER
 age_v1
 trigger_test
 DEP_TRIGGER
@@ -316,9 +313,6 @@ id
 trigger_test_4
 DEP_TRIGGER
 id_t1
-trigger_test
-DEP_TRIGGER
-name
 trigger_test
 DEP_TRIGGER
 
@@ -352,7 +346,7 @@ DEP_FUNC
 dump_functions
 dump_database
 DEP_FUNC
-dump_grant_user_priviledges
+dump_grant_user_privileges
 dump_database
 DEP_FUNC
 dump_indices

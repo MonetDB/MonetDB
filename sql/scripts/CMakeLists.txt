@@ -15,7 +15,6 @@ install(FILES
   16_tracelog.sql
   17_temporal.sql
   18_index.sql
-  20_vacuum.sql
   21_dependency_views.sql
   22_clients.sql
   23_skyserver.sql

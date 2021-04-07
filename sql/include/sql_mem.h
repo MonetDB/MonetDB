@@ -50,6 +50,7 @@ typedef struct sql_allocator {
 	char **blks;
 	size_t used; 	/* memory used in last block */
 	size_t usedmem;	/* used memory */
+	void *freelist;	/* list of freed blocks */
 	exception_buffer eb;
 } sql_allocator;
 

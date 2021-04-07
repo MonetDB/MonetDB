@@ -59,7 +59,7 @@ select_views
 create_aggregate
 #ToDo triggers
 #ToDo inherit
-vacuum
+#vacuum
 #ToDo sanity_check
 #ToDo errors
 #ToDo select

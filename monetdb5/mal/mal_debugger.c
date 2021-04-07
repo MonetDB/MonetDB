@@ -56,11 +56,9 @@ typedef struct MDBSTATE{
 static void
 printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
 {
-	VarPtr n = getVar(mb, index);
-
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
-	mnstr_printf(f, "#[%2d] %5s", index, n->id);
+	mnstr_printf(f, "#[%2d] %5s", index, getVarName(mb,index));
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb,index), getLastUpdate(mb,index),getEndScope(mb, index));
 	if (v)
 		ATOMprint(v->vtype, VALptr(v), f);
@@ -75,8 +73,8 @@ printBATproperties(stream *f, BAT *b)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->theap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
+	if (b->theap->parentid != b->batCacheid)
+		mnstr_printf(f, "view on %s ", BBPname(b->theap->parentid));
 }
 
 static void
@@ -143,7 +141,6 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	if (nmeOnStk && strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
-	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
 	GDKfree(nme);
 	mnstr_printf(f, "\n");
@@ -346,7 +343,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tparentid", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->theap.parentid, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->theap->parentid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batSharecnt", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batSharecnt, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCount", false) != GDK_SUCCEED ||
@@ -401,15 +398,15 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "batInserted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->theap.free, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(b->theap->free, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batCopiedtodisk, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->batDirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED ||
-	    BUNappend(bv, b->theap.dirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
-		infoHeap(bk, bv, &b->theap, "tail.") != GDK_SUCCEED ||
+	    BUNappend(bv, b->theap->dirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
+		infoHeap(bk, bv, b->theap, "tail.") != GDK_SUCCEED ||
 
 	    BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, (b->tvheap && b->tvheap->dirty) ? "dirty" : "clean", false) != GDK_SUCCEED ||
@@ -592,7 +589,6 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	}
 	/* the final step is to break on a variable */
 	i = findVariable(mb, request);
-	/* ignore a possible dummy TMPMARKER character */
 	if ( i < 0)
 		i = findVariable(mb, request+1);
 	if (i < 0)
@@ -1445,18 +1441,16 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
 	str oldprompt= cntxt->prompt;
 	int oldtrace = cntxt->itrace;
-	int oldhist = cntxt->curprg->def->keephistory;
 	str msg;
 
 	cntxt->itrace = 'n';
-	cntxt->curprg->def->keephistory = TRUE;
 
 	msg = runMAL(cntxt, mb, 0, 0);
 
-	cntxt->curprg->def->keephistory = oldhist;
 	cntxt->prompt =oldprompt;
 	cntxt->itrace = oldtrace;
 	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
+	removeMalBlkHistory(mb);
 	return msg;
 }
 

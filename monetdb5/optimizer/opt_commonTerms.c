@@ -18,6 +18,10 @@
  * Therefore we skip all constants, except for a constant only situation.
  */
 
+/*
+ * Speed up simple insert operations by skipping the common terms.
+*/
+
 static int
 isProjectConst(InstrPtr p)
 {
@@ -46,14 +50,19 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int actions = 0;
 	int limit, slimit;
 	int duplicate;
-	int *alias;
-	int *hash, h;
-	int *list;
+	int *alias = NULL;
+	int *hash = NULL, h;
+	int *list = NULL;
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
+
+	/* catch simple insert operations */
+	if( isSimpleSQL(mb)){
+		goto wrapup;
+	}
 
 	(void) cntxt;
 	(void) stk;
@@ -122,6 +131,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			pushInstruction(mb,p);
 			continue;
 		}
+		/* simple SQL bind operations need not be merged, they are cheap and/or can be duplicated eliminated elsewhere cheaper */
+		if( getModuleId(p) == sqlRef && getFunctionId(p) != tidRef){
+			pushInstruction(mb,p);
+			continue;
+		}
 
 		/* from here we have a candidate to look for a match */
 
@@ -138,7 +152,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		bailout = 1024 ;  // don't run over long collision list
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j])
-			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
+			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)){
 				TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
 					j, list[j],
 					hasSameSignature(mb, p, q),

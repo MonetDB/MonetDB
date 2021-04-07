@@ -1,0 +1,557 @@
+statement ok
+CREATE TABLE t1(c0 INT, c1 STRING)
+
+statement ok
+INSERT INTO t1(c0) VALUES(2), (4)
+
+statement ok
+DELETE FROM t1
+
+statement ok
+INSERT INTO t1(c1, c0) VALUES('a', 6)
+
+statement ok
+ALTER TABLE t1 ADD COLUMN c3 CLOB
+
+statement ok
+UPDATE t1 SET c0 = 0 WHERE t1.c3 LIKE substr(t1.c3, t1.c0)
+
+statement ok
+DROP TABLE t1
+
+statement ok
+CREATE TABLE t1(c0 VARCHAR(32))
+
+statement ok
+ALTER TABLE t1 ADD COLUMN c2 TIME
+
+statement ok
+INSERT INTO t1(c2) VALUES(TIME '01:00:00')
+
+statement ok
+TRUNCATE TABLE t1
+
+statement ok
+UPDATE t1 SET c2 = TIME '01:00:00' WHERE t1.c2 + CASE 1 WHEN 2 THEN INTERVAL '3' SECOND ELSE INTERVAL '4' SECOND END < TIME '19:20:39'
+
+statement ok
+DROP TABLE t1
+
+statement ok
+CREATE TABLE t1(c1 boolean, c2 tinyint)
+
+statement ok
+INSERT INTO t1(c2) VALUES(6), (2)
+
+statement error
+ALTER TABLE t1 ALTER c1 SET NOT NULL
+
+statement ok
+DROP TABLE t1
+
+statement ok
+CREATE TABLE t0(c0 boolean, c1 boolean, c2 INTERVAL SECOND)
+
+statement ok
+CREATE TABLE t1(c0 boolean, c1 boolean, c2 INTERVAL SECOND)
+
+statement ok
+ALTER TABLE t1 DROP c2
+
+statement ok
+ALTER TABLE t1 ADD COLUMN c2 bigint
+
+statement ok
+ALTER TABLE t0 DROP c2
+
+statement ok
+ALTER TABLE t1 ADD PRIMARY KEY(c2)
+
+statement ok
+ALTER TABLE t0 ADD COLUMN c2 int
+
+statement ok
+ALTER TABLE t0 ADD FOREIGN KEY (c2) REFERENCES t1(c2) MATCH SIMPLE
+
+statement ok
+UPDATE t1 SET c2 = 9 WHERE t1.c2 BETWEEN 9 AND 2
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" UUID, CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t2" ("c0"))
+
+statement ok
+update t2 set c0 = uuid 'ABeCdDdd-80Cd-D26A-2a77-aAabE4C2caeA' where least(9 in (2, 3), case false when true then false end)
+
+statement ok
+update t2 set c0 = uuid 'ABeCdDdd-80Cd-D26A-2a77-aAabE4C2caeA' where least(9 in (2, 3), case false when true then false end)
+
+statement ok
+DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INTEGER NOT NULL,"c2" VARCHAR(64),"c3" DECIMAL(18,3),"c4" VARCHAR(64),"c5" DECIMAL(18,3),
+	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c2_c3_c0_unique" UNIQUE ("c2", "c3", "c0"))
+
+statement ok
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0	""	-1.000	NULL	0.422
+-3	"Q"	0.421	NULL	0.110
+5	""	0.500	NULL	NULL
+-241330779	""	0.193	"TRUE"	0.377
+
+statement ok
+CREATE TABLE "t1" ("c0" UUID NOT NULL,"c2" DECIMAL(18,3),"c4" DECIMAL(18,3),"c5" VARCHAR(64) NOT NULL,
+	"c6" UUID NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+ac3be9d0-109d-3c26-9dbb-e715c78aaded	-5.000	NULL	"2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e"	ab3d0d27-a79c-5df2-ce72-d5b824df7b54
+ac118dae-fcf5-ed3f-accd-2b07daf44f8f	0.390	0.140	"3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6"	ab5a6b6b-c95b-3abc-bedd-f66ceb7fef33
+e0cafdba-1e30-b8ef-5a15-82259f6f5851	0.068	NULL	"*zd \n+~U["	f2daaf10-5caf-cbf8-4230-9daedbacccfd
+
+statement ok
+CREATE TABLE "t2" ("c0" VARCHAR(64) NOT NULL,"c2" DECIMAL(18,3) NOT NULL,"c3" DOUBLE PRECISION,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok
+COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"-2145663488"	-0.637	NULL
+"DOmV}KEp<"	-0.637	NULL
+"毺"	-0.637	NULL
+"-1597273906"	7.000	0.8478250121719998
+".4601199041541437"	0.584	-2
+"-{"	2.000	0.8377131873426266
+
+query T rowsort
+SELECT t1.c5 FROM t2, t1 CROSS JOIN (SELECT DISTINCT t0.c0 FROM t0) AS sub0 WHERE CASE 2 WHEN 3 THEN t2.c3 > t1.c2 ELSE TRUE END
+----
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+*zd @+~U[
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+2b1fb0c3-bfa0-863f-9afc-5adfbe2c007e
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+3dcfce29-ebb2-de1f-c3b9-c2830bdffaa6
+
+query T rowsort
+SELECT CASE 2 WHEN 3 THEN t2.c3 > t1.c2 ELSE TRUE END FROM t2, t1 CROSS JOIN (SELECT DISTINCT t0.c0 FROM t0) AS sub0
+----
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+
+statement ok
+ROLLBACK
+
+statement error
+select 1 from (values (1),(2),(3)) x(x) where uuid '55a279B4-f52a-835C-C43c-5E0bd20fFbAB'
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3),"c1" DOUBLE PRECISION, CONSTRAINT "t2_c1_unique" UNIQUE ("c1"))
+
+statement ok
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.555	0.3061110021038482
+-0.570	0.17636274539499308
+0.179	0.6665201184847672
+0.000	0
+0.594	0.7878848439535873
+NULL	0.289151774384275
+12.000	1578787758
+
+query R rowsort
+select var_pop(-983102429*(0.3*t2.c0)) from t2 union all select var_pop(-983102429*(0.3*t2.c0)) from t2
+----
+1709093873140383744.000
+1709093873140383744.000
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" UUID,"c1" INTEGER,"c3" BOOLEAN)
+
+statement ok
+INSERT INTO t0(c3) VALUES ((VALUES (3)) = ANY(SELECT 2 FROM t0 WHERE t0.c3))
+
+statement ok
+INSERT INTO t0(c3) VALUES(TRUE), ((VALUES (-409412573)) = ANY(SELECT ALL (VALUES (0.87714195), (NULL)) FROM t0 AS l1t0 WHERE l1t0.c3))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DECIMAL(18,3) NOT NULL)
+
+statement ok
+INSERT INTO "t0" VALUES (0.418),(0.000),(3.109),(9.000),(0.972),(1.000),(0.442),(4.141),(8.000)
+
+query T rowsort
+SELECT (VALUES (FALSE = ALL(SELECT TRUE FROM t0))) FROM t0
+----
+False
+False
+False
+False
+False
+False
+False
+False
+False
+
+query T rowsort
+SELECT (VALUES (FALSE = ALL((SELECT TRUE FROM t0) INTERSECT (SELECT TRUE FROM t0)))) FROM t0
+----
+False
+False
+False
+False
+False
+False
+False
+False
+False
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INT,"c2" DOUBLE PRECISION,"c3" BOOLEAN)
+
+statement ok
+INSERT INTO "t0" VALUES (2, 0.7601885404869176, true), (NULL, NULL, true), (9, -1761235313, NULL)
+
+statement ok
+CREATE TABLE "t1" ("c0" INT,"c2" BIGINT,"c3" REAL,"c4" DOUBLE PRECISION)
+
+statement ok
+INSERT INTO "t1" VALUES (NULL, 1, NULL, NULL),(NULL, 7, NULL, NULL),(NULL, 6, NULL, NULL),(NULL, 1, NULL, NULL),(NULL, -231965749, NULL, NULL),(NULL, -7, NULL, NULL),
+(NULL, 8, NULL, NULL),(NULL, 6, NULL, NULL),(NULL, 3, NULL, NULL),(NULL, -831397202, NULL, NULL),(NULL, 3, NULL, NULL),(NULL, NULL, 6, NULL),(NULL, 6, NULL, NULL),
+(NULL, 0, NULL, NULL),(NULL, NULL, NULL, 0.6770046548670181),(NULL, NULL, -1.687969e+09, 0.36210734782881415),(NULL, NULL, -1.687969e+09, 0.36210734782881415),
+(3, 4, 8, 0),(6, NULL, 0.6231754, 1),(NULL, 1, NULL, NULL),(9, 7, NULL, NULL)
+
+statement ok
+CREATE TABLE "t2"("c0" INT)
+
+query I rowsort
+SELECT 1 FROM t0 NATURAL JOIN (SELECT t1.c0, (SELECT t1.c4 FROM t2, t1) FROM t1) AS sub0
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" DOUBLE PRECISION)
+
+statement ok
+INSERT INTO "t1" VALUES (0.5491550453086529), (0.07482309364658168), (928354548)
+
+query I rowsort
+select t1.c0 from t1 where exists (select 1) and 3 = any(values (2))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" DECIMAL(18,3) NOT NULL)
+
+query T rowsort
+SELECT t1.c2 FROM t1 LEFT OUTER JOIN (SELECT 3 = ANY((SELECT 1) INTERSECT (SELECT 2))) AS sub0 ON (VALUES (FALSE))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" VARCHAR(32))
+
+statement ok
+INSERT INTO "t0" VALUES ('ixJiA'),(''),('~O'),('I'),('sdasd'),('%')
+
+statement ok
+CREATE TABLE "t2" ("c0" VARCHAR(32))
+
+statement ok
+INSERT INTO "t2" VALUES ('-dsdaZ'),('0.7715351394637016'),('sdsd'),('D'),('dsads')
+
+query T rowsort
+SELECT min(1) FROM t2
+----
+1
+
+query I rowsort
+SELECT 1 FROM t2 WHERE ((SELECT 1 WHERE FALSE) = ANY(SELECT 2)) IS NULL
+----
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
+----
+1
+1
+1
+1
+1
+
+query T rowsort
+SELECT MIN(agg0) FROM (
+SELECT min(1) as agg0 FROM t2 WHERE (SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')
+UNION ALL
+SELECT min(1) as agg0 FROM t2 WHERE NOT ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select ''))
+UNION ALL
+SELECT min(1) as agg0 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
+) as asdf
+----
+1
+
+statement ok
+ROLLBACK
+
+query I rowsort
+SELECT 1 WHERE (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
+----
+
+query I rowsort
+SELECT (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
+----
+NULL
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" TIME)
+
+statement ok
+INSERT INTO "t1" VALUES (TIME '01:00:00'),(TIME '01:00:00'),(TIME '01:00:00'),(TIME '11:35:52'),(TIME '10:13:05'),(TIME '01:00:00'),(TIME '01:00:00'),
+(TIME '01:00:00'),(TIME '01:00:00'),(TIME '17:04:15'),(TIME '01:00:00'),(TIME '01:00:00'),(TIME '10:13:05'),(TIME '22:32:15')
+
+statement ok
+CREATE TABLE "t2" ("c0" UUID,"c2" CHAR(32),"c4" INTERVAL SECOND,"c7" UUID,"c6" INTERVAL DAY)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE EXISTS (SELECT (SELECT 1 FROM t2, t1))
+----
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+10:13:05
+10:13:05
+11:35:52
+17:04:15
+22:32:15
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT 1 FROM t2, t1) AS INT) as count FROM t1) as res
+----
+0
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT (SELECT 1 FROM t2, t1)) AS INT) as count FROM t1) as res
+----
+14
+
+query T rowsort
+SELECT EXISTS (SELECT (SELECT 1 WHERE FALSE))
+----
+True
+
+query T rowsort
+SELECT EXISTS (SELECT (SELECT 1 FROM t2, t1)) FROM t1
+----
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+
+statement ok
+ROLLBACK

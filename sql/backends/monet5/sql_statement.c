@@ -322,7 +322,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 {
 	int i = 0;
 	node *n;
-	int *l = SA_NEW_ARRAY(sa, int, list_length(t->columns.set) + 1);
+	int *l = SA_NEW_ARRAY(sa, int, ol_length(t->columns) + 1);
 
 	if (!l)
 		return NULL;
@@ -331,7 +331,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0)
 		return NULL;
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
 		if ((l[i++] = create_bat(mb, c->type.type->localtype)) < 0)
@@ -558,7 +558,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
-		BUN rows = (BUN) store->storage_api.count_col(tr, t->columns.set->h->data, 1);
+		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, QUICK);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
@@ -620,12 +620,12 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
 	}
-	if (access != RD_INS && partition) {
+	if (partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-			BUN rows = (BUN) store->storage_api.count_col(tr, c, 1);
+			BUN rows = (BUN) store->storage_api.count_col(tr, c, QUICK);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -674,12 +674,12 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
 	}
-	if (access != RD_INS && partition) {
+	if (partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-			BUN rows = (BUN) store->storage_api.count_idx(tr, i, 1);
+			BUN rows = (BUN) store->storage_api.count_idx(tr, i, QUICK);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -700,7 +700,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 }
 
 stmt *
-stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
+stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -723,6 +723,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 		if (q)
 			getArg(q,0) = l[c->colnr+1];
 	} else if (!fake) {	/* fake append */
+		if (offset->nr < 0)
+			return NULL;
 		q = newStmt(mb, sqlRef, appendRef);
 		q = pushArgument(mb, q, be->mvc_var);
 		if (q == NULL)
@@ -731,6 +733,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 		q = pushSchema(mb, q, c->t);
 		q = pushStr(mb, q, c->t->base.name);
 		q = pushStr(mb, q, c->base.name);
+		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, b->nr);
 		if (q == NULL)
 			return NULL;
@@ -746,6 +749,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 			return NULL;
 		}
 		s->op1 = b;
+		s->op2 = offset;
 		s->op4.cval = c;
 		s->q = q;
 		s->nr = getDestVar(q);
@@ -755,12 +759,12 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 }
 
 stmt *
-stmt_append_idx(backend *be, sql_idx *i, stmt *b)
+stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (b->nr < 0)
+	if (offset->nr < 0 || b->nr < 0)
 		return NULL;
 
 	q = newStmt(mb, sqlRef, appendRef);
@@ -771,6 +775,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *b)
 	q = pushSchema(mb, q, i->t);
 	q = pushStr(mb, q, i->t->base.name);
 	q = pushStr(mb, q, sa_strconcat(be->mvc->sa, "%", i->base.name));
+	q = pushArgument(mb, q, offset->nr);
 	q = pushArgument(mb, q, b->nr);
 	if (q == NULL)
 		return NULL;
@@ -783,6 +788,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *b)
 	}
 
 	s->op1 = b;
+	s->op2 = offset;
 	s->op4.idxval = i;
 	s->q = q;
 	s->nr = getDestVar(q);
@@ -1919,8 +1925,8 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	else
 		q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
-	q = pushBit(mb, q, FALSE);    /* nil matches */
-	q = pushBit(mb, q, TRUE);     /* clear nils */
+	q = pushBit(mb, q, FALSE);     /* nil matches */
+	q = pushBit(mb, q, TRUE);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {
@@ -2155,7 +2161,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 }
 
 static InstrPtr
-stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
+stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2163,16 +2169,13 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
 	/* delta bat */
-	if (ins) {
+	if (delta) {
 		int uval = getArg(op2->q, 1);
 
-		if (ins->nr < 0)
-			return NULL;
 		q = newStmt(mb, sqlRef, deltaRef);
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		q = pushArgument(mb, q, uval);
-		q = pushArgument(mb, q, ins->nr);
 	} else {
 		/* projections, ie left is void headed */
 		q = newStmt(mb, algebraRef, projectionRef);
@@ -2189,7 +2192,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 {
 	if (!op2->nrcols)
 		return stmt_const(be, op1, op2);
-	InstrPtr q = stmt_project_join(be, op1, op2, NULL);
+	InstrPtr q = stmt_project_join(be, op1, op2, false);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
 		if (s == NULL) {
@@ -2212,9 +2215,9 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins)
+stmt_project_delta(backend *be, stmt *col, stmt *upd)
 {
-	InstrPtr q = stmt_project_join(be, col, upd, ins);
+	InstrPtr q = stmt_project_join(be, col, upd, true);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
 		if (s == NULL) {
@@ -2224,7 +2227,6 @@ stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins)
 
 		s->op1 = col;
 		s->op2 = upd;
-		s->op3 = ins;
 		s->flag = cmp_project;
 		s->key = 0;
 		s->nrcols = 2;
@@ -2930,6 +2932,36 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 }
 
 stmt *
+stmt_claim(backend *be, sql_table *t, stmt *cnt)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (!t || cnt->nr < 0)
+		return NULL;
+	if (!t->s) /* declared table */
+		assert(0);
+	q = newStmtArgs(mb, sqlRef, claimRef, 5);
+	q = pushArgument(mb, q, be->mvc_var);
+	q = pushSchema(mb, q, t);
+	q = pushStr(mb, q, t->base.name);
+	q = pushArgument(mb, q, cnt->nr);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_claim);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = cnt;
+		s->op4.tval = t;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 {
 	MalBlkPtr mb = be->mb;
@@ -2969,7 +3001,7 @@ stmt_table_clear(backend *be, sql_table *t)
 	InstrPtr q = NULL;
 
 	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
-		int *l = ATOMIC_PTR_GET(&t->data), cnt = list_length(t->columns.set)+1;
+		int *l = ATOMIC_PTR_GET(&t->data), cnt = ol_length(t->columns)+1;
 
 		for (int i = 0; i < cnt; i++) {
 			q = newStmt(mb, batRef, deleteRef);
@@ -3087,7 +3119,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->base.name;
-	int pushed = (v->cand && v->cand == sel);
+	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -3110,18 +3142,19 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	   these can generate errors (fromstr cannot) */
 	if (t->type->eclass == EC_EXTERNAL)
 		convert = t->type->sqlname;
-
-	if (t->type->eclass == EC_MONTH)
+	else if (t->type->eclass == EC_MONTH)
 		convert = "month_interval";
 	else if (t->type->eclass == EC_SEC)
 		convert = "second_interval";
+
+	no_candidates = t->type->eclass == EC_EXTERNAL && strcmp(convert, "uuid") != 0; /* uuids conversions support candidate lists */
 
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
 	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
 		q = newStmtArgs(mb, calcRef, convert, 13);
-	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && t->type->eclass == EC_EXTERNAL) {
+	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && no_candidates) {
 		int type = t->type->localtype;
 
 		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
@@ -3162,7 +3195,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
-	} else if (v->nrcols > 0 && t->type->eclass != EC_EXTERNAL) {
+	} else if (v->nrcols > 0 && !no_candidates) {
 		q = pushNil(mb, q, TYPE_bat);
 	}
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
@@ -3205,6 +3238,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 			return NULL;
 		}
 		s->op1 = v;
+		s->nrcols = 0;	/* function without arguments returns single value */
 		s->key = v->key;
 		s->nrcols = v->nrcols;
 		s->aggr = v->aggr;
@@ -3223,7 +3257,8 @@ stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
-	r->cand = op1->cand;
+	if (!r->cand)
+		r->cand = op1->cand;
 	return r;
 }
 
@@ -3234,7 +3269,8 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	list_append(ops, op1);
 	list_append(ops, op2);
 	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
-	r->cand = op1->cand?op1->cand:op2->cand;
+	if (!r->cand)
+		r->cand = op1->cand?op1->cand:op2->cand;
 	return r;
 }
 

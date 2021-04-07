@@ -47,7 +47,7 @@
 /* in the commit prelude, the delta status in the memory image of all
  * bats is commited */
 static gdk_return
-prelude(int cnt, bat *subcommit)
+prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 {
 	int i = 0;
 
@@ -65,7 +65,7 @@ prelude(int cnt, bat *subcommit)
 			if (b) {
 				assert(!isVIEW(b));
 				assert(b->batRole == PERSISTENT);
-				BATcommit(b);
+				BATcommit(b, sizes ? sizes[i] : BUN_NONE);
 			}
 		}
 	}
@@ -138,8 +138,8 @@ TMcommit(void)
 
 	/* commit with the BBP globally locked */
 	BBPlock();
-	if (prelude(getBBPsize(), NULL) == GDK_SUCCEED &&
-	    BBPsync(getBBPsize(), NULL) == GDK_SUCCEED) {
+	if (prelude(getBBPsize(), NULL, NULL) == GDK_SUCCEED &&
+	    BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
 		epilogue(getBBPsize(), NULL);
 		ret = GDK_SUCCEED;
 	}
@@ -174,7 +174,7 @@ TMcommit(void)
  * a real global TMcommit.
  */
 gdk_return
-TMsubcommit_list(bat *subcommit, int cnt)
+TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
 {
 	int xx;
 	gdk_return ret = GDK_FAIL;
@@ -186,7 +186,7 @@ TMsubcommit_list(bat *subcommit, int cnt)
 		return GDK_SUCCEED;
 
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat, false, false);
+	GDKqsort(subcommit + 1, sizes ? sizes + 1 : NULL, NULL, cnt - 1, sizeof(bat), sizes ? sizeof(BUN) : 0, TYPE_bat, false, false);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	/* de-duplication of BAT ids in subcommit list
@@ -198,14 +198,18 @@ TMsubcommit_list(bat *subcommit, int cnt)
 			cnt--;
 			for (i = xx; i < cnt; i++)
 				subcommit[i] = subcommit[i+1];
+			if (sizes) {
+				for (i = xx; i < cnt; i++)
+					sizes[i] = sizes[i+1];
+			}
 		}
 	}
-	if (prelude(cnt, subcommit) == GDK_SUCCEED) {	/* save the new bats outside the lock */
+	if (prelude(cnt, subcommit, sizes) == GDK_SUCCEED) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global
 		 * (sub-)commits */
 		for (xx = 0; xx <= BBP_THREADMASK; xx++)
 			MT_lock_set(&GDKtrimLock(xx));
-		if (BBPsync(cnt, subcommit) == GDK_SUCCEED) { /* write BBP.dir (++) */
+		if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 			epilogue(cnt, subcommit);
 			ret = GDK_SUCCEED;
 		}
@@ -238,7 +242,7 @@ TMsubcommit(BAT *b)
 			subcommit[cnt++] = bid;
 	}
 
-	ret = TMsubcommit_list(subcommit, cnt);
+	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
 	GDKfree(subcommit);
 	return ret;
 }
