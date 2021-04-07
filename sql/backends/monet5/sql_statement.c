@@ -4055,13 +4055,8 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 	if (val->nr < 0)
 		return NULL;
 	int args = 0;
-	if (val->type == st_table) {
-		/* ugghh */
-		if (val->op1)
-			args = 2 * list_length(val->op1->op4.lval);
-		else
-			args = 2 * list_length(val->op4.lval);
-	}
+	if (val->type == st_table)
+		args = 2 * list_length(val->op4.relstval->cols);
 	if (args < MAXARG)
 		args = MAXARG;
 	q = newInstructionArgs(mb, NULL, NULL, args);
