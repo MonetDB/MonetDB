@@ -6211,7 +6211,7 @@ rel_bin(backend *be, sql_rel *rel)
 }
 
 rel_bin_stmt *
-output_rel_bin(backend *be, sql_rel *rel)
+output_rel_bin(backend *be, sql_rel *rel, int top)
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
@@ -6228,9 +6228,10 @@ output_rel_bin(backend *be, sql_rel *rel)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
-	if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0)
+	if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
 		return NULL;
-	else if ((!is_ddl(rel->op) && sqltype == Q_UPDATE) || be->cur_append) {
+	} else if (top && (!is_ddl(rel->op) || rel->flag == ddl_list) && (sqltype == Q_UPDATE || be->cur_append)) {
+		/* only call stmt_affected_rows outside functions and ddl, however if the ddl is a list, it might be called. eg. merge statements */
 		if (be->cur_append) { /* finish the output bat */
 			stmt *last = s->cols->t->data;
 			last->nr = be->cur_append;

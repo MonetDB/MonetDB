@@ -767,7 +767,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* generate MAL code, ignoring any code generation error */
 		setVarType(c->curprg->def, 0, 0);
-		if (backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
+		if (backend_dumpstmt(b, c->curprg->def, rel, 0, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);

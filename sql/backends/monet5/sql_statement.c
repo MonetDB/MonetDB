@@ -506,6 +506,7 @@ stmt_table(backend *be, rel_bin_stmt *relst, int temp)
 
 	if (s == NULL)
 		return NULL;
+	s->nr = ((stmt*)relst->cols->h->data)->nr;
 	s->op4.relstval = relst;
 	s->flag = temp;
 	s->nrcols = relst->nrcols;
@@ -3038,6 +3039,9 @@ tail_set_type(stmt *st, sql_subtype *t)
 		case st_list:
 			st = st->op4.lval->h->data;
 			continue;
+		case st_table:
+			st = st->op4.relstval->cols->h->data;
+			continue;
 		case st_join:
 		case st_join2:
 		case st_joinN:
@@ -3683,6 +3687,9 @@ tail_type(stmt *st)
 		case st_order:
 			st = st->op1;
 			continue;
+		case st_table:
+			st = st->op4.relstval->cols->h->data;
+			continue;
 		case st_list:
 			st = st->op4.lval->h->data;
 			continue;
@@ -3733,8 +3740,6 @@ tail_type(stmt *st)
 			/* fall through */
 		case st_exception:
 			return NULL;
-		case st_table:
-			return sql_bind_localtype("bat");
 		default:
 			assert(0);
 			return NULL;
@@ -3852,7 +3857,8 @@ _column_name(sql_allocator *sa, stmt *st)
 		if (sa)
 			return sa_strdup(sa, "single_value");
 		return "single_value";
-
+	case st_table:
+		return column_name(sa, st->op4.relstval->cols->h->data);
 	case st_list:
 		if (list_length(st->op4.lval))
 			return column_name(sa, st->op4.lval->h->data);
