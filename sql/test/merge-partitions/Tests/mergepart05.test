@@ -53,7 +53,7 @@ SELECT minimum, maximum FROM range_partitions
 statement error
 ALTER TABLE listparts DROP TABLE subtable1
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable1 VALUES ('wrong')
 
 statement error
@@ -84,7 +84,7 @@ ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM RANGE MINVALUE TO
 statement ok
 ALTER TABLE testtimestamps DROP TABLE subtime
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtime VALUES (timestamp '2018-02-01 00:00')
 
 statement ok
@@ -93,10 +93,10 @@ ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM timestamp '2018-0
 statement ok
 ALTER TABLE testtimestamps DROP TABLE subtime
 
-statement ok
+statement ok rowcount 1
 DELETE FROM subtime
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtime VALUES (timestamp '2050-01-01 00:00')
 
 statement error
@@ -120,7 +120,7 @@ ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE
 statement ok
 ALTER TABLE testrangelimits DROP TABLE sublimits
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits VALUES (-1)
 
 statement ok
@@ -129,7 +129,7 @@ ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE
 statement ok
 ALTER TABLE testrangelimits DROP TABLE sublimits
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits VALUES (0)
 
 statement error

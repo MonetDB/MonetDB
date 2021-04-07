@@ -4,11 +4,11 @@ create table merging (aa int, bb int)
 statement ok
 create table predata (aa int, bb int not null)
 
-statement ok
+statement ok rowcount 0
 merge into predata using (select * from merging) other on predata.bb = other.bb
       when not matched then insert
 
-statement ok
+statement ok rowcount 1
 insert into merging
 
 statement error
@@ -24,10 +24,10 @@ alter table predata alter bb set null
 statement ok
 alter table predata add constraint uniquebb unique (bb)
 
-statement ok
+statement ok rowcount 2
 insert into merging values (1,1), (0,1)
 
-statement ok
+statement ok rowcount 1
 insert into predata values (1,1)
 
 statement error

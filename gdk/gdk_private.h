@@ -236,6 +236,10 @@ void PROPdestroy(BAT *b)
 gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+const char *gettailname(const BAT *b)
+	__attribute__((__visibility__("hidden")));
+void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
+	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 void strHeap(Heap *d, size_t cap)

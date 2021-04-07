@@ -13,7 +13,7 @@ CREATE TABLE sublimits3 (a int, b varchar(32))
 statement ok
 ALTER TABLE testvaluespartitions ADD TABLE sublimits1 AS PARTITION IN ('1', '2', '3')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testvaluespartitions VALUES (1, 'first')
 
 statement error
@@ -34,28 +34,28 @@ ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN ('1')
 statement ok
 ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN ('7', '8', '9')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testvaluespartitions VALUES (1, 'a'), (5, 'b'), (7, 'c')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testvaluespartitions VALUES (7, 'another'), (9, 'to'), (9, 'pass')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testvaluespartitions VALUES (3, 'mmm')
 
-statement ok
+statement ok rowcount 2
 INSERT INTO testvaluespartitions VALUES ('5', 'test'), (NULL, 'test')
 
 statement error
 INSERT INTO testvaluespartitions VALUES (100, 'I am going to no partition')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (1, 'another')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits2 VALUES (NULL, 'successful')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits3 VALUES (8, 'attempt')
 
 statement error

@@ -742,8 +742,9 @@ typedef struct {
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
+#define GDKLIBRARY_TAILN	061043U /* first after Oct2020: str offset heaps names don't take width into account */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061043U /* first after Oct2020 */
+#define GDKLIBRARY		061044U /* first after Oct2020 */
 
 typedef struct BAT {
 	/* static bat properties */

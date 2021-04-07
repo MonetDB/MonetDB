@@ -2553,7 +2553,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 061043U) {
+	if (gdk_version != 061044U) {
 		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
 		// into account.
@@ -2580,6 +2580,8 @@ snapshot_bats(stream *plan, const char *db_dir)
 
 	while (mnstr_readline(cat, line, sizeof(line)) > 0) {
 		uint64_t batid;
+		char type[16];
+		uint16_t width;
 		uint64_t tail_free;
 		uint64_t theap_free;
 		char filename[sizeof(BBP_physical(0))];
@@ -2593,15 +2595,15 @@ snapshot_bats(stream *plan, const char *db_dir)
 				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 14 fields, we need field 10 (free)
-				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
+				// 14 fields, we need fields 1 (type), 2 (width), 10 (free)
+				" %10s %" SCNu16 " %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
 
 				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
 				// 3 fields, we need field 1 (free).
 				"%" SCNu64 " %*s ^*s"
 				,
 				&batid, filename,
-				&tail_free,
+				type, &width, &tail_free,
 				&theap_free);
 
 		// The following switch uses fallthroughs to make
@@ -2610,15 +2612,21 @@ snapshot_bats(stream *plan, const char *db_dir)
 			default:
 				GDKerror("Couldn't parse (%d) %s line: %s", scanned, bbpdir, line);
 				goto end;
-			case 4:
+			case 6:
 				// tail and theap
 				ret = snapshot_heap(plan, db_dir, batid, filename, ".theap", theap_free);
 				if (ret != GDK_SUCCEED)
 					goto end;
 				/* fallthrough */
-			case 3:
+			case 5:
 				// tail only
-				snapshot_heap(plan, db_dir, batid, filename, ".tail", tail_free);
+				snapshot_heap(plan, db_dir, batid, filename,
+							  strcmp(type, "str") == 0 ? width == 1 ? ".tail1" : width == 2 ? ".tail2" :
+#if SIZEOF_VAR_T == 8
+							  width == 4 ? ".tail4" :
+#endif
+							  ".tail" : ".tail",
+							  tail_free);
 				if (ret != GDK_SUCCEED)
 					goto end;
 				/* fallthrough */
