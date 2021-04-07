@@ -26,10 +26,10 @@ SELECT value FROM value_partitions
 22
 23
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testme VALUES (23, 'iam')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subt1 VALUES (23, 'ok')
 
 query IT rowsort
@@ -55,7 +55,7 @@ SELECT a, b FROM subt2
 statement error
 ALTER TABLE testme SET TABLE subt1 AS PARTITION IN ('44', '45', '46')
 
-statement ok
+statement ok rowcount 2
 DELETE FROM testme
 
 statement ok
@@ -77,10 +77,10 @@ INSERT INTO testme VALUES (1, 'wrong')
 statement error
 INSERT INTO subt1 VALUES (1, 'insert')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testme VALUES (31, 'still'), (11, 'going'), (12, 'elsewhere')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subt1 VALUES (32, 'ok')
 
 statement ok
@@ -102,7 +102,7 @@ SELECT value FROM value_partitions
 52
 53
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testme VALUES (52, 'third')
 
 statement error
@@ -127,10 +127,10 @@ INSERT INTO testme VALUES (51, 'wrong')
 statement error
 INSERT INTO subt1 VALUES (53, 'again')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testme VALUES (33, 'alright')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subt1 VALUES (32, 'done')
 
 query IT rowsort

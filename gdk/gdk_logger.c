@@ -2222,16 +2222,21 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
 	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset)))
-		return GDK_FAIL;
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+		ok = GDK_FAIL;
+		goto bailout;
+	}
 
 	ok = wt(val, lg->output_log, 1);
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
-	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		const char *err = mnstr_peek_error(lg->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
 	return ok;
 }
 
@@ -2266,8 +2271,10 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
 	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset)))
-		return GDK_FAIL;
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+		ok = GDK_FAIL;
+		goto bailout;
+	}
 
 	/* if offset is just for the log, but BAT is already sliced, reset offset */
 	if (sliced)
@@ -2303,8 +2310,11 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
-	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		const char *err = mnstr_peek_error(lg->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
 	return ok;
 }
 
@@ -2418,8 +2428,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, nr) ||
 	     mnstr_write(lg->output_log, &tpe, 1, 1) != 1){
-		logger_unlock(lg);
-		return GDK_FAIL;
+		ok = GDK_FAIL;
+		goto bailout;
 	}
 	for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 		const oid id = BUNtoid(uid, p);
@@ -2440,8 +2450,11 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
-	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		const char *err = mnstr_peek_error(lg->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
 	logger_unlock(lg);
 	return ok;
 }

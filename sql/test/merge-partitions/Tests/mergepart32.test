@@ -13,7 +13,7 @@ CREATE TABLE another3 (a int)
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 10 TO 10
 
-statement ok
+statement ok rowcount 1
 insert into table1 values (10)
 
 statement error
@@ -22,7 +22,7 @@ insert into table1 values (11)
 statement error
 insert into another1 values (11)
 
-statement ok
+statement ok rowcount 1
 insert into another1 values (10)
 
 statement error
@@ -40,16 +40,16 @@ ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 10 TO RANGE MAXVALUE
 statement error
 ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 11 TO RANGE MAXVALUE
 
-statement ok
+statement ok rowcount 1
 insert into table1 values (11)
 
-statement ok
+statement ok rowcount 1
 insert into table1 values (10)
 
 statement error
 insert into another2 values (10)
 
-statement ok
+statement ok rowcount 1
 insert into another2 values (11)
 
 query I rowsort
