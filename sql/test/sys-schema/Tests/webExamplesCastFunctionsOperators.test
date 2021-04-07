@@ -1,0 +1,204 @@
+query T rowsort
+select cast(123 as varchar(10))
+----
+123
+
+query R rowsort
+select convert(123, decimal(10,3))
+----
+123.000
+
+query I rowsort
+select cast(true as smallint)
+----
+1
+
+query I rowsort
+select cast(42 as int)
+----
+42
+
+query R rowsort
+select cast(123.45 as real)
+----
+123.450
+
+query R rowsort
+select cast('123.45' as double precision)
+----
+123.450
+
+query R rowsort
+select cast(23.45 as decimal(5,2))
+----
+23.450
+
+query T rowsort
+select cast('2020-07-29' as date)
+----
+2020-07-29
+
+query T rowsort
+select cast('17:44:59' as time)
+----
+17:44:59
+
+query T rowsort
+select cast('17:44:59.123456' as time)
+----
+17:44:59
+
+query T rowsort
+select cast('2020-07-29 17:44:59' as timestamp)
+----
+2020-07-29 17:44:59
+
+query T rowsort
+select cast('2020-07-29T17:44:59' as timestamp)
+----
+2020-07-29 17:44:59
+
+query T rowsort
+select cast('2020-07-29 17:44:59.123456' as timestamp)
+----
+2020-07-29 17:44:59.123456
+
+query T rowsort
+select cast('17:44:59.321+01:30' as timetz)
+----
+16:14:59.321000
+
+query T rowsort
+select cast('2020-07-29 17:44:59.321+01:30' as timestamptz)
+----
+2020-07-29 16:14:59.321000
+
+query T rowsort
+select cast('1234' as interval month)
+----
+1234
+
+query T rowsort
+select cast('86400.123' as interval second)
+----
+1 day, 0:00:00
+
+query T rowsort
+select cast('abcd' as blob)
+----
+ABCD
+
+query T rowsort
+select cast('abcde' as clob)
+----
+abcde
+
+query T rowsort
+select cast('192.168.1.5/24' as inet)
+----
+192.168.1.5/24
+
+query T rowsort
+select cast(r'{"a":[1,2,4]}' as json)
+----
+{"a":[1,2,4]}
+
+query T rowsort
+select cast('https://www.monetdb.org/Home' as url)
+----
+https://www.monetdb.org/Home
+
+query T rowsort
+select cast('e31960fb-dc8b-452d-ab30-b342723e756a' as uuid)
+----
+e31960fb-dc8b-452d-ab30-b342723e756a
+
+query T rowsort
+select convert('a4cd' , blob)
+----
+A4CD
+
+query T rowsort
+select convert('abcde' , clob)
+----
+abcde
+
+query T rowsort
+select convert('192.168.1.5/24' , inet)
+----
+192.168.1.5/24
+
+query T rowsort
+select convert(r'{"a":[1,2,4]}' , json)
+----
+{"a":[1,2,4]}
+
+query T rowsort
+select convert('https://www.monetdb.org/Home' , url)
+----
+https://www.monetdb.org/Home
+
+query T rowsort
+select convert('e31960fb-dc8b-452d-ab30-b342723e756a' , uuid)
+----
+e31960fb-dc8b-452d-ab30-b342723e756a
+
+query T rowsort
+select x'abcd'
+----
+ABCD
+
+query T rowsort
+select blob 'abcd'
+----
+ABCD
+
+statement error
+select clob 'abcde'
+
+query T rowsort
+select cast('abcde' as clob)
+----
+abcde
+
+query T rowsort
+select inet '192.168.1.5/24'
+----
+192.168.1.5/24
+
+query T rowsort
+select json '{"a":[1,2,4]}'
+----
+{"a":[1,2,4]}
+
+query T rowsort
+select url 'https://www.monetdb.org/Home'
+----
+https://www.monetdb.org/Home
+
+query T rowsort
+select uuid 'e31960fb-dc8b-452d-ab30-b342723e756a'
+----
+e31960fb-dc8b-452d-ab30-b342723e756a
+
+query T rowsort
+select E'EA\fB\tC\n\\Z'
+----
+EA@B@C@\Z
+
+query T rowsort
+select e'eA\fB\tC\n\\Z'
+----
+eA@B@C@\Z
+
+query T rowsort
+select R'RA\fB\tC\n\\Z'
+----
+RA\fB\tC\n\\Z
+
+query T rowsort
+select r'rA\fB\tC\n\\Z'
+----
+rA\fB\tC\n\\Z
+
+

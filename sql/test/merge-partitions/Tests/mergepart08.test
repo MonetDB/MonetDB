@@ -7,10 +7,10 @@ CREATE TABLE subtable1 (a int, b varchar(32))
 statement ok
 CREATE TABLE subtable2 (a int, b varchar(32))
 
-statement ok
+statement ok rowcount 3
 INSERT INTO subtable1 VALUES (1, 'one'), (2, 'two'), (3, 'three')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen')
 
 statement ok
@@ -55,7 +55,7 @@ twelve
 13
 thirteen
 
-statement ok
+statement ok rowcount 6
 DELETE FROM testme
 
 query IT rowsort
@@ -70,13 +70,13 @@ query IT rowsort
 SELECT a, b FROM subtable2
 ----
 
-statement ok
+statement ok rowcount 3
 INSERT INTO subtable1 VALUES (1, 'one'), (5, 'five'), (9, 'fifteen')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen')
 
-statement ok
+statement ok rowcount 4
 DELETE FROM testme where a > 5
 
 query IT rowsort
@@ -99,10 +99,10 @@ query IT rowsort
 SELECT a, b FROM subtable2
 ----
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable1 VALUES (6, 'six')
 
-statement ok
+statement ok rowcount 3
 TRUNCATE testme
 
 query IT rowsort
@@ -120,13 +120,13 @@ SELECT a, b FROM subtable2
 statement ok
 ALTER TABLE testme DROP TABLE subtable1
 
-statement ok
+statement ok rowcount 3
 INSERT INTO subtable1 VALUES (1, 'one'), (2, 'two'), (3, 'three')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen')
 
-statement ok
+statement ok rowcount 3
 TRUNCATE testme
 
 query IT rowsort

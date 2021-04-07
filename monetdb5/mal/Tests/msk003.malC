@@ -1,0 +1,22 @@
+# Let's explore what happens when we want to support :bat[:msk] vectors
+
+b := bat.new(:oid);
+bat.append(b,1@0);
+bat.append(b,3@0);
+bat.append(b,5@0);
+bat.append(b,6@0);
+bat.append(b,8@0);
+
+bv2:bat[:msk]:= mask.mask(b);
+io.print(bv2);
+# should produce (1,0,1,0,1,1,0,1)
+bv3:bat[:oid]:= mask.umask(bv2);
+io.print(bv3);
+#should produce 1@0, 3@0, 5@0,6@0,8@0
+
+b2 := bat.new(:oid);
+bat.append(b,1@0);
+bat.append(b,5@0);
+bat.append(b,3@0);
+# bat should be ordered
+mv2:bat[:msk]:= mask.mask(b2);

@@ -47,6 +47,7 @@ GRANT EXECUTE ON FUNCTION json.isvalid(string) TO PUBLIC;
 
 create function json.isvalid(js json)
 returns bool begin return true; end;
+GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
 
 create function json.isobject(js json)
 returns bool external name json.isobject;

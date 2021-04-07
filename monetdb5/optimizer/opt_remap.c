@@ -372,13 +372,22 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 str
 OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-
 	InstrPtr *old, p;
 	int i, limit, slimit, doit= 0;
 	Module scope = cntxt->usermodule;
 	lng usec = GDKusec();
 	char buf[256];
 	str msg = MAL_SUCCEED;
+
+	for( i=0; i< mb->stop; i++){
+		p = getInstrPtr(mb, i);
+		if (isMultiplex(p) || (p->argc == 4 && getModuleId(p) == aggrRef && getFunctionId(p) == avgRef)){
+			break;
+		}
+	}
+	if( i == mb->stop){
+		goto wrapup;
+	}
 
 	(void) pci;
 	old = mb->stmt;
@@ -488,6 +497,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg)
         	msg = chkDeclarations(mb);
     }
+wrapup:
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit, usec);

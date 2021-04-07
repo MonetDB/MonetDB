@@ -35,21 +35,22 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-static uint8_t
+static inline uint8_t __attribute__((__const__))
 HASHwidth(BUN hashsize)
 {
+	(void) hashsize;
+#ifdef BUN2
 	if (hashsize <= (BUN) BUN2_NONE)
 		return BUN2;
-#ifdef BUN8
-	if (hashsize <= (BUN) BUN4_NONE)
-		return BUN4;
-	return BUN8;
-#else
-	return BUN4;
 #endif
+#ifdef BUN8
+	if (hashsize > (BUN) BUN4_NONE)
+		return BUN8;
+#endif
+	return BUN4;
 }
 
-static inline BUN
+static inline BUN __attribute__((__const__))
 hashmask(BUN m)
 {
 	m |= m >> 1;
@@ -89,7 +90,7 @@ static inline void
 HASHclear(Hash *h)
 {
 	/* since BUN2_NONE, BUN4_NONE, BUN8_NONE
-	 * are all equal to -1 (~0), i.e., have all bits set,
+	 * are all equal to ~0, i.e., have all bits set,
 	 * we can use a simple memset() to clear the Hash,
 	 * rather than iteratively assigning individual
 	 * BUNi_NONE values in a for-loop
@@ -139,12 +140,12 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->width = HASHwidth(size);
 
 	if (!bcktonly) {
-		if (HEAPalloc(&h->heaplink, size, h->width) != GDK_SUCCEED)
+		if (HEAPalloc(&h->heaplink, size, h->width, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->heaplink.free = size * h->width;
 		h->Link = h->heaplink.base;
 	}
-	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width, 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->nbucket = mask;
@@ -157,10 +158,12 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->mask2 = h->mask1 << 1 | 1;
 	}
 	switch (h->width) {
+#ifdef BUN2
 	case BUN2:
 		h->nil = (BUN) BUN2_NONE;
 		break;
-	case BUN4:
+#endif
+	default:		/* BUN4 */
 		h->nil = (BUN) BUN4_NONE;
 		break;
 #ifdef BUN8
@@ -168,8 +171,6 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->nil = (BUN) BUN8_NONE;
 		break;
 #endif
-	default:
-		assert(0);
 	}
 	h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->type = tpe;
@@ -219,6 +220,7 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 static gdk_return
 HASHupgradehashheap(BAT *b)
 {
+#if defined(BUN2) || defined(BUN8)
 	Hash *h = b->thash;
 	int nwidth = h->width << 1;
 	BUN i;
@@ -236,6 +238,7 @@ HASHupgradehashheap(BAT *b)
 	h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	switch (nwidth) {
 	case BUN4:
+#ifdef BUN2
 		switch (h->width) {
 		case BUN2:
 			i = h->heaplink.free / h->width;
@@ -254,11 +257,13 @@ HASHupgradehashheap(BAT *b)
 			}
 			break;
 		}
+#endif
 		h->nil = BUN4_NONE;
 		break;
 #ifdef BUN8
 	case BUN8:
 		switch (h->width) {
+#ifdef BUN2
 		case BUN2:
 			i = h->heaplink.free / h->width;
 			h->heaplink.free = i * nwidth;
@@ -275,6 +280,7 @@ HASHupgradehashheap(BAT *b)
 				((BUN8type *) h->Bckt)[i] = v == BUN2_NONE ? BUN8_NONE : v;
 			}
 			break;
+#endif
 		case BUN4:
 			i = h->heaplink.free / h->width;
 			h->heaplink.free = i * nwidth;
@@ -297,6 +303,9 @@ HASHupgradehashheap(BAT *b)
 #endif
 	}
 	h->width = nwidth;
+#else
+	(void) b;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -330,7 +339,7 @@ HASHgrowbucket(BAT *b)
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
 		BATiter bi = bat_iterator(b);
-		BUN msk = h->mask1 + 1; /* == h->mask2 - h->mask1 */
+		BUN mask = h->mask1 + 1; /* == h->mask2 - h->mask1 */
 
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
 		if (h->heapbckt.free + h->width > h->heapbckt.size) {
@@ -360,8 +369,8 @@ HASHgrowbucket(BAT *b)
 			do {
 				const void *v = BUNtail(bi, hb);
 				BUN hsh = ATOMhash(h->type, v);
-				assert((hsh & (msk - 1)) == old);
-				if (hsh & msk) {
+				assert((hsh & (mask - 1)) == old);
+				if (hsh & mask) {
 					/* move to new list */
 					if (lnew == HASHnil(h)) {
 						HASHput(h, new, hb);
@@ -389,8 +398,6 @@ HASHgrowbucket(BAT *b)
 			HASHput(h, old, HASHnil(h));
 		else
 			HASHputlink(h, lold, HASHnil(h));
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
-				  &(oid){h->nbucket});
 	}
 	TRC_DEBUG_IF(ACCELERATOR) if (h->nbucket > onbucket) {
 		TRC_DEBUG_ENDIF(ACCELERATOR, ALGOBATFMT " " BUNFMT
@@ -420,14 +427,14 @@ BATcheckhash(BAT *b)
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
-		MT_lock_set(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->thashlock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
 			Hash *h;
 			int fd;
 
-			assert(!GDKinmemory(b->theap.farmid));
+			assert(!GDKinmemory(b->theap->farmid));
 			b->thash = NULL;
 			if ((h = GDKzalloc(sizeof(*h))) != NULL &&
 			    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
@@ -462,6 +469,15 @@ BATcheckhash(BAT *b)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&
+					    (
+#ifdef BUN2
+						    hdata[3] == BUN2 ||
+#endif
+						    hdata[3] == BUN4
+#ifdef BUN8
+						    || hdata[3] == BUN8
+#endif
+						    ) &&
 					    hdata[4] == (size_t) BATcount(b) &&
 					    fstat(fd, &st) == 0 &&
 					    st.st_size >= (off_t) (h->heapbckt.size = h->heapbckt.free = (h->nbucket = (BUN) hdata[2]) * (BUN) (h->width = (uint8_t) hdata[3]) + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
@@ -483,10 +499,12 @@ BATcheckhash(BAT *b)
 							h->nheads = hdata[6];
 							h->type = ATOMtype(b->ttype);
 							switch (h->width) {
+#ifdef BUN2
 							case BUN2:
 								h->nil = (BUN) BUN2_NONE;
 								break;
-							case BUN4:
+#endif
+							default: /* BUN4 */
 								h->nil = (BUN) BUN4_NONE;
 								break;
 #ifdef BUN8
@@ -494,8 +512,6 @@ BATcheckhash(BAT *b)
 								h->nil = (BUN) BUN8_NONE;
 								break;
 #endif
-							default:
-								assert(0);
 							}
 							if (h->nil > h->nbucket) {
 								close(fd);
@@ -505,20 +521,10 @@ BATcheckhash(BAT *b)
 								h->heapbckt.parentid = b->batCacheid;
 								h->heaplink.dirty = false;
 								h->heapbckt.dirty = false;
-								BATsetprop_nolock(
-									b,
-									GDK_HASH_BUCKETS,
-									TYPE_oid,
-									&(oid){h->nbucket});
-								BATsetprop_nolock(
-									b,
-									GDK_NUNIQUE,
-									TYPE_oid,
-									&(oid){h->nunique});
 								b->thash = h;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
-								MT_lock_unset(&b->batIdxLock);
+								MT_rwlock_wrunlock(&b->thashlock);
 								return true;
 							}
 							/* if h->nil==h->nbucket
@@ -550,7 +556,7 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		MT_lock_unset(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	ret = b->thash != NULL;
 	if (ret)
@@ -586,7 +592,7 @@ BAThashsave(BAT *b, bool dosync)
 		((size_t *) hp->base)[4] = (size_t) BATcount(b);
 		((size_t *) hp->base)[5] = (size_t) h->nunique;
 		((size_t *) hp->base)[6] = (size_t) h->nheads;
-		if (!b->theap.dirty &&
+		if (!b->theap->dirty &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
@@ -637,9 +643,9 @@ BAThashsync(void *arg)
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very
 	 * unlikely that that is the case, so we don't */
-	MT_lock_set(&b->batIdxLock);
+	MT_rwlock_rdlock(&b->thashlock);
 	BAThashsave(b, true);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_rdunlock(&b->thashlock);
 	BBPunfix(b->batCacheid);
 }
 #endif
@@ -653,6 +659,15 @@ BAThashsync(void *arg)
 #endif
 #define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
 #define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
+#ifdef HAVE_HGE
+#define EQuuid(a, b)	((a).h == (b).h)
+#else
+#ifdef HAVE_UUID
+#define EQuuid(a, b)	(uuid_compare((a).u, (b).u) == 0)
+#else
+#define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
+#endif
+#endif
 
 #define starthash(TYPE)							\
 	do {								\
@@ -686,16 +701,20 @@ BAThashsync(void *arg)
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == hnil;			\
-			for (hb = hget;					\
-			     hb != hnil;				\
-			     hb = HASHgetlink(h, hb)) {			\
-				if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
-					break;				\
+			if (!hascand) {					\
+				for (hb = hget;				\
+				     hb != hnil;			\
+				     hb = HASHgetlink(h, hb)) {		\
+					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
+						break;			\
+				}					\
+				h->nunique += hb == hnil;		\
+				o = canditer_next_dense(ci);		\
+			} else {					\
+				o = canditer_next(ci);			\
 			}						\
-			h->nunique += hb == hnil;			\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
-			o = canditer_next(ci);				\
 		}							\
 	} while (0)
 
@@ -715,7 +734,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	oid o;
 	BUN hnil, hget, hb;
 	Hash *h = NULL;
-	const char *nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
@@ -740,8 +759,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
-	    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
-	    (h->heapbckt.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0) {
+	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0 ||
+	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0) {
 		GDKfree(h);
 		return NULL;
 	}
@@ -753,7 +772,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
-		      h->width) != GDK_SUCCEED) {
+		      h->width, 0) != GDK_SUCCEED) {
 		GDKfree(h);
 		return NULL;
 	}
@@ -778,10 +797,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
+ 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_NUNIQUE)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval * 8 / 7;
- 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
+ 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_HASH_BUCKETS)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
 		maxmask = HASHmask(ci->ncand);
@@ -846,6 +865,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(hge);
 			break;
 #endif
+		case TYPE_uuid:
+			starthash(uuid);
+			break;
 		default:
 			for (; p < cnt1; p++) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
@@ -917,19 +939,24 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(hge);
 		break;
 #endif
+	case TYPE_uuid:
+		finishhash(uuid);
+		break;
 	default:
 		for (; p < ci->ncand; p++) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
 			h->nheads += hget == hnil;
-			for (hb = hget;
-			     hb != hnil;
-			     hb = HASHgetlink(h, hb)) {
-				if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-					break;
+			if (!hascand) {
+				for (hb = hget;
+				     hb != hnil;
+				     hb = HASHgetlink(h, hb)) {
+					if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+						break;
+				}
+				h->nunique += hb == hnil;
 			}
-			h->nunique += hb == hnil;
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
 			o = canditer_next(ci);
@@ -937,8 +964,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	if (!hascand) {
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){h->nbucket});
-		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){h->nunique});
+		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
+		BATrmprop_nolock(b, GDK_NUNIQUE);
 	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;
@@ -963,21 +990,43 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
-	MT_lock_set(&b->batIdxLock);
+	for (;;) {
+		/* If multiple threads simultaneously try to build a
+		 * hash on a bat, e.g. in order to perform a join, it
+		 * may happen that one thread succeeds in obtaining the
+		 * write lock, then builds the hash, releases the lock,
+		 * acquires the read lock, and performs the join.  The
+		 * other threads may then still be attempting to acquire
+		 * the write lock.  But now they have to wait until the
+		 * read lock is released, which can be quite a long
+		 * time.  Especially if a second thread goes through the
+		 * same process as the first. */
+		if (MT_rwlock_wrtry(&b->thashlock))
+			break;
+		MT_sleep_ms(1);
+		if (MT_rwlock_rdtry(&b->thashlock)) {
+			if (b->thash != NULL && b->thash != (Hash *) 1) {
+				MT_rwlock_rdunlock(&b->thashlock);
+				return GDK_SUCCEED;
+			}
+			MT_rwlock_rdunlock(&b->thashlock);
+		}
+	}
+	/* we have the write lock */
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
 		if ((b->thash = BAThash_impl(b, &ci, "thash")) == NULL) {
-			MT_lock_unset(&b->batIdxLock);
+			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory(b->theap.farmid)) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_lock_unset(&b->batIdxLock);
+			MT_rwlock_wrunlock(&b->thashlock);
 			if (MT_create_thread(&tid, BAThashsync, b,
 					     MT_THR_DETACHED,
 					     name) < 0) {
@@ -990,7 +1039,7 @@ BAThash(BAT *b)
 					"NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
 }
 
@@ -1016,13 +1065,15 @@ HASHprobe(const Hash *h, const void *v)
 	case TYPE_hge:
 		return hash_hge(h, v);
 #endif
+	case TYPE_uuid:
+		return hash_uuid(h, v);
 	default:
 		return hash_any(h, v);
 	}
 }
 
-static void
-HASHins_locked(BAT *b, BUN i, const void *v)
+static inline void
+HASHappend_locked(BAT *b, BUN i, const void *v)
 {
 	Hash *h = b->thash;
 	if (h == NULL) {
@@ -1033,6 +1084,7 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 		doHASHdestroy(b, h);
 		return;
 	}
+	assert(i * h->width == h->heaplink.free);
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
 		return;
@@ -1055,12 +1107,11 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 	BUN hb = HASHget(h, c);
 	BUN hb2;
 	BATiter bi = bat_iterator(b);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	for (hb2 = hb;
 	     hb2 != HASHnil(h);
 	     hb2 = HASHgetlink(h, hb2)) {
-		if (ATOMcmp(h->type,
-			    v,
-			    BUNtail(bi, hb2)) == 0)
+		if (atomcmp(v, BUNtail(bi, hb2)) == 0)
 			break;
 	}
 	h->nheads += hb == HASHnil(h);
@@ -1072,11 +1123,154 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 }
 
 void
-HASHins(BAT *b, BUN i, const void *v)
+HASHappend(BAT *b, BUN i, const void *v)
 {
-	MT_lock_set(&b->batIdxLock);
-	HASHins_locked(b, i, v);
-	MT_lock_unset(&b->batIdxLock);
+	MT_rwlock_wrlock(&b->thashlock);
+	HASHappend_locked(b, i, v);
+	MT_rwlock_wrunlock(&b->thashlock);
+}
+
+/* insert value v at position p into the hash table of b */
+static inline void
+HASHinsert_locked(BAT *b, BUN p, const void *v)
+{
+	Hash *h = b->thash;
+	if (h == NULL) {
+		return;
+	}
+	if (h == (Hash *) 1) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	assert(p * h->width < h->heaplink.free);
+	BUN c = HASHprobe(h, v);
+	BUN hb = HASHget(h, c);
+	BATiter bi = bat_iterator(b);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	if (hb == h->nil || hb < p) {
+		/* bucket is empty, or bucket is used by lower numbered
+		 * position */
+		h->heaplink.dirty = true;
+		h->heapbckt.dirty = true;
+		HASHputlink(h, p, hb);
+		HASHput(h, c, p);
+		if (hb == h->nil) {
+			h->nheads++;
+		} else {
+			do {
+				if (atomcmp(v, BUNtail(bi, hb)) == 0) {
+					/* found another row with the
+					 * same value, so don't
+					 * increment nunique */
+					return;
+				}
+				hb = HASHgetlink(h, hb);
+			} while (hb != h->nil);
+		}
+		/* this is a new value */
+		h->nunique++;
+		return;
+	}
+	bool seen = false;
+	for (;;) {
+		if (!seen)
+			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
+		BUN hb2 = HASHgetlink(h, hb);
+		if (hb2 == h->nil || hb2 < p) {
+			h->heaplink.dirty = true;
+			HASHputlink(h, p, hb2);
+			HASHputlink(h, hb, p);
+			while (!seen && hb2 != h->nil) {
+				seen = atomcmp(v, BUNtail(bi, hb2)) == 0;
+				hb2 = HASHgetlink(h, hb2);
+			}
+			if (!seen)
+				h->nunique++;
+			return;
+		}
+		hb = hb2;
+	}
+}
+
+void
+HASHinsert(BAT *b, BUN p, const void *v)
+{
+	MT_rwlock_wrlock(&b->thashlock);
+	HASHinsert_locked(b, p, v);
+	MT_rwlock_wrunlock(&b->thashlock);
+}
+
+/* delete value v at position p from the hash table of b */
+static inline void
+HASHdelete_locked(BAT *b, BUN p, const void *v)
+{
+	Hash *h = b->thash;
+	if (h == NULL) {
+		return;
+	}
+	if (h == (Hash *) 1) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	assert(p * h->width < h->heaplink.free);
+	BUN c = HASHprobe(h, v);
+	BUN hb = HASHget(h, c);
+	BATiter bi = bat_iterator(b);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	if (hb == p) {
+		BUN hb2 = HASHgetlink(h, p);
+		h->heaplink.dirty = true;
+		h->heapbckt.dirty = true;
+		HASHput(h, c, hb2);
+		HASHputlink(h, p, h->nil);
+		if (hb2 == h->nil) {
+			h->nheads--;
+		} else {
+			do {
+				if (atomcmp(v, BUNtail(bi, hb2)) == 0) {
+					/* found another row with the
+					 * same value, so don't
+					 * decrement nunique below */
+					return;
+				}
+				hb2 = HASHgetlink(h, hb2);
+			} while (hb2 != h->nil);
+		}
+		/* no rows found with the same value, so number of
+		 * unique values is one lower */
+		h->nunique--;
+		return;
+	}
+	bool seen = false;
+	for (;;) {
+		if (!seen)
+			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
+		BUN hb2 = HASHgetlink(h, hb);
+		assert(hb2 != h->nil);
+		if (hb2 == p) {
+			for (hb2 = HASHgetlink(h, hb2);
+			     !seen && hb2 != h->nil;
+			     hb2 = HASHgetlink(h, hb2))
+				seen = atomcmp(v, BUNtail(bi, hb2)) == 0;
+			break;
+		}
+		hb = hb2;
+	}
+	h->heaplink.dirty = true;
+	HASHputlink(h, hb, HASHgetlink(h, p));
+	HASHputlink(h, p, h->nil);
+	if (!seen)
+		h->nunique--;
+}
+
+void
+HASHdelete(BAT *b, BUN p, const void *v)
+{
+	MT_rwlock_wrlock(&b->thashlock);
+	HASHdelete_locked(b, p, v);
+	MT_rwlock_wrunlock(&b->thashlock);
 }
 
 BUN
@@ -1099,10 +1293,10 @@ HASHdestroy(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *hs;
-		MT_lock_set(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->thashlock);
 		hs = b->thash;
 		b->thash = NULL;
-		MT_lock_unset(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->thashlock);
 		doHASHdestroy(b, hs);
 	}
 }
@@ -1112,7 +1306,7 @@ HASHfree(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *h;
-		MT_lock_set(&b->batIdxLock);
+		MT_rwlock_wrlock(&b->thashlock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {
 			bool rmheap = h->heaplink.dirty || h->heapbckt.dirty;
 			TRC_DEBUG(ACCELERATOR, ALGOBATFMT " free hash %s\n",
@@ -1124,7 +1318,7 @@ HASHfree(BAT *b)
 			HEAPfree(&h->heaplink, rmheap);
 			GDKfree(h);
 		}
-		MT_lock_unset(&b->batIdxLock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 }
 

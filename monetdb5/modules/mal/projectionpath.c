@@ -29,7 +29,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = *getArgReference_bat(stk, pci, i);
 		b = BATdescriptor(bid);
-		if (b == NULL || (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid)) {
+		if (b == NULL || (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid && b->ttype != TYPE_msk)) {
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
 			GDKfree(joins);
@@ -45,7 +45,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( b)
 		BBPkeepref( *r = b->batCacheid);
 	else
-		throw(MAL, "algebra.projectionpath", INTERNAL_OBJ_CREATE);
+		throw(MAL, "algebra.projectionpath", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

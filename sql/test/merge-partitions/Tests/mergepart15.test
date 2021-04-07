@@ -7,22 +7,22 @@ CREATE TABLE sublimits1 (a int, b varchar(32))
 statement ok
 CREATE TABLE sublimits2 (a int, b varchar(32))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (0, 'dummy')
 
 statement error
 ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES
 
-statement ok
+statement ok rowcount 1
 TRUNCATE sublimits1
 
 statement ok
 ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES
 
-statement ok
+statement ok rowcount 2
 INSERT INTO testme VALUES (NULL, 'first'), (NULL, NULL)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO sublimits1 VALUES (NULL, 'second'), (NULL, NULL)
 
 statement error
@@ -64,7 +64,7 @@ ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500' WITH NU
 statement ok
 ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500'
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testme VALUES (NULL, 'fourth'), (303, 'null'), (NULL, 'fifth')
 
 query IT rowsort

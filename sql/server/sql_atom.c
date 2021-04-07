@@ -324,7 +324,9 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			VALset(&a->data, a->data.vtype, p);
 			SA_VALcopy(sa, &a->data, &a->data);
 			if (tpe->type->eclass == EC_TIME && tpe->digits <= 7) {
-				int diff = 6-(tpe->digits-1);
+				unsigned int diff = 6-(tpe->digits-1);
+
+				assert(diff < MAX_SCALE);
 #ifdef HAVE_HGE
 				hge d = scales[diff];
 #else
@@ -1200,7 +1202,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			else if (a->data.vtype == TYPE_lng) {
 				if ((hge) GDK_lng_min > (hge) a->data.val.lval * mul || (hge) a->data.val.lval * mul > (hge) GDK_lng_max)
 					return 0;
-				a->data.val.ival *= (int) mul;
+				a->data.val.lval *= (lng) mul;
 			}
 			else if (a->data.vtype == TYPE_int) {
 				if ((hge) GDK_int_min > (hge) a->data.val.ival * mul || (hge) a->data.val.ival * mul > (hge) GDK_int_max)

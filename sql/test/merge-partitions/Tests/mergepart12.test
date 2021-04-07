@@ -13,22 +13,22 @@ ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FROM '-200' TO '300'
 statement ok
 ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500'
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testme VALUES (-150, 'first'), (103, 'second'), (450, 'third'), (301, 'fourth')
 
-statement ok
+statement ok rowcount 4
 UPDATE testme SET b = 'b' || b || 'e'
 
 statement error
 UPDATE testme SET a = a + 1
 
-statement ok
+statement ok rowcount 2
 UPDATE sublimits1 SET b = 'a' || b || 'f'
 
 statement error
 UPDATE sublimits1 SET a = a * 3
 
-statement ok
+statement ok rowcount 2
 UPDATE sublimits2 SET b = 'a' || b || 'f'
 
 statement error

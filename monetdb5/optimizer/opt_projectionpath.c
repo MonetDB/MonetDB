@@ -18,111 +18,123 @@
 // future experiments.
 //#define ELIMCOMMONPREFIX
 
-#define LOOKAHEAD 500   /* limit the lookahead for candidates */
-
-/* locate common prefixes  in projection lists
- * The algorithm is quadratic in the number of paths considered. */
-
 #ifdef ELIMCOMMONPREFIX
 static int
-OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
+OPTprojectionPrefix(Client cntxt, MalBlkPtr mb)
 {
-	int i, j, k, match, actions=0;
-	InstrPtr p,q,r,*old;
+	int i, j, k, maxmatch, actions=0;
+	InstrPtr p,q,*old;
 	int limit, slimit;
-	str msg = MAL_SUCCEED;
+	InstrPtr *paths = NULL;
+	int     *alias = NULL;
 
+	(void) cntxt;
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit= mb->ssize;
-	if (newMalBlkStmt(mb,mb->ssize) < 0)
+
+	paths = (InstrPtr *) GDKzalloc(mb->vsize * sizeof(InstrPtr));
+	if (paths == NULL)
 		return 0;
+	alias = (int*) GDKzalloc(mb->vsize * sizeof(int));
+	if( alias == NULL){
+		GDKfree(paths);
+		return 0;
+	}
+
+	maxmatch = 0; // to collect maximum common paths
+	/* Collect the projection paths achored at the same start */
+	for( i=0; i< limit; i++){
+		p = old[i];
+		if ( getFunctionId(p) == projectionpathRef && p->argc > 3){
+			k = getArg(p,1);
+			if( paths[k] == 0)
+				paths[k] = p;
+			q = paths[k];
+			// Calculate the number of almost identical paths
+			if( q->argc == p->argc){
+				for(j = q->retc; j<q->argc - 1; j++)
+					if( getArg(p,j) != getArg(q,j))
+						break;
+				if( j == q->argc -1 ){
+					alias[k] = alias[k] -1;
+					if (alias[k] < maxmatch)
+						maxmatch = alias[k];
+				}
+			}
+		}
+	}
+	if (maxmatch == -1){
+		GDKfree(alias);
+		GDKfree(paths);
+		return 0;
+	}
+
+	if (newMalBlkStmt(mb,mb->ssize) < 0){
+		GDKfree(paths);
+		GDKfree(alias);
+		return 0;
+	}
 
 
 	for( i = 0; i < limit; i++){
 		p = old[i];
-		assert(p);
-		if ( getFunctionId(p) != projectionpathRef || p->argc < prefixlength) {
+		if ( getFunctionId(p) != projectionpathRef ){
+			pushInstruction(mb,p);
+			continue;
+		}
+		if( p->argc < 3){
 			pushInstruction(mb,p);
 			continue;
 		}
 
-		/* we fixed a projection path of the target prefixlength
-		 * Search now the remainder for at least one case where it
-		 * has a common prefix of prefixlength
-		 */
-		for(match = 0,  j= i+1; j < limit && j < i + LOOKAHEAD; j++) {
-			q= old[j];
-			if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength)
-				continue;
-			for( match =0,  k = q->retc; k <  prefixlength; k++)
-				match += getArg(q,k) == getArg(p,k);
-			if ( match == prefixlength - q->retc )
-				break;
-			match = 0;
+		actions++;
+		// the first one should be split if there is interest
+		k = getArg(p,1);
+		q = paths[k];
+		if( alias[k] < 0){
+			// inject the join prefix calculation
+			q= copyInstruction(q);
+			q->argc = q->argc -1;
+			getArg(q,0) = newTmpVariable(mb, getArgType(mb,q, q->argc -1));
+			pushInstruction(mb, q);
+			alias[k] = getArg(q,0);
+			q = copyInstruction(p);
+			getArg(q,1) = alias[k];
+			getArg(q,2) = getArg(q, q->argc -1);
+			q->argc = 3;
+			pushInstruction(mb,q);
+			continue;
 		}
-		if ( match && match == prefixlength - q->retc ){
-			/* at least one instruction has been found.
-			 * Inject the prefex projection path and replace all use cases
-			 */
-
-			/* create the factored out prefix projection */
-			r = copyInstruction(p);
-			if( r == NULL){
-				return -1;
+		// check if we can replace the projectionpath with an alias
+		k = getArg(p,1);
+		q = paths[k];
+		if( alias[k] >  0 && q->argc == p->argc){
+			for(j = q->retc; j<q->argc - 1; j++)
+				if( getArg(p,j) != getArg(q,j))
+					break;
+			if( j == q->argc - 1){
+				// we found a common prefix, and it is the first one?
+				getArg(p,1) = alias[k];
+				getArg(p,2) = getArg(p, p->argc -1);
+				p->argc = 3;
+				pushInstruction(mb,p);
 			}
-			r->argc = prefixlength;
-			getArg(r,0) = newTmpVariable(mb, newBatType(getBatType(getArgType(mb,r,r->argc-1))));
-			if( r->argc == 3)
-				setFunctionId(r,projectionRef);
-			r->typechk = TYPE_UNKNOWN;
-			pushInstruction(mb,r);
-
-
-			/* patch all instructions with same prefix. */
-			for( ; j < limit; j++) {
-				q= old[j];
-				if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength)
-					continue;
-				for( match =0,  k = r->retc; k < r->argc; k++)
-					match += getArg(q,k) == getArg(r,k);
-				if (match &&  match == prefixlength - r->retc ){
-					actions++;
-					if( q->argc == r->argc ){
-						clrFunction(q);
-						getArg(q,q->retc) = getArg(r,0);
-						q->argc = q->retc + 1;
-					} else {
-						getArg(q,q->retc) = getArg(r,0);
-						for( k= q->retc +1 ; k < prefixlength; k++)
-							delArgument(q, q->retc + 1);
-						if( q->argc == 3)
-							setFunctionId(q,projectionRef);
-					}
-				}
-			}
-			/* patch instruction p by deletion of common prefix */
-			if( r->argc == p->argc ){
-				clrFunction(p);
-				getArg(p,p->retc) = getArg(r,0);
-				p->argc = p->retc + 1;
-			} else {
-				getArg(p,p->retc) = getArg(r,0);
-				for( k= p->retc +  1; k < prefixlength; k++)
-					delArgument(p, p->retc + 1);
-				if( p->argc == 3)
-					setFunctionId(p,projectionRef);
-			}
+		} else {
+			pushInstruction(mb,p);
+			continue;
 		}
-		pushInstruction(mb,p);
+
 	}
 
 	for(; i<slimit; i++)
 		if(old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	if( actions)
-		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
+	GDKfree(paths);
+	GDKfree(alias);
+	//if(actions)
+		//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 	return actions;
 }
 #endif
@@ -147,7 +159,15 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	//if ( optimizerIsApplied(mb,"projectionpath") )
 		//return 0;
 
-
+	for( i = 0; i < mb->stop ; i++){
+		p = getInstrPtr(mb,i);
+		if ( getModuleId(p) == algebraRef && ((getFunctionId(p) == projectionRef && p->argc == 3) || getFunctionId(p) == projectionpathRef) ){
+			break;
+		}
+	}
+	if ( i == mb->stop){
+		goto wrapupall;
+	}
 
 	old= mb->stmt;
 	limit= mb->stop;
@@ -263,19 +283,14 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	/* All complete projection paths have been constructed.
 	 * There may be cases where there is a common prefix used multiple times.
-	 * They are located and removed in a few scans over the plan
-	 *
-	 * The prefix path mostly consist of smaller columns,
-	 * which make the benefit not large. In SF100 roughly 100 out of
-	 * 4500 projection operations were removed.
-	 * On medium scale databases it may save cpu cycles.
-	 * Turning this feature into a compile time option.
-		if( maxprefixlength > 3){
-			 //Before searching the prefix, we should remove all non-used instructions.
-			actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
-			for( ; maxprefixlength > 2; maxprefixlength--)
-				actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
-		}
+	 * Especially in wide table projections and lengthy paths
+	 * They can be located and replaced in the plan by factoring the common part out
+	 * First experiments on tpch SF10- Q7, showed significant decrease in performance
+	 * Also a run against SF-100 did not show improvement in Q7
+ 	 * Also there are collateral damages in the testweb.
+	 if( OPTdeadcodeImplementation(cntxt, mb, 0, 0) == MAL_SUCCEED){
+		actions += OPTprojectionPrefix(cntxt, mb);
+	}
 	 */
 
     /* Defense line against incorrect plans */

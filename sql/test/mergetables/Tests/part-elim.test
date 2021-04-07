@@ -70,7 +70,7 @@ plan select * from test where id between 1 and 1000
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "test"."id", "test"."posx" ] COUNT 
+| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
 | ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -95,7 +95,7 @@ plan select * from test where id between 1 and 1000
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "test"."id", "test"."posx" ] COUNT 
+| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
 | ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -152,7 +152,7 @@ plan select * from test where id in (1, 1000)
 ----
 project (
 | select (
-| | table("sys"."mt2") [ "test"."id", "test"."posx" ] COUNT 
+| | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
 | ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1000" as "%3"."%3") ]
 ) [ "test"."id", "test"."posx" ]
 

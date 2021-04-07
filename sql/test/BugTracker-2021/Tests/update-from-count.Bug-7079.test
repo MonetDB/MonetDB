@@ -1,0 +1,15 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE testme (a int, b varchar(32))
+
+statement ok
+insert into testme values (1, 'a'), (2, 'b'), (3, 'c')
+
+statement error
+update testme set a = "y".a from testme "y", testme "z"
+
+statement ok
+ROLLBACK
+

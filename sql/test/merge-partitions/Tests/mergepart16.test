@@ -34,10 +34,10 @@ ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2',
 statement error
 INSERT INTO subnested1 VALUES (-1, 'ups')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subnested1 VALUES (1, 'ok')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testnestedpartitions VALUES (1, 'ok')
 
 statement error
@@ -49,7 +49,7 @@ ALTER TABLE subnested1 DROP TABLE subt1
 statement ok
 ALTER TABLE subnested1 ADD TABLE subt1 AS PARTITION FROM '0' TO '100'
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testnestedpartitions VALUES (1, 'ok')
 
 query IT rowsort
@@ -94,7 +94,7 @@ ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4',
 statement ok
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('4', '5', '6') WITH NULL VALUES
 
-statement ok
+statement ok rowcount 2
 INSERT INTO testnestedpartitions VALUES (2, 'going'), (5, 'through')
 
 statement error
@@ -159,7 +159,7 @@ ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION FROM '101' TO '200'
 statement ok
 ALTER TABLE subnested2 ADD TABLE subt4 AS PARTITION FROM '100' TO '200' WITH NULL VALUES
 
-statement ok
+statement ok rowcount 5
 TRUNCATE testnestedpartitions
 
 query I rowsort
@@ -187,10 +187,10 @@ SELECT count(*) FROM subt2
 ----
 0
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testnestedpartitions VALUES (1, 'another'), (1, 'test'), (5, 'to'), (5, 'go')
 
-statement ok
+statement ok rowcount 2
 TRUNCATE subnested1
 
 query I rowsort

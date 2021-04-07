@@ -113,7 +113,7 @@ Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder 
 ----
 REF 1 (2)
 join (
-| table("sys"."open_auctions") [ "open_auctions"."id" NOT NULL HASHCOL  as "o"."id", "open_auctions"."open_auction_id" NOT NULL as "o"."open_auction_id", "open_auctions"."initial" NOT NULL as "o"."initial", "open_auctions"."reserve" NOT NULL as "o"."reserve", "open_auctions"."aktuell" NOT NULL as "o"."aktuell", "open_auctions"."privacy" NOT NULL as "o"."privacy", "open_auctions"."itemref" NOT NULL as "o"."itemref", "open_auctions"."seller" NOT NULL as "o"."seller", "open_auctions"."quantity" NOT NULL as "o"."quantity", "open_auctions"."type" NOT NULL as "o"."type", "open_auctions"."start" NOT NULL as "o"."start", "open_auctions"."ende" NOT NULL as "o"."ende", "open_auctions"."%TID%" NOT NULL as "o"."%TID%" ] COUNT ,
+| table("sys"."open_auctions") [ "open_auctions"."open_auction_id" NOT NULL as "o"."open_auction_id", "open_auctions"."%TID%" NOT NULL as "o"."%TID%" ] COUNT ,
 | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b"."id", "bidder"."open_auction_id" NOT NULL as "b"."open_auction_id", "bidder"."date" NOT NULL as "b"."date", "bidder"."time" NOT NULL as "b"."time", "bidder"."personref" NOT NULL as "b"."personref", "bidder"."increase" NOT NULL as "b"."increase", "bidder"."%TID%" NOT NULL as "b"."%TID%" ] COUNT 
 ) [ "o"."open_auction_id" NOT NULL = "b"."open_auction_id" NOT NULL ]
 REF 2 (2)
@@ -122,7 +122,7 @@ single project (
 | | & REF 1 ,
 | | project (
 | | | join (
-| | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3"."id", "bidder"."open_auction_id" NOT NULL as "b3"."open_auction_id", "bidder"."date" NOT NULL as "b3"."date", "bidder"."time" NOT NULL as "b3"."time", "bidder"."personref" NOT NULL as "b3"."personref", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL as "b3"."%TID%" ] COUNT ,
+| | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL as "b3"."%TID%" ] COUNT ,
 | | | | group by (
 | | | | | join (
 | | | | | | group by (
@@ -130,13 +130,13 @@ single project (
 | | | | | | | | & REF 1 
 | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
 | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
-| | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."date" NOT NULL as "b3a"."date", "bidder"."time" NOT NULL as "b3a"."time", "bidder"."personref" NOT NULL as "b3a"."personref", "bidder"."increase" NOT NULL as "b3a"."increase", "bidder"."%TID%" NOT NULL as "b3a"."%TID%" ] COUNT 
+| | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."%TID%" NOT NULL as "b3a"."%TID%" ] COUNT 
 | | | | | ) [ "b3a"."open_auction_id" NOT NULL = "o"."open_auction_id" NOT NULL ]
 | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."min" no nil ("b3a"."id" NOT NULL HASHCOL ) as "%1"."%1", "o"."open_auction_id" NOT NULL ]
 | | | ) [ "b3"."id" NOT NULL HASHCOL  = "%1"."%1" ]
-| | ) [ "b3"."id" NOT NULL HASHCOL , "b3"."open_auction_id" NOT NULL, "b3"."date" NOT NULL, "b3"."time" NOT NULL, "b3"."personref" NOT NULL, "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1", "o"."open_auction_id" NOT NULL as "%5"."%5" ]
+| | ) [ "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1", "o"."open_auction_id" NOT NULL as "%5"."%5" ]
 | ) [ "o"."open_auction_id" NOT NULL * = "%5"."%5" NOT NULL ]
-) [ "o"."id" NOT NULL HASHCOL , "o"."open_auction_id" NOT NULL, "o"."initial" NOT NULL, "o"."reserve" NOT NULL, "o"."aktuell" NOT NULL, "o"."privacy" NOT NULL, "o"."itemref" NOT NULL, "o"."seller" NOT NULL, "o"."quantity" NOT NULL, "o"."type" NOT NULL, "o"."start" NOT NULL, "o"."ende" NOT NULL, "o"."%TID%" NOT NULL, "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL, "b"."%TID%" NOT NULL, "b3"."increase" NOT NULL as "%2"."%2" ]
+) [ "o"."open_auction_id" NOT NULL, "o"."%TID%" NOT NULL, "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL, "b"."%TID%" NOT NULL, "b3"."increase" NOT NULL as "%2"."%2" ]
 project (
 | single select (
 | | single join (

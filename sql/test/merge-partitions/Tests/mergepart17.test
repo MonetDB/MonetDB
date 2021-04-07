@@ -4,25 +4,25 @@ CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE ON (a)
 statement ok
 CREATE TABLE sublimits1 (a int, b varchar(32))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (1000, 'ups')
 
 statement error
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
-statement ok
+statement ok rowcount 1
 TRUNCATE sublimits1
 
 statement ok
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (99, 'ok')
 
 statement error
 UPDATE sublimits1 SET a = a + 1
 
-statement ok
+statement ok rowcount 1
 UPDATE sublimits1 SET b = 'p' || b WHERE a = 99
 
 query IT rowsort
@@ -40,16 +40,16 @@ pok
 statement ok
 ALTER TABLE testupdates DROP TABLE sublimits1
 
-statement ok
+statement ok rowcount 1
 UPDATE sublimits1 SET a = a + 1
 
-statement ok
+statement ok rowcount 1
 UPDATE sublimits1 SET b = b || 's' WHERE a = 100
 
 statement error
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
-statement ok
+statement ok rowcount 1
 UPDATE sublimits1 SET a = a - 1
 
 statement ok

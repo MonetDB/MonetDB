@@ -19,7 +19,7 @@ INSERT INTO maps VALUES (1, NULL, 1, 'world-map-1600-1700.jpg', 0, 0, 0, 0)
 statement ok
 INSERT INTO maps VALUES (2, 1, 1, 'world-map-1600-1700.jpg', 0, 0, 0, 0)
 
-statement error 40002!INSERT INTO: FOREIGN KEY constraint 'maps.maps_parent_fkey' violated
+statement error
 INSERT INTO maps VALUES (3, 10, 1, 'world-map-1600-1700.jpg', 0, 0, 0, 0)
 
 query IIITRRRR rowsort

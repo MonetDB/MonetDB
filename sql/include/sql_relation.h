@@ -72,8 +72,7 @@ typedef struct expression {
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2
-#define UPD_LOCKED		4
-#define UPD_NO_CONSTRAINT	8
+#define UPD_NO_CONSTRAINT	4
 
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
@@ -278,7 +277,7 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 used:1;	/* used by rewrite_fix_count at rel_unnest, so a relation is not modified twice */
+	 used:2;	/* used by rewriters at rel_unnest and rel_dce, so a relation is not modified twice */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

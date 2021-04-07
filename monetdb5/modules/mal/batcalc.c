@@ -1059,7 +1059,8 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 		}
 		if (s && ATOMtype(s->ttype) != TYPE_oid) {
 			BBPunfix(b->batCacheid);
-			BBPunfix(s->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		}
 	}
@@ -1337,7 +1338,11 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		bit v = *getArgReference_bit(stk, pci, 1);
+		bit v;
+		if (tp0 == TYPE_msk)
+			v = (bit) *getArgReference_msk(stk, pci, 1);
+		else
+			v = *getArgReference_bit(stk, pci, 1);
 		if (is_bit_nil(v)) {
 			if (b1 != NULL)
 				bn = BATconstant(b1->hseqbase, b1->ttype, ATOMnilptr(b1->ttype), BATcount(b1), TRANSIENT);

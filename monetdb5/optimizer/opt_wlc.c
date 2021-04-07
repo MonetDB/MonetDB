@@ -48,6 +48,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
+			  getFunctionId(p) == claimRef  ||
 			  getFunctionId(p) == deleteRef  ||
 			  getFunctionId(p) == clear_tableRef ))
 			query = 0;
@@ -114,6 +115,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( def && getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
+			  getFunctionId(p) == claimRef  ||
 			  getFunctionId(p) == deleteRef  ||
 			  getFunctionId(p) == clear_tableRef ) &&
 			  strcmp( getVarConstant(mb,getArg(p,2)).val.sval, "tmp") != 0 ){

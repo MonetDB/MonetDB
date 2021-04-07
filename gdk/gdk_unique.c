@@ -76,10 +76,16 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	if (s == NULL && (prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
-		bn = COLnew(0, TYPE_oid, prop->v.val.oval, TRANSIENT);
-	else
-		bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
+	BUN initsize = 1024;
+	if (s == NULL) {
+		MT_rwlock_rdlock(&b->thashlock);
+		if (b->thash != NULL && b->thash != (Hash *) 1)
+			initsize = b->thash->nunique;
+		else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
+			initsize = prop->v.val.oval;
+		MT_rwlock_rdunlock(&b->thashlock);
+	}
+	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	vals = Tloc(b, 0);
@@ -155,7 +161,8 @@ BATunique(BAT *b, BAT *s)
 		   (!b->batTransient &&
 		    cnt == BATcount(b) &&
 		    BAThash(b) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
+		   (/* DISABLES CODE */ (0) &&
+		    (parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
 		BUN lo;
 		oid seq;
@@ -165,9 +172,9 @@ BATunique(BAT *b, BAT *s)
 		 * is a view on a bat that already has a hash table */
 		algomsg = "unique: existing hash";
 		seq = b->hseqbase;
-		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
 			bi = bat_iterator(b);
 			algomsg = "unique: existing parent hash";
@@ -254,7 +261,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(hs);
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = true;

@@ -1,0 +1,12 @@
+stderr of test 'msk003` in directory 'monetdb5/mal` itself:
+
+
+# 07:26:10 >  
+# 07:26:10 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-29025" "--port=34351"
+# 07:26:10 >  
+
+
+# 07:26:10 >  
+# 07:26:10 >  "Done."
+# 07:26:10 >  
+

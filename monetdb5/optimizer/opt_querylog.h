@@ -15,6 +15,6 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-mal_export str OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

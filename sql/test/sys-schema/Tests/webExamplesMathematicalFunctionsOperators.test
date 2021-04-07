@@ -1,0 +1,560 @@
+query IIIIRI rowsort
+select 2 + 3 as add23, 2 - 3 as sub23, 2 * 3 as mul23, 5 / 2 as div52, 5.0 / 2 as div502, 5 % 4 as mod54
+----
+5
+-1
+6
+2
+2.500
+1
+
+query I rowsort
+select 2 ^ 3 
+----
+1
+
+query T rowsort
+plan select 2 ^ 3 
+----
+) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+query R rowsort
+select 2.0 ^ 3.0 
+----
+1.000
+
+query T rowsort
+plan select 2.0 ^ 3.0 
+----
+) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+statement error
+select |/ 25.0 
+
+statement error
+select ||/ 27.0 
+
+statement error
+select 5! 
+
+statement error
+select !! 5 
+
+statement error
+select @ -5.0 
+
+query I rowsort
+select 91 & 15 
+----
+11
+
+query I rowsort
+select 32 | 3 
+----
+35
+
+query I rowsort
+select 17 # 5 
+----
+17
+
+query I rowsort
+select 17 ^ 5 
+----
+20
+
+query T rowsort
+plan select 17 ^ 5 
+----
+) [ "sys"."bit_xor"(tinyint "17", tinyint "5") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+query I rowsort
+select 2 ^ 3 
+----
+1
+
+query T rowsort
+plan select 2 ^ 3 
+----
+) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+query I rowsort
+select ~1 
+----
+-2
+
+query T rowsort
+plan select ~1 
+----
+) [ "sys"."bit_not"(tinyint "1") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+query I rowsort
+select 1 << 4 
+----
+16
+
+query T rowsort
+plan select 1 << 4 
+----
+) [ "sys"."left_shift"(tinyint "1", int "4") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+query I rowsort
+select left_shift(1, 4) 
+----
+16
+
+query I rowsort
+select 8 >> 2 
+----
+2
+
+query T rowsort
+plan select 8 >> 2 
+----
+) [ "sys"."right_shift"(tinyint "8", int "2") NOT NULL ]
+project (
+|  [ boolean "true" ]
+
+query I rowsort
+select right_shift(16, 2) 
+----
+4
+
+statement error
+SELECT 10 DIV 5
+
+query R rowsort
+select abs(-17.4)
+----
+17.400
+
+query IIII rowsort
+select bit_and(91, 15), bit_not(1), bit_or(32, 3), bit_xor(17, 5)
+----
+11
+-2
+35
+20
+
+query R rowsort
+select cbrt(2.0)
+----
+1.260
+
+query R rowsort
+select sys.cbrt(2.0)
+----
+1.260
+
+query R rowsort
+select cbrt(27)
+----
+3.000
+
+query RRRR rowsort
+select ceil(-42.8), ceiling(-95.3), ceil(-42), ceiling(-95)
+----
+-42.000
+-95.000
+-42.000
+-95.000
+
+query RRRR rowsort
+select ceil(42.8), ceiling(95.3), ceil(42), ceiling(95)
+----
+43.000
+96.000
+42.000
+95.000
+
+query RRRR rowsort
+select floor(-42.8), floor(-95.3), floor(-42), floor(-95)
+----
+-43.000
+-96.000
+-42.000
+-95.000
+
+query RRRR rowsort
+select floor(42.8), floor(95.3), floor(42), floor(95)
+----
+42.000
+95.000
+42.000
+95.000
+
+statement error
+select div(9,4)
+
+statement error
+select div(9,4.0)
+
+statement error
+select div(9.0,4.0)
+
+statement error
+select sys.div(9,4)
+
+statement error
+select sys.div(9.0,4.0)
+
+query R rowsort
+select degrees(0.5)
+----
+28.648
+
+query R rowsort
+select sys.degrees(0.5)
+----
+28.648
+
+query R rowsort
+select degrees(2)
+----
+114.592
+
+query R rowsort
+select sys.degrees(2)
+----
+114.592
+
+query R rowsort
+select degrees(pi())
+----
+180.000
+
+query R rowsort
+select radians(45.0)
+----
+0.785
+
+query R rowsort
+select sys.radians(45.0)
+----
+0.785
+
+query R rowsort
+select radians(180)
+----
+3.142
+
+query R rowsort
+select sys.degrees(sys.radians(45))
+----
+45.000
+
+query R rowsort
+select sys.radians(sys.degrees(2))
+----
+2.000
+
+query RRRR rowsort
+select exp(1), exp(10), exp(1.00), exp(10.00)
+----
+2.718
+22026.466
+2.718
+22026.466
+
+query I rowsort
+select right_shift(8, 2)
+----
+2
+
+query RRRR rowsort
+select sql_min(1.2, 5), least(1.2, 5), sql_max(1.2, 5), greatest(1.2, 5)
+----
+1.200
+1.200
+5.000
+5.000
+
+query RRRRRR rowsort
+select log(2.0), ln(2), log(64.0, 2), log(2, 64.0), log10(100.0), log2(64.0)
+----
+0.693
+0.693
+0.167
+6.000
+2.000
+6.000
+
+query R rowsort
+select mod(5.0, 2.1)
+----
+0.800
+
+query R rowsort
+select pi()
+----
+3.142
+
+query RR rowsort
+select power(2, 5), power(2, 31)
+----
+32.000
+2147483648.000
+
+query RR rowsort
+-- select rand()
+----
+32.000
+2147483648.000
+
+query I rowsort
+select 2144156907 / 2147483648
+----
+0
+
+query I rowsort
+-- select rand() / 2147483648
+----
+0
+
+query I rowsort
+-- select cast(rand() as float) / 2147483648
+----
+0
+
+query T rowsort
+plan select CAST(RAND() as float) / 2147483648
+----
+) [ "sys"."sql_div"(double["sys"."rand"()] as "%1"."%1", double "2147483648") ]
+project (
+|  [ boolean "true" ]
+
+query I rowsort
+select rand(0)
+----
+1868859049
+
+query I rowsort
+select rand(1)
+----
+847553797
+
+query I rowsort
+select rand(2)
+----
+543032001
+
+query I rowsort
+select rand(-5)
+----
+1345532277
+
+statement error
+select random()
+
+query IRR rowsort
+select right_shift(16, 2), right_shift(8.0, 2), right_shift(8.2, 2)
+----
+4
+0.200
+0.200
+
+statement error
+select round(41.538)
+
+query R rowsort
+select round(41.538, 2)
+----
+41.540
+
+query R rowsort
+select round(42.4382e0, 2)
+----
+42.440
+
+query IRIR rowsort
+select scale_down(100, 3), scale_down(100.0, 3), scale_down(100, 6), scale_down(100.0, 6)
+----
+33
+3.300
+17
+1.700
+
+query I rowsort
+select scale_up(13, 3)
+----
+39
+
+query R rowsort
+select scale_up(13.0, 3)
+----
+390.000
+
+statement error
+select scale_up(13, 3.0)
+
+query IIII rowsort
+select sign(-8.4), sign(-0), sign(+0), sign(+8.4)
+----
+-1
+0
+0
+1
+
+query RI rowsort
+select sql_add(2, 3.4), sql_sub(5, 7)
+----
+5.400
+-2
+
+query RR rowsort
+select sql_div(3.4, 2), sql_mul(1.2, 5)
+----
+1.700
+6.000
+
+query RR rowsort
+select sql_max(1.2, 5), sql_min(1.2, 5)
+----
+5.000
+1.200
+
+query R rowsort
+select sql_max(1.2, sql_max(3.3, 5))
+----
+5.000
+
+query R rowsort
+select sql_min(1.2, sql_min(3.3, 5))
+----
+1.200
+
+query RR rowsort
+select sql_neg(-2.5), sql_neg(2.5)
+----
+2.500
+-2.500
+
+query R rowsort
+select sqrt(2.0)
+----
+1.414
+
+query R rowsort
+select sqrt(64)
+----
+8.000
+
+query R rowsort
+select sys.alpha(5.0, 1.2)
+----
+1.205
+
+query I rowsort
+select sys.fuse(2, 6)
+----
+518
+
+query I rowsort
+select sys.fuse(256 , 1)
+----
+16777217
+
+query R rowsort
+select sys.ms_round(1.2359, 2, 0)
+----
+1.240
+
+query R rowsort
+select sys.ms_trunc(1.2359, 0)
+----
+1.000
+
+query R rowsort
+select sys.ms_trunc(1.2359, 2)
+----
+1.230
+
+query R rowsort
+select sys.ms_trunc(1.2359, 3)
+----
+1.235
+
+query RR rowsort
+select acos(0.54), acos(0.25)
+----
+1.000
+1.318
+
+query RRRR rowsort
+select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0)
+----
+1.571
+0.785
+0.464
+0.464
+
+statement error
+select atan2(1.0, 2.0)
+
+query RRR rowsort
+select cos(12.2), cosh(3.0), cot(16.0)
+----
+0.934
+10.068
+3.326
+
+query RR rowsort
+select degrees(0.5), radians(45)
+----
+28.648
+0.785
+
+query R rowsort
+select pi()
+----
+3.142
+
+query RRRR rowsort
+select sin(1.4), sin(2), sinh(0), sinh(1.4)
+----
+0.985
+0.909
+0.000
+1.904
+
+query RRRR rowsort
+select tan(1.4), tan(2), tanh(0), tanh(1.4)
+----
+5.798
+-2.185
+0.000
+0.885
+
+statement ok
+create sequence tst20210325
+
+query I rowsort
+select get_value_for('sys', 'tst20210325')
+----
+1
+
+query I rowsort
+select next_value_for('sys', 'tst20210325')
+----
+1
+
+query I rowsort
+select get_value_for('sys', 'tst20210325')
+----
+2
+
+statement ok
+drop sequence tst20210325
+

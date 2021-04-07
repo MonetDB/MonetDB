@@ -49,8 +49,8 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *b, *bn;
 	BUN cap = 0;
 	int tt = TYPE_any;
+	int rt = getArgType(mb, p, 0), unmask = 0;
 	(void) cntxt;
-	(void) mb;
 
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p,i)].val.bval;
@@ -58,7 +58,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( b ){
 			if (tt == TYPE_any)
 				tt = b->ttype;
-			if ((tt != TYPE_void && b->ttype != TYPE_void) && tt != b->ttype)
+			if ((tt != TYPE_void && b->ttype != TYPE_void && b->ttype != TYPE_msk) && tt != b->ttype)
 				throw(MAL, "mat.pack", "incompatible arguments");
 			cap += BATcount(b);
 		}
@@ -68,12 +68,18 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return MAL_SUCCEED;
 	}
 
+	if (tt == TYPE_msk && rt == newBatType(TYPE_oid)) {
+		tt = TYPE_oid;
+		unmask = 1;
+	}
 	bn = COLnew(0, tt, cap, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
-		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		BAT *ob = b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if ((unmask && b && b->ttype == TYPE_msk) || mask_cand(b))
+			b = BATunmask(b);
 		if( b ){
 			if (BATcount(bn) == 0) {
 				BAThseqbase(bn, b->hseqbase);
@@ -86,6 +92,8 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			BBPunfix(b->batCacheid);
 		}
+		if (b != ob)
+			BBPunfix(ob->batCacheid);
 	}
 	if( !(!bn->tnil || !bn->tnonil)){
 		BBPkeepref(*ret = bn->batCacheid);
@@ -113,9 +121,13 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ( getArgType(mb,p,2) == TYPE_int){
+		BAT *ob = b;
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p,2)].val.ival;
-		bn = COLnew(b->hseqbase, ATOMtype(b->ttype), (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
+		int tt = ATOMtype(b->ttype);
+		if (b->ttype == TYPE_msk)
+			tt = TYPE_oid;
+		bn = COLnew(b->hseqbase, tt, (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -131,19 +143,28 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 		}
 		BATtseqbase(bn, b->tseqbase);
-		if (BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
+		if (b->ttype == TYPE_msk || mask_cand(b))
+			b = BATunmask(b);
+		if (b && BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
+			if (b != ob)
+				BBPunfix(ob->batCacheid);
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
 		bn->unused = (pieces-1); /* misuse "unused" field */
 		BBPkeepref(*ret = bn->batCacheid);
-		BBPunfix(b->batCacheid);
+		if (b != ob)
+			BBPunfix(ob->batCacheid);
+		if (b)
+			BBPunfix(b->batCacheid);
 		if( !(!bn->tnil || !bn->tnonil))
 			throw(MAL, "mat.packIncrement", "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
 	} else {
 		/* remaining steps */
-		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
+		BAT *obb = bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
+		if (bb && (bb->ttype == TYPE_msk || mask_cand(bb)))
+			bb = BATunmask(bb);
 		if ( bb ){
 			if (BATcount(b) == 0) {
 				BAThseqbase(b, bb->hseqbase);
@@ -156,6 +177,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			BBPunfix(bb->batCacheid);
 		}
+		if (bb != obb)
+			BBPunfix(obb->batCacheid);
 		b->unused--;
 		if(b->unused == 0)
 			if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED) {

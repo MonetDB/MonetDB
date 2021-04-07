@@ -45,60 +45,63 @@
 #define getModName(M)		getModuleId(getInstrPtr(M,0))
 #define getPrgSize(M)		(M)->stop
 
-#define getVar(M,I)			(&(M)->var[I])
+#define getVar(M,I)		(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
-#define getVarName(M,I)		((M)->var[I].id)
-#define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
-#define setVarType(M,I,V)   (M)->var[I].type = V
+mal_export char* getVarName(MalBlkPtr mb, int idx);
 
-#define clrVarFixed(M,I)		((M)->var[I].fixedtype = 0)
-#define setVarFixed(M,I)		((M)->var[I].fixedtype =1)
+#define getVarKind(M,I)   	((M)->var[I].kind)
+#define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
+#define setVarType(M,I,V)   	((M)->var[I].type = V)
+#define setVarKind(M,I,V)   	((M)->var[I].kind = V)	/* either _, X, or C */
+
+#define clrVarFixed(M,I)	((M)->var[I].fixedtype = 0)
+#define setVarFixed(M,I)	((M)->var[I].fixedtype =1)
 #define isVarFixed(M,I)		((M)->var[I].fixedtype)
 
-#define clrVarCleanup(M,I)		((M)->var[I].cleanup = 0)
-#define setVarCleanup(M,I)		((M)->var[I].cleanup = 1)
-#define isVarCleanup(M,I)		((M)->var[I].cleanup )
+#define clrVarCleanup(M,I)	((M)->var[I].cleanup = 0)
+#define setVarCleanup(M,I)	((M)->var[I].cleanup = 1)
+#define isVarCleanup(M,I)	((M)->var[I].cleanup )
 
-#define isTmpVar(M,I)			(*getVarName(M,I) == REFMARKER && *(getVarName(M,I)+1) == TMPMARKER)
+#define isTmpVar(M,I)		(getVarKind(M,I) == REFMARKER)
 
 #define clrVarUsed(M,I)		((M)->var[I].used = 0)
 #define setVarUsed(M,I)		((M)->var[I].used = 1)
 #define isVarUsed(M,I)		((M)->var[I].used)
 
-#define clrVarDisabled(M,I)		((M)->var[I].disabled= 0 )
-#define setVarDisabled(M,I)		((M)->var[I].disabled = 1)
-#define isVarDisabled(M,I)		((M)->var[I].disabled)
+#define clrVarDisabled(M,I)	((M)->var[I].disabled= 0 )
+#define setVarDisabled(M,I)	((M)->var[I].disabled = 1)
+#define isVarDisabled(M,I)	((M)->var[I].disabled)
 
 #define clrVarInit(M,I)		((M)->var[I].initialized = 0)
 #define setVarInit(M,I)		((M)->var[I].initialized = 1)
 #define isVarInit(M,I)		((M)->var[I].initialized)
 
-#define clrVarTypedef(M,I)		((M)->var[I].typevar = 0)
-#define setVarTypedef(M,I)		((M)->var[I].typevar = 1)
-#define isVarTypedef(M,I)		((M)->var[I].typevar)
+#define clrVarTypedef(M,I)	((M)->var[I].typevar = 0)
+#define setVarTypedef(M,I)	((M)->var[I].typevar = 1)
+#define isVarTypedef(M,I)	((M)->var[I].typevar)
 
-#define clrVarConstant(M,I)		((M)->var[I].constant = 0)
-#define setVarConstant(M,I)		((M)->var[I].constant = 1)
-#define isVarConstant(M,I)		((M)->var[I].constant)
+#define clrVarConstant(M,I)	((M)->var[I].constant = 0)
+#define setVarConstant(M,I)	((M)->var[I].constant = 1)
+#define isVarConstant(M,I)	((M)->var[I].constant)
 
 #define setVarDeclared(M,I,X)	((M)->var[I].declared = X )
-#define getVarDeclared(M,I)		((M)->var[I].declared)
+#define getVarDeclared(M,I)	((M)->var[I].declared)
 
 #define setVarUpdated(M,I,X)	((M)->var[I].updated = X )
-#define getVarUpdated(M,I)		((M)->var[I].updated)
+#define getVarUpdated(M,I)	((M)->var[I].updated)
 
 #define setVarEolife(M,I,X)	((M)->var[I].eolife = X )
-#define getVarEolife(M,I)		((M)->var[I].eolife)
+#define getVarEolife(M,I)	((M)->var[I].eolife)
 
-#define setVarWorker(M,I,S)		((M)->var[I].worker = S)
-#define getVarWorker(M,I)		((M)->var[I].worker)
+#define setVarWorker(M,I,S)	((M)->var[I].worker = S)
+#define getVarWorker(M,I)	((M)->var[I].worker)
 
-#define setVarScope(M,I,S)		((M)->var[I].depth = S)
-#define getVarScope(M,I)		((M)->var[I].depth)
+#define setVarScope(M,I,S)	((M)->var[I].depth = S)
+#define getVarScope(M,I)	((M)->var[I].depth)
 
-#define clrVarCList(M,I)		((M)->var[I].id[0]= REFMARKER)
-#define setVarCList(M,I)		((M)->var[I].id[0]= REFMARKERC)
-#define isVarCList(M,I)			((M)->var[I].id[0] == REFMARKERC)
+#define clrVarCList(M,I)	((M)->var[I].kind = REFMARKER)
+#define setVarCList(M,I)	((M)->var[I].kind = REFMARKERC)
+#define isVarCList(M,I)		((M)->var[I].kind  == REFMARKERC)
 
 #define getVarConstant(M,I)	((M)->var[I].value)
 #define getVarValue(M,I)	VALget(&(M)->var[I].value)
@@ -142,6 +145,7 @@ mal_export int prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
+mal_export void removeMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
 mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, const char *name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
@@ -157,9 +161,6 @@ mal_export malType getType(MalBlkPtr mb, const char *nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
-/* generate a new variable name based on a pattern with 1 %d argument
- * -- not used, but this is how to do it */
-/* #define renameVariable(mb, id, pattern, newid) snprintf(getVarName(mb,id),IDLENGTH,pattern,newid) */
 mal_export void setVariableType(MalBlkPtr mb, const int idx, malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);

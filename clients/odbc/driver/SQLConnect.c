@@ -141,6 +141,20 @@ MNDBConnect(ODBCDbc *dbc,
 		}
 	}
 
+#ifdef ODBCDEBUG
+	if ((ODBCdebug == NULL || *ODBCdebug == 0) && dsn && *dsn) {
+		char logfile[2048];
+		n = SQLGetPrivateProfileString(dsn, "logfile", "",
+					       logfile, sizeof(logfile),
+					       "odbc.ini");
+		if (n > 0) {
+			if (ODBCdebug)
+				free((void *) ODBCdebug); /* discard const */
+			ODBCdebug = strdup(logfile);
+		}
+	}
+#endif
+
 	if (dsn && *dsn)
 		n = SQLGetPrivateProfileString(dsn, "uid", "monetdb",
 					       uid, sizeof(uid), "odbc.ini");

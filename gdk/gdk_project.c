@@ -106,6 +106,7 @@ project_loop(lng)
 #ifdef HAVE_HGE
 project_loop(hge)
 #endif
+project_loop(uuid)
 
 static gdk_return
 project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
@@ -120,14 +121,14 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	struct canditer r1ci = {0}, r2ci = {0};
 
 	MT_thread_setalgorithm(__func__);
-	if (r1->ttype == TYPE_void && r1->tvheap != NULL)
+	if (complex_cand(r1))
 		canditer_init(&r1ci, NULL, r1);
 	else if (!BATtdense(r1))
 		r1t = (const oid *) Tloc(r1, 0);
 	r1seq = r1->hseqbase;
 	r1end = r1seq + BATcount(r1);
 	if (r2) {
-		if (r2->ttype == TYPE_void && r2->tvheap != NULL)
+		if (complex_cand(r2))
 			canditer_init(&r2ci, NULL, r2);
 		else if (!BATtdense(r2))
 			r2t = (const oid *) Tloc(r2, 0);
@@ -286,7 +287,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 		}
 	}
 	BATsetcount(bn, lo);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return GDK_SUCCEED;
 }
 
@@ -361,31 +362,31 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 			switch (r->twidth) {
 			case 1:
-				v = (var_t) ((uint8_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 4:
-				v = (var_t) ((uint32_t *) r->theap.base)[o - seq];
+				v = (var_t) ((uint32_t *) r->theap->base)[o - seq];
 				break;
 			case 8:
-				v = (var_t) ((uint64_t *) r->theap.base)[o - seq];
+				v = (var_t) ((uint64_t *) r->theap->base)[o - seq];
 				break;
 			}
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				((uint8_t *) bn->theap->base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				((uint16_t *) bn->theap->base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 			case 4:
-				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
+				((uint32_t *) bn->theap->base)[lo] = (uint32_t) v;
 				break;
 			case 8:
-				((uint64_t *) bn->theap.base)[lo] = (uint64_t) v;
+				((uint64_t *) bn->theap->base)[lo] = (uint64_t) v;
 				break;
 			}
 		}
@@ -408,31 +409,31 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 			switch (r->twidth) {
 			case 1:
-				v = (var_t) ((uint8_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 4:
-				v = (var_t) ((uint32_t *) r->theap.base)[o - seq];
+				v = (var_t) ((uint32_t *) r->theap->base)[o - seq];
 				break;
 			case 8:
-				v = (var_t) ((uint64_t *) r->theap.base)[o - seq];
+				v = (var_t) ((uint64_t *) r->theap->base)[o - seq];
 				break;
 			}
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				((uint8_t *) bn->theap->base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				((uint16_t *) bn->theap->base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 			case 4:
-				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
+				((uint32_t *) bn->theap->base)[lo] = (uint32_t) v;
 				break;
 			case 8:
-				((uint64_t *) bn->theap.base)[lo] = (uint64_t) v;
+				((uint64_t *) bn->theap->base)[lo] = (uint64_t) v;
 				break;
 			}
 		}
@@ -456,31 +457,31 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 			switch (r->twidth) {
 			case 1:
-				v = (var_t) ((uint8_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) r->theap->base)[o - seq] + GDK_VAROFFSET;
 				break;
 			case 4:
-				v = (var_t) ((uint32_t *) r->theap.base)[o - seq];
+				v = (var_t) ((uint32_t *) r->theap->base)[o - seq];
 				break;
 			case 8:
-				v = (var_t) ((uint64_t *) r->theap.base)[o - seq];
+				v = (var_t) ((uint64_t *) r->theap->base)[o - seq];
 				break;
 			}
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				((uint8_t *) bn->theap->base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				((uint16_t *) bn->theap->base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 			case 4:
-				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
+				((uint32_t *) bn->theap->base)[lo] = (uint32_t) v;
 				break;
 			case 8:
-				((uint64_t *) bn->theap.base)[lo] = (uint64_t) v;
+				((uint64_t *) bn->theap->base)[lo] = (uint64_t) v;
 				break;
 			}
 		}
@@ -502,7 +503,8 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 BAT *
 BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 {
-	BAT *bn;
+	BAT *bn = NULL;
+	BAT *or1 = r1, *or2 = r2;
 	oid lo, hi;
 	gdk_return res;
 	int tpe = ATOMtype(r1->ttype);
@@ -514,8 +516,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	assert(ATOMtype(l->ttype) == TYPE_oid);
-	assert(r2 == NULL || ATOMtype(r1->ttype) == ATOMtype(r2->ttype));
+	assert(ATOMtype(l->ttype) == TYPE_oid || l->ttype == TYPE_msk);
+	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
 	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
 
 	if (BATtdense(l) && lcount > 0) {
@@ -538,9 +540,9 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			goto doreturn;
 		}
 	}
-	if (l->ttype == TYPE_void && l->tvheap != NULL) {
-		/* l is candidate list with exceptions */
-		assert(!is_oid_nil(l->tseqbase));
+	if (complex_cand(l) || l->ttype == TYPE_msk) {
+		/* l is candidate list with exceptions or is a bitmask */
+		assert(l->ttype == TYPE_msk || !is_oid_nil(l->tseqbase));
 		lcount = canditer_init(&ci, NULL, l);
 		lci = &ci;
 	}
@@ -550,9 +552,9 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	     (r2 == NULL ||
 	      (r2->ttype == TYPE_void && is_oid_nil(r2->tseqbase))))) {
 		/* trivial: all values are nil (includes no entries at all) */
-		const void *nil = ATOMnilptr(r1->ttype);
+		const void *nil = r1->ttype == TYPE_msk ? &oid_nil : ATOMnilptr(r1->ttype);
 
-		bn = BATconstant(l->hseqbase, r1->ttype == TYPE_oid ? TYPE_void : r1->ttype,
+		bn = BATconstant(l->hseqbase, r1->ttype == TYPE_oid || r1->ttype == TYPE_msk ? TYPE_void : r1->ttype,
 				 nil, lcount, TRANSIENT);
 		if (bn != NULL &&
 		    ATOMtype(bn->ttype) == TYPE_oid &&
@@ -589,6 +591,16 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			 * will remain the same */
 			return project_str(l, lci, r1, r2, t0);
 		}
+	} else if (tpe == TYPE_msk || mask_cand(r1)) {
+		r1 = BATunmask(r1);
+		if (r1 == NULL)
+			goto doreturn;
+		if (r2) {
+			r2 = BATunmask(r2);
+			if (r2 == NULL)
+				goto doreturn;
+		}
+		tpe = TYPE_oid;
 	}
 	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {
@@ -640,6 +652,9 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	case TYPE_oid:
 		res = project_oid(bn, l, lci, r1, r2);
 		break;
+	case TYPE_uuid:
+		res = project_uuid(bn, l, lci, r1, r2);
+		break;
 	default:
 		res = project_any(bn, l, lci, r1, r2);
 		break;
@@ -653,9 +668,13 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		assert(r1->tvheap);
 		if (r1->batRestricted == BAT_READ) {
 			/* really share string heap */
+			MT_lock_set(&r1->theaplock);
+			/* no need to lock bn, it's ours */
 			assert(r1->tvheap->parentid > 0);
 			BBPshare(r1->tvheap->parentid);
 			bn->tvheap = r1->tvheap;
+			HEAPincref(r1->tvheap);
+			MT_lock_unset(&r1->theaplock);
 		} else {
 			/* make copy of string heap */
 			bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap));
@@ -667,6 +686,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
+			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -682,10 +702,14 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
   doreturn:
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT "%s%s " LLFMT "us\n",
-		  ALGOBATPAR(l), ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  ALGOBATPAR(l), ALGOBATPAR(or1), ALGOOPTBATPAR(or2),
 		  ALGOOPTBATPAR(bn),
 		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
 		  msg, GDKusec() - t0);
+	if (r1 != or1)
+		BBPreclaim(r1);
+	if (r2 != or2)
+		BBPreclaim(r2);
 	return bn;
 
   bailout:
@@ -710,7 +734,7 @@ BATproject(BAT *restrict l, BAT *restrict r)
  * bn = BATproject(bn, bats[n-1]);
  * return bn;
  * where none of the intermediates are actually produced (and bats[n]==NULL).
- * Note that all BATs except the last must have type oid/void.
+ * Note that all BATs except the last must have type oid/void or msk.
  */
 BAT *
 BATprojectchain(BAT **bats)
@@ -718,12 +742,15 @@ BATprojectchain(BAT **bats)
 	struct ba {
 		BAT *b;
 		oid hlo;
+		oid hhi;
 		BUN cnt;
 		oid *t;
 		struct canditer ci; /* used if .ci.s != NULL */
 	} *ba;
+	BAT **tobedeleted = NULL;
+	int ndelete = 0;
 	int n;
-	BAT *b = NULL, *bn;
+	BAT *b = NULL, *bn = NULL;
 	bool allnil = false;
 	bool issorted = true;
 	bool nonil = true;
@@ -737,6 +764,7 @@ BATprojectchain(BAT **bats)
 	 * temporary work space */
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
+		ndelete += (b->ttype == TYPE_msk || mask_cand(b));
 		TRC_DEBUG(ALGO, "arg %d: " ALGOBATFMT "\n",
 			  n + 1, ALGOBATPAR(b));
 	}
@@ -752,17 +780,30 @@ BATprojectchain(BAT **bats)
 		return bn;
 	}
 
-	ba = GDKmalloc(sizeof(*ba) * n);
-	if (ba == NULL)
+	if (ndelete > 0 &&
+	    (tobedeleted = GDKmalloc(sizeof(BAT *) * ndelete)) == NULL)
 		return NULL;
+	ba = GDKmalloc(sizeof(*ba) * n);
+	if (ba == NULL) {
+		GDKfree(tobedeleted);
+		return NULL;
+	}
 
+	ndelete = 0;
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
+		if (b->ttype == TYPE_msk || mask_cand(b)) {
+			if ((b = BATunmask(b)) == NULL) {
+				goto bunins_failed;
+			}
+			tobedeleted[ndelete++] = b;
+		}
 		ba[n] = (struct ba) {
 			.b = b,
 			.hlo = b->hseqbase,
+			.hhi = b->hseqbase + b->batCount,
 			.cnt = b->batCount,
-			.t = (oid *) b->theap.base,
+			.t = (oid *) Tloc(b, 0),
 		};
 		allnil |= b->ttype == TYPE_void && is_oid_nil(b->tseqbase);
 		issorted &= b->tsorted;
@@ -779,6 +820,9 @@ BATprojectchain(BAT **bats)
 	if (allnil || ba[0].cnt == 0) {
 		bn = BATconstant(ba[0].hlo, tpe == TYPE_oid ? TYPE_void : tpe,
 				 nil, ba[0].cnt, TRANSIENT);
+		while (ndelete-- > 0)
+			BBPreclaim(tobedeleted[ndelete]);
+		GDKfree(tobedeleted);
 		GDKfree(ba);
 		TRC_DEBUG(ALGO, "with %d bats: nil/empty -> " ALGOOPTBATFMT
 			  " " LLFMT " usec\n",
@@ -793,8 +837,7 @@ BATprojectchain(BAT **bats)
 
 	bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	if (bn == NULL) {
-		GDKfree(ba);
-		return NULL;
+		goto bunins_failed;
 	}
 
 	if (ATOMtype(b->ttype) == TYPE_oid) {
@@ -808,7 +851,7 @@ BATprojectchain(BAT **bats)
 					bn->tnil = true;
 					break;
 				}
-				if (o < ba[i].hlo || o >= ba[i].hlo + ba[i].cnt) {
+				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
 					goto bunins_failed;
 				}
@@ -835,7 +878,7 @@ BATprojectchain(BAT **bats)
 					bn->tnil = true;
 					break;
 				}
-				if (o < ba[i].hlo || o >= ba[i].hlo + ba[i].cnt) {
+				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
 					goto bunins_failed;
 				}
@@ -846,7 +889,7 @@ BATprojectchain(BAT **bats)
 				assert(!stringtrick);
 				bn->tnil = true;
 				v = nil;
-			} else if (o < ba[n].hlo || o >= ba[n].hlo + ba[n].cnt) {
+			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
 				goto bunins_failed;
 			} else {
@@ -861,8 +904,11 @@ BATprojectchain(BAT **bats)
 			bn->tnil = false;
 			bn->tnonil = b->tnonil;
 			bn->tkey = false;
+			MT_lock_set(&b->theaplock);
 			BBPshare(b->tvheap->parentid);
 			bn->tvheap = b->tvheap;
+			HEAPincref(b->tvheap);
+			MT_lock_unset(&b->theaplock);
 			bn->ttype = b->ttype;
 			bn->tvarsized = true;
 			assert(bn->twidth == b->twidth);
@@ -883,7 +929,7 @@ BATprojectchain(BAT **bats)
 					bn->tnil = true;
 					break;
 				}
-				if (o < ba[i].hlo || o >= ba[i].hlo + ba[i].cnt) {
+				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
 					goto bunins_failed;
 				}
@@ -893,7 +939,7 @@ BATprojectchain(BAT **bats)
 			if (is_oid_nil(o)) {
 				bn->tnil = true;
 				v = nil;
-			} else if (o < ba[n].hlo || o >= ba[n].hlo + ba[n].cnt) {
+			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
 				goto bunins_failed;
 			} else {
@@ -910,12 +956,20 @@ BATprojectchain(BAT **bats)
 	bn->trevsorted = ba[0].cnt <= 1;
 	bn->tnonil = nonil & b->tnonil;
 	bn->tseqbase = oid_nil;
+	/* note, b may point to one of the bats in tobedeleted, so
+	 * reclaim after the last use of b */
+	while (ndelete-- > 0)
+		BBPreclaim(tobedeleted[ndelete]);
+	GDKfree(tobedeleted);
 	GDKfree(ba);
 	TRC_DEBUG(ALGO, "with %d bats: " ALGOOPTBATFMT " " LLFMT " usec\n",
 		  n, ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 
   bunins_failed:
+	while (ndelete-- > 0)
+		BBPreclaim(tobedeleted[ndelete]);
+	GDKfree(tobedeleted);
 	GDKfree(ba);
 	BBPreclaim(bn);
 	TRC_DEBUG(ALGO, "failed " LLFMT "usec\n", GDKusec() - t0);

@@ -13,6 +13,6 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export str OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

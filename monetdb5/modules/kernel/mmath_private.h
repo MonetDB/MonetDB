@@ -16,6 +16,18 @@ __attribute__((__visibility__("hidden")));
 extern MT_Lock mmath_rse_lock
 __attribute__((__visibility__("hidden")));
 
+/* cotangent value */
+extern double cot(double);
+extern float cotf(float);
+
+/* degress to radians conversion */
+extern double radians(double);
+extern float radiansf(float);
+
+/* radians to degress conversion */
+extern double degrees(double);
+extern float degreesf(float);
+
 /* return the logarigthm of the first argument with the second
  * argument as base */
 extern double logbs(double, double);
@@ -33,4 +45,7 @@ extern float logbsf(float, float);
 #endif
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
+#ifndef M_PIF
+#define M_PIF 3.14159265358979323846f
 #endif

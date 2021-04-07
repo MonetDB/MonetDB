@@ -41,8 +41,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			isVarConstant(mb, getArg(p, 2)) &&
 			getVarConstant(mb, getArg(p, 2)).val.sval != NULL &&
 			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "PRIMARY KEY constraint") ||
-			 strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "UNIQUE constraint")))
+			 strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "UNIQUE constraint"))){
+			pieces = 0;
 			goto bailout;
+		}
 
 		/* mitosis/mergetable bailout conditions */
 
@@ -59,8 +61,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    	getFunctionId(p) != maxRef &&
 		    	getFunctionId(p) != avgRef &&
 		    	getFunctionId(p) != sumRef &&
-		    	getFunctionId(p) != prodRef)
-			goto bailout;
+		    	getFunctionId(p) != prodRef){
+				pieces = 0;
+				goto bailout;
+			}
 
 		/* do not split up floating point bat that is being summed */
 		if (p->retc == 1 &&
@@ -72,16 +76,22 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			  getFunctionId(p) == sumRef)) &&
 			isaBatType(getArgType(mb, p, p->retc)) &&
 			(getBatType(getArgType(mb, p, p->retc)) == TYPE_flt ||
-			 getBatType(getArgType(mb, p, p->retc)) == TYPE_dbl))
-			goto bailout;
+			 getBatType(getArgType(mb, p, p->retc)) == TYPE_dbl)){
+				pieces = 0;
+				goto bailout;
+			}
 
 		if (p->argc > 2 && (getModuleId(p) == capiRef || getModuleId(p) == rapiRef || getModuleId(p) == pyapi3Ref) &&
-		        getFunctionId(p) == subeval_aggrRef)
-			goto bailout;
+		        getFunctionId(p) == subeval_aggrRef){
+				pieces = 0;
+				goto bailout;
+			}
 
 		/* Mergetable cannot handle intersect/except's for now */
-		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef)
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef){
+			pieces = 0;
 			goto bailout;
+		}
 
 		/* locate the largest non-partitioned table */
 		if (getModuleId(p) != sqlRef || (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef))
@@ -106,8 +116,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			r = 0;
 		}
 	}
-	if (target == 0)
+	if (target == 0){
+		pieces = 0;
 		goto bailout;
+	}
 	/*
 	 * The number of pieces should be based on the footprint of the
 	 * queryplan, such that preferrably it can be handled without
@@ -174,8 +186,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (mito_size > 0)
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
-	if (pieces <= 1)
+	if (pieces <= 1){
+		pieces = 0;
 		goto bailout;
+	}
 
 	/* at this stage we have identified the #chunks to be used for the largest table */
 	limit = mb->stop;

@@ -15,3 +15,4 @@ incorrect_columns
 columns
 no_escape
 no_escape2
+crlf_normalization

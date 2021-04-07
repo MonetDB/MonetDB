@@ -11,6 +11,6 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export str OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

@@ -322,7 +322,7 @@ GDKbatread(char *src, BAT **bat, str *colname)
 	b = (BAT *) (src + position);
 	position += align(sizeof(BAT));
 	//[DATA]
-	b->theap.base = (void *) (src + position);
+	b->theap->base = (void *) (src + position);
 	position += align(b->twidth * BATcount(b));
 	if (b->tvheap != NULL) {
 		//[VHEAP]

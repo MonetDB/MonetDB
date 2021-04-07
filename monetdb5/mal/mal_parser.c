@@ -703,7 +703,7 @@ parseTypeId(Client cntxt, int defaultType)
 	int tt;
 
 	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
-		/* parse :bat[:oid,:type] */
+		/* parse :bat[:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
 			tt = simpleTypeId(cntxt);

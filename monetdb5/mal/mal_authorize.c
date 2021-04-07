@@ -84,11 +84,15 @@ AUTHfindUser(const char *username)
 	BUN p;
 
 	if (BAThash(user) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&user->thashlock);
 		HASHloop_str(cni, cni.b->thash, p, username) {
 			oid pos = p;
-			if (BUNfnd(duser, &pos) == BUN_NONE)
+			if (BUNfnd(duser, &pos) == BUN_NONE) {
+				MT_rwlock_rdunlock(&user->thashlock);
 				return p;
+			}
 		}
+		MT_rwlock_rdunlock(&user->thashlock);
 	}
 	return BUN_NONE;
 }
@@ -165,7 +169,7 @@ AUTHcommit(void)
 	blist[7] = rt_hashedpwd->batCacheid;
 	assert(rt_deleted);
 	blist[8] = rt_deleted->batCacheid;
-	TMsubcommit_list(blist, 9);
+	TMsubcommit_list(blist, NULL, 9, getBBPlogno(), getBBPtransid());
 }
 
 /*
@@ -394,7 +398,10 @@ AUTHinitTables(const char *passwd) {
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
 		if(!pw) {
-			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
+			if (!GDKembedded())
+				throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
+			else
+				pw = strdup(passwd);
 		}
 		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
@@ -531,8 +538,11 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 		throw(MAL, "addUser", "user '%s' already exists", username);
 
 	/* we assume the BATs are still aligned */
-	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
-
+	if (!GDKembedded()) {
+		rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+	} else {
+		hash = GDKstrdup("hash");
+	}
 	/* needs force, as SQL makes a view over user */
 	if (BUNappend(user, username, true) != GDK_SUCCEED ||
 		BUNappend(pass, hash, true) != GDK_SUCCEED) {
@@ -544,7 +554,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	p = AUTHfindUser(username);
 
 	/* make the stuff persistent */
-	AUTHcommit();
+	if (!GDKembedded())
+		AUTHcommit();
 
 	*uid = p;
 	return(MAL_SUCCEED);
@@ -616,7 +627,8 @@ AUTHchangeUsername(Client cntxt, const char *olduser, const char *newuser)
 		throw(MAL, "changeUsername", "user '%s' already exists", newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	if (BUNinplace(user, p, newuser, true) != GDK_SUCCEED)
+	assert(user->hseqbase == 0);
+	if (BUNreplace(user, p, newuser, true) != GDK_SUCCEED)
 		throw(MAL, "changeUsername", GDK_EXCEPTION);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -668,7 +680,8 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 
 	/* ok, just overwrite the password field for this user */
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
+	assert(pass->hseqbase == 0);
+	if (BUNreplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(INVCRED, "changePassword", GDK_EXCEPTION);
 	}
@@ -722,7 +735,8 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
+	assert(pass->hseqbase == 0);
+	if (BUNreplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(MAL, "setPassword", GDK_EXCEPTION);
 	}
@@ -999,6 +1013,8 @@ AUTHverifyPassword(const char *passwd)
 
 	return(MAL_SUCCEED);
 #else
+	if (GDKembedded())
+		return(MAL_SUCCEED);
 	(void) passwd;
 	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 		  MONETDB5_PASSWDHASH);
@@ -1015,11 +1031,15 @@ lookupRemoteTableKey(const char *key)
 	assert(rt_deleted);
 
 	if (BAThash(rt_key) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_str(cni, cni.b->thash, p, key) {
 			oid pos = p;
-			if (BUNfnd(rt_deleted, &pos) == BUN_NONE)
+			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
+				MT_rwlock_rdunlock(&cni.b->thashlock);
 				return p;
+			}
 		}
+		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 
 	return BUN_NONE;

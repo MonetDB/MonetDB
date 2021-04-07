@@ -31,7 +31,7 @@ CREATE TABLE subtable1 (a int, b int, dd real)
 statement ok
 CREATE TABLE subtable2 (a int, b int, dd real)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable1 VALUES (4, 2, 1.2)
 
 statement error
@@ -91,7 +91,7 @@ CREATE MERGE TABLE nexttest (a int, dd real) PARTITION BY VALUES USING (dosometh
 statement ok
 CREATE TABLE subtable3 (a int, dd real)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable3 VALUES (0, 1.68)
 
 statement error

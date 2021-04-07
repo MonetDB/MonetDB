@@ -180,6 +180,8 @@ MNDBPrepare(ODBCStmt *stmt,
 		}
 
 		s = mapi_fetch_field(hdl, 0); /* type */
+		if (!stmt->Dbc->allow_hugeint && strcmp(s, "hugeint") == 0)
+			s = "bigint";
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
 
