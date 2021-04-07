@@ -1383,10 +1383,11 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 	case e_column: {
 		if (right) /* check relation names */
 			s = bin_find_column(be, right, e->l, e->r);
-		if (!s && left)
+		if (!s && left) {
 			s = bin_find_column(be, left, e->l, e->r);
-		if (s && right && right->grp)
-			s = stmt_project(be, right->ext, s);
+			if (s && right && right->grp)
+				s = stmt_project(be, right->ext, s);
+		}
 		if (!s && right) {
 			TRC_CRITICAL(SQL_EXECUTION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
