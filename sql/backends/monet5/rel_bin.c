@@ -1149,7 +1149,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				rel_bin_stmt *lst = r->op4.relstval;
 
-				if (r->type == st_table && lst && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
+				if (r->type == st_table && lst->nrcols == 0 && e->card > CARD_ATOM) {
 					list *l = sa_list(sql->sa);
 
 					for (node *n=lst->cols->h; n; n = n->next)
@@ -1204,10 +1204,6 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 
 			if (!r)
 				return NULL;
-#if 0
-			if (is_modify(rel->op) || is_ddl(rel->op))
-				return r;
-#endif
 			return stmt_table(be, r, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
 			stmt *cond = exp_bin(be, e->l, left, right, 0, 0, push);
@@ -5868,6 +5864,8 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 	if (!restart || !sname || !seqname || !seq)
 		return NULL;
 
+	if (restart->type == st_table) /* relational statement */
+		restart = restart->op4.relstval->cols->h->data;
 	append(l, sname);
 	append(l, seqname);
 	append(l, seq);
@@ -6232,9 +6230,9 @@ output_rel_bin(backend *be, sql_rel *rel)
 
 	if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0)
 		return NULL;
-	else if (sqltype == Q_UPDATE || be->cur_append) {
+	else if ((!is_ddl(rel->op) && sqltype == Q_UPDATE) || be->cur_append) {
 		if (be->cur_append) { /* finish the output bat */
-			stmt *last = s->cols->h->data;
+			stmt *last = s->cols->t->data;
 			last->nr = be->cur_append;
 			be->cur_append = 0;
 			be->first_statement_generated = false;
