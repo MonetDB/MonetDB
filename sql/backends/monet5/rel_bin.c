@@ -1316,6 +1316,8 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				sql_exp *at = en->data;
 
 				as = exp_bin(be, at, left, /*right*/NULL, depth+1, 0, push);
+				if (!as)
+					as = exp_bin(be, at, left, right, depth+1, 0, push);
 
 				if (as && as->nrcols <= 0 && left)
 					as = stmt_const(be, bin_find_smallest_column(be, left), as);
