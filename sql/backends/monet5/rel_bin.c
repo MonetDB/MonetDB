@@ -3579,7 +3579,8 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			if (sel)
 				return NULL;
 		}
-	} else if (sub)
+	}
+	if (sub && !sel)
 		sel = sub->cand;
 	sub = create_rel_bin_stmt(sql->sa, sub->cols, sel, NULL, NULL, NULL);
 	for( en = rel->exps->h; en; en = en->next ) {
