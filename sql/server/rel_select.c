@@ -1742,8 +1742,8 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		compare_op = "=";
 	}
 
-	if (!ro2 && (lo->token == SQL_SELECT || lo->token == SQL_UNION || lo->token == SQL_EXCEPT || lo->token == SQL_INTERSECT) &&
-		(ro->token != SQL_SELECT && ro->token != SQL_UNION && ro->token != SQL_EXCEPT && ro->token != SQL_INTERSECT)) {
+	if (!ro2 && (lo->token == SQL_SELECT || lo->token == SQL_UNION || lo->token == SQL_EXCEPT || lo->token == SQL_INTERSECT || lo->token == SQL_VALUES) &&
+		(ro->token != SQL_SELECT && ro->token != SQL_UNION && ro->token != SQL_EXCEPT && ro->token != SQL_INTERSECT && ro->token != SQL_VALUES)) {
 		symbol *tmp = lo; /* swap subquery to the right hand side */
 
 		lo = ro;
@@ -5215,8 +5215,9 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
 				e = exp_values(query->sql->sa, r->exps);
 			} else {
-				e = r->exps->h->data;
-				if (rel && *rel && !exp_has_rel(e)) {
+				sql_exp *ne = r->exps->h->data;
+				if (rel && *rel && !exp_has_rel(ne)) {
+					e = ne;
 					rel_bind_var(query->sql, *rel, e);
 					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
 						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);

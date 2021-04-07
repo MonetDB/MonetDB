@@ -76,7 +76,7 @@ typedef __int128_t hge;
 typedef struct stream stream;
 
 /* some os specific initialization */
-stream_export int mnstr_init(bool embedded);
+stream_export int mnstr_init(void);
 
 
 typedef enum mnstr_error_kind {

@@ -147,7 +147,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
-	MT_rwlock_rdlock(&b->batIdxLock);
+	MT_rwlock_rdlock(&b->thashlock);
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
@@ -171,7 +171,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			cnt++;
 		}
 	}
-	MT_rwlock_rdunlock(&b->batIdxLock);
+	MT_rwlock_rdunlock(&b->thashlock);
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -1375,11 +1375,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+		/* create a hash on the parent bat (and use it) if it is
+		 * the same size as the view and it is persistent */
+		if (!phash &&
+		    !tmp->batTransient &&
+		    BATcount(tmp) == BATcount(b) &&
+		    BAThash(tmp) == GDK_SUCCEED)
+			hash = phash = true;
 	}
 
-	/* make sure tsorted and trevsorted flags are set */
-	(void) BATordered(b);
-	(void) BATordered_rev(b);
+	if (hash && (phash || b->thash)) {
+		/* make sure tsorted and trevsorted flags are set, but
+		 * we only need to know if we're not yet sure that we're
+		 * going for the hash (i.e. it already exists) */
+		(void) BATordered(b);
+		(void) BATordered_rev(b);
+	}
 
 	/* If there is an order index or it is a view and the parent
 	 * has an ordered index, and the bat is not tsorted or

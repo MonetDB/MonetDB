@@ -647,7 +647,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
 		MT_lock_init(&bn->theaplock, name);
 		snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
-		MT_rwlock_init(&bn->batIdxLock, name);
+		MT_lock_init(&bn->batIdxLock, name);
+		snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
+		MT_rwlock_init(&bn->thashlock, name);
 		ATOMIC_INIT(&bn->theap->refs, 1);
 
 		if (base > (uint64_t) GDK_oid_max) {

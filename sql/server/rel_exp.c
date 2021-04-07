@@ -1337,16 +1337,17 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			    need_no_nil(e1) == need_no_nil(e2))
 				return 1;
 			break;
-		case e_func:
-			if (!subfunc_cmp(e1->f, e2->f) && /* equal functions */
-			    exps_equal(e1->l, e2->l) &&
-			    /* optional order by expressions */
-			    exps_equal(e1->r, e2->r)) {
-				sql_subfunc *f = e1->f;
-				if (!f->func->side_effect)
+		case e_func: {
+			sql_subfunc *e1f = (sql_subfunc*) e1->f;
+			int (*comp)(list*, list*) = !e1f->func->s && is_commutative(e1f->func->base.name) ? exp_match_list : exps_equal;
+
+			if (!e1f->func->side_effect &&
+				!subfunc_cmp(e1f, e2->f) && /* equal functions */
+				comp(e1->l, e2->l) &&
+				/* optional order by expressions */
+				exps_equal(e1->r, e2->r))
 					return 1;
-			}
-			break;
+			} break;
 		case e_atom:
 			if (e1->l && e2->l && !atom_cmp(e1->l, e2->l))
 				return 1;
@@ -1543,21 +1544,6 @@ rel_has_all_exps(sql_rel *rel, list *exps)
 		if (rel_has_exp(rel, n->data) < 0)
 			return 0;
 	return 1;
-}
-
-int
-rel_has_cmp_exp(sql_rel *rel, sql_exp *e)
-{
-	if (e->type == e_cmp) {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return rel_has_all_exps(rel, e->l) && rel_has_all_exps(rel, e->r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return rel_has_exp(rel, e->l) == 0 && rel_has_all_exps(rel, e->r);
-		} else {
-			return rel_has_exp(rel, e->l) == 0 && rel_has_exp(rel, e->r) == 0 && (!e->f || rel_has_exp(rel, e->f) == 0);
-		}
-	}
-	return 0;
 }
 
 sql_rel *

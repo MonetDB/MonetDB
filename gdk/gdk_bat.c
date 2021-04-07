@@ -142,7 +142,9 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
 	MT_lock_init(&bn->theaplock, name);
 	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
-	MT_rwlock_init(&bn->batIdxLock, name);
+	MT_lock_init(&bn->batIdxLock, name);
+	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
+	MT_rwlock_init(&bn->thashlock, name);
 	bn->batDirtydesc = true;
 	return bn;
       bailout:
@@ -247,7 +249,8 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	if (bn->tvheap)
 		HEAPdecref(bn->tvheap, true);
 	MT_lock_destroy(&bn->theaplock);
-	MT_rwlock_destroy(&bn->batIdxLock);
+	MT_lock_destroy(&bn->batIdxLock);
+	MT_rwlock_destroy(&bn->thashlock);
 	GDKfree(bn);
 	return NULL;
 }
@@ -604,6 +607,10 @@ BATfree(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
+	if (b->thash && b->thash != (Hash *) 1) {
+		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
+		BATsetprop(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){b->thash->nbucket});
+	}
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
@@ -631,7 +638,8 @@ BATdestroy(BAT *b)
 	GDKfree(b->tvheap);
 	PROPdestroy(b);
 	MT_lock_destroy(&b->theaplock);
-	MT_rwlock_destroy(&b->batIdxLock);
+	MT_lock_destroy(&b->batIdxLock);
+	MT_rwlock_destroy(&b->thashlock);
 	GDKfree(b->theap);
 	GDKfree(b);
 }
@@ -1182,7 +1190,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	BATrmprop(b, GDK_NUNIQUE);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 	for (BUN i = 0; i < count; i++) {
 		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
@@ -1197,23 +1204,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		p++;
 	}
 
-	if (b->thash)
-		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
-
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-#if 0		/* enable if we have more properties than just min/max */
-	PROPrec *prop;
-	do {
-		for (prop = b->tprops; prop; prop = prop->next)
-			if (prop->id != GDK_MAX_VALUE &&
-			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_BUCKETS) {
-				BATrmprop(b, prop->id);
-				break;
-			}
-	} while (prop);
-#endif
 	return GDK_SUCCEED;
 }
 
@@ -1260,6 +1252,7 @@ BUNdelete(BAT *b, oid o)
 	}
 	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
 		return GDK_FAIL;
+	HASHdelete(b, p, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
@@ -1269,11 +1262,17 @@ BUNdelete(BAT *b, oid o)
 		    BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			mskSetVal(b, p, mskGetVal(b, BUNlast(b) - 1));
+			msk mval = mskGetVal(b, BUNlast(b) - 1);
+			HASHdelete(b, BUNlast(b) - 1, &mval);
+			mskSetVal(b, p, mval);
 			/* don't leave garbage */
 			mskClr(b, BUNlast(b) - 1);
+			HASHinsert(b, p, &mval);
 		} else {
-			memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
+			val = Tloc(b, BUNlast(b) - 1);
+			HASHdelete(b, BUNlast(b) - 1, val);
+			memcpy(Tloc(b, p), val, Tsize(b));
+			HASHinsert(b, p, val);
 		}
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
@@ -1296,20 +1295,7 @@ BUNdelete(BAT *b, oid o)
 	}
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	HASHdestroy(b);
-	BATrmprop(b, GDK_NUNIQUE);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
-#if 0		/* enable if we have more properties than just min/max */
-	do {
-		for (prop = b->tprops; prop; prop = prop->next)
-			if (prop->id != GDK_MAX_VALUE &&
-			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_BUCKETS) {
-				BATrmprop(b, prop->id);
-				break;
-			}
-	} while (prop);
-#endif
 	return GDK_SUCCEED;
 }
 
@@ -1395,19 +1381,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					BATrmprop(b, GDK_MIN_POS);
 				}
 			}
-			BATrmprop(b, GDK_NUNIQUE);
 			BATrmprop(b, GDK_UNIQUE_ESTIMATE);
-#if 0		/* enable if we have more properties than just min/max */
-			do {
-				for (prop = b->tprops; prop; prop = prop->next)
-					if (prop->id != GDK_MAX_VALUE &&
-					    prop->id != GDK_MIN_VALUE &&
-					    prop->id != GDK_HASH_BUCKETS) {
-						BATrmprop(b, prop->id);
-						break;
-					}
-			} while (prop);
-#endif
 		} else {
 			PROPdestroy(b);
 		}

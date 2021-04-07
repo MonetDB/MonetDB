@@ -953,7 +953,7 @@ insert into sys.functions values (260, 'sql_add', '+', 'calc', 0, 1, false, fals
 insert into sys.args values (8292, 260, 'res_0', 'month_interval', 3, 0, 0, 0);
 insert into sys.args values (8293, 260, 'arg_1', 'month_interval', 3, 0, 1, 1);
 insert into sys.args values (8294, 260, 'arg_2', 'month_interval', 3, 0, 1, 2);
-insert into sys.functions values (261, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, true);
+insert into sys.functions values (261, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (8295, 261, 'res_0', 'month_interval', 3, 0, 0, 0);
 insert into sys.args values (8296, 261, 'arg_1', 'month_interval', 3, 0, 1, 1);
 insert into sys.functions values (262, 'abs', 'abs', 'calc', 0, 1, false, false, false, 2000, true, false);
@@ -978,7 +978,7 @@ insert into sys.functions values (267, 'sql_add', '+', 'calc', 0, 1, false, fals
 insert into sys.args values (8310, 267, 'res_0', 'day_interval', 4, 0, 0, 0);
 insert into sys.args values (8311, 267, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.args values (8312, 267, 'arg_2', 'day_interval', 4, 0, 1, 2);
-insert into sys.functions values (268, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, true);
+insert into sys.functions values (268, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (8313, 268, 'res_0', 'day_interval', 4, 0, 0, 0);
 insert into sys.args values (8314, 268, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (269, 'abs', 'abs', 'calc', 0, 1, false, false, false, 2000, true, false);
@@ -1003,7 +1003,7 @@ insert into sys.functions values (274, 'sql_add', '+', 'calc', 0, 1, false, fals
 insert into sys.args values (8328, 274, 'res_0', 'sec_interval', 13, 0, 0, 0);
 insert into sys.args values (8329, 274, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.args values (8330, 274, 'arg_2', 'sec_interval', 13, 0, 1, 2);
-insert into sys.functions values (275, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, true);
+insert into sys.functions values (275, 'sql_neg', '-', 'calc', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (8331, 275, 'res_0', 'sec_interval', 13, 0, 0, 0);
 insert into sys.args values (8332, 275, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (276, 'abs', 'abs', 'calc', 0, 1, false, false, false, 2000, true, false);
@@ -3626,7 +3626,7 @@ grant execute on function json.isvalid(json) to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'json') and name = 'isvalid';
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords where keyword = 'STREAM';
-INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN');
+INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN'), ('CURRENT_SCHEMA'), ('CURRENT_TIMEZONE'), ('IMPRINTS'), ('ORDERED'), ('PATH'), ('ROLE'), ('ROW'), ('VALUE');
 ALTER TABLE sys.table_types SET READ WRITE;
 DELETE FROM sys.table_types where table_type_id = 4;
 ALTER TABLE sys.function_types SET READ WRITE;

@@ -717,7 +717,7 @@ main(int argc, char *argv[])
 	}
 
 	/* time to initialize the stream library */
-	if (mnstr_init(false) < 0) {
+	if (mnstr_init() < 0) {
 		Mfprintf(stderr, "cannot initialize stream library\n");
 		MERO_EXIT_CLEAN(1);
 	}

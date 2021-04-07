@@ -2489,8 +2489,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *lvals = Tloc(l, 0);				\
 		TYPE v;							\
 		if (!hash_cand) {					\
-			MT_rwlock_rdlock(&r->batIdxLock);		\
-			locked = true;					\
+			MT_rwlock_rdlock(&r->thashlock);		\
+			locked = true;	/* in case we abandon */	\
+			hsh = r->thash;	/* re-initialize inside lock */	\
 		}							\
 		while (lci->next < lci->ncand) {			\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
@@ -2520,7 +2521,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						break;			\
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
-				hsh = r->thash;				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2537,7 +2537,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					}				\
 				}					\
 			} else {					\
-				hsh = r->thash;				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2597,7 +2596,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}							\
 		if (!hash_cand) {					\
 			locked = false;					\
-			MT_rwlock_rdunlock(&r->batIdxLock);		\
+			MT_rwlock_rdunlock(&r->thashlock);		\
 		}							\
 	} while (0)
 
@@ -2783,6 +2782,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
+		if (!hash_cand) {
+			MT_rwlock_rdlock(&r->thashlock);
+			locked = true;	/* in case we abandon */
+			hsh = r->thash;	/* re-initialize inside lock */
+		}
 		while (lci->next < lci->ncand) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
@@ -2889,6 +2893,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
+		if (!hash_cand) {
+			locked = false;
+			MT_rwlock_rdunlock(&r->thashlock);
+		}
 		break;
 	}
 	if (hash_cand) {
@@ -2947,7 +2955,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
   bailout:
 	if (locked)
-		MT_rwlock_rdunlock(&r->batIdxLock);
+		MT_rwlock_rdunlock(&r->thashlock);
 	if (hash_cand && hsh) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
@@ -3178,9 +3186,9 @@ guess_uniques(BAT *b, struct canditer *ci)
 				  ALGOBATPAR(b));
 			return p->v.val.dval;
 		}
-		s1 = BATsample(b, 1000);
+		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
-		BAT *s2 = BATsample(ci->s, 1000);
+		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
@@ -3198,6 +3206,17 @@ guess_uniques(BAT *b, struct canditer *ci)
 		BATsetprop(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &B);
 	}
 	return B;
+}
+
+BUN
+BATguess_uniques(BAT *b, struct canditer *ci)
+{
+	struct canditer lci;
+	if (ci == NULL) {
+		canditer_init(&lci, b, NULL);
+		ci = &lci;
+	}
+	return (BUN) guess_uniques(b, ci);
 }
 
 /* estimate the cost of doing a hashjoin with a hash on r; return value
@@ -3253,14 +3272,18 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		 * since the searching of the candidate list
 		 * (canditer_idx) will kill us */
 		double rccost;
-		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * chains */
-			rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		if (rhash && !prhash) {
+			rccost = (double) BATcount(r) / r->thash->nheads;
 		} else {
-			/* guess number of unique value and work with that */
-			rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+			PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+			if (prop) {
+				/* we know number of unique values, assume some
+				 * chains */
+				rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+			} else {
+				/* guess number of unique value and work with that */
+				rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+			}
 		}
 		rccost *= lci->ncand;
 		rccost += rci->ncand * 2.0; /* cost of building the hash */

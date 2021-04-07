@@ -1459,23 +1459,11 @@ dcount_col(sql_trans *tr, sql_column *c)
 		return 1;
 	size_t cnt = s->segs->t->end;
 	if (cnt) {
+		BAT *v = cs_bind_bat( &b->cs, QUICK, cnt);
 		size_t dcnt = 0;
-		dbl f = 1.0;
-		BAT *v = cs_bind_bat( &b->cs, QUICK, cnt), *o = v, *u;
 
-		if ((dcnt = (size_t) BATcount(v)) > 1024*1024) {
-			BAT *s = BATsample(v, 1024);
-			if (!s)
-				return cnt;
-			v = BATproject(s, v);
-			f = dcnt/1024.0;
-		}
-		u = BATunique(v, NULL);
-		bat_destroy(o);
-		if (v!=o)
-			bat_destroy(v);
-		dcnt = (size_t) (BATcount(u) * f);
-		bat_destroy(u);
+		if (v)
+			dcnt = BATguess_uniques(v, NULL);
 		return dcnt;
 	}
 	return cnt;
