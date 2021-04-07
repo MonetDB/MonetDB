@@ -26,10 +26,10 @@ SELECT minimum, maximum, with_nulls FROM range_partitions
 300
 0
 
-statement ok
+statement ok rowcount 1
 INSERT INTO updateme VALUES (1, 'first')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subt1 VALUES (1, 'first')
 
 query IT rowsort
@@ -55,7 +55,7 @@ SELECT a, b FROM subt2
 statement error
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
 
-statement ok
+statement ok rowcount 2
 DELETE FROM updateme
 
 statement ok
@@ -77,10 +77,10 @@ INSERT INTO updateme VALUES (1, 'ups')
 statement error
 INSERT INTO subt1 VALUES (1, 'ups')
 
-statement ok
+statement ok rowcount 2
 INSERT INTO updateme VALUES (-1, 'second'), (201, 'other table')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subt1 VALUES (-1, 'second')
 
 statement ok
@@ -99,7 +99,7 @@ SELECT minimum, maximum, with_nulls FROM range_partitions
 300
 0
 
-statement ok
+statement ok rowcount 1
 INSERT INTO updateme VALUES (199, 'third')
 
 statement error
@@ -124,10 +124,10 @@ INSERT INTO updateme VALUES (150, 'fourth')
 statement error
 INSERT INTO subt1 VALUES (150, 'fourth')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO updateme VALUES (-50, 'fifth')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subt1 VALUES (-50, 'fifth')
 
 query IT rowsort

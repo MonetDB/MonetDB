@@ -19,7 +19,7 @@ ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM '0000000000000000000000
 statement ok
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM '80000000000000000000000000000000' TO 'ffffffffffffffffffffffffffffffff'
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testme VALUES (1, 'first'), (2000, 'second'), (3, 'third'), (4000, 'fourth')
 
 query IT rowsort
@@ -96,13 +96,13 @@ ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 1 TO 10
 statement error
 ALTER TABLE testme ADD TABLE subtable3 AS PARTITION FROM 'abc' TO 'cde'
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testme VALUES (1, 'first'), (10, 'second'), (2, 'third'), (15, 'fourth')
 
 statement error
 INSERT INTO testme VALUES (12, 'this'), (6, 'not'), (50, 'ok')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable1 VALUES (12, 'sixth')
 
 statement error

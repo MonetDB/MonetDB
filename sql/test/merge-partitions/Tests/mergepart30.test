@@ -43,10 +43,10 @@ CREATE TABLE another5 (a int)
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE WITH NULL VALUES
 
-statement ok
+statement ok rowcount 2
 INSERT INTO table1 VALUES (1), (NULL)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO another1 VALUES (2), (NULL)
 
 query I rowsort
@@ -95,7 +95,7 @@ ALTER TABLE table1 DROP TABLE another1
 statement ok
 ALTER TABLE table1 DROP TABLE another2
 
-statement ok
+statement ok rowcount 2
 DELETE FROM another1 WHERE a IS NULL
 
 statement ok
@@ -116,10 +116,10 @@ ALTER TABLE table1 ADD TABLE another2 AS PARTITION FOR NULL VALUES
 statement ok
 TRUNCATE table1
 
-statement ok
+statement ok rowcount 2
 INSERT INTO table1 VALUES (2), (NULL)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO another1 VALUES (3)
 
 statement error
@@ -128,7 +128,7 @@ INSERT INTO another1 VALUES (NULL)
 statement error
 INSERT INTO another2 VALUES (2)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO another2 VALUES (NULL)
 
 query I rowsort
