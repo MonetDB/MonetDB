@@ -883,10 +883,8 @@ static sql_rel*
 rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
 	rel = rel_generate_subdeletes(sql, rel, t, changes);
-	if (rel) {
-		rel = rel_exception(sql->sa, rel, NULL, NULL);
+	if (rel)
 		rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
-	}
 	return rel;
 }
 
@@ -924,16 +922,13 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	if (!found_partition_col) { /* easy scenario where the partitioned column is not being updated, just propagate */
 		sel = rel_generate_subupdates(sql, rel, t, changes);
-		if (sel) {
-			sel = rel_exception(sql->sa, sel, NULL, NULL);
+		if (sel)
 			sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
-		}
 	} else { /* harder scenario, has to insert and delete across partitions. */
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
 
 		deletes = rel_generate_subdeletes(sql, rel, t, changes);
-		deletes = rel_exception(sql->sa, deletes, NULL, NULL);
 		inserts = rel_generate_subinserts(query, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
 		inserts = rel_exception(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
 		return rel_list(sql->sa, deletes, inserts);*/
