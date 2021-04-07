@@ -5742,19 +5742,18 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 	rel_bin_stmt *l = NULL, *r = NULL;
 	list *slist = sa_list(sql->sa);
 
-	if (find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
-		create_merge_partitions_accumulator(be);
-
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
 	l = subrel_project(be, l, refs, rel->l);
 	r = subrel_project(be, r, refs, rel->r);
-	if (!l || !r)
+	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
-	list_append(slist, l);
-	list_append(slist, r);
+	if (l)
+		list_append(slist, l);
+	if (r)
+		list_append(slist, r);
 	return create_rel_bin_stmt(sql->sa, slist, NULL, NULL, NULL, NULL);
 }
 
@@ -5815,10 +5814,7 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	rel_bin_stmt *l = NULL, *r = NULL;
-	list *slist = sa_list(be->mvc->sa);
-
-	if (find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
-		create_merge_partitions_accumulator(be);
+	list *slist = sa_list(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
@@ -5829,17 +5825,13 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
 
-	if (rel->exps) {
-		for (node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			stmt *s = exp_bin(be, e, l, r, 0, 0, 0);
-			if (!s)
-				return NULL;
-			append(slist, s);
-		}
-	} else { /* if there is no exception condition, just generate a statement list */
-		list_append(slist, l);
-		list_append(slist, r);
+	assert(rel->exps);
+	for (node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *s = exp_bin(be, e, l, r, 0, 0, 0);
+		if (!s)
+			return NULL;
+		list_append(slist, s);
 	}
 	return create_rel_bin_stmt(sql->sa, slist, NULL, NULL, NULL, NULL);
 }
@@ -6224,6 +6216,10 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	be->join_idx = 0;
 	if (refs == NULL)
 		return NULL;
+
+	if (top && find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
+		create_merge_partitions_accumulator(be);
+
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
 	if (!s)
@@ -6233,8 +6229,8 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
 		return NULL;
-	} else if (top && (!is_ddl(rel->op) || rel->flag == ddl_list) && (sqltype == Q_UPDATE || be->cur_append)) {
-		/* only call stmt_affected_rows outside functions and ddl, however if the ddl is a list, it might be called. eg. merge statements */
+	} else if (top && (!is_ddl(rel->op) || find_prop(rel->p, PROP_DISTRIBUTE)) && sqltype == Q_UPDATE) {
+		/* only call stmt_affected_rows outside functions and ddl, however if PROP_DISTRIBUTE is found it might be called. eg. merge statements */
 		if (be->cur_append) { /* finish the output bat */
 			stmt *last = s->cols->t->data;
 			last->nr = be->cur_append;
