@@ -1287,10 +1287,10 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
 				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
-					if (en == exps->h && left->nrcols)
+					if (en == exps->h && left && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es); /* ensure the first argument is a column */
 					if (!f->func->s && !strcmp(f->func->base.name, "window_bound")
-						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next && left->nrcols)
+						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next && left && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es);
 				}
 				if (es->nrcols > nrcols)
@@ -1322,7 +1322,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				if (as && as->nrcols <= 0 && left)
 					as = stmt_const(be, bin_find_smallest_column(be, left), as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
-					as = exp_count_no_nil_arg(e, left->ext, at, as);
+					as = exp_count_no_nil_arg(e, left ? left->ext : NULL, at, as);
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
@@ -1331,11 +1331,11 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					return NULL;
 				append(l, as);
 			}
-			if (need_distinct(e) && (left->grp || list_length(l) > 1)){
+			if (need_distinct(e) && ((left && left->grp) || list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
-				stmt *ngrp = left->grp;
-				stmt *next = left->ext;
-				stmt *ncnt = left->cnt;
+				stmt *ngrp = left ? left->grp : NULL;
+				stmt *next = left ? left->ext : NULL;
+				stmt *ncnt = left ? left->cnt : NULL;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
 					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
@@ -1347,7 +1347,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					stmt *as = en->data;
 					append(nl, stmt_project(be, next, as));
 				}
-				if (left->grp)
+				if (left && left->grp)
 					left->grp = stmt_project(be, next, left->grp);
 				l = nl;
 			} else if (need_distinct(e)) {
@@ -1360,7 +1360,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		} else {
 			/* count(*) may need the default group (relation) and
 			   and/or an attribute to count */
-			if (left->grp) {
+			if (left && left->grp) {
 				as = left->grp;
 			} else if (left) {
 				as = bin_find_smallest_column(be, left);
@@ -1371,7 +1371,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				as = const_column(be, as);
 			}
 		}
-		s = stmt_aggr(be, as, left->grp, left->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+		s = stmt_aggr(be, as, left ? left->grp : NULL, left ? left->ext : NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
 	} 	break;
@@ -1380,7 +1380,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			s = bin_find_column(be, right, e->l, e->r);
 		if (!s && left)
 			s = bin_find_column(be, left, e->l, e->r);
-		if (s && left->grp)
+		if (s && left && left->grp)
 			s = stmt_project(be, left->ext, s);
 		if (!s && right) {
 			TRC_CRITICAL(SQL_EXECUTION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
