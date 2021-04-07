@@ -3580,6 +3580,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 		}
 	}
+	sub = create_rel_bin_stmt(sql->sa, sub->cols, sel, NULL, NULL, NULL);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
 		stmt *s = exp_bin(be, e, sub, NULL, 0, 1, 0);
@@ -3602,8 +3603,9 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		} else {
 			sel = s;
 		}
+		sub->cand = sel;
 	}
-	return create_rel_bin_stmt(sql->sa, sub->cols, sel, NULL, NULL, NULL);
+	return sub;
 }
 
 static rel_bin_stmt *
