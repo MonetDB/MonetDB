@@ -4647,7 +4647,6 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 {
 	mvc *sql = be->mvc;
 	sql_trans *tr = sql->session->tr;
-	list *l = NULL;
 	int len = 0;
 	node *m, *o;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
@@ -4680,9 +4679,9 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 
 		new_updates[fc->c->colnr] = upd;
 	}
-	if ((l = sql_update(be, t, ftids, new_updates)) == NULL)
+	if (!sql_update(be, t, ftids, new_updates))
 		return NULL;
-	return stmt_list(be, l);
+	return ftids; /* return something to show it succeeded */
 }
 
 static stmt*
@@ -4743,7 +4742,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 
 	if ((l = sql_update(be, t, rows, new_updates)) == NULL)
 		return NULL;
-	return stmt_list(be, l);
+	return utids; /* return something to say it succeeded */
 }
 
 static int
@@ -4774,32 +4773,29 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids)
 			case ACT_CASCADE:
 				if (!sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update)) {
 					list_destroy(keys);
-					return -1;
+					return 0;
 				}
 				break;
 			default:	/*RESTRICT*/
 				if (!join_updated_pkey(be, fk, tids, updates)) {
 					list_destroy(keys);
-					return -1;
+					return 0;
 				}
 			}
 		}
 		list_destroy(keys);
 	}
-	return 0;
+	return 1;
 }
 
 static void
-sql_update_check_key(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol, list *l, rel_bin_stmt *pup)
+sql_update_check_key(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol, rel_bin_stmt *pup)
 {
-	stmt *ckeys;
-
 	if (k->type == pkey || k->type == ukey) {
-		ckeys = update_check_ukey(be, updates, k, tids, idx_updates, updcol);
+		(void) update_check_ukey(be, updates, k, tids, idx_updates, updcol);
 	} else { /* foreign keys */
-		ckeys = update_check_fkey(be, updates, k, tids, idx_updates, updcol, pup);
+		(void) update_check_fkey(be, updates, k, tids, idx_updates, updcol, pup);
 	}
-	list_append(l, ckeys);
 }
 
 static stmt *
@@ -4901,7 +4897,7 @@ cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	node *n;
 
 	if (!ol_length(t->idxs))
-		return 0;
+		return 1;
 
 	for (n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
@@ -4921,17 +4917,17 @@ cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
 				*local_id = i->key->base.id;
 				list_append(sql->cascade_action, local_id);
 				if (k->type == pkey || k->type == ukey) {
-					if (cascade_ukey(be, updates, k, rows))
-						return -1;
+					if (!cascade_ukey(be, updates, k, rows))
+						return 0;
 				}
 			}
 		}
 	}
-	return 0;
+	return 1;
 }
 
 static list *
-update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates, list *l, rel_bin_stmt *pup)
+update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates, rel_bin_stmt *pup)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -4961,7 +4957,7 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 				return NULL;
 		}
 		if (i->key)
-			sql_update_check_key(be, updates, i->key, rows, is, updcol, l, pup);
+			sql_update_check_key(be, updates, i->key, rows, is, updcol, pup);
 		if (is)
 			list_append(idx_updates, stmt_update_idx(be, i, rows, is));
 	}
@@ -5082,14 +5078,13 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	mvc *sql = be->mvc;
 	list *idx_updates = NULL;
 	int i, nr_cols = ol_length(t->columns);
-	list *l = sa_list(sql->sa);
 	node *n;
 
 	if (!be->first_statement_generated)
 		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
 
 	/* check keys + get idx */
-	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
+	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, NULL);
 	if (!idx_updates) {
 		assert(0);
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: failed to update indexes for table '%s'", t->base.name);
@@ -5104,9 +5099,9 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		sql_column *c = n->data;
 
 		if (updates[i])
-			list_append(l, stmt_update_col(be, c, rows, updates[i]));
+			stmt_update_col(be, c, rows, updates[i]);
 	}
-	if (cascade_updates(be, t, rows, updates))
+	if (!cascade_updates(be, t, rows, updates))
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
@@ -5114,7 +5109,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* cascade ?? */
-	return l;
+	return idx_updates; /* return something to show it succeeded */
 }
 
 /* updates with empty list is alter with create idx or keys */
@@ -5124,7 +5119,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	rel_bin_stmt *update = NULL, *ddl = NULL, *pup = NULL;
 	stmt **updates = NULL, *tids, *ret;
-	list *l = sa_list(sql->sa);
 	int nr_cols, updcol, idx_ups = 0;
 	node *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -5193,9 +5187,9 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 				update_idx = NULL;
 			}
 			if (i->key)
-				sql_update_check_key(be, (updcol>=0)?updates:NULL, i->key, tids, update_idx, updcol, l, pup);
+				sql_update_check_key(be, (updcol>=0)?updates:NULL, i->key, tids, update_idx, updcol, pup);
 			if (is)
-				list_append(l, stmt_update_idx(be,  i, tids, is));
+				stmt_update_idx(be,  i, tids, is);
 		}
 	}
 
@@ -5211,10 +5205,10 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql_column *c = find_sql_column(t, exp_name(ce));
 
 		if (c)
-			list_append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
+			stmt_update_col(be,  c, tids, updates[c->colnr]);
 	}
 
-	if (cascade_updates(be, t, tids, updates)) {
+	if (!cascade_updates(be, t, tids, updates)) {
 		sql->cascade_action = NULL;
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 	}
@@ -5228,15 +5222,14 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	sql->cascade_action = NULL;
 
 	if (ddl) {
-		list_prepend(l, ddl);
+		ret = (stmt*) ddl;
 	} else {
 		ret = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 		if (be->cur_append) /* building the total number of rows affected across all tables */
 			ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
-		list_append(l, ret);
 	}
 
-	return create_rel_bin_stmt(sql->sa, l, NULL, NULL, NULL, NULL);
+	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), ret), NULL, NULL, NULL, NULL);
 }
 
 static int
@@ -5310,8 +5303,8 @@ sql_delete_cascade_Fkeys(backend *be, sql_key *fk, stmt *ftids)
 	return sql_delete(be, t, ftids);
 }
 
-static void
-sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql_key *k, list *l, char* which, int cascade)
+static int
+sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql_key *k, char* which, int cascade)
 {
 	mvc *sql = be->mvc;
 	sql_subtype *lng = sql_bind_localtype("lng");
@@ -5339,36 +5332,36 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 			s = stmt_result(be, s, 0);
 			tids = stmt_project(be, s, tids);
 			if (cascade) { /* for truncate statements with the cascade option */
-				s = sql_delete_cascade_Fkeys(be, fk, tids);
-				list_prepend(l, s);
+				if (!sql_delete_cascade_Fkeys(be, fk, tids))
+					return 0;
 			} else {
 				switch (((sql_fkey*)fk)->on_delete) {
 					case ACT_NO_ACTION:
 						break;
 					case ACT_SET_NULL:
 					case ACT_SET_DEFAULT:
-						s = sql_delete_set_Fkeys(be, fk, tids, ((sql_fkey*)fk)->on_delete);
-						list_prepend(l, s);
+						if (!sql_delete_set_Fkeys(be, fk, tids, ((sql_fkey*)fk)->on_delete))
+							return 0;
 						break;
 					case ACT_CASCADE:
-						s = sql_delete_cascade_Fkeys(be, fk, tids);
-						list_prepend(l, s);
+						if (!sql_delete_cascade_Fkeys(be, fk, tids))
+							return 0;
 						break;
 					default:	/*RESTRICT*/
 						/* The overlap between deleted primaries and foreign should be empty */
 						s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
 						msg = sa_message(sql->sa, SQLSTATE(40002) "%s: FOREIGN KEY constraint '%s.%s' violated", which, fk->t->base.name, fk->base.name);
 						s = stmt_exception(be, s, msg, 00001);
-						list_prepend(l, s);
 				}
 			}
 		}
 		list_destroy(keys);
 	}
+	return 1;
 }
 
 static int
-sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int cascade)
+sql_delete_keys(backend *be, sql_table *t, stmt *rows, char* which, int cascade)
 {
 	mvc *sql = be->mvc;
 	int res = 1;
@@ -5388,7 +5381,8 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int
 
 				*local_id = k->base.id;
 				list_append(sql->cascade_action, local_id);
-				sql_delete_ukey(be, rows, k, l, which, cascade);
+				if (!sql_delete_ukey(be, rows, k, which, cascade))
+					return 0;
 			}
 		}
 	}
@@ -5399,9 +5393,7 @@ static stmt *
 sql_delete(backend *be, sql_table *t, stmt *rows)
 {
 	mvc *sql = be->mvc;
-	stmt *v = NULL, *s = NULL;
-	list *l = sa_list(sql->sa);
-	stmt **deleted_cols = NULL;
+	stmt *v = NULL, *s = NULL, **deleted_cols = NULL;
 
 	if (rows) {
 		v = rows;
@@ -5419,7 +5411,6 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 			stmt *s = stmt_col(be, c, v, v->partition);
 
 			deleted_cols[i] = s;
-			list_append(l, s);
 		}
 	}
 
@@ -5427,15 +5418,13 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 0, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
-	if (!sql_delete_keys(be, t, v, l, "DELETE", 0))
+	if (!sql_delete_keys(be, t, v, "DELETE", 0))
 		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) {
-		list_append(l, stmt_delete(be, t, rows));
+		s = stmt_delete(be, t, rows);
 	} else { /* delete all */
-		/* first column */
-		s = stmt_table_clear(be, t);
-		list_append(l, s);
+		s = stmt_table_clear(be, t); /* first column */
 	}
 
 /* after */
@@ -5562,7 +5551,6 @@ static stmt *
 sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
-	list *l = sa_list(sql->sa);
 	stmt *v, *ret = NULL, *other = NULL;
 	const char *next_value_for = "next value for ";
 	sql_column *col = NULL;
@@ -5626,7 +5614,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 				stmt *s = stmt_col(be, c, v, v->partition);
 
 				deleted_cols[i] = s;
-				list_append(l, s);
 			}
 		}
 
@@ -5637,14 +5624,13 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade)) {
+		if (!sql_delete_keys(be, next, v, "TRUNCATE", cascade)) {
 			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
 		}
 
 		other = stmt_table_clear(be, next);
-		list_append(l, other);
 		if (next == t)
 			ret = other;
 
