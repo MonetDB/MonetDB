@@ -5864,7 +5864,7 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 	if (!restart || !sname || !seqname || !seq)
 		return NULL;
 
-	if (restart->type == st_table) /* relational statement */
+	if (restart->type == st_table && !list_empty(restart->op4.relstval->cols)) /* relational statement */
 		restart = restart->op4.relstval->cols->h->data;
 	append(l, sname);
 	append(l, seqname);

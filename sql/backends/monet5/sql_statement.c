@@ -506,7 +506,7 @@ stmt_table(backend *be, rel_bin_stmt *relst, int temp)
 
 	if (s == NULL)
 		return NULL;
-	s->nr = ((stmt*)relst->cols->h->data)->nr;
+	s->nr = !list_empty(relst->cols) ? ((stmt*)relst->cols->h->data)->nr : 0;
 	s->op4.relstval = relst;
 	s->flag = temp;
 	s->nrcols = relst->nrcols;
@@ -3040,8 +3040,11 @@ tail_set_type(stmt *st, sql_subtype *t)
 			st = st->op4.lval->h->data;
 			continue;
 		case st_table:
-			st = st->op4.relstval->cols->h->data;
-			continue;
+			if (!list_empty(st->op4.relstval->cols)) {
+				st = st->op4.relstval->cols->h->data;
+				continue;
+			}
+			return;
 		case st_join:
 		case st_join2:
 		case st_joinN:
@@ -3688,8 +3691,11 @@ tail_type(stmt *st)
 			st = st->op1;
 			continue;
 		case st_table:
-			st = st->op4.relstval->cols->h->data;
-			continue;
+			if (!list_empty(st->op4.relstval->cols)) {
+				st = st->op4.relstval->cols->h->data;
+				continue;
+			}
+			return NULL;
 		case st_list:
 			st = st->op4.lval->h->data;
 			continue;
@@ -3858,7 +3864,9 @@ _column_name(sql_allocator *sa, stmt *st)
 			return sa_strdup(sa, "single_value");
 		return "single_value";
 	case st_table:
-		return column_name(sa, st->op4.relstval->cols->h->data);
+		if (!list_empty(st->op4.relstval->cols))
+			return column_name(sa, st->op4.relstval->cols->h->data);
+		return NULL;
 	case st_list:
 		if (list_length(st->op4.lval))
 			return column_name(sa, st->op4.lval->h->data);
