@@ -1264,7 +1264,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		}
 		assert(!e->r);
 		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)
-			return bin_find_smallest_column(be, left);
+			return left->cols->h->data;
 		else if (!list_empty(exps)) {
 			unsigned nrcols = 0;
 
