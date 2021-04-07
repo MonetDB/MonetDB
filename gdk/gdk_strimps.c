@@ -136,9 +136,9 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
  */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define isNotIgnored(x) (!isIgnored(x))
-#define pairToIndex(b1, b2) (DataPair)(((uint8_t)b1)<<8 | ((uint8_t)b2))
-#define indexToPair1(idx) (idx & 0xff00) >> 8
-#define indexToPair2(idx) (idx & 0xff)
+#define pairToIndex(b1, b2) (DataPair)(((uint8_t)b2)<<8 | ((uint8_t)b1))
+#define indexToPair2(idx) (idx & 0xff00) >> 8
+#define indexToPair1(idx) (idx & 0xff)
 #define swp(_a, _i, _j, TPE)			\
 	do {					\
 		TPE _t = ((TPE *)_a)[_i];	\
@@ -330,9 +330,9 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 	Heap *r = NULL;
 	uint64_t *d;
 	uint64_t descriptor;
-	uint8_t npairs, bytes_per_pair;
-	uint16_t hsize;
-	size_t i,j;
+	uint64_t npairs, bytes_per_pair, hsize;
+	size_t i;
+	int j;
 	const char *nme;
 
 	nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
@@ -362,7 +362,7 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 	 */
 	for(i = 0; i < STRIMP_HEADER_SIZE; i += 4) {
 		*d = 0;
-		for(j = 0; j < 4; j++) {
+		for(j = 3; j >= 0; j--) {
 			*d <<= 16;
 			*d |= h->bytepairs[i + j];
 		}
