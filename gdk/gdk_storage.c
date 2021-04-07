@@ -799,7 +799,7 @@ BATsave(BAT *bd)
 	nme = BBP_physical(b->batCacheid);
 	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
 		if (err == GDK_SUCCEED && b->ttype)
-			err = HEAPsave(b->theap, nme, "tail", dosync);
+			err = HEAPsave(b->theap, nme, gettailname(b), dosync);
 	if (b->tvheap
 	    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
 	    && b->ttype
@@ -846,7 +846,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
-		if (HEAPload(b->theap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 		assert(0);
 			return NULL;
@@ -924,7 +924,7 @@ BATdelete(BAT *b)
 	PROPdestroy(b);
 	if (b->batCopiedtodisk || (b->theap->storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
-		    HEAPdelete(b->theap, o, "tail") != GDK_SUCCEED &&
+		    HEAPdelete(b->theap, o, gettailname(b)) != GDK_SUCCEED &&
 		    b->batCopiedtodisk)
 			TRC_DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->theap->base) {

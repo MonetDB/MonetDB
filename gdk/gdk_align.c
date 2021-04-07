@@ -329,7 +329,7 @@ VIEWreset(BAT *b)
 		.farmid = BBPselectfarm(b->batRole, b->ttype, offheap),
 	};
 	ATOMIC_INIT(&tail->refs, 1);
-	strconcat_len(tail->filename, sizeof(tail->filename), nme, ".tail", NULL);
+	settailname(tail, nme, b->ttype, b->twidth);
 	if (b->ttype && HEAPalloc(tail, cnt, Tsize(b), Tsize(b)) != GDK_SUCCEED) {
 		GDKfree(tail);
 		BBPunfix(v->batCacheid);
