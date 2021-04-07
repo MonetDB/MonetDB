@@ -57,6 +57,12 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for(i=0; i<mb->stop; i++){
 		q = getInstrPtr(mb,i);
+		if ( !q) {
+			continue;
+		}
+		if ( getModuleId(q) == sqlRef && getFunctionId(q) != tidRef) {
+			continue;
+		}
 		if( hasSideEffects(mb, q, 1) )
 			continue;
 		for(k= q->retc; k < q->argc; k++){

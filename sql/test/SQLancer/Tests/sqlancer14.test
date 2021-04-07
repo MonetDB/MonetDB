@@ -327,7 +327,7 @@ statement ok
 INSERT INTO t0(c3) VALUES ((VALUES (3)) = ANY(SELECT 2 FROM t0 WHERE t0.c3))
 
 statement ok
-INSERT INTO t0(c3) VALUES(TRUE), ((VALUES (-409412573)) = ANY(SELECT ALL (VALUES (0.87714195), (NULL)) FROM t0 AS l1t0 WHERE l1t0.c3));
+INSERT INTO t0(c3) VALUES(TRUE), ((VALUES (-409412573)) = ANY(SELECT ALL (VALUES (0.87714195), (NULL)) FROM t0 AS l1t0 WHERE l1t0.c3))
 
 statement ok
 ROLLBACK
@@ -395,6 +395,163 @@ query I rowsort
 SELECT 1 FROM t0 NATURAL JOIN (SELECT t1.c0, (SELECT t1.c4 FROM t2, t1) FROM t1) AS sub0
 ----
 1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" DOUBLE PRECISION)
+
+statement ok
+INSERT INTO "t1" VALUES (0.5491550453086529), (0.07482309364658168), (928354548)
+
+query I rowsort
+select t1.c0 from t1 where exists (select 1) and 3 = any(values (2))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" DECIMAL(18,3) NOT NULL)
+
+query T rowsort
+SELECT t1.c2 FROM t1 LEFT OUTER JOIN (SELECT 3 = ANY((SELECT 1) INTERSECT (SELECT 2))) AS sub0 ON (VALUES (FALSE))
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" VARCHAR(32))
+
+statement ok
+INSERT INTO "t0" VALUES ('ixJiA'),(''),('~O'),('I'),('sdasd'),('%')
+
+statement ok
+CREATE TABLE "t2" ("c0" VARCHAR(32))
+
+statement ok
+INSERT INTO "t2" VALUES ('-dsdaZ'),('0.7715351394637016'),('sdsd'),('D'),('dsads')
+
+query T rowsort
+SELECT min(1) FROM t2
+----
+1
+
+query I rowsort
+SELECT 1 FROM t2 WHERE ((SELECT 1 WHERE FALSE) = ANY(SELECT 2)) IS NULL
+----
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
+----
+1
+1
+1
+1
+1
+
+query T rowsort
+SELECT MIN(agg0) FROM (
+SELECT min(1) as agg0 FROM t2 WHERE (SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')
+UNION ALL
+SELECT min(1) as agg0 FROM t2 WHERE NOT ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select ''))
+UNION ALL
+SELECT min(1) as agg0 FROM t2 WHERE ((SELECT DISTINCT t0.c0 FROM t0 WHERE FALSE) = ANY(select '')) IS NULL
+) as asdf
+----
+1
+
+statement ok
+ROLLBACK
+
+query I rowsort
+SELECT 1 WHERE (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
+----
+
+query I rowsort
+SELECT (SELECT 2 WHERE FALSE) = ALL(VALUES (2))
+----
+NULL
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" TIME)
+
+statement ok
+INSERT INTO "t1" VALUES (TIME '01:00:00'),(TIME '01:00:00'),(TIME '01:00:00'),(TIME '11:35:52'),(TIME '10:13:05'),(TIME '01:00:00'),(TIME '01:00:00'),
+(TIME '01:00:00'),(TIME '01:00:00'),(TIME '17:04:15'),(TIME '01:00:00'),(TIME '01:00:00'),(TIME '10:13:05'),(TIME '22:32:15')
+
+statement ok
+CREATE TABLE "t2" ("c0" UUID,"c2" CHAR(32),"c4" INTERVAL SECOND,"c7" UUID,"c6" INTERVAL DAY)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE EXISTS (SELECT (SELECT 1 FROM t2, t1))
+----
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+10:13:05
+10:13:05
+11:35:52
+17:04:15
+22:32:15
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT 1 FROM t2, t1) AS INT) as count FROM t1) as res
+----
+0
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(EXISTS (SELECT (SELECT 1 FROM t2, t1)) AS INT) as count FROM t1) as res
+----
+14
+
+query T rowsort
+SELECT EXISTS (SELECT (SELECT 1 WHERE FALSE))
+----
+True
+
+query T rowsort
+SELECT EXISTS (SELECT (SELECT 1 FROM t2, t1)) FROM t1
+----
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
 
 statement ok
 ROLLBACK

@@ -81,16 +81,15 @@ logbsf(float base, float x)
 
 #define unopbaseM5(NAME, FUNC, TYPE)								\
 static str															\
-MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
+MATHunary##NAME##TYPE(TYPE *res, const TYPE *a)						\
 {																	\
 	if (is_##TYPE##_nil(*a)) {										\
 		*res = TYPE##_nil;											\
 	} else {														\
-		TYPE a1 = *a, r;											\
 		int e = 0, ex = 0;											\
 		errno = 0;													\
 		feclearexcept(FE_ALL_EXCEPT);								\
-		r = FUNC(a1);												\
+		*res = FUNC(*a);											\
 		if ((e = errno) != 0 ||										\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 							   FE_OVERFLOW)) != 0) {				\
@@ -105,7 +104,6 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 				err = "Invalid result";								\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
 		}															\
-		*res = r;													\
 	}																\
 	return MAL_SUCCEED;												\
 }
@@ -121,11 +119,10 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
 		*res = TYPE##_nil;											\
 	} else {														\
-		TYPE r1, a1 = *a, b1 = *b;									\
 		int e = 0, ex = 0;											\
 		errno = 0;													\
 		feclearexcept(FE_ALL_EXCEPT);								\
-		r1 = FUNC(a1, b1);											\
+		*res = FUNC(*a, *b);										\
 		if ((e = errno) != 0 ||										\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 							   FE_OVERFLOW)) != 0) {				\
@@ -140,7 +137,6 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 				err = "Invalid result";								\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
 		}															\
-		*res = r1;													\
 	}																\
 	return MAL_SUCCEED;												\
 }

@@ -63,7 +63,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
+				gdk_code = GDKanalyticaldiff(r, b, c, NULL, b->ttype);
 			} else { /* the input is a constant, so the output is the previous sql.diff output */
 				assert(b->ttype == TYPE_bit);
 				BBPkeepref(*res = b->batCacheid);
@@ -74,13 +74,12 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
+			gdk_code = GDKanalyticaldiff(r, b, NULL, NULL, b->ttype);
 		}
 		if (gdk_code != GDK_SUCCEED)
 			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
 	} else if (pci->argc > 2 && isaBatType(getArgType(mb, pci, 2))) {
-		bit prev = *getArgReference_bit(stk, pci, 1);
-		bit *restrict cb;
+		bit *restrict prev = getArgReference_bit(stk, pci, 1);
 
 		res = getArgReference_bat(stk, pci, 0);
 		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
@@ -91,14 +90,8 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		if (!(c = COLnew(0, TYPE_bit, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		cb = (bit *) Tloc(c, 0);
-		memset(cb, prev, BATcount(b));
 
-		if (GDKanalyticaldiff(r, b, c, b->ttype) != GDK_SUCCEED)
+		if (GDKanalyticaldiff(r, b, NULL, prev, b->ttype) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);

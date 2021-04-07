@@ -33,8 +33,6 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-extern sql_exp *exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
-
 extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
 
 #endif /*_REL_REWRITER_H_*/

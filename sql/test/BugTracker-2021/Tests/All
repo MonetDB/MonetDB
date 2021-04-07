@@ -1,2 +1,3 @@
 update-from-count.Bug-7079
 HAVE_PYMONETDB?remote-table-ranges.Bug-7089
+KNOWNFAIL?query-too-complex.Bug-7092

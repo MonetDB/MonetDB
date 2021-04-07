@@ -83,10 +83,16 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	if (s == NULL && (prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
-		bn = COLnew(0, TYPE_oid, prop->v.val.oval, TRANSIENT);
-	else
-		bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
+	BUN initsize = 1024;
+	if (s == NULL) {
+		MT_rwlock_rdlock(&b->thashlock);
+		if (b->thash != NULL && b->thash != (Hash *) 1)
+			initsize = b->thash->nunique;
+		else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
+			initsize = prop->v.val.oval;
+		MT_rwlock_rdunlock(&b->thashlock);
+	}
+	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	vals = Tloc(b, 0);

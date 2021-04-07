@@ -30,9 +30,14 @@
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
-	oid o;
-	struct oidtreenode *left;
-	struct oidtreenode *right;
+	union {
+		struct {	/* use as a binary tree */
+			oid o;
+			struct oidtreenode *left;
+			struct oidtreenode *right;
+		};
+		uint64_t r;	/* temporary storage for random numbers */
+	};
 };
 
 static int
@@ -129,19 +134,41 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 			return NULL;
 		}
 
-		/* while we do not have enough sample OIDs yet */
-		if (lock)	/* serialize access to random state engine */
+		/* generate a list of random numbers; note we use the
+		 * "tree" array, but we use the value from each location
+		 * before it is overwritten by the use as part of the
+		 * binary tree */
+		if (lock) {
 			MT_lock_set(lock);
+			for (rescnt = 0; rescnt < n; rescnt++)
+				tree[rescnt].r = next(rse);
+			MT_lock_unset(lock);
+		} else {
+			for (rescnt = 0; rescnt < n; rescnt++)
+				tree[rescnt].r = next(rse);
+		}
+
+		/* while we do not have enough sample OIDs yet */
+		BUN rnd = 0;
 		for (rescnt = 0; rescnt < n; rescnt++) {
 			oid candoid;
 			do {
-				candoid = minoid + next(rse) % cnt;
+				if (rnd == n) {
+					/* we ran out of random numbers,
+					 * so generate more */
+					if (lock)
+						MT_lock_set(lock);
+					for (rnd = rescnt; rnd < n; rnd++)
+						tree[rnd].r = next(rse);
+					if (lock)
+						MT_lock_unset(lock);
+					rnd = rescnt;
+				}
+				candoid = minoid + tree[rnd++].r % cnt;
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
 		}
-		if (lock)
-			MT_lock_unset(lock);
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
@@ -163,11 +190,11 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 
 /* BATsample implements sampling for BATs */
 BAT *
-BATsample_with_seed(BAT *b, BUN n, unsigned seed)
+BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 {
 	random_state_engine rse;
 
-	init_random_state_engine(rse, (uint64_t) seed);
+	init_random_state_engine(rse, seed);
 
 	return do_batsample(b, n, rse, NULL);
 }

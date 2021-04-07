@@ -7,10 +7,10 @@ CREATE TABLE subtable1 (a int, b varchar(32))
 statement ok
 CREATE TABLE subtable2 (a int, b varchar(32))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable1 VALUES (NULL, 'hello')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO subtable2 VALUES (102, 'hello')
 
 statement ok
@@ -61,7 +61,7 @@ CREATE TABLE othersub1 (a int, b varchar(32))
 statement ok
 CREATE TABLE othersub2 (a int, b varchar(32))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO othersub1 VALUES (1, NULL)
 
 statement ok

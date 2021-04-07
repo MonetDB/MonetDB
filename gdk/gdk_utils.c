@@ -926,7 +926,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 			MT_lock_init(&GDKbbpLock[i].trim, name);
 			GDKbbpLock[i].free = 0;
 		}
-		if (mnstr_init(embedded) < 0) {
+		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}

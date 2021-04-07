@@ -237,8 +237,10 @@ freeMalBlk(MalBlkPtr mb)
 	GDKfree(mb->var);
 	mb->var = 0;
 
-	if (mb->history)
+	if (mb->history){
 		freeMalBlk(mb->history);
+		mb->history = NULL;
+	}
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	if (mb->help)
@@ -358,6 +360,16 @@ addtoMalBlkHistory(MalBlkPtr mb)
 				;
 			h->history = cpy;
 		}
+	}
+}
+
+void
+removeMalBlkHistory(MalBlkPtr mb)
+{
+	if(mb->history){
+		removeMalBlkHistory(mb->history);
+		freeMalBlk(mb->history);
+		mb->history = NULL;
 	}
 }
 
