@@ -142,14 +142,6 @@ add_to_merge_partitions_accumulator(backend *be, int nr)
 	return getDestVar(q);
 }
 
-int
-stmt_key(stmt *s)
-{
-	const char *nme = column_name(NULL, s);
-
-	return hash_key(nme);
-}
-
 /* #TODO make proper traversal operations */
 stmt *
 stmt_atom_string(backend *be, const char *S)
@@ -221,6 +213,44 @@ stmt_create(sql_allocator *sa, st_type type)
 		.type = type,
 	};
 	return s;
+}
+
+void
+stmt_set_nrcols(rel_bin_stmt *s)
+{
+	unsigned nrcols = 0;
+	int key = 1;
+
+	for (node *n = s->cols->h; n; n = n->next) {
+		stmt *f = n->data;
+
+		assert(f);
+		if (f->nrcols > nrcols)
+			nrcols = f->nrcols;
+		key &= f->key;
+	}
+	s->nrcols = nrcols;
+	s->key = key;
+}
+
+rel_bin_stmt *
+create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt)
+{
+	rel_bin_stmt *rs = SA_NEW(sa, rel_bin_stmt);
+
+	if (!rs)
+		return NULL;
+	*rs = (rel_bin_stmt) {
+		.cols = cols,
+		.cand = cand,
+		.grp = grp,
+		.ext = ext,
+		.cnt = cnt,
+		.nrcols = 0
+	};
+
+	stmt_set_nrcols(rs);
+	return rs;
 }
 
 stmt *
@@ -297,12 +327,6 @@ stmt_unique(backend *be, stmt *s)
 		return ns;
 	}
 	return NULL;
-}
-
-stmt *
-stmt_none(backend *be)
-{
-	return stmt_create(be->mvc->sa, st_none);
 }
 
 static int
@@ -476,25 +500,15 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 }
 
 stmt *
-stmt_table(backend *be, stmt *cols, int temp)
+stmt_table(backend *be, rel_bin_stmt *relst, int temp)
 {
 	stmt *s = stmt_create(be->mvc->sa, st_table);
-	MalBlkPtr mb = be->mb;
 
-	if (s == NULL || cols->nr < 0)
+	if (s == NULL)
 		return NULL;
-
-	if (cols->type != st_list) {
-	    InstrPtr q = newAssignment(mb);
-		q = newStmt(mb, sqlRef, printRef);
-		q = pushStr(mb, q, "not a valid output list\n");
-		if (q == NULL)
-			return NULL;
-	}
-	s->op1 = cols;
+	s->op4.relstval = relst;
 	s->flag = temp;
-	s->nr = cols->nr;
-	s->nrcols = cols->nrcols;
+	s->nrcols = relst->nrcols;
 	return s;
 }
 
@@ -1323,7 +1337,7 @@ stmt_atom(backend *be, atom *a)
 }
 
 stmt *
-stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti)
+stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *cand, int anti)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1362,8 +1376,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
+		if (cand)
+			q = pushArgument(mb, q, cand->nr);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
@@ -1388,8 +1402,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* candidate lists */
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
+		if (cand)
+			q = pushArgument(mb, q, cand->nr);
 		else
 			q = pushNil(mb, q, TYPE_bat);
 
@@ -1411,13 +1425,13 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 
 		s->op1 = lops;
 		s->op2 = rops;
-		s->op3 = sub;
+		s->op3 = cand;
 		s->key = lops->nrcols == 0 && rops->nrcols == 0;
 		s->flag = cmp_filter;
 		s->nrcols = lops->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = sub;
+		s->cand = cand;
 		return s;
 	}
 	return NULL;
@@ -2484,44 +2498,33 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	return ret;
 }
 
-
 stmt *
-stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file)
+stmt_export(backend *be, rel_bin_stmt *st, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int fnr;
-	list *l;
+	list *l = st->cols;
 
-	if (t->nr < 0)
-		return NULL;
-	l = t->op4.lval;
 	if (file) {
 		if (file->nr < 0)
 			return NULL;
 		fnr = file->nr;
-        } else {
+	} else {
 		q = newAssignment(mb);
 		q = pushStr(mb,q,"stdout");
 		fnr = getArg(q,0);
 	}
-	if (t->type == st_list) {
-		if (dump_export_header(be->mvc, mb, l, fnr, "csv", sep, rsep, ssep, null_string, onclient) < 0)
-			return NULL;
-	} else {
-		q = newStmt(mb, sqlRef, raiseRef);
-		q = pushStr(mb, q, "not a valid output list\n");
-		if (q == NULL)
-			return NULL;
-	}
+	if (dump_export_header(be->mvc, mb, l, fnr, "csv", sep, rsep, ssep, null_string, onclient) < 0)
+		return NULL;
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_export);
 		if(!s) {
 			freeInstruction(q);
 			return NULL;
 		}
-		s->op1 = t;
 		s->op2 = file;
+		s->op4.relstval = st;
 		s->q = q;
 		s->nr = 1;
 		return s;
@@ -2576,14 +2579,10 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 }
 
 stmt *
-stmt_catalog(backend *be, int type, stmt *args)
+stmt_catalog(backend *be, int type, list *args)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	node *n;
-
-	if (args->nr < 0)
-		return NULL;
 
 	/* cast them into properly named operations */
 	const char *ref;
@@ -2631,9 +2630,9 @@ stmt_catalog(backend *be, int type, stmt *args)
 		TRC_ERROR(SQL_EXECUTION, "Unknown catalog operation\n");
 		return NULL;
 	}
-	q = newStmtArgs(mb, sqlcatalogRef, ref, list_length(args->op4.lval) + 1);
+	q = newStmtArgs(mb, sqlcatalogRef, ref, list_length(args) + 1);
 	// pass all arguments as before
-	for (n = args->op4.lval->h; n; n = n->next) {
+	for (node *n = args->h; n; n = n->next) {
 		stmt *c = n->data;
 
 		q = pushArgument(mb, q, c->nr);
@@ -2644,7 +2643,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 			freeInstruction(q);
 			return NULL;
 		}
-		s->op1 = args;
+		s->op4.lval = args;
 		s->flag = type;
 		s->q = q;
 		s->nr = getDestVar(q);
@@ -2653,16 +2652,17 @@ stmt_catalog(backend *be, int type, stmt *args)
 	return NULL;
 }
 
-void
-stmt_set_nrcols(stmt *s)
+stmt *
+stmt_list(backend *be, list *l)
 {
 	unsigned nrcols = 0;
 	int key = 1;
-	node *n;
-	list *l = s->op4.lval;
+	stmt *s = stmt_create(be->mvc->sa, st_list);
 
-	assert(s->type == st_list);
-	for (n = l->h; n; n = n->next) {
+	if (!s)
+		return NULL;
+
+	for (node *n = l->h; n; n = n->next) { /* set nr cols */
 		stmt *f = n->data;
 
 		if (!f)
@@ -2674,22 +2674,12 @@ stmt_set_nrcols(stmt *s)
 	}
 	s->nrcols = nrcols;
 	s->key = key;
-}
-
-stmt *
-stmt_list(backend *be, list *l)
-{
-	stmt *s = stmt_create(be->mvc->sa, st_list);
-	if(!s) {
-		return NULL;
-	}
 	s->op4.lval = l;
-	stmt_set_nrcols(s);
 	return s;
 }
 
 static InstrPtr
-dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
+dump_header(mvc *sql, MalBlkPtr mb, list *l)
 {
 	node *n;
 	bool error = false;
@@ -2713,8 +2703,6 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	meta(scalePtr, scaleId, TYPE_int, args);
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return NULL;
-
-	(void) s;
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
@@ -2752,19 +2740,15 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	return list;
 }
 
-stmt *
-stmt_output(backend *be, stmt *lst)
+int
+stmt_output(backend *be, rel_bin_stmt *st)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	list *l = lst->op4.lval;
-
+	list *l = st->cols;
 	int cnt = list_length(l), ok = 0;
-	stmt *first;
-	node *n;
-
-	n = l->h;
-	first = n->data;
+	node *n = l->h;
+	stmt *first = n->data;
 
 	/* single value result, has a fast exit */
 	if (cnt == 1 && first->nrcols <= 0 ){
@@ -2781,10 +2765,10 @@ stmt_output(backend *be, stmt *lst)
 		size_t fqtnl;
 		char *fqtn = NULL;
 
-		if(ntn && nsn) {
+		if (ntn && nsn) {
 			fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
 			fqtn = SA_NEW_ARRAY(be->mvc->ta, char, fqtnl);
-			if(fqtn) {
+			if (fqtn) {
 				ok = 1;
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2802,56 +2786,34 @@ stmt_output(backend *be, stmt *lst)
 			}
 		}
 		sa_reset(be->mvc->ta);
-		if(!ok)
-			return NULL;
+		if (!ok)
+			return -1;
 	} else {
-		if ((q = dump_header(be->mvc, mb, lst, l)) == NULL)
-			return NULL;
+		if ((q = dump_header(be->mvc, mb, l)) == NULL)
+			return -1;
 	}
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_output);
-		if (s == NULL) {
-			freeInstruction(q);
-			return NULL;
-		}
-
-		s->op1 = lst;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
+	return 0;
 }
 
-stmt *
-stmt_affected_rows(backend *be, stmt *l)
+int
+stmt_affected_rows(backend *be, rel_bin_stmt *st)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	stmt *last = st->cols->t->data;
 
-	if (l->nr < 0)
-		return NULL;
+	if (last->nr < 0)
+		return -1;
 	q = newStmt(mb, sqlRef, affectedRowsRef);
 	q = pushArgument(mb, q, be->mvc_var);
 	if (q == NULL)
-		return NULL;
+		return -1;
 	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
-	q = pushArgument(mb, q, l->nr);
+	q = pushArgument(mb, q, last->nr);
 	if (q == NULL)
-		return NULL;
+		return -1;
 	be->mvc_var = getDestVar(q);
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_affected_rows);
-		if(!s) {
-			freeInstruction(q);
-			return NULL;
-		}
-		s->op1 = l;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
+	return 0;
 }
 
 stmt *
@@ -4100,9 +4062,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 		return NULL;
 	q->barrier= RETURNsymbol;
 	if (val->type == st_table) {
-		list *l = val->op1->op4.lval;
-
-		q = dump_cols(mb, l, q);
+		q = dump_cols(mb, val->op4.relstval->cols, q);
 	} else {
 		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
 		q = pushArgument(mb, q, val->nr);
@@ -4230,9 +4190,9 @@ stmt_fetch(backend *be, stmt *val)
 		return NULL;
 	/* pick from first column on a table case */
 	if (val->type == st_table) {
-		if (list_length(val->op1->op4.lval) > 1)
+		if (list_length(val->op4.relstval->cols) > 1)
 			return NULL;
-		val = val->op1->op4.lval->h->data;
+		val = val->op4.relstval->cols->h->data;
 	}
 	ct = tail_type(val);
 	tt = ct->type->localtype;

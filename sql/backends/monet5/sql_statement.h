@@ -16,10 +16,22 @@
 #include "sql_mvc.h"
 #include "mal_backend.h"
 
+typedef struct rel_bin_stmt {
+	list *cols;
+	struct stmt *cand, 	/* optional candidate list */
+		 *grp,
+		 *ext,
+		 *cnt;
+	unsigned int
+	 nrcols:2,
+	 key:1;
+} rel_bin_stmt;
+
 typedef union stmtdata {
 	struct atom *aval;
 	struct list *lval;
 	struct stmt *stval;
+	struct rel_bin_stmt *relstval;
 
 	struct sql_column *cval;
 	struct sql_idx *idxval;
@@ -31,7 +43,6 @@ typedef union stmtdata {
 } stmtdata;
 
 typedef enum stmt_type {
-	st_none,
 	st_var,			/* use and/or declare variable */
 
 	st_table,		/* some functions return a table */
@@ -51,9 +62,6 @@ typedef enum stmt_type {
 	st_sample,
 	st_order,
 	st_reorder,
-
-	st_output,
-	st_affected_rows,
 
 	st_atom,
 	st_uselect,
@@ -116,7 +124,7 @@ typedef struct stmt {
 
 	unsigned int
 	 nrcols:2,
-	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
+	 key:1,			/* key (aka all values are unique) */
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
 	 reduce:1;		/* used to reduce number of rows (also for joins) */
@@ -140,17 +148,14 @@ typedef struct stmt {
 extern void create_merge_partitions_accumulator(backend *be);
 extern int add_to_merge_partitions_accumulator(backend *be, int nr);
 
-extern int stmt_key(stmt *s);
+extern void stmt_set_nrcols(rel_bin_stmt *s);
+extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt);
 
-extern stmt *stmt_none(backend *be);
-
-//#define VAR_DECLARE 1
-#define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
-extern stmt *stmt_table(backend *be, stmt *cols, int temp);
+extern stmt *stmt_table(backend *be, rel_bin_stmt *cols, int temp);
 extern stmt *stmt_rs_column(backend *be, stmt *result_set, int i, sql_subtype *tpe);
 
 extern stmt *stmt_bat(backend *be, sql_column *c, int access, int partition);
@@ -169,9 +174,9 @@ extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
-extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
+extern stmt *stmt_export(backend *be, rel_bin_stmt *st, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
-extern stmt *stmt_catalog(backend *be, int type, stmt *args);
+extern stmt *stmt_catalog(backend *be, int type, list *args);
 
 extern stmt *stmt_temp(backend *be, sql_subtype *t);
 extern stmt *stmt_atom(backend *be, atom *a);
@@ -190,7 +195,7 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        3 ==   l <= x <= h
        */
 extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce);
-extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
+extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *cand, int anti);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
@@ -209,7 +214,6 @@ extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 
 extern stmt *stmt_list(backend *be, list *l);
-extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
 extern stmt *stmt_unique(backend *be, stmt *op1);
@@ -244,8 +248,8 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
-extern stmt *stmt_output(backend *be, stmt *l);
-extern stmt *stmt_affected_rows(backend *be, stmt *l);
+extern int stmt_output(backend *be, rel_bin_stmt *l);
+extern int stmt_affected_rows(backend *be, rel_bin_stmt *l);
 
 /* flow control statements */
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);

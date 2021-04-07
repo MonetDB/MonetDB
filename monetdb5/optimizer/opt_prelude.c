@@ -235,7 +235,6 @@ const char *pyapi3mapRef;
 const char *pyapi3Ref;
 const char *querylogRef;
 const char *queryRef;
-const char *raiseRef;
 const char *rangejoinRef;
 const char *rankRef;
 const char *rapiRef;
@@ -545,7 +544,6 @@ void optimizerInit(void)
 	pyapi3Ref = putName("pyapi3");
 	querylogRef = putName("querylog");
 	queryRef = putName("query");
-	raiseRef = putName("raise");
 	rangejoinRef = putName("rangejoin");
 	rankRef = putName("rank");
 	rapiRef = putName("rapi");

@@ -234,7 +234,6 @@ mal_export  const char *pyapi3mapRef;
 mal_export  const char *pyapi3Ref;
 mal_export  const char *querylogRef;
 mal_export  const char *queryRef;
-mal_export  const char *raiseRef;
 mal_export  const char *rangejoinRef;
 mal_export  const char *rankRef;
 mal_export  const char *rapiRef;
