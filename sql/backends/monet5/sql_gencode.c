@@ -697,7 +697,7 @@ monet5_create_relational_function(mvc *m, const char *mod, const char *name, sql
  * by using the SQLstatment.
  */
 static rel_bin_stmt *
-sql_relation2stmt(backend *be, sql_rel *r)
+sql_relation2stmt(backend *be, sql_rel *r, int top)
 {
 	mvc *c = be->mvc;
 	rel_bin_stmt *s = NULL;
@@ -709,7 +709,7 @@ sql_relation2stmt(backend *be, sql_rel *r)
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
 		} else {
-			s = output_rel_bin(be, r);
+			s = output_rel_bin(be, r, top);
 		}
 	}
 	return s;
@@ -760,7 +760,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	}
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
-	if (!sql_relation2stmt(be, r)) {
+	if (!sql_relation2stmt(be, r, top)) {
 		if (querylog)
 			(void) pushInt(mb, querylog, mb->stop);
 		return (be->mvc->errstr[0] == '\0') ? 0 : -1;
@@ -860,7 +860,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		}
 	}
 
-	if ((res = backend_dumpstmt(be, mb, r, 1, 1, be->q ? be->q->f->query : NULL)) < 0)
+	if ((res = backend_dumpstmt(be, mb, r, m->emode == m_prepare, 1, be->q ? be->q->f->query : NULL)) < 0)
 		goto cleanup;
 
 	if (cq) {
