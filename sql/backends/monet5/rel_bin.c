@@ -393,7 +393,8 @@ subrel_project( backend *be, rel_bin_stmt *s, list *refs, sql_rel *rel)
 		}
 		append(l, c);
 	}
-	s->cols = l;
+	s = create_rel_bin_stmt(be->mvc->sa, l, NULL, NULL, NULL, NULL);
+	//s->cols = l;
 	stmt_set_nrcols(s);
 	if (rel && rel_is_ref(rel))
 		refs_update_stmt(refs, rel, s);
@@ -1147,7 +1148,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
-				if (r->type == st_table && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
+				if (r->type == st_table && lst && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
 					list *l = sa_list(sql->sa);
 
 					for (node *n=lst->op4.relstval->cols->h; n; n = n->next)
@@ -1317,12 +1318,12 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			for (en = attr->h; en; en = en->next) {
 				sql_exp *at = en->data;
 
-				as = exp_bin(be, at, left, right, depth+1, 0, push);
+				as = exp_bin(be, at, left, /*right*/NULL, depth+1, 0, push);
 
 				if (as && as->nrcols <= 0 && left)
 					as = stmt_const(be, bin_find_smallest_column(be, left), as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
-					as = exp_count_no_nil_arg(e, left ? left->ext : NULL, at, as);
+					as = exp_count_no_nil_arg(e, right ? right->ext : NULL, at, as);
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
@@ -1331,11 +1332,11 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					return NULL;
 				append(l, as);
 			}
-			if (need_distinct(e) && ((left && left->grp) || list_length(l) > 1)){
+			if (need_distinct(e) && ((right && right->grp) || list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
-				stmt *ngrp = left ? left->grp : NULL;
-				stmt *next = left ? left->ext : NULL;
-				stmt *ncnt = left ? left->cnt : NULL;
+				stmt *ngrp = right ? right->grp : NULL;
+				stmt *next = right ? right->ext : NULL;
+				stmt *ncnt = right ? right->cnt : NULL;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
 					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
@@ -1347,8 +1348,10 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					stmt *as = en->data;
 					append(nl, stmt_project(be, next, as));
 				}
-				if (left && left->grp)
-					left->grp = stmt_project(be, next, left->grp);
+				/*
+				if (right && right->grp)
+					right->grp = stmt_project(be, next, right->grp);
+					*/
 				l = nl;
 			} else if (need_distinct(e)) {
 				stmt *a = l->h->data;
@@ -1360,18 +1363,21 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		} else {
 			/* count(*) may need the default group (relation) and
 			   and/or an attribute to count */
-			if (left && left->grp) {
-				as = left->grp;
-			} else if (left) {
+			if (right && right->grp) {
+				as = right->grp;
+			} else if (right) {
 				as = bin_find_smallest_column(be, left);
-				as = exp_count_no_nil_arg(e, left->ext, NULL, as);
+				as = exp_count_no_nil_arg(e, right->ext, NULL, as);
 			} else {
 				/* create dummy single value in a column */
 				as = stmt_atom_lng(be, 0);
 				as = const_column(be, as);
 			}
 		}
-		s = stmt_aggr(be, as, left ? left->grp : NULL, left ? left->ext : NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+		if (right)
+			s = stmt_aggr(be, as, right->grp, right->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+		else
+			s = stmt_aggr(be, as, NULL, NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
 	} 	break;
@@ -1380,8 +1386,8 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			s = bin_find_column(be, right, e->l, e->r);
 		if (!s && left)
 			s = bin_find_column(be, left, e->l, e->r);
-		if (s && left && left->grp)
-			s = stmt_project(be, left->ext, s);
+		if (s && right && right->grp)
+			s = stmt_project(be, right->ext, s);
 		if (!s && right) {
 			TRC_CRITICAL(SQL_EXECUTION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
@@ -2495,7 +2501,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	stmt *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL;
 	int need_left = (rel->flag == LEFT_JOIN);
 
-	assert(rel->l && rel->r); 
+	assert(rel->l && rel->r);
 	left = subrel_bin(be, rel->l, refs); /* first construct the left sub relation */
 	right = subrel_bin(be, rel->r, refs); /* first construct the right sub relation */
 	left = subrel_project(be, left, refs, rel->l);
@@ -2712,7 +2718,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	rel_bin_stmt *left = NULL, *right = NULL;
 	stmt *join = NULL;
 
-	assert(rel->l && rel->r); 
+	assert(rel->l && rel->r);
 	left = subrel_bin(be, rel->l, refs); /* first construct the left sub relation */
 	right = subrel_bin(be, rel->r, refs); /* first construct the right sub relation */
 	left = subrel_project(be, left, refs, rel->l);
@@ -3095,7 +3101,7 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	node *n, *m;
 	rel_bin_stmt *left = NULL, *right = NULL, *sub;
 
-	assert(rel->l && rel->r); 
+	assert(rel->l && rel->r);
 	left = subrel_bin(be, rel->l, refs); /* first construct the left sub relation */
 	right = subrel_bin(be, rel->r, refs); /* first construct the right sub relation */
 	left = subrel_project(be, left, refs, rel->l);
@@ -3144,7 +3150,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
-	assert(rel->l && rel->r); 
+	assert(rel->l && rel->r);
 	left = subrel_bin(be, rel->l, refs); /* first construct the left sub relation */
 	right = subrel_bin(be, rel->r, refs); /* first construct the right sub relation */
 	if (!left || !right)
@@ -3255,7 +3261,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
-	assert(rel->l && rel->r); 
+	assert(rel->l && rel->r);
 	left = subrel_bin(be, rel->l, refs); /* first construct the left sub relation */
 	right = subrel_bin(be, rel->r, refs); /* first construct the right sub relation */
 	left = subrel_project(be, left, refs, rel->l);
@@ -3679,8 +3685,10 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		oldvtop = be->mb->vtop;
 		oldstop = be->mb->stop;
 		oldvid = be->mb->vid;
+		/*
 		if (!aggrstmt)
 			aggrstmt = exp_bin(be, aggrexp, sub, NULL, 0, 0, 0);
+			*/
 		/* maybe the aggr uses intermediate results of this group by,
 		   therefore we pass the group by columns too
 		 */
@@ -3700,6 +3708,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
+	/* for now don't pass grouping info */
+	cursub->grp = NULL;
+	cursub->ext = NULL;
 	return cursub;
 }
 
