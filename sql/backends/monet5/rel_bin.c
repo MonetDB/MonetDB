@@ -3603,9 +3603,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			sel = s;
 		}
 	}
-
-	sub->cand = sel;
-	return sub;
+	return create_rel_bin_stmt(sql->sa, sub->cols, sel, NULL, NULL, NULL);
 }
 
 static rel_bin_stmt *
