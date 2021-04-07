@@ -398,40 +398,50 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					else
 						res = LOG_ERR;
 				} else {
-					for (lng i = 0; i < nr; i += 32) {
-						int v;
-						switch (mnstr_readInt(lg->input_log, &v)) {
-						case 1:
-							continue;
-						case 0:
-							res = LOG_EOF;
-							break;
-						default:
+					size_t tlen = lg->bufsize/sizeof(int);
+					size_t cnt = 0, snr = (size_t)nr;
+					snr = (snr+31)/32;
+					assert(tlen);
+					for (; res == LOG_OK && snr > 0; snr-=cnt) {
+						cnt = snr>tlen?tlen:snr;
+						if (!mnstr_readIntArray(lg->input_log, lg->buf, cnt))
 							res = LOG_ERR;
-							break;
-						}
-						break;
 					}
 				}
 			} else {
-				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->bufsize;
-					void *t = rt(lg->buf, &tlen, lg->input_log, 1);
+				if (!ATOMvarsized(tpe)) {
+					size_t cnt = 0, snr = (size_t)nr;
+					size_t tlen = lg->bufsize/ATOMsize(tpe), ntlen = lg->bufsize;
+					assert(tlen);
+					/* read in chunks of max
+					 * BUFSIZE/width rows */
+					for (; res == LOG_OK && snr > 0; snr-=cnt) {
+						cnt = snr>tlen?tlen:snr;
+						void *t = rt(lg->buf, &ntlen, lg->input_log, cnt);
+						assert(t == lg->buf);
+						if (r && BUNappendmulti(r, t, cnt, true) != GDK_SUCCEED)
+							res = LOG_ERR;
+					}
+				} else {
+					for (; res == LOG_OK && nr > 0; nr--) {
+						size_t tlen = lg->bufsize;
+						void *t = rt(lg->buf, &tlen, lg->input_log, 1);
 
-					if (t == NULL) {
-						/* see if failure was due to
-						 * malloc or something less
-						 * serious (in the current
-						 * context) */
-						if (strstr(GDKerrbuf, "alloc") == NULL)
-							res = LOG_EOF;
-						else
-							res = LOG_ERR;
-					} else {
-						lg->buf = t;
-						lg->bufsize = tlen;
-						if (r && BUNappend(r, t, true) != GDK_SUCCEED)
-							res = LOG_ERR;
+						if (t == NULL) {
+							/* see if failure was due to
+							* malloc or something less
+							* serious (in the current
+							* context) */
+							if (strstr(GDKerrbuf, "alloc") == NULL)
+								res = LOG_EOF;
+							else
+								res = LOG_ERR;
+						} else {
+							lg->buf = t;
+							lg->bufsize = tlen;
+							if (r && BUNappend(r, t, true) != GDK_SUCCEED)
+								res = LOG_ERR;
+						}
 					}
 				}
 			}

@@ -66,7 +66,7 @@ get_buffer(inner_state_t *inner_state)
 	return (pump_buffer) { .start = inner_state->buffer, .count = BUFFER_SIZE };
 }
 
-static void
+inline static void
 put_byte(inner_state_t *ist, char byte)
 {
 	*ist->dst_win.start++ = byte;
@@ -74,7 +74,7 @@ put_byte(inner_state_t *ist, char byte)
 	ist->dst_win.count--;
 }
 
-static char
+inline static char
 take_byte(inner_state_t *ist)
 {
 	ist->src_win.count--;
