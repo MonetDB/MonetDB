@@ -696,11 +696,11 @@ monet5_create_relational_function(mvc *m, const char *mod, const char *name, sql
  * They have to be initialized, which is currently hacked
  * by using the SQLstatment.
  */
-static stmt *
+static rel_bin_stmt *
 sql_relation2stmt(backend *be, sql_rel *r)
 {
 	mvc *c = be->mvc;
-	stmt *s = NULL;
+	rel_bin_stmt *s = NULL;
 
 	if (!r) {
 		sql_error(c, 003, SQLSTATE(42000) "Missing relation to convert into statements");
@@ -722,7 +722,6 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	InstrPtr q, querylog = NULL;
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
-	stmt *s;
 
 	/* Always keep the SQL query around for monitoring */
 	if (query) {
@@ -761,8 +760,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	}
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
-	s = sql_relation2stmt(be, r);
-	if (!s) {
+	if (!sql_relation2stmt(be, r)) {
 		if (querylog)
 			(void) pushInt(mb, querylog, mb->stop);
 		return (be->mvc->errstr[0] == '\0') ? 0 : -1;

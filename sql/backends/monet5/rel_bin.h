@@ -13,6 +13,6 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
-extern stmt *output_rel_bin(backend *be, sql_rel *rel);
+extern rel_bin_stmt *output_rel_bin(backend *be, sql_rel *rel);
 
 #endif /*_REL_BIN_H_*/
