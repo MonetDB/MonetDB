@@ -13,8 +13,8 @@ select cast('17:44:59.123456' as time);
 select cast('2020-07-29 17:44:59' as timestamp);
 select cast('2020-07-29T17:44:59' as timestamp);
 select cast('2020-07-29 17:44:59.123456' as timestamp);
-select cast('17:44:59.321+01:30' as timetz);
-select cast('2020-07-29 17:44:59.321+01:30' as timestamptz);	-- produces wrong TZ +1:00 instead of +1:30
+--select cast('17:44:59.321+01:30' as timetz);	-- produces wrong TZ +1:00 instead of +1:30 also it changes to +02:00 when summertime starts so no stable output
+--select cast('2020-07-29 17:44:59.321+01:30' as timestamptz);	-- produces wrong TZ +1:00 instead of +1:30 also it changes to +02:00 when summertime starts so no stable output
 select cast('1234' as interval month);
 select cast('86400.123' as interval second);
 
