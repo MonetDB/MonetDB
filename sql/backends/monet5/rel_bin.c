@@ -1147,16 +1147,17 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				return NULL;
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
-				stmt *lst = r->op1;
+				rel_bin_stmt *lst = r->op4.relstval;
+
 				if (r->type == st_table && lst && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
 					list *l = sa_list(sql->sa);
 
-					for (node *n=lst->op4.relstval->cols->h; n; n = n->next)
+					for (node *n=lst->cols->h; n; n = n->next)
 						list_append(l, const_column(be, (stmt*)n->data));
 					r = stmt_list(be, l);
 				} else if (r->type == st_table && e->card == CARD_ATOM) { /* fetch value */
 					sql_rel *ll = (sql_rel*) l->l;
-					r = lst->op4.relstval->cols->h->data;
+					r = lst->cols->h->data;
 					if (!r->aggr && lastexp(ll)->card > CARD_ATOM) /* if the cardinality is atom, no fetch call needed */
 						r = stmt_fetch(be, r);
 				}
