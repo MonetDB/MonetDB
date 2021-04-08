@@ -3476,7 +3476,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 
 	if (op1->nr < 0)
 		return NULL;
-	if (backend_create_subaggr(be, op) < 0)
+	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = op->func->mod;
 	aggrfunc = op->func->imp;
