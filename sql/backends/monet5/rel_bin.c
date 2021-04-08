@@ -3716,7 +3716,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	for( n = rel->exps->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
-		int oldvtop, oldstop, oldvid;
 
 		/* first look in the current aggr list (l) and group by column list */
 		if (l && !aggrstmt && aggrexp->type == e_column)
@@ -3730,16 +3729,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 		}
 
-		oldvtop = be->mb->vtop;
-		oldstop = be->mb->stop;
-		oldvid = be->mb->vid;
-		/* maybe the aggr uses intermediate results of this group by,
-		   therefore we pass the group by columns too
-		 */
-		if (!aggrstmt) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+		/* maybe the aggr uses intermediate results of this group by, therefore we pass the group by columns too */
+		if (!aggrstmt)
 			aggrstmt = exp_bin(be, aggrexp, sub, cursub, 0, 0, 0);
-		}
 		if (!aggrstmt) {
 			assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 			return NULL;
