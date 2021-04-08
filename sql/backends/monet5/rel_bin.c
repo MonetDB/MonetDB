@@ -4273,14 +4273,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
-	if (ddl) {
-		ret = (stmt*) ddl;
-	} else if (!be->silent) {
+	if (!ddl && !be->silent) {
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
 
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), ret), NULL, NULL, NULL, NULL);
+	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL, NULL, NULL, NULL);
 }
 
 static int
@@ -5137,7 +5135,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	rel_bin_stmt *update = NULL, *ddl = NULL, *pup = NULL;
-	stmt **updates = NULL, *tids, *ret;
+	stmt **updates = NULL, *tids;
 	int nr_cols, updcol, idx_ups = 0;
 	node *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -5240,15 +5238,13 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	sql->cascade_action = NULL;
 
-	if (ddl) {
-		ret = (stmt*) ddl;
-	} else if (!be->silent) {
-		ret = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+	if (!ddl && !be->silent) {
+		stmt *ret = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
 
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), ret), NULL, NULL, NULL, NULL);
+	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL, NULL, NULL, NULL);
 }
 
 static int
@@ -5484,7 +5480,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
 	}
 
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stdelete), NULL, NULL, NULL, NULL);
+	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL, NULL, NULL, NULL);
 }
 
 struct tablelist {
@@ -5701,7 +5697,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	if (!truncate)
 		return NULL;
 
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), truncate), NULL, NULL, NULL, NULL);
+	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL, NULL, NULL, NULL);
 }
 
 static rel_bin_stmt *
