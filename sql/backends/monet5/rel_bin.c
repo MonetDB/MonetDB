@@ -39,6 +39,19 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	freeVariables(be->client, be->mb, NULL, oldvtop, oldvid);
 }
 
+static int
+add_to_rowcount_accumulator(backend *be, int nr)
+{
+	int prev = be->rowcount;
+	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+
+	getArg(q, 0) = be->rowcount = newTmpVariable(be->mb, TYPE_lng);
+	q = pushArgument(be->mb, q, prev);
+	q = pushArgument(be->mb, q, nr);
+
+	return getDestVar(q);
+}
+
 static stmt *
 stmt_selectnil( backend *be, stmt *col)
 {
@@ -4191,8 +4204,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint && !be->first_statement_generated)
-		sql_insert_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, inserts->cols);
+	if (constraint && !be->rowcount)
+		sql_insert_check_null(be, t, inserts->cols);
 
 	updates = table_update_stmts(sql, t, &len);
 	for (n = ol_first_node(t->columns), m = inserts->cols->h; n && m; n = n->next, m = m->next) {
@@ -4205,13 +4218,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(be, t, updates, 0))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
-	insert = inserts->cols->h->data;
-	if (insert->nrcols == 0) {
+	ret = inserts->cols->h->data;
+	if (ret->nrcols == 0) {
 		ret = stmt_atom_lng(be, 1);
 	} else {
-		ret = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		ret = stmt_aggr(be, ret, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	}
-	insert = NULL;
 
 	if (t->idxs) {
 		idx_m = m;
@@ -4263,9 +4275,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
 		ret = (stmt*) ddl;
-	} else {
-		if (be->cur_append) /* building the total number of rows affected across all tables */
-			ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
+	} else if (!be->silent) {
+		/* if there are multiple update statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
 
 	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), ret), NULL, NULL, NULL, NULL);
@@ -5087,8 +5099,8 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	int i, nr_cols = ol_length(t->columns);
 	node *n;
 
-	if (!be->first_statement_generated)
-		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
+	if (!be->rowcount)
+		sql_update_check_null(be, /*(be->rowcount && t->p) ? t->p :*/ t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, NULL);
@@ -5172,8 +5184,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	if (!be->first_statement_generated)
-		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
+	if (!be->rowcount)
+		sql_update_check_null(be, /*(be->rowcount && t->p) ? t->p :*/ t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, ol_length(t->columns));
@@ -5230,10 +5242,10 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	if (ddl) {
 		ret = (stmt*) ddl;
-	} else {
+	} else if (!be->silent) {
 		ret = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-		if (be->cur_append) /* building the total number of rows affected across all tables */
-			ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
+		/* if there are multiple update statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
 
 	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), ret), NULL, NULL, NULL, NULL);
@@ -5430,6 +5442,8 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 	if (rows) {
 		s = stmt_delete(be, t, rows);
+		if (!be->silent)
+			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else { /* delete all */
 		s = stmt_table_clear(be, t); /* first column */
 	}
@@ -5444,7 +5458,6 @@ static rel_bin_stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	rel_bin_stmt *rows = NULL;
 	stmt *stdelete = NULL, *tids = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
@@ -5455,7 +5468,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(0/*ddl statement*/);
 
 	if (rel->r) { /* first construct the deletes relation */
-		rows = subrel_bin(be, rel->r, refs);
+		rel_bin_stmt *rows = subrel_bin(be, rel->r, refs);
 		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
 			return NULL;
@@ -5466,10 +5479,10 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	if (!stdelete)
 		return NULL;
 
-	if (rows)
-		stdelete = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-	if (be->cur_append) /* building the total number of rows affected across all tables */
-		stdelete->nr = add_to_merge_partitions_accumulator(be, stdelete->nr);
+	if (!be->silent) {
+		/* if there are multiple update statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
+	}
 
 	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stdelete), NULL, NULL, NULL, NULL);
 }
@@ -5648,8 +5661,10 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if (be->cur_append) /* building the total number of rows affected across all tables */
-			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
+		if (!be->silent) {
+			/* if there are multiple update statements, update total count, otherwise use the the current count */
+			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
+		}
 	}
 
 finalize:
@@ -6208,13 +6223,8 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	rel_bin_stmt *s;
 
 	be->join_idx = 0;
-	be->cur_append = 0;
-	be->first_statement_generated = false;
-	if (refs == NULL)
-		return NULL;
-
-	if (!GDKembedded()&& top && find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
-		create_merge_partitions_accumulator(be);
+	be->rowcount = 0;
+	be->silent = GDKembedded() || !top;
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
@@ -6223,17 +6233,12 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
-	if (!GDKembedded()) {
+	if (!be->silent) { /* don't generate outputs when we are silent */
 		if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
 			return NULL;
-		} else if (top && (!is_ddl(rel->op) || find_prop(rel->p, PROP_DISTRIBUTE)) && sqltype == Q_UPDATE) {
+		} else if (be->rowcount > 0 && sqltype == Q_UPDATE && stmt_affected_rows(be, be->rowcount) < 0) {
 			/* only call stmt_affected_rows outside functions and ddl, however if PROP_DISTRIBUTE is found it might be called. eg. merge statements */
-			if (be->cur_append) { /* finish the output bat */
-				stmt *last = s->cols->t->data;
-				last->nr = be->cur_append;
-			}
-			if (stmt_affected_rows(be, s) < 0)
-				return NULL;
+			return NULL;
 		}
 	}
 	return s;

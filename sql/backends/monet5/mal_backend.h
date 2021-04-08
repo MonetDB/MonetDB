@@ -30,10 +30,6 @@ typedef enum output_format {
 	OFMT_NONE = 3
 } ofmt;
 
-/* The cur_append variable on an insert/update/delete on a partitioned table, tracks the current MAL variable holding
- * the total number of rows affected. The first_statement_generated looks if the first of the sub-statements was
- * generated or not */
-
 typedef struct backend {
 	char 	language;		/* 'S' or 's' or 'X' */
 	char	depth;			/* depth >= 1 means no output for trans/schema statements */
@@ -45,7 +41,7 @@ typedef struct backend {
 	MalBlkPtr mb;		/* needed during mal generation */
 
 	int 	mvc_var;	/* current variable holding the latest query context (used to create dependencies in mal statements) */
-	int 	cur_append; /* The cur_append variable on an insert/update/delete on a partitioned table, tracks the current MAL variable holding
+	int 	rowcount; /* When multiple insert/update/delete/truncate statements are sent, use an accumulator to hold all the inserted rows
  				         * the total number of rows affected. */
 	int		vtop;			/* top of the variable stack before the current function */
 	int		vid;			/* old variable id top before the current function */
@@ -53,9 +49,9 @@ typedef struct backend {
 	lng 	reloptimizer;	/* timer for optimizer phase */
 
 	bool sizeheader:1,	/* print size header in result set */
-	     	no_mitosis:1,	/* run query without mitosis */
-	     	first_statement_generated:1, /* The first_statement_generated looks if the first of the sub-statements was generated or not */
-		console:1;
+		 no_mitosis:1,	/* run query without mitosis */
+		 console:1,
+		 silent:1; /* on some occasions we don't want to output the result set or the number of affected rows */
 	cq 	*q;		/* pointer to the cached query */
 
 	int result_id;
