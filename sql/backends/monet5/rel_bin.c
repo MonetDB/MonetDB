@@ -418,11 +418,18 @@ static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_stmt *right, bool in, int use_r, int depth, int reduce)
 {
 	mvc *sql = be->mvc;
-	node *n;
-	stmt *s = NULL, *c = exp_bin(be, ce, left, right, 0, 0, 0);
+	stmt *s = NULL, *c, *lcand = NULL;
 
-	if(!c)
+	if (left) {
+		lcand = left->cand;
+		left->cand = NULL;
+	}
+	c = exp_bin(be, ce, left, right, 0, 0, 0);
+	if (!c) {
+		if (left)
+			left->cand = lcand;
 		return NULL;
+	}
 
 	if (reduce && c->nrcols == 0)
 		c = stmt_const(be, bin_find_smallest_column(be, left), c);
@@ -435,11 +442,15 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 		sql_subfunc *a = (in)?sql_bind_func(sql, "sys", "or", bt, bt, F_FUNC)
 				     :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC);
 
-		for( n = nl->h; n; n = n->next) {
+		for( node *n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
+
 			stmt *i = exp_bin(be, use_r?e->r:e, left, right, 0, 0, 0);
-			if(!i)
+			if (!i) {
+				if (left)
+					left->cand = lcand;
 				return NULL;
+			}
 
 			i = stmt_binop(be, c, i, NULL, cmp);
 			if (s)
@@ -447,23 +458,27 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 			else
 				s = i;
 		}
-		if (left && left->cand && !(depth || !reduce))
+		if (lcand && !(depth || !reduce))
 			s = stmt_uselect(be,
 				stmt_const(be, bin_find_smallest_column(be, left), s),
-				stmt_bool(be, 1), cmp_equal, left->cand, 0, 0);
+				stmt_bool(be, 1), cmp_equal, lcand, 0, 0);
 	} else if (list_length(nl) < 16) {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
 		if (!in)
-			s = left ? left->cand : NULL;
-		for( n = nl->h; n; n = n->next) {
+			s = lcand;
+		for( node *n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
+
 			stmt *i = exp_bin(be, use_r?e->r:e, left, right, 0, 0, 0);
-			if(!i)
+			if (!i) {
+				if (left)
+					left->cand = lcand;
 				return NULL;
+			}
 
 			if (in) {
-				i = stmt_uselect(be, c, i, cmp, left ? left->cand : NULL, 0, 0);
+				i = stmt_uselect(be, c, i, cmp, lcand, 0, 0);
 				if (s)
 					s = stmt_tunion(be, s, i);
 				else
@@ -481,8 +496,11 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 
 		/* The actual in-value-list should not contain duplicates to ensure that final join results are unique. */
 		s = distinct_value_list(be, nl, &last_null_value);
-		if (!s)
+		if (!s) {
+			if (left)
+				left->cand = lcand;
 			return NULL;
+		}
 
 		if (last_null_value) {
 			/* The actual in-value-list should not contain null values. */
@@ -490,7 +508,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 		}
 
 		if (in) {
-			s = stmt_semijoin(be, c, s, left ? left->cand : NULL, NULL, 0, false);
+			s = stmt_semijoin(be, c, s, lcand, NULL, 0, false);
 		} else {
 			if (last_null_value) {
 				/* CORNER CASE ALERT:
@@ -507,12 +525,14 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 				/* BACK TO HAPPY FLOW:
 				   Make sure that null values are never returned. */
 				stmt* non_nulls;
-				non_nulls = stmt_selectnonil(be, c, left ? left->cand : NULL);
+				non_nulls = stmt_selectnonil(be, c, lcand);
 				s = stmt_tdiff(be, stmt_project(be, non_nulls, c), s, NULL);
 				s = stmt_project(be, s, non_nulls);
 			}
 		}
 	}
+	if (left)
+		left->cand = lcand;
 	return s;
 }
 
@@ -521,21 +541,34 @@ value_list(backend *be, list *vals, rel_bin_stmt *left)
 {
 	sql_subtype *type = exp_subtype(vals->h->data);
 	list *l = sa_list(be->mvc->sa);
+	stmt *lcand = NULL;
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
+	if (left) {
+		lcand = left->cand;
+		left->cand = NULL;
+	}
 	/* create bat append values */
 	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, left, NULL, 0, 0, 0);
 
-		if (!i)
+		if (!i) {
+			if (left)
+				left->cand = lcand;
 			return NULL;
+		}
 
-		if (list_length(vals) == 1)
+		if (list_length(vals) == 1) {
+			if (left)
+				left->cand = lcand;
 			return i;
+		}
 		list_append(l, i);
 	}
+	if (left)
+		left->cand = lcand;
 	return stmt_append_bulk(be, stmt_temp(be, type), l);
 }
 
