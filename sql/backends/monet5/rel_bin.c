@@ -4155,9 +4155,8 @@ static rel_bin_stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	list *l = sa_list(sql->sa);
 	rel_bin_stmt *inserts = NULL, *ddl = NULL, *pin = NULL;
-	stmt *insert = NULL, **updates, *cnt = NULL, *pos = NULL;
+	stmt *insert = NULL, **updates, *ret = NULL, *pos = NULL;
 	int idx_ins = 0, constraint = 1, len = 0;
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -4208,9 +4207,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	insert = inserts->cols->h->data;
 	if (insert->nrcols == 0) {
-		cnt = stmt_atom_lng(be, 1);
+		ret = stmt_atom_lng(be, 1);
 	} else {
-		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		ret = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	}
 	insert = NULL;
 
@@ -4224,11 +4223,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 				continue;
 			if (hash_index(i->type) && list_length(i->columns) <= 1)
 				is = NULL;
-			if (i->key && constraint) {
-				stmt *ckeys = sql_insert_key(be, inserts->cols, i->key, is, pin);
-
-				list_append(l, ckeys);
-			}
+			if (i->key && constraint)
+				sql_insert_key(be, inserts->cols, i->key, is, pin);
 			if (!insert)
 				insert = is;
 			/* If the index doesn't hold delta structures, don't update the 'm' variable */
@@ -4237,7 +4233,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (t->s) /* only not declared tables, need this */
-		pos = stmt_claim(be, t, cnt);
+		pos = stmt_claim(be, t, ret);
 
 	if (t->idxs)
 	for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next) {
@@ -4259,7 +4255,6 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		sql_column *c = n->data;
 
 		insert = stmt_append_col(be, c, pos, ins, rel->flag);
-		list_append(l,insert);
 	}
 	if (!insert)
 		return NULL;
@@ -4267,14 +4262,13 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
-		list_prepend(l, ddl);
+		ret = (stmt*) ddl;
 	} else {
 		if (be->cur_append) /* building the total number of rows affected across all tables */
-			cnt->nr = add_to_merge_partitions_accumulator(be, cnt->nr);
-		list_append(l, cnt);
+			ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
 	}
 
-	return create_rel_bin_stmt(sql->sa, l, NULL, NULL, NULL, NULL);
+	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), ret), NULL, NULL, NULL, NULL);
 }
 
 static int
@@ -6214,10 +6208,12 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	rel_bin_stmt *s;
 
 	be->join_idx = 0;
+	be->cur_append = 0;
+	be->first_statement_generated = false;
 	if (refs == NULL)
 		return NULL;
 
-	if (top && find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
+	if (!GDKembedded()&& top && find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
 		create_merge_partitions_accumulator(be);
 
 	s = subrel_bin(be, rel, refs);
@@ -6227,18 +6223,18 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
-	if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
-		return NULL;
-	} else if (top && (!is_ddl(rel->op) || find_prop(rel->p, PROP_DISTRIBUTE)) && sqltype == Q_UPDATE) {
-		/* only call stmt_affected_rows outside functions and ddl, however if PROP_DISTRIBUTE is found it might be called. eg. merge statements */
-		if (be->cur_append) { /* finish the output bat */
-			stmt *last = s->cols->t->data;
-			last->nr = be->cur_append;
-			be->cur_append = 0;
-			be->first_statement_generated = false;
-		}
-		if (stmt_affected_rows(be, s) < 0)
+	if (!GDKembedded()) {
+		if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
 			return NULL;
+		} else if (top && (!is_ddl(rel->op) || find_prop(rel->p, PROP_DISTRIBUTE)) && sqltype == Q_UPDATE) {
+			/* only call stmt_affected_rows outside functions and ddl, however if PROP_DISTRIBUTE is found it might be called. eg. merge statements */
+			if (be->cur_append) { /* finish the output bat */
+				stmt *last = s->cols->t->data;
+				last->nr = be->cur_append;
+			}
+			if (stmt_affected_rows(be, s) < 0)
+				return NULL;
+		}
 	}
 	return s;
 }
