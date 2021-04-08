@@ -1181,10 +1181,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	MalBlkPtr curBlk = NULL;
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
-	Symbol backup = NULL, curPrg = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid;
+	Symbol symbackup = NULL;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid, res = 0;
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
+	backend bebackup;
 
 	if (strlen(f->base.name) >= IDLENGTH) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "Function name '%s' too large for the backend", f->base.name);
@@ -1222,10 +1223,14 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		return -1;
 	}
 
-	backup = c->curprg;
-	curPrg = c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
-	if( curPrg == NULL) {
+	symbackup = c->curprg;
+	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
+	backend_reset(be);
+
+	c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
+	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		res = -1;
 		goto cleanup;
 	}
 
@@ -1233,15 +1238,16 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	curInstr = getInstrPtr(curBlk, 0);
 
 	if (f->res) {
-		sql_arg *res = f->res->h->data;
+		sql_arg *fres = f->res->h->data;
 		if (f->type == F_UNION) {
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 			if( curInstr == NULL) {
 				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				res = -1;
 				goto cleanup;
 			}
 		} else {
-			setArgType(curBlk, curInstr, 0, res->type.type->localtype);
+			setArgType(curBlk, curInstr, 0, fres->type.type->localtype);
 		}
 	} else {
 		setArgType(curBlk, curInstr, 0, TYPE_void);
@@ -1260,6 +1266,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			(void) snprintf(buf, IDLENGTH, "A%d", argc);
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				res = -1;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1286,10 +1293,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			}
 			if (!buf) {
 				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				res = -1;
 				goto cleanup;
 			}
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				res = -1;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1297,7 +1306,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		}
 	}
 	/* announce the transaction mode */
-	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0)
+	if ((res = backend_dumpstmt(be, curBlk, r, 0, 1, NULL)) < 0)
 		goto cleanup;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
@@ -1335,15 +1344,14 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	if (c->curprg->def->errors) {
 		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+		res = -1;
 		goto cleanup;
 	}
-	if (backup)
-		c->curprg = backup;
-	return 0;
+
 cleanup:
-	if (backup)
-		c->curprg = backup;
-	return -1;
+	memcpy(be, &bebackup, sizeof(backend));
+	c->curprg = symbackup;
+	return res;
 }
 
 /* TODO handle aggr */
@@ -1377,27 +1385,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 int
 backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 {
-	int res;
-	backend backup;
-
-	memcpy(&backup, be, sizeof(backend));
-	backend_reset(be);
-	res = backend_create_func(be, f->func, f->res, ops);
-	memcpy(be, &backup, sizeof(backend));
-	return res;
-}
-
-int
-backend_create_subaggr(backend *be, sql_subfunc *f)
-{
-	int res;
-	backend backup;
-
-	memcpy(&backup, be, sizeof(backend));
-	backend_reset(be);
-	res = backend_create_func(be, f->func, f->res, NULL);
-	memcpy(be, &backup, sizeof(backend));
-	return res;
+	return backend_create_func(be, f->func, f->res, ops);
 }
 
 void
