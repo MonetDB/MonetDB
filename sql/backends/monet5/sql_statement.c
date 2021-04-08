@@ -2002,7 +2002,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		if (!lcand)
+		if (!lcand || op1->cand == lcand)
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, lcand->nr);
@@ -2020,7 +2020,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		if (!lcand)
+		if (!lcand || op1->cand == lcand)
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, lcand->nr);
@@ -2042,7 +2042,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		if (!lcand)
+		if (!lcand || op1->cand == lcand)
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, lcand->nr);

@@ -3733,10 +3733,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		oldvtop = be->mb->vtop;
 		oldstop = be->mb->stop;
 		oldvid = be->mb->vid;
-		/*
-		if (!aggrstmt)
-			aggrstmt = exp_bin(be, aggrexp, sub, NULL, 0, 0, 0);
-			*/
 		/* maybe the aggr uses intermediate results of this group by,
 		   therefore we pass the group by columns too
 		 */
