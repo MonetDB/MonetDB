@@ -720,8 +720,12 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 {
 	mvc *m = be->mvc;
 	InstrPtr q, querylog = NULL;
-	int old_mv = be->mvc_var;
-	MalBlkPtr old_mb = be->mb;
+	backend backup;
+	rel_bin_stmt *s = NULL;
+	int res = 0;
+
+	memcpy(&backup, be, sizeof(backend));
+	backend_reset(be);
 
 	/* Always keep the SQL query around for monitoring */
 	if (query) {
@@ -760,14 +764,15 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	}
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
-	if (!sql_relation2stmt(be, r, top)) {
+	if (!(s = sql_relation2stmt(be, r, top))) {
 		if (querylog)
 			(void) pushInt(mb, querylog, mb->stop);
-		return (be->mvc->errstr[0] == '\0') ? 0 : -1;
+		res = (be->mvc->errstr[0] == '\0') ? 0 : -1;
 	}
+	memcpy(be, &backup, sizeof(backend)); /* reset before returning */
+	if (!s)
+		return res;
 
-	be->mvc_var = old_mv;
-	be->mb = old_mb;
 	if (top && !be->depth && (m->type == Q_SCHEMA || m->type == Q_TRANS) && !GDKembedded()) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL) {
@@ -1373,11 +1378,12 @@ int
 backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 {
 	int res;
-	MalBlkPtr mb = be->mb;
+	backend backup;
 
-	be->mb = NULL;
+	memcpy(&backup, be, sizeof(backend));
+	backend_reset(be);
 	res = backend_create_func(be, f->func, f->res, ops);
-	be->mb = mb;
+	memcpy(be, &backup, sizeof(backend));
 	return res;
 }
 
@@ -1385,11 +1391,12 @@ int
 backend_create_subaggr(backend *be, sql_subfunc *f)
 {
 	int res;
-	MalBlkPtr mb = be->mb;
+	backend backup;
 
-	be->mb = NULL;
+	memcpy(&backup, be, sizeof(backend));
+	backend_reset(be);
 	res = backend_create_func(be, f->func, f->res, NULL);
-	be->mb = mb;
+	memcpy(be, &backup, sizeof(backend));
 	return res;
 }
 
