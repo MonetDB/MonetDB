@@ -1385,10 +1385,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	if (processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
 		res = rel_list(sql->sa, insert, upd_del);
-		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
 	} else if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
 		res = upd_del;
-		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
 	} else if ((processed & MERGE_INSERT) == MERGE_INSERT) {
 		res = insert;
 	} else {

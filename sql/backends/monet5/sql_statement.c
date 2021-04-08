@@ -117,30 +117,7 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
-void
-create_merge_partitions_accumulator(backend *be)
-{
-	sql_subtype tpe;
 
-	sql_find_subtype(&tpe, "bigint", 0, 0);
-	be->cur_append = constantAtom(be, be->mb, atom_int(be->mvc->sa, &tpe, 0));
-}
-
-int
-add_to_merge_partitions_accumulator(backend *be, int nr)
-{
-	MalBlkPtr mb = be->mb;
-	int help = be->cur_append;
-	InstrPtr q = newStmt(mb, calcRef, plusRef);
-
-	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
-	q = pushArgument(mb, q, help);
-	q = pushArgument(mb, q, nr);
-
-	be->first_statement_generated = true; /* set the first statement as generated */
-
-	return getDestVar(q);
-}
 
 /* #TODO make proper traversal operations */
 stmt *
@@ -2797,20 +2774,17 @@ stmt_output(backend *be, rel_bin_stmt *st)
 }
 
 int
-stmt_affected_rows(backend *be, rel_bin_stmt *st)
+stmt_affected_rows(backend *be, int lastnr)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	stmt *last = st->cols->t->data;
 
-	if (last->nr < 0)
-		return -1;
 	q = newStmt(mb, sqlRef, affectedRowsRef);
 	q = pushArgument(mb, q, be->mvc_var);
 	if (q == NULL)
 		return -1;
 	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
-	q = pushArgument(mb, q, last->nr);
+	q = pushArgument(mb, q, lastnr);
 	if (q == NULL)
 		return -1;
 	be->mvc_var = getDestVar(q);
