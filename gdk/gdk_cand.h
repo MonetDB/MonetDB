@@ -177,6 +177,7 @@ gdk_export oid canditer_last(const struct canditer *ci);
 gdk_export oid canditer_prev(struct canditer *ci);
 gdk_export oid canditer_peekprev(struct canditer *ci);
 gdk_export oid canditer_idx(const struct canditer *ci, BUN p);
+#define canditer_idx_dense(ci, p) ((p >= (ci)->ncand)?oid_nil:((ci)->seq + p))
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next);
