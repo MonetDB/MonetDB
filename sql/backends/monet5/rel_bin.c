@@ -1338,7 +1338,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 	} 	break;
 	case e_aggr: {
 		list *attr = e->l;
-		stmt *as = NULL;
+		stmt *as = NULL, *input_group = right ? right->grp : NULL;
 		sql_subfunc *a = e->f;
 
 		if (attr && attr->h) {
@@ -1380,10 +1380,8 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					stmt *as = en->data;
 					append(nl, stmt_project(be, next, as));
 				}
-				/*
 				if (right && right->grp)
-					right->grp = stmt_project(be, next, right->grp);
-					*/
+					input_group = stmt_project(be, next, right->grp);
 				l = nl;
 			} else if (need_distinct(e)) {
 				stmt *a = l->h->data;
@@ -1407,7 +1405,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			}
 		}
 		if (right)
-			s = stmt_aggr(be, as, right->grp, right->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+			s = stmt_aggr(be, as, input_group, right->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		else
 			s = stmt_aggr(be, as, NULL, NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
