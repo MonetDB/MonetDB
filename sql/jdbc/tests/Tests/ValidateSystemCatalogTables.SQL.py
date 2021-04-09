@@ -15,7 +15,7 @@ PASSWORD='monetdb'
 if __name__ == '__main__':
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/ValidateSystemCatalogTables.sql')]
     try:
-        p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, text=True)
+        p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     except CalledProcessError as e:
         raise SystemExit(e.stderr)
 

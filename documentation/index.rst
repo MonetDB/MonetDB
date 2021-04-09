@@ -16,6 +16,9 @@ Welcome to MonetDB's documentation!
    monetdbe/examples
    monetdbe/installation
    monetdbe/monetdbe_api
+   monetdbe/manual_pages/monetdbe_open
+   monetdbe/manual_pages/monetdbe_options
+   monetdbe/manual_pages/monetdbe_remote
    source/intro
    source/build
    source/build-fedora

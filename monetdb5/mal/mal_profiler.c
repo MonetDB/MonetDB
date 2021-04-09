@@ -783,7 +783,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 
 	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO);
 	c = stmt;
 
 	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))

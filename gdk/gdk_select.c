@@ -1,7 +1,7 @@
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+* file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
@@ -628,14 +628,27 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	case 1: {
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			if (ptr[o - hseq] == pos) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 		break;
@@ -643,14 +656,27 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	case 2: {
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			if (ptr[o - hseq] == pos) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 		break;
@@ -658,14 +684,27 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 #if SIZEOF_VAR_T == 8
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			if (ptr[o - hseq] == pos) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 		break;
@@ -673,14 +712,27 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 #endif
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			if (ptr[o - hseq] == pos) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				if (ptr[o - hseq] == pos) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 		break;
