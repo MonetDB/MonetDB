@@ -1072,6 +1072,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 		}
 	}
 	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
+	reset_single(r); /* don't let single joins get propagated */
 	r = rel_update(sql, bt, r, updates, exps);
 	return r;
 }

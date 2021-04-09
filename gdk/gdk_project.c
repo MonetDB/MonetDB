@@ -20,6 +20,57 @@
  * hseqbase + its batCount.
  */
 
+#define project1_loop(TYPE)						\
+static gdk_return							\
+project1_##TYPE(BAT *restrict bn, BAT *restrict l, BAT *restrict r1)	\
+{									\
+	BUN lo, hi;							\
+	const TYPE *restrict r1t;					\
+	TYPE *restrict bt;						\
+	oid r1seq, r1end;						\
+									\
+	MT_thread_setalgorithm(__func__);				\
+	r1t = (const TYPE *) Tloc(r1, 0);				\
+	bt = (TYPE *) Tloc(bn, 0);					\
+	r1seq = r1->hseqbase;						\
+	r1end = r1seq + BATcount(r1);					\
+	if (BATtdense(l)) {						\
+		if (l->tseqbase < r1seq ||				\
+		   (l->tseqbase+BATcount(l)) >= r1end) {		\
+			GDKerror("does not match always\n");		\
+			return GDK_FAIL;				\
+		}							\
+		oid off = l->tseqbase - r1seq;				\
+		r1t += off;						\
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) 		\
+			bt[lo] = r1t[lo];				\
+	} else {							\
+		const oid *restrict ot = (const oid *) Tloc(l, 0);	\
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
+			oid o = ot[lo];					\
+			if (o < r1seq || o >= r1end) {			\
+				GDKerror("does not match always\n");	\
+				return GDK_FAIL;			\
+			}						\
+			bt[lo] = r1t[o - r1seq];			\
+		}							\
+	}								\
+	BATsetcount(bn, lo);						\
+	return GDK_SUCCEED;						\
+}
+
+/* project type switch */
+project1_loop(bte)
+project1_loop(sht)
+project1_loop(int)
+project1_loop(flt)
+project1_loop(dbl)
+project1_loop(lng)
+#ifdef HAVE_HGE
+project1_loop(hge)
+#endif
+project1_loop(uuid)
+
 #define project_loop(TYPE)						\
 static gdk_return							\
 project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
@@ -34,6 +85,8 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 	oid r1seq, r1end;						\
 	oid r2seq, r2end;						\
 									\
+	if ((!ci || ci->tpe == cand_dense) && l->tnonil && !r2)		\
+		return project1_##TYPE(bn, l, r1);			\
 	MT_thread_setalgorithm(__func__);				\
 	r1t = (const TYPE *) Tloc(r1, 0);				\
 	r2t = r2 ? (const TYPE *) Tloc(r2, 0) : NULL;			\
@@ -120,6 +173,12 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
+	if ((!lci || lci->tpe == cand_dense) && !BATtdense(r1) && !r2) {
+		if (sizeof(oid) == sizeof(lng))
+			return project1_lng(bn, l, r1);
+		else
+			return project1_int(bn, l, r1);
+	}
 	MT_thread_setalgorithm(__func__);
 	if (complex_cand(r1))
 		canditer_init(&r1ci, NULL, r1);
@@ -856,13 +915,12 @@ BATprojectchain(BAT **bats)
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
-				o = ba[i].ci.s ? canditer_idx(&ba[i].ci, o) : ba[i].t[o];
+				o = ba[i].ci.s ?
+				    (ba[i].ci.tpe == cand_dense) ?
+					canditer_idx_dense(&ba[i].ci, o) :
+					canditer_idx(&ba[i].ci, o) : ba[i].t[o];
 			}
-			if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
-				goto bunins_failed;
-			if (ATOMputFIX(bn->ttype, d, &o) != GDK_SUCCEED)
-				goto bunins_failed;
-			d++;
+			*d++ = o;
 		}
 	} else if (!ATOMvarsized(tpe)) {
 		const void *v;
@@ -883,7 +941,10 @@ BATprojectchain(BAT **bats)
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
-				o = ba[i].ci.s ? canditer_idx(&ba[i].ci, o) : ba[i].t[o];
+				o = ba[i].ci.s ?
+				    (ba[i].ci.tpe == cand_dense) ?
+					canditer_idx_dense(&ba[i].ci, o) :
+					canditer_idx(&ba[i].ci, o) : ba[i].t[o];
 			}
 			if (is_oid_nil(o)) {
 				assert(!stringtrick);
@@ -934,7 +995,10 @@ BATprojectchain(BAT **bats)
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
-				o = ba[i].ci.s ? canditer_idx(&ba[i].ci, o) : ba[i].t[o];
+				o = ba[i].ci.s ?
+				    (ba[i].ci.tpe == cand_dense) ?
+					canditer_idx_dense(&ba[i].ci, o) :
+					canditer_idx(&ba[i].ci, o) : ba[i].t[o];
 			}
 			if (is_oid_nil(o)) {
 				bn->tnil = true;
