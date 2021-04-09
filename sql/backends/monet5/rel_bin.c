@@ -541,34 +541,21 @@ value_list(backend *be, list *vals, rel_bin_stmt *left)
 {
 	sql_subtype *type = exp_subtype(vals->h->data);
 	list *l = sa_list(be->mvc->sa);
-	stmt *lcand = NULL;
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
-	if (left) {
-		lcand = left->cand;
-		left->cand = NULL;
-	}
 	/* create bat append values */
 	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, left, NULL, 0, 0, 0);
 
-		if (!i) {
-			if (left)
-				left->cand = lcand;
+		if (!i)
 			return NULL;
-		}
 
-		if (list_length(vals) == 1) {
-			if (left)
-				left->cand = lcand;
+		if (list_length(vals) == 1)
 			return i;
-		}
 		list_append(l, i);
 	}
-	if (left)
-		left->cand = lcand;
 	return stmt_append_bulk(be, stmt_temp(be, type), l);
 }
 
