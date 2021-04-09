@@ -7,13 +7,13 @@ create table predata (aa int, bb int)
 statement ok
 start transaction
 
-statement ok
+statement ok rowcount 1
 insert into merging values (-100, 1)
 
-statement ok
+statement ok rowcount 6
 insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2)
 
-statement ok
+statement ok rowcount 2
 merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
       when matched then delete when not matched then insert values (6, 6)
 
@@ -29,13 +29,13 @@ select aa, bb from predata
 NULL
 2
 
-statement ok
+statement ok rowcount 4
 delete from predata
 
-statement ok
+statement ok rowcount 6
 insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (4, 1), (6, 3)
 
-statement ok
+statement ok rowcount 3
 merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
       when not matched then insert values (null, null) when matched then update set bb = 3
 
@@ -55,17 +55,17 @@ select aa, bb from predata
 6
 3
 
-statement ok
+statement ok rowcount 6
 delete from predata
 
-statement ok
+statement ok rowcount 6
 insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (8, 2), (NULL, 4)
 
-statement ok
+statement ok rowcount 2
 merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
       when matched then update set bb = predata.bb + 1
 
-statement ok
+statement ok rowcount 0
 merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
       when matched then update set bb = othertt.bb + sub.bb
 
@@ -85,16 +85,16 @@ select aa, bb from predata
 NULL
 4
 
-statement ok
+statement ok rowcount 6
 delete from predata
 
-statement ok
+statement ok rowcount 4
 insert into predata values (15, 1), (3, 1), (6, 3), (8, 2)
 
-statement ok
+statement ok rowcount 1
 insert into merging values (-500, -300)
 
-statement ok
+statement ok rowcount 1
 merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
       when not matched then insert values (sub.aa, 2)
 
@@ -112,10 +112,10 @@ select aa, bb from predata
 8
 2
 
-statement ok
+statement ok rowcount 1
 insert into merging values (1900, 2)
 
-statement ok
+statement ok rowcount 1
 merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
       when not matched then insert values (sub.aa + 5, sub.bb * 2)
 
@@ -135,13 +135,13 @@ select aa, bb from predata
 8
 2
 
-statement ok
+statement ok rowcount 6
 delete from predata
 
-statement ok
+statement ok rowcount 1
 insert into predata values (2, 2)
 
-statement ok
+statement ok rowcount 2
 merge into predata using (select aa, bb from merging) thee on predata.bb = thee.bb
       when not matched then insert
 
@@ -158,10 +158,10 @@ NULL
 statement ok
 rollback
 
-statement ok
+statement ok rowcount 1
 insert into predata values (1, 1)
 
-statement ok
+statement ok rowcount 2
 insert into merging values (1, 1), (2, 1)
 
 statement error
