@@ -723,6 +723,8 @@ if __name__ == '__main__':
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--language', action='store', default='sql',
+                        help='language to use for testing')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
     parser.add_argument('--verbose', action='store_true',
@@ -740,7 +742,7 @@ if __name__ == '__main__':
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language)
     for test in args:
         try:
             if not opts.nodrop:
