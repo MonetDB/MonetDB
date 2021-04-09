@@ -392,34 +392,36 @@ GDKstrimp_create_strimp(BAT *b)
 	assert(b->ttype == TYPE_str);
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((head = create_header(b)) == NULL) {
-		return GDK_FAIL;
+	if (b->tstrimps == NULL) {
+		if ((head = create_header(b)) == NULL) {
+			return GDK_FAIL;
+		}
+
+		if ((h = create_strimp_heap(b, head)) == NULL) {
+			GDKfree(head);
+			return GDK_FAIL;
+		}
+		dh = (uint64_t *)h->base + h->free;
+
+		bi = bat_iterator(b);
+		for (i = 0; i < b->batCount; i++) {
+			s = (str)BUNtvar(bi, i);
+			if (!strNil(s))
+				*dh++ = GDKstrimp_make_bitstring(s, head);
+			else
+				*dh++ = 0; /* no pairs in nil values */
+
+		}
+
+		/* After we have computed the strimp, attempt to write it back
+		 * to the BAT.
+		 */
+		MT_lock_set(&b->batIdxLock);
+		b->tstrimps = h;
+		b->batDirtydesc = true;
+		/* persistStrimp(b) */
+		MT_lock_unset(&b->batIdxLock);
 	}
-
-	if ((h = create_strimp_heap(b, head)) == NULL) {
-		GDKfree(head);
-		return GDK_FAIL;
-	}
-	dh = (uint64_t *)h->base + h->free;
-
-	bi = bat_iterator(b);
-	for (i = 0; i < b->batCount; i++) {
-		s = (str)BUNtvar(bi, i);
-		if (!strNil(s))
-			*dh++ = GDKstrimp_make_bitstring(s, head);
-		else
-			*dh++ = 0; /* no pairs in nil values */
-
-	}
-
-	/* After we have computed the strimp, attempt to write it back
-	 * to the BAT.
-	 */
-	MT_lock_set(&b->batIdxLock);
-	b->tstrimps = h;
-	b->batDirtydesc = true;
-	/* persistStrimp(b) */
-	MT_lock_unset(&b->batIdxLock);
 
 	TRC_DEBUG(ALGO, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
