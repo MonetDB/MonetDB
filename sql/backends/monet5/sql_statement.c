@@ -696,6 +696,8 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	s->flag = access;
 	s->nr = getDestVar(q);
 	s->q = q;
+	s->tname = i->t->base.name;
+	s->cname = i->base.name;
 	return s;
 }
 

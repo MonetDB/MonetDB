@@ -32,6 +32,14 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 	return store->storage_api.count_col(tr, c, access);
 }
 
+static lng
+SQLgetIdxSize(sql_trans *tr, sql_idx *i, int access)
+{
+	sqlstore *store = tr->store;
+	return store->storage_api.count_idx(tr, i, access);
+}
+
+
 /*
  * The maximal space occupied by a query is calculated
  * under the assumption that the complete database should fit in memory.
@@ -95,8 +103,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					sql_column *c = ol_first_node(i->t->columns)->data;
-					size = SQLgetColumnSize(tr, c, access);
+					size = SQLgetIdxSize(tr, i, access);
 
 					if( !prepare && size == 0 && ! i->t->system){
 						setFunctionId(p, emptybindidxRef);
