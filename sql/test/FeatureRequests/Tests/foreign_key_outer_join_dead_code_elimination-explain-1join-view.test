@@ -53,8 +53,6 @@ sql.tid
 sql.bind
 2
 sql.bind_idxbat
-2
-sql.delta
 1
 algebra.projection
 6
