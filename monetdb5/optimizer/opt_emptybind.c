@@ -159,6 +159,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
+			if( p->retc == 2){
+				empty[getArg(p,1)] = i;
+			}
 			// replace the call into a empty bat creation unless the table was updated already in the same query
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
