@@ -885,7 +885,7 @@ BATprojectchain(BAT **bats)
 			bn = BATproject(ba[0].b, ba[1].b);
 		}
 		while (ndelete-- > 0)
-			BBPreclaim(tobedeleted[ndelete]);
+			BBPunfix(tobedeleted[ndelete]->batCacheid);
 		GDKfree(tobedeleted);
 		GDKfree(ba);
 		return bn;
