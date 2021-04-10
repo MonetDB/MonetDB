@@ -631,6 +631,21 @@ SELECT t0.c0 FROM t0 WHERE t0.c0 BETWEEN NULL AND NULL
 ----
 
 query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 BETWEEN 3 AND 0
+----
+
+query I rowsort
+SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 3 AND 0
+----
+-7
+0
+1
+2
+6
+7
+9
+
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 0
 ----
 -7
@@ -657,6 +672,34 @@ SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN NULL AND 0
 query I rowsort
 SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN NULL AND NULL
 ----
+
+statement ok
+set optimizer='sequential_pipe'
+
+query T python .explain.function_histogram
+EXPLAIN SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 2
+----
+user.main
+1
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.bind
+1
+algebra.select
+1
+algebra.projection
+1
+bat.pack
+5
+sql.resultSet
+1
+
+statement ok
+set optimizer='default_pipe'
 
 query T rowsort
 SELECT t2.c2 FROM t0, t2 WHERE (- (t0.c0)) BETWEEN ASYMMETRIC (CAST(0.49579459740908504716827565061976201832294464111328125 AS TINYINT)) AND (CASE WHEN FALSE THEN t0.c0 END)

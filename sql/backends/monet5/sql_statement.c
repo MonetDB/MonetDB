@@ -1638,7 +1638,6 @@ argumentZero(MalBlkPtr mb, int tpe)
 }
 */
 
-
 static InstrPtr
 select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub, int anti, int swapped, int type, int
 		reduce)
@@ -1652,7 +1651,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	if (op1->nr < 0 || (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
 		int k;
 		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 
