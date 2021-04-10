@@ -284,7 +284,6 @@ static str
 ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
 	BAT *b, *s = NULL, *bn;
-	const void *nilptr;
 	bit nanti = *anti, nli = *li, nhi = *hi;
 
 	if (!*unknown)
@@ -305,17 +304,20 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	derefStr(b, low);
 	derefStr(b, high);
 	/* here we don't need open ended parts with nil */
-	nilptr = ATOMnilptr(b->ttype);
-	if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
-		low = high;
-		nli = 0;
+	if (!nanti) {
+		const void *nilptr = ATOMnilptr(b->ttype);
+		if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
+			low = high;
+			nli = 0;
+		}
+		if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
+			high = low;
+			nhi = 0;
+		}
+		if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+			nanti = 1;
 	}
-	if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
-		high = low;
-		nhi = 0;
-	}
-	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
-		nanti = !nanti;
+
 	bn = BATselect(b, s, low, high, nli, nhi, nanti);
 	BBPunfix(b->batCacheid);
 	if (s)
