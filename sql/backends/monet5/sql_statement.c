@@ -1345,11 +1345,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 	if (rops->nrcols >= 1) {
 		bit need_not = FALSE;
 
-		int narg = 3;
-		for (node *n = lops->op4.lval->h; n; n = n->next)
-			narg++;
-		for (node *n = rops->op4.lval->h; n; n = n->next)
-			narg++;
+		int narg = 3 + list_length(lops->op4.lval) + list_length(rops->op4.lval);
 		q = newStmtArgs(mb, malRef, multiplexRef, narg);
 		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
 		q = pushStr(mb, q, convertMultiplexMod(mod, op));
@@ -1401,10 +1397,19 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		for (node *n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
+			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				op = stmt_project_column_on_cand(be, sel, op);
+			else if (push_cands && op->nrcols > 0)
+				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* candidate lists */
-		q = pushNil(mb, q, TYPE_bat);
+		if (push_cands) {
+			if (sel && !all_cands_pushed)
+				q = pushArgument(mb, q, sel->nr);
+			else
+				q = pushNil(mb, q, TYPE_bat);
+		}
 
 		for (node *n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
