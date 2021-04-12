@@ -1359,7 +1359,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 
 			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
 				op = stmt_project_column_on_cand(be, sel, op);
-			else if (push_cands)
+			else if (push_cands && op->nrcols > 0)
 				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
@@ -1368,7 +1368,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 
 			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
 				op = stmt_project_column_on_cand(be, sel, op);
-			else if (push_cands)
+			else if (push_cands && op->nrcols > 0)
 				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
@@ -1522,7 +1522,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 				anti = !anti;
 			q = newStmtArgs(mb, algebraRef, selectRef, 9);
 			q = pushArgument(mb, q, l);
-			if (!op1->cand && sel) /* don't push cands again */
+			if (!op1->cand && op1->nrcols && sel) /* don't push cands again */
 				q = pushArgument(mb, q, sel->nr);
 			else
 				q = pushNil(mb, q, TYPE_bat);
@@ -1534,7 +1534,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
-			if (!op1->cand && sel) /* don't push cands again */
+			if (!op1->cand && op1->nrcols && sel) /* don't push cands again */
 				q = pushArgument(mb, q, sel->nr);
 			else
 				q = pushNil(mb, q, TYPE_bat);
@@ -1657,7 +1657,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 		if (type == st_join2)
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, l);
-		if (!op1->cand && sel) /* don't push cands again */
+		if (!op1->cand && op1->nrcols && sel) /* don't push cands again */
 			q = pushArgument(mb, q, sel->nr);
 		if (rs) {
 			q = pushArgument(mb, q, rs);
