@@ -272,7 +272,7 @@ MATHrandint(int *res)
 }
 
 static str
-MATHrandintarg(int *res, const int *dummy)
+MATHrandintarg(int *res, const void *dummy)
 {
 	(void) dummy;
 #ifdef __COVERITY__
@@ -372,7 +372,7 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "isinf", MATHunary_ISINF, false, "The isinf(x) function returns -1 if x represents negative \ninfinity, 1 if x represents positive infinity, and 0 otherwise.", args(1,2, arg("",int),arg("d",dbl))),
  command("mmath", "finite", MATHunary_FINITE, false, "The finite(x) function returns true if x is neither infinite \nnor a 'not-a-number' (NaN) value, and false otherwise.", args(1,2, arg("",bit),arg("d",dbl))),
  command("mmath", "rand", MATHrandint, true, "return a random number", args(1,1, arg("",int))),
- command("mmath", "rand", MATHrandintarg, true, "return a random number", args(1,2, arg("",int),arg("v",int))),
+ command("mmath", "rand", MATHrandintarg, true, "return a random number", args(1,2, arg("",int),argany("v",0))),
  command("mmath", "srand", MATHsrandint, false, "initialize the rand() function with a seed", args(1,2, arg("",void),arg("seed",int))),
  command("mmath", "sqlrand", MATHsqlrandint, false, "initialize the rand() function with a seed and call rand()", args(1,2, arg("",int),arg("seed",int))),
  command("mmath", "pi", MATHpi, false, "return an important mathematical value", args(1,1, arg("",dbl))),

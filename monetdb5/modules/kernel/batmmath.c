@@ -569,8 +569,8 @@ mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,3, batarg("",flt),arg("x",flt),batarg("y",flt))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
- pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,2, batarg("",int),batarg("v",int))),
- pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,3, batarg("",int),batarg("v",int),batarg("s",oid))),
+ pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,2, batarg("",int),batargany("v",0))),
+ pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,3, batarg("",int),batargany("v",0),batarg("s",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

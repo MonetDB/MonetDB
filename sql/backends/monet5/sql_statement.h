@@ -139,18 +139,13 @@ typedef struct stmt {
 	InstrPtr q;
 } stmt;
 
-/* which MAL modules can push candidates */
-#define can_push_cands(sel, f) \
-	(sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || \
-			 strcmp(sql_func_mod(f->func), "mtime") == 0 || strcmp(sql_func_mod(f->func), "blob") == 0 || \
-			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
-
 extern void stmt_set_nrcols(rel_bin_stmt *s);
-extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt);
+extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *sel, stmt *grp, stmt *ext, stmt *cnt);
+extern stmt *stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c);
 
-extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
-extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
-extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
+extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level, stmt *sel);
+extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level, stmt *sel);
+extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t, stmt *sel);
 
 extern stmt *stmt_table(backend *be, rel_bin_stmt *cols, int temp);
 extern stmt *stmt_rs_column(backend *be, stmt *result_set, int i, sql_subtype *tpe);
@@ -176,23 +171,21 @@ extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, list *args);
 
 extern stmt *stmt_temp(backend *be, sql_subtype *t);
-extern stmt *stmt_atom(backend *be, atom *a);
-extern stmt *stmt_atom_string(backend *be, const char *s);
-extern stmt *stmt_atom_string_nil(backend *be);
-extern stmt *stmt_atom_int(backend *be, int i);
-extern stmt *stmt_atom_lng(backend *be, lng i);
-extern stmt *stmt_atom_lng_nil(backend *be);
-extern stmt *stmt_bool(backend *be, int b);
+extern stmt *stmt_atom(backend *be, atom *a, stmt *sel);
+extern stmt *stmt_atom_string(backend *be, const char *s, stmt *sel);
+extern stmt *stmt_atom_int(backend *be, int i, stmt *sel);
+extern stmt *stmt_atom_lng(backend *be, lng i, stmt *sel);
+extern stmt *stmt_bool(backend *be, int b, stmt *sel);
 
-extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics);
+extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, int anti, int is_semantics);
 /* cmp
        0 ==   l <  x <  h
        1 ==   l <  x <= h
        2 ==   l <= x <  h
        3 ==   l <= x <= h
        */
-extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce);
-extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *cand, int anti);
+extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, int anti, int reduce);
+extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, int anti);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
@@ -239,7 +232,7 @@ extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sq
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op);
-extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+extern stmt *stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 

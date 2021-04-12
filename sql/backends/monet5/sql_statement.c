@@ -117,66 +117,82 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
+static int
+is_tid_chain(stmt *sel)
+{
+	while (sel && sel->type != st_tid && sel->cand)
+		sel = sel->cand;
+	if (sel && sel->type == st_tid)
+		return 1;
+	return 0;
+}
 
+stmt *
+stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c)
+{
+	stmt *res = NULL;
+
+	if (!sel)
+		return res;
+	assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
+	if (c->type != st_alias) {
+		res = stmt_project(be, sel, c);
+	} else if (c->op1->type == st_mirror && is_tid_chain(sel)) { /* alias with mirror (ie full row ids) */
+		res = stmt_alias(be, sel, c->tname, c->cname);
+	} else { /* st_alias */
+		stmt *s = c->op1;
+		if (s->nrcols == 0)
+			s = stmt_const(be, sel, s);
+		else
+			s = stmt_project(be, sel, s);
+		res = stmt_alias(be, s, c->tname, c->cname);
+	}
+	res->cand = sel;
+	return res;
+}
 
 /* #TODO make proper traversal operations */
 stmt *
-stmt_atom_string(backend *be, const char *S)
+stmt_atom_string(backend *be, const char *S, stmt *sel)
 {
-	const char *s = sa_strdup(be->mvc->sa, S);
+	char *s = NULL;
 	sql_subtype t;
 
-	sql_find_subtype(&t, "varchar", _strlen(s), 0);
-	return stmt_atom(be, atom_string(be->mvc->sa, &t, s));
+	if (S) {
+		s = sa_strdup(be->mvc->sa, S);
+		sql_find_subtype(&t, "varchar", _strlen(s), 0);
+	} else {
+		sql_find_subtype(&t, "clob", 0, 0);
+	}
+
+	return stmt_atom(be, atom_string(be->mvc->sa, &t, s), sel);
 }
 
 stmt *
-stmt_atom_string_nil(backend *be)
-{
-	sql_subtype t;
-
-	sql_find_subtype(&t, "clob", 0, 0);
-	return stmt_atom(be, atom_string(be->mvc->sa, &t, NULL));
-}
-
-stmt *
-stmt_atom_int(backend *be, int i)
+stmt_atom_int(backend *be, int i, stmt *sel)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "int", 32, 0);
-	return stmt_atom(be, atom_int(be->mvc->sa, &t, i));
+	return stmt_atom(be, is_int_nil(i) ? atom_general(be->mvc->sa, &t, NULL) : atom_int(be->mvc->sa, &t, i), sel);
 }
 
 stmt *
-stmt_atom_lng(backend *be, lng i)
+stmt_atom_lng(backend *be, lng i, stmt *sel)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(be, atom_int(be->mvc->sa, &t, i));
+	return stmt_atom(be, is_lng_nil(i) ? atom_general(be->mvc->sa, &t, NULL) : atom_int(be->mvc->sa, &t, i), sel);
 }
 
 stmt *
-stmt_atom_lng_nil(backend *be)
-{
-	sql_subtype t;
-
-	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(be, atom_general(be->mvc->sa, &t, NULL));
-}
-
-stmt *
-stmt_bool(backend *be, int b)
+stmt_bool(backend *be, int b, stmt *sel)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "boolean", 0, 0);
-	if (b) {
-		return stmt_atom(be, atom_bool(be->mvc->sa, &t, TRUE));
-	} else {
-		return stmt_atom(be, atom_bool(be->mvc->sa, &t, FALSE));
-	}
+	return stmt_atom(be, atom_bool(be->mvc->sa, &t, b ? TRUE: FALSE), sel);
 }
 
 static stmt *
@@ -342,7 +358,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 }
 
 stmt *
-stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level)
+stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level, stmt *sel)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -408,13 +424,14 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		s->key = 1;
 		s->q = q;
 		s->nr = getDestVar(q);
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
+stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level, stmt *sel)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -431,20 +448,17 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 		}
 
 		ATOMIC_PTR_SET(&t->data, l);
-		/*
-		s->op2 = (stmt*)l;
-		s->op3 = (stmt*)t;
-		*/
 		s->flag = declare + (level << 1);
 		s->key = 1;
 		s->nr = l[0];
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_varnr(backend *be, int nr, sql_subtype *t)
+stmt_varnr(backend *be, int nr, sql_subtype *t, stmt *sel)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = newAssignment(mb);
@@ -471,6 +485,7 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 		s->key = 1;
 		s->q = q;
 		s->nr = getDestVar(q);
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -942,6 +957,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->nr = getDestVar(q);
 		ns->tname = val->tname;
 		ns->cname = val->cname;
+		ns->cand = s->cand;
 		return ns;
 	}
 	return NULL;
@@ -1032,7 +1048,6 @@ stmt_result(backend *be, stmt *s, int nr)
 	ns->aggr = s->aggr;
 	return ns;
 }
-
 
 /* limit maybe atom nil */
 stmt *
@@ -1201,7 +1216,6 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 	return NULL;
 }
 
-
 stmt *
 stmt_order(backend *be, stmt *s, int direction, int nullslast)
 {
@@ -1278,7 +1292,7 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 }
 
 stmt *
-stmt_atom(backend *be, atom *a)
+stmt_atom(backend *be, atom *a, stmt *sel)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->base.name) : newAssignment(mb);
@@ -1309,61 +1323,69 @@ stmt_atom(backend *be, atom *a)
 		s->key = 1;		/* values are also unique */
 		s->q = q;
 		s->nr = getDestVar(q);
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *cand, int anti)
+stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, int anti)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod, *op;
-	node *n;
-	int k;
+	const char *mod = sql_func_mod(f->func), *op = sql_func_imp(f->func);
+	int k, push_cands = sel && (strcmp(mod, "pcre") == 0 || strcmp(mod, "algebra") == 0), all_cands_pushed = 1;
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
-	op = sql_func_imp(f->func);
-	mod = sql_func_mod(f->func);
 
 	if (rops->nrcols >= 1) {
 		bit need_not = FALSE;
 
 		int narg = 3;
-		for (n = lops->op4.lval->h; n; n = n->next)
+		for (node *n = lops->op4.lval->h; n; n = n->next)
 			narg++;
-		for (n = rops->op4.lval->h; n; n = n->next)
+		for (node *n = rops->op4.lval->h; n; n = n->next)
 			narg++;
 		q = newStmtArgs(mb, malRef, multiplexRef, narg);
 		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
 		q = pushStr(mb, q, convertMultiplexMod(mod, op));
 		q = pushStr(mb, q, convertMultiplexFcn(op));
-		for (n = lops->op4.lval->h; n; n = n->next) {
+		for (node *n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
+			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				op = stmt_project_column_on_cand(be, sel, op);
+			else if (push_cands)
+				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
-		for (n = rops->op4.lval->h; n; n = n->next) {
+		for (node *n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
+			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				op = stmt_project_column_on_cand(be, sel, op);
+			else if (push_cands)
+				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
 		k = getDestVar(q);
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (cand)
-			q = pushArgument(mb, q, cand->nr);
+		if (push_cands) {
+			if (sel && !all_cands_pushed)
+				q = pushArgument(mb, q, sel->nr);
+			else
+				q = pushNil(mb, q, TYPE_bat);
+		}
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, anti);
 	} else {
-		node *n;
-
 		op = sa_strconcat(be->mvc->sa, op, selectRef);
 		q = newStmtArgs(mb, mod, convertOperator(op), 9);
 		// push pointer to the SQL structure into the MAL call
@@ -1374,18 +1396,15 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *cand, 
 		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 			q = pushStr(mb, q, f->func->query);
 
-		for (n = lops->op4.lval->h; n; n = n->next) {
+		for (node *n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* candidate lists */
-		if (cand)
-			q = pushArgument(mb, q, cand->nr);
-		else
-			q = pushNil(mb, q, TYPE_bat);
+		q = pushNil(mb, q, TYPE_bat);
 
-		for (n = rops->op4.lval->h; n; n = n->next) {
+		for (node *n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
 			q = pushArgument(mb, q, op->nr);
@@ -1403,27 +1422,26 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *cand, 
 
 		s->op1 = lops;
 		s->op2 = rops;
-		s->op3 = cand;
+		s->op3 = sel;
 		s->key = lops->nrcols == 0 && rops->nrcols == 0;
 		s->flag = cmp_filter;
 		s->nrcols = lops->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = cand;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics)
+stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, int anti, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int l, r;
-	stmt *sel = sub;
 
-	if (op1->nr < 0 || op2->nr < 0 || (sub && sub->nr < 0))
+	if (op1->nr < 0 || op2->nr < 0 || (sel && sel->nr < 0))
 		return NULL;
 	l = op1->nr;
 	r = op2->nr;
@@ -1470,17 +1488,15 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL)
 			return NULL;
-		if (sub && (op1->cand || op2->cand)) {
-			if (op1->cand && !op2->cand) {
-				if (op1->nrcols > 0)
-					q = pushNil(mb, q, TYPE_bat);
-				q = pushArgument(mb, q, sub->nr);
-			} else if (!op1->cand && op2->cand) {
-				q = pushArgument(mb, q, sub->nr);
-				if (op2->nrcols > 0)
-					q = pushNil(mb, q, TYPE_bat);
-			}
-			sub = NULL;
+		if (sel && (op1->cand || op2->cand)) { /* some already handled the previous selection */
+			if (op1->cand && op1->nrcols)
+				q = pushNil(mb, q, TYPE_bat);
+			else if (op1->nrcols)
+				q = pushArgument(mb, q, sel->nr);
+			if (op2->cand && op2->nrcols)
+				q = pushNil(mb, q, TYPE_bat);
+			else if (op2->nrcols)
+				q = pushArgument(mb, q, sel->nr);
 		}
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
@@ -1488,8 +1504,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
@@ -1506,12 +1520,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				anti = !anti;
 			q = newStmtArgs(mb, algebraRef, selectRef, 9);
 			q = pushArgument(mb, q, l);
-			if (sub && !op1->cand) {
-				q = pushArgument(mb, q, sub->nr);
-			} else {
-				assert(!sub || op1->cand == sub);
-				sub = NULL;
-			}
+			if (!op1->cand && sel) /* don't push cands again */
+				q = pushArgument(mb, q, sel->nr);
+			else
+				q = pushNil(mb, q, TYPE_bat);
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
@@ -1520,13 +1532,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
-			if (sub && !op1->cand) {
-				q = pushArgument(mb, q, sub->nr);
-			} else {
-				assert(!sub || op1->cand == sub);
+			if (!op1->cand && sel) /* don't push cands again */
+				q = pushArgument(mb, q, sel->nr);
+			else
 				q = pushNil(mb, q, TYPE_bat);
-				sub = NULL;
-			}
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
 			case mark_in:
@@ -1568,78 +1577,25 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 	s->op1 = op1;
 	s->op2 = op2;
-	s->op3 = sub;
+	s->op3 = sel;
 	s->flag = cmptype;
 	s->key = op1->nrcols == 0 && op2->nrcols == 0;
 	s->nrcols = op1->nrcols;
 	s->nr = getDestVar(q);
 	s->q = q;
-	s->cand = sub;
-	if (!sub && sel) /* project back the old ids */
-		return stmt_project(be, s, sel);
+	s->cand = sel;
 	return s;
 }
 
-/*
-static int
-range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
-{
-	int ls = 0, hs = 0;
-	stmt *l = NULL, *h = NULL;
-	stmt *bl = s->op2, *bh = s->op3;
-	int tt = tail_type(s->op2)->type->localtype;
-
-#ifdef HAVE_HGE
-	if (tt > TYPE_hge)
-#else
-	if (tt > TYPE_lng)
-#endif
-		return 0;
-	if (s->op2->type == st_Nop && list_length(s->op2->op1->op4.lval) == 2) {
-		bl = s->op2->op1->op4.lval->h->data;
-		l = s->op2->op1->op4.lval->t->data;
-	}
-	if (s->op3->type == st_Nop && list_length(s->op3->op1->op4.lval) == 2) {
-		bh = s->op3->op1->op4.lval->h->data;
-		h = s->op3->op1->op4.lval->t->data;
-	}
-
-	if (((ls = (l && strcmp(s->op2->op4.funcval->func->base.name, "sql_sub") == 0 && l->nrcols == 0)) || (hs = (h && strcmp(s->op3->op4.funcval->func->base.name, "sql_add") == 0 && h->nrcols == 0))) && (ls || hs) && bl == bh) {
-		*base = bl;
-		*L = l;
-		*H = h;
-		return 1;
-	}
-	return 0;
-}
-
-static int
-argumentZero(MalBlkPtr mb, int tpe)
-{
-	ValRecord cst;
-	str msg;
-
-	cst.vtype = TYPE_int;
-	cst.val.ival = 0;
-	msg = convertConstant(tpe, &cst);
-	if( msg)
-		freeException(msg); // will not be called
-	return defConstant(mb, tpe, &cst);
-}
-*/
-
-
 static InstrPtr
-select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub, int anti, int swapped, int type, int
-		reduce)
+select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, int anti, int swapped, int type, int reduce)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr p, q;
 	int l;
 	const char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
-	stmt *sub = (Sub)?*Sub:NULL;
 
-	if (op1->nr < 0 || (sub && sub->nr < 0))
+	if (op1->nr < 0 || (sel && sel->nr < 0))
 		return NULL;
 	l = op1->nr;
 	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
@@ -1658,24 +1614,19 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		p = pushArgument(mb, p, op3->nr);
 
 		/* cands */
-		if ((sub && !reduce) || op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
+		if (sel && (op1->cand || op2->cand || op3->cand)) { /* some already handled the previous selection */
 			if (op1->cand && op1->nrcols)
 				p = pushNil(mb, p, TYPE_bat);
 			else if (op1->nrcols)
-				p = pushArgument(mb, p, sub->nr);
-			if (op2->nrcols) {
-				if (op2->cand)
-					p = pushNil(mb, p, TYPE_bat);
-				else if (op2->nrcols)
-					p = pushArgument(mb, p, sub->nr);
-			}
-			if (op3->nrcols) {
-				if (op3->cand)
-					p = pushNil(mb, p, TYPE_bat);
-				else if (op3->nrcols)
-					p = pushArgument(mb, p, sub->nr);
-			}
-			sub = NULL;
+				p = pushArgument(mb, p, sel->nr);
+			if (op2->cand && op2->nrcols)
+				p = pushNil(mb, p, TYPE_bat);
+			else if (op2->nrcols)
+				p = pushArgument(mb, p, sel->nr);
+			if (op3->cand && op3->nrcols)
+				p = pushNil(mb, p, TYPE_bat);
+			else if (op3->nrcols)
+				p = pushArgument(mb, p, sel->nr);
 		}
 
 		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
@@ -1689,8 +1640,6 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
@@ -1699,31 +1648,6 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		if (q == NULL)
 			return NULL;
 	} else {
-		/* if st_join2 try to convert to bandjoin */
-		/* ie check if we subtract/add a constant, to the
-	   	same column */
-		/* move this optimization into the relational phase! */
-	/*
-		stmt *base, *low = NULL, *high = NULL;
-		if (type == st_join2 && range_join_convertable(s, &base, &low, &high)) {
-			int tt = tail_type(base)->type->localtype;
-
-			if ((rs = _dumpstmt(sql, mb, base)) < 0)
-				return -1;
-			if (low) {
-				if ((r1 = _dumpstmt(sql, mb, low)) < 0)
-					return -1;
-			} else
-				r1 = argumentZero(mb, tt);
-			if (high) {
-				if ((r2 = _dumpstmt(sql, mb, high)) < 0)
-					return -1;
-			} else
-				r2 = argumentZero(mb, tt);
-			cmd = bandjoinRef;
-		}
-	*/
-
 		int r1 = op2->nr;
 		int r2 = op3->nr;
 		int rs = 0;
@@ -1731,23 +1655,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		if (type == st_join2)
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, l);
-		if (sub) {
-			int cand = op1->cand || op2->cand || op3->cand;
-			if (cand) {
-				if (op1->nrcols && !op1->cand) {
-					assert(0);
-				}
-				if (op2->nrcols && !op2->cand) {
-					assert(0);
-				}
-				if (op3->nrcols && !op3->cand) {
-					assert(0);
-				}
-				sub = NULL;
-			}
-		}
-		if (sub) /* only for uselect2 */
-			q = pushArgument(mb, q, sub->nr);
+		if (!op1->cand && sel) /* don't push cands again */
+			q = pushArgument(mb, q, sel->nr);
 		if (rs) {
 			q = pushArgument(mb, q, rs);
 		} else {
@@ -1800,16 +1709,13 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 			q = r;
 		}
 	}
-	if (Sub)
-		*Sub = sub;
 	return q;
 }
 
 stmt *
 stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce)
 {
-	stmt *sel = sub;
-	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, &sub, anti, 0, st_uselect2, reduce);
+	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, 0, st_uselect2, reduce);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect2);
@@ -1821,7 +1727,6 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->op1 = op1;
 		s->op2 = op2;
 		s->op3 = op3;
-		s->op4.stval = sub;
 		s->flag = cmp;
 		s->nrcols = op1->nrcols;
 		s->key = op1->nrcols == 0 && op2->nrcols == 0 && op3->nrcols == 0;
@@ -1829,8 +1734,6 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->q = q;
 		s->cand = sub;
 		s->reduce = reduce;
-		if (!sub && sel) /* project back the old ids */
-			return stmt_project(be, s, sel);
 		return s;
 	}
 	return NULL;
@@ -3062,7 +2965,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->base.name;
-	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
+	int push_cands = (t->type->eclass != EC_EXTERNAL || !strcmp(convert, "uuid")); /* uuids conversions support candidate lists */
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -3090,22 +2993,17 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	else if (t->type->eclass == EC_SEC)
 		convert = "second_interval";
 
-	no_candidates = t->type->eclass == EC_EXTERNAL && strcmp(convert, "uuid") != 0; /* uuids conversions support candidate lists */
-
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
 	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
 		q = newStmtArgs(mb, calcRef, convert, 13);
-	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && no_candidates) {
+	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && !push_cands) {
 		int type = t->type->localtype;
 
 		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
-		if (sel && !pushed) {
-			pushed = 1;
-			v = stmt_project(be, sel, v);
-			v->cand = sel;
-		}
+		if (sel && !v->cand)
+			v = stmt_project_column_on_cand(be, sel, v);
 		q = newStmtArgs(mb, malRef, multiplexRef, 15);
 		if (q == NULL)
 			return NULL;
@@ -3113,11 +3011,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 		q = pushStr(mb, q, convertMultiplexFcn(convert));
 	} else {
-		if (v->nrcols == 0 && sel && !pushed) {
-			pushed = 1;
-			v = stmt_project(be, sel, v);
-			v->cand = sel;
-		}
+		if (v->nrcols == 0 && sel && !v->cand)
+			v = stmt_project_column_on_cand(be, sel, v);
 		q = newStmtArgs(mb, batcalcRef, convert, 13);
 	}
 
@@ -3135,11 +3030,12 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	if (sel && !pushed && !v->cand) {
-		q = pushArgument(mb, q, sel->nr);
-		pushed = 1;
-	} else if (v->nrcols > 0 && !no_candidates) {
-		q = pushNil(mb, q, TYPE_bat);
+	if (v->nrcols > 0 && push_cands) {
+		if (v->cand || !sel) { /* Don't push cands twice */
+			q = pushNil(mb, q, TYPE_bat);
+		} else {
+			q = pushArgument(mb, q, sel->nr);
+		}
 	}
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
@@ -3188,7 +3084,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		s->op4.typeval = *t;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = pushed ? sel : NULL;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -3197,12 +3093,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 stmt *
 stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op)
 {
-	list *ops = sa_list(be->mvc->sa);
-	list_append(ops, op1);
-	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
-	if (!r->cand)
-		r->cand = op1->cand;
-	return r;
+	return stmt_Nop(be, stmt_list(be, list_append(sa_list(be->mvc->sa), op1)), sel, op);
 }
 
 stmt *
@@ -3211,10 +3102,7 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	list_append(ops, op2);
-	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
-	if (!r->cand)
-		r->cand = op1->cand?op1->cand:op2->cand;
-	return r;
+	return stmt_Nop(be, stmt_list(be, ops), sel, op);
 }
 
 stmt *
@@ -3222,19 +3110,21 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod, *fimp;
+	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = can_push_cands(sel, f);
-
+	int push_cands = sel && (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
+			 strcmp(mod, "blob") == 0 || (strcmp(mod, "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func))));
 	node *n;
 	stmt *o = NULL;
 
 	if (list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
-			stmt *c = n->data;
+			stmt *op = n->data;
 
-			if (c && o->nrcols < c->nrcols)
-				o = c;
+			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				op = stmt_project_column_on_cand(be, sel, op);
+			if (o->nrcols < op->nrcols)
+				o = op;
 		}
 	}
 
@@ -3325,7 +3215,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
-					if (op->cand && op->cand == sel) {
+					if (op->cand) { /* Don't push cands twice */
 						q = pushNil(mb, q, TYPE_bat);
 					} else {
 						q = pushArgument(mb, q, sel->nr);
@@ -3358,8 +3248,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		s->op4.funcval = f;
 		s->nr = getDestVar(q);
 		s->q = q;
-		if (sel && push_cands && s->nrcols)
-			s->cand = sel;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -3384,13 +3273,14 @@ stmt_direct_func(backend *be, InstrPtr q)
 }
 
 stmt *
-stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
+stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int f_union)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod = "user";
-	node *n;
 	prop *p = NULL;
+	sql_allocator *sa = be->mvc->sa;
+	stmt *o = NULL, *s = NULL;
 
 	/* dump args */
 	if (ops && ops->nr < 0)
@@ -3406,7 +3296,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	}
 
 	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
-		 return NULL;
+		return NULL;
 
 	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);
@@ -3417,34 +3307,28 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		q = pushStr(mb, q, mod);
 		q = pushStr(mb, q, name);
 	}
-	if (ops) {
-		for (n = ops->op4.lval->h; n; n = n->next) {
+	if (ops && list_length(ops->op4.lval)) {
+		o = ops->op4.lval->h->data;
+		for (node *n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
+			if (sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				op = stmt_project_column_on_cand(be, sel, op);
+			if (o->nrcols < op->nrcols)
+				o = op;
 			q = pushArgument(mb, q, op->nr);
 		}
 	}
 
 	if (q) {
-		node *n;
-		sql_allocator *sa = be->mvc->sa;
-		stmt *o = NULL, *s = stmt_create(sa, st_func);
-		if(!s) {
+		if (!(s = stmt_create(sa, st_func))) {
 			freeInstruction(q);
 			return NULL;
 		}
 		s->op1 = ops;
-		s->op2 = stmt_atom_string(be, name);
+		s->op2 = stmt_atom_string(be, name, sel);
 		s->op4.rel = rel;
 		s->flag = f_union;
-		if (ops && list_length(ops->op4.lval)) {
-			for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
-				stmt *c = n->data;
-
-				if (o->nrcols < c->nrcols)
-					o = c;
-			}
-		}
 
 		if (o) {
 			s->nrcols = o->nrcols;
@@ -3456,6 +3340,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		}
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
