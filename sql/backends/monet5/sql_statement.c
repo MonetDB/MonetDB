@@ -1337,7 +1337,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *op = sql_func_imp(f->func);
-	int k, push_cands = sel && (strcmp(mod, "pcre") == 0 || strcmp(mod, "algebra") == 0), all_cands_pushed = 1;
+	int k, push_cands = strcmp(mod, "pcre") == 0 || strcmp(mod, "algebra") == 0, all_cands_pushed = 1;
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
@@ -2998,9 +2998,9 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
-	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
+	if (v->nrcols == 0) {	/* simple calc */
 		q = newStmtArgs(mb, calcRef, convert, 13);
-	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && !push_cands) {
+	} else if (v->nrcols > 0 && !push_cands) {
 		int type = t->type->localtype;
 
 		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
@@ -3013,8 +3013,6 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 		q = pushStr(mb, q, convertMultiplexFcn(convert));
 	} else {
-		if (v->nrcols == 0 && sel && !v->cand)
-			v = stmt_project_column_on_cand(be, sel, v);
 		q = newStmtArgs(mb, batcalcRef, convert, 13);
 	}
 
@@ -3114,8 +3112,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = sel && (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
-			 strcmp(mod, "blob") == 0 || (strcmp(mod, "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func))));
+	int push_cands = strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
+		strcmp(mod, "blob") == 0 || (strcmp(mod, "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)));
 	node *n;
 	stmt *o = NULL;
 
@@ -3212,7 +3210,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT && push_cands) {
+		if (sel && push_cands && f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT) {
 			for (n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
@@ -3226,7 +3224,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			}
 		}
 		/* special case for round function on decimals */
-		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
+		if (strcmp(mod, "calc") == 0 && strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
