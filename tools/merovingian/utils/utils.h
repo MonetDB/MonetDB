@@ -16,6 +16,7 @@
 enum valtype {
 	INVALID = 0,
 	INT,
+	SINT,
 	BOOLEAN,
 	STR,
 	MURI,

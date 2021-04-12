@@ -3634,13 +3634,13 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rewrite_simplify(v, rel);
 	if (rel)
-		rel = rewrite_or_exp(v, rel);
-	if (rel)
 		rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
 	if (rel)
-		rel = rewrite_aggregates(v, rel);
+		rel = rewrite_outer2inner_union(v, rel); /* has to run before rewrite_or_exp */
 	if (rel)
-		rel = rewrite_outer2inner_union(v, rel);
+		rel = rewrite_or_exp(v, rel);
+	if (rel)
+		rel = rewrite_aggregates(v, rel);
 	if (rel)
 		rel = rewrite_values(v, rel);
 	return rel;

@@ -173,7 +173,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
-	if ((!lci || lci->tpe == cand_dense) && !BATtdense(r1) && !r2) {
+	if ((!lci || lci->tpe == cand_dense) && r1->ttype && !BATtdense(r1) && !r2) {
 		if (sizeof(oid) == sizeof(lng))
 			return project1_lng(bn, l, r1);
 		else
@@ -808,7 +808,7 @@ BATprojectchain(BAT **bats)
 	} *ba;
 	BAT **tobedeleted = NULL;
 	int ndelete = 0;
-	int n;
+	int n, i;
 	BAT *b = NULL, *bn = NULL;
 	bool allnil = false;
 	bool issorted = true;
@@ -849,7 +849,7 @@ BATprojectchain(BAT **bats)
 	}
 
 	ndelete = 0;
-	for (n = 0; bats[n]; n++) {
+	for (n = 0, i = 0; bats[n]; n++) {
 		b = bats[n];
 		if (b->ttype == TYPE_msk || mask_cand(b)) {
 			if ((b = BATunmask(b)) == NULL) {
@@ -857,7 +857,9 @@ BATprojectchain(BAT **bats)
 			}
 			tobedeleted[ndelete++] = b;
 		}
-		ba[n] = (struct ba) {
+		if (bats[n+1] && BATtdense(b) && b->hseqbase == b->tseqbase && b->tseqbase == bats[n+1]->hseqbase && BATcount(b) == BATcount(bats[n+1]))
+			continue; /* skip dense bat */
+		ba[i] = (struct ba) {
 			.b = b,
 			.hlo = b->hseqbase,
 			.hhi = b->hseqbase + b->batCount,
@@ -870,8 +872,23 @@ BATprojectchain(BAT **bats)
 			nonil &= b->tnonil;
 		if (b->tnonil && b->tkey && b->tsorted &&
 		    ATOMtype(b->ttype) == TYPE_oid) {
-			canditer_init(&ba[n].ci, NULL, b);
+			canditer_init(&ba[i].ci, NULL, b);
 		}
+		i++;
+	}
+	n = i;
+	if (i<=2) {
+		if (i == 1) {
+			bn = ba[0].b;
+			BBPfix(bn->batCacheid);
+		} else {
+			bn = BATproject(ba[0].b, ba[1].b);
+		}
+		while (ndelete-- > 0)
+			BBPunfix(tobedeleted[ndelete]->batCacheid);
+		GDKfree(tobedeleted);
+		GDKfree(ba);
+		return bn;
 	}
 	/* b is last BAT in bats array */
 	tpe = ATOMtype(b->ttype);

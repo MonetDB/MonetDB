@@ -703,6 +703,8 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	s->flag = access;
 	s->nr = getDestVar(q);
 	s->q = q;
+	s->tname = i->t->base.name;
+	s->cname = i->base.name;
 	return s;
 }
 
@@ -1598,7 +1600,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 	if (op1->nr < 0 || (sel && sel->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
 		int k;
 		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 

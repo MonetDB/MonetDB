@@ -2675,8 +2675,19 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
+		sql_rel *or = rel;
 		AtomNode *an = (AtomNode *) sc;
 		sql_exp *e = exp_atom(sql->sa, atom_dup(sql->sa, an->a));
+
+		if (e) {
+			sql_subtype bt;
+
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			e = exp_check_type(sql, &bt, rel, e, type_equal);
+		}
+		if (!e || or != rel)
+			return NULL;
+		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, e, e, e, e, e, NULL, f);
 	}
 	case SQL_IDENT:
@@ -2692,6 +2703,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		}
 		if (!e || or != rel)
 			return NULL;
+		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, e, e, e, e, e, NULL, f);
 	}
 	case SQL_UNION:
