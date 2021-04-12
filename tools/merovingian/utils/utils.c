@@ -223,8 +223,14 @@ setConfVal(confkeyval *ckv, const char *val) {
 					ckv->key);
 			return(strdup(buf));
 		}
+		case SINT:
 		case INT: {
 			const char *p = val;
+			int sign = 1;
+			if (ckv->type == SINT && *p == '-') {
+				sign = -1;
+				p++;
+			}
 			while (isdigit((unsigned char) *p))
 				p++;
 			if (*p != '\0') {
@@ -234,7 +240,7 @@ setConfVal(confkeyval *ckv, const char *val) {
 						ckv->key, val);
 				return(strdup(buf));
 			}
-			ival = atoi(val);
+			ival = sign * atoi(val);
 		}; break;
 		case BOOLEAN: {
 			if (strcasecmp(val, "true") == 0 ||
