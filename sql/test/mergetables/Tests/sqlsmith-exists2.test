@@ -525,6 +525,12 @@ limit 74
 14
 51
 
+query I rowsort
+select 1 from tab0 right join (select 1) as subq_0
+on false or (tab0.col1 is null and exists (select 1))
+----
+1
+
 query II rowsort
 select
  cast(coalesce(subq_1.c0,
