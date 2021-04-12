@@ -682,7 +682,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 static stmt *
 exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth)
 {
-	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL, *ocand = left ? left->cand : NULL;
+	stmt *res = NULL, *ires = NULL, *rsel = left ? left->cand : NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL;
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -721,7 +721,7 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 
 		if (!es) {
 			if (left)
-				left->cand = ocand;
+				left->cand = rsel;
 			return NULL;
 		}
 		if (!single_value) {
@@ -813,17 +813,17 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 		next_cond = !next_cond;
 	}
 	if (left)
-		left->cand = ocand;
+		left->cand = rsel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, ocand);
-	res->cand = ocand;
+		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, rsel);
+	res->cand = rsel;
 	return res;
 }
 
 static stmt *
 exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth)
 {
-	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL, *ocand = left ? left->cand : NULL;
+	stmt *res = NULL, *ires = NULL, *rsel = left ? left->cand : NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL;
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -884,7 +884,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		if (!es) {
 			if (left)
-				left->cand = ocand;
+				left->cand = rsel;
 			return NULL;
 		}
 		if (next_cond) {
@@ -910,7 +910,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				}
 				assert(l->cand == es->cand);
 			}
-			es = stmt_binop(be, l, es, NULL, cmp);
+			es = stmt_binop(be, l, es, es->cand, cmp);
 		}
 		if (!single_value) {
 			/* create result */
@@ -999,17 +999,17 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 		next_cond = !next_cond;
 	}
 	if (left)
-		left->cand = ocand;
+		left->cand = rsel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, ocand);
-	res->cand = ocand;
+		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, rsel);
+	res->cand = rsel;
 	return res;
 }
 
 static stmt*
 exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth)
 {
-	stmt *res = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *isel = left ? left->cand : NULL, *ocand = left ? left->cand : NULL;
+	stmt *res = NULL, *rsel = left ? left->cand : NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *isel = left ? left->cand : NULL;
 	int single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -1040,7 +1040,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		if (!es) {
 			if (left)
-				left->cand = ocand;
+				left->cand = rsel;
 			return NULL;
 		}
 		/* create result */
@@ -1057,7 +1057,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 				if (en->next) {
 					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
-					ncond = stmt_unop(be, es, NULL, a);
+					ncond = stmt_unop(be, es, nsel, a);
 					if (ncond->nrcols == 0) {
 						stmt *l = bin_find_smallest_column(be, left);
 						if (nsel && l)
@@ -1120,10 +1120,10 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 		}
 	}
 	if (left)
-		left->cand = ocand;
+		left->cand = rsel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, ocand);
-	res->cand = ocand;
+		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, rsel);
+	res->cand = rsel;
 	return res;
 }
 
