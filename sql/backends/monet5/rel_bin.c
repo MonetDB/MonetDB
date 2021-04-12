@@ -709,7 +709,7 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 
 		stmt *nsel = rsel;
 		if (!single_value) {
-			if (/*!next_cond &&*/ rsel && isel) {
+			if (/*!next_cond &&*/ rsel && isel && rsel != isel) {
 				/* back into left range */
 				nsel = stmt_project(be, rsel, isel);
 			} else if (isel && !rsel)
@@ -721,7 +721,7 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 
 		if (!es) {
 			if (left)
-				left->cand = rsel;
+				left->cand = isel;
 			return NULL;
 		}
 		if (!single_value) {
@@ -813,10 +813,10 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 		next_cond = !next_cond;
 	}
 	if (left)
-		left->cand = rsel;
+		left->cand = isel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, rsel);
-	res->cand = rsel;
+		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, isel);
+	res->cand = isel;
 	return res;
 }
 
@@ -872,7 +872,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		stmt *nsel = rsel;
 		if (!single_value) {
-			if (/*!next_cond &&*/ rsel && isel) {
+			if (/*!next_cond &&*/ rsel && isel && rsel != isel) {
 				/* back into left range */
 				nsel = stmt_project(be, rsel, isel);
 			} else if (isel && !rsel)
@@ -884,7 +884,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		if (!es) {
 			if (left)
-				left->cand = rsel;
+				left->cand = isel;
 			return NULL;
 		}
 		if (next_cond) {
@@ -999,10 +999,10 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 		next_cond = !next_cond;
 	}
 	if (left)
-		left->cand = rsel;
+		left->cand = isel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, rsel);
-	res->cand = rsel;
+		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, isel);
+	res->cand = isel;
 	return res;
 }
 
@@ -1028,7 +1028,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		stmt *nsel = rsel;
 		if (!single_value) {
-			if (/*!next_cond &&*/ rsel && isel) {
+			if (/*!next_cond &&*/ rsel && isel && rsel != isel) {
 				/* back into left range */
 				nsel = stmt_project(be, rsel, isel);
 			} else if (isel && !rsel)
@@ -1040,7 +1040,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		if (!es) {
 			if (left)
-				left->cand = rsel;
+				left->cand = isel;
 			return NULL;
 		}
 		/* create result */
@@ -1067,7 +1067,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 							ncond->cand = nsel;
 					} else if (!ncond->cand && nsel)
 						ncond = stmt_project(be, nsel, ncond);
-					stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1, NULL), cmp_equal, NULL, 0/*anti*/, 0);
+					stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1, ncond), cmp_equal, NULL, 0/*anti*/, 0);
 					if (!val->cand && nsel)
 						val = stmt_project(be, nsel, val);
 					val = stmt_project(be, s, val);
@@ -1086,7 +1086,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				res = stmt_replace(be, res, pos, val);
 			}
 			if (en->next) { /* handled then part */
-				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1, NULL), cmp_equal, NULL, 1/*anti*/, 0);
+				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1, ncond), cmp_equal, NULL, 1/*anti*/, 0);
 				if (osel)
 					rsel = stmt_project(be, s, osel);
 				else
@@ -1120,10 +1120,10 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 		}
 	}
 	if (left)
-		left->cand = rsel;
+		left->cand = isel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, rsel);
-	res->cand = rsel;
+		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2, isel);
+	res->cand = isel;
 	return res;
 }
 
