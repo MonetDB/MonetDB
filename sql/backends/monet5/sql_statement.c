@@ -143,6 +143,7 @@ stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c)
 		stmt *s = c->op1;
 		if (s->nrcols == 0)
 			s = stmt_const(be, sel, NULL, s);
+		else
 			s = stmt_project(be, sel, s);
 		res = stmt_alias(be, s, c->tname, c->cname);
 	}
