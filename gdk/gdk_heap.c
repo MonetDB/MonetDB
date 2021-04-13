@@ -432,12 +432,13 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		newsize = cap << shift;
 	else
 		newsize = (old->size >> b->tshift) << shift;
-	if (b->twidth == width && newsize <= old->size) {
-		/* nothing to do */
-		return GDK_SUCCEED;
+	if (b->twidth == width) {
+		if (newsize <= old->size) {
+			/* nothing to do */
+			return GDK_SUCCEED;
+		}
+		return BATextend(b, newsize >> shift);
 	}
-	if (width > b->twidth)
-		MT_thread_setalgorithm("widen offset heap");
 
 	/* if copyall is set, we need to convert the whole heap, since
 	 * we may be in the middle of an insert loop that adjusts the
@@ -445,6 +446,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	 * indicated by the "free" pointer */
 	n = (copyall ? old->size : old->free) >> b->tshift;
 
+	if (width > b->twidth)
+		MT_thread_setalgorithm(n ? "widen offset heap" : "widen empty offset heap");
 	/* Create a backup copy before widening.
 	 *
 	 * If the file is memory-mapped, this solves a problem that we
@@ -462,7 +465,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	else
 		filename++;
 	int exists = 0;
-	if (BBP_status(bid) & (BBPEXISTING|BBPDELETED)) {
+	if (BBP_status(bid) & (BBPEXISTING|BBPDELETED) && width > b->twidth) {
 		char fname[sizeof(old->filename)];
 		char *p = strrchr(old->filename, DIR_SEP);
 		strcpy_len(fname, p ? p + 1 : old->filename, sizeof(fname));
