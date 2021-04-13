@@ -222,7 +222,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				}
 			}
 		}
-	} else if (unshare_varsized_heap(b) != GDK_SUCCEED)
+	} else if (b->tvheap != n->tvheap &&
+		   unshare_varsized_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	/* make sure there is (vertical) space in the offset heap, we
