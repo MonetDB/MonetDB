@@ -436,6 +436,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		/* nothing to do */
 		return GDK_SUCCEED;
 	}
+	if (width > b->twidth)
+		MT_thread_setalgorithm("widen offset heap");
 
 	/* if copyall is set, we need to convert the whole heap, since
 	 * we may be in the middle of an insert loop that adjusts the
