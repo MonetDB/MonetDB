@@ -2398,6 +2398,7 @@ BBPkeepref(bat i)
 		BAT *b;
 
 		if ((b = BBPdescriptor(i)) != NULL) {
+			BATsetaccess(b, BAT_READ);
 			BATsettrivprop(b);
 			if (GDKdebug & (CHECKMASK | PROPMASK))
 				BATassertProps(b);

@@ -27,6 +27,7 @@ unshare_varsized_heap(BAT *b)
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
+		MT_thread_setalgorithm("unshare vheap");
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		strconcat_len(h->filename, sizeof(h->filename),
@@ -111,6 +112,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				/* make sure locking happens in a
 				 * predictable order: lowest id
 				 * first */
+				MT_thread_setalgorithm("share vheap, copy heap");
 				if (b->batCacheid < n->batCacheid) {
 					MT_lock_set(&b->theaplock);
 					MT_lock_set(&n->theaplock);
@@ -136,6 +138,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 					(var_t) 1 << 17;
 			} else if (b->tvheap->parentid == n->tvheap->parentid &&
 				   ci->tpe == cand_dense) {
+				MT_thread_setalgorithm("copy heap");
 				toff = 0;
 			} else if (b->tvheap->parentid != bid &&
 				   unshare_varsized_heap(b) != GDK_SUCCEED) {
@@ -148,6 +151,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				n->twidth != 4 ? (var_t) 1 << 33 :
 #endif
 				(var_t) 1 << 17;
+			MT_thread_setalgorithm("copy vheap, copy heap");
 			if (b->tvheap->size < n->tvheap->free) {
 				Heap *h = HEAPgrow(b->tvheap, n->tvheap->free);
 				if (h == NULL)
@@ -207,6 +211,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				HEAPdecref(b->tvheap, false);
 				b->tvheap = h;
 				MT_lock_unset(&b->theaplock);
+				MT_thread_setalgorithm("append vheap");
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
 				if (toff > 0) {
@@ -217,7 +222,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				}
 			}
 		}
-	} else if (unshare_varsized_heap(b) != GDK_SUCCEED)
+	} else if (b->tvheap != n->tvheap &&
+		   unshare_varsized_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	/* make sure there is (vertical) space in the offset heap, we
@@ -250,32 +256,27 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 
 		switch (b->twidth) {
 		case 1:
-			b->ttype = TYPE_bte;
 			tp = &tbv;
 			break;
 		case 2:
-			b->ttype = TYPE_sht;
 			tp = &tsv;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
-			b->ttype = TYPE_int;
 			tp = &tiv;
 			break;
 		case 8:
-			b->ttype = TYPE_lng;
 			tp = &v;
 			break;
 #else
 		case 4:
-			b->ttype = TYPE_int;
 			tp = &v;
 			break;
 #endif
 		default:
 			assert(0);
 		}
-		b->tvarsized = false;
+		MT_thread_setalgorithm("copy offset values");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - n->hseqbase;
@@ -322,8 +323,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				break;
 			}
 		}
-		b->tvarsized = true;
-		b->ttype = TYPE_str;
 	} else if (b->tvheap->free < n->tvheap->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
@@ -333,6 +332,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		 * to use the double elimination mechanism */
 		r = BUNlast(b);
 		oid hseq = n->hseqbase;
+		MT_thread_setalgorithm("insert string values");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - hseq;
@@ -349,6 +349,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		 * n's).  If this is the case, we just copy the
 		 * offset, otherwise we insert normally.  */
 		r = BUNlast(b);
+		MT_thread_setalgorithm("insert string values with check");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - n->hseqbase;

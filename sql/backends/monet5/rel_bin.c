@@ -340,7 +340,7 @@ distinct_value_list(backend *be, list *vals, stmt **last_null_value, int depth, 
 	/* create bat append values */
 	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, NULL, NULL, depth+1, 0, push);
+		stmt *i = exp_bin(be, e, NULL, NULL, depth, 0, push);
 
 		if (exp_is_null(e))
 			*last_null_value = i;
