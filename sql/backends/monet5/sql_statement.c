@@ -134,7 +134,7 @@ stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c)
 
 	if (!sel)
 		return res;
-	assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
+	assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single || c->type == st_const);
 	if (c->type != st_alias) {
 		res = stmt_project(be, sel, c);
 	} else if (c->op1->type == st_mirror && is_tid_chain(sel)) { /* alias with mirror (ie full row ids) */
@@ -142,8 +142,7 @@ stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c)
 	} else { /* st_alias */
 		stmt *s = c->op1;
 		if (s->nrcols == 0)
-			s = stmt_const(be, sel, s);
-		else
+			s = stmt_const(be, sel, NULL, s);
 			s = stmt_project(be, sel, s);
 		res = stmt_alias(be, s, c->tname, c->cname);
 	}
@@ -153,7 +152,7 @@ stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c)
 
 /* #TODO make proper traversal operations */
 stmt *
-stmt_atom_string(backend *be, const char *S, stmt *sel)
+stmt_atom_string(backend *be, const char *S)
 {
 	char *s = NULL;
 	sql_subtype t;
@@ -165,34 +164,34 @@ stmt_atom_string(backend *be, const char *S, stmt *sel)
 		sql_find_subtype(&t, "clob", 0, 0);
 	}
 
-	return stmt_atom(be, atom_string(be->mvc->sa, &t, s), sel);
+	return stmt_atom(be, atom_string(be->mvc->sa, &t, s));
 }
 
 stmt *
-stmt_atom_int(backend *be, int i, stmt *sel)
+stmt_atom_int(backend *be, int i)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "int", 32, 0);
-	return stmt_atom(be, is_int_nil(i) ? atom_general(be->mvc->sa, &t, NULL) : atom_int(be->mvc->sa, &t, i), sel);
+	return stmt_atom(be, is_int_nil(i) ? atom_general(be->mvc->sa, &t, NULL) : atom_int(be->mvc->sa, &t, i));
 }
 
 stmt *
-stmt_atom_lng(backend *be, lng i, stmt *sel)
+stmt_atom_lng(backend *be, lng i)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(be, is_lng_nil(i) ? atom_general(be->mvc->sa, &t, NULL) : atom_int(be->mvc->sa, &t, i), sel);
+	return stmt_atom(be, is_lng_nil(i) ? atom_general(be->mvc->sa, &t, NULL) : atom_int(be->mvc->sa, &t, i));
 }
 
 stmt *
-stmt_bool(backend *be, int b, stmt *sel)
+stmt_bool(backend *be, int b)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "boolean", 0, 0);
-	return stmt_atom(be, atom_bool(be->mvc->sa, &t, b ? TRUE: FALSE), sel);
+	return stmt_atom(be, atom_bool(be->mvc->sa, &t, b ? TRUE: FALSE));
 }
 
 static stmt *
@@ -358,7 +357,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 }
 
 stmt *
-stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level, stmt *sel)
+stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -424,14 +423,13 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		s->key = 1;
 		s->q = q;
 		s->nr = getDestVar(q);
-		s->cand = sel;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level, stmt *sel)
+stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -451,14 +449,13 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 		s->flag = declare + (level << 1);
 		s->key = 1;
 		s->nr = l[0];
-		s->cand = sel;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_varnr(backend *be, int nr, sql_subtype *t, stmt *sel)
+stmt_varnr(backend *be, int nr, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = newAssignment(mb);
@@ -485,7 +482,6 @@ stmt_varnr(backend *be, int nr, sql_subtype *t, stmt *sel)
 		s->key = 1;
 		s->q = q;
 		s->nr = getDestVar(q);
-		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -934,15 +930,13 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 }
 
 stmt *
-stmt_const(backend *be, stmt *s, stmt *val)
+stmt_const(backend *be, stmt *s, stmt *sel, stmt *val)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
+	stmt *pc = sel ? sel : s;
 
-	if (val)
-		q = dump_2(mb, algebraRef, projectRef, s, val);
-	else
-		q = dump_1(mb, algebraRef, projectRef, s);
+	q = dump_2(mb, algebraRef, projectRef, pc, val);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_const);
 		if (ns == NULL) {
@@ -950,7 +944,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 			return NULL;
 		}
 
-		ns->op1 = s;
+		ns->op1 = pc;
 		ns->op2 = val;
 		ns->nrcols = s->nrcols;
 		ns->key = s->key;
@@ -959,7 +953,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->nr = getDestVar(q);
 		ns->tname = val->tname;
 		ns->cname = val->cname;
-		ns->cand = s->cand;
+		ns->cand = sel;
 		return ns;
 	}
 	return NULL;
@@ -1294,7 +1288,7 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 }
 
 stmt *
-stmt_atom(backend *be, atom *a, stmt *sel)
+stmt_atom(backend *be, atom *a)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->base.name) : newAssignment(mb);
@@ -1325,7 +1319,6 @@ stmt_atom(backend *be, atom *a, stmt *sel)
 		s->key = 1;		/* values are also unique */
 		s->q = q;
 		s->nr = getDestVar(q);
-		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -2093,7 +2086,7 @@ stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
 	if (!op2->nrcols)
-		return stmt_const(be, op1, op2);
+		return stmt_const(be, op1, NULL, op2);
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -3331,7 +3324,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 			return NULL;
 		}
 		s->op1 = ops;
-		s->op2 = stmt_atom_string(be, name, sel);
+		s->op2 = stmt_atom_string(be, name);
 		s->op4.rel = rel;
 		s->flag = f_union;
 

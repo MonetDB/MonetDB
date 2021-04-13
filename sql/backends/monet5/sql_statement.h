@@ -143,9 +143,9 @@ extern void stmt_set_nrcols(rel_bin_stmt *s);
 extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *sel, stmt *grp, stmt *ext, stmt *cnt);
 extern stmt *stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c);
 
-extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level, stmt *sel);
-extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level, stmt *sel);
-extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t, stmt *sel);
+extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
+extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
 extern stmt *stmt_table(backend *be, rel_bin_stmt *cols, int temp);
 extern stmt *stmt_rs_column(backend *be, stmt *result_set, int i, sql_subtype *tpe);
@@ -171,11 +171,11 @@ extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, list *args);
 
 extern stmt *stmt_temp(backend *be, sql_subtype *t);
-extern stmt *stmt_atom(backend *be, atom *a, stmt *sel);
-extern stmt *stmt_atom_string(backend *be, const char *s, stmt *sel);
-extern stmt *stmt_atom_int(backend *be, int i, stmt *sel);
-extern stmt *stmt_atom_lng(backend *be, lng i, stmt *sel);
-extern stmt *stmt_bool(backend *be, int b, stmt *sel);
+extern stmt *stmt_atom(backend *be, atom *a);
+extern stmt *stmt_atom_string(backend *be, const char *s);
+extern stmt *stmt_atom_int(backend *be, int i);
+extern stmt *stmt_atom_lng(backend *be, lng i);
+extern stmt *stmt_bool(backend *be, int b);
 
 extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, int anti, int is_semantics);
 /* cmp
@@ -211,7 +211,7 @@ extern stmt *stmt_unique(backend *be, stmt *op1);
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);
 
-extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
+extern stmt *stmt_const(backend *be, stmt *s, stmt *sel, stmt *val);
 
 extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
 extern stmt *stmt_mirror(backend *be, stmt *s);
