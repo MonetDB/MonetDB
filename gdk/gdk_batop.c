@@ -220,6 +220,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 					memset(b->tvheap->base, 0,
 					       GDK_STRHASHSIZE);
 				}
+				/* make sure b is wide enough */
+				v = b->tvheap->free;
 			}
 		}
 	} else if (b->tvheap != n->tvheap &&
