@@ -333,7 +333,7 @@ row2cols(backend *be, stmt *sub)
 }
 
 static stmt*
-distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
+distinct_value_list(backend *be, list *vals, stmt **last_null_value, int depth, int push)
 {
 	list *l = sa_list(be->mvc->sa);
 	stmt *s;
@@ -341,7 +341,7 @@ distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 	/* create bat append values */
 	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, depth, 0, push);
 
 		if (exp_is_null(e))
 			*last_null_value = i;
@@ -415,11 +415,11 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 }
 
 static stmt *
-handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, bool in, int use_r, int depth, int reduce)
+handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, bool in, int depth, int reduce, int push)
 {
 	mvc *sql = be->mvc;
 	node *n;
-	stmt *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL, 0, 0, 0);
+	stmt *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
 
 	if(!c)
 		return NULL;
@@ -437,7 +437,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 
 		for( n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL, 0, 0, 0);
+			stmt *i = exp_bin(be, e, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
 			if(!i)
 				return NULL;
 
@@ -458,7 +458,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = sel;
 		for( n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL, 0, 0, 0);
+			stmt *i = exp_bin(be, e, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
 			if(!i)
 				return NULL;
 
@@ -480,7 +480,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		stmt* last_null_value = NULL;  /* CORNER CASE ALERT: See description below. */
 
 		/* The actual in-value-list should not contain duplicates to ensure that final join results are unique. */
-		s = distinct_value_list(be, nl, &last_null_value);
+		s = distinct_value_list(be, nl, &last_null_value, depth+1, push);
 		if (!s)
 			return NULL;
 
@@ -1435,9 +1435,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_genselect(be, l, r, e->f, sel, is_anti(e));
 			return s;
 		}
-		if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), 0, depth, reduce);
-		}
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), depth, reduce, push);
 		if (e->flag == cmp_or && (!right || right->nrcols == 1))
 			return exp_bin_or(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
 		if (e->flag == cmp_or && right) {  /* join */
@@ -2755,11 +2754,11 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		assert(list_length(mexps) == 1);
 		for( en = mexps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
-			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL, 0, 0, 0), *rs;
+			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL, 0, 1, 0), *rs;
 			if (!ls)
 				return NULL;
 
-			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 0, 0)))
+			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 1, 0)))
 				return NULL;
 
 			if (ls->nrcols == 0)
@@ -2858,14 +2857,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 				if (equality_only) {
 					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid, swap = 0;
-					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 1, 0);
 
 					if (!l) {
 						swap = 1;
 						clean_mal_statements(be, oldstop, oldvtop, oldvid);
-						l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+						l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 0, 1, 0);
 					}
-					r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 0, 0);
+					r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
 
 					if (swap) {
 						stmt *t = l;
