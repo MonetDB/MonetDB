@@ -405,7 +405,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 	}
 
 	if (reduce && c->nrcols == 0)
-		c = stmt_const(be, bin_find_smallest_column(be, left), lcand, c);
+		c = stmt_const(be, bin_find_smallest_column(be, left), NULL, c);
 
 	if (c->nrcols == 0 || depth || !reduce) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -433,8 +433,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 		}
 		if (lcand && !(depth || !reduce))
 			s = stmt_uselect(be,
-				stmt_const(be, bin_find_smallest_column(be, left), lcand, s),
-				stmt_bool(be, 1), cmp_equal, NULL, 0, 0);
+				stmt_const(be, bin_find_smallest_column(be, left), NULL, s),
+				stmt_bool(be, 1), cmp_equal, lcand, 0, 0);
 	} else if (list_length(nl) < 16) {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
@@ -578,14 +578,16 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 {
 	sql_subtype *bt = sql_bind_localtype("bit");
 	list *l = e->l;
-	stmt *ocand = left ? left->cand : NULL, *sel1 = left ? left->cand : NULL, *sel2 = left ? left->cand : NULL, *s = NULL;
+	stmt *ocand = left ? left->cand : NULL, *sel1 = left ? left->cand : NULL, *sel2 = left ? left->cand : NULL, *s = NULL, *lcand = NULL;
 	int anti = is_anti(e);
 
 	for( node *n = l->h; n; n = n->next ) {
 		sql_exp *c = n->data;
 
-		if (left)
-			left->cand = sel1;
+		if (left) {
+			left->cand = (sel1 && sel1->nrcols)?sel1:NULL;
+			lcand = left->cand;
+		}
 
 		/* propagate the anti flag */
 		if (anti)
@@ -597,29 +599,29 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 			return s;
 		}
 
-		if (sel1 && !sel1->cand && sel1->nrcols == 0 && s->nrcols == 0) {
+		if (!lcand && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC);
 			assert(f);
-			s = stmt_binop(be, sel1, s, NULL, f);
+			s = stmt_binop(be, sel1, s, lcand, f);
 		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
 			stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, s->nrcols == 0 ? sel1 : s, stmt_bool(be, 1));
+			predicate = stmt_const(be, predicate, NULL, stmt_bool(be, 1));
 			if (s->nrcols == 0)
-				s = stmt_uselect(be, predicate, s, cmp_equal, NULL, anti, is_semantics(c));
+				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
 			else
-				s = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, anti, is_semantics(c));
+				s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
 		}
 		sel1 = s;
 	}
 	l = e->r;
-	if (left)
-		left->cand = ocand;
 	for( node *n = l->h; n; n = n->next ) {
 		sql_exp *c = n->data;
 
-		if (left)
-			left->cand = sel2;
+		if (left) {
+			left->cand = (sel2 && sel2->nrcols)?sel2:NULL;
+			lcand = left->cand;
+		}
 
 		/* propagate the anti flag */
 		if (anti)
@@ -630,19 +632,18 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 				left->cand = ocand;
 			return s;
 		}
-
-		if (sel2 && !sel2->cand && sel2->nrcols == 0 && s->nrcols == 0) {
+		if (!lcand && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC);
 			assert(f);
-			s = stmt_binop(be, sel2, s, NULL, f);
+			s = stmt_binop(be, sel2, s, lcand, f);
 		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
 			stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, s->nrcols == 0 ? sel2 : s, stmt_bool(be, 1));
+			predicate = stmt_const(be, predicate, NULL, stmt_bool(be, 1));
 			if (s->nrcols == 0)
-				s = stmt_uselect(be, predicate, s, cmp_equal, NULL, anti, 0);
+				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
 			else
-				s = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, anti, 0);
+				s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti, 0);
 		}
 		sel2 = s;
 	}
@@ -679,7 +680,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 static stmt *
 exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth)
 {
-	stmt *res = NULL, *ires = NULL, *rsel = left ? left->cand : NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL;
+	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL;
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -706,7 +707,7 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 
 		stmt *nsel = rsel;
 		if (!single_value) {
-			if (/*!next_cond &&*/ rsel && isel && rsel != isel) {
+			if (/*!next_cond &&*/ rsel && isel) {
 				/* back into left range */
 				nsel = stmt_project(be, rsel, isel);
 			} else if (isel && !rsel)
@@ -729,6 +730,8 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 					l = bin_find_smallest_column(be, left);
 				res = stmt_const(be, l, NULL, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				ires = l;
+				if (res)
+					res->cand = isel;
 			} else if (res && !next_cond) { /* use result too update column */
 				stmt *val = es;
 				stmt *pos = rsel;
@@ -812,7 +815,7 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 	if (left)
 		left->cand = isel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
+		return stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
 	res->cand = isel;
 	return res;
 }
@@ -820,7 +823,7 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 static stmt *
 exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth)
 {
-	stmt *res = NULL, *ires = NULL, *rsel = left ? left->cand : NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL;
+	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL, *isel = left ? left->cand : NULL;
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -839,12 +842,20 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 	node *en = exps->h;
 	sql_exp *e = en->data;
 
+	if (left)
+		left->cand = !single_value?isel:NULL;
 	stmt *case_when = exp_bin(be, e, left, right, depth+1, 0);
-	if (!case_when)
+	if (!case_when) {
+		if (left)
+			left->cand = isel;
 		return NULL;
+	}
 	cmp = sql_bind_func(be->mvc, "sys", "=", exp_subtype(e), exp_subtype(e), F_FUNC);
-	if (!cmp)
+	if (!cmp) {
+		if (left)
+			left->cand = isel;
 		return NULL;
+	}
 	if (!single_value && !case_when->nrcols) {
 		stmt *l = isel;
 		if (!l)
@@ -869,7 +880,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		stmt *nsel = rsel;
 		if (!single_value) {
-			if (/*!next_cond &&*/ rsel && isel && rsel != isel) {
+			if (/*!next_cond &&*/ rsel && isel) {
 				/* back into left range */
 				nsel = stmt_project(be, rsel, isel);
 			} else if (isel && !rsel)
@@ -907,7 +918,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				}
 				assert(l->cand == es->cand);
 			}
-			es = stmt_binop(be, l, es, es->cand, cmp);
+			es = stmt_binop(be, l, es, NULL, cmp);
 		}
 		if (!single_value) {
 			/* create result */
@@ -917,6 +928,8 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 					l = bin_find_smallest_column(be, left);
 				res = stmt_const(be, l, NULL, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				ires = l;
+				if (res)
+					res->cand = isel;
 			} else if (res && !next_cond) { /* use result too update column */
 				stmt *val = es;
 				stmt *pos = rsel;
@@ -998,7 +1011,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 	if (left)
 		left->cand = isel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
+		return stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
 	res->cand = isel;
 	return res;
 }
@@ -1006,7 +1019,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 static stmt*
 exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth)
 {
-	stmt *res = NULL, *rsel = left ? left->cand : NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *isel = left ? left->cand : NULL;
+	stmt *res = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *isel = left ? left->cand : NULL;
 	int single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -1025,7 +1038,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 		stmt *nsel = rsel;
 		if (!single_value) {
-			if (/*!next_cond &&*/ rsel && isel && rsel != isel) {
+			if (/*!next_cond &&*/ rsel && isel) {
 				/* back into left range */
 				nsel = stmt_project(be, rsel, isel);
 			} else if (isel && !rsel)
@@ -1047,6 +1060,8 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				if (!l)
 					l = bin_find_smallest_column(be, left);
 				res = stmt_const(be, l, NULL, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				if (res)
+					res->cand = isel;
 			}
 			if (res) {
 				stmt *val = es;
@@ -1054,7 +1069,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 				if (en->next) {
 					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
-					ncond = stmt_unop(be, es, nsel, a);
+					ncond = stmt_unop(be, es, NULL, a);
 					if (ncond->nrcols == 0) {
 						stmt *l = bin_find_smallest_column(be, left);
 						if (nsel && l)
@@ -1119,7 +1134,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 	if (left)
 		left->cand = isel;
 	if (single_value)
-		res = stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
+		return stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
 	res->cand = isel;
 	return res;
 }
