@@ -256,32 +256,26 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 
 		switch (b->twidth) {
 		case 1:
-			b->ttype = TYPE_bte;
 			tp = &tbv;
 			break;
 		case 2:
-			b->ttype = TYPE_sht;
 			tp = &tsv;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
-			b->ttype = TYPE_int;
 			tp = &tiv;
 			break;
 		case 8:
-			b->ttype = TYPE_lng;
 			tp = &v;
 			break;
 #else
 		case 4:
-			b->ttype = TYPE_int;
 			tp = &v;
 			break;
 #endif
 		default:
 			assert(0);
 		}
-		b->tvarsized = false;
 		MT_thread_setalgorithm("copy offset values");
 		while (cnt > 0) {
 			cnt--;
@@ -329,8 +323,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				break;
 			}
 		}
-		b->tvarsized = true;
-		b->ttype = TYPE_str;
 	} else if (b->tvheap->free < n->tvheap->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
