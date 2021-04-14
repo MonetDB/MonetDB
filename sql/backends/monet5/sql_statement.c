@@ -1488,6 +1488,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		default:
 			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
+		int pushed = 0;
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL)
 			return NULL;
@@ -1500,6 +1501,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 				q = pushNil(mb, q, TYPE_bat);
 			else if (op2->nrcols)
 				q = pushArgument(mb, q, sel->nr);
+			pushed = 1;
 		}
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
@@ -1507,6 +1509,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
+		if (sel && !pushed)
+			pushArgument(mb, q, sel->nr);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
@@ -1514,6 +1518,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		q = pushBit(mb, q, anti);
 		if (q == NULL)
 			return NULL;
+		if (sel && pushed) { /* get back too the correct ids */
+			int nr = getDestVar(q);
+			q = newStmt(mb, algebraRef, projectionRef);
+			q = pushArgument(mb, q, nr);
+			q = pushArgument(mb, q, sel->nr);
+		}
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
@@ -1533,12 +1543,15 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 			q = pushBit(mb, q, TRUE);
 			q = pushBit(mb, q, anti);
 		} else {
+			int pushed = 0;
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
 			if (!op1->cand && op1->nrcols && sel) /* don't push cands again */
 				q = pushArgument(mb, q, sel->nr);
-			else
+			else {
 				q = pushNil(mb, q, TYPE_bat);
+				pushed = 1;
+			}
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
 			case mark_in:
@@ -1566,6 +1579,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 				if (q)
 					freeInstruction(q);
 				q = NULL;
+			}
+			if (sel && pushed) {
+				int nr = getDestVar(q);
+				q = newStmt(mb, algebraRef, projectionRef);
+				q = pushArgument(mb, q, nr);
+				q = pushArgument(mb, q, sel->nr);
 			}
 		}
 		if (q == NULL)
@@ -1659,6 +1678,13 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, FALSE);
+		/* project */
+		if (sel && pushed) { /* get back too the correct ids */
+			int nr = getDestVar(q);
+			q = newStmt(mb, algebraRef, projectionRef);
+			q = pushArgument(mb, q, nr);
+			q = pushArgument(mb, q, sel->nr);
+		}
 		if (q == NULL)
 			return NULL;
 	} else {
