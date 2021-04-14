@@ -27,7 +27,3 @@ except CalledProcessError as e:
 #TST=$1
 #
 #java ${TST} "${URL}"
-#
-##!/bin/sh
-#
-#$TSTSRCDIR/Test.SQL.sh $*
