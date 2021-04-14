@@ -3496,6 +3496,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			sub = subrel_project(be, sub, refs, rel);
 		psub = subrel_project(be, psub, refs, rel);
 	}
+	pl = psub->cols;
 	stmt_set_nrcols(psub);
 
 	/* In case of a topn
