@@ -83,6 +83,18 @@ stdout of test 'webExamplesCastFunctionsOperators` in directory 'sql/test/sys-sc
 % timestamp # type
 % 26 # length
 [ 2020-07-29 17:44:59.123456	]
+#select cast('17:44:59.321+01:30' as timetz);
+% .%1 # table_name
+% %1 # name
+% timetz # type
+% 21 # length
+[ 17:14:59.321000+01:00        ]
+#select cast('2020-07-29 17:44:59.321+01:30' as timestamptz);
+% .%1 # table_name
+% %1 # name
+% timestamptz # type
+% 32 # length
+[ 2020-07-29 17:14:59.321000+01:00     ]
 #select cast('1234' as interval month);
 % .%1 # table_name
 % %1 # name
