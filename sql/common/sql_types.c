@@ -1469,14 +1469,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "substr", "str", "substring3", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
 
-		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
-		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
-		sql_create_filter(sa, "ilike", "algebra", "ilike", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
-		sql_create_filter(sa, "ilike", "algebra", "ilike", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
-		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
-		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
-		sql_create_filter(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
-		sql_create_filter(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 4, *t, *t, *t, BIT);
+		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 4, *t, *t, *t, BIT);
 
 		sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);

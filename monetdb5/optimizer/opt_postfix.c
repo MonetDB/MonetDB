@@ -35,7 +35,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ( getModuleId(p) == algebraRef) {
 			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
 				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
-				 getFunctionId(p) == likejoinRef || getFunctionId(p) == ilikejoinRef ) {
+				 getFunctionId(p) == likejoinRef) {
 				if ( getVarEolife(mb, getArg(p, p->retc -1)) == i) {
 					delArgument(p, p->retc -1);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
