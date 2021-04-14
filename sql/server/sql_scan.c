@@ -43,6 +43,7 @@ query_cleaned(sql_allocator *sa, const char *query)
 			if (*query == '/' && query[-1] == '*') {
 				incomment1 = false;
 			}
+			*q++ = *query;
 		} else if (incomment2) {
 			if (*query == '\n') {
 				incomment2 = false;
@@ -77,6 +78,7 @@ query_cleaned(sql_allocator *sa, const char *query)
 			incomment2 = true;
 		} else if (*query == '/' && query[1] == '*') {
 			incomment1 = true;
+			*q++ = *query;
 		} else if (*query == '\n') {
 			/* collapse newlines */
 			if (q > r && q[-1] != '\n')
