@@ -915,6 +915,9 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 						l = stmt_project(be, nsel, l);
 						l->cand = nsel;
 					}
+				} else if (rsel && es->cand && es->cand != nsel) {
+					es = stmt_project(be, rsel, es);
+					es->cand = nsel;
 				}
 				assert(l->cand == es->cand);
 			}
