@@ -3592,14 +3592,16 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b)) {
+		    BATcount(l) == BATcount(b) &&
+		    ATOMtype(l->ttype) == ATOMtype(b->ttype)) {
 			l = b;
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b)) {
+		    BATcount(r) == BATcount(b) &&
+		    ATOMtype(r->ttype) == ATOMtype(b->ttype)) {
 			r = b;
 		}
 	}
