@@ -65,7 +65,7 @@
  * contains.
  */
 static size_t
-GDKstrimp_strlen(const uint8_t *s)
+STRMP_strlen(const uint8_t *s)
 {
 	size_t ret = 0;
 	size_t i;
@@ -102,7 +102,7 @@ GDKstrimp_strlen(const uint8_t *s)
  * 1 digram starting at character n - 1
  */
 gdk_return
-GDKstrimp_ndigrams(BAT *b, size_t *n)
+STRMPndigrams(BAT *b, size_t *n)
 {
 	// lng t0;
 	BUN i;
@@ -119,7 +119,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 	*n = 0;
 	for (i = 0; i < b->batCount; i++) {
 		s = (char *)BUNtail(bi, i);
-                // *n += GDKstrimp_strlen(s) - 1;
+                // *n += STRMP_strlen(s) - 1;
 		*n += strlen(s) - 1;
 		// TRC_DEBUG(ALGO, "s["LLFMT"]=%s\n", i, s);
 	}
@@ -152,7 +152,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
  * count.
  */
 gdk_return
-GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins)
+STRMPmakehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins)
 {
 	lng t0=0;
 	size_t hi;
@@ -269,7 +269,7 @@ create_header(BAT *b)
 	if ((header = (StrimpHeader*)GDKmalloc(sizeof(StrimpHeader))) == NULL)
 		return NULL;
 
-	if(GDKstrimp_make_histogram(b, hist, STRIMP_HISTSIZE, &nbins) != GDK_SUCCEED) {
+	if(STRMPmakehistogram(b, hist, STRIMP_HISTSIZE, &nbins) != GDK_SUCCEED) {
 		GDKfree(header);
 		return NULL;
 	}
@@ -307,7 +307,7 @@ lookup_index(StrimpHeader *h, DataPair n)
  * This should probably be inlined.
  */
 static uint64_t
-GDKstrimp_make_bitstring(const str s, StrimpHeader *h)
+STRMPmakebitstring(const str s, StrimpHeader *h)
 {
 	uint64_t ret = 0;
 	int8_t pair_idx;
@@ -379,7 +379,7 @@ create_strimp_heap(BAT *b, StrimpHeader *h)
 
 /* Create */
 gdk_return
-GDKstrimp_create_strimp(BAT *b)
+STRMPcreate(BAT *b)
 {
 	lng t0 = 0;
 	BATiter bi;
@@ -401,13 +401,13 @@ GDKstrimp_create_strimp(BAT *b)
 			GDKfree(head);
 			return GDK_FAIL;
 		}
-		dh = (uint64_t *)h->base + h->free;
+		dh = (uint64_t *)h->base + h->free; // That's probably not correct
 
 		bi = bat_iterator(b);
 		for (i = 0; i < b->batCount; i++) {
 			s = (str)BUNtvar(bi, i);
 			if (!strNil(s))
-				*dh++ = GDKstrimp_make_bitstring(s, head);
+				*dh++ = STRMPmakebitstring(s, head);
 			else
 				*dh++ = 0; /* no pairs in nil values */
 

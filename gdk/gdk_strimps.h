@@ -27,9 +27,10 @@ typedef struct {
 	DataPair bytepairs[STRIMP_HEADER_SIZE];
 } StrimpHeader;
 
-gdk_export gdk_return GDKstrimp_ndigrams(BAT *b, size_t *n); // Remove?
-gdk_export gdk_return GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins); // make static
-// gdk_export gdk_return GDKstrimp_make_header(StrimpHeader *h, uint64_t *hist, size_t hist_size); // make static
-//gdk_export gdk_return GDKstrimp_make_header(BAT *b);
-gdk_export gdk_return GDKstrimp_create_strimp(BAT *b);
+gdk_export gdk_return STRMPndigrams(BAT *b, size_t *n); // Remove?
+gdk_export gdk_return STRMPmakehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins); // make static
+// gdk_export gdk_return STRMP_make_header(StrimpHeader *h, uint64_t *hist, size_t hist_size); // make static
+//gdk_export gdk_return STRMP_make_header(BAT *b);
+gdk_export gdk_return STRMPcreate(BAT *b);
+gdk_export BAT *STRMPfilter(BAT *b, char *q);
 #endif /* _GDK_STRIMPS_H_ */
