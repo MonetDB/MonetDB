@@ -284,7 +284,7 @@ PATstrimp_ndigrams(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "bat.strimpDigrams", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (!GDKstrimp_ndigrams(b, &n)) {
+	if (!STRMPndigrams(b, &n)) {
 		throw(MAL, "bat.strimpDigrams", SQLSTATE(HY002) OPERATION_FAILED);
 	}
 
@@ -309,7 +309,7 @@ PATstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (!GDKstrimp_make_histogram(b, hist, STRIMP_HISTSIZE, &count)) {
+	if (!STRMPmakehistogram(b, hist, STRIMP_HISTSIZE, &count)) {
 		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
 	}
 
@@ -342,7 +342,7 @@ PATstrimp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "bat.strimpHeader", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if(GDKstrimp_create_strimp(b) != GDK_SUCCEED)
+	if(STRMPcreate(b) != GDK_SUCCEED)
 		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
 
 	// *getArgReference_lng(stk, pci, 0) = 0;
