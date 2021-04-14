@@ -3068,9 +3068,20 @@ SQLidentity(oid *ret, const void *i)
 }
 
 str
-BATSQLidentity(bat *ret, const bat *bid)
+BATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return BKCmirror(ret, bid);
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (sid && !is_bat_nil(*sid)) {
+		*res = *sid;
+		return MAL_SUCCEED;
+	} else {
+		return BKCmirror(res, bid);
+	}
 }
 
 str
@@ -3078,25 +3089,22 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *res = getArgReference_bat(stk, pci, 0);
 	oid *ns = getArgReference_oid(stk, pci, 1);
-	bat bid = *getArgReference_bat(stk, pci, 2);
 	oid s = *getArgReference_oid(stk, pci, 3);
+	bat *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	bat bid = sid && !is_bat_nil(*sid) ? *sid : *getArgReference_bat(stk, pci, 2);
 	BAT *b, *bn = NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if ((b = BATdescriptor(bid)) == NULL) {
+	if (!(b = BBPquickdesc(bid, false)))
 		throw(MAL, "batcalc.identity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
 	bn = BATdense(b->hseqbase, s, BATcount(b));
 	if (bn != NULL) {
 		*ns = s + BATcount(b);
-		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "batcalc.identity", SQLSTATE(45001) "Internal error");
-
+	throw(MAL, "batcalc.identity", GDK_EXCEPTION);
 }
 
 /*
@@ -4950,8 +4958,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "createorderindex", sql_createorderindex, true, "Instantiate the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  pattern("sql", "droporderindex", sql_droporderindex, true, "Drop the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
- command("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
+ pattern("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
+ pattern("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers with a candidate list input", args(1,3, batarg("",oid),batargany("b",0), batarg("",oid))),
  pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,4, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid))),
+ pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,5, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid),batarg("s",oid))),
  pattern("sql", "querylog_catalog", sql_querylog_catalog, false, "Obtain the query log catalog", args(8,8, batarg("id",oid),batarg("user",str),batarg("defined",timestamp),batarg("query",str),batarg("pipe",str),batarg("plan",str),batarg("mal",int),batarg("optimize",lng))),
  pattern("sql", "querylog_calls", sql_querylog_calls, false, "Obtain the query log calls", args(9,9, batarg("id",oid),batarg("start",timestamp),batarg("stop",timestamp),batarg("arguments",str),batarg("tuples",lng),batarg("exec",lng),batarg("result",lng),batarg("cpuload",int),batarg("iowait",int))),
  pattern("sql", "querylog_empty", sql_querylog_empty, true, "", noargs),
