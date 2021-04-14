@@ -1582,15 +1582,17 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 }
 
 static sql_rel *
-rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti, int f)
+rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *r1, sql_exp *r2, sql_exp *r3, char *filter_op, int anti, int f)
 {
 	list *l = sa_list(sql->sa);
 	list *r = sa_list(sql->sa);
 
 	list_append(l, ls);
-	list_append(r, rs);
-	if (rs2)
-		list_append(r, rs2);
+	list_append(r, r1);
+	if (r2)
+		list_append(r, r2);
+	if (r3)
+		list_append(r, r3);
 	return rel_filter(sql, rel, l, r, "sys", filter_op, anti, f);
 }
 
@@ -1706,8 +1708,7 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *
 		}
 	}
 	type = compare_str2type(compare_op);
-	if (type == cmp_filter)
-		return rel_filter_exp_(sql, rel, ls, rs, esc, compare_op, 0, f);
+	assert(type != cmp_filter);
 	return rel_compare_exp_(query, rel, ls, rs, esc, type, need_not, quantifier, f);
 }
 
@@ -2330,8 +2331,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, rel, lo, f, ek), *re, *ee = NULL;
-		char *like = insensitive ? (anti ? "not_ilike" : "ilike") : (anti ? "not_like" : "like");
+		sql_exp *le = rel_value_exp(query, rel, lo, f, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
 			return NULL;
@@ -2348,14 +2348,16 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if ((re = exp_check_type(sql, st, rel ? *rel : NULL, re, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
+		if ((le = exp_check_type(sql, st, rel ? *rel : NULL, le, type_equal)) == NULL)
+			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
 			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
+		} else {
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, "")));
 		}
-		if (ee)
-			return rel_nop_(sql, rel ? *rel : NULL, le, re, ee, NULL, "sys", like, card_value);
-		return rel_binop_(sql, rel ? *rel : NULL, le, re, "sys", like, card_value);
+		return rel_nop_(sql, rel ? *rel : NULL, le, re, ee, ie, "sys", anti ? "not_like" : "like", card_value);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -2585,7 +2587,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek), *re, *ee = NULL;
+		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
 			return NULL;
@@ -2609,7 +2611,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		if ((le = exp_check_type(sql, st, rel, le, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
-		return rel_filter_exp_(sql, rel, le, re, ee, (insensitive ? "ilike" : "like"), anti, f);
+		return rel_filter_exp_(sql, rel, le, re, ee, ie, "like", anti, f);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
