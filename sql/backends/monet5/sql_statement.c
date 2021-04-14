@@ -132,9 +132,11 @@ stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c)
 {
 	stmt *res = NULL;
 
+	if (c->cand == sel)
+		return c;
 	if (!sel)
 		return res;
-	assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single || c->type == st_const);
+	assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single || c->type == st_const || c->type == st_Nop);
 	if (c->type != st_alias) {
 		res = stmt_project(be, sel, c);
 	} else if (c->op1->type == st_mirror && is_tid_chain(sel)) { /* alias with mirror (ie full row ids) */
@@ -1600,7 +1602,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 		return NULL;
 	l = op1->nr;
 	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
-		int k;
+		int k, pushed = 0;
 		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1628,6 +1630,15 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 				p = pushNil(mb, p, TYPE_bat);
 			else if (op3->nrcols)
 				p = pushArgument(mb, p, sel->nr);
+			pushed = 1;
+		}
+		if (sel && !reduce && !pushed) {
+			if (op1->nrcols)
+				p = pushArgument(mb, p, sel->nr);
+			if (op2->nrcols)
+				p = pushArgument(mb, p, sel->nr);
+			if (op3->nrcols)
+				p = pushArgument(mb, p, sel->nr);
 		}
 
 		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
@@ -1641,6 +1652,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
+		if (sel && !pushed)
+			pushArgument(mb, q, sel->nr);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
@@ -2997,9 +3010,9 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
-	if (v->nrcols == 0) {	/* simple calc */
+	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
 		q = newStmtArgs(mb, calcRef, convert, 13);
-	} else if (v->nrcols > 0 && !push_cands) {
+	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && !push_cands) {
 		int type = t->type->localtype;
 
 		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
@@ -3012,6 +3025,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 		q = pushStr(mb, q, convertMultiplexFcn(convert));
 	} else {
+		if (v->nrcols == 0 && sel && !v->cand)
+			v = stmt_const(be, sel, sel, v);
 		q = newStmtArgs(mb, batcalcRef, convert, 13);
 	}
 
@@ -3111,8 +3126,9 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
+	int push_cands = (strcmp(mod, "calc") == 0 && strcmp(sql_func_imp(f->func), "identity")) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
 		strcmp(mod, "blob") == 0 || (strcmp(mod, "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)));
+	int pushed = 0;
 	node *n;
 	stmt *o = NULL;
 
@@ -3120,8 +3136,10 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
-				op = stmt_project_column_on_cand(be, sel, op);
+			if (!push_cands && sel && op->nrcols > 0 && !op->cand){ /* don't push cands twice */
+				n->data = op = stmt_project_column_on_cand(be, sel, op);
+				pushed = 1;
+			}
 			if (o->nrcols < op->nrcols)
 				o = op;
 		}
@@ -3219,6 +3237,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 					} else {
 						q = pushArgument(mb, q, sel->nr);
 					}
+					pushed = 1;
 				}
 			}
 		}
@@ -3247,7 +3266,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		s->op4.funcval = f;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = sel;
+		s->cand = (pushed || (!push_cands && sel))?sel:NULL;
 		return s;
 	}
 	return NULL;
@@ -3506,6 +3525,7 @@ stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
 	s->cname = alias;
 	s->nr = op1->nr;
 	s->q = op1->q;
+	s->cand = op1->cand;
 	return s;
 }
 

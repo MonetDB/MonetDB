@@ -378,7 +378,10 @@ subrel_project( backend *be, rel_bin_stmt *s, list *refs, sql_rel *rel)
 	stmt *cand = s->cand;
 	for(node *n = s->cols->h; n; n = n->next) {
 		stmt *c = n->data;
-		list_append(l, stmt_project_column_on_cand(be, cand, c));
+		stmt *s = stmt_project_column_on_cand(be, cand, c);
+
+		s->cand = NULL;
+		list_append(l, s);
 	}
 	s = create_rel_bin_stmt(be->mvc->sa, l, NULL, NULL, NULL, NULL);
 	stmt_set_nrcols(s);
@@ -425,15 +428,15 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, rel_bin_stmt *left, rel_bin_s
 				return NULL;
 			}
 
-			i = stmt_binop(be, c, i, NULL, cmp);
+			i = stmt_binop(be, c, i, lcand, cmp);
 			if (s)
-				s = stmt_binop(be, s, i, NULL, a);
+				s = stmt_binop(be, s, i, lcand, a);
 			else
 				s = i;
 		}
 		if (lcand && !(depth || !reduce))
 			s = stmt_uselect(be,
-				stmt_const(be, bin_find_smallest_column(be, left), NULL, s),
+				stmt_const(be, lcand, lcand, s),
 				stmt_bool(be, 1), cmp_equal, lcand, 0, 0);
 	} else if (list_length(nl) < 16) {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
@@ -578,7 +581,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 {
 	sql_subtype *bt = sql_bind_localtype("bit");
 	list *l = e->l;
-	stmt *ocand = left ? left->cand : NULL, *sel1 = left ? left->cand : NULL, *sel2 = left ? left->cand : NULL, *s = NULL, *lcand = NULL;
+	stmt *ocand = left ? left->cand : NULL, *sel1 = ocand, *sel2 = ocand, *s = NULL, *lcand = NULL;
 	int anti = is_anti(e);
 
 	for( node *n = l->h; n; n = n->next ) {
@@ -592,7 +595,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		/* propagate the anti flag */
 		if (anti)
 			set_anti(c);
-		s = exp_bin(be, c, left, right, depth+1, reduce, push);
+		s = exp_bin(be, c, left, right, depth, reduce, push);
 		if (!s) {
 			if (left)
 				left->cand = ocand;
@@ -606,7 +609,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
 			stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, NULL, stmt_bool(be, 1));
+			predicate = stmt_const(be, predicate, sel1, stmt_bool(be, 1));
 			if (s->nrcols == 0)
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
 			else
@@ -615,6 +618,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		sel1 = s;
 	}
 	l = e->r;
+	lcand = NULL;
 	for( node *n = l->h; n; n = n->next ) {
 		sql_exp *c = n->data;
 
@@ -626,7 +630,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		/* propagate the anti flag */
 		if (anti)
 			set_anti(c);
-		s = exp_bin(be, c, left, right, depth+1, reduce, push);
+		s = exp_bin(be, c, left, right, depth, reduce, push);
 		if (!s) {
 			if (left)
 				left->cand = ocand;
@@ -639,7 +643,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
 			stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, NULL, stmt_bool(be, 1));
+			predicate = stmt_const(be, predicate, sel2, stmt_bool(be, 1));
 			if (s->nrcols == 0)
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
 			else
@@ -728,16 +732,14 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 				stmt *l = isel;
 				if (!l)
 					l = bin_find_smallest_column(be, left);
-				res = stmt_const(be, l, NULL, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				res = stmt_const(be, l, isel, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				ires = l;
-				if (res)
-					res->cand = isel;
 			} else if (res && !next_cond) { /* use result too update column */
 				stmt *val = es;
 				stmt *pos = rsel;
 
 				if (val->nrcols == 0)
-					val = stmt_const(be, pos, NULL, val);
+					val = stmt_const(be, pos, rsel, val);
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 				res = stmt_replace(be, res, pos, val);
@@ -756,11 +758,9 @@ exp2bin_case(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, 
 				ncond = cond = es;
 				if (!ncond->nrcols) {
 					if (osel) {
-						ncond = stmt_const(be, nsel, NULL, ncond);
-						ncond->cand = nsel;
+						ncond = stmt_const(be, nsel, nsel, ncond);
 					} else if (isel) {
-						ncond = stmt_const(be, isel, NULL, ncond);
-						ncond->cand = isel;
+						ncond = stmt_const(be, isel, isel, ncond);
 					} else
 						ncond = stmt_const(be, bin_find_smallest_column(be, left), NULL, ncond);
 				}
@@ -918,7 +918,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				}
 				assert(l->cand == es->cand);
 			}
-			es = stmt_binop(be, l, es, NULL, cmp);
+			es = stmt_binop(be, l, es, nsel, cmp);
 		}
 		if (!single_value) {
 			/* create result */
@@ -926,7 +926,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				stmt *l = isel;
 				if (!l)
 					l = bin_find_smallest_column(be, left);
-				res = stmt_const(be, l, NULL, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				res = stmt_const(be, l, isel, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				ires = l;
 				if (res)
 					res->cand = isel;
@@ -935,7 +935,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				stmt *pos = rsel;
 
 				if (val->nrcols == 0)
-					val = stmt_const(be, pos, NULL, val);
+					val = stmt_const(be, pos, rsel, val);
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 				res = stmt_replace(be, res, pos, val);
@@ -954,10 +954,10 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 				ncond = cond = es;
 				if (!ncond->nrcols) {
 					if (osel) {
-						ncond = stmt_const(be, nsel, NULL, ncond);
+						ncond = stmt_const(be, nsel, nsel, ncond);
 						ncond->cand = nsel;
 					} else if (isel) {
-						ncond = stmt_const(be, isel, NULL, ncond);
+						ncond = stmt_const(be, isel, isel, ncond);
 						ncond->cand = isel;
 					} else
 						ncond = stmt_const(be, bin_find_smallest_column(be, left), NULL, ncond);
@@ -1069,7 +1069,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 
 				if (en->next) {
 					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
-					ncond = stmt_unop(be, es, NULL, a);
+					ncond = stmt_unop(be, es, nsel, a);
 					if (ncond->nrcols == 0) {
 						stmt *l = bin_find_smallest_column(be, left);
 						if (nsel && l)
@@ -1268,7 +1268,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		}
 		if (!l)
 			return NULL;
-		s = stmt_convert(be, l, left ? left->cand : NULL, from, to);
+		s = stmt_convert(be, l, (!push && l->nrcols==0)?NULL: left ? left->cand : NULL, from, to);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -1409,13 +1409,17 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 	case e_column: {
 		if (right) {/* check relation names */
 			s = bin_find_column(be, right, e->l, e->r);
+#if 0
 			if (s && s->nrcols > 0 && depth == 0 && right->cand) /* topmost column reference, needs to be projected on the cand */
 				s = stmt_project_column_on_cand(be, right->cand, s);
+#endif
 		}
 		if (!s && left) {
 			s = bin_find_column(be, left, e->l, e->r);
+#if 0
 			if (s && s->nrcols > 0 && depth == 0 && left->cand) /* topmost column reference, needs to be projected on the cand */
 				s = stmt_project_column_on_cand(be, left->cand, s);
+#endif
 			if (s && right && right->grp)
 				s = stmt_project(be, right->ext, s);
 		}
@@ -3460,6 +3464,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	if (sub)
 		pl->expected_cnt = list_length(sub->cols);
 	psub = create_rel_bin_stmt(sql->sa, pl, NULL, NULL, NULL, NULL);
+	int used = 0;
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		stmt *s = exp_bin(be, exp, sub, psub, 0, 0, 0);
@@ -3472,12 +3477,22 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(be, bin_find_smallest_column(be, sub), sub->cand, s);
 
+		if (sub && sub->cand && s && s->cand == sub->cand)
+			used++;
+
 		if (!exp_name(exp))
 			exp_label(sql->sa, exp, ++sql->label);
 		s = stmt_rename(be, exp, s);
 		column_name(sql->sa, s); /* save column name */
 		list_append(pl, s);
 	}
+	if (sub && sub->cand && used < list_length(rel->exps)) {
+		psub->cand = sub->cand;
+		if (used > 0) /* we don't want half projected candidates */
+			psub = subrel_project(be, psub, refs, rel);
+	}
+	if (psub->cand && rel->r) /* for now we first handle the candidates */
+		psub = subrel_project(be, psub, refs, rel);
 	stmt_set_nrcols(psub);
 
 	/* In case of a topn
