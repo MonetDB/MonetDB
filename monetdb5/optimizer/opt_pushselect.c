@@ -326,11 +326,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				if (isLikeOp(q) &&
 						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
-						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) && /* escape is a value */
+						!isaBatType(getArgType(mb, q, 3)) && /* escape is a value */
+						!isaBatType(getArgType(mb, q, 4)) && /* isensitive flag is a value */
 						strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
-					bool selectok = true;
-					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0;
-					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
+					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0, anti = (getFunctionId(q)[0] == 'n');
+					bit ignore_case = *(bit*)getVarValue(mb, getArg(q, 4)), selectok = TRUE;
 
 					/* TODO at the moment we cannot convert if the select statement has NULL semantics
 						we can convert it into VAL is NULL or PATTERN is NULL or ESCAPE is NULL
@@ -342,7 +342,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 						/* semantic or not symmetric cases, it cannot be converted */
 						if (is_bit_nil(low) || is_bit_nil(li) || is_bit_nil(santi) || low != high || li != hi || sunknown)
-							selectok = false;
+							selectok = FALSE;
 
 						/* there are no negative candidate lists so on = false situations swap anti flag */
 						if (low == 0)
@@ -359,11 +359,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						if (truth_value == 0)
 							anti = !anti;
 						else if (is_bit_nil(truth_value))
-							selectok = false;
+							selectok = FALSE;
 						if (strcmp(comparison, "<>") == 0)
 							anti = !anti;
 						else if (strcmp(comparison, "==") != 0)
-							selectok = false;
+							selectok = FALSE;
 					}
 
 					if (selectok) {
@@ -377,10 +377,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							r = pushNil(mb, r, TYPE_bat);
 							offset = 1;
 						}
-						for(a = 2; a<q->argc; a++)
+						for(int a = 2; a<q->argc; a++)
 							r = addArgument(mb, r, getArg(q, a));
 						if (r->argc < (4+offset))
-							r = pushStr(mb, r, ""); /* default esc */
+							r = pushStr(mb, r, (str)getVarValue(mb, getArg(q, 3)));
 						if (r->argc < (5+offset))
 							r = pushBit(mb, r, ignore_case);
 						if (r->argc < (6+offset))

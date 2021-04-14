@@ -7504,7 +7504,7 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 		list *l = e->l;
 		list *r = e->r;
 
-		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e))
+		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3)
 			needed = 1;
 	}
 
@@ -7519,10 +7519,11 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 		list *l = e->l;
 		list *r = e->r;
 
-		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e)) {
+		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3) {
 			list *r = e->r;
 			sql_exp *fmt = r->h->data;
-			sql_exp *esc = (r->h->next)?r->h->next->data:NULL;
+			sql_exp *esc = r->h->next->data;
+			sql_exp *isen = r->h->next->next->data;
 			int rewrite = 0, isnull = 0;
 
 			if (fmt->type == e_convert)
@@ -7538,14 +7539,24 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 				else if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
 					rewrite = 1;
 			}
-			if (rewrite && !isnull && esc && is_atom(esc->type)) {
-				atom *ea = NULL;
+			if (rewrite && !isnull) { /* check escape flag */
+				atom *ea = esc->l;
 
-				if (esc->l)
-					ea = esc->l;
-				if (ea && ea->isnull)
+				if (!is_atom(esc->type) || !ea)
+					rewrite = 0;
+				else if (ea->isnull)
 					isnull = 1;
-				else if (ea && (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0))
+				else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
+					rewrite = 0;
+			}
+			if (rewrite && !isnull) { /* check insensitive flag */
+				atom *ia = isen->l;
+
+				if (!is_atom(isen->type) || !ia)
+					rewrite = 0;
+				else if (ia->isnull)
+					isnull = 1;
+				else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
 					rewrite = 0;
 			}
 			if (isnull) {
@@ -7554,10 +7565,8 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 			} else if (rewrite) { 	/* rewrite to cmp_equal ! */
 				list *l = e->l;
 				list *r = e->r;
-				sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
+				sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, is_anti(e) ? cmp_notequal : cmp_equal);
 
-				if (is_anti(e)) set_anti(ne);
-				if (is_semantics(e)) set_semantics(ne);
 				list_append(exps, ne);
 				v->changes++;
 			} else {
