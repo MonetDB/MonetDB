@@ -587,9 +587,7 @@ inline int isMap2Op(InstrPtr p){
 inline int isLikeOp(InstrPtr p){
 	return	(getModuleId(p) == batalgebraRef &&
 		(getFunctionId(p) == likeRef ||
-		 getFunctionId(p) == not_likeRef ||
-		 getFunctionId(p) == ilikeRef ||
-		 getFunctionId(p) == not_ilikeRef));
+		 getFunctionId(p) == not_likeRef));
 }
 
 inline int

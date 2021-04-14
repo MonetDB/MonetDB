@@ -65,7 +65,7 @@ sql.tid
 1
 sql.bind
 4
-algebra.ilikeselect
+algebra.likeselect
 2
 sql.subdelta
 1
@@ -89,7 +89,7 @@ sql.tid
 1
 sql.bind
 4
-algebra.ilikeselect
+algebra.likeselect
 2
 sql.subdelta
 1
