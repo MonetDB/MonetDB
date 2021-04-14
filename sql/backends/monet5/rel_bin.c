@@ -3491,8 +3491,11 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		if (used > 0) /* we don't want half projected candidates */
 			psub = subrel_project(be, psub, refs, rel);
 	}
-	if (psub->cand && rel->r) /* for now we first handle the candidates */
+	if (psub->cand && rel->r) { /* for now we first handle the candidates */
+		if (sub)
+			sub = subrel_project(be, sub, refs, rel);
 		psub = subrel_project(be, psub, refs, rel);
+	}
 	stmt_set_nrcols(psub);
 
 	/* In case of a topn
