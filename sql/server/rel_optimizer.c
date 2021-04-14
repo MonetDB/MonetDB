@@ -7549,7 +7549,7 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 				else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
 					rewrite = 0;
 			}
-			if (rewrite && !isnull) { /* check isentitive flag */
+			if (rewrite && !isnull) { /* check insensitive flag */
 				atom *ia = isen->l;
 
 				if (!is_atom(isen->type) || !ia)
