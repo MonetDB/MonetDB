@@ -3077,7 +3077,7 @@ BATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (sid && !is_bat_nil(*sid)) {
-		*res = *sid;
+		BBPkeepref(*res = *sid);
 		return MAL_SUCCEED;
 	} else {
 		return BKCmirror(res, bid);
