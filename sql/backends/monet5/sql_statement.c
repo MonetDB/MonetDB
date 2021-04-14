@@ -3152,7 +3152,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = (strcmp(mod, "calc") == 0 && strcmp(sql_func_imp(f->func), "identity")) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
+	int push_cands = (strcmp(mod, "calc") == 0 && strcmp(sql_func_imp(f->func), "identity") && strcmp(sql_func_imp(f->func), "rotate_xor_hash")) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
 		strcmp(mod, "blob") == 0 || (strcmp(mod, "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)));
 	int pushed = 0;
 	node *n;
