@@ -108,8 +108,8 @@ strCleanHash(Heap *h, bool rebuild)
 	 * started. */
 	memset(newhash, 0, sizeof(newhash));
 	pos = GDK_STRHASHSIZE;
-	while (pos < h->free && pos < GDK_ELIMLIMIT) {
-		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+	while (pos < h->free &&
+	       pos + (pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1))) < GDK_ELIMLIMIT) {
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
 		pos += pad + extralen;
@@ -219,7 +219,6 @@ checkUTF8(const char *v)
 var_t
 strPut(Heap *h, var_t *dst, const char *v)
 {
-	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
 	size_t pos, len = strLen(v);
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
@@ -265,19 +264,16 @@ strPut(Heap *h, var_t *dst, const char *v)
 	}
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
-	if (elimbase == 0) {	/* i.e. h->free < GDK_ELIMLIMIT */
+	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
 		if (pad < sizeof(stridx_t)) {
 			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
-	} else if (extralen == 0) {	/* i.e., h->hashash == FALSE */
-		/* no VARSHIFT and no string hash value stored => no
-		 * padding/alignment needed */
+	} else if (GDK_ELIMBASE(h->free) != 0) {
+		/* no extra padding needed when no hash links needed
+		 * (but only when padding doesn't cross duplicate
+		 * elimination boundary) */
 		pad = 0;
-	} else {
-		/* pad to align on VARALIGN for VARSHIFT and/or string
-		 * hash value */
-		pad &= (GDK_VARALIGN - 1);
 	}
 
 	/* check heap for space (limited to a certain maximum after
@@ -328,7 +324,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 	/* maintain hash table */
 	pos -= extralen;
-	if (elimbase == 0) {	/* small string heap: link the next pointer */
+	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
 		/* the stridx_t next pointer directly precedes the
 		 * string and optional (depending on hashash) hash
 		 * value */

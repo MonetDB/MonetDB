@@ -358,7 +358,7 @@ main(int argc, char *argv[])
 		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 
-		{"exittimeout",   strdup("60"),            60,                 INT},
+		{"exittimeout",   strdup("60"),            60,                 SINT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
 
 		{"discovery",     strdup("true"),          1,                  BOOLEAN},
@@ -1069,7 +1069,7 @@ shutdown:
 	/* stop started mservers */
 
 	kv = findConfKey(ckv, "exittimeout");
-	if (d->next != NULL && atoi(kv->val) > 0) {
+	if (d->next != NULL && atoi(kv->val) != 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
 

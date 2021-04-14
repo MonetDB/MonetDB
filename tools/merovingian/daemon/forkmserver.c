@@ -120,7 +120,8 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		return false;
 	}
 	kv = findConfKey(_mero_props, "exittimeout");
-	for (i = 0; i < atoi(kv->val) * 2; i++) {
+	int exittimeout = atoi(kv->val);
+	for (i = 0; exittimeout < 0 || i < exittimeout * 2; i++) {
 		if (stats != NULL)
 			msab_freeStatus(&stats);
 		sleep_ms(500);
