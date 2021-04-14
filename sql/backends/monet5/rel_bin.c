@@ -941,6 +941,10 @@ exp2bin_casewhen(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 					val = stmt_const(be, pos, rsel, val);
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
+				else if (rsel && val->cand && val->cand != nsel) {
+					val = stmt_project(be, rsel, val);
+					val->cand = nsel;
+				}
 				res = stmt_replace(be, res, pos, val);
 
 				assert(cond);
