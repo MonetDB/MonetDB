@@ -8677,6 +8677,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batmtime",	"epoch",	"pattern batmtime.epoch(X_0:bat[:timestamp]):bat[:int] ",	"MTIMEseconds_since_epoch_bulk;",	""	]
 [ "batmtime",	"epoch",	"pattern batmtime.epoch(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] ",	"MTIMEseconds_since_epoch_bulk;",	""	]
 [ "batmtime",	"epoch",	"pattern batmtime.epoch(X_0:bat[:lng]):bat[:timestamp] ",	"MTIMEtimestamp_frommsec_epoch_bulk;",	""	]
+[ "batmtime",	"epoch",	"pattern batmtime.epoch(X_0:bat[:lng], X_1:bat[:oid]):bat[:timestamp] ",	"MTIMEtimestamp_frommsec_epoch_bulk;",	""	]
 [ "batmtime",	"epoch",	"pattern batmtime.epoch(X_0:bat[:int]):bat[:timestamp] ",	"MTIMEtimestamp_fromsecond_epoch_bulk;",	""	]
 [ "batmtime",	"epoch",	"pattern batmtime.epoch(X_0:bat[:int], X_1:bat[:oid]):bat[:timestamp] ",	"MTIMEtimestamp_fromsecond_epoch_bulk;",	""	]
 [ "batmtime",	"epoch_ms",	"pattern batmtime.epoch_ms(X_0:bat[:date]):bat[:lng] ",	"MTIMEdate_extract_epoch_ms_bulk;",	""	]
