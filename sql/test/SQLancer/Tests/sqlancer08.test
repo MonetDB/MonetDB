@@ -261,36 +261,6 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE "sys"."salesmart"("city" VARCHAR(100))
-
-statement ok
-COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-"b~dEQ~"
-"77378079"
-"0.8200084709639743"
-""
-"\015"
-
-query I rowsort
-SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true)
-----
-1
-1
-1
-1
-1
-
-statement ok
-DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)))
-
-statement ok
-ROLLBACK
-
-statement ok
-START TRANSACTION
-
-statement ok
 CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY)
 
 statement ok
