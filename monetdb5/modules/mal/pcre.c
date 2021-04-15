@@ -1153,7 +1153,7 @@ pat2pcre(str *r, const char *pat)
 /*
  * @+ Wrapping
  */
-#include "mal.h"
+
 static str
 PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags)
 {
