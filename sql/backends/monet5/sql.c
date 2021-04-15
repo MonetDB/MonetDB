@@ -3070,14 +3070,13 @@ SQLidentity(oid *ret, const void *i)
 str
 BATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *res = getArgReference_bat(stk, pci, 0);
-	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1);
 	bat *sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 
 	(void) cntxt;
 	(void) mb;
 	if (sid && !is_bat_nil(*sid)) {
-		BBPkeepref(*res = *sid);
+		BBPretain(*res = *sid);
 		return MAL_SUCCEED;
 	} else {
 		return BKCmirror(res, bid);
