@@ -1554,6 +1554,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
+		int pushed = 0;
 		if (is_semantics) {
 			assert(cmptype == cmp_equal || cmptype == cmp_notequal);
 			if (cmptype == cmp_notequal)
@@ -1562,15 +1563,16 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 			q = pushArgument(mb, q, l);
 			if (!op1->cand && op1->nrcols && sel) /* don't push cands again */
 				q = pushArgument(mb, q, sel->nr);
-			else
+			else {
 				q = pushNil(mb, q, TYPE_bat);
+				pushed = 1;
+			}
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
 			q = pushBit(mb, q, TRUE);
 			q = pushBit(mb, q, anti);
 		} else {
-			int pushed = 0;
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
 			if (!op1->cand && op1->nrcols && sel) /* don't push cands again */
@@ -1607,12 +1609,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 					freeInstruction(q);
 				q = NULL;
 			}
-			if (sel && pushed) {
-				int nr = getDestVar(q);
-				q = newStmt(mb, algebraRef, projectionRef);
-				q = pushArgument(mb, q, nr);
-				q = pushArgument(mb, q, sel->nr);
-			}
+		}
+		if (q && sel && pushed) {
+			int nr = getDestVar(q);
+			q = newStmt(mb, algebraRef, projectionRef);
+			q = pushArgument(mb, q, nr);
+			q = pushArgument(mb, q, sel->nr);
 		}
 		if (q == NULL)
 			return NULL;
