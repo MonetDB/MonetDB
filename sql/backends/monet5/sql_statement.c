@@ -51,22 +51,6 @@ convertOperator(const char *op)
 }
 
 static InstrPtr
-multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int rtype)
-{
-	InstrPtr q = NULL;
-
-	q = newStmt(mb, malRef, multiplexRef);
-	if (q == NULL)
-		return NULL;
-	setVarType(mb, getArg(q, 0), newBatType(rtype));
-	q = pushStr(mb, q, convertMultiplexMod(mod, name));
-	q = pushStr(mb, q, convertMultiplexFcn(name));
-	q = pushArgument(mb, q, o1);
-	q = pushArgument(mb, q, o2);
-	return q;
-}
-
-static InstrPtr
 dump_1(MalBlkPtr mb, const char *mod, const char *name, stmt *o1)
 {
 	InstrPtr q = NULL;
@@ -1487,15 +1471,14 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 	}
 	if (op2->nrcols >= 1) {
 		bit need_not = FALSE;
-		const char *mod = calcRef;
-		const char *op = "=";
+		const char *op = "==";
 		int k;
 
 		switch (cmptype) {
 		case mark_in:
 		case mark_notin:
 		case cmp_equal:
-			op = "=";
+			op = "==";
 			break;
 		case cmp_notequal:
 			op = "!=";
@@ -1517,8 +1500,9 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		}
 		int pushed = 0;
 
-		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL)
-			return NULL;
+		q = newStmtArgs(mb, batcalcRef, op, 9);
+		q = pushArgument(mb, q, l);
+		q = pushArgument(mb, q, r);
 		if (sel && (op1->cand || op2->cand)) { /* some already handled the previous selection */
 			if (op1->cand && op1->nrcols)
 				q = pushNil(mb, q, TYPE_bat);
