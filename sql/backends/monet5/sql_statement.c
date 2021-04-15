@@ -1308,7 +1308,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = sql_func_mod(f->func), *op = sql_func_imp(f->func);
+	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	int k, push_cands = strcmp(mod, "algebra") == 0, all_cands_pushed = 1;
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
@@ -1316,12 +1316,19 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 
 	if (rops->nrcols >= 1) {
 		bit need_not = FALSE;
-
 		int narg = 3 + list_length(lops->op4.lval) + list_length(rops->op4.lval);
-		q = newStmtArgs(mb, malRef, multiplexRef, narg);
+
+		if (push_cands) {
+			char batmodule[16];
+			stpcpy(stpcpy(batmodule, "bat"), mod);
+			q = newStmtArgs(mb, batmodule, fimp, narg);
+		} else {
+			q = newStmtArgs(mb, malRef, multiplexRef, narg);
+			q = pushStr(mb, q, convertMultiplexMod(mod, fimp));
+			q = pushStr(mb, q, convertMultiplexFcn(fimp));
+		}
 		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
-		q = pushStr(mb, q, convertMultiplexMod(mod, op));
-		q = pushStr(mb, q, convertMultiplexFcn(op));
+
 		for (node *n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
@@ -1383,8 +1390,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 			q = pushArgument(mb, q, sel->nr);
 		}
 	} else {
-		op = sa_strconcat(be->mvc->sa, op, selectRef);
-		q = newStmtArgs(mb, mod, convertMultiplexFcn(op), 9);
+		fimp = sa_strconcat(be->mvc->sa, fimp, selectRef);
+		q = newStmtArgs(mb, mod, convertMultiplexFcn(fimp), 9);
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
