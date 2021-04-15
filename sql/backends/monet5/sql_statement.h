@@ -24,7 +24,8 @@ typedef struct rel_bin_stmt {
 		 *cnt;
 	unsigned int
 	 nrcols:2,
-	 key:1;
+	 key:1,
+	 pushed:1;
 } rel_bin_stmt;
 
 typedef union stmtdata {
