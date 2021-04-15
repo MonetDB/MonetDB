@@ -3154,7 +3154,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	sql_subtype *tpe = NULL;
 	int push_cands = (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
 		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "mkey") == 0 || strcmp(mod, "blob") == 0);
-	int pushed = 0;
+	int pushed = 0, nrcols = 0;
 	node *n;
 	stmt *o = NULL;
 
@@ -3168,6 +3168,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			}
 			if (o->nrcols < op->nrcols)
 				o = op;
+			if (op->nrcols)
+				nrcols++;
 		}
 	}
 
@@ -3292,7 +3294,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		s->op4.funcval = f;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = (pushed || (!push_cands && sel))?sel:NULL;
+		s->cand = (pushed || (!push_cands && sel && nrcols))?sel:NULL;
 		return s;
 	}
 	return NULL;
