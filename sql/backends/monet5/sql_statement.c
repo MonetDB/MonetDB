@@ -3152,8 +3152,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = (strcmp(mod, "calc") == 0 && strcmp(sql_func_imp(f->func), "identity") && strcmp(sql_func_imp(f->func), "rotate_xor_hash")) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
-		strcmp(mod, "blob") == 0 || (strcmp(mod, "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)));
+	int push_cands = (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
+		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "mkey") == 0 || strcmp(mod, "blob") == 0);
 	int pushed = 0;
 	node *n;
 	stmt *o = NULL;
@@ -3205,8 +3205,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			fimp = convertMultiplexFcn(fimp);
 			q = NULL;
 			if (strcmp(fimp, "rotate_xor_hash") == 0 &&
-				strcmp(mod, calcRef) == 0 &&
-				(q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef)) == NULL)
+				strcmp(mod, mkeyRef) == 0 &&
+				(q = newStmt(mb, batmkeyRef, rotate_xor_hashRef)) == NULL)
 				return NULL;
 			if (!q) {
 				if (f->func->type == F_UNION)

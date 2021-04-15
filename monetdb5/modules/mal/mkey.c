@@ -113,35 +113,26 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 
-#define MKEYHASH_bte(valp)	((ulng) (lng) *(const bte*)(valp))
-#define MKEYHASH_sht(valp)	((ulng) (lng) *(const sht*)(valp))
-#define MKEYHASH_int(valp)	((ulng) (lng) *(const int*)(valp))
-#define MKEYHASH_lng(valp)	((ulng) (lng) *(const lng*)(valp))
+#define MKEYHASH_bte(valp)	((lng) valp)
+#define MKEYHASH_sht(valp)	((lng) valp)
+#define MKEYHASH_int(valp)	((lng) valp)
+#define MKEYHASH_lng(valp)	(valp)
 #ifdef HAVE_HGE
-#define MKEYHASH_hge(valp)	((ulng) (*(const uhge *)(valp) >> 64) ^ \
-							 (ulng) *(const uhge *)(valp))
+#define MKEYHASH_hge(valp)	((lng) (valp >> 64) ^ (lng) (valp))
 #endif
 
-static inline ulng
-GDK_ROTATE(ulng x, int y, int z)
+static inline lng
+GDK_ROTATE(lng x, int y, int z)
 {
 	return (x << y) | (x >> z);
 }
 
-/* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
 static str
-MKEYrotate(lng *res, const lng *val, const int *n)
+MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	*res = (lng) GDK_ROTATE((ulng) *val, *n, (sizeof(lng)*8) - *n);
-	return MAL_SUCCEED;
-}
-
-static str
-MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	lng *res = getArgReference_lng(stk,p,0);
-	ptr val = getArgReference(stk,p,1);
-	int tpe = getArgType(mb,p,1);
+	lng *res = getArgReference_lng(stk,pci,0);
+	ptr val = getArgReference(stk,pci,1);
+	int tpe = getArgType(mb,pci,1);
 
 	(void) cntxt;
 	switch (ATOMstorage(tpe)) {
@@ -153,22 +144,22 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		// illegal types, avoid falling into the default case.
 		assert(0);
 	case TYPE_bte:
-		*res = (lng) MKEYHASH_bte(val);
+		*res = MKEYHASH_bte((*(bte*)val));
 		break;
 	case TYPE_sht:
-		*res = (lng) MKEYHASH_sht(val);
+		*res = MKEYHASH_sht((*(sht*)val));
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		*res = (lng) MKEYHASH_int(val);
+		*res = MKEYHASH_int((*(int*)val));
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
-		*res = (lng) MKEYHASH_lng(val);
+		*res = MKEYHASH_lng((*(lng*)val));
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		*res = (lng) MKEYHASH_hge(val);
+		*res = MKEYHASH_hge((*(hge*)val));
 		break;
 #endif
 	default:
@@ -181,230 +172,259 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+#define MKEYbathashloop(TPE) \
+	do { \
+		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
+		if (ci.tpe == cand_dense) { \
+			for (BUN i = 0; i < n; i++) { \
+				oid p = (canditer_next_dense(&ci) - off); \
+				r[i] = (lng) MKEYHASH_##TPE(v[p]); \
+			} \
+		} else { \
+			for (BUN i = 0; i < n; i++) { \
+				oid p = (canditer_next(&ci) - off); \
+				r[i] = (lng) MKEYHASH_##TPE(v[p]); \
+			} \
+		} \
+	} while (0)
+
 static str
-MKEYbathash(bat *res, const bat *bid)
+MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *dst;
-	ulng *restrict r;
-	BUN n;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	str msg = MAL_SUCCEED;
+	struct canditer ci = {0};
+	oid off;
+	BUN n = 0;
+	lng *restrict r;
 
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, "mkey.bathash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	n = BATcount(b);
-	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "mkey.bathash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "mkey.bathash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	BATsetcount(dst, n);
-
-	r = (ulng *) Tloc(dst, 0);
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "mkey.bathash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	n = canditer_init(&ci, b, bs);
+	if (!(bn = COLnew(ci.hseq, TYPE_lng, n, TRANSIENT))) {
+		msg = createException(MAL, "mkey.bathash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	off = b->hseqbase;
+	r = (lng *) Tloc(bn, 0);
 
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void: {
 		oid o = b->tseqbase;
-		if (is_oid_nil(o))
-			for (BUN i = 0; i < n; i++)
-				r[i] = (ulng) lng_nil;
-		else
-			for (BUN i = 0; i < n; i++)
-				r[i] = o + i;
+		if (is_oid_nil(o)) {
+			for (BUN i = 0; i < n; i++) {
+				r[i] = lng_nil;
+			}
+		} else {
+			for (BUN i = 0; i < n; i++) {
+				oid p = (canditer_next(&ci) - off);
+				r[i] = (lng) (o + p);
+			}
+		}
+	} break;
+	case TYPE_bte:
+		MKEYbathashloop(bte);
 		break;
-	}
-	case TYPE_bte: {
-		const bte *restrict v = (const bte *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = MKEYHASH_bte(v + i);
+	case TYPE_sht:
+		MKEYbathashloop(sht);
 		break;
-	}
-	case TYPE_sht: {
-		const sht *restrict v = (const sht *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = MKEYHASH_sht(v + i);
-		break;
-	}
 	case TYPE_int:
-	case TYPE_flt: {
-		const int *restrict v = (const int *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = MKEYHASH_int(v + i);
+	case TYPE_flt:
+		MKEYbathashloop(int);
 		break;
-	}
 	case TYPE_lng:
-	case TYPE_dbl: {
-		const lng *restrict v = (const lng *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = MKEYHASH_lng(v + i);
+	case TYPE_dbl:
+		MKEYbathashloop(lng);
 		break;
-	}
 #ifdef HAVE_HGE
-	case TYPE_hge: {
-		const hge *restrict v = (const hge *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = MKEYHASH_hge(v + i);
+	case TYPE_hge:
+		MKEYbathashloop(hge);
 		break;
-	}
 #endif
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
-		int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-		const void *nil = ATOMnilptr(b->ttype);
 
-		for (BUN i = 0; i < n; i++) {
-			const void *restrict v = BUNtail(bi, i);
-			if ((*cmp)(v, nil) == 0)
-				r[i] = (ulng) lng_nil;
-			else
-				r[i] = (ulng) (*hash)(v);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0; i < n; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				r[i] = (lng) hash(BUNtail(bi, p));
+			}
+		} else {
+			for (BUN i = 0; i < n; i++) {
+				oid p = (canditer_next(&ci) - off);
+				r[i] = (lng) hash(BUNtail(bi, p));
+			}
 		}
-		break;
 	}
 	}
 
-	if (dst->batCount <= 1) {
-		BATkey(dst, true);
-		dst->tsorted = dst->trevsorted = true;
-	} else {
-		BATkey(dst, false);
-		dst->tsorted = dst->trevsorted = false;
+bailout:
+	if (bn && !msg) {
+		BATsetcount(bn, n);
+		bn->tnonil = false;
+		bn->tnil = false;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn) {
+		BBPreclaim(bn);
 	}
-	dst->tnonil = false;
-	dst->tnil = false;
-
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bs)
+		BBPunfix(bs->batCacheid);
+	return msg;
 }
 
 static str
-MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *dst = getArgReference_lng(stk, p, 0);
-	ulng h = (ulng) *getArgReference_lng(stk, p, 1);
-	int lbit = *getArgReference_int(stk, p, 2);
-	int rbit = (int) sizeof(lng) * 8 - lbit;
-	int tpe = getArgType(mb, p, 3);
-	ptr pval = getArgReference(stk, p, 3);
-	ulng val;
+	lng *res = getArgReference_lng(stk, pci, 0), h = *getArgReference_lng(stk, pci, 1), val;
+	int lbit = *getArgReference_int(stk, pci, 2), rbit = (int) sizeof(lng) * 8 - lbit, tpe = getArgType(mb, pci, 3);
+	ptr pval = getArgReference(stk, pci, 3);
 
 	(void) cntxt;
 	switch (ATOMstorage(tpe)) {
 	case TYPE_bte:
-		val = MKEYHASH_bte(pval);
+		val = MKEYHASH_bte((*(bte*)pval));
 		break;
 	case TYPE_sht:
-		val = MKEYHASH_sht(pval);
+		val = MKEYHASH_sht((*(sht*)pval));
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		val = MKEYHASH_int(pval);
+		val = MKEYHASH_int((*(int*)pval));
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
-		val = MKEYHASH_lng(pval);
+		val = MKEYHASH_lng((*(lng*)pval));
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		val = MKEYHASH_hge(pval);
+		val = MKEYHASH_hge((*(hge*)pval));
 		break;
 #endif
 	default:
 		if (ATOMextern(tpe))
-			val = ATOMhash(tpe, *(ptr*)pval);
+			val = (lng) ATOMhash(tpe, *(ptr*)pval);
 		else
-			val = ATOMhash(tpe, pval);
+			val = (lng) ATOMhash(tpe, pval);
 		break;
 	}
-	*dst = (lng) (GDK_ROTATE(h, lbit, rbit) ^ val);
+	*res = GDK_ROTATE(h, lbit, rbit) ^ val;
 	return MAL_SUCCEED;
 }
 
+#define MKEYbulk_rotate_xor_hashloop(TPE) \
+	do { \
+		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) { \
+			for (BUN i = 0; i < n; i++) { \
+				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2); \
+				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ MKEYHASH_##TPE(v[p2]); \
+			} \
+		} else { \
+			for (BUN i = 0; i < n; i++) { \
+				oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2); \
+				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ MKEYHASH_##TPE(v[p2]); \
+			} \
+		} \
+	} while (0)
+
 static str
-MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *bid)
+MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *hb, *b, *bn;
-	int lbit = *nbits;
-	int rbit = (int) sizeof(lng) * 8 - lbit;
-	ulng *restrict r;
-	const ulng *restrict h;
-	BUN n;
+	bat *res = getArgReference_bat(stk, pci, 0), *hid = getArgReference_bat(stk, pci, 1), *bid = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL, *sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+	BAT *hb = NULL, *b = NULL, *bn = NULL, *s1 = NULL, *s2 = NULL;
+	int lbit = *getArgReference_int(stk, pci, 2), rbit = (int) sizeof(lng) * 8 - lbit;
+	str msg = MAL_SUCCEED;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	BUN n = 0;
+	lng *restrict r;
+	const lng *restrict h;
 
-	if ((hb = BATdescriptor(*hid)) == NULL)
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		BBPunfix(hb->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	(void) cntxt;
+	(void) mb;
+	if (!(hb = BATdescriptor(*hid))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if ((sid1 && !is_bat_nil(*sid1) && !(s1 = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(s2 = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
 
-	if (!ALIGNsynced(hb, b) && (BATcount(b) || BATcount(hb))) {
-		BBPunfix(hb->batCacheid);
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash",
-			  OPERATION_FAILED ": input bats are not aligned");
+	n = canditer_init(&ci1, hb, s1);
+	if (canditer_init(&ci2, b, s2) != n || ci1.hseq != ci2.hseq) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
 	}
 
-	n = BATcount(b);
-
-	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
-	if (bn == NULL) {
-		BBPunfix(hb->batCacheid);
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!(bn = COLnew(ci1.hseq, TYPE_lng, n, TRANSIENT))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
-	BATsetcount(bn, n);
 
-	r = (ulng *) Tloc(bn, 0);
-	h = (const ulng *) Tloc(hb, 0);
+	r = (lng *) Tloc(bn, 0);
+	h = (const lng *) Tloc(hb, 0);
+
+	off1 = hb->hseqbase;
+	off2 = b->hseqbase;
 
 	switch (ATOMstorage(b->ttype)) {
-	case TYPE_bte: {
-		const bte *restrict v = (const bte *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_bte(v + i);
-		}
+	case TYPE_bte:
+		MKEYbulk_rotate_xor_hashloop(bte);
 		break;
-	}
-	case TYPE_sht: {
-		const sht *restrict v = (const sht *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_sht(v + i);
-		}
+	case TYPE_sht:
+		MKEYbulk_rotate_xor_hashloop(sht);
 		break;
-	}
 	case TYPE_int:
-	case TYPE_flt: {
-		const int *restrict v = (const int *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_int(v + i);
-		}
+	case TYPE_flt:
+		MKEYbulk_rotate_xor_hashloop(int);
 		break;
-	}
 	case TYPE_lng:
-	case TYPE_dbl: {
-		const lng *restrict v = (const lng *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_lng(v + i);
-		}
+	case TYPE_dbl:
+		MKEYbulk_rotate_xor_hashloop(lng);
 		break;
-	}
 #ifdef HAVE_HGE
-	case TYPE_hge: {
-		const hge *restrict v = (const hge *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++) {
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_hge(v + i);
-		}
+	case TYPE_hge:
+		MKEYbulk_rotate_xor_hashloop(hge);
 		break;
-	}
 #endif
 	case TYPE_str:
 		if (b->tvheap->hashash) {
 			BATiter bi = bat_iterator(b);
-			for (BUN i = 0; i < n; i++) {
-				const void *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
+
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < n; i++) {
+					oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+					const void *restrict s = BUNtvar(bi, p2);
+					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (lng) ((const BUN *) s)[-1];
+				}
+			} else {
+				for (BUN i = 0; i < n; i++) {
+					oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+					const void *restrict s = BUNtvar(bi, p2);
+					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (lng) ((const BUN *) s)[-1];
+				}
 			}
 			break;
 		}
@@ -413,171 +433,220 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+			for (BUN i = 0; i < n; i++) {
+				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (lng) hash(BUNtail(bi, p2));
+			}
+		} else {
+			for (BUN i = 0; i < n; i++) {
+				oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (lng) hash(BUNtail(bi, p2));
+			}
+		}
 		break;
 	}
 	}
-	if (bn->batCount <= 1) {
-		BATkey(bn, true);
-		bn->tsorted = bn->trevsorted = true;
-	} else {
-		BATkey(bn, false);
-		bn->tsorted = bn->trevsorted = false;
-	}
-	bn->tnonil = false;
-	bn->tnil = false;
 
-	BBPkeepref(*res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(hb->batCacheid);
-	return MAL_SUCCEED;
+bailout:
+	if (bn && !msg) {
+		BATsetcount(bn, n);
+		bn->tnonil = false;
+		bn->tnil = false;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn) {
+		BBPreclaim(bn);
+	}
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (hb)
+		BBPunfix(hb->batCacheid);
+	if (s1)
+		BBPunfix(s1->batCacheid);
+	if (s2)
+		BBPunfix(s2->batCacheid);
+	return msg;
 }
 
 static str
-MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *res = getArgReference_bat(stk, p, 0);
-	bat *hid = getArgReference_bat(stk, p, 1);
-	int lbit = *getArgReference_int(stk, p, 2);
-	int tpe = getArgType(mb, p, 3);
-	ptr pval = getArgReference(stk, p, 3);
-	BAT *hb, *bn;
-	int rbit = (int) sizeof(lng) * 8 - lbit;
-	ulng *r;
-	const ulng *h;
-	ulng val;
-	BUN n;
+	bat *res = getArgReference_bat(stk, pci, 0), *hid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	int lbit = *getArgReference_int(stk, pci, 2), tpe = getArgType(mb, pci, 3), rbit = (int) sizeof(lng) * 8 - lbit;
+	ptr pval = getArgReference(stk, pci, 3);
+	BAT *hb = NULL, *bn = NULL, *bs = NULL;
+	str msg = MAL_SUCCEED;
+	struct canditer ci = {0};
+	oid off;
+	BUN n = 0;
+	lng *restrict r, val;
+	const lng *restrict h;
 
 	(void) cntxt;
-
-	if ((hb = BATdescriptor(*hid)) == NULL)
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	n = BATcount(hb);
-
-	bn = COLnew(hb->hseqbase, TYPE_lng, n, TRANSIENT);
-	if (bn == NULL) {
-		BBPunfix(hb->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!(hb = BATdescriptor(*hid))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	BATsetcount(bn, n);
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	n = canditer_init(&ci, hb, bs);
+	if (!(bn = COLnew(ci.hseq, TYPE_lng, n, TRANSIENT))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	off = hb->hseqbase;
 
 	switch (ATOMstorage(tpe)) {
 	case TYPE_bte:
-		val = MKEYHASH_bte(pval);
+		val = MKEYHASH_bte((*(bte*)pval));
 		break;
 	case TYPE_sht:
-		val = MKEYHASH_sht(pval);
+		val = MKEYHASH_sht((*(sht*)pval));
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		val = MKEYHASH_int(pval);
+		val = MKEYHASH_int((*(int*)pval));
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
-		val = MKEYHASH_lng(pval);
+		val = MKEYHASH_lng((*(lng*)pval));
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		val = MKEYHASH_hge(pval);
+		val = MKEYHASH_hge((*(hge*)pval));
 		break;
 #endif
 	default:
 		if (ATOMextern(tpe))
-			val = (ulng) ATOMhash(tpe, *(ptr*)pval);
+			val = (lng) ATOMhash(tpe, *(ptr*)pval);
 		else
-			val = (ulng) ATOMhash(tpe, pval);
+			val = (lng) ATOMhash(tpe, pval);
 		break;
 	}
 
-	r = (ulng *) Tloc(bn, 0);
-	h = (const ulng *) Tloc(hb, 0);
+	r = (lng *) Tloc(bn, 0);
+	h = (const lng *) Tloc(hb, 0);
 
-	while (n-- > 0) {
-		*r++ = GDK_ROTATE(*h, lbit, rbit) ^ val;
-		h++;
-	}
-
-	if (bn->batCount <= 1) {
-		BATkey(bn, true);
-		bn->tsorted = bn->trevsorted = true;
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < n; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			r[i] = GDK_ROTATE(h[p], lbit, rbit) ^ val;
+		}
 	} else {
-		BATkey(bn, false);
-		bn->tsorted = bn->trevsorted = false;
+		for (BUN i = 0; i < n; i++) {
+			oid p = (canditer_next(&ci) - off);
+			r[i] = GDK_ROTATE(h[p], lbit, rbit) ^ val;
+		}
 	}
-	bn->tnonil = false;
-	bn->tnil = false;
 
-	BBPkeepref(*res = bn->batCacheid);
-	BBPunfix(hb->batCacheid);
-	return MAL_SUCCEED;
+bailout:
+	if (bn && !msg) {
+		BATsetcount(bn, n);
+		bn->tnonil = false;
+		bn->tnil = false;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn) {
+		BBPreclaim(bn);
+	}
+	if (hb)
+		BBPunfix(hb->batCacheid);
+	if (bs)
+		BBPunfix(bs->batCacheid);
+	return msg;
 }
 
+#define MKEYconstbulk_rotate_xor_hashloop(TPE) \
+	do { \
+		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
+		if (ci.tpe == cand_dense) { \
+			for (BUN i = 0; i < n; i++) { \
+				oid p = (canditer_next_dense(&ci) - off); \
+				r[i] = h ^ MKEYHASH_##TPE(v[p]); \
+			} \
+		} else { \
+			for (BUN i = 0; i < n; i++) { \
+				oid p = (canditer_next(&ci) - off); \
+				r[i] = h ^ MKEYHASH_##TPE(v[p]); \
+			} \
+		} \
+	} while (0)
+
 static str
-MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const bat *bid)
+MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *bn;
-	int lbit = *nbits;
-	int rbit = (int) sizeof(lng) * 8 - lbit;
-	ulng *restrict r;
-	BUN n;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	int lbit = *getArgReference_int(stk, pci, 2), rbit = (int) sizeof(lng) * 8 - lbit;
+	BAT *b = NULL, *bn = NULL, *bs = NULL;
+	str msg = MAL_SUCCEED;
+	struct canditer ci = {0};
+	oid off;
+	BUN n = 0;
+	lng *restrict r, h = GDK_ROTATE(*getArgReference_lng(stk, pci, 1), lbit, rbit);
 
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	n = BATcount(b);
-
-	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
-	if (bn == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	BATsetcount(bn, n);
-
-	r = (ulng *) Tloc(bn, 0);
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	n = canditer_init(&ci, b, bs);
+	if (!(bn = COLnew(ci.hseq, TYPE_lng, n, TRANSIENT))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	off = b->hseqbase;
+	r = (lng *) Tloc(bn, 0);
 
 	switch (ATOMstorage(b->ttype)) {
-	case TYPE_bte: {
-		const bte *restrict v = (const bte *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ MKEYHASH_bte(v + i);
+	case TYPE_bte:
+		MKEYconstbulk_rotate_xor_hashloop(bte);
 		break;
-	}
-	case TYPE_sht: {
-		const sht *restrict v = (const sht *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ MKEYHASH_sht(v + i);
+	case TYPE_sht:
+		MKEYconstbulk_rotate_xor_hashloop(sht);
 		break;
-	}
 	case TYPE_int:
-	case TYPE_flt: {
-		const int *restrict v = (const int *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ MKEYHASH_int(v + i);
+	case TYPE_flt:
+		MKEYconstbulk_rotate_xor_hashloop(int);
 		break;
-	}
 	case TYPE_lng:
-	case TYPE_dbl: {
-		const lng *restrict v = (const lng *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ MKEYHASH_lng(v + i);
+	case TYPE_dbl:
+		MKEYconstbulk_rotate_xor_hashloop(lng);
 		break;
-	}
 #ifdef HAVE_HGE
-	case TYPE_hge: {
-		const hge *restrict v = (const hge *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ MKEYHASH_hge(v + i);
+	case TYPE_hge:
+		MKEYconstbulk_rotate_xor_hashloop(hge);
 		break;
-	}
 #endif
 	case TYPE_str:
 		if (b->tvheap->hashash) {
 			BATiter bi = bat_iterator(b);
-			for (BUN i = 0; i < n; i++) {
-				const char *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
+
+			if (ci.tpe == cand_dense) {
+				for (BUN i = 0; i < n; i++) {
+					oid p = (canditer_next_dense(&ci) - off);
+					const char *restrict s = BUNtvar(bi, p);
+					r[i] = h ^ (lng) ((const BUN *) s)[-1];
+				}
+			} else {
+				for (BUN i = 0; i < n; i++) {
+					oid p = (canditer_next(&ci) - off);
+					const char *restrict s = BUNtvar(bi, p);
+					r[i] = h ^ (lng) ((const BUN *) s)[-1];
+				}
 			}
 			break;
 		}
@@ -586,68 +655,52 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
-		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0; i < n; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				r[i] = h ^ (lng) hash(BUNtail(bi, p));
+			}
+		} else {
+			for (BUN i = 0; i < n; i++) {
+				oid p = (canditer_next(&ci) - off);
+				r[i] = h ^ (lng) hash(BUNtail(bi, p));
+			}
+		}
 		break;
 	}
 	}
-	if (bn->batCount <= 1) {
-		BATkey(bn, true);
-		bn->tsorted = bn->trevsorted = true;
-	} else {
-		BATkey(bn, false);
-		bn->tsorted = bn->trevsorted = false;
-	}
-	bn->tnonil = false;
-	bn->tnil = false;
 
-	BBPkeepref(*res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+bailout:
+	if (bn && !msg) {
+		BATsetcount(bn, n);
+		bn->tnonil = false;
+		bn->tnil = false;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn) {
+		BBPreclaim(bn);
+	}
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bs)
+		BBPunfix(bs->batCacheid);
+	return msg;
 }
 
 #include "mel.h"
 mel_func mkey_init_funcs[] = {
- command("mkey", "rotate", MKEYrotate, false, "left-rotate an int by nbits", args(1,3, arg("",lng),arg("v",lng),arg("nbits",int))),
  pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),argany("v",0))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",bit))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",bte))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",sht))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",int))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",flt))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",dbl))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",lng))),
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",str))),
- pattern("mkey", "bulk_rotate_xor_hash", MKEYrotate_xor_hash, false, "post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",0))),
- command("mkey", "bulk_rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",1))),
- pattern("mkey", "bulk_rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0))),
- command("mkey", "bulk_rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",1))),
- command("batmkey", "hash", MKEYbathash, false, "calculate a hash value", args(1,2, batarg("",lng),batargany("b",1))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",bte))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",bte))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",sht))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",sht))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",int))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",int))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",oid))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",oid))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",flt))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",flt))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",dbl))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",dbl))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),argany("v",0))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batargany("b",1))),
- pattern("calc", "rotate_xor_hash", MKEYrotate_xor_hash, false, "", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",1))),
- command("batcalc", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "", args(1,4, batarg("",int),batarg("h",lng),arg("nbits",int),batargany("b",1))),
-#ifdef HAVE_HGE
- pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",hge))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",hge))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",hge))),
-#endif
+ pattern("batmkey", "hash", MKEYbathash, false, "calculate a hash value", args(1,2, batarg("",lng),batargany("b",0))),
+ pattern("batmkey", "hash", MKEYbathash, false, "calculate a hash value, with a candidate list", args(1,3, batarg("",lng),batargany("b",0),batarg("s",oid))),
+ pattern("mkey", "rotate_xor_hash", MKEYrotate_xor_hash, false, "post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",0))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list", args(1,5, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0),batarg("s",oid))),
+ pattern("batmkey", "rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",1))),
+ pattern("batmkey", "rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list", args(1,5, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",1),batarg("s",oid))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",1))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b)), with candidate lists", args(1,6, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",1),batarg("s1",oid),batarg("s2",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"
