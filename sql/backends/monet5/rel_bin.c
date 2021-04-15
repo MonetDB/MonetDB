@@ -1101,7 +1101,12 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 					val = stmt_const(be, pos, NULL, val);
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
-
+				else if (rsel && val->cand && val->cand == isel) {
+					val = stmt_project(be, rsel, val);
+					val->cand = nsel;
+				} else if (rsel && val->cand && val->cand != nsel && val->cand != rsel) {
+					assert(0);
+				}
 				res = stmt_replace(be, res, pos, val);
 			}
 			if (en->next) { /* handled then part */
