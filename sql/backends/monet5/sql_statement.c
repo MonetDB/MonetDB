@@ -1364,6 +1364,27 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
+		if (!all_cands_pushed && push_cands && sel) {
+			for (node *n = lops->op4.lval->h; n; n = n->next) {
+				stmt *op = n->data;
+				if (op->nrcols) {
+					if (op->cand)
+						q = pushNil(mb, q, TYPE_bat);
+					else
+						q = pushArgument(mb, q, sel->nr);
+				}
+			}
+			for (node *n = rops->op4.lval->h; n; n = n->next) {
+				stmt *op = n->data;
+				if (op->nrcols) {
+					if (op->cand)
+						q = pushNil(mb, q, TYPE_bat);
+					else
+						q = pushArgument(mb, q, sel->nr);
+				}
+			}
+			all_cands_pushed = 1;
+		}
 		k = getDestVar(q);
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
@@ -1379,6 +1400,12 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, anti);
+		if (all_cands_pushed && sel) {
+			int nr = getDestVar(q);
+			q = newStmt(mb, algebraRef, projectionRef);
+			q = pushArgument(mb, q, nr);
+			q = pushArgument(mb, q, sel->nr);
+		}
 	} else {
 		op = sa_strconcat(be->mvc->sa, op, selectRef);
 		q = newStmtArgs(mb, mod, convertOperator(op), 9);
