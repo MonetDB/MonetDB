@@ -3526,6 +3526,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 	} else if (sub && sub->cand && used == list_length(rel->exps)) {
 		sub = used_cands(sub);
+		psub = used_cands(psub);
 	}
 	if (psub->cand && rel->r) { /* for now we first handle the candidates */
 		if (sub)
