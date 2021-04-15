@@ -2383,7 +2383,6 @@ join_hash_key( backend *be, list *l )
 static stmt *
 releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, int need_left, int is_semantics )
 {
-	mvc *sql = be->mvc;
 	node *n1 = l1->h, *n2 = l2->h, *n3 = NULL;
 	stmt *l, *r, *res;
 	sql_exp *e;
@@ -2420,25 +2419,14 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, int need_
 		stmt *rd = n2->data;
 		stmt *le = stmt_project(be, l, ld );
 		stmt *re = stmt_project(be, r, rd );
+		stmt *cmp;
 		/* intentional both tail_type's of le (as re sometimes is a find for bulk loading */
-		sql_subfunc *f = NULL;
-		stmt * cmp;
-		list *ops;
 
-		f = sql_bind_func(sql, "sys", "=", tail_type(le), tail_type(le), F_FUNC);
-		assert(f);
-
-		ops = sa_list(be->mvc->sa);
-		list_append(ops, le);
-		list_append(ops, re);
 		if (!semantics && exps) {
 			e = n3->data;
 			semantics = is_semantics(e);
 		}
-		if (semantics)
-			list_append(ops, stmt_bool(be, 1));
-		cmp = stmt_Nop(be, stmt_list(be, ops), NULL, f);
-		cmp = stmt_uselect(be, cmp, stmt_bool(be, 1), cmp_equal, NULL, 0, 0);
+		cmp = stmt_uselect(be, le, re, cmp_equal, NULL, 0, semantics);
 		l = stmt_project(be, cmp, l );
 		r = stmt_project(be, cmp, r );
 	}

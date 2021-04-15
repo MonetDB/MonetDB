@@ -42,14 +42,6 @@ convertMultiplexFcn(const char *op)
 	return op;
 }
 
-static const char *
-convertOperator(const char *op)
-{
-	if (strcmp(op, "=") == 0)
-		return "==";
-	return op;
-}
-
 static InstrPtr
 dump_1(MalBlkPtr mb, const char *mod, const char *name, stmt *o1)
 {
@@ -1392,7 +1384,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		}
 	} else {
 		op = sa_strconcat(be->mvc->sa, op, selectRef);
-		q = newStmtArgs(mb, mod, convertOperator(op), 9);
+		q = newStmtArgs(mb, mod, convertMultiplexFcn(op), 9);
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
@@ -3187,8 +3179,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	}
 
 	/* handle nullif */
-	if (list_length(ops->op4.lval) == 2 &&
-		f->func->mod && strcmp(f->func->mod, "") == 0 && f->func->imp && strcmp(f->func->imp, "") == 0) {
+	if (list_length(ops->op4.lval) == 2 && strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
 		stmt *e1 = ops->op4.lval->h->data;
 		stmt *e2 = ops->op4.lval->h->next->data;
 		int nrcols = 0;
@@ -3211,34 +3202,27 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		}
 	}
 	if (!q) {
+		int default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
+		
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
-		fimp = sql_func_imp(f->func);
+		fimp = convertMultiplexFcn(sql_func_imp(f->func));
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
-			fimp = convertMultiplexFcn(fimp);
-			q = NULL;
-			if (strcmp(fimp, "rotate_xor_hash") == 0 &&
-				strcmp(mod, mkeyRef) == 0 &&
-				(q = newStmt(mb, batmkeyRef, rotate_xor_hashRef)) == NULL)
-				return NULL;
-			if (!q) {
-				if (f->func->type == F_UNION)
-					q = newStmtArgs(mb, batmalRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
-				else
-					q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
-				if (q == NULL)
-					return NULL;
-				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+
+			if (push_cands) {
+				char batmodule[16];
+				stpcpy(stpcpy(batmodule, "bat"), mod);
+				q = newStmtArgs(mb, batmodule, fimp, default_nargs);
+			} else {
+				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
 				q = pushStr(mb, q, mod);
 				q = pushStr(mb, q, fimp);
-			} else {
-				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 			}
+			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
-			fimp = convertOperator(fimp);
-			q = newStmtArgs(mb, mod, fimp, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 4);
+			q = newStmtArgs(mb, mod, fimp, default_nargs);
 
 			if (f->res && list_length(f->res)) {
 				sql_subtype *res = f->res->h->data;
@@ -3268,12 +3252,12 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (sel && push_cands && f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT) {
+		if (push_cands && f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT) {
 			for (n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
-					if (op->cand) { /* Don't push cands twice */
+					if (!sel || op->cand) { /* Don't push cands twice */
 						q = pushNil(mb, q, TYPE_bat);
 					} else {
 						q = pushArgument(mb, q, sel->nr);
