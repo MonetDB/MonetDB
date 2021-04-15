@@ -79,8 +79,6 @@ bat.replace
 2
 algebra.likeselect
 1
-algebra.projection
-1
 bat.pack
 5
 sql.resultSet
