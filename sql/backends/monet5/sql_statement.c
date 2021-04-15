@@ -1333,7 +1333,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *op = sql_func_imp(f->func);
-	int k, push_cands = strcmp(mod, "pcre") == 0 || strcmp(mod, "algebra") == 0, all_cands_pushed = 1;
+	int k, push_cands = strcmp(mod, "algebra") == 0, all_cands_pushed = 1;
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
