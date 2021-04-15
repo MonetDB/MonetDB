@@ -60,8 +60,6 @@ sql.tid
 1
 sql.bind
 2
-algebra.projection
-2
 sql.update
 1
 aggr.count
@@ -82,8 +80,6 @@ sql.tid
 1
 sql.bind
 2
-algebra.projection
-2
 sql.update
 1
 aggr.count
@@ -103,8 +99,6 @@ sql.mvc
 sql.tid
 1
 sql.bind
-2
-algebra.projection
 2
 sql.update
 1
