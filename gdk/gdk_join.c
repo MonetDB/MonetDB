@@ -3112,11 +3112,11 @@ guess_uniques(BAT *b, struct canditer *ci)
 
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		PROPrec *p = BATgetprop(b, GDK_UNIQUE_ESTIMATE);
+		const ValRecord *p = BATgetprop(b, GDK_UNIQUE_ESTIMATE);
 		if (p) {
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
 				  ALGOBATPAR(b));
-			return p->v.val.dval;
+			return p->val.dval;
 		}
 		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
@@ -3181,11 +3181,11 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		/* average chain length */
 		rcost *= (double) BATcount(b) / b->thash->nheads;
 	} else {
-		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+		const ValRecord *prop = BATgetprop(r, GDK_NUNIQUE);
 		if (prop) {
 			/* we know number of unique values, assume some
 			 * collisions */
-			rcost *= 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+			rcost *= 1.1 * ((double) BATcount(r) / prop->val.oval);
 		} else {
 			/* guess number of unique value and work with that */
 			rcost *= 1.1 * ((double) BATcount(r) / guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)}));
@@ -3207,11 +3207,11 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		if (rhash && !prhash) {
 			rccost = (double) BATcount(r) / r->thash->nheads;
 		} else {
-			PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+			ValPtr prop = BATgetprop(r, GDK_NUNIQUE);
 			if (prop) {
 				/* we know number of unique values, assume some
 				 * chains */
-				rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+				rccost = 1.1 * ((double) BATcount(r) / prop->val.oval);
 			} else {
 				/* guess number of unique value and work with that */
 				rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
