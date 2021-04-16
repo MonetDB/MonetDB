@@ -1288,7 +1288,7 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 	assert(g == NULL || s != NULL);
 	/* g and s must be aligned (same size, same hseqbase) */
 	assert(g == NULL || BATcount(s) == BATcount(g));
-	assert(g == NULL || BATcount(g) == 0 || s->hseqbase == g->hseqbase);
+	//assert(g == NULL || BATcount(g) == 0 || s->hseqbase == g->hseqbase);
 
 	if (n == 0 || BATcount(b) == 0 || (s != NULL && BATcount(s) == 0)) {
 		/* trivial: empty result */
