@@ -1311,7 +1311,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
 				if (f1)
 					f = f1;
-				list_append(l, strcmp(f->func->base.name, "rand") == 0 ? left->cand ? left->cand : bin_find_smallest_column(be, left) : stmt_const(be, bin_find_smallest_column(be, left), left->cand,
+				list_append(l, strcmp(f->func->base.name, "rand") == 0 ? bin_find_smallest_column(be, left) : stmt_const(be, bin_find_smallest_column(be, left), left->cand,
 							stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
 			} else if (exps_card(exps) < CARD_MULTI) {
 				rows = left->cand ? left->cand : bin_find_smallest_column(be, left);
