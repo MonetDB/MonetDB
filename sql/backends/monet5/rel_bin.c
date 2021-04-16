@@ -353,7 +353,7 @@ distinct_value_list(backend *be, list *vals, stmt **last_null_value, int depth, 
 	s = stmt_append_bulk(be, stmt_temp(be, exp_subtype(vals->h->data)), l);
 	/* Probably faster to filter out the values directly in the underlying list of atoms.
 	   But for now use groupby to filter out duplicate values. */
-	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
+	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, NULL, 1);
 	stmt* ext = stmt_result(be, groupby, 1);
 
 	return stmt_project(be, ext, s);
@@ -369,10 +369,13 @@ stmt_selectnonil( backend *be, stmt *col, stmt *s )
 }
 
 static rel_bin_stmt *
-subrel_project( backend *be, rel_bin_stmt *s, list *refs, sql_rel *rel, bool allow_single_cand)
+subrel_project( backend *be, rel_bin_stmt *s, list *refs, sql_rel *rel, bool partial_push)
 {
-	if (!s || !s->cand || (s->cand && allow_single_cand && !s->pushed))
+	if (!s || !s->cand || (s->cand && partial_push && !s->pushed)) {
+		if (s->cand)
+			s->pushed = partial_push;
 		return s;
+	}
 
 	list *l = sa_list(be->mvc->sa);
 	stmt *cand = s->cand;
@@ -1374,7 +1377,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					as = exp_bin(be, at, left, right, depth+1, 0, push);
 
 				if (as && as->nrcols <= 0 && left)
-					as = stmt_const(be, bin_find_smallest_column(be, left), NULL, as);
+					as = stmt_const(be, bin_find_smallest_column(be, left), left->cand, as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
 					as = exp_count_no_nil_arg(e, right ? right->ext : NULL, at, as);
 				/* insert single value into a column */
@@ -1392,7 +1395,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				stmt *ncnt = right ? right->cnt : NULL;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
-					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
+					stmt *g = stmt_group(be, as, right->cand, ngrp, next, ncnt, 1);
 					ngrp = stmt_result(be, g, 0);
 					next = stmt_result(be, g, 1);
 					ncnt = stmt_result(be, g, 2);
@@ -1426,9 +1429,9 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			}
 		}
 		if (right)
-			s = stmt_aggr(be, as, input_group, right->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+			s = stmt_aggr(be, as, left->cand, input_group, right->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		else
-			s = stmt_aggr(be, as, NULL, NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+			s = stmt_aggr(be, as, left->cand, NULL, NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
 	} 	break;
@@ -3077,7 +3080,7 @@ rel2bin_distinct(backend *be, rel_bin_stmt *s, stmt **distinct)
 	for (node *n = s->cols->h; n; n = n->next) {
 		stmt *t = n->data;
 
-		g = stmt_group(be, column(be, t), grp, ext, cnt, !n->next);
+		g = stmt_group(be, column(be, t), NULL, grp, ext, cnt, !n->next);
 		grp = stmt_result(be, g, 0);
 		ext = stmt_result(be, g, 1);
 		cnt = stmt_result(be, g, 2);
@@ -3116,7 +3119,7 @@ rel2bin_single(backend *be, rel_bin_stmt *s)
 		const char *nme = column_name(sql->sa, t);
 		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", tail_type(t), NULL, F_AGGR);
 
-		t = stmt_aggr(be, t, NULL, NULL, zero_or_one, 1, 0, 1);
+		t = stmt_aggr(be, t, NULL, NULL, NULL, zero_or_one, 1, 0, 1);
 		t = stmt_alias(be, t, rnme, nme);
 		list_append(rl, t);
 	}
@@ -3220,13 +3223,13 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	 * number of rows.
 	 */
 	for (n = left->cols->h; n; n = n->next) {
-		lg = stmt_group(be, column(be, n->data), lgrp, lext, lcnt, !n->next);
+		lg = stmt_group(be, column(be, n->data), NULL, lgrp, lext, lcnt, !n->next);
 		lgrp = stmt_result(be, lg, 0);
 		lext = stmt_result(be, lg, 1);
 		lcnt = stmt_result(be, lg, 2);
 	}
 	for (n = right->cols->h; n; n = n->next) {
-		rg = stmt_group(be, column(be, n->data), rgrp, rext, rcnt, !n->next);
+		rg = stmt_group(be, column(be, n->data), NULL, rgrp, rext, rcnt, !n->next);
 		rgrp = stmt_result(be, rg, 0);
 		rext = stmt_result(be, rg, 1);
 		rcnt = stmt_result(be, rg, 2);
@@ -3330,13 +3333,13 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	 * number of rows.
 	 */
 	for (n = left->cols->h; n; n = n->next) {
-		lg = stmt_group(be, column(be, n->data), lgrp, lext, lcnt, !n->next);
+		lg = stmt_group(be, column(be, n->data), NULL, lgrp, lext, lcnt, !n->next);
 		lgrp = stmt_result(be, lg, 0);
 		lext = stmt_result(be, lg, 1);
 		lcnt = stmt_result(be, lg, 2);
 	}
 	for (n = right->cols->h; n; n = n->next) {
-		rg = stmt_group(be, column(be, n->data), rgrp, rext, rcnt, !n->next);
+		rg = stmt_group(be, column(be, n->data), NULL, rgrp, rext, rcnt, !n->next);
 		rgrp = stmt_result(be, rg, 0);
 		rext = stmt_result(be, rg, 1);
 		rcnt = stmt_result(be, rg, 2);
@@ -3508,10 +3511,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 	if (sub && sub->cand && used < list_length(rel->exps)) {
 		psub->cand = sub->cand;
-		if (used > 0) {
+		if (used > 0)
 			psub = subrel_project(be, psub, refs, rel, true);
-			psub->pushed = true;
-		}
 	} else if (sub && sub->cand && used == list_length(rel->exps)) {
 		sub = used_cands(sub);
 		psub = used_cands(psub);
@@ -3694,7 +3695,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	assert(rel->l); /* first construct the sub relation */
 	sub = subrel_bin(be, rel->l, refs);
-	sub = subrel_project(be, sub, refs, rel->l, false);
+//	sub = subrel_project(be, sub, refs, rel->l, false);
 	if (!sub)
 		return NULL;
 
@@ -3728,8 +3729,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 			}
 			if (!gbcol->nrcols)
-				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), NULL, gbcol);
-			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
+				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), sub->cand, gbcol);
+			groupby = stmt_group(be, gbcol, sub->cand, grp, ext, cnt, !en->next);
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
 			cnt = stmt_result(be, groupby, 2);
@@ -3960,7 +3961,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, 0);
 			s = stmt_result(be, s, 0);
 		}
-		s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
+		s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
 
 		/* 2nd stage: find out if inserted are unique */
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
@@ -3998,7 +3999,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				return NULL;
 
 			sum = sql_bind_func(sql, "sys", "not_unique", tail_type(orderby_grp), NULL, F_AGGR);
-			ssum = stmt_aggr(be, orderby_grp, NULL, NULL, sum, 1, 0, 1);
+			ssum = stmt_aggr(be, orderby_grp, NULL, NULL, NULL, sum, 1, 0, 1);
 			/* combine results */
 			s = stmt_binop(be, s, ssum, NULL, or);
 		}
@@ -4022,11 +4023,11 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_join(be, s, h, 0, cmp_equal, 0, 0, false);
 			/* s should be empty */
 			s = stmt_result(be, s, 0);
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			s = stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1);
 		} else {
 			s = stmt_uselect(be, s, h, cmp_equal, NULL, 0, 0);
 			/* s should be empty */
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			s = stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1);
 		}
 		/* s should be empty */
 		s = stmt_binop(be, s, stmt_atom_lng(be, 0), NULL, ne);
@@ -4046,13 +4047,13 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				ins = stmt_project(be, nn, ins);
 			}
 
-			g = stmt_group(be, ins, NULL, NULL, NULL, 1);
+			g = stmt_group(be, ins, NULL, NULL, NULL, NULL, 1);
 			ss = stmt_result(be, g, 2); /* use count */
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR);
-			ssum = stmt_aggr(be, ss, NULL, NULL, sum, 1, 0, 1);
+			ssum = stmt_aggr(be, ss, NULL, NULL, NULL, sum, 1, 0, 1);
 			ssum = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", ssum), stmt_atom_lng(be, 0), ssum, NULL);
-			count_sum = stmt_binop(be, check_types(be, tail_type(ssum), stmt_aggr(be, ss, NULL, NULL, cnt, 1, 0, 1), type_equal), ssum, NULL, ne);
+			count_sum = stmt_binop(be, check_types(be, tail_type(ssum), stmt_aggr(be, ss, NULL, NULL, NULL, cnt, 1, 0, 1), type_equal), ssum, NULL, ne);
 
 			/* combine results */
 			s = stmt_binop(be, s, count_sum, NULL, or);
@@ -4081,10 +4082,10 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, rel
 	if (pin && list_length(pin->cols))
 		s = pin->cols->h->data;
 	if (s->key && s->nrcols == 0) {
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 1), NULL, ne);
+		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 1), NULL, ne);
 	} else {
 		/* releqjoin.count <> inserts[col1].count */
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, column(be, s), NULL, NULL, cnt, 1, 0, 1), NULL, ne);
+		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, column(be, s), NULL, NULL, NULL, cnt, 1, 0, 1), NULL, ne);
 	}
 
 	/* s should be empty */
@@ -4193,7 +4194,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
-				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+				s = stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC);
 
@@ -4270,7 +4271,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (ret->nrcols == 0) {
 		ret = stmt_atom_lng(be, 1);
 	} else {
-		ret = stmt_aggr(be, ret, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		ret = stmt_aggr(be, ret, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	}
 
 	if (t->idxs) {
@@ -4405,7 +4406,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			}
 			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, 0);
 			s = stmt_result(be, s, 0);
-			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
+			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
 		}
 
 		/* 2e stage: find out if the updated are unique */
@@ -4420,7 +4421,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			/* also take the hopefully unique hash keys, to reduce
 			   (re)group costs */
 			if (k->idx && hash_index(k->idx->type)) {
-				g = stmt_group(be, idx_updates, grp, ext, Cnt, 0);
+				g = stmt_group(be, idx_updates, NULL, grp, ext, Cnt, 0);
 				grp = stmt_result(be, g, 0);
 				ext = stmt_result(be, g, 1);
 				Cnt = stmt_result(be, g, 2);
@@ -4463,7 +4464,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 				}
 
 				/* apply group by on groups with Cnt > 1 */
-				g = stmt_group(be, upd, grp, ext, Cnt, !m->next);
+				g = stmt_group(be, upd, NULL, grp, ext, Cnt, !m->next);
 				grp = stmt_result(be, g, 0);
 				ext = stmt_result(be, g, 1);
 				Cnt = stmt_result(be, g, 2);
@@ -4471,9 +4472,9 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			ss = Cnt; /* use count */
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR);
-			ssum = stmt_aggr(be, ss, NULL, NULL, sum, 1, 0, 1);
+			ssum = stmt_aggr(be, ss, NULL, NULL, NULL, sum, 1, 0, 1);
 			ssum = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", ssum), stmt_atom_lng(be, 0), ssum, NULL);
-			count_sum = stmt_binop(be, stmt_aggr(be, ss, NULL, NULL, cnt, 1, 0, 1), check_types(be, lng, ssum, type_equal), NULL, ne);
+			count_sum = stmt_binop(be, stmt_aggr(be, ss, NULL, NULL, NULL, cnt, 1, 0, 1), check_types(be, lng, ssum, type_equal), NULL, ne);
 
 			/* combine results */
 			if (s)
@@ -4502,7 +4503,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 			o = stmt_col(be, c->c, nu_tids, nu_tids->partition);
 			s = stmt_join(be, o, h, 0, cmp_equal, 0, 0, false);
 			s = stmt_result(be, s, 0);
-			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
+			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
 		}
 
 		/* 2e stage: find out if updated are unique */
@@ -4526,14 +4527,14 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 				upd = stmt_project(be, nn, upd);
 			}
 
-			g = stmt_group(be, upd, NULL, NULL, NULL, 1);
+			g = stmt_group(be, upd, NULL, NULL, NULL, NULL, 1);
 			ss = stmt_result(be, g, 2); /* use count */
 
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_func(sql, "sys", "sum", lng, NULL, F_AGGR);
-			ssum = stmt_aggr(be, ss, NULL, NULL, sum, 1, 0, 1);
+			ssum = stmt_aggr(be, ss, NULL, NULL, NULL, sum, 1, 0, 1);
 			ssum = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", ssum), stmt_atom_lng(be, 0), ssum, NULL);
-			count_sum = stmt_binop(be, check_types(be, tail_type(ssum), stmt_aggr(be, ss, NULL, NULL, cnt, 1, 0, 1), type_equal), ssum, NULL, ne);
+			count_sum = stmt_binop(be, check_types(be, tail_type(ssum), stmt_aggr(be, ss, NULL, NULL, NULL, cnt, 1, 0, 1), type_equal), ssum, NULL, ne);
 
 			/* combine results */
 			if (s)
@@ -4604,7 +4605,7 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		assert(0);
 		cur = stmt_col(be, c->c, dels, dels->partition);
 	}
-	s = stmt_binop(be, stmt_aggr(be, idx_updates, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, cur, NULL, NULL, cnt, 1, 0, 1), NULL, ne);
+	s = stmt_binop(be, stmt_aggr(be, idx_updates, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, cur, NULL, NULL, NULL, cnt, 1, 0, 1), NULL, ne);
 
 	for (m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
@@ -4627,12 +4628,12 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		}
 	}
 	if (null) {
-		cntnulls = stmt_aggr(be, null, NULL, NULL, cnt, 1, 0, 1);
+		cntnulls = stmt_aggr(be, null, NULL, NULL, NULL, cnt, 1, 0, 1);
 	} else {
 		cntnulls = stmt_atom_lng(be, 0);
 	}
 	s = stmt_binop(be, s,
-		stmt_binop(be, stmt_aggr(be, stmt_selectnil(be, idx_updates), NULL, NULL, cnt, 1, 0, 1), cntnulls, NULL, ne), NULL, or);
+		stmt_binop(be, stmt_aggr(be, stmt_selectnil(be, idx_updates), NULL, NULL, NULL, cnt, 1, 0, 1), cntnulls, NULL, ne), NULL, or);
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
@@ -4691,14 +4692,14 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	s = stmt_result(be, s, 0);
 
 	/* add missing nulls */
-	cnteqjoin = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+	cnteqjoin = stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1);
 	if (nulls) {
 		sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
-		cnteqjoin = stmt_binop(be, cnteqjoin, stmt_aggr(be, null, NULL, NULL, cnt, 1, 0, 1), NULL, add);
+		cnteqjoin = stmt_binop(be, cnteqjoin, stmt_aggr(be, null, NULL, NULL, NULL, cnt, 1, 0, 1), NULL, add);
 	}
 
 	/* releqjoin.count <> updates[updcol].count */
-	s = stmt_binop(be, cnteqjoin, stmt_aggr(be, rows, NULL, NULL, cnt, 1, 0, 1), NULL, ne);
+	s = stmt_binop(be, cnteqjoin, stmt_aggr(be, rows, NULL, NULL, NULL, cnt, 1, 0, 1), NULL, ne);
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
@@ -5124,7 +5125,7 @@ sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, updates[c->colnr]);
-				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+				s = stmt_aggr(be, s, NULL, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC);
 
@@ -5287,7 +5288,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	sql->cascade_action = NULL;
 
 	if (!ddl && !be->silent) {
-		stmt *ret = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		stmt *ret = stmt_aggr(be, tids, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
@@ -5412,7 +5413,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 						break;
 					default:	/*RESTRICT*/
 						/* The overlap between deleted primaries and foreign should be empty */
-						s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
+						s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
 						msg = sa_message(sql->sa, SQLSTATE(40002) "%s: FOREIGN KEY constraint '%s.%s' violated", which, fk->t->base.name, fk->base.name);
 						s = stmt_exception(be, s, msg, 00001);
 				}
@@ -5487,7 +5488,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (rows) {
 		s = stmt_delete(be, t, rows);
 		if (!be->silent)
-			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+			s = stmt_aggr(be, rows, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else { /* delete all */
 		s = stmt_table_clear(be, t); /* first column */
 	}
@@ -5781,7 +5782,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	}
 	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, onclient, fns));
 	if (s->nrcols != 0) {
-		cnt = stmt_aggr(be, s->cols->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		cnt = stmt_aggr(be, s->cols->h->data, NULL, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else {
 		cnt = stmt_atom_lng(be, 1);
 	}
