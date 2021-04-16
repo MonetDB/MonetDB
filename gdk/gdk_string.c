@@ -979,9 +979,10 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 		if (separator) {
 			for (p = 0; p < ncand; p++) {
+				gid = gids[ci->next];
 				i = canditer_next(ci) - seqb;
-				if (gids[i] >= min && gids[i] <= max) {
-					gid = gids[i] - min;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
 					s = BUNtvar(bi, i);
@@ -998,9 +999,10 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		} else { /* sep case */
 			assert(sep != NULL);
 			for (p = 0; p < ncand; p++) {
+				gid = gids[ci->next];
 				i = canditer_next(ci) - seqb;
-				if (gids[i] >= min && gids[i] <= max) {
-					gid = gids[i] - min;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
 					s = BUNtvar(bi, i);
@@ -1054,9 +1056,10 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 		if (separator) {
 			for (p = 0; p < ncand; p++) {
+				gid = gids[ci->next];
 				i = canditer_next(ci) - seqb;
-				if (gids[i] >= min && gids[i] <= max) {
-					gid = gids[i] - min;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (astrings[gid]) {
 						s = BUNtvar(bi, i);
 						if (strNil(s))
@@ -1075,9 +1078,10 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		} else { /* sep case */
 			assert(sep != NULL);
 			for (p = 0; p < ncand; p++) {
+				gid = gids[ci->next];
 				i = canditer_next(ci) - seqb;
-				if (gids[i] >= min && gids[i] <= max) {
-					gid = gids[i] - min;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (astrings[gid]) {
 						s = BUNtvar(bi, i);
 						sl = BUNtvar(bis, i);

@@ -18,13 +18,10 @@
 		TYPE *restrict rp = (TYPE *) Tloc(res, 0); \
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - l->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (oids[gid] != (BUN_NONE - 1)) { \
 					if (oids[gid] == BUN_NONE) { \
 						if (!is_##TYPE##_nil(vals[i])) \
@@ -119,13 +116,10 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (oids[gid] != (BUN_NONE - 1)) {
 						if (oids[gid] == BUN_NONE) {
 							if (ocmp(BUNtail(li, i), nilp) != 0)
@@ -201,13 +195,10 @@ alloc_fail:
 		const TYPE *restrict vals = (const TYPE *) Tloc(l, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - l->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (ret[gid] != TRUE && is_##TYPE##_nil(vals[i])) \
 					ret[gid] = TRUE; \
 			} \
@@ -285,13 +276,10 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					const void *restrict lv = BUNtail(li, i);
 					if (ret[gid] != TRUE && ocmp(lv, nilp) == 0)
 						ret[gid] = TRUE;
@@ -327,13 +315,10 @@ alloc_fail:
 		const TYPE *vals2 = (const TYPE *) Tloc(r, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - l->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (ret[gid] != TEST) { \
 					if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
 						ret[gid] = bit_nil; \
@@ -417,13 +402,10 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (ret[gid] != TRUE) {
 						const void *lv = BUNtail(li, i);
 						const void *rv = BUNtail(ri, i);
@@ -530,13 +512,10 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (ret[gid] != FALSE) {
 						const void *lv = BUNtail(li, i);
 						const void *rv = BUNtail(ri, i);
@@ -578,13 +557,10 @@ alloc_fail:
 		const TYPE *vals2 = (const TYPE *) Tloc(r, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - l->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (ret[gid] != VAL1) { \
 					const oid id = *(oid*)BUNtail(ii, i); \
 					if (is_oid_nil(id)) { \
@@ -671,13 +647,10 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (ret[gid] != TRUE) {
 						const oid id = *(oid*)BUNtail(ii, i);
 						if (is_oid_nil(id)) {
@@ -791,13 +764,10 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gid >= min && gid <= max) {
+					gid -= min;
 					if (ret[gid] != FALSE) {
 						const oid id = *(oid*)BUNtail(ii, i);
 						if (is_oid_nil(id)) {
@@ -881,9 +851,10 @@ BATsubexist(BAT *b, BAT *g, BAT *e, BAT *s)
 		if (gids) {
 			while (ncand > 0) {
 				ncand--;
+				oid gid = gids[ci.next];
 				i = canditer_next(&ci) - b->hseqbase;
-				if (gids[i] >= min && gids[i] <= max)
-					exists[gids[i] - min] = TRUE;
+				if (gid >= min && gid <= max)
+					exists[gid - min] = TRUE;
 			}
 		} else {
 			while (ncand > 0) {
@@ -956,9 +927,10 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 		if (gids) {
 			while (ncand > 0) {
 				ncand--;
+				oid gid = gids[ci.next];
 				i = canditer_next(&ci) - b->hseqbase;
-				if (gids[i] >= min && gids[i] <= max)
-					exists[gids[i] - min] = FALSE;
+				if (gid >= min && gid <= max)
+					exists[gid - min] = FALSE;
 			}
 		} else {
 			while (ncand > 0) {
