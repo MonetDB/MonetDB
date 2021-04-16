@@ -132,7 +132,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST)	\
 	do {					\
-		for (TPE i = 0; rb < rp; i++, rb++) {	\
+		for (UPCAST i = 0; rb < rp; i++, rb++) {	\
 			TPE val = NEXT_VALUE; \
 			if (is_##TPE##_nil(val)) {	\
 				has_nils = true;	\
@@ -140,7 +140,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			} else { \
 				UPCAST nval = (UPCAST) LNG_HGE; \
 				if (nval >= ncnt) { \
-					*rb = i + 1;  \
+					*rb = (TPE)(i + 1);  \
 				} else { \
 					UPCAST bsize = ncnt / nval; \
 					UPCAST top = ncnt - nval * bsize; \
