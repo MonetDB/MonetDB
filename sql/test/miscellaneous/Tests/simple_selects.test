@@ -614,6 +614,19 @@ select * from (select 1 as c0, 2 as c0) as sub
 statement error
 select *,* from (select 1 as c0, 2 as c0) as sub
 
+# for longer projection lists, we use hashing
+statement error
+select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as d) as sub
+
+query IIIII rowsort
+select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as e) as sub
+----
+1
+2
+3
+4
+5
+
 statement error
 select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub
 

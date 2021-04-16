@@ -2124,6 +2124,7 @@ enum prop_t {
 	GDK_NUNIQUE,		/* number of unique values */
 	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values */
 };
+gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
 
 /*
  * @- BAT relational operators
