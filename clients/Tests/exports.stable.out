@@ -122,6 +122,7 @@ gdk_return BATextend(BAT *b, BUN newcap) __attribute__((__warn_unused_result__))
 void BATfakeCommit(BAT *b);
 gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct) __attribute__((__warn_unused_result__));
 restrict_t BATgetaccess(BAT *b);
+ValPtr BATgetprop(BAT *b, enum prop_t idx);
 gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h) __attribute__((__warn_unused_result__));
 const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s, oid *minp, oid *maxp, BUN *ngrpp, struct canditer *ci, BUN *ncand);
 gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale);

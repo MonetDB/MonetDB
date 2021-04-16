@@ -1261,14 +1261,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 
 	if (anti) {
-		PROPrec *prop;
+		const ValRecord *prop;
 		int c;
 
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			c = ATOMcmp(t, tl, VALptr(prop));
 			if (c < 0 || (li && c == 0)) {
 				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-					c = ATOMcmp(t, th, VALptr(&prop->v));
+					c = ATOMcmp(t, th, VALptr(prop));
 					if (c > 0 || (hi && c == 0)) {
 						/* tl..th range fully
 						 * inside MIN..MAX
@@ -1289,11 +1289,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 	} else if (!equi || !lnil) {
-		PROPrec *prop;
+		const ValRecord *prop;
 		int c;
 
 		if (hval && (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, th, VALptr(&prop->v));
+			c = ATOMcmp(t, th, VALptr(prop));
 			if (c < 0 || (!hi && c == 0)) {
 				/* smallest value in BAT larger than
 				 * what we're looking for */
@@ -1311,7 +1311,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		if (lval && (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			c = ATOMcmp(t, tl, VALptr(prop));
 			if (c > 0 || (!li && c == 0)) {
 				/* largest value in BAT smaller than
 				 * what we're looking for */
