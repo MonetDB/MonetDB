@@ -72,7 +72,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	*ncand = canditer_init(ci, b, s);
 	if (g) {
 		if (ci->ncand != BATcount(g) ||
-		    (ci->ncand != 0 && ci->seq != g->hseqbase))
+		    /*(ci->ncand != 0 && ci->seq != g->hseqbase)*/ 0)
 			return "b with s and g must be aligned";
 		assert(BATttype(g) == TYPE_oid);
 	}
