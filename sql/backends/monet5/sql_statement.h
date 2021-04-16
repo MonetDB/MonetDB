@@ -206,7 +206,7 @@ extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 
 extern stmt *stmt_list(backend *be, list *l);
 
-extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
+extern stmt *stmt_group(backend *be, stmt *op1, stmt *sel, stmt *grp, stmt *ext, stmt *cnt, int done);
 extern stmt *stmt_unique(backend *be, stmt *op1);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
@@ -235,7 +235,7 @@ extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfun
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
-extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
+extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 

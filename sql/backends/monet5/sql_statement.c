@@ -225,7 +225,7 @@ create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *
 }
 
 stmt *
-stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
+stmt_group(backend *be, stmt *s, stmt *sel, stmt *grp, stmt *ext, stmt *cnt, int done)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -243,6 +243,12 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, s->nr);
+	if (sel)
+		q = pushArgument(mb, q, sel->nr);
+	/*
+	else
+		q = pushNil(mb, q, TYPE_bat);
+		*/
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
 	if (q) {
@@ -263,6 +269,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 		ns->key = 0;
 		ns->q = q;
 		ns->nr = getDestVar(q);
+		ns->cand = sel;
 		return ns;
 	}
 	return NULL;
@@ -1021,6 +1028,7 @@ stmt_result(backend *be, stmt *s, int nr)
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
+	ns->cand = s->cand;
 	return ns;
 }
 
@@ -3210,7 +3218,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	}
 	if (!q) {
 		int default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
-		
+
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
@@ -3397,7 +3405,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 }
 
 stmt *
-stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3407,7 +3415,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	bool complex_aggr = false;
 	bool abort_on_error;
 	int *stmt_nr = NULL;
-	int avg = 0;
+	int avg = 0, pushed = 0;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3484,6 +3492,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
+		if (op1_cand && op1->cand == op1_cand)
+			pushed = 1;
 	} else {
 		int i;
 		node *n;
@@ -3495,12 +3505,17 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 				q = pushArgument(mb, q, stmt_nr[i]);
 			else
 				q = pushArgument(mb, q, op->nr);
+			if (op1_cand && op->cand == op1_cand && op->nrcols)
+				pushed = 1;
 		}
 	}
 	if (grp) {
 		q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, ext->nr);
-		if (avg) /* push nil candidates */
+		/* push candidates */
+		if (op1_cand && !pushed)
+			q = pushArgument(mb, q, op1_cand->nr);
+		else if (avg)
 			q = pushNil(mb, q, TYPE_bat);
 		if (q == NULL)
 			return NULL;
@@ -3552,12 +3567,12 @@ stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
+	s->cand = op1->cand;
 
 	s->tname = tname;
 	s->cname = alias;
 	s->nr = op1->nr;
 	s->q = op1->q;
-	s->cand = op1->cand;
 	return s;
 }
 
