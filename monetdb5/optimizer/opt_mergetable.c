@@ -1232,7 +1232,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
  * most (handled) aggregates thats relatively simple. AVG is somewhat
  * more complex. */
 static int
-mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
+mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e, int cand)
 {
 	int tp = getArgType(mb,p,0), k, tp2 = 0, tpe = getBatType(tp);
 	const char *aggr2 = aggr_phase2(getFunctionId(p), tpe == TYPE_dbl);
@@ -1289,6 +1289,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(q,1+off) = getArg(mat[b].mi,k);
 		getArg(q,2+off) = getArg(mat[g].mi,k);
 		getArg(q,3+off) = getArg(mat[e].mi,k);
+		if (cand >= 0)
+			getArg(q,4+off) = getArg(mat[cand].mi,k);
 		pushInstruction(mb,q);
 
 		/* pack the result into a mat */
@@ -1470,7 +1472,7 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 }
 
 static int
-mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
+mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int cand)
 {
 	int tp0 = getArgType(mb,p,0);
 	int tp1 = getArgType(mb,p,1);
@@ -1509,6 +1511,8 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		getArg(q, 1) = newTmpVariable(mb, tp1);
 		getArg(q, 2) = newTmpVariable(mb, tp2);
 		getArg(q, 3) = getArg(ml->v[b].mi, i);
+		if (cand >= 0)
+			getArg(q, 4) = getArg(ml->v[cand].mi, i);
 		pushInstruction(mb, q);
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i) ||
 		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i) ||
@@ -1562,12 +1566,12 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 }
 
 static int
-mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
+mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int cand, int g)
 {
 	int tp0 = getArgType(mb,p,0);
 	int tp1 = getArgType(mb,p,1);
 	int tp2 = getArgType(mb,p,2);
-	int atp = getArgType(mb,p,3), i, a, push = 0;
+	int atp = getArgType(mb,p,3), i, a, push = 0, grparg = 4+((cand>=0)?1:0);
 	InstrPtr r0, r1, r2, attr;
 
 	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
@@ -1610,7 +1614,9 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		getArg(q,1) = newTmpVariable(mb, tp1);
 		getArg(q,2) = newTmpVariable(mb, tp2);
 		getArg(q,3) = getArg(ml->v[b].mi,i);
-		getArg(q,4) = getArg(ml->v[g].mi,i);
+		if (cand >= 0)
+			getArg(q,4) = getArg(ml->v[cand].mi,i);
+		getArg(q,grparg) = getArg(ml->v[g].mi,i);
 		pushInstruction(mb,q);
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i) ||
 		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i) ||
@@ -2160,7 +2166,19 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (!groupdone && match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef &&
 		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) &&
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
-			if(mat_group_new(mb, p, &ml, m)) {
+			if(mat_group_new(mb, p, &ml, m, -1)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+		/* group with cands */
+		if (!groupdone && match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef &&
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) &&
+	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
+	 	   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0)) {
+			if(mat_group_new(mb, p, &ml, m, n)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
@@ -2172,14 +2190,28 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 		     ml.v[n].im >= 0 /* not packed */) {
-			if(mat_group_derive(mb, p, &ml, m, n)) {
+			if(mat_group_derive(mb, p, &ml, m, -1, n)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
 			continue;
 		}
-		/* TODO sub'aggr' with cand list */
+		/* derive with cands */
+		if (!groupdone && match == 3 && bats == 3 && p->argc == 6 && getModuleId(p) == groupRef &&
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) &&
+		   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
+		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
+		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0) &&
+		     ml.v[o].im >= 0 /* not packed */) {
+			if(mat_group_derive(mb, p, &ml, m, n, o)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+		/* 'aggr' */
 		if (match == 3 && bats == 3 && getModuleId(p) == aggrRef && p->argc >= 4 &&
 		   (getFunctionId(p) == subcountRef ||
 		    getFunctionId(p) == subminRef ||
@@ -2190,7 +2222,26 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   ((m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0)) {
-			if(mat_group_aggr(mb, p, ml.v, m, n, o)) {
+			if(mat_group_aggr(mb, p, ml.v, m, n, o, -1)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+		/* 'aggr' with cand list */
+		if (match == 4 && bats == 4 && getModuleId(p) == aggrRef && p->argc >= 5 &&
+		   (getFunctionId(p) == subcountRef ||
+		    getFunctionId(p) == subminRef ||
+		    getFunctionId(p) == submaxRef ||
+		    getFunctionId(p) == subavgRef ||
+		    getFunctionId(p) == subsumRef ||
+		    getFunctionId(p) == subprodRef) &&
+		   ((m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) &&
+		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
+		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0) &&
+		   ((k=is_a_mat(getArg(p,p->retc+3), &ml)) >= 0)) {
+			if(mat_group_aggr(mb, p, ml.v, m, n, o, k)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
