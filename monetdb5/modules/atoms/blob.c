@@ -519,7 +519,6 @@ static mel_func blob_init_funcs[] = {
  command("blob", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
  command("blob", "toblob", BLOBtoblob, false, "store a string as a blob.", args(1,2, arg("",blob),arg("v",str))),
  command("blob", "nitems", BLOBnitems, false, "get the number of bytes in this blob.", args(1,2, arg("",int),arg("b",blob))),
- pattern("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
  pattern("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,3, batarg("",int),batarg("b",blob),batarg("s",oid))),
  command("blob", "prelude", BLOBprelude, false, "", args(1,1, arg("",void))),
  command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),

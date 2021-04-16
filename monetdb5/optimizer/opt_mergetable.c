@@ -1051,6 +1051,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		q = addArgument(mb,q,getArg(mat[m].mi,k));
 		for (i = q->argc; i<p->argc; i++)
 			q = addArgument(mb,q,getArg(p,i));
+		if (isAvg && tp == TYPE_dbl)
+			q = pushNil(mb, q, TYPE_bat);
 		pushInstruction(mb,q);
 
 		r = addArgument(mb,r,getArg(q,0));
@@ -1102,6 +1104,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		v = newInstruction(mb,  batcalcRef, dblRef);
 		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		v = addArgument(mb, v, getArg(u, 0));
+		v = pushNil(mb, v, TYPE_bat);
 		pushInstruction(mb, v);
 
 		/* dbl x = v / y */
@@ -1320,6 +1323,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 		cond = addArgument(mb, cond, getArg(s, 0));
 		cond = pushLng(mb, cond, 0);
+		cond = pushNil(mb, cond, TYPE_bat);
 		pushInstruction(mb,cond);
 
 		w = newInstruction(mb, batcalcRef, ifthenelseRef);
@@ -1341,6 +1345,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		v = newInstruction(mb, batcalcRef, dblRef);
 		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		v = addArgument(mb, v, getArg(ai10, 0));
+		v = pushNil(mb, v, TYPE_bat);
 		pushInstruction(mb, v);
 
 		/* dbl r = v / s */

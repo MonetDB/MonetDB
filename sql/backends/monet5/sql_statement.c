@@ -1355,11 +1355,11 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
-		if (!all_cands_pushed && push_cands && sel) {
+		if (!all_cands_pushed && push_cands) {
 			for (node *n = lops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 				if (op->nrcols) {
-					if (op->cand)
+					if (!sel || op->cand)
 						q = pushNil(mb, q, TYPE_bat);
 					else
 						q = pushArgument(mb, q, sel->nr);
@@ -1368,7 +1368,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 			for (node *n = rops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 				if (op->nrcols) {
-					if (op->cand)
+					if (!sel || op->cand)
 						q = pushNil(mb, q, TYPE_bat);
 					else
 						q = pushArgument(mb, q, sel->nr);
@@ -1505,21 +1505,23 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		default:
 			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
-		int pushed = 0;
 
 		q = newStmtArgs(mb, batcalcRef, op, 9);
 		q = pushArgument(mb, q, l);
 		q = pushArgument(mb, q, r);
-		if (sel && (op1->cand || op2->cand)) { /* some already handled the previous selection */
-			if (op1->cand && op1->nrcols)
+
+		/* cands, some already handled the previous selection */
+		if (op1->nrcols) {
+			if (!sel || !op1->cand)
 				q = pushNil(mb, q, TYPE_bat);
-			else if (op1->nrcols)
+			else
 				q = pushArgument(mb, q, sel->nr);
-			if (op2->cand && op2->nrcols)
+		}
+		if (op2->nrcols) {
+			if (!sel || !op2->cand)
 				q = pushNil(mb, q, TYPE_bat);
-			else if (op2->nrcols)
+			else
 				q = pushArgument(mb, q, sel->nr);
-			pushed = 1;
 		}
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
@@ -1527,8 +1529,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (sel && !pushed)
-			pushArgument(mb, q, sel->nr);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
@@ -1536,7 +1536,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 		q = pushBit(mb, q, anti);
 		if (q == NULL)
 			return NULL;
-		if (sel && pushed) { /* get back too the correct ids */
+		if (sel) { /* get back too the correct ids */
 			int nr = getDestVar(q);
 			q = newStmt(mb, algebraRef, projectionRef);
 			q = pushArgument(mb, q, nr);
@@ -1641,8 +1641,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 		return NULL;
 	l = op1->nr;
 	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
-		int k, pushed = 0;
-		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
+		int k, nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 
 		if (op2->nr < 0 || op3->nr < 0)
 			return NULL;
@@ -1655,28 +1654,23 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 		p = pushArgument(mb, p, op2->nr);
 		p = pushArgument(mb, p, op3->nr);
 
-		/* cands */
-		if (sel && (op1->cand || op2->cand || op3->cand)) { /* some already handled the previous selection */
-			if (op1->cand && op1->nrcols)
+		/* cands, some already handled the previous selection */
+		if (op1->nrcols) {
+			if (!sel || !op1->cand)
 				p = pushNil(mb, p, TYPE_bat);
-			else if (op1->nrcols)
+			else
 				p = pushArgument(mb, p, sel->nr);
-			if (op2->cand && op2->nrcols)
-				p = pushNil(mb, p, TYPE_bat);
-			else if (op2->nrcols)
-				p = pushArgument(mb, p, sel->nr);
-			if (op3->cand && op3->nrcols)
-				p = pushNil(mb, p, TYPE_bat);
-			else if (op3->nrcols)
-				p = pushArgument(mb, p, sel->nr);
-			pushed = 1;
 		}
-		if (sel && !reduce && !pushed) {
-			if (op1->nrcols)
+		if (op2->nrcols) {
+			if (!sel || !op2->cand)
+				p = pushNil(mb, p, TYPE_bat);
+			else
 				p = pushArgument(mb, p, sel->nr);
-			if (op2->nrcols)
-				p = pushArgument(mb, p, sel->nr);
-			if (op3->nrcols)
+		}
+		if (op3->nrcols) {
+			if (!sel || !op3->cand)
+				p = pushNil(mb, p, TYPE_bat);
+			else
 				p = pushArgument(mb, p, sel->nr);
 		}
 
@@ -1691,15 +1685,13 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (sel && !pushed)
-			pushArgument(mb, q, sel->nr);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, FALSE);
 		/* project */
-		if (sel && pushed) { /* get back too the correct ids */
+		if (sel) { /* get back too the correct ids */
 			int nr = getDestVar(q);
 			q = newStmt(mb, algebraRef, projectionRef);
 			q = pushArgument(mb, q, nr);
@@ -3172,8 +3164,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 ||
-		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "mkey") == 0 || strcmp(mod, "blob") == 0);
+	int push_cands = (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
+		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
 	int pushed = 0, nrcols = 0;
 	node *n;
 	stmt *o = NULL;
@@ -3208,6 +3200,10 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = newStmt(mb, mod, "==");
 			q = pushArgument(mb, q, e1->nr);
 			q = pushArgument(mb, q, e2->nr);
+			if (e1->nrcols)
+				q = pushNil(mb, q, TYPE_bat);
+			if (e2->nrcols)
+				q = pushNil(mb, q, TYPE_bat);
 			int nr = getDestVar(q);
 
 			q = newStmt(mb, mod, "ifthenelse");
@@ -3267,7 +3263,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (push_cands && f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT) {
+		if (push_cands && (f->func->type == F_FUNC || f->func->type == F_FILT) && f->func->lang == FUNC_LANG_INT) {
 			for (n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 

@@ -447,12 +447,14 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 			t = addArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
+			t = pushNil(mb, t, TYPE_bat);
 			pushInstruction(mb, t);
 			iszero = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = addArgument(mb, t, getDestVar(sum));
+			t = pushNil(mb, t, TYPE_bat);
 			pushInstruction(mb, t);
 			sum = t;
 
@@ -467,6 +469,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = addArgument(mb, t, getDestVar(cnt));
+			t = pushNil(mb, t, TYPE_bat);
 			pushInstruction(mb, t);
 			cnt = t;
 
