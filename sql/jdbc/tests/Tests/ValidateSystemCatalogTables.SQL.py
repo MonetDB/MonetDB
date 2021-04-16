@@ -13,6 +13,8 @@ PASSWORD='monetdb'
 
 
 if __name__ == '__main__':
+    with open(os.path.join('.monetdb'), 'w') as f:
+        f.write('\n'.join(['user=monetdb', 'password=monetdb']))
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/ValidateSystemCatalogTables.sql')]
     try:
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
