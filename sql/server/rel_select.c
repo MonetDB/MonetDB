@@ -5356,6 +5356,8 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 			}
 		}
 		if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
+			if (!(exps = check_distinct_exp_names(sql, exps)))
+				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
 			if (groupby) {
 				groupby->exps = list_distinct(list_merge(groupby->exps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
 				for (node *n = groupby->exps->h ; n ; n = n->next) {
@@ -5369,8 +5371,6 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 					}
 				}
 			}
-			if (!(exps = check_distinct_exp_names(sql, exps)))
-				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
 			return exps;
 		}
 		if (!tname)
