@@ -68,30 +68,35 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tre
 		} \
 	} while (0)
 
-#define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
+#define ANALYTICAL_NTILE(IMP, TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
 	do {							\
 		TPE *restrict rb = (TPE*)Tloc(r, 0);		\
 		if (p) {						\
 			for (; i < cnt; i++) {			\
-				if (np[i]) 			\
-					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION);\
-			}						\
-		} 					\
-		i = cnt;					\
-		NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION);	\
+				if (np[i]) 	{		\
+ntile##IMP##TPE: \
+					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION); \
+				} \
+			}				\
+		}				\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto ntile##IMP##TPE; \
+		} \
 	} while (0)
 
 #define ANALYTICAL_NTILE_SINGLE_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE ntl = *(TPE*) ntile; \
 		if (!is_##TPE##_nil(ntl) && ntl < 0) goto invalidntile; \
-		ANALYTICAL_NTILE_IMP(TPE, ntl, LNG_HGE, UPCAST, ;); \
+		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ;); \
 	} while (0)
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
-		ANALYTICAL_NTILE_IMP(TPE, nn[k], LNG_HGE, UPCAST, if (val < 0) goto invalidntile;); \
+		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val < 0) goto invalidntile;); \
 	} while (0)
 
 gdk_return
@@ -99,7 +104,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 {
 	lng i = 0, k = 0, cnt = (lng) BATcount(b);
 	bit *restrict np = p ? Tloc(p, 0) : NULL;
-	bool has_nils = false;
+	bool has_nils = false, last = false;
 
 	assert((n && !ntile) || (!n && ntile));
 
