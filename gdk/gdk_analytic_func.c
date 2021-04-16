@@ -44,8 +44,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tre
 
 #define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
 	do {					\
-		TPE j = 0; \
-		UPCAST ncnt = (UPCAST) (i - k); \
+		UPCAST j = 0, ncnt = (UPCAST) (i - k); \
 		for (; k < i; k++, j++) {	\
 			TPE val = NEXT_VALUE; \
 			if (is_##TPE##_nil(val)) {	\
@@ -55,7 +54,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tre
 				UPCAST nval = (UPCAST) LNG_HGE; \
 				VALIDATION /* validation must come after null check */	\
 				if (nval >= ncnt) { \
-					rb[k] = j + 1;  \
+					rb[k] = (TPE)(j + 1);  \
 				} else { \
 					UPCAST bsize = ncnt / nval; \
 					UPCAST top = ncnt - nval * bsize; \
