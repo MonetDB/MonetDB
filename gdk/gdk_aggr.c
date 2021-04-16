@@ -18,17 +18,17 @@
  *
  * The input BATs are
  * - b, a dense-headed BAT with the values to work on in the tail;
- * - g, a dense-headed BAT, aligned with b, with group ids (OID) in
- *   the tail;
+ * - g, a dense-headed BAT, aligned with s, or if s is NULL, with b,
+ *   with group ids (OID) in the tail;
  * - e, optional but recommended, a dense-headed BAT with the list of
  *   group ids in the head(!) (the tail is completely ignored);
  * - s, optional, a dense-headed bat with a list of candidate ids in
  *   the tail.
  *
- * The tail values of s refer to the head of b and g.  Only entries at
- * the specified ids are taken into account for the grouped
- * aggregates.  All other values are ignored.  s is compatible with
- * the result of BATselect().
+ * The tail values of s refer to the head of b.  Only entries at the
+ * specified ids are taken into account for the grouped aggregates.  All
+ * other values are ignored.  s is compatible with the result of
+ * BATselect().
  *
  * If e is not specified, we need to do an extra scan over g to find
  * out the range of the group ids that are used.  e is defined in such
@@ -230,8 +230,8 @@ dofsum(const void *restrict values, oid seqb,
 	}
 	while (ncand > 0) {
 		ncand--;
+		grp = gids ? gids[ci->next] : 0;
 		listi = canditer_next(ci) - seqb;
-		grp = gids ? gids[listi] : 0;
 		if (grp < min || grp > max)
 			continue;
 		if (pergroup[grp].partials == NULL)
@@ -536,10 +536,10 @@ dofsum(const void *restrict values, oid seqb,
 			*algo = "sum: with candidates, with groups";	\
 			while (ncand > 0) {				\
 				ncand--;				\
+				gid = gids ? gids[ci->next] : (oid) ci->next + min; \
 				i = canditer_next(ci) - seqb;		\
-				if (gids == NULL ||			\
-				    (gids[i] >= min && gids[i] <= max)) { \
-					gid = gids ? gids[i] - min : (oid) i; \
+				if (gid >= min && gid <= max) {		\
+					gid -= min;			\
 					x = vals[i];			\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
@@ -667,10 +667,10 @@ dofsum(const void *restrict values, oid seqb,
 			*algo = "sum: with candidates, with groups, no overflow"; \
 			while (ncand > 0) {				\
 				ncand--;				\
+				gid = gids ? gids[ci->next] : (oid) ci->next + min; \
 				i = canditer_next(ci) - seqb;		\
-				if (gids == NULL ||			\
-				    (gids[i] >= min && gids[i] <= max)) { \
-					gid = gids ? gids[i] - min : (oid) i; \
+				if (gid >= min && gid <= max) {		\
+					gid -= min;			\
 					x = vals[i];			\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
@@ -1171,17 +1171,14 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
+		assert(gidincr || min == 0);				\
 		while (ncand > 0) {					\
 			ncand--;					\
+			if (gidincr)					\
+				gid = gids ? gids[ci->next] : (oid) ci->next + min; \
 			i = canditer_next(ci) - seqb;			\
-			if (gids == NULL || !gidincr ||			\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gidincr) {				\
-					if (gids)			\
-						gid = gids[i] - min;	\
-					else				\
-						gid = (oid) i;		\
-				}					\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (is_##TYPE1##_nil(vals[i])) {	\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
@@ -1212,17 +1209,14 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE *vals = (const TYPE *) values;		\
 		gid = 0;	/* doesn't change if gidincr == false */ \
+		assert(gidincr || min == 0);				\
 		while (ncand > 0) {					\
 			ncand--;					\
+			if (gidincr)					\
+				gid = gids ? gids[ci->next] : (oid) ci->next + min; \
 			i = canditer_next(ci) - seqb;			\
-			if (gids == NULL || !gidincr ||			\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gidincr) {				\
-					if (gids)			\
-						gid = gids[i] - min;	\
-					else				\
-						gid = (oid) i;		\
-				}					\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (nil_if_empty &&			\
 				    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1U << (gid & 0x1F); \
@@ -1248,17 +1242,14 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
+		assert(gidincr || min == 0);				\
 		while (ncand > 0) {					\
 			ncand--;					\
+			if (gidincr)					\
+				gid = gids ? gids[ci->next] : (oid) ci->next + min; \
 			i = canditer_next(ci) - seqb;			\
-			if (gids == NULL || !gidincr ||			\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gidincr) {				\
-					if (gids)			\
-						gid = gids[i] - min;	\
-					else				\
-						gid = (oid) i;		\
-				}					\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils) {		\
 						prods[gid] = lng_nil;	\
@@ -1288,17 +1279,14 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
+		assert(gidincr || min == 0);				\
 		while (ncand > 0) {					\
 			ncand--;					\
+			if (gidincr)					\
+				gid = gids ? gids[ci->next] : (oid) ci->next + min; \
 			i = canditer_next(ci) - seqb;			\
-			if (gids == NULL || !gidincr ||			\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gidincr) {				\
-					if (gids)			\
-						gid = gids[i] - min;	\
-					else				\
-						gid = (oid) i;		\
-				}					\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (is_##TYPE1##_nil(vals[i])) {	\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
@@ -1689,13 +1677,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 			goto alloc_fail;				\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - b->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
@@ -1726,13 +1710,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 			dbls[i] = 0;					\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - b->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
@@ -2005,9 +1985,9 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		const bte *vals = Tloc(b, 0);
 		bte *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
-			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = gids ? gids[ci.next] - min : ci.next;
+			o = canditer_next(&ci) - b->hseqbase;
 			if (is_bte_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = bte_nil;
@@ -2053,9 +2033,9 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		const sht *vals = Tloc(b, 0);
 		sht *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
-			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = gids ? gids[ci.next] - min : ci.next;
+			o = canditer_next(&ci) - b->hseqbase;
 			if (is_sht_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = sht_nil;
@@ -2101,9 +2081,9 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		const int *vals = Tloc(b, 0);
 		int *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
-			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = gids ? gids[ci.next] - min : ci.next;
+			o = canditer_next(&ci) - b->hseqbase;
 			if (is_int_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = int_nil;
@@ -2149,9 +2129,9 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		const lng *vals = Tloc(b, 0);
 		lng *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
-			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = gids ? gids[ci.next] - min : ci.next;
+			o = canditer_next(&ci) - b->hseqbase;
 			if (is_lng_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = lng_nil;
@@ -2198,9 +2178,9 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		const hge *vals = Tloc(b, 0);
 		hge *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
-			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = gids ? gids[ci.next] - min : ci.next;
+			o = canditer_next(&ci) - b->hseqbase;
 			if (is_hge_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = hge_nil;
@@ -2983,15 +2963,11 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : ci.next + min;	\
 			i = canditer_next(&ci) - b->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
 				if (!is_##TYPE##_nil(vals[i])) {	\
-					cnts[gid]++;			\
+					cnts[gid - min]++;		\
 				}					\
 			}						\
 		}							\
@@ -3055,9 +3031,10 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 		if (gids) {
 			while (ncand > 0) {
 				ncand--;
+				gid = gids[ci.next];
 				i = canditer_next(&ci) - b->hseqbase;
-				if (gids[i] >= min && gids[i] <= max)
-					cnts[gids[i] - min]++;
+				if (gid >= min && gid <= max)
+					cnts[gid - min]++;
 			}
 		} else {
 			while (ncand > 0) {
@@ -3101,15 +3078,11 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 
 			while (ncand > 0) {
 				ncand--;
+				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - b->hseqbase;
-				if (gids == NULL ||
-				    (gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
+				if (gids[i] >= min && gids[i] <= max) {
 					if ((*atomcmp)(BUNtail(bi, i), nil) != 0) {
-						cnts[gid]++;
+						cnts[gid - min]++;
 					}
 				}
 			}
@@ -3187,10 +3160,10 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 
 	while (ncand > 0) {
 		ncand--;
+		oid gid = gids ? gids[ci.next] : (oid) ci.next + min;
 		i = canditer_next(&ci) - b->hseqbase;
-		if (bits[i] == 1 &&
-		    (gids == NULL || (gids[i] >= min && gids[i] <= max))) {
-			cnts[gids ? gids[i] - min : (oid) i]++;
+		if (bits[i] == 1 && gid >= min && gid <= max) {
+			cnts[gid - min]++;
 		}
 	}
 	BATsetcount(bn, ngrp);
@@ -3229,11 +3202,12 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 			gid = 0; /* in case gids == NULL */		\
 			while (ncand > 0) {				\
 				ncand--;				\
+				if (gids)				\
+					gid = gids[ci->next];		\
 				i = canditer_next(ci) - b->hseqbase;	\
-				if (gids == NULL ||			\
-				    (gids[i] >= min && gids[i] <= max)) { \
+				if (gid >= min && gid <= max) {		\
 					if (gids)			\
-						gid = gids[i] - min;	\
+						gid -= min;		\
 					if (!skip_nils || !is_##TYPE##_nil(vals[i])) { \
 						if (is_oid_nil(oids[gid])) { \
 							oids[gid] = i + b->hseqbase; \
@@ -3324,12 +3298,13 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 			gid = 0; /* in case gids == NULL */
 			while (ncand > 0) {
 				ncand--;
+				if (gids)
+					gid = gids[ci->next];
 				i = canditer_next(ci) - b->hseqbase;
-				if (gids == NULL ||
-				    (gids[i] >= min && gids[i] <= max)) {
+				if (gid >= min && gid <= max) {
 					const void *v = BUNtail(bi, i);
 					if (gids)
-						gid = gids[i] - min;
+						gid -= min;
 					if (!skip_nils ||
 					    (*atomcmp)(v, nil) != 0) {
 						if (is_oid_nil(oids[gid])) {
@@ -3428,12 +3403,13 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 			gid = 0; /* in case gids == NULL */
 			while (ncand > 0) {
 				ncand--;
+				if (gids)
+					gid = gids[ci->next];
 				i = canditer_next(ci) - b->hseqbase;
-				if (gids == NULL ||
-				    (gids[i] >= min && gids[i] <= max)) {
+				if (gid >= min && gid <= max) {
 					const void *v = BUNtail(bi, i);
 					if (gids)
-						gid = gids[i] - min;
+						gid -= min;
 					if (!skip_nils ||
 					    (*atomcmp)(v, nil) != 0) {
 						if (is_oid_nil(oids[gid])) {
@@ -4405,13 +4381,10 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - b->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
@@ -4659,13 +4632,10 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - b1->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
@@ -4861,13 +4831,10 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
+			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
 			i = canditer_next(&ci) - b1->hseqbase;		\
-			if (gids == NULL ||				\
-			    (gids[i] >= min && gids[i] <= max)) {	\
-				if (gids)				\
-					gid = gids[i] - min;		\
-				else					\
-					gid = (oid) i;			\
+			if (gid >= min && gid <= max) {			\
+				gid -= min;				\
 				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\

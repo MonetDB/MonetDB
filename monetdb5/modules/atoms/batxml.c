@@ -1217,14 +1217,6 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			goto out;
 		}
 		freeb = 1;
-		if (g) {
-			g = BATproject(s, g);
-			if (g == NULL) {
-				err = "internal project failed";
-				goto out;
-			}
-			freeg = 1;
-		}
 	}
 	if (g && BATtdense(g)) {
 		/* singleton groups: return group ID's (g's tail) and original
@@ -1253,8 +1245,6 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			err = "internal sort failed";
 			goto out;
 		}
-		if (freeg)
-			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = 1;
 		if (t2->ttype == TYPE_void) {
