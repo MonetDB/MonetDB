@@ -108,11 +108,14 @@ strCleanHash(Heap *h, bool rebuild)
 	 * started. */
 	memset(newhash, 0, sizeof(newhash));
 	pos = GDK_STRHASHSIZE;
-	while (pos < h->free &&
-	       pos + (pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1))) < GDK_ELIMLIMIT) {
+	while (pos < h->free) {
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
-		pos += pad + extralen;
+		pos += pad;
+		if (pos >= GDK_ELIMLIMIT)
+			break;
+		pos += extralen;
 		s = h->base + pos;
 		if (h->hashash)
 			strhash = ((const BUN *) s)[-1];
@@ -276,9 +279,11 @@ strPut(Heap *h, var_t *dst, const char *v)
 		pad = 0;
 	}
 
+	pad += extralen;
+
 	/* check heap for space (limited to a certain maximum after
 	 * which nils are inserted) */
-	if (h->free + pad + len + extralen >= h->size) {
+	if (h->free + pad + len >= h->size) {
 		size_t newsize = MAX(h->size, 4096);
 
 		/* double the heap size until we have enough space */
@@ -287,11 +292,11 @@ strPut(Heap *h, var_t *dst, const char *v)
 				newsize <<= 1;
 			else
 				newsize += 4 * 1024 * 1024;
-		} while (newsize <= h->free + pad + len + extralen);
+		} while (newsize <= h->free + pad + len);
 
 		assert(newsize);
 
-		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
+		if (h->free + pad + len >= (size_t) VAR_MAX) {
 			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
@@ -299,19 +304,16 @@ strPut(Heap *h, var_t *dst, const char *v)
 		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
 			return 0;
 		}
-#ifndef NDEBUG
-		/* fill should solve initialization problems within
-		 * valgrind */
-		memset(h->base + h->free, 0, h->size - h->free);
-#endif
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
 	}
 
 	/* insert string */
-	pos = h->free + pad + extralen;
+	pos = h->free + pad;
 	*dst = (var_t) pos;
+	if (pad > 0)
+		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
 	if (h->hashash) {
 		((BUN *) (h->base + pos))[-1] = strhash;
@@ -319,7 +321,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 		((BUN *) (h->base + pos))[-2] = (BUN) len;
 #endif
 	}
-	h->free += pad + len + extralen;
+	h->free += pad + len;
 	h->dirty = true;
 
 	/* maintain hash table */
