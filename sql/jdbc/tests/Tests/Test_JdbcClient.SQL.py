@@ -6,13 +6,15 @@ HOST=os.getenv('HOST')
 MAPIPORT=os.getenv('MAPIPORT')
 TSTDB=os.getenv('TSTDB')
 TSTSRCBASE=os.getenv('TSTSRCBASE')
+TSTTRGBASE=os.getenv('TSTTRGBASE')
 TSTDIR=os.getenv('TSTDIR')
 CLIENT='org.monetdb.client.JdbcClient'
 USER='monetdb'
 PASSWORD='monetdb'
 
-
 if __name__ == '__main__':
+    with open(os.path.join('.monetdb'), 'w') as f:
+        f.write('\n'.join(['user=monetdb', 'password=monetdb']))
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--help']
     try:
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
