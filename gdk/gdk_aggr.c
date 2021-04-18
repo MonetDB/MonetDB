@@ -82,13 +82,13 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		ngrp = 1;
 	} else if (e == NULL) {
 		/* we need to find out the min and max of g */
-		PROPrec *prop;
+		const ValRecord *prop;
 
 		prop = BATgetprop(g, GDK_MAX_VALUE);
 		if (prop) {
-			assert(prop->v.vtype == TYPE_oid);
+			assert(prop->vtype == TYPE_oid);
 			min = 0; /* just assume it starts at 0 */
-			max = prop->v.val.oval;
+			max = prop->val.oval;
 		} else {
 			min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
 			max = 0;
@@ -3080,7 +3080,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 				ncand--;
 				gid = gids ? gids[ci.next] : (oid) ci.next + min;
 				i = canditer_next(&ci) - b->hseqbase;
-				if (gids[i] >= min && gids[i] <= max) {
+				if (gid >= min && gid <= max) {
 					if ((*atomcmp)(BUNtail(bi, i), nil) != 0) {
 						cnts[gid - min]++;
 					}
@@ -3517,7 +3517,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 void *
 BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 {
-	PROPrec *prop;
+	const ValRecord *prop;
 	const void *res;
 	size_t s;
 	BATiter bi;
@@ -3534,7 +3534,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	if (BATcount(b) == 0) {
 		res = ATOMnilptr(b->ttype);
 	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-		res = VALptr(&prop->v);
+		res = VALptr(prop);
 	} else {
 		oid pos;
 		BAT *pb = NULL;
@@ -3631,7 +3631,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 void *
 BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 {
-	PROPrec *prop;
+	const ValRecord *prop;
 	const void *res;
 	size_t s;
 	BATiter bi;
@@ -3646,7 +3646,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	if (BATcount(b) == 0) {
 		res = ATOMnilptr(b->ttype);
 	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-		res = VALptr(&prop->v);
+		res = VALptr(prop);
 	} else {
 		oid pos;
 		BAT *pb = NULL;

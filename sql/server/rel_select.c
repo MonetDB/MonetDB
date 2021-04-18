@@ -5279,6 +5279,44 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
+static inline int
+exp_key(sql_exp *e)
+{
+	if (e->alias.name)
+		return hash_key(e->alias.name);
+	return 0;
+}
+
+static list *
+check_distinct_exp_names(mvc *sql, list *exps)
+{
+	list *distinct_exps = NULL;
+	bool duplicates = false;
+
+	if (list_length(exps) < 5) {
+		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
+	} else { /* for longer lists, use hashing */
+		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
+
+		for (node *n = exps->h; n && !duplicates; n = n->next) {
+			sql_exp *e = n->data;
+			int key = ht->key(e);
+			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+
+			for (; he && !duplicates; he = he->chain) {
+				sql_exp *f = he->value;
+
+				if (!exp_equal(e, f))
+					duplicates = true;
+			}
+			hash_add(ht, key, e);
+		}
+	}
+	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
+		return NULL;
+	return exps;
+}
+
 static list *
 rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp )
 {
@@ -5331,8 +5369,7 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 					}
 				}
 			}
-			list *distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
-			if (list_length(distinct_exps) != list_length(exps))
+			if (!(exps = check_distinct_exp_names(sql, exps)))
 				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
 			return exps;
 		}
