@@ -243,12 +243,8 @@ stmt_group(backend *be, stmt *s, stmt *sel, stmt *grp, stmt *ext, stmt *cnt, int
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, s->nr);
-	if (sel)
+	if (sel && s->cand != sel)
 		q = pushArgument(mb, q, sel->nr);
-	/*
-	else
-		q = pushNil(mb, q, TYPE_bat);
-		*/
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
 	if (q) {
