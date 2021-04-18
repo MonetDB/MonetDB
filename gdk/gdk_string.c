@@ -108,11 +108,14 @@ strCleanHash(Heap *h, bool rebuild)
 	 * started. */
 	memset(newhash, 0, sizeof(newhash));
 	pos = GDK_STRHASHSIZE;
-	while (pos < h->free &&
-	       pos + (pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1))) < GDK_ELIMLIMIT) {
+	while (pos < h->free) {
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
-		pos += pad + extralen;
+		pos += pad;
+		if (pos >= GDK_ELIMLIMIT)
+			break;
+		pos += extralen;
 		s = h->base + pos;
 		if (h->hashash)
 			strhash = ((const BUN *) s)[-1];
@@ -312,6 +315,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 	/* insert string */
 	pos = h->free + pad + extralen;
 	*dst = (var_t) pos;
+	if (pos > h->free)
+		memset(h->base + h->free, 0, pos - h->free);
 	memcpy(h->base + pos, v, len);
 	if (h->hashash) {
 		((BUN *) (h->base + pos))[-1] = strhash;
