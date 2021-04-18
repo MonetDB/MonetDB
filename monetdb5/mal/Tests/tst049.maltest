@@ -125,7 +125,7 @@ io.print(i)
 false
 
 statement ok
-z:= batalgebra.like(b,"t_","",false)
+z:= batalgebra.like(b, "t_", "", false, nil:bat)
 
 query II rowsort
 io.print(z)
