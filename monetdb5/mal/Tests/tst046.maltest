@@ -21,7 +21,7 @@ io.print(b)
 9
 
 statement ok
-f:= batcalc.flt(b)
+f:= batcalc.flt(b,nil:bat)
 
 query IR rowsort
 io.print(f)
@@ -34,7 +34,7 @@ io.print(f)
 9.000
 
 statement ok
-l:= batcalc.lng(b)
+l:= batcalc.lng(b,nil:bat)
 
 query II rowsort
 io.print(l)
@@ -47,7 +47,7 @@ io.print(l)
 9
 
 statement ok
-i:= batcalc.int(f)
+i:= batcalc.int(f,nil:bat)
 
 query II rowsort
 io.print(i)
