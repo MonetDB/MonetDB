@@ -33,7 +33,7 @@
 char *
 query_cleaned(const char *query)
 {
-	char *q, *r, *c;
+	char *q, *r, *c = NULL;
 	int lines = 0;
 	int quote = 0;		/* inside quotes ('..', "..", {..}) */
 	bool bs = false;		/* seen a backslash in a quoted string */
@@ -44,8 +44,6 @@ query_cleaned(const char *query)
 	r = GDKmalloc(strlen(query) + 1);
 	if(!r)
 		return NULL;
-
-	(void) c;
 
 	for (q = r; *query; query++) {
 		if (incomment1) {
