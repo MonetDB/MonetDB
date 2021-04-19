@@ -30,7 +30,7 @@
 char *
 query_cleaned(sql_allocator *sa, const char *query)
 {
-	char *q, *r, *c;
+	char *q, *r, *c = NULL;
 	int lines = 0;
 	int quote = 0;		/* inside quotes ('..', "..", {..}) */
 	bool bs = false;		/* seen a backslash in a quoted string */
