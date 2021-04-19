@@ -1792,45 +1792,27 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return BATPCRElike_imp(cntxt, mb, stk, pci, esc, ci, &yes);
 }
 
-/* these two defines are copies from gdk_select.c */
-
-/* scan select loop with candidates */
-#define candscanloop(TEST)												\
-	do {																\
-		TRC_DEBUG(ALGO,													\
-				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
-				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
-		for (p = 0; p < ci.ncand; p++) {								\
-			o = canditer_next(&ci);										\
-			r = (BUN) (o - off);										\
-			v = BUNtvar(bi, r);											\
-			if (TEST)													\
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED) {		\
-					msg = createException(MAL, "pcre.likeselect", OPERATION_FAILED); \
-					goto bailout;									\
-				}														\
-		}																\
-	} while (0)
-
-/* scan select loop without candidates */
-#define scanloop(TEST)													\
-	do {																\
-		TRC_DEBUG(ALGO,													\
-				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
-				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
-		while (p < q) {													\
-			v = BUNtvar(bi, p-off);										\
-			if (TEST) {													\
-				o = (oid) p;											\
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)	{		\
-					msg = createException(MAL, "pcre.likeselect", OPERATION_FAILED); \
-					goto bailout;	 								\
-				}														\
-			}															\
-			p++;														\
-		}																\
+/* scan select loop with or without candidates */
+#define pcrescanloop(TEST)		\
+	do {	\
+		TRC_DEBUG(ALGO,			\
+				  "PCREselect(b=%s#"BUNFMT",anti=%d): "		\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),	\
+				  anti, #TEST);		\
+		if (!s || BATtdense(s)) {	\
+			for (; p < q; p++) {	\
+				const char *restrict v = BUNtvar(bi, p - off);	\
+				if (TEST)	\
+					vals[cnt++] = p;	\
+			}		\
+		} else {		\
+			for (; p < ncands; p++) {		\
+				oid o = canditer_next(ci);		\
+				const char *restrict v = BUNtvar(bi, o - off);	\
+				if (TEST) 	\
+					vals[cnt++] = o;	\
+			}		\
+		}		\
 	} while (0)
 
 #ifdef HAVE_LIBPCRE
@@ -1840,7 +1822,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 static str
-pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti)
+pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti)
 {
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
@@ -1850,158 +1832,66 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	void *ex = NULL;
 #endif
 	BATiter bi = bat_iterator(b);
-	BAT *bn;
-	BUN p, q, r;
-	oid o, off = b->hseqbase;
-	const char *v;
+	BUN cnt = 0, ncands = ci->ncand;
+	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
 	str msg = MAL_SUCCEED;
-	struct canditer ci;
 
-	canditer_init(&ci, b, s);
-
-	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
-		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci.ncand)) != MAL_SUCCEED)
+	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci->ncand)) != MAL_SUCCEED)
 		goto bailout;
 
-	if (s && !BATtdense(s)) {
-		if (anti)
-			candscanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY);
-		else
-			candscanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY);
-	} else {
-		if (s) {
-			assert(BATtdense(s));
-			p = (BUN) s->tseqbase;
-			q = p + BATcount(s);
-			if ((oid) p < b->hseqbase)
-				p = b->hseqbase;
-			if ((oid) q > b->hseqbase + BATcount(b))
-				q = b->hseqbase + BATcount(b);
-		} else {
-			p = off;
-			q = BUNlast(b) + off;
-		}
-
-		if (anti)
-			scanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY);
-		else
-			scanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY);
-	}
+	if (anti)
+		pcrescanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY);
+	else
+		pcrescanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY);
 
 bailout:
 	pcre_clean(&re, &ex);
-	if (bn && !msg) {
-		BATsetcount(bn, BATcount(bn)); /* set some properties */
-		bn->tsorted = true;
-		bn->trevsorted = bn->batCount <= 1;
-		bn->tkey = true;
-		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
-	}
-	*bnp = bn;
+	*rcnt = cnt;
 	return msg;
 }
 
 static str
-re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
+re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
 {
 	BATiter bi = bat_iterator(b);
-	BAT *bn = NULL;
-	BUN p, q, r;
-	oid o, off = b->hseqbase;
-	const char *v;
+	BUN cnt = 0, ncands = ci->ncand;
+	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
 	struct RE *re = NULL;
 	uint32_t *wpat = NULL;
 	str msg = MAL_SUCCEED;
-	struct canditer ci;
 
-	canditer_init(&ci, b, s);
-
-	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
-		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
 	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, esc)) != MAL_SUCCEED)
 		goto bailout;
 
-	if (s && !BATtdense(s)) {
-		if (use_strcmp) {
-			if (caseignore) {
-				if (anti)
-					candscanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0);
-				else
-					candscanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0);
-			} else {
-				if (anti)
-					candscanloop(v && *v != '\200' && strcmp(v, pat) != 0);
-				else
-					candscanloop(v && *v != '\200' && strcmp(v, pat) == 0);
-			}
+	if (use_strcmp) {
+		if (caseignore) {
+			if (anti)
+				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0);
+			else
+				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0);
 		} else {
-			if (caseignore) {
-				if (anti)
-					candscanloop(v && *v != '\200' && !re_match_ignore(v, re));
-				else
-					candscanloop(v && *v != '\200' && re_match_ignore(v, re));
-			} else {
-				if (anti)
-					candscanloop(v && *v != '\200' && !re_match_no_ignore(v, re));
-				else
-					candscanloop(v && *v != '\200' && re_match_no_ignore(v, re));
-			}
+			if (anti)
+				pcrescanloop(v && *v != '\200' && strcmp(v, pat) != 0);
+			else
+				pcrescanloop(v && *v != '\200' && strcmp(v, pat) == 0);
 		}
 	} else {
-		if (s) {
-			assert(BATtdense(s));
-			p = (BUN) s->tseqbase;
-			q = p + BATcount(s);
-			if ((oid) p < b->hseqbase)
-				p = b->hseqbase;
-			if ((oid) q > b->hseqbase + BATcount(b))
-				q = b->hseqbase + BATcount(b);
+		if (caseignore) {
+			if (anti)
+				pcrescanloop(v && *v != '\200' && !re_match_ignore(v, re));
+			else
+				pcrescanloop(v && *v != '\200' && re_match_ignore(v, re));
 		} else {
-			p = off;
-			q = BUNlast(b) + off;
-		}
-		if (use_strcmp) {
-			if (caseignore) {
-				if (anti)
-					scanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0);
-				else
-					scanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0);
-			} else {
-				if (anti)
-					scanloop(v && *v != '\200' && strcmp(v, pat) != 0);
-				else
-					scanloop(v && *v != '\200' && strcmp(v, pat) == 0);
-			}
-		} else {
-			if (caseignore) {
-				if (anti)
-					scanloop(v && *v != '\200' && !re_match_ignore(v, re));
-				else
-					scanloop(v && *v != '\200' && re_match_ignore(v, re));
-			} else {
-				if (anti)
-					scanloop(v && *v != '\200' && !re_match_no_ignore(v, re));
-				else
-					scanloop(v && *v != '\200' && re_match_no_ignore(v, re));
-			}
+			if (anti)
+				pcrescanloop(v && *v != '\200' && !re_match_no_ignore(v, re));
+			else
+				pcrescanloop(v && *v != '\200' && re_match_no_ignore(v, re));
 		}
 	}
 
 bailout:
 	re_like_clean(&re, &wpat);
-	if (bn && !msg) {
-		BATsetcount(bn, BATcount(bn)); /* set some properties */
-		bn->tsorted = true;
-		bn->trevsorted = bn->batCount <= 1;
-		bn->tkey = true;
-		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
-	}
-	*bnp = bn;
+	*rcnt = cnt;
 	return msg;
 }
 
@@ -2029,13 +1919,46 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
 						   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
 
-	if (use_re) {
-		msg = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, (unsigned char) **esc);
-	} else if (empty) {
+	if (empty) {
 		if (!(bn = BATdense(0, 0, 0)))
 			msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		msg = pcre_likeselect(&bn, b, s, ppat, (bool) *caseignore, (bool) *anti);
+		BUN p = 0, q = 0, rcnt = 0;
+		struct canditer ci;
+
+		canditer_init(&ci, b, s);
+		if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
+			msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+
+		if (!s || BATtdense(s)) {
+			if (s) {
+				assert(BATtdense(s));
+				p = (BUN) s->tseqbase;
+				q = p + BATcount(s);
+				if ((oid) p < b->hseqbase)
+					p = b->hseqbase;
+				if ((oid) q > b->hseqbase + BATcount(b))
+					q = b->hseqbase + BATcount(b);
+			} else {
+				p = b->hseqbase;
+				q = BUNlast(b) + b->hseqbase;
+			}
+		}
+
+		if (use_re) {
+			msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, (unsigned char) **esc);
+		} else {
+			msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, (bool) *caseignore, (bool) *anti);
+		}
+		if (!msg) { /* set some properties */
+			BATsetcount(bn, rcnt);
+			bn->tsorted = true;
+			bn->trevsorted = bn->batCount <= 1;
+			bn->tkey = true;
+			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 || rcnt == b->batCount ? b->hseqbase : oid_nil;
+		}
 	}
 
 bailout:

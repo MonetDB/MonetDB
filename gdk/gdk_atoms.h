@@ -406,7 +406,7 @@ strEQ(const char *l, const char *r)
 static inline bool __attribute__((__pure__))
 strNil(const char *s)
 {
-	return s == NULL || *s == '\200';
+	return s == NULL || (s[0] == '\200' && s[1] == '\0');
 }
 
 static inline size_t __attribute__((__pure__))

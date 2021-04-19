@@ -52,6 +52,9 @@
  * Also check for barrier blocks. We only allow reordering
  * for a linear plan. Future extensions could consider
  * re-ordering basic blocks only.
+ *
+ * For this purpose this optimizer should be run before 
+ * the dataflow optimizer, because it adds barriers.
  */
 typedef struct{
 	int cnt;
@@ -88,6 +91,11 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 		return NULL;
 	}
 
+/* Instead of malloced structures for each instruction,
+ * we can also consider a simple scan to determinee the max size
+ * and allocate a single block
+ */
+
 	for ( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		block |= p->barrier != 0;
@@ -98,11 +106,15 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 			return 0;
 		}
 		list[i]->cnt = p->argc;
+		/* Collect the dependencies of arguments on previous instructions */
 		for( j=p->retc; j<p->argc; j++) {
 			list[i]->stmt[j] = var[getArg(p,j)];
 			list[var[getArg(p,j)]]->used++;
 		}
-		/* keep the assignment order */
+		/* keep the assignment order 
+		 * Duplicate assignment of a variable is not wanted
+		 * but can not be avoided when loops are involved
+		 * In this case we bail out*/
 		for( j= 0; j < p->retc; j++) {
 			if ( var[ getArg(p,j)] ) {
 				//list[i]->stmt[j] = var [getArg(p,j)];
@@ -112,7 +124,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 				return 0;
 			}
 		}
-		/* remember the last assignment */
+		/* remember the statement where a variable was last assignment */
 		for( j=0; j<p->retc; j++)
 			var[getArg(p,j)] = i;
 	}

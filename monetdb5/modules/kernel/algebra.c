@@ -974,28 +974,46 @@ ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, 
 static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
-	BAT *b, *s = NULL;
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL, *s = NULL;
+	bool heap_loaded = false;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (!(b = BBPquickdesc(*bid, false))) {
+		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	if (cnd && !is_bat_nil(*cnd) && (s = BATdescriptor(*cnd)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (cnd && !is_bat_nil(*cnd) && !(s = BATdescriptor(*cnd))) {
+		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
+	if (b->ttype == TYPE_void || b->ttype == TYPE_msk || (*ignore_nils && !b->tnonil)) {
+		if (!(b = BATdescriptor(*bid))) { /* has to load the heap */
+			msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		heap_loaded = true;
+	}
+
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
-	} else
-	if (*ignore_nils) {
+		assert(heap_loaded);
+		if (BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "aggr.count", GDK_EXCEPTION);
+			goto bailout;
+		}
+	} else if (*ignore_nils && !b->tnonil) {
+		assert(heap_loaded);
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
 		struct canditer ci;
 		*result = (lng) canditer_init(&ci, b, s);
 	}
+
+bailout:
+	if (b && heap_loaded)
+		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
