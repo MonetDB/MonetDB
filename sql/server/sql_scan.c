@@ -42,8 +42,6 @@ query_cleaned(sql_allocator *sa, const char *query)
 	if(!r)
 		return NULL;
 
-	(void) c;
-
 	for (q = r; *query; query++) {
 		if (incomment1) {
 			if (*query == '/' && query[-1] == '*') {
