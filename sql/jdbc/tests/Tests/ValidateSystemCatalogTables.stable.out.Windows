@@ -14,7 +14,7 @@ stdout of test 'ValidateSystemCatalogTables` in directory 'sql/jdbc/tests` itsel
 Checking     45 tables/keys  in schema sys for Primary Key uniqueness violations.
 Checking     45 columns      in schema sys for Primary Key Not Null violations.
 Checking     30 tables/keys  in schema sys for Unique Constraint violations.
-Checking     95 foreign keys in schema sys for Foreign Key referential integrity violations.
+Checking     93 foreign keys in schema sys for Foreign Key referential integrity violations.
 Checking    169 columns      in schema sys for Not Null violations.
 Checking    145 columns      in schema sys for Max Character Length violations.
 Checking      6 tables/keys  in schema tmp for Primary Key uniqueness violations.
