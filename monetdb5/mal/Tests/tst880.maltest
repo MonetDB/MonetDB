@@ -16,9 +16,9 @@ bat.append(c,nil:int);
 bat.append(c,4);
 bat.append(c,9);
 bat.append(c,nil:int);
-z:= batcalc.max(b,c);
+z:= batcalc.max(b,c,nil:bat,nil:bat);
 io.print(b,c,z);
-z:= batcalc.min(b,c);
+z:= batcalc.min(b,c,nil:bat,nil:bat);
 io.print(b,c,z);
 end;
 

@@ -163,7 +163,7 @@ statement error
 o := calc.or(n,n); bo := bat.append(bo,o)
 
 statement ok
-oo := batcalc.or(bl,br)
+oo := batcalc.or(bl,br,nil:bat,nil:bat)
 
 statement error
 io.print(bl,br, bo, oo)
@@ -196,7 +196,7 @@ statement error
 a := calc.and(n,n); ba := bat.append(ba,a)
 
 statement ok
-aa := batcalc.and(bl,br)
+aa := batcalc.and(bl,br,nil:bat,nil:bat)
 
 statement error
 io.print(bl,br, ba, aa)

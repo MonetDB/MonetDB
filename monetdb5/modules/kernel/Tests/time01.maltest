@@ -55,7 +55,7 @@ io.print(b1)
 10:00:20
 
 statement ok
-c := batcalc.==(b2, b1)
+c := batcalc.==(b2,b1,nil:bat,nil:bat)
 
 query II rowsort
 io.print(c)

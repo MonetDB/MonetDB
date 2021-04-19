@@ -8,7 +8,7 @@ statement ok
 bat.append(bi,nil:int)
 
 statement ok
-zi:= batcalc.isnil(bi)
+zi:= batcalc.isnil(bi,nil:bat)
 
 query II rowsort
 io.print(zi)
@@ -31,7 +31,7 @@ statement ok
 bat.append(bb,false)
 
 statement ok
-zb:= batcalc.isnil(bb)
+zb:= batcalc.isnil(bb,nil:bat)
 
 query II rowsort
 io.print(zb)
@@ -53,7 +53,7 @@ statement ok
 bat.append(bf,nil:flt)
 
 statement ok
-fi:= batcalc.isnil(bf)
+fi:= batcalc.isnil(bf,nil:bat)
 
 query II rowsort
 io.print(fi)
@@ -76,7 +76,7 @@ statement ok
 bat.append(bs,"")
 
 statement ok
-zs:= batcalc.isnil(bs)
+zs:= batcalc.isnil(bs,nil:bat)
 
 query II rowsort
 io.print(zs)
@@ -98,7 +98,7 @@ statement ok
 bat.append(bo,nil:oid)
 
 statement ok
-fo:= batcalc.isnil(bo)
+fo:= batcalc.isnil(bo,nil:bat)
 
 query II rowsort
 io.print(fo)
@@ -118,7 +118,7 @@ statement ok
 bat.append(bc,nil:bte)
 
 statement ok
-fc:= batcalc.isnil(bc)
+fc:= batcalc.isnil(bc,nil:bat)
 
 query II rowsort
 io.print(fc)

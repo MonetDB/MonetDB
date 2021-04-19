@@ -21,7 +21,7 @@ io.print(b)
 3
 
 statement ok
-bl:= batcalc.lng(b)
+bl:= batcalc.lng(b,nil:bat)
 
 query II rowsort
 io.print(bl)
@@ -56,7 +56,7 @@ io.print(bb)
 3
 
 statement ok
-bbl:= batcalc.lng(bb)
+bbl:= batcalc.lng(bb,nil:bat)
 
 query II rowsort
 io.print(bbl)
@@ -128,7 +128,7 @@ io.print(c)
 3
 
 statement ok
-cl:= batcalc.lng(c)
+cl:= batcalc.lng(c,nil:bat)
 
 query II rowsort
 io.print(cl)

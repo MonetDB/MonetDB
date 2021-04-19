@@ -5,19 +5,19 @@ statement ok
 t := bat.append(t, "0123456789")
 
 statement ok
-x1 := batstr.string(t, 0)
+x1 := batstr.string(t,0,nil:bat)
 
 statement ok
-x2 := batstr.string(t, 3)
+x2 := batstr.string(t,3,nil:bat)
 
 statement ok
-x3 := batstr.string(t, 9)
+x3 := batstr.string(t,9,nil:bat)
 
 statement ok
-x4 := batstr.string(t, 12)
+x4 := batstr.string(t,12,nil:bat)
 
 statement ok
-x5 := batstr.string(t, -6)
+x5 := batstr.string(t,-6,nil:bat)
 
 query IT rowsort
 io.print(x1)
