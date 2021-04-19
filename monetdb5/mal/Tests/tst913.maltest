@@ -7,7 +7,7 @@ bat.append(b,"FALSE");
 bat.append(b,"false");
 bat.append(b,"");
 bat.append(b,nil:str);
-bc:= batcalc.bit_noerror(b);
+bc:= batcalc.bit_noerror(b,nil:bat);
 io.print(bc);
 end;
 

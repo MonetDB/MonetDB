@@ -21,7 +21,7 @@ io.print(z1)
 2
 
 statement ok
-o:= batcalc.oid(z1)
+o:= batcalc.oid(z1,nil:bat)
 
 query II rowsort
 io.print(o)

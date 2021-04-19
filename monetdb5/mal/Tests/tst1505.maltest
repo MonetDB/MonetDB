@@ -70,7 +70,7 @@ io.print(y)
 1.000
 
 statement ok
-z:= batcalc.<(y,2.0:dbl)
+z:= batcalc.<(y,2.0:dbl,nil:bat)
 
 query II rowsort
 io.print(z)
@@ -160,7 +160,7 @@ query II rowsort
 0
 
 statement ok
-	xn:= batcalc.not(x)
+	xn:= batcalc.not(x,nil:bat)
 
 query III rowsort
 io.print(x,xn)
@@ -179,7 +179,7 @@ io.print(x,xn)
 1
 
 statement ok
-	xandx:= batcalc.and(x,A)
+	xandx:= batcalc.and(x,A,nil:bat,nil:bat)
 
 query III rowsort
 io.print(x,xandx)
@@ -198,7 +198,7 @@ io.print(x,xandx)
 0
 
 statement ok
-	xorx:= batcalc.or(x,A)
+	xorx:= batcalc.or(x,A,nil:bat,nil:bat)
 
 query III rowsort
 io.print(x,xorx)

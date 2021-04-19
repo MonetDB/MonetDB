@@ -11,7 +11,7 @@ statement ok
 bat.append(b,nil:dbl)
 
 statement ok
-z:= batmmath.sqrt(b)
+z:= batmmath.sqrt(b,nil:bat)
 
 query IR rowsort
 io.print(z)
@@ -24,7 +24,7 @@ io.print(z)
 NULL
 
 statement ok
-zz:= batmmath.cbrt(b)
+zz:= batmmath.cbrt(b,nil:bat)
 
 query IR rowsort
 io.print(zz)
@@ -49,7 +49,7 @@ statement ok
 bat.append(f,nil:flt)
 
 statement ok
-zf:= batmmath.sqrt(f)
+zf:= batmmath.sqrt(f,nil:bat)
 
 query IR rowsort
 io.print(zf)
@@ -62,7 +62,7 @@ io.print(zf)
 NULL
 
 statement ok
-zzf:= batmmath.cbrt(f)
+zzf:= batmmath.cbrt(f,nil:bat)
 
 query IR rowsort
 io.print(zzf)
