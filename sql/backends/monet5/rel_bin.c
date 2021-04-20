@@ -3754,7 +3754,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			if (aggrstmt && groupby) {
-				if (sub->cand && sub->cand != aggrstmt) {
+				if (sub->cand && sub->cand != aggrstmt->cand) {
 					if (!ext2)
 						ext2 = stmt_project(be, ext, sub->cand);
 					aggrstmt = stmt_project(be, ext2, aggrstmt);
