@@ -2225,23 +2225,23 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"var_values",	"var_name",	"char",	16,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"var_values",	"value",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 #select 'sys.table_partitions', t.name, c.name, p.expression from sys.table_partitions p left outer join sys._tables t on p.table_id = t.id left outer join sys._columns c on p.column_id = c.id;
-% .%16,	.t,	.c,	.p # table_name
-% %16,	name,	name,	expression # name
+% .%14,	.t,	.c,	.p # table_name
+% %14,	name,	name,	expression # name
 % char,	varchar,	varchar,	varchar # type
 % 20,	0,	0,	0 # length
 #select 'sys.range_partitions', t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
-% .%16,	.t,	.p,	.r,	.r,	.r # table_name
-% %16,	name,	expression,	minimum,	maximum,	with_nulls # name
+% .%14,	.t,	.p,	.r,	.r,	.r # table_name
+% %14,	name,	expression,	minimum,	maximum,	with_nulls # name
 % char,	varchar,	varchar,	varchar,	varchar,	boolean # type
 % 20,	0,	0,	0,	0,	5 # length
 #select 'sys.value_partitions', t.name, p.expression, v.value from sys.value_partitions v left outer join sys._tables t on t.id = v.table_id left outer join sys.table_partitions p on v.partition_id = p.id;
-% .%16,	.t,	.p,	.v # table_name
-% %16,	name,	expression,	value # name
+% .%14,	.t,	.p,	.v # table_name
+% %14,	name,	expression,	value # name
 % char,	varchar,	varchar,	varchar # type
 % 20,	0,	0,	0 # length
 #with funcs as (select name, pcre_replace(func, E'--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select 'dangling external functions', * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
-% .%23,	.x,	.x,	.x # table_name
-% %23,	sname,	name,	modfunc # name
+% .%21,	.x,	.x,	.x # table_name
+% %21,	sname,	name,	modfunc # name
 % char,	varchar,	varchar,	varchar # type
 % 27,	0,	0,	0 # length
 #select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, func_type, name0 nulls first, type0 nulls first, type_digits0 nulls first, type_scale0 nulls first, inout0 nulls first, name1 nulls first, type1 nulls first, type_digits1 nulls first, type_scale1 nulls first, inout1 nulls first, name2 nulls first, type2 nulls first, type_digits2 nulls first, type_scale2 nulls first, inout2 nulls first, name3 nulls first, type3 nulls first, type_digits3 nulls first, type_scale3 nulls first, inout3 nulls first, name4 nulls first, type4 nulls first, type_digits4 nulls first, type_scale4 nulls first, inout4 nulls first, name5 nulls first, type5 nulls first, type_digits5 nulls first, type_scale5 nulls first, inout5 nulls first, name6 nulls first, type6 nulls first, type_digits6 nulls first, type_scale6 nulls first, inout6 nulls first, name7 nulls first, type7 nulls first, type_digits7 nulls first, type_scale7 nulls first, inout7 nulls first, name8 nulls first, type8 nulls first, type_digits8 nulls first, type_scale8 nulls first, inout8 nulls first, name9 nulls first, type9 nulls first, type_digits9 nulls first, type_scale9 nulls first, inout9 nulls first, name10 nulls first, type10 nulls first, type_digits10 nulls first, type_scale10 nulls first, inout10 nulls first, name11 nulls first, type11 nulls first, type_digits11 nulls first, type_scale11 nulls first, inout11 nulls first, name12 nulls first, type12 nulls first, type_digits12 nulls first, type_scale12 nulls first, inout12 nulls first, name13 nulls first, type13 nulls first, type_digits13 nulls first, type_scale13 nulls first, inout13 nulls first, name14 nulls first, type14 nulls first, type_digits14 nulls first, type_scale14 nulls first, inout14 nulls first, name15 nulls first, type15 nulls first, type_digits15 nulls first, type_scale15 nulls first, inout15 nulls first;
@@ -4287,7 +4287,7 @@ drop function pcre_replace(string, string, string, string);
 % 16,	7,	13,	3 # length
 [ "sys.db_user_info",	"monetdb",	"MonetDB Admin",	"sys"	]
 #select 'function used by function', s1.name, f1.name, s2.name, f2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
-% .%4,	sys.s1,	sys.f1,	sys.s2,	sys.f2,	.dt # table_name
+% .%4,	sys.s1,	sys.f1,	.s2,	.f2,	.dt # table_name
 % %4,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 25,	3,	17,	3,	13,	8 # length
@@ -4298,7 +4298,7 @@ drop function pcre_replace(string, string, string, string);
 [ "function used by function",	"sys",	"internaltransform",	"sys",	"st_transform",	"FUNCTION"	]
 [ "function used by function",	"sys",	"st_srid",	"sys",	"st_transform",	"FUNCTION"	]
 #select 'table used by function', s1.name, t.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
-% .%4,	sys.s1,	sys.t,	sys.s2,	sys.f,	.dt # table_name
+% .%4,	sys.s1,	sys.t,	.s2,	.f,	.dt # table_name
 % %4,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 22,	3,	17,	3,	16,	9 # length
@@ -4311,7 +4311,7 @@ drop function pcre_replace(string, string, string, string);
 [ "table used by function",	"sys",	"storagemodelinput",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "table used by function",	"sys",	"tables",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 #select 'column used by function', s1.name, t.name, c.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
-% .%4,	sys.s1,	sys.t,	sys.c,	sys.s2,	sys.f,	.dt # table_name
+% .%4,	sys.s1,	sys.t,	sys.c,	.s2,	.f,	.dt # table_name
 % %4,	name,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 23,	3,	17,	13,	3,	16,	9 # length
@@ -4954,7 +4954,7 @@ drop function pcre_replace(string, string, string, string);
 [ "column used by index",	"sys",	"table_types",	"table_type_id",	"sys",	"table_types",	"table_types_table_type_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"table_types",	"table_type_name",	"sys",	"table_types",	"table_types_table_type_name_unique",	"INDEX"	]
 #select 'type used by function', t.systemname, t.sqlname, s.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, types t, functions f, schemas s where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
-% .%4,	sys.t,	sys.t,	sys.s,	sys.f,	.dt # table_name
+% .%4,	sys.t,	sys.t,	.s,	.f,	.dt # table_name
 % %4,	systemname,	sqlname,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 21,	4,	4,	4,	18,	4 # length
@@ -5169,7 +5169,7 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on table",	"value_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"var_values",	"public",	"SELECT",	"monetdb",	0	]
 #select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
-% .%6,	sys.t,	sys.c,	sys.a,	.pc,	.g,	.p # table_name
+% .%6,	.t,	.c,	sys.a,	.pc,	.g,	.p # table_name
 % %6,	name,	name,	name,	privilege_code_name,	name,	grantable # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	int # type
 % 15,	0,	0,	0,	0,	0,	1 # length

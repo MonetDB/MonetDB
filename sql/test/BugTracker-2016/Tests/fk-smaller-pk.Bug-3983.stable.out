@@ -31,7 +31,7 @@ stdout of test 'fk-smaller-pk.Bug-3983` in directory 'sql/test/BugTracker-2016` 
 #CREATE TABLE parent2(a int, b int, PRIMARY KEY(a,b));
 #CREATE TABLE child1(x int, y int, FOREIGN KEY(x,y) REFERENCES parent2);
 #SELECT table_name, column_name, key_name, key_col_nr, key_type, depend_type FROM dependency_columns_on_keys WHERE table_name LIKE 'parent%' AND key_name LIKE 'parent%';
-% .dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys # table_name
+% .dependency_columns_on_keys,	.dependency_columns_on_keys,	sys.dependency_columns_on_keys,	.dependency_columns_on_keys,	sys.dependency_columns_on_keys,	.dependency_columns_on_keys # table_name
 % table_name,	column_name,	key_name,	key_col_nr,	key_type,	depend_type # name
 % varchar,	varchar,	varchar,	int,	smallint,	smallint # type
 % 7,	1,	16,	1,	1,	1 # length

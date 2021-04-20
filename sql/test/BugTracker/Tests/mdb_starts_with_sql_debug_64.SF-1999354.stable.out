@@ -36,8 +36,8 @@ stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'sql/test/
 #-- minutes
 #SET d = 60.0 * (d-nd);
 #SELECT f2(1,2,3);
-% .%2 # table_name
-% %2 # name
+% .%4 # table_name
+% %4 # name
 % varchar # type
 % 12 # length
 [ "00:04:00.004"	]

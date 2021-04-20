@@ -108,11 +108,14 @@ strCleanHash(Heap *h, bool rebuild)
 	 * started. */
 	memset(newhash, 0, sizeof(newhash));
 	pos = GDK_STRHASHSIZE;
-	while (pos < h->free && pos < GDK_ELIMLIMIT) {
+	while (pos < h->free) {
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
-		pos += pad + extralen;
+		pos += pad;
+		if (pos >= GDK_ELIMLIMIT)
+			break;
+		pos += extralen;
 		s = h->base + pos;
 		if (h->hashash)
 			strhash = ((const BUN *) s)[-1];
@@ -176,10 +179,49 @@ strLocate(Heap *h, const char *v)
 	return 0;
 }
 
+static inline gdk_return
+checkUTF8(const char *v)
+{
+	if (v[0] != '\200' || v[1] != '\0') {
+		/* check that string is correctly encoded UTF-8; there
+		 * was no need to do this earlier: if the string was
+		 * found above, it must have gone through here in the
+		 * past */
+		int nutf8 = 0;
+		int m = 0;
+		for (size_t i = 0; v[i]; i++) {
+			if (nutf8 > 0) {
+				if ((v[i] & 0xC0) != 0x80 ||
+				    (m != 0 && (v[i] & m) == 0))
+					goto badutf8;
+				m = 0;
+				nutf8--;
+			} else if ((v[i] & 0xE0) == 0xC0) {
+				nutf8 = 1;
+				if ((v[i] & 0x1E) == 0)
+					goto badutf8;
+			} else if ((v[i] & 0xF0) == 0xE0) {
+				nutf8 = 2;
+				if ((v[i] & 0x0F) == 0)
+					m = 0x20;
+			} else if ((v[i] & 0xF8) == 0xF0) {
+				nutf8 = 3;
+				if ((v[i] & 0x07) == 0)
+					m = 0x30;
+			} else if ((v[i] & 0x80) != 0) {
+				goto badutf8;
+			}
+		}
+	}
+	return GDK_SUCCEED;
+
+  badutf8:
+	return GDK_FAIL;
+}
+
 var_t
 strPut(Heap *h, var_t *dst, const char *v)
 {
-	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
 	size_t pos, len = strLen(v);
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
@@ -219,60 +261,29 @@ strPut(Heap *h, var_t *dst, const char *v)
 	}
 	/* the string was not found in the heap, we need to enter it */
 
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8; there
-		 * was no need to do this earlier: if the string was
-		 * found above, it must have gone through here in the
-		 * past */
-		int nutf8 = 0;
-		int m = 0;
-		for (size_t i = 0; v[i]; i++) {
-			if (nutf8 > 0) {
-				if ((v[i] & 0xC0) != 0x80 ||
-				    (m != 0 && (v[i] & m) == 0)) {
-				  badutf8:
-					GDKerror("incorrectly encoded UTF-8");
-					return 0;
-				}
-				m = 0;
-				nutf8--;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				nutf8 = 1;
-				if ((v[i] & 0x1E) == 0)
-					goto badutf8;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				nutf8 = 2;
-				if ((v[i] & 0x0F) == 0)
-					m = 0x20;
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				nutf8 = 3;
-				if ((v[i] & 0x07) == 0)
-					m = 0x30;
-			} else if ((v[i] & 0x80) != 0) {
-				goto badutf8;
-			}
-		}
+	if (checkUTF8(v) != GDK_SUCCEED) {
+		GDKerror("incorrectly encoded UTF-8\n");
+		return 0;
 	}
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
-	if (elimbase == 0) {	/* i.e. h->free < GDK_ELIMLIMIT */
+	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
 		if (pad < sizeof(stridx_t)) {
 			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
-	} else if (extralen == 0) {	/* i.e., h->hashash == FALSE */
-		/* no VARSHIFT and no string hash value stored => no
-		 * padding/alignment needed */
+	} else if (GDK_ELIMBASE(h->free) != 0) {
+		/* no extra padding needed when no hash links needed
+		 * (but only when padding doesn't cross duplicate
+		 * elimination boundary) */
 		pad = 0;
-	} else {
-		/* pad to align on VARALIGN for VARSHIFT and/or string
-		 * hash value */
-		pad &= (GDK_VARALIGN - 1);
 	}
+
+	pad += extralen;
 
 	/* check heap for space (limited to a certain maximum after
 	 * which nils are inserted) */
-	if (h->free + pad + len + extralen >= h->size) {
+	if (h->free + pad + len >= h->size) {
 		size_t newsize = MAX(h->size, 4096);
 
 		/* double the heap size until we have enough space */
@@ -281,11 +292,11 @@ strPut(Heap *h, var_t *dst, const char *v)
 				newsize <<= 1;
 			else
 				newsize += 4 * 1024 * 1024;
-		} while (newsize <= h->free + pad + len + extralen);
+		} while (newsize <= h->free + pad + len);
 
 		assert(newsize);
 
-		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
+		if (h->free + pad + len >= (size_t) VAR_MAX) {
 			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
@@ -293,19 +304,16 @@ strPut(Heap *h, var_t *dst, const char *v)
 		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
 			return 0;
 		}
-#ifndef NDEBUG
-		/* fill should solve initialization problems within
-		 * valgrind */
-		memset(h->base + h->free, 0, h->size - h->free);
-#endif
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
 	}
 
 	/* insert string */
-	pos = h->free + pad + extralen;
+	pos = h->free + pad;
 	*dst = (var_t) pos;
+	if (pad > 0)
+		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
 	if (h->hashash) {
 		((BUN *) (h->base + pos))[-1] = strhash;
@@ -313,12 +321,12 @@ strPut(Heap *h, var_t *dst, const char *v)
 		((BUN *) (h->base + pos))[-2] = (BUN) len;
 #endif
 	}
-	h->free += pad + len + extralen;
+	h->free += pad + len;
 	h->dirty = true;
 
 	/* maintain hash table */
 	pos -= extralen;
-	if (elimbase == 0) {	/* small string heap: link the next pointer */
+	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
 		/* the stridx_t next pointer directly precedes the
 		 * string and optional (depending on hashash) hash
 		 * value */
@@ -780,6 +788,10 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
+	if (checkUTF8(a) != GDK_SUCCEED) {
+		GDKerror("incorrectly encoded UTF-8\n");
+		return GDK_FAIL;
+	}
 	if (mnstr_writeInt(s, (int) len) && mnstr_write(s, a, len, 1) == 1)
 		return GDK_SUCCEED;
 	else

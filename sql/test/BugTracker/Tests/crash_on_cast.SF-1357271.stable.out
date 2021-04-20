@@ -14,8 +14,8 @@ stdout of test 'crash_on_cast.SF-1357271` in directory 'sql/test/BugTracker` its
 
 
 #select cast( 1 as varchar(10));
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % varchar # type
 % 1 # length
 [ "1"	]

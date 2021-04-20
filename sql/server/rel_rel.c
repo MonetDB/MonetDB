@@ -243,7 +243,7 @@ rel_issubquery(sql_rel*r)
 static sql_rel *
 rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, int no_tname)
 {
-	int ambiguous = 0;
+	int ambiguous = 0, multi = 0;
 	sql_rel *l = NULL, *r = NULL;
 
 	if (THRhighwater())
@@ -258,7 +258,7 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 
 		r = rel_bind_column_(sql, exp_has_nil, rel->r, cname, no_tname);
 		if (!r || !rel_issubquery(right)) {
-			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, 0):NULL;
+			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, &multi, 0):NULL;
 
 			if (!r || !e || !is_freevar(e)) {
 				l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
@@ -286,11 +286,11 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	case op_project:
 	case op_table:
 	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous, no_tname))
+		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname))
 			return rel;
-		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, no_tname))
+		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname))
 			return rel;
-		if (ambiguous) {
+		if (ambiguous || multi) {
 			(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			return NULL;
 		}
@@ -326,11 +326,11 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 		return NULL;
 
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
-		sql_exp *e = exps_bind_column(rel->exps, cname, NULL, no_tname);
+		sql_exp *e = exps_bind_column(rel->exps, cname, NULL, NULL, no_tname);
 		if (e)
 			e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 		if (!e && is_groupby(rel->op) && rel->r) {
-			sql_exp *e = exps_bind_column(rel->r, cname, NULL, no_tname);
+			sql_exp *e = exps_bind_column(rel->r, cname, NULL, NULL, no_tname);
 			if (e)
 				e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 		}
@@ -344,6 +344,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 sql_exp *
 rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f)
 {
+	int ambiguous = 0, multi = 0;
+
 	if (!rel)
 		return NULL;
 
@@ -352,21 +354,31 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 
 		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
 		if (!list_empty(rel->exps)) {
-			e = exps_bind_column2(rel->exps, tname, cname);
+			e = exps_bind_column2(rel->exps, tname, cname, &multi);
+			if (multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
+								 tname, cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
 				e = exps_bind_alias(rel->r, tname, cname);
 				if (e) {
-					if (exp_relname(e))
-						e = exps_bind_column2(rel->exps, exp_relname(e), exp_name(e));
+					const char *rname = exp_relname(e), *nname = exp_name(e);
+					if (rname)
+						e = exps_bind_column2(rel->exps, rname, nname, &multi);
 					else
-						e = exps_bind_column(rel->exps, exp_name(e), NULL, 0);
+						e = exps_bind_column(rel->exps, nname, &ambiguous, &multi, 0);
+					if (ambiguous || multi)
+						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
+										 rname ? rname : "", rname ? "." : "", nname);
 					if (e)
 						return e;
 				}
 			}
 		}
 		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
-			e = exps_bind_column2(rel->r, tname, cname);
+			e = exps_bind_column2(rel->r, tname, cname, &multi);
+			if (multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
+								 tname, cname);
 			if (e) {
 				e = exp_ref(sql, e);
 				e->card = rel->card;
@@ -823,6 +835,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			sql_idx *i = cn->data;
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = NULL;
+			int has_nils = 0;
 
 			/* do not include empty indices in the plan */
 			if (hash_index(i->type) && list_length(i->columns) <= 1)
@@ -832,7 +845,13 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 				t = sql_bind_localtype("oid");
 
 			iname = sa_strconcat( sa, "%", i->base.name);
-			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1);
+			for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
+				sql_kc *kc = n->data;
+
+				if (kc->c->null)
+					has_nils = 1;
+			}
+			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, has_nils, 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
 				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
@@ -1169,9 +1188,9 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_basetable:
 		if (!rel->exps)
 			break;
-		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r))
+		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
 			found = 1;
-		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, 1))
+		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
 			found = 1;
 		break;
 	case op_insert:
@@ -1522,11 +1541,11 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		return NULL;
 
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
-		int ambiguous = 0;
-		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		int ambiguous = 0, multi = 0;
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname, &multi);
 		if (!e && cname[0] == '%' && !tname)
-			e = exps_bind_column(rel->exps, cname, &ambiguous, 0);
-		if (e && !ambiguous)
+			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, 0);
+		if (e && !ambiguous && !multi)
 			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
 	if (is_project(rel->op) && rel->l && !is_processed(rel)) {

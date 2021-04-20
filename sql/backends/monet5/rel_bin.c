@@ -1548,15 +1548,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
 	sql_table *t = rel->l;
-	sql_column *c = rel->r;
+	sql_column *fcol = NULL;
+	sql_idx *fi = NULL;
 	list *l = sa_list(sql->sa);
-	stmt *dels, *col = NULL;
+	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *col = NULL;
 	node *en;
-
-	if (!t && c)
-		t = c->t;
-
-	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1572,10 +1568,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
+			fi = i;
 			col = stmt_idx(be, i, NULL/*dels*/, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
+			fcol = c;
 			col = stmt_col(be, c, NULL/*dels*/, dels->partition);
 		}
 	}
@@ -1585,26 +1583,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		const char *oname = exp->r;
 		stmt *s = NULL;
 
-		if (is_func(exp->type)) {
-			assert(0);
-			list *exps = exp->l;
-			sql_exp *cexp = exps->h->data;
-			const char *cname = cexp->r;
-			list *l = sa_list(sql->sa);
-
-			c = find_sql_column(t, cname);
-			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
-			append(l, s);
-			if (exps->h->next) {
-				sql_exp *at = exps->h->next->data;
-				stmt *u = exp_bin(be, at, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
-				if(!u)
-					return NULL;
-
-				append(l, u);
-			}
-			s = stmt_Nop(be, stmt_list(be, l), exp->f);
-		} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+		assert(!is_func(exp->type));
+		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
 			const char *rnme = t->base.name;
 
@@ -1619,11 +1599,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
-			s = stmt_idx(be, i, NULL/*dels*/, dels->partition);
+			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
-			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
+			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
 		}
 		s->tname = rname;
 		s->cname = exp_name(exp);
@@ -2250,6 +2230,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 }
 
 #define is_equi_exp(e) ((e)->flag == cmp_equal || (e)->flag == mark_in || (e)->flag == mark_notin)
+#define is_equi_exp_(e) ((e)->flag == cmp_equal || (e)->flag == mark_in)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
@@ -2574,12 +2555,16 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
+	int semijoin_only = 0, l_is_base = 0;
 
 	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
 
-	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(be, rel->l, refs);
+	if (rel->l) { /* first construct the left sub relation */
+		sql_rel *l = rel->l;
+		l_is_base = is_basetable(l->op);
+		left = subrel_bin(be, l, refs);
+	}
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
 	if (!left || !right)
@@ -2654,7 +2639,13 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
+					if (sql->no_mitosis && list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !e->anti && is_equi_exp_(e)) {
+						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
+						semijoin_only = 1;
+						en = NULL;
+						break;
+					} else
+						s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
 					lcand = left->cand;
 				} else {
 					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, NULL, 0, 1);
@@ -2761,22 +2752,28 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, left->op4.lval->h->data);
-	if (rel->op == op_anti) {
-		join = stmt_tdiff(be, c, jl, lcand);
-	} else {
-		if (lcand)
-			join = stmt_semijoin(be, c, jl, lcand, NULL/*right->cand*/, 0, false);
-		else
-			join = stmt_tinter(be, c, jl, false);
+	if (!semijoin_only) {
+		c = stmt_mirror(be, left->op4.lval->h->data);
+		if (rel->op == op_anti) {
+			join = stmt_tdiff(be, c, jl, lcand);
+		} else {
+			if (lcand)
+				join = stmt_semijoin(be, c, jl, lcand, NULL/*right->cand*/, 0, false);
+			else
+				join = stmt_tinter(be, c, jl, false);
+		}
 	}
 
 	/* project all the left columns */
 	for( n = left->op4.lval->h; n; n = n->next ) {
-		stmt *c = n->data;
+		stmt *c = n->data, *s;
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
-		stmt *s = stmt_project(be, join, column(be, c));
+
+		if (semijoin_only && l_is_base && nme[0] == '%' && strcmp(nme, TID) == 0)
+			s = join;
+		else
+			s = stmt_project(be, join, column(be, c));
 
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);

@@ -325,6 +325,71 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 [ 4,	23	]
 [ 5,	NULL	]
 [ 6,	NULL	]
+#select count(*) from pk1 join fk on fk.fk1 = pk1.pk1;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 4	]
+#select count(*) from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2;
+% .%5 # table_name
+% %5 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#select id from pk1 join fk on fk.fk1 = pk1.pk1 order by id;
+% sys.fk # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 5	]
+#select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
+% sys.fk # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#select id, v1 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
+% sys.fk,	sys.pk1 # table_name
+% id,	v1 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	11	]
+[ 2,	11	]
+[ 3,	12	]
+#select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
+% sys.fk,	sys.pk2 # table_name
+% id,	v2 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	21	]
+[ 2,	22	]
+[ 3,	21	]
+#start transaction;
+#CREATE TABLE "myt" ("myid" int NOT NULL,"great" varchar(32),CONSTRAINT "mypkey" PRIMARY KEY ("myid"));
+#insert into myt values (1, 'a'),(2, 'b'),(3, 'c'),(4, 'd');
+[ 4	]
+#CREATE TABLE "testme" ("good" int,"myid" int NOT NULL,"hello" varchar(32),CONSTRAINT "givemeapkey" PRIMARY KEY ("myid"),CONSTRAINT "myfkey" FOREIGN KEY ("good") REFERENCES "myt" ("myid"));
+#insert into testme values (1, 1, 'a'),(2, 2, 'b'),(3, 3, 'c'),(4, 4, 'd');
+[ 4	]
+#select testme.myid from testme inner join "myt" on testme.good = "myt".myid where testme.hello = 'd' order by "myt".great limit 10;
+% sys.testme # table_name
+% myid # name
+% int # type
+% 1 # length
+[ 4	]
+#select count(*) from testme inner join "myt" on testme.good = "myt".myid where testme.hello = 'd' group by "myt".great;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#rollback;
 
 # 01:44:33 >  
 # 01:44:33 >  "Done."

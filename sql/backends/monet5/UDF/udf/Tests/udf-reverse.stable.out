@@ -107,17 +107,17 @@ end user.s4_0;
 % clob # type
 % 114 # length
 function user.s16_0():void;
-    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 21:int);
-    X_27:bat[:str] := bat.pack("sys.%1":str);
-    X_28:bat[:str] := bat.pack("%1":str);
-    X_29:bat[:str] := bat.pack("clob":str);
-    X_30:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 17:int);
+    X_22:bat[:str] := bat.pack("sys.%1":str);
+    X_23:bat[:str] := bat.pack("%1":str);
+    X_24:bat[:str] := bat.pack("clob":str);
+    X_25:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "udf_reverse":str);
-    X_17:bat[:str] := sql.bind(X_4:int, "sys":str, "udf_reverse":str, "x":str, 0:int);
-    X_22:bat[:str] := algebra.projection(C_5:bat[:oid], X_17:bat[:str]);
-    X_23:bat[:str] := batudf.reverse(X_22:bat[:str]);
-    sql.resultSet(X_27:bat[:str], X_28:bat[:str], X_29:bat[:str], X_30:bat[:int], X_30:bat[:int], X_23:bat[:str]);
+    X_8:bat[:str] := sql.bind(X_4:int, "sys":str, "udf_reverse":str, "x":str, 0:int);
+    X_17:bat[:str] := algebra.projection(C_5:bat[:oid], X_8:bat[:str]);
+    X_18:bat[:str] := batudf.reverse(X_17:bat[:str]);
+    sql.resultSet(X_22:bat[:str], X_23:bat[:str], X_24:bat[:str], X_25:bat[:int], X_25:bat[:int], X_18:bat[:str]);
 end user.s16_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=5 usec 

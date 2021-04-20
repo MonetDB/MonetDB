@@ -20,10 +20,8 @@ The use of
 .I monetdbd
 is either as user-oriented way to configure, start and stop a database
 farm, or to be started from a startup script, such as from
-.I /etc/init.d/
-on Linux systems or
-.IR smf (5)
-on Solaris systems, as part of a system startup.
+.IR systemd (1)
+on Linux systems, as part of a system startup.
 .P
 .I Monetdbd
 is the system formerly known as
@@ -40,11 +38,10 @@ at many places for historical reasons.
 .P
 A
 .I monetdbd
-instance manages one local cluster based, which is a directory in the
-system, referred to as the
+instance manages one local cluster of databases, which is a directory
+in the system, referred to as the
 .IR dbfarm .
-Nowadays, the dbfarm location always has to be given as argument
-to
+The dbfarm location must always be given as argument to
 .IR monetdbd .
 .P
 Within its local cluster
@@ -93,7 +90,7 @@ and
 The commands facilitate initializing a dbfarm, starting and stopping the
 MonetDB Database Server, and retrieving or setting options.
 .TP
-.B create dbfarm
+\fBcreate\fP \fIdbfarm\fP
 Initializes a new database farm, such that a MonetDB Database Server can
 be started on that location.  All necessary directories are attempted to
 be created, and an initial properties file is created in the directory
@@ -115,6 +112,14 @@ calling environment, until given a stop signal.
 Sends a stop signal to the
 .I monetdbd
 process responsible for the given dbfarm.
+If the
+.B exittimeout
+value is non-zero (see below), all mserver processes will be sent a
+termination signal.  The current process will wait for the manager
+process to terminate, but sends a SIGKILL signal if waiting takes
+longer than 5 seconds more than the value of exittimeout.  If
+exittimeout is negative, both monetdbd processes involved will wait
+until the servers have all terminated and no extra signals are sent.
 .TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> \fIdbfarm\fP
 Prints the requested properties, or all known properties, for the given

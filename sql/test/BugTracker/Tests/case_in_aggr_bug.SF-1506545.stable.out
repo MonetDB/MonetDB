@@ -58,8 +58,8 @@ stdout of test 'case_in_aggr_bug.SF-1506545` in directory 'sql/test/BugTracker` 
 #);
 #select avg(target_id / case (system_id - 1) WHEN 0 THEN cast(null as int)
 #ELSE system_id - 1 END) from configuration;
-% sys.%1 # table_name
-% %1 # name
+% sys.%2 # table_name
+% %2 # name
 % double # type
 % 24 # length
 [ NULL	]

@@ -169,20 +169,20 @@ end user.s8_0;
 % clob # type
 % 114 # length
 function user.s16_0():void;
-    X_1:void := querylog.define("explain select fuse(a,b) from udf_fuse;":str, "sequential_pipe":str, 26:int);
-    X_34:bat[:str] := bat.pack("sys.%1":str);
-    X_35:bat[:str] := bat.pack("%1":str);
-    X_36:bat[:str] := bat.pack("smallint":str);
-    X_37:bat[:int] := bat.pack(16:int);
-    X_38:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select fuse(a,b) from udf_fuse;":str, "sequential_pipe":str, 22:int);
+    X_29:bat[:str] := bat.pack("sys.%1":str);
+    X_30:bat[:str] := bat.pack("%1":str);
+    X_31:bat[:str] := bat.pack("smallint":str);
+    X_32:bat[:int] := bat.pack(16:int);
+    X_33:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "udf_fuse":str);
-    X_17:bat[:bte] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "a":str, 0:int);
-    X_28:bat[:bte] := algebra.projection(C_5:bat[:oid], X_17:bat[:bte]);
-    X_22:bat[:bte] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "b":str, 0:int);
-    X_29:bat[:bte] := algebra.projection(C_5:bat[:oid], X_22:bat[:bte]);
-    X_30:bat[:sht] := batudf.fuse(X_28:bat[:bte], X_29:bat[:bte]);
-    sql.resultSet(X_34:bat[:str], X_35:bat[:str], X_36:bat[:str], X_37:bat[:int], X_38:bat[:int], X_30:bat[:sht]);
+    X_8:bat[:bte] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "a":str, 0:int);
+    X_23:bat[:bte] := algebra.projection(C_5:bat[:oid], X_8:bat[:bte]);
+    X_17:bat[:bte] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "b":str, 0:int);
+    X_24:bat[:bte] := algebra.projection(C_5:bat[:oid], X_17:bat[:bte]);
+    X_25:bat[:sht] := batudf.fuse(X_23:bat[:bte], X_24:bat[:bte]);
+    sql.resultSet(X_29:bat[:str], X_30:bat[:str], X_31:bat[:str], X_32:bat[:int], X_33:bat[:int], X_25:bat[:sht]);
 end user.s16_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=6 usec 
@@ -215,20 +215,20 @@ end user.s16_0;
 % clob # type
 % 114 # length
 function user.s18_0():void;
-    X_1:void := querylog.define("explain select fuse(c,d) from udf_fuse;":str, "sequential_pipe":str, 26:int);
-    X_34:bat[:str] := bat.pack("sys.%1":str);
-    X_35:bat[:str] := bat.pack("%1":str);
-    X_36:bat[:str] := bat.pack("int":str);
-    X_37:bat[:int] := bat.pack(32:int);
-    X_38:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select fuse(c,d) from udf_fuse;":str, "sequential_pipe":str, 22:int);
+    X_29:bat[:str] := bat.pack("sys.%1":str);
+    X_30:bat[:str] := bat.pack("%1":str);
+    X_31:bat[:str] := bat.pack("int":str);
+    X_32:bat[:int] := bat.pack(32:int);
+    X_33:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "udf_fuse":str);
-    X_17:bat[:sht] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "c":str, 0:int);
-    X_28:bat[:sht] := algebra.projection(C_5:bat[:oid], X_17:bat[:sht]);
-    X_22:bat[:sht] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "d":str, 0:int);
-    X_29:bat[:sht] := algebra.projection(C_5:bat[:oid], X_22:bat[:sht]);
-    X_30:bat[:int] := batudf.fuse(X_28:bat[:sht], X_29:bat[:sht]);
-    sql.resultSet(X_34:bat[:str], X_35:bat[:str], X_36:bat[:str], X_37:bat[:int], X_38:bat[:int], X_30:bat[:int]);
+    X_8:bat[:sht] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "c":str, 0:int);
+    X_23:bat[:sht] := algebra.projection(C_5:bat[:oid], X_8:bat[:sht]);
+    X_17:bat[:sht] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "d":str, 0:int);
+    X_24:bat[:sht] := algebra.projection(C_5:bat[:oid], X_17:bat[:sht]);
+    X_25:bat[:int] := batudf.fuse(X_23:bat[:sht], X_24:bat[:sht]);
+    sql.resultSet(X_29:bat[:str], X_30:bat[:str], X_31:bat[:str], X_32:bat[:int], X_33:bat[:int], X_25:bat[:int]);
 end user.s18_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 1 time=4 usec 
@@ -261,20 +261,20 @@ end user.s18_0;
 % clob # type
 % 114 # length
 function user.s20_0():void;
-    X_1:void := querylog.define("explain select fuse(e,f) from udf_fuse;":str, "sequential_pipe":str, 26:int);
-    X_34:bat[:str] := bat.pack("sys.%1":str);
-    X_35:bat[:str] := bat.pack("%1":str);
-    X_36:bat[:str] := bat.pack("bigint":str);
-    X_37:bat[:int] := bat.pack(64:int);
-    X_38:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select fuse(e,f) from udf_fuse;":str, "sequential_pipe":str, 22:int);
+    X_29:bat[:str] := bat.pack("sys.%1":str);
+    X_30:bat[:str] := bat.pack("%1":str);
+    X_31:bat[:str] := bat.pack("bigint":str);
+    X_32:bat[:int] := bat.pack(64:int);
+    X_33:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "udf_fuse":str);
-    X_17:bat[:int] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "e":str, 0:int);
-    X_28:bat[:int] := algebra.projection(C_5:bat[:oid], X_17:bat[:int]);
-    X_22:bat[:int] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "f":str, 0:int);
-    X_29:bat[:int] := algebra.projection(C_5:bat[:oid], X_22:bat[:int]);
-    X_30:bat[:lng] := batudf.fuse(X_28:bat[:int], X_29:bat[:int]);
-    sql.resultSet(X_34:bat[:str], X_35:bat[:str], X_36:bat[:str], X_37:bat[:int], X_38:bat[:int], X_30:bat[:lng]);
+    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "e":str, 0:int);
+    X_23:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);
+    X_17:bat[:int] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "f":str, 0:int);
+    X_24:bat[:int] := algebra.projection(C_5:bat[:oid], X_17:bat[:int]);
+    X_25:bat[:lng] := batudf.fuse(X_23:bat[:int], X_24:bat[:int]);
+    sql.resultSet(X_29:bat[:str], X_30:bat[:str], X_31:bat[:str], X_32:bat[:int], X_33:bat[:int], X_25:bat[:lng]);
 end user.s20_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 1 time=4 usec 

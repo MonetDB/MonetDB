@@ -11,14 +11,14 @@ stdout of test 'decimal_vs_integer.Bug-3941` in directory 'sql/test/BugTracker-2
 % .explain # table_name
 % mal # name
 % clob # type
-% 120 # length
-function user.s4_0():void;
-    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "default_pipe":str, 13:int);
-    X_16:bat[:oid] := bat.new(nil:oid);
-    X_19:lng := aggr.count(X_16:bat[:oid]);
-    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
-end user.s4_0;
-#inline               actions= 0 time=1 usec 
+% 123 # length
+function user.s6_0():void;
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "sequential_pipe":str, 12:int);
+    X_15:bat[:oid] := bat.new(nil:oid);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s6_0;
+#inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 

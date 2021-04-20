@@ -82,7 +82,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 
 					if ((is_basecol(e) && exp_relname(e) && strcmp(exp_relname(e), tname) == 0) ||
 					    (is_basecol(e) && !exp_relname(e) && e->l && strcmp(e->l, tname) == 0)) {
-						if (exp_name(e) && exps_bind_column2(exps, tname, exp_name(e)))
+						if (exp_name(e) && exps_bind_column2(exps, tname, exp_name(e), NULL))
 							rename = 1;
 						else
 							append(exps, e);
@@ -154,11 +154,11 @@ rel_orderby(mvc *sql, sql_rel *l)
 
 /* forward refs */
 static sql_rel * rel_setquery(sql_query *query, symbol *sq);
-static sql_rel * rel_joinquery(sql_query *query, sql_rel *rel, symbol *sq);
-static sql_rel * rel_crossquery(sql_query *query, sql_rel *rel, symbol *q);
+static sql_rel * rel_joinquery(sql_query *query, sql_rel *rel, symbol *sq, list *refs);
+static sql_rel * rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs);
 
 static sql_rel *
-rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
+rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 {
 	sql_rel *osq = sq;
 	node *ne;
@@ -185,7 +185,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			for (; d && ne; d = d->next, ne = ne->next) {
 				sql_exp *e = ne->data;
 
-				if (exps_bind_column2(l, tname, d->data.sval))
+				if (exps_bind_column2(l, tname, d->data.sval, NULL))
 					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: Duplicate column name '%s.%s'", tname, d->data.sval);
 				exp_setname(sql->sa, e, tname, d->data.sval );
 				if (!is_intern(e))
@@ -208,6 +208,11 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 				append(l, e);
 			}
 		}
+		if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
+			if (list_find(refs, tname, (fcmp) &strcmp))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
+			list_append(refs, tname);
+		}
 	} else {
 		if (!is_project(sq->op) || is_topn(sq->op) || is_sample(sq->op) || ((is_simple_project(sq->op) || is_groupby(sq->op)) && sq->r)) {
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
@@ -224,7 +229,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 }
 
 static sql_rel *
-rel_subquery_optname(sql_query *query, sql_rel *rel, symbol *ast)
+rel_subquery_optname(sql_query *query, sql_rel *rel, symbol *ast, list *refs)
 {
 	mvc *sql = query->sql;
 	SelectNode *sn = (SelectNode *) ast;
@@ -235,7 +240,7 @@ rel_subquery_optname(sql_query *query, sql_rel *rel, symbol *ast)
 	if (!sq)
 		return NULL;
 
-	return rel_table_optname(sql, sq, sn->name);
+	return rel_table_optname(sql, sq, sn->name, refs);
 }
 
 sql_rel *
@@ -295,7 +300,7 @@ rel_with_query(sql_query *query, symbol *q )
 }
 
 static sql_rel *
-query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
+query_exp_optname(sql_query *query, sql_rel *r, symbol *q, list *refs)
 {
 	mvc *sql = query->sql;
 	switch (q->token) {
@@ -306,34 +311,35 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 		if (!tq)
 			return NULL;
 		if (q->data.lval->t->type == type_symbol)
-			return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+			return rel_table_optname(sql, tq, q->data.lval->t->data.sym, refs);
 		return tq;
 	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
 	{
+		/* subqueries will be called, ie no need to test for duplicate references */
 		sql_rel *tq = rel_setquery(query, q);
 
 		if (!tq)
 			return NULL;
-		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym, NULL);
 	}
 	case SQL_JOIN:
 	{
-		sql_rel *tq = rel_joinquery(query, r, q);
+		sql_rel *tq = rel_joinquery(query, r, q, refs);
 
 		if (!tq)
 			return NULL;
-		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym, NULL);
 	}
 	case SQL_CROSS:
 	{
-		sql_rel *tq = rel_crossquery(query, r, q);
+		sql_rel *tq = rel_crossquery(query, r, q, refs);
 
 		if (!tq)
 			return NULL;
-		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym, NULL);
 	}
 	default:
 		(void) sql_error(sql, 02, SQLSTATE(42000) "case %d %s", (int) q->token, token2string(q->token));
@@ -525,7 +531,7 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 }
 
 static sql_rel *
-rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int lateral)
+rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int lateral, list *refs)
 {
 	mvc *sql = query->sql;
 	list *exps = NULL, *tl;
@@ -630,8 +636,13 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		append(exps, e);
 	}
 	rel = rel_table_func(sql->sa, rel, e, exps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
-	if (ast->data.lval->h->next->data.sym && ast->data.lval->h->next->data.sym->data.lval->h->next->data.lval)
-		rel = rel_table_optname(sql, rel, ast->data.lval->h->next->data.sym);
+	if (ast->data.lval->h->next->data.sym && ast->data.lval->h->next->data.sym->data.lval->h->next->data.lval) {
+		rel = rel_table_optname(sql, rel, ast->data.lval->h->next->data.sym, refs);
+	} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
+		if (list_find(refs, tname, (fcmp) &strcmp))
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
+		list_append(refs, tname);
+	}
 	return rel;
 }
 
@@ -757,7 +768,7 @@ tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples)
 }
 
 static sql_rel *
-rel_values(sql_query *query, symbol *tableref)
+rel_values(sql_query *query, symbol *tableref, list *refs)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = NULL;
@@ -811,7 +822,7 @@ rel_values(sql_query *query, symbol *tableref)
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
 	r->card = card;
-	return rel_table_optname(sql, r, optname);
+	return rel_table_optname(sql, r, optname, refs);
 }
 
 static int
@@ -851,7 +862,7 @@ rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
 }
 
 sql_rel *
-table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
+table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *refs)
 {
 	mvc *sql = query->sql;
 	char *tname = NULL;
@@ -960,17 +971,22 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			if (!res)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 		}
-		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
-			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);
+		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
+			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym, refs);
+		} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
+			if (list_find(refs, tname, (fcmp) &strcmp))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
+			list_append(refs, tname);
+		}
 		return res;
 	} else if (tableref->token == SQL_VALUES) {
-		return rel_values(query, tableref);
+		return rel_values(query, tableref, refs);
 	} else if (tableref->token == SQL_TABLE) {
-		return rel_named_table_function(query, rel, tableref, lateral);
+		return rel_named_table_function(query, rel, tableref, lateral, refs);
 	} else if (tableref->token == SQL_SELECT) {
-		return rel_subquery_optname(query, rel, tableref);
+		return rel_subquery_optname(query, rel, tableref, refs);
 	} else {
-		return query_exp_optname(query, rel, tableref);
+		return query_exp_optname(query, rel, tableref, refs);
 	}
 }
 
@@ -1026,10 +1042,10 @@ is_groupby_col(sql_rel *gb, sql_exp *e)
 
 	if (gb) {
 		if (exp_relname(e)) {
-			if (exp_name(e) && exps_bind_column2(gb->r, exp_relname(e), exp_name(e)))
+			if (exp_name(e) && exps_bind_column2(gb->r, exp_relname(e), exp_name(e), NULL))
 				return 1;
 		} else {
-			if (exp_name(e) && exps_bind_column(gb->r, exp_name(e), NULL, 1))
+			if (exp_name(e) && exps_bind_column(gb->r, exp_name(e), NULL, NULL, 1))
 				return 1;
 		}
 	}
@@ -1146,19 +1162,23 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		char *cname = l->h->next->data.sval;
 
 		if (!exp && rel && inner)
-			exp = rel_bind_column2(sql, inner, tname, cname, f);
+			if (!(exp = rel_bind_column2(sql, inner, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
 		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
 			inner = inner->l;
 		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
-			exp = rel_bind_column2(sql, inner->l, tname, cname, f);
+			if (!(exp = rel_bind_column2(sql, inner->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
-				exp = rel_bind_column2(sql, outer, tname, cname, f | sql_outer);
+				if (!(exp = rel_bind_column2(sql, outer, tname, cname, f | sql_outer)) && sql->session->status == -ERR_AMBIGUOUS)
+					return NULL;
 				if (!exp && is_groupby(outer->op))
-					exp = rel_bind_column2(sql, outer->l, tname, cname, f);
+					if (!(exp = rel_bind_column2(sql, outer->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+						return NULL;
 				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
 				if (exp)
@@ -1199,7 +1219,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
 					*rel = v;
-				exp = rel_bind_column2(sql, *rel, tname, cname, f);
+				if (!(exp = rel_bind_column2(sql, *rel, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+					return NULL;
 			}
 		}
 		if (!exp)
@@ -5122,7 +5143,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
 		} else if (se->token == SQL_VALUES) {
-			r = rel_values(query, se);
+			r = rel_values(query, se, NULL);
 		} else {
 			assert(se->token == SQL_SELECT);
 			r = rel_subquery(query, NULL, se, ek);
@@ -5278,7 +5299,7 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 
 		if (!is_project((*rel)->op))
 			return NULL;
-		r = rel_named_table_function( query, (*rel)->l, column_e, 0);
+		r = rel_named_table_function(query, (*rel)->l, column_e, 0, NULL);
 		if (!r)
 			return NULL;
 		*rel = r;
@@ -5483,22 +5504,27 @@ static sql_rel *
 join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
 {
 	mvc *sql = query->sql;
-	int nr = ++sql->label, found = 0, full = (op != op_join);
-	char name[16], *nme;
+	int found = 0, full = (op != op_join);
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list(sql->sa);
-	node *n;
 
-	nme = number2name(name, sizeof(name), nr);
 	if (!exps || !r_exps)
 		return NULL;
-	for (n = exps->h; n; n = n->next) {
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
-		const char *nm = exp_name(le);
-		sql_exp *re = exps_bind_column(r_exps, nm, NULL, 0);
+		int multi = 0;
+		const char *rname = exp_relname(le), *name = exp_name(le);
+		sql_exp *re = exps_bind_column(r_exps, name, NULL, &multi, 0);
 
 		if (re) {
+			if (multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in right table", rname);
+			multi = 0;
+			le = exps_bind_column(exps, name, NULL, &multi, 0);
+			if (multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in left table", rname);
+
 			found = 1;
 			if (!(rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0)))
 				return NULL;
@@ -5510,7 +5536,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 				if (!(le = rel_nop_(sql, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value)))
 					return NULL;
 			}
-			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
+			exp_setname(sql->sa, le, rname, name);
 			append(outexps, le);
 			list_remove_data(r_exps, re);
 		} else {
@@ -5521,7 +5547,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	}
 	if (!found)
 		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
-	for (n = r_exps->h; n; n = n->next) {
+	for (node *n = r_exps->h; n; n = n->next) {
 		sql_exp *re = n->data;
 		if (r_nil)
 			set_has_nil(re);
@@ -5626,10 +5652,10 @@ rel_unique_names(mvc *sql, sql_rel *rel)
 		sql_exp *e = n->data;
 
 		if (exp_relname(e)) {
-			if (exp_name(e) && exps_bind_column2(l, exp_relname(e), exp_name(e)))
+			if (exp_name(e) && exps_bind_column2(l, exp_relname(e), exp_name(e), NULL))
 				exp_label(sql->sa, e, ++sql->label);
 		} else {
-			if (exp_name(e) && exps_bind_column(l, exp_name(e), NULL, 0))
+			if (exp_name(e) && exps_bind_column(l, exp_name(e), NULL, NULL, 0))
 				exp_label(sql->sa, e, ++sql->label);
 		}
 		append(l,e);
@@ -5646,7 +5672,7 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 	SelectNode *sn = NULL;
 
 	if (sq->token != SQL_SELECT)
-		return table_ref(query, rel, sq, 0);
+		return table_ref(query, rel, sq, 0, NULL);
 
 	/* select ... into is currently not handled here ! */
  	sn = (SelectNode *) sq;
@@ -5670,36 +5696,27 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		}
 	}
 
-	if (sn->from) {		/* keep variable list with tables and names */
+	if (sn->from) {
 		dlist *fl = sn->from->data.lval;
 		sql_rel *fnd = NULL;
-		list *names = new_exp_list(sql->sa);
+		list *refs = new_exp_list(sql->sa); /* Keep list of relation names in order to test for duplicates */
 
 		for (dnode *n = fl->h; n ; n = n->next) {
-			char *nrame = NULL;
 			int lateral = check_is_lateral(n->data.sym);
 
 			/* just used current expression */
-			fnd = table_ref(query, NULL, n->data.sym, lateral);
+			fnd = table_ref(query, NULL, n->data.sym, lateral, refs);
 			if (!fnd && res && lateral && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
 
 				query_push_outer(query, res, sql_from);
-				fnd = table_ref(query, NULL, n->data.sym, lateral);
+				fnd = table_ref(query, NULL, n->data.sym, lateral, refs);
 				res = query_pop_outer(query);
 			}
 			if (!fnd)
 				break;
-			if ((nrame = (char*) rel_name(fnd))) {
-				if (list_find(names, nrame, (fcmp) &strcmp)) {
-					if (res)
-						rel_destroy(res);
-					return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
-				} else
-					list_append(names, nrame);
-			}
 			if (res) {
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
@@ -5760,10 +5777,10 @@ rel_setquery(sql_query *query, symbol *q)
 	sql_rel *t1, *t2;
 
 	assert(n->next->type == type_int);
-	t1 = table_ref(query, NULL, tab_ref1, 0);
+	t1 = table_ref(query, NULL, tab_ref1, 0, NULL);
 	if (!t1)
 		return NULL;
-	t2 = table_ref(query, NULL, tab_ref2, 0);
+	t2 = table_ref(query, NULL, tab_ref2, 0, NULL);
 	if (!t2)
 		return NULL;
 
@@ -5798,7 +5815,7 @@ rel_setquery(sql_query *query, symbol *q)
 }
 
 static sql_rel *
-rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
+rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js, list *refs)
 {
 	mvc *sql = query->sql;
 	operator_type op = op_join;
@@ -5822,22 +5839,22 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 
 	lateral = check_is_lateral(tab2);
-	t1 = table_ref(query, NULL, tab1, 0);
+	t1 = table_ref(query, NULL, tab1, 0, refs);
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		t1 = table_ref(query, NULL, tab1, 0);
+		t1 = table_ref(query, NULL, tab1, 0, refs);
 	}
 	if (t1) {
-		t2 = table_ref(query, NULL, tab2, 0);
+		t2 = table_ref(query, NULL, tab2, 0, refs);
 		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 
 			query_push_outer(query, t1, sql_from);
-			t2 = table_ref(query, NULL, tab2, 0);
+			t2 = table_ref(query, NULL, tab2, 0, refs);
 			t1 = query_pop_outer(query);
 		}
 	}
@@ -5845,9 +5862,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		rel_destroy(rel);
 	if (!t1 || !t2)
 		return NULL;
-
-	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
 
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
 	inner->op = op;
@@ -5870,10 +5884,12 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		rnme = number2name(rname, sizeof(rname), ++sql->label);
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
-			sql_exp *cond;
-			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where | sql_join, 0);
-			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where | sql_join, 0);
+			sql_exp *cond, *ls, *rs;
 
+			if (!(ls = rel_bind_column(sql, t1, nm, sql_where | sql_join, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
+			if (!(rs = rel_bind_column(sql, t2, nm, sql_where | sql_join, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
 			if (!ls || !rs)
 				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
 			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0)))
@@ -5941,7 +5957,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 }
 
 static sql_rel *
-rel_joinquery(sql_query *query, sql_rel *rel, symbol *q)
+rel_joinquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 {
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
@@ -5952,27 +5968,23 @@ rel_joinquery(sql_query *query, sql_rel *rel, symbol *q)
 
 	assert(n->next->type == type_int);
 	assert(n->next->next->type == type_int);
-	return rel_joinquery_(query, rel, tab_ref1, natural, jointype, tab_ref2, joinspec);
+	return rel_joinquery_(query, rel, tab_ref1, natural, jointype, tab_ref2, joinspec, refs);
 }
 
 static sql_rel *
-rel_crossquery(sql_query *query, sql_rel *rel, symbol *q)
+rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 {
 	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym;
 	symbol *tab2 = n->next->data.sym;
-	sql_rel *t1 = table_ref(query, rel, tab1, 0);
+	sql_rel *t1 = table_ref(query, rel, tab1, 0, refs);
 	sql_rel *t2 = NULL;
 
 	if (t1)
-		t2 = table_ref(query, rel, tab2, 0);
+		t2 = table_ref(query, rel, tab2, 0, refs);
 	if (!t1 || !t2)
 		return NULL;
-
-	if (rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rel_name(t1));
-
 	return rel_crossproduct(sql->sa, t1, t2, op_join);
 }
 
@@ -6009,7 +6021,7 @@ rel_selects(sql_query *query, symbol *s)
 		sql->type = Q_TABLE;
 		break;
 	case SQL_VALUES:
-		ret = rel_values(query, s);
+		ret = rel_values(query, s, NULL);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_SELECT: {
@@ -6025,11 +6037,11 @@ rel_selects(sql_query *query, symbol *s)
 		}
 	}	break;
 	case SQL_JOIN:
-		ret = rel_joinquery(query, NULL, s);
+		ret = rel_joinquery(query, NULL, s, NULL);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_CROSS:
-		ret = rel_crossquery(query, NULL, s);
+		ret = rel_crossquery(query, NULL, s, NULL);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:

@@ -174,7 +174,7 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 48,	1,	1,	0 # length
 #SELECT '"sys"."dependency_columns_on_keys"."key_name"' as full_col_nm, 1024 as max_allowed_length, length("key_name") as data_length, t."key_name" as data_value FROM "sys"."dependency_columns_on_keys" t WHERE "key_name" IS NOT NULL AND length("key_name") > (select type_digits from sys._columns where name = 'key_name' and table_id in (select id from tables where name = 'dependency_columns_on_keys' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .,	.,	.,	. # table_name
+% .,	.,	sys.,	sys. # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 45,	1,	1,	0 # length
