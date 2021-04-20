@@ -18,7 +18,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.22.04 of catalog */
-#define CATALOG_VERSION 52204	/* first in Jun2020 */
+#define CATALOG_VERSION 52206	/* first in Jun2020 */
 int catalog_version = 0;
 
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");

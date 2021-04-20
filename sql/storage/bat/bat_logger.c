@@ -15,6 +15,8 @@
 #define CATALOG_MAR2018 52201	/* first in Jun2016 */
 #define CATALOG_AUG2018 52202	/* first in Aug2018 */
 #define CATALOG_NOV2019 52203	/* first in Apr2019 */
+#define CATALOG_JUN2020 52204	/* first in Jun2020-mmt */
+#define CATALOG_JUN2020_MMT 52206	/* first in Jun2020-mmt */
 
 logger *bat_logger = NULL;
 
@@ -49,14 +51,22 @@ bl_preversion(int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_JUN2020_MMT
+	if (oldversion == CATALOG_JUN2020) {
+		/* upgrade to Jun2020-mmt releases */
+		catalog_version = CATALOG_JUN2020_MMT;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #define N(schema, table, column)	schema "_" table "_" column
 
-#ifdef CATALOG_AUG2018
+#if defined(CATALOG_AUG2018) || defined(CATALOG_JUN2020_MMT)
 static int
-find_table_id(logger *lg, const char *val, int *sid)
+find_table_id(logger *lg, const char *sch, const char *tbl, int *sid)
 {
 	BAT *s = NULL;
 	BAT *b, *t;
@@ -67,7 +77,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
 	if (b == NULL)
 		return 0;
-	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
+	s = BATselect(b, NULL, sch, NULL, 1, 1, 0);
 	bat_destroy(b);
 	if (s == NULL)
 		return 0;
@@ -83,7 +93,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	bi = bat_iterator(b);
 	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
 	bat_destroy(b);
-	/* store id of schema "sys" */
+	/* store id of schema */
 	*sid = id;
 
 	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name"), 0, 0));
@@ -91,7 +101,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 		bat_destroy(s);
 		return 0;
 	}
-	s = BATselect(b, NULL, val, NULL, 1, 1, 0);
+	s = BATselect(b, NULL, tbl, NULL, 1, 1, 0);
 	bat_destroy(b);
 	if (s == NULL)
 		return 0;
@@ -400,7 +410,7 @@ bl_postversion(void *lg)
 
 #ifdef CATALOG_AUG2018
 	if (catalog_version <= CATALOG_AUG2018) {
-		int id;
+		int sid, tid, id;
 		lng lid;
 		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
 		BAT *sf = temp_descriptor(logger_find_bat(lg, N("sys", "systemfunctions", "function_id"), 0, 0));
@@ -448,8 +458,8 @@ bl_postversion(void *lg)
 			return GDK_FAIL;
 		}
 		bat_destroy(b);
-		int sid;
-		int tid = find_table_id(lg, "functions", &sid);
+		if (!(tid = find_table_id(lg, "sys", "functions", &sid)))
+			return GDK_FAIL;
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "system",
@@ -810,6 +820,73 @@ bl_postversion(void *lg)
 	}
 #endif
 
+#ifdef CATALOG_JUN2020_MMT
+	if (catalog_version <= CATALOG_JUN2020_MMT) {
+		/* add sub column to "objects" table. This is required for merge tables */
+		/* alter table sys.objects add column sub integer; */
+		int id, sid, tid;
+		lng lid;
+		BAT *obid = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "id"), 0, 0)), *b;
+
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0 || obid == NULL) {
+			bat_destroy(obid);
+			return GDK_FAIL;
+		}
+		id = (int) lid;
+
+		/* create bat for new column sys.objects.sub with value NULL */
+		b = BATconstant(obid->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(obid), PERSISTENT);
+		bat_destroy(obid);
+		if (b == NULL)
+			return GDK_FAIL;
+		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED || logger_add_bat(lg, b, N("sys", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		bat_destroy(b);
+
+		if (!(tid = find_table_id(lg, "sys", "objects", &sid)))
+			return GDK_FAIL;
+		if (tabins(lg, true, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "sub",
+			   "type", "int",
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {3}),
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+
+		if (!(b = BATconstant(0, TYPE_int, ATOMnilptr(TYPE_int), 0, PERSISTENT)))
+			return GDK_FAIL;
+		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED || logger_add_bat(lg, b, N("tmp", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		bat_destroy(b);
+
+		if (!(tid = find_table_id(lg, "tmp", "objects", &sid)))
+			return GDK_FAIL;
+		if (tabins(lg, false, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "sub",
+			   "type", "int",
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {3}),
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -1069,7 +1146,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 		fclose(f);
 		return GDK_FAIL;
 	}
-	assert(version == 52204); // if version has changed this code may need to be revised
+	assert(version == 52206); // if version has changed this code may need to be revised
 	ret = fscanf(f, LLSCN, &start_id); // real read (log id))
 	if (ret != 1) {
 		GDKerror("Could not read log id from %s", meta_file);
