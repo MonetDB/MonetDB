@@ -1659,8 +1659,8 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 			const str input = *getArgReference_str(stk, pci, 1);
 
 			for (BUN p = 0; p < q; p++) {
-				oid p = (canditer_next(&ci1) - off1);
-				const str np = BUNtvar(pi, p);
+				oid o = (canditer_next(&ci1) - off1);
+				const str np = BUNtvar(pi, o);
 
 				if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED)
 					goto bailout;
@@ -1698,47 +1698,38 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				goto bailout;
 			if (ci1.tpe == cand_dense) {
 				for (BUN p = 0; p < q; p++) {
-					oid p = (canditer_next_dense(&ci1) - off1);
-					const str s = BUNtvar(bi, p);
+					oid o = (canditer_next_dense(&ci1) - off1);
+					const str s = BUNtvar(bi, o);
 					ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 					has_nil |= is_bit_nil(ret[p]);
 				}
 			} else {
 				for (BUN p = 0; p < q; p++) {
-					oid p = (canditer_next(&ci1) - off1);
-					const str s = BUNtvar(bi, p);
+					oid o = (canditer_next(&ci1) - off1);
+					const str s = BUNtvar(bi, o);
 					ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 					has_nil |= is_bit_nil(ret[p]);
 				}
 			}
 		} else if (empty) {
-			if (ci1.tpe == cand_dense) {
-				for (BUN p = 0; p < q; p++) {
-					oid p = (canditer_next_dense(&ci1) - off1);
-					ret[p] = bit_nil;
-				}
-			} else {
-				for (BUN p = 0; p < q; p++) {
-					oid p = (canditer_next(&ci1) - off1);
-					ret[p] = bit_nil;
-				}
-			}
+			for (BUN p = 0; p < q; p++)
+				ret[p] = bit_nil;
 			has_nil = true;
 		} else {
 			if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, q)) != MAL_SUCCEED)
 				goto bailout;
 			if (ci1.tpe == cand_dense) {
 				for (BUN p = 0; p < q; p++) {
-					oid p = (canditer_next_dense(&ci1) - off1);
-					const str s = BUNtvar(bi, p);
+					oid o = (canditer_next_dense(&ci1) - off1);
+					const str s = BUNtvar(bi, o);
 					if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED)
 						goto bailout;
 					has_nil |= is_bit_nil(ret[p]);
 				}
 			} else {
 				for (BUN p = 0; p < q; p++) {
-					oid p = (canditer_next(&ci1) - off1);
-					const str s = BUNtvar(bi, p);
+					oid o = (canditer_next(&ci1) - off1);
+					const str s = BUNtvar(bi, o);
 					if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED)
 						goto bailout;
 					has_nil |= is_bit_nil(ret[p]);
