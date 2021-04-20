@@ -1184,7 +1184,7 @@ walk_n_back(mat_t *mat, int g, int cnt)
 }
 
 static int
-group_by_ext(matlist_t *ml, int g)
+find_by_parent(matlist_t *ml, int g)
 {
 	int i;
 
@@ -1421,12 +1421,13 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 		/* if cur is non-NULL, it's a subgroup; if i is zero, it's "done" */
 		InstrPtr grp = newInstruction(mb, groupRef,cur?i?subgroupRef:subgroupdoneRef:i?groupRef:groupdoneRef);
 		int ogrp = walk_n_back(mat, g, i);
-		int oext = group_by_ext(ml, ogrp);
+		int oext = find_by_parent(ml, ogrp);
+		int ocnt = find_by_parent(ml, oext);
 		int attr = mat[oext].im;
 
 		getArg(grp,0) = mat[ogrp].mv;
-		grp = pushReturn(mb, grp, mat[oext].mv);
-		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType(TYPE_lng)));
+		grp = pushReturn(mb, grp, mat[oext].mv); /* extend */
+		grp = pushReturn(mb, grp, mat[ocnt].mv); /* histo */
 		grp = addArgument(mb, grp, getArg(mat[attr].mi, 0));
 		if (cur)
 			grp = addArgument(mb, grp, getArg(cur, 0));
@@ -1450,7 +1451,7 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 	for(i = 0; i < cnt; i++) {
 		int agrp = walk_n_back(ml->v, ogrp, i);
 		int b = ml->v[agrp].im;
-		int aext = group_by_ext(ml, agrp);
+		int aext = find_by_parent(ml, agrp);
 		int a = ml->v[aext].im;
 		int atp = getArgType(mb,ml->v[a].mi,0), k;
 		InstrPtr attr = newInstructionArgs(mb, matRef, packRef, ml->v[a].mi->argc);
