@@ -3490,6 +3490,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subf
 		int i;
 		node *n;
 
+		/* TODO check all pushed */
 		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
 			stmt *op = n->data;
 
@@ -3638,6 +3639,8 @@ tail_type(stmt *st)
 		case st_result:
 		case st_tid:
 		case st_mirror:
+			if (st->type == st_result && st->flag == 2 && st->op1->type == st_group)
+				return sql_bind_localtype("lng");
 			return sql_bind_localtype("oid");
 		case st_table_clear:
 			return sql_bind_localtype("lng");

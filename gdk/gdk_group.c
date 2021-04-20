@@ -609,7 +609,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKerror("b must exist\n");
 		return GDK_FAIL;
 	}
-	assert(s == NULL || BATttype(s) == TYPE_oid);
+	//assert(s == NULL || BATttype(s) == TYPE_oid);
 	cnt = canditer_init(&ci, b, s);
 
 	/* g is NULL or [oid(dense),oid] and same size as b or s */
@@ -633,7 +633,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		gn = BATdense(hseqb, 0, BATcount(b));
+		gn = BATdense(hseqb, 0, cnt);
 		if (gn == NULL)
 			goto error;
 		*groups = gn;
