@@ -1451,8 +1451,11 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			if (s && s->nrcols > 0 && depth == 0 && left->cand) /* topmost column reference, needs to be projected on the cand */
 				s = stmt_project_column_on_cand(be, left->cand, s);
 #endif
-			if (s && right && right->grp)
+			if (s && right && right->grp) {
+				if (left->cand && !s->cand)
+					s = stmt_project(be, left->cand, s);
 				s = stmt_project(be, right->ext, s);
+			}
 		}
 		if (!s && right) {
 			TRC_CRITICAL(SQL_EXECUTION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
