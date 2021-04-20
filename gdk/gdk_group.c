@@ -31,10 +31,10 @@
  * (type oid).
  *
  * The extents and histo bats are indexed by group id.  The tail of
- * extents is the head oid from b of a representative of the group.
- * The tail of histo is of type lng and contains the number of
- * elements from b that are member of the group.  The extents BAT can
- * be used as a candidate list (sorted and unique).
+ * extents is the head oid from the candidate list s of a representative
+ * of the group.  The tail of histo is of type lng and contains the
+ * number of elements from b that are member of the group.  The extents
+ * BAT can be used as a candidate list (sorted and unique).
  *
  * The extents and histo bats are optionally created.  The groups bat
  * is always created.  In other words, the groups argument may not be
@@ -88,7 +88,7 @@
 			}						\
 		}							\
 		if (extents)						\
-			exts[ngrp] = hseqb + p - lo;			\
+			exts[ngrp] = ci.hseq + r;			\
 		if (histo)						\
 			cnts[ngrp] = 1;					\
 		ngrps[r] = ngrp++;					\
@@ -638,7 +638,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			goto error;
 		*groups = gn;
 		if (extents) {
-			en = canditer_slice(&ci, 0, cnt);
+			en = BATdense(0, ci.hseq, cnt);
 			if (en == NULL)
 				goto error;
 			*extents = en;
@@ -688,7 +688,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				goto error;
 			*groups = gn;
 			if (extents) {
-				en = BATdense(0, canditer_next(&ci), 1);
+				en = BATdense(0, ci.hseq, 1);
 				if (en == NULL)
 					goto error;
 				*extents = en;
@@ -713,7 +713,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  ALGOOPTBATPAR(hn), GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
-		if ((extents == NULL || e != NULL) &&
+		if ((extents == NULL || (e != NULL && ci.hseq == b->hseqbase)) &&
 		    (histo == NULL || h != NULL) &&
 		    cnt == BATcount(b)) {
 			/* inherit given grouping; note that if
@@ -955,7 +955,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				bgrps[w[p]] = v = (unsigned char) ngrp++;
 				maxgrppos = r;
 				if (extents)
-					exts[v] = o;
+					exts[v] = ci.hseq + r;
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
@@ -988,7 +988,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				sgrps[w[p]] = v = (unsigned short) ngrp++;
 				maxgrppos = r;
 				if (extents)
-					exts[v] = o;
+					exts[v] = ci.hseq + r;
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
