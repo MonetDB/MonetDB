@@ -325,12 +325,13 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
 				if (isLikeOp(q) &&
+						 isaBatType(getArgType(mb, q, 1)) && /* input is a column */
 						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
 						!isaBatType(getArgType(mb, q, 3)) && /* escape is a value */
 						!isaBatType(getArgType(mb, q, 4)) && /* isensitive flag is a value */
 						strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
-					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0, anti = (getFunctionId(q)[0] == 'n');
-					bit ignore_case = *(bit*)getVarValue(mb, getArg(q, 4)), selectok = TRUE;
+					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), anti = (getFunctionId(q)[0] == 'n');
+					bit selectok = TRUE;
 
 					/* TODO at the moment we cannot convert if the select statement has NULL semantics
 						we can convert it into VAL is NULL or PATTERN is NULL or ESCAPE is NULL
@@ -368,23 +369,21 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 					if (selectok) {
 						InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
+						bat likecand = *(bat*)getVarValue(mb, getArg(q, 5));
+
 						getArg(r,0) = getArg(p,0);
 						r = addArgument(mb, r, getArg(q, 1));
-						if (has_cand) {
+						if (!is_bat_nil(likecand)) { /* attempt to add the batalgebra.like cand */
+							r = addArgument(mb, r, getArg(q, 5));
+						} else if (has_cand) { /* then the [theta]select cand */
 							r = addArgument(mb, r, getArg(p, 2));
-							offset = 1;
-						} else if (isaBatType(getArgType(mb, q, 1))) { /* likeselect calls have a candidate parameter */
-							r = pushNil(mb, r, TYPE_bat);
-							offset = 1;
+						} else {
+							r = pushNil(mb, r, TYPE_bat); /* no cand, then nil bat */
 						}
-						for(int a = 2; a<q->argc; a++)
-							r = addArgument(mb, r, getArg(q, a));
-						if (r->argc < (4+offset))
-							r = pushStr(mb, r, (str)getVarValue(mb, getArg(q, 3)));
-						if (r->argc < (5+offset))
-							r = pushBit(mb, r, ignore_case);
-						if (r->argc < (6+offset))
-							r = pushBit(mb, r, anti);
+						r = pushStr(mb, r, (str)getVarValue(mb, getArg(q, 2))); /* pattern */
+						r = pushStr(mb, r, (str)getVarValue(mb, getArg(q, 3))); /* escape */
+						r = pushBit(mb, r, *(bit*)getVarValue(mb, getArg(q, 4))); /* ignore case */
+						r = pushBit(mb, r, anti);
 						freeInstruction(p);
 						p = r;
 						actions++;
