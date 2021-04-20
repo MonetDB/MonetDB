@@ -1419,6 +1419,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			   and/or an attribute to count */
 			if (right && right->grp) {
 				as = right->grp;
+				right->cnt->cand = NULL; /* cand has been applied */
 				return right->cnt;
 			} else if (right) {
 				as = bin_find_smallest_column(be, left);

@@ -1508,13 +1508,13 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 
 		/* cands, some already handled the previous selection */
 		if (op1->nrcols) {
-			if (!sel || !op1->cand)
+			if (!sel || op1->cand == sel)
 				q = pushNil(mb, q, TYPE_bat);
 			else
 				q = pushArgument(mb, q, sel->nr);
 		}
 		if (op2->nrcols) {
-			if (!sel || !op2->cand)
+			if (!sel || op2->cand == sel)
 				q = pushNil(mb, q, TYPE_bat);
 			else
 				q = pushArgument(mb, q, sel->nr);
@@ -1652,19 +1652,19 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 
 		/* cands, some already handled the previous selection */
 		if (op1->nrcols) {
-			if (!sel || !op1->cand)
+			if (!sel || op1->cand == sel)
 				p = pushNil(mb, p, TYPE_bat);
 			else
 				p = pushArgument(mb, p, sel->nr);
 		}
 		if (op2->nrcols) {
-			if (!sel || !op2->cand)
+			if (!sel || op2->cand == sel)
 				p = pushNil(mb, p, TYPE_bat);
 			else
 				p = pushArgument(mb, p, sel->nr);
 		}
 		if (op3->nrcols) {
-			if (!sel || !op3->cand)
+			if (!sel || op3->cand == sel)
 				p = pushNil(mb, p, TYPE_bat);
 			else
 				p = pushArgument(mb, p, sel->nr);
