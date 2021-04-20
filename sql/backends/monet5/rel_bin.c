@@ -1419,6 +1419,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			   and/or an attribute to count */
 			if (right && right->grp) {
 				as = right->grp;
+				return right->cnt;
 			} else if (right) {
 				as = bin_find_smallest_column(be, left);
 				as = exp_count_no_nil_arg(e, right->ext, NULL, as);
@@ -3691,7 +3692,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	list *l, *gbexps = sa_list(sql->sa);
 	node *n, *en;
 	rel_bin_stmt *sub = NULL, *cursub;
-	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
+	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *ext2 = NULL, *cnt = NULL;
 
 	assert(rel->l); /* first construct the sub relation */
 	sub = subrel_bin(be, rel->l, refs);
@@ -3752,7 +3753,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			if (aggrstmt && groupby) {
-				aggrstmt = stmt_project(be, ext, aggrstmt);
+				if (sub->cand && sub->cand != aggrstmt) {
+					if (!ext2)
+						ext2 = stmt_project(be, ext, sub->cand);
+					aggrstmt = stmt_project(be, ext2, aggrstmt);
+				} else
+					aggrstmt = stmt_project(be, ext, aggrstmt);
 				if (list_length(gbexps) == 1)
 					aggrstmt->key = 1;
 			}

@@ -51,6 +51,19 @@ mat_type( mat_t *mat, int n)
 }
 
 static inline int
+is_a_mat_none(int idx, const matlist_t *ml)
+{
+	if (ml->vars[idx] >= 0 && !ml->v[ml->vars[idx]].packed) {
+		while (idx >= 0 && ml->vars[idx] >= 0 && ml->v[ml->vars[idx]].type != mat_none) {
+			idx = ml->v[ml->vars[idx]].pm;
+		}
+		if (idx >= 0 && ml->vars[idx] >= 0 && !ml->v[ml->vars[idx]].packed)
+			return ml->vars[idx];
+	}
+	return -1;
+}
+
+static inline int
 is_a_mat(int idx, const matlist_t *ml)
 {
 	if (ml->vars[idx] >= 0 && !ml->v[ml->vars[idx]].packed)
@@ -1553,7 +1566,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int cand)
 
 	/* create mat's for the intermediates */
 	a = ml->top;
-	if(mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1, push))
+	if(mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext, -1, b, push))
 		return -1;
 	g = ml->top;
 	if(mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, -1, 1) ||
@@ -2219,7 +2232,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		    getFunctionId(p) == subavgRef ||
 		    getFunctionId(p) == subsumRef ||
 		    getFunctionId(p) == subprodRef) &&
-		   ((m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) &&
+		   ((m=is_a_mat_none(getArg(p,p->retc+0), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0)) {
 			if(mat_group_aggr(mb, p, ml.v, m, n, o, -1)) {
@@ -2237,7 +2250,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		    getFunctionId(p) == subavgRef ||
 		    getFunctionId(p) == subsumRef ||
 		    getFunctionId(p) == subprodRef) &&
-		   ((m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) &&
+		   ((m=is_a_mat_none(getArg(p,p->retc+0), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0) &&
 		   ((k=is_a_mat(getArg(p,p->retc+3), &ml)) >= 0)) {
@@ -2255,7 +2268,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_ext || ml.v[n].type == mat_grp)) {
 			assert(ml.v[m].pushed);
-			if (!ml.v[n].pushed) {
+			//if (!ml.v[n].pushed) {
+			if (!ml.v[n].packed) {
 				if(mat_group_project(mb, p, &ml, m, n)) {
 					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
