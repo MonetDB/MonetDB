@@ -480,6 +480,7 @@ rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
 	rel->flag = 0;
+	set_processed(rel);
 	return rel;
 }
 
