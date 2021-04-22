@@ -59,6 +59,18 @@ mal_init(char *modules[], int embedded)
  */
 	str err;
 
+	/* check that library that we're linked against is compatible with
+	 * the one we were compiled with */
+	int maj, min, patch;
+	const char *version = GDKlibversion();
+	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
+	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
+		TRC_CRITICAL(MAL_SERVER, "Linked GDK library not compatible with the one this was compiled with\n");
+		TRC_CRITICAL(MAL_SERVER, "Linked version: %s, compiled version: %s\n",
+					 version, GDK_VERSION);
+		return -1;
+	}
+
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		freeException(err);
 		return -1;
