@@ -22,7 +22,7 @@ extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts);
 extern sql_rel *rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes);
 extern sql_rel *rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action);
 
-extern sql_exp *rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from);
+extern sql_exp *rel_parse_val(mvc *m, sql_schema *s, char *query, sql_subtype *tpe, char emode, sql_rel *from);
 
 extern sql_rel *rel_updates(sql_query *query, symbol *sym);
 
