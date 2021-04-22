@@ -77,19 +77,10 @@ monet_version(void)
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
-	/* PCRE_PRERELEASE may be defined as an empty value.  In order
-	 * to get the proper amount of white space between various
-	 * parts of the version string on different compilers (none
-	 * between minor and prerelease, a single one between that
-	 * combination and the date), we need to resort to some
-	 * run-time trickery since we can't do it with the
-	 * preprocessor */
 	print_libversion("libpcre",
-			 pcre_version(),
-			 XSTRING(Z PCRE_PRERELEASE)[1] == 0
-			 ? XSTRING(PCRE_MAJOR.PCRE_MINOR PCRE_DATE)
-			 : XSTRING(PCRE_MAJOR.PCRE_MINOR)
-			   XSTRING(PCRE_PRERELEASE PCRE_DATE));
+					 pcre_version(),
+					 XSTRING(PCRE_MAJOR.PCRE_MINOR) XSTRING(PCRE_PRERELEASE)
+					 " " XSTRING(PCRE_DATE));
 #endif
 #ifdef HAVE_OPENSSL
 	print_libversion("openssl",
