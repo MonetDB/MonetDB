@@ -539,7 +539,7 @@ gdk_return log_constant(logger *lg, int type, ptr val, log_id id, lng offset, ln
 gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 gdk_return log_sequence(logger *lg, int seq, lng id);
 gdk_return log_tend(logger *lg);
-gdk_return log_tstart(logger *lg, ulng commit_ts);
+gdk_return log_tstart(logger *lg, ulng commit_ts, bool flush);
 lng logger_changes(logger *lg);
 logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 void logger_destroy(logger *lg);
