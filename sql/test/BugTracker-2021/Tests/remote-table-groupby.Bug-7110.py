@@ -30,9 +30,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
         node1_cur.execute("CREATE TABLE keyword_test (toc_no String null,myname String null)")
         node1_cur.execute("insert into keyword_test values('A000000009', 'AAAA'),('A000000010', 'BBBB'),('A000000011', 'CCCC'),('A000000012', 'DDDD'),('A000000013', 'EEEE'),('A000000014', 'AAAA'),('A000000015', 'DDDD'),('A000000016', 'AAAA')")
         node1_cur.execute("select * from keyword_test order by myname")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('A000000009', 'AAAA'), ('A000000014', 'AAAA'), ('A000000016', 'AAAA'), ('A000000010', 'BBBB'), ('A000000011', 'CCCC'), ('A000000012', 'DDDD'), ('A000000015', 'DDDD'), ('A000000013', 'EEEE')]:
+            sys.stderr.write("[('A000000009', 'AAAA'), ('A000000014', 'AAAA'), ('A000000016', 'AAAA'), ('A000000010', 'BBBB'), ('A000000011', 'CCCC'), ('A000000012', 'DDDD'), ('A000000015', 'DDDD'), ('A000000013', 'EEEE')] expected")
         node1_cur.execute("select '*' as category, count(*) as cnt from keyword_test group by category")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [('*', 8)]:
+            sys.stderr.write("[('*', 8)] expected")
 
         node2_port = freeport()
         with process.server(mapiport=node2_port, dbname='node2',
@@ -44,9 +46,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
             node2_cur.execute("CREATE REMOTE TABLE keyword_test (toc_no String null,myname String null) on 'mapi:monetdb://localhost:{}/node1/sys/keyword_test'".format(node1_port))
             node2_cur.execute("select * from keyword_test order by myname")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('A000000009', 'AAAA'), ('A000000014', 'AAAA'), ('A000000016', 'AAAA'), ('A000000010', 'BBBB'), ('A000000011', 'CCCC'), ('A000000012', 'DDDD'), ('A000000015', 'DDDD'), ('A000000013', 'EEEE')]:
+                sys.stderr.write("[('A000000009', 'AAAA'), ('A000000014', 'AAAA'), ('A000000016', 'AAAA'), ('A000000010', 'BBBB'), ('A000000011', 'CCCC'), ('A000000012', 'DDDD'), ('A000000015', 'DDDD'), ('A000000013', 'EEEE')] expected")
             node2_cur.execute("select '*' as category, count(*) as cnt from keyword_test group by category")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [('*', 8)]:
+                sys.stderr.write("[('*', 8)] expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
             out, err = node1_proc.communicate()
