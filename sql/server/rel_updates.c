@@ -1211,43 +1211,103 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 	return NULL;
 }
 
+static sql_exp *
+null_check_best_score(list *exps)
+{
+	int max = 0;
+	sql_exp *res = exps->h->data;
+
+	for (node *n = exps->h ; n ; n = n->next) {
+		sql_exp *e = n->data;
+		sql_subtype *t = exp_subtype(e);
+		int score = 0;
+
+		if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
+			score += 700;
+		if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
+			score += 400;
+		if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
+			score += 300;
+
+		if (t) {
+			switch (ATOMstorage(t->type->localtype)) {
+				case TYPE_bte:
+					score += 150 - 8;
+					break;
+				case TYPE_sht:
+					score += 150 - 16;
+					break;
+				case TYPE_int:
+					score += 150 - 32;
+					break;
+				case TYPE_void:
+				case TYPE_lng:
+					score += 150 - 64;
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					score += 150 - 128;
+					break;
+#endif
+				case TYPE_flt:
+					score += 75 - 24;
+					break;
+				case TYPE_dbl:
+					score += 75 - 53;
+					break;
+				default:
+					break;
+			}
+		}
+		if (score > max) {
+			max = score;
+			res = e;
+		}
+	}
+	return res;
+}
+
 #define MERGE_UPDATE_DELETE 1
 #define MERGE_INSERT        2
 
 static sql_rel *
 validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_table, tokens upd_token,
-							 sql_rel *upd_del, sql_rel *bt, sql_rel *extra_projection)
+							 sql_rel *upd_del, sql_rel *join_rel, const char *bt_name)
 {
 	char buf[BUFSIZ];
-	sql_exp *aggr, *bigger, *ex;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-	sql_subfunc *bf;
+	sql_exp *aggr1, *aggr2, *bigger, *ex;
+	sql_subfunc *bf, *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	list *exps = new_exp_list(sql->sa);
-	sql_rel *groupby, *res;
+	sql_rel *groupby1, *groupby2, *res, *cross;
 	const char *join_rel_name = rel_name(joined_table);
+	exp_kind ek = {type_value, card_value, FALSE};
 
 	assert(upd_token == SQL_UPDATE || upd_token == SQL_DELETE);
 
-	groupby = rel_groupby(sql, rel_dup(extra_projection), NULL); //aggregate by all column and count (distinct values)
-	groupby->r = rel_projections(sql, bt, NULL, 1, 0);
-	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby->card, 0);
-	(void) rel_groupby_add_aggr(sql, groupby, aggr);
-	exp_label(sql->sa, aggr, ++sql->label);
+	groupby1 = rel_groupby(sql, rel_dup(join_rel), NULL); /* count the number of rows of the join */
+	aggr1 = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby1->card, 0);
+	(void) rel_groupby_add_aggr(sql, groupby1, aggr1);
+	exp_label(sql->sa, aggr1, ++sql->label);
 
-	if (!(bf = sql_bind_func(sql, "sys", ">", exp_subtype(aggr), exp_subtype(aggr), F_FUNC)))
+	groupby2 = rel_groupby(sql, rel_basetable(sql, t, bt_name), NULL); /* the current count of the table */
+	aggr2 = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby2->card, 0);
+	(void) rel_groupby_add_aggr(sql, groupby2, aggr2);
+	exp_label(sql->sa, aggr2, ++sql->label);
+
+	cross = rel_crossproduct(sql->sa, groupby1, groupby2, op_join); /* both should have 1 row */
+
+	bf = sql_bind_func(sql, "sys", ">", exp_subtype(aggr1), exp_subtype(aggr2), F_FUNC);
+	if (!bf)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: function '>' not found");
-	list_append(exps, exp_ref(sql, aggr));
-	list_append(exps, exp_atom_lng(sql->sa, 1));
+	list_append(exps, exp_ref(sql, aggr1));
+	list_append(exps, exp_ref(sql, aggr2));
 	bigger = exp_op(sql->sa, exps, bf);
-	exp_label(sql->sa, bigger, ++sql->label);
-	groupby = rel_select(sql->sa, groupby, bigger); //select only columns with more than 1 value
+	exp_label(sql->sa, bigger, ++sql->label); /* the join cannot produce more rows than what the table has */
 
-	groupby = rel_groupby(sql, groupby, NULL);
-	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby->card, 0);
-	(void) rel_groupby_add_aggr(sql, groupby, aggr);
-	exp_label(sql->sa, aggr, ++sql->label); //count all of them, if there is at least one, throw the exception
+	res = rel_project(sql->sa, cross, list_append(sa_list(sql->sa), bigger));
+	res = rel_return_zero_or_one(sql, res, ek);
 
-	ex = exp_ref(sql, aggr);
+	ex = exp_ref(sql, res->exps->h->data);
 	snprintf(buf, BUFSIZ, "MERGE %s: Multiple rows in the input relation%s%s%s match the same row in the target %s '%s%s%s'",
 			 (upd_token == SQL_DELETE) ? "DELETE" : "UPDATE",
 			 join_rel_name ? " '" : "", join_rel_name ? join_rel_name : "", join_rel_name ? "'" : "",
@@ -1255,7 +1315,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 			 alias ? alias : t->s ? t->s->base.name : "", alias ? "" : ".", alias ? "" : t->base.name);
 	ex = exp_exception(sql->sa, ex, buf);
 
-	res = rel_exception(sql->sa, groupby, NULL, list_append(new_exp_list(sql->sa), ex));
+	res = rel_exception(sql->sa, res, NULL, list_append(new_exp_list(sql->sa), ex));
 	return rel_list(sql->sa, res, upd_del);
 }
 
@@ -1317,16 +1377,19 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
 					join_rel = rel_dup(join_rel);
 				} else {
-					join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
+					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
 
-				//project columns of both bt and joined + oid to be used on update
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
-				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
-				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+				sql_exp *extra = null_check_best_score(rel_projections(sql, joined, NULL, 1, 0));
+				/* select values with correspondent on the table side, ie they are not null */
+				sql_exp *le = exp_compare(sql->sa, exp_ref(sql, extra), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(extra), NULL)), cmp_equal);
+				set_anti(le);
+				set_has_no_nil(le);
+				set_semantics(le);
+				extra_project = rel_project(sql->sa, rel_select(sql->sa, join_rel, le), rel_projections(sql, join_rel, NULL, 1, 1));
 
 				upd_del = update_generate_assignments(query, t, extra_project, rel_basetable(sql, t, bt_name), sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
@@ -1335,21 +1398,25 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
 					join_rel = rel_dup(join_rel);
 				} else {
-					join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
+					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
 
-				//project columns of bt + oid to be used on delete
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
-				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+				sql_exp *extra = null_check_best_score(rel_projections(sql, joined, NULL, 1, 0));
+				/* select values with correspondent on the table side, ie they are not null */
+				sql_exp *le = exp_compare(sql->sa, exp_ref(sql, extra), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(extra), NULL)), cmp_equal);
+				set_anti(le);
+				set_has_no_nil(le);
+				set_semantics(le);
+				extra_project = rel_project(sql->sa, rel_select(sql->sa, join_rel, le), list_append(new_exp_list(sql->sa), exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
 
 				upd_del = rel_delete(sql->sa, rel_basetable(sql, t, bt_name), extra_project);
 			} else {
 				assert(0);
 			}
-			if (!upd_del || !(upd_del = validate_merge_update_delete(sql, t, alias, joined, uptdel, upd_del, bt, extra_project)))
+			if (!upd_del || !(upd_del = validate_merge_update_delete(sql, t, alias, joined, uptdel, upd_del, join_rel, bt_name)))
 				return NULL;
 		} else if (token == SQL_MERGE_NO_MATCH) {
 			if ((processed & MERGE_INSERT) == MERGE_INSERT)
@@ -1362,7 +1429,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
 				join_rel = rel_dup(join_rel);
 			} else {
-				join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
+				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
 				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 					return NULL;
 				set_processed(join_rel);

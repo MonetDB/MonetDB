@@ -1646,7 +1646,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			if (e->l) {
 				if (rel_base_bind_column2_(rel, e->l, e->r))
 					ne = e;
-			} else if (rel_base_bind_column_(rel, e->r, NULL))
+			} else if (rel_base_bind_column_(rel, e->r))
 				ne = e;
 		} else if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 			if (e->l) {

@@ -1862,9 +1862,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
 		/* order by ? */
-		if (r[*pos] == '[')
-			if (!(rel->r = read_exps(sql, nrel, rel, NULL, r, pos, '[', 0, 1)))
+		if (r[*pos] == '[') {
+			/* first projected expressions, then left relation projections */
+			if (!(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
 				return NULL;
+		}
 		break;
 	case 'g':
 		*pos += (int) strlen("group by");
@@ -1885,11 +1887,14 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		skipWS(r, pos);
-		if (!(exps = read_exps(sql, nrel, NULL, gexps, r, pos, '[', 1, 1)))
-			return NULL;
-
 		rel = rel_groupby(sql, nrel, gexps);
+		rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
+		set_processed(rel); /* don't search beyond the group by */
+		/* first group projected expressions, then group by columns, then left relation projections */
+		if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
+			return NULL;
 		rel->exps = exps;
+		rel->nrcols = list_length(exps);
 		break;
 	case 's':
 	case 'a':
