@@ -568,6 +568,7 @@ typedef struct {
 
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
+typedef struct Strimps Strimps;
 
 /*
  * @+ Binary Association Tables
@@ -732,7 +733,7 @@ typedef struct {
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
-	Heap *strimps;		/* string imprint index  */
+	Strimps *strimps;	/* string imprint index  */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
