@@ -10,13 +10,6 @@
 #define _SHP_
 #include "mal.h"
 #include "mal_client.h"
-/* these are redefined in gdal.h */
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_URL
-#undef PACKAGE_VERSION
 
 /* these were previously defined in monetdb_config.h */
 #undef HAVE_DLFCN_H

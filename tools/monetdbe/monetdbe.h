@@ -11,8 +11,6 @@
 
 #include "monetdb_config.h"
 
-#define MONETDBE_VERSION 1.0.0
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -144,6 +142,8 @@ DEFAULT_STRUCT_DEFINITION(monetdbe_data_date, date);
 DEFAULT_STRUCT_DEFINITION(monetdbe_data_time, time);
 DEFAULT_STRUCT_DEFINITION(monetdbe_data_timestamp, timestamp);
 // UUID, INET, XML ?
+
+monetdbe_export const char *monetdbe_version(void);
 
 monetdbe_export int   monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts);
 /* 0 ok, -1 (allocation failed),  -2 error in db */

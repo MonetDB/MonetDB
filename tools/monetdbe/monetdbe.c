@@ -125,6 +125,12 @@ static daytime time_from_data(monetdbe_data_time *ptr);
 
 static char* monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result_internal* res);
 
+const char *
+monetdbe_version(void)
+{
+	return MONETDBE_VERSION;
+}
+
 static void
 clear_error( monetdbe_database_internal *mdbe)
 {
