@@ -266,6 +266,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#if 0
 /*
  * String imprints.
  */
@@ -329,7 +330,7 @@ PATstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(ob->batCacheid);
 	return MAL_SUCCEED;
 }
-
+#endif
 static str
 PATstrimp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -381,8 +382,8 @@ mel_func batExtensions_init_funcs[] = {
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
 
  /* String imprints */
- pattern("bat", "strimpNDigrams", PATstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
- pattern("bat", "strimpHistogram", PATstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
+ // pattern("bat", "strimpNDigrams", PATstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
+ // pattern("bat", "strimpHistogram", PATstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
  pattern("bat", "strimp", PATstrimp, false, "construct the strimp a BAT", args(1,2,arg("",void),batarg("b",str))),
  { .imp=NULL }
 };

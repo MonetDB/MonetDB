@@ -18,6 +18,9 @@
 /* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
+/* persist strimp heaps for persistent BATs */
+#define PERSISTENTSTRIMP 1
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -382,6 +385,15 @@ struct Imprints {
 	void *dict;		/* pointer into imprints heap (dictionary)    */
 	BUN impcnt;		/* counter for imprints                       */
 	BUN dictcnt;		/* counter for cache dictionary               */
+};
+
+struct Strimps {
+	Heap strimps;
+	void *offsets_base;	/* pointer into strimps heap (pair offsets)  */
+	/* offsets_base is a pointer to either a uint8_t or a uint16_ */
+	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
+	void *strimps_base;	/* pointer into strimps heap (strimps start) */
+	/* strimps_base is a pointer to either a uint32_t or a uint64_t */
 };
 
 typedef struct {
