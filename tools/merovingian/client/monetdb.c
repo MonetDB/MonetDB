@@ -215,7 +215,7 @@ command_help(int argc, char *argv[])
 static void
 command_version(void)
 {
-	printf("MonetDB Database Server Toolkit v%s", VERSION);
+	printf("MonetDB Database Server Toolkit v%s", MONETDB_VERSION);
 #ifdef MONETDB_RELEASE
 	printf(" (%s)", MONETDB_RELEASE);
 #else

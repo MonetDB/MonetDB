@@ -66,7 +66,7 @@ command_help(int argc, char *argv[])
 int
 command_version(void)
 {
-	printf("MonetDB Database Server v%s", VERSION);
+	printf("MonetDB Database Server v%s", MONETDB_VERSION);
 	/* coverity[pointless_string_compare] */
 #ifdef MONETDB_RELEASE
 	printf(" (%s)", MONETDB_RELEASE);

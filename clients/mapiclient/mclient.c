@@ -3349,7 +3349,7 @@ main(int argc, char **argv)
 		case 'v': {
 			mnstr_printf(toConsole,
 				     "mclient, the MonetDB interactive "
-				     "terminal, version %s", VERSION);
+				     "terminal, version %s", MONETDB_VERSION);
 #ifdef MONETDB_RELEASE
 			mnstr_printf(toConsole, " (%s)", MONETDB_RELEASE);
 #else
@@ -3372,6 +3372,8 @@ main(int argc, char **argv)
 				     "character encoding: %s\n",
 				     encoding ? encoding : "utf-8 (default)");
 #endif
+			mnstr_printf(toConsole, "using mapi library %s\n",
+						 mapi_get_mapi_version());
 			return 0;
 		}
 		case 'w':

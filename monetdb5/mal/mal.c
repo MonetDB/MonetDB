@@ -41,6 +41,12 @@ MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
 MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER(mal_oltpLock);
 
+const char *
+mal_version(void)
+{
+	return MONETDB5_VERSION;
+}
+
 /*
  * Initialization of the MAL context
  */

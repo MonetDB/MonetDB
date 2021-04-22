@@ -950,7 +950,7 @@ main(int argc, char *argv[])
 	fclose(pidfile);
 
 	{
-		Mfprintf(stdout, "Merovingian %s", VERSION);
+		Mfprintf(stdout, "Merovingian %s", MONETDB_VERSION);
 #ifdef MONETDB_RELEASE
 		Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
 #else
@@ -1111,7 +1111,7 @@ shutdown:
 
 	/* need to do this here, since the logging thread is shut down as
 	 * next thing */
-	Mfprintf(stdout, "Merovingian %s stopped\n", VERSION);
+	Mfprintf(stdout, "Merovingian %s stopped\n", MONETDB_VERSION);
 
 	_mero_keep_logging = 0;
 	if (tid != 0 && (argp = pthread_join(tid, NULL)) != 0) {
