@@ -2918,8 +2918,11 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	}
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		if (!isLocalTemp(t))
+			tr->logchanges += cnt;
+	}
 	return slot;
 }
 

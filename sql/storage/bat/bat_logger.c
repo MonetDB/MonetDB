@@ -2347,9 +2347,9 @@ bl_log_isnew(sqlstore *store)
 }
 
 static int
-bl_tstart(sqlstore *store, ulng commit_ts)
+bl_tstart(sqlstore *store, ulng commit_ts, bool flush)
 {
-	return log_tstart(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, commit_ts, flush) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int

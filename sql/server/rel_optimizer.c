@@ -4653,7 +4653,7 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 				rel_select_add_exp(v->sql->sa, rel->l, e);
 				list_remove_node(rel->exps, NULL, n);
 				v->changes++;
-			} else if (right && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)) && 
+			} else if (right && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)) &&
 					   rel_rebind_exp(v->sql, rel->r, e)) { /* select expressions on right */
 				sql_rel *r = rel->r;
 				if (!is_select(r->op)) {
