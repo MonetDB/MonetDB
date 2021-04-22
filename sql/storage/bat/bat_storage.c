@@ -2392,6 +2392,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 
 	/* for cleared tables the bid is reset */
 	if (cbat->bid == 0) {
+		assert(cbat->cleared);
 		cbat->bid = obat->bid;
 		if (cbat->bid)
 			temp_dup(cbat->bid);
@@ -2424,11 +2425,13 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		cbat->cached = NULL;
 		if (!obat->bid) {
 			cur = temp_descriptor(obat->ibid);
-			obat->bid = obat->ibid;
-			obat->cnt = obat->ibase = BATcount(cur);
-			obat->ibid = e_bat(cur->ttype);
+			if (BATcount(cur) > SNAPSHOT_MINSIZE) {
+				obat->bid = obat->ibid;
+				obat->cnt = obat->ibase = BATcount(cur);
+				obat->ibid = e_bat(cur->ttype);
+				obat->cleared = 0;
+			}
 			bat_destroy(cur);
-			obat->cleared = 0;
 		}
 		return ok;
 	}
