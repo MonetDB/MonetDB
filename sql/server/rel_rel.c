@@ -233,104 +233,73 @@ rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps)
 	return rel;
 }
 
-static sql_rel *
-rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, int no_tname)
-{
-	int ambiguous = 0, multi = 0;
-	sql_rel *l = NULL, *r = NULL;
-
-	if (mvc_highwater(sql))
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-
-	switch(rel->op) {
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full: {
-		r = rel_bind_column_(sql, exp_has_nil, rel->r, cname, no_tname);
-		sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, &multi, 0):NULL;
-
-		if (!r || !e || !is_freevar(e)) {
-			l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-			if (l && r && !is_dependent(rel))
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-		}
-		if (sql->session->status == -ERR_AMBIGUOUS)
-			return NULL;
-		if (l && !r) {
-			if (is_full(rel->op) || is_right(rel->op))
-				*exp_has_nil = 1;
-			return l;
-		}
-		if (r && (is_full(rel->op) || is_left(rel->op)))
-			*exp_has_nil = 1;
-		return r;
-	}
-	case op_basetable:
-		if (!rel->exps)
-			return rel_base_bind_column_(rel, cname, exp_has_nil);
-		/* fall through */
-	case op_union:
-	case op_except:
-	case op_inter:
-	case op_groupby:
-	case op_project:
-	case op_table: {
-		sql_exp *found = NULL;
-
-		if (rel->exps)
-			found = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
-		if (!found && rel->r && is_groupby(rel->op))
-			found = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
-		if (ambiguous || multi)
-			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-		if (found)
-			return rel;
-		if (is_processed(rel))
-			return NULL;
-		if (rel->l && !(is_base(rel->op)))
-			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-		} break;
-	case op_semi:
-	case op_anti:
-
-	case op_select:
-	case op_topn:
-	case op_sample:
-		if (rel->l)
-			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-		/* fall through */
-	default:
-		return NULL;
-	}
-	return NULL;
-}
-
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 {
-	int exp_has_nil = 0; /* mark if we passed any outer joins */
+	int ambiguous = 0, multi = 0;
 
-	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
-		rel = rel->l;
-
-	if (!rel || (rel = rel_bind_column_(sql, &exp_has_nil, rel, cname, no_tname)) == NULL)
+	if (!rel)
 		return NULL;
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (is_basetable(rel->op) && !rel->exps)
-		return rel_base_bind_column(sql, rel, cname, no_tname);
-	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
-		sql_exp *e = exps_bind_column(rel->exps, cname, NULL, NULL, no_tname);
-		if (e)
-			e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
-		if (!e && is_groupby(rel->op) && rel->r) {
-			sql_exp *e = exps_bind_column(rel->r, cname, NULL, NULL, no_tname);
-			if (e)
-				e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+	if ((is_project(rel->op) || is_base(rel->op))) {
+		sql_exp *e = NULL;
+
+		if (is_base(rel->op) && !rel->exps)
+			return rel_base_bind_column(sql, rel, cname, no_tname);
+		if (!list_empty(rel->exps)) {
+			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+			if (ambiguous || multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+			if (!e && is_groupby(rel->op) && rel->r) {
+				e = exps_bind_alias(rel->r, NULL, cname);
+				if (e) {
+					e = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
+					if (ambiguous || multi)
+						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+					return e;
+				}
+			}
 		}
-		if (e && exp_has_nil)
-			set_has_nil(e);
-		return e;
+		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
+			e = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
+			if (ambiguous || multi)
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+			if (e) {
+				e = exp_ref(sql, e);
+				e->card = rel->card;
+				return e;
+			}
+		}
+		if (e)
+			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+	}
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+		if (!is_processed(rel))
+			return rel_bind_column(sql, rel->l, cname, f, no_tname);
+	} else if (is_set(rel->op)) {
+		assert(is_processed(rel));
+		return NULL;
+	} else if (is_join(rel->op)) {
+		sql_exp *e1 = rel_bind_column(sql, rel->l, cname, f, no_tname), *e2 = NULL;
+
+		if (e1 && (is_right(rel->op) || is_full(rel->op)))
+			set_has_nil(e1);
+		if (!e1 || !is_freevar(e1)) {
+			e2 = rel_bind_column(sql, rel->r, cname, f, no_tname);
+			if (e2 && (is_left(rel->op) || is_full(rel->op)))
+				set_has_nil(e2);
+			if (e1 && e2 && !is_dependent(rel))
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+		}
+		return e1 ? e1 : e2;
+	} else if (is_semi(rel->op) ||
+		   is_select(rel->op) ||
+		   is_topn(rel->op) ||
+		   is_sample(rel->op)) {
+		if (rel->l)
+			return rel_bind_column(sql, rel->l, cname, f, no_tname);
 	}
 	return NULL;
 }
@@ -342,6 +311,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 
 	if (!rel)
 		return NULL;
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if ((is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = NULL;
@@ -1075,7 +1046,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		if (e->l)
 			found = (rel_base_bind_column2_(rel, e->l, e->r) != NULL);
 		else
-			found = (rel_base_bind_column_(rel, e->r, NULL) != NULL);
+			found = (rel_base_bind_column_(rel, e->r) != NULL);
 		break;
 	case op_union:
 	case op_inter:
