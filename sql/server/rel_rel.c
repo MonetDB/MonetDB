@@ -317,7 +317,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 		if (e)
 			e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 		if (!e && is_groupby(rel->op) && rel->r) {
-			sql_exp *e = exps_bind_column(rel->r, cname, NULL, NULL, no_tname);
+			e = exps_bind_column(rel->r, cname, NULL, NULL, no_tname);
 			if (e)
 				e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 		}

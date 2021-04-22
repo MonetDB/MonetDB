@@ -1,0 +1,16 @@
+stdout of test 'remote-table-groupby.Bug-7110` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 10:13:57 >  
+# 10:13:57 >  "/usr/bin/python3.9" "remote-table-groupby.Bug-7110.py" "remote-table-groupby.Bug-7110"
+# 10:13:57 >  
+
+[('A000000009', 'AAAA'), ('A000000014', 'AAAA'), ('A000000016', 'AAAA'), ('A000000010', 'BBBB'), ('A000000011', 'CCCC'), ('A000000012', 'DDDD'), ('A000000015', 'DDDD'), ('A000000013', 'EEEE')]
+[('*', 8)]
+[('A000000009', 'AAAA'), ('A000000014', 'AAAA'), ('A000000016', 'AAAA'), ('A000000010', 'BBBB'), ('A000000011', 'CCCC'), ('A000000012', 'DDDD'), ('A000000015', 'DDDD'), ('A000000013', 'EEEE')]
+[('*', 8)]
+
+# 10:13:59 >  
+# 10:13:59 >  "Done."
+# 10:13:59 >  
+
