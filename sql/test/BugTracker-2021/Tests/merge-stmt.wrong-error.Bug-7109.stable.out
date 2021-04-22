@@ -1,0 +1,47 @@
+stdout of test 'merge-stmt.wrong-error.Bug-7109` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 23:15:06 >  
+# 23:15:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=35497" "--set" "mapi_usock=/var/tmp/mtest-14496/.s.monetdb.35497" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 23:15:06 >  
+
+# MonetDB 5 server v11.39.16 (hg id: eca29d0d38a6)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2021', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.493 GiB available main-memory of which we use 12.627 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2021 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:35497/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14496/.s.monetdb.35497
+# MonetDB/GIS module loaded
+# MonetDB/R   module loaded
+# MonetDB/SQL module loaded
+
+# 23:15:07 >  
+# 23:15:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14496" "--port=35497"
+# 23:15:07 >    
+
+#start transaction;
+#create table ce (id bigint);
+#insert into ce values (1), (2);
+[ 2	]
+#create table attr (id bigint, value text);
+#insert into attr values (1,'a'),(1,'b'),(2,'a'),(2,'a'),(3,'a'),(3,'b');
+[ 6	]
+#merge into attr using ce on ce.id = attr.id when matched then delete;
+[ 4	]
+#select * from attr;
+% sys.attr,	sys.attr # table_name
+% id,	value # name
+% bigint,	clob # type
+% 1,	1 # length
+[ 3,	"a"	]
+[ 3,	"b"	]
+#rollback;
+
+# 23:15:07 >  
+# 23:15:07 >  "Done."
+# 23:15:07 >  
+
