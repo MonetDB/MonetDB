@@ -30,7 +30,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			sql_exp *e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
+			sql_exp *e = rel_parse_val(sql, c->t->s, c->def, &c->type, sql->emode, NULL);
 			if (!e || (e = exp_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 			return e;
@@ -357,7 +357,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_exp *e = NULL;
 
 				if (c->def) {
-					e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
+					e = rel_parse_val(sql, t->s, c->def, &c->type, sql->emode, NULL);
 					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 						return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 				} else {
@@ -964,7 +964,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (!c)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, colname);
 				if (c->def) {
-					v = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
+					v = rel_parse_val(sql, t->s, c->def, &c->type, sql->emode, NULL);
 				} else {
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 				}
@@ -1847,7 +1847,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 }
 
 sql_exp *
-rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
+rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 {
 	mvc o = *m;
 	sql_exp *e = NULL;
@@ -1859,6 +1859,9 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 	bstream *bs;
 
 	m->qc = NULL;
+
+	if (sch)
+		m->session->schema = sch;
 
 	m->emode = emode;
 	b = malloc(sizeof(buffer));

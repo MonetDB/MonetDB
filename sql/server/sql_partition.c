@@ -249,7 +249,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 
 	r = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
-	if ((exp = rel_parse_val(sql, query, NULL, sql->emode, r)) == NULL) {
+	if (!(exp = rel_parse_val(sql, mt->s, query, NULL, sql->emode, r))) {
 		if (*sql->errstr) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.partition", "%s", sql->errstr);

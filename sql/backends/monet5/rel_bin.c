@@ -1670,9 +1670,9 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 }
 
 static stmt *
-parse_value(backend *be, char *query, sql_subtype *tpe, char emode)
+parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emode)
 {
-	sql_exp *e = rel_parse_val(be->mvc, query, tpe, emode, NULL);
+	sql_exp *e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL);
 	if (e)
 		return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 	return sql_error(be->mvc, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -4740,7 +4740,7 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 
 		if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				stmt *sq = parse_value(be, fc->c->def, &fc->c->type, sql->emode);
+				stmt *sq = parse_value(be, fc->c->t->s, fc->c->def, &fc->c->type, sql->emode);
 				if (!sq)
 					return NULL;
 				upd = sq;
@@ -4798,7 +4798,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 			upd = updates[c->c->colnr];
 		} else if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				stmt *sq = parse_value(be, fc->c->def, &fc->c->type, sql->emode);
+				stmt *sq = parse_value(be, fc->c->t->s, fc->c->def, &fc->c->type, sql->emode);
 				if (!sq)
 					return NULL;
 				upd = sq;

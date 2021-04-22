@@ -36,7 +36,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		//res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
-		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, mt->s, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 	} else {
 		assert(0);
@@ -100,7 +100,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		res = list_fetch((*anti_rel)->exps, colr);
 	} else if (isPartitionedByExpressionTable(t)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
-		if (!(res = rel_parse_val(sql, t->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, t->s, t->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 		exp_label(sql->sa, res, ++sql->label);
 		append((*anti_rel)->exps, res);
