@@ -1320,6 +1320,14 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					ok = LOG_ERR;
 			}
 		} else {
+			if (!BATtordered(i)) {
+				assert(oi == i);
+				BAT *ni = NULL;
+				if (BATsort(&ni, NULL, NULL, i, NULL, NULL, false, false, false) != GDK_SUCCEED)
+					ok = LOG_ERR;
+				if (ni)
+					i = ni;
+			}
 			assert(BATtordered(i));
 			BUN icnt = BATcount(i);
 			oid *o = Tloc(i,0), n = o[0]+1;
