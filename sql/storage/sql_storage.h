@@ -291,7 +291,7 @@ typedef struct store_functions {
 
 	snapshot_fptr save_snapshot;
 
-	/* rollforward the changes, first snapshot, then log and finaly apply */
+	/* rollforward the changes, first snapshot, then log and finally apply */
 	update_table_fptr snapshot_table;
 	update_table_fptr log_table;
 	update_table_fptr update_table;
