@@ -3315,9 +3315,11 @@ sql_trans_commit(sql_trans *tr)
 		}
 	}
 	if (tr->changes) {
+		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
+		int flush = (tr->logchanges > min_changes && !store->changes);
 		/* log changes should only be done if there is something to log */
 		if (tr->logchanges > 0) {
-			ok = store->logger_api.log_tstart(store, commit_ts);
+			ok = store->logger_api.log_tstart(store, commit_ts, flush);
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
@@ -3329,7 +3331,7 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
-			if (ok == LOG_OK)
+			if (ok == LOG_OK && !flush)
 				ok = store->logger_api.log_tend(store);
 		}
 		tr->logchanges = 0;
@@ -3342,6 +3344,9 @@ sql_trans_commit(sql_trans *tr)
 			else
 				c->obj->flags = 0;
 		}
+		/* flush logger after changes got applied */
+		if (ok == LOG_OK && flush)
+			ok = store->logger_api.log_tend(store);
 		/* garbage collect */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
 			node *next = n->next;

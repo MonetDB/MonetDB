@@ -219,7 +219,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	// No comma at the beginning
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
-				"\"version\":\""VERSION" (hg id: %s)\""
+				"\"version\":\""MONETDB_VERSION" (hg id: %s)\""
 				",\"user\":"OIDFMT
 				",\"clk\":"LLFMT
 				",\"mclk\":%"PRIu64""

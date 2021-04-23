@@ -48,7 +48,7 @@ static gdk_return logger_del_bat(logger *lg, log_bid bid);
 
 #define BATSIZE 0
 
-#define LOG_DISABLED(lg) ((lg)->debug&128 || (lg)->inmemory)
+#define LOG_DISABLED(lg) ((lg)->debug&128 || (lg)->inmemory || (lg)->flushnow)
 
 static const char *log_commands[] = {
 	"LOG_START",
@@ -1386,7 +1386,7 @@ bm_subcommit(logger *lg)
 	sizes[i] = 0;
 	n[i++] = 0;		/* n[0] is not used */
 	bids = (const log_bid *) Tloc(catalog_bid, 0);
-	if (!LOG_DISABLED(lg) && lg->catalog_cnt)
+	if (/*!LOG_DISABLED(lg) && */lg->catalog_cnt)
 		cnts = (const lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (const lng *) Tloc(lg->catalog_lid, 0);
@@ -1402,6 +1402,7 @@ bm_subcommit(logger *lg)
 		n[i++] = col;
 	}
 	/* now commit catalog, so it's also up to date on disk */
+	assert(!LOG_DISABLED(lg) || BATcount(catalog_bid) == lg->cnt);
 	sizes[i] = lg->cnt;
 	n[i++] = catalog_bid->batCacheid;
 	sizes[i] = lg->cnt;
@@ -2212,6 +2213,8 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (nr)
+			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
 	}
 
@@ -2260,6 +2263,8 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (nr)
+			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
 	}
 
@@ -2343,13 +2348,11 @@ log_bat_persists(logger *lg, BAT *b, int id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
+	} else {
+		lg->cnt++;
 	}
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
-	if (LOG_DISABLED(lg)) {
-		logger_unlock(lg);
-		return GDK_SUCCEED;
-	}
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
 	logger_unlock(lg);
 	return r;
@@ -2365,15 +2368,14 @@ log_bat_transient(logger *lg, int id)
 	l.flag = LOG_DESTROY;
 	l.id = id;
 
-	if (LOG_DISABLED(lg)) {
-		logger_unlock(lg);
-		return GDK_SUCCEED;
-	}
-
-	if (log_write_format(lg, &l) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "write failed\n");
-		logger_unlock(lg);
-		return GDK_FAIL;
+	if (!LOG_DISABLED(lg)) {
+		if (log_write_format(lg, &l) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "write failed\n");
+			logger_unlock(lg);
+			return GDK_FAIL;
+		}
+	} else {
+		lg->cnt--;
 	}
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
@@ -2466,7 +2468,8 @@ log_bat_clear(logger *lg, int id)
 	logformat l;
 
 	if (LOG_DISABLED(lg))
-		return GDK_SUCCEED;
+		return la_bat_update_count(lg, id, 0);
+	//	return GDK_SUCCEED;
 
 	l.flag = LOG_CLEAR;
 	l.id = id;
@@ -2516,14 +2519,18 @@ log_tend(logger *lg)
 	logformat l;
 	gdk_return res = GDK_SUCCEED;
 
-	if (LOG_DISABLED(lg))
-		return GDK_SUCCEED;
-
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tend %d\n", lg->tid);
 
 	l.flag = LOG_END;
 	l.id = lg->tid;
+	if (lg->flushnow) {
+		lg->flushnow = 0;
+		return logger_commit(lg);
+	}
+
+	if (LOG_DISABLED(lg))
+		return GDK_SUCCEED;
 
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
@@ -2690,16 +2697,27 @@ logger_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, ulng commit_ts)
+log_tstart(logger *lg, ulng commit_ts, bool flushnow)
 {
 	logformat l;
 
+	if (flushnow) {
+		lg->id++;
+		logger_close_output(lg);
+		/* start new file */
+		if (logger_open_output(lg) != GDK_SUCCEED)
+			return GDK_FAIL;
+		while (lg->saved_id+1 < lg->id)
+			logger_flush(lg, commit_ts);
+		lg->flushnow = flushnow;
+	}
+	if (lg->current) {
+		lg->current->last_tid = lg->tid+1;
+		lg->current->last_ts = commit_ts;
+	}
+
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
-
-	assert(lg->current);
-	lg->current->last_tid = lg->tid+1;
-	lg->current->last_ts = commit_ts;
 
 	l.flag = LOG_START;
 	l.id = ++lg->tid;

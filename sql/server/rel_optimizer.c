@@ -4198,10 +4198,6 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			}
 		}
 
-		u = rel_setop(v->sql->sa, ul, ur, op_union);
-		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1));
-		set_processed(u);
-
 		if (rel->r) {
 			list *ogbe = rel->r;
 
@@ -4209,15 +4205,27 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			for (n = ogbe->h; n; n = n->next) {
 				sql_exp *e = n->data, *ne;
 
+				/* group by in aggreation list */
 				ne = exps_uses_exp( rel->exps, e);
-				if (!ne)
-					continue;
-				ne = list_find_exp( u->exps, ne);
+				if (ne)
+					ne = list_find_exp( ul->exps, ne);
+				if (!ne) {
+					/* e only in the ul/ur->r (group by list) */
+					ne = exp_ref(v->sql, e);
+					list_append(ul->exps, ne);
+					ne = exp_ref(v->sql, e);
+					list_append(ur->exps, ne);
+				}
 				assert(ne);
 				ne = exp_ref(v->sql, ne);
 				append(gbe, ne);
 			}
 		}
+
+		u = rel_setop(v->sql->sa, ul, ur, op_union);
+		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1));
+		set_processed(u);
+
 		exps = new_exp_list(v->sql->sa);
 		for (n = u->exps->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 			sql_exp *ne, *e = n->data, *oa = m->data;

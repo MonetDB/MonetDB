@@ -29,7 +29,7 @@ extern char *rel_base_name(sql_rel *r);
 extern char *rel_base_rename(sql_rel *r, char *name);
 
 extern sql_exp * rel_base_bind_colnr( mvc *sql, sql_rel *rel, int nr);
-extern sql_rel *rel_base_bind_column_( sql_rel *rel, const char *cname, int *exp_has_nil);
+extern sql_rel *rel_base_bind_column_( sql_rel *rel, const char *cname);
 extern sql_exp *rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname);
 extern sql_rel *rel_base_bind_column2_( sql_rel *rel, const char *tname, const char *cname);
 extern sql_exp *rel_base_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname);

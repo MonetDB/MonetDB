@@ -891,7 +891,6 @@ enum mapi_lang_t {
 */
 struct MapiStruct {
 	char *server;		/* server version */
-	const char *mapiversion; /* mapi version */
 	char *hostname;
 	int port;
 	char *username;
@@ -1909,7 +1908,6 @@ static const struct MapiStruct MapiStructDefaults = {
 	.auto_commit = true,
 	.error = MOK,
 	.languageId = LANG_SQL,
-	.mapiversion = "mapi 1.0",
 	.cachelimit = 100,
 	.redirmax = 10,
 	.blk.eos = false,
@@ -5671,9 +5669,9 @@ mapi_get_uri(Mapi mid)
 }
 
 const char *
-mapi_get_mapi_version(Mapi mid)
+mapi_get_mapi_version(void)
 {
-	return mid->mapiversion;
+	return MAPI_VERSION;
 }
 
 const char *

@@ -49,8 +49,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
-	 "optimizer.candidates();"
+	 //"optimizer.profiler();" only for decoration in the profiler
+	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
