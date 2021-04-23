@@ -1955,7 +1955,8 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	node *n;
 	Symbol remote_prg = NULL;
 	blob *bbuf = NULL;
-	size_t pos = 0, bbuf_len = 0;
+	size_t pos = 0;
+	var_t bbuf_len = 0;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -2159,8 +2160,8 @@ remote_cleanup:
 			monetdbe_data_blob* be = (monetdbe_data_blob*)v;
 
 			if (!bbuf) {
-				bbuf_len = 1024;
-				if (!(bbuf = (blob*) GDKmalloc(bbuf_len + sizeof(blob)))) {
+				bbuf_len = blobsize(1024);
+				if (!(bbuf = (blob*) GDKmalloc(bbuf_len))) {
 					mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -2173,10 +2174,11 @@ remote_cleanup:
 					res = store->storage_api.append_col(m->session->tr, c, pos+j, (blob*)nil, mtype, 1);
 				} else {
 					size_t len = be[j].size;
+					var_t nlen = blobsize(len);
 
-					if (len > bbuf_len) { /* reuse buffer and reallocate only when the new input size becomes larger */
-						size_t newlen = (((len) + 1023) & ~1023); /* align to a multiple of 1024 bytes */
-						blob *newbuf = GDKmalloc(newlen + sizeof(blob));
+					if (nlen > bbuf_len) { /* reuse buffer and reallocate only when the new input size becomes larger */
+						var_t newlen = ((nlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
+						blob *newbuf = GDKmalloc(newlen);
 						if (!newbuf) {
 							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 							goto cleanup;
