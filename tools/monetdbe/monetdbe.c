@@ -2084,11 +2084,11 @@ remote_cleanup:
 			monetdbe_data_blob* be = (monetdbe_data_blob*)v;
 
 			if (!bbuf) {
-				if (!(bbuf = (blob*) GDKmalloc(1024))) {
+				bbuf_len = 1024;
+				if (!(bbuf = (blob*) GDKmalloc(bbuf_len + sizeof(blob)))) {
 					mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
-				bbuf_len = 1024;
 			}
 
 			for (size_t j=0; j<cnt; j++){
@@ -2101,7 +2101,7 @@ remote_cleanup:
 
 					if (len > bbuf_len) { /* reuse buffer and reallocate only when the new input size becomes larger */
 						size_t newlen = (((len) + 1023) & ~1023); /* align to a multiple of 1024 bytes */
-						blob *newbuf = GDKmalloc(newlen);
+						blob *newbuf = GDKmalloc(newlen + sizeof(blob));
 						if (!newbuf) {
 							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 							goto cleanup;
