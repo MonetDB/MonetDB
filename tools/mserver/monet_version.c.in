@@ -79,7 +79,7 @@ monet_version(void)
 #ifdef HAVE_LIBPCRE
 	print_libversion("libpcre",
 					 pcre_version(),
-					 XSTRING(PCRE_MAJOR.PCRE_MINOR) XSTRING(PCRE_PRERELEASE)
+					 XSTRING(PCRE_MAJOR.PCRE_MINOR) XSTRING("" PCRE_PRERELEASE)
 					 " " XSTRING(PCRE_DATE));
 #endif
 #ifdef HAVE_OPENSSL
