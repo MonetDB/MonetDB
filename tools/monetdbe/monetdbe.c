@@ -125,6 +125,43 @@ static daytime time_from_data(monetdbe_data_time *ptr);
 
 static char* monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result_internal* res);
 
+static int
+date_is_null(monetdbe_data_date *value)
+{
+	monetdbe_data_date null_value;
+	data_from_date(date_nil, &null_value);
+	return value->year == null_value.year && value->month == null_value.month &&
+		   value->day == null_value.day;
+}
+
+static int
+time_is_null(monetdbe_data_time *value)
+{
+	monetdbe_data_time null_value;
+	data_from_time(daytime_nil, &null_value);
+	return value->hours == null_value.hours &&
+		   value->minutes == null_value.minutes &&
+		   value->seconds == null_value.seconds && value->ms == null_value.ms;
+}
+
+static int
+timestamp_is_null(monetdbe_data_timestamp *value)
+{
+	return is_timestamp_nil(timestamp_from_data(value));
+}
+
+static int
+str_is_null(char **value)
+{
+	return !value || *value == NULL;
+}
+
+static int
+blob_is_null(monetdbe_data_blob *value)
+{
+	return !value || value->data == NULL;
+}
+
 const char *
 monetdbe_version(void)
 {
@@ -1420,14 +1457,52 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 {
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
 
-	/* TODO !data treat as NULL value (add nil mask) ? */
 	if (i >= stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
 	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
 	assert(a);
-	stmt_internal->data[i].vtype = a->type.type->localtype;
-	/* TODO handle conversion from NULL and special types */
-	VALset(&stmt_internal->data[i], a->type.type->localtype, data);
+	int tpe = a->type.type->localtype;
+	stmt_internal->data[i].vtype = tpe;
+
+	const void* nil = (tpe>=0)?ATOMnilptr(tpe):NULL;
+	if (!data) {
+		VALset(&stmt_internal->data[i], tpe, (ptr)nil);
+	} else if (tpe == TYPE_timestamp) {
+		monetdbe_data_timestamp* ts = (monetdbe_data_timestamp*)data;
+		timestamp t = *(timestamp*) nil;
+		if(!timestamp_is_null(ts))
+			t = timestamp_from_data(ts);
+		VALset(&stmt_internal->data[i], tpe, &t);
+	} else if (tpe == TYPE_date) {
+		monetdbe_data_date* de = (monetdbe_data_date*)data;
+		date d = *(date*) nil;
+		if(!date_is_null(de))
+			d = date_from_data(de);
+		VALset(&stmt_internal->data[i], tpe, &d);
+	} else if (tpe == TYPE_daytime) {
+		monetdbe_data_time* t = (monetdbe_data_time*)data;
+		daytime dt = *(daytime*) nil;
+
+		if(!time_is_null(t))
+			dt = time_from_data(t);
+		VALset(&stmt_internal->data[i], tpe, &dt);
+	} else if (tpe == TYPE_blob) {
+		monetdbe_data_blob *be = (monetdbe_data_blob*)data;
+		blob *b = (blob*)nil;
+		if (!blob_is_null(be)) {
+			size_t len = be->size;
+			b = (blob*) GDKmalloc(blobsize(len));
+			if (b == NULL) {
+				stmt_internal->mdbe->msg = createException(MAL, "monetdbe.monetdbe_bind", MAL_MALLOC_FAIL);
+				return stmt_internal->mdbe->msg;
+			}
+			b->nitems = len;
+			memcpy(b->data, be->data, len);
+		}
+		VALset(&stmt_internal->data[i], tpe, b);
+	} else {
+		VALset(&stmt_internal->data[i], tpe, data);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1465,6 +1540,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		}
 
 		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		res_internal = *(monetdbe_result_internal**)result;
 	}
 cleanup:
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
@@ -2503,41 +2579,4 @@ timestamp_from_data(monetdbe_data_timestamp *ptr)
 	return timestamp_create(
 		date_create(ptr->date.year, ptr->date.month, ptr->date.day),
 		daytime_create(ptr->time.hours, ptr->time.minutes, ptr->time.seconds, ptr->time.ms * 1000));
-}
-
-static int
-date_is_null(monetdbe_data_date *value)
-{
-	monetdbe_data_date null_value;
-	data_from_date(date_nil, &null_value);
-	return value->year == null_value.year && value->month == null_value.month &&
-		   value->day == null_value.day;
-}
-
-static int
-time_is_null(monetdbe_data_time *value)
-{
-	monetdbe_data_time null_value;
-	data_from_time(daytime_nil, &null_value);
-	return value->hours == null_value.hours &&
-		   value->minutes == null_value.minutes &&
-		   value->seconds == null_value.seconds && value->ms == null_value.ms;
-}
-
-static int
-timestamp_is_null(monetdbe_data_timestamp *value)
-{
-	return is_timestamp_nil(timestamp_from_data(value));
-}
-
-static int
-str_is_null(char **value)
-{
-	return !value || *value == NULL;
-}
-
-static int
-blob_is_null(monetdbe_data_blob *value)
-{
-	return !value || value->data == NULL;
 }
