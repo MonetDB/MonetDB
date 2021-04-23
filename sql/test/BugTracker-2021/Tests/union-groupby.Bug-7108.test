@@ -1,4 +1,7 @@
-START TRANSACTION;
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "sys"."lineitem_denormalized_first1k_sanitised" (
 	"Customer_Gender"        VARCHAR(255),
 	"Customer_Region"        VARCHAR(255),
@@ -33,8 +36,11 @@ CREATE TABLE "sys"."lineitem_denormalized_first1k_sanitised" (
 	"Line_Cost"              DOUBLE,
 	"Line_Margin"            DOUBLE,
 	"Line_Margin_Percent"    DOUBLE
-);
-COPY 200 RECORDS INTO "sys"."lineitem_denormalized_first1k_sanitised" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+)
+
+statement ok
+COPY 200 RECORDS INTO "sys"."lineitem_denormalized_first1k_sanitised" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 "f"	"APAC"	"People's Republic of China"	"Sichuan"	"Yibin"	"1957-09-19 00:00:00.000000"	99425	"Non-consumables"	"Clothing"	"Clothing"	"Croft & Barrow Velour Separates"	1757	30	-3.2	55.95	"Edinburgh, United Kingdom"	"Melody J. Hambard"	"+44-875-777-1712"	"EUROPE"	"United Kingdom"	"Scotland"	"Edinburgh"	"2010-11-03 00:00:00.000000"	"2010-01-01 00:00:00.000000"	"2010-10-01 00:00:00.000000"	"2010-11-01 00:00:00.000000"	201011	20101103	"03NOV2010"	482.7	354.87	127.83	26.482
 "f"	"APAC"	"People's Republic of China"	"Sichuan"	"Yibin"	"1957-09-19 00:00:00.000000"	99425	"Non-consumables"	"Clothing"	"Clothing"	"Men's Beanies"	2951	30	-3.2	55.95	"Edinburgh, United Kingdom"	"Melody J. Hambard"	"+44-875-777-1712"	"EUROPE"	"United Kingdom"	"Scotland"	"Edinburgh"	"2010-11-03 00:00:00.000000"	"2010-01-01 00:00:00.000000"	"2010-10-01 00:00:00.000000"	"2010-11-01 00:00:00.000000"	201011	20101103	"03NOV2010"	260.2	72.76	187.44	72.036
 "f"	"APAC"	"People's Republic of China"	"Sichuan"	"Yibin"	"1957-09-19 00:00:00.000000"	99425	"Non-consumables"	"Clothing"	"Clothing"	"Smartwool Ski Socks"	3502	30	-3.2	55.95	"Edinburgh, United Kingdom"	"Melody J. Hambard"	"+44-875-777-1712"	"EUROPE"	"United Kingdom"	"Scotland"	"Edinburgh"	"2010-11-03 00:00:00.000000"	"2010-01-01 00:00:00.000000"	"2010-10-01 00:00:00.000000"	"2010-11-01 00:00:00.000000"	201011	20101103	"03NOV2010"	384.87	287.16	97.71	25.387
@@ -236,9 +242,10 @@ COPY 200 RECORDS INTO "sys"."lineitem_denormalized_first1k_sanitised" FROM stdin
 "m"	"MIDDLE EAST"	"Turkey"	"Mardin"	"Yesilli"	"1951-07-12 00:00:00.000000"	99428	"Food"	"Health foods"	"Fruits"	"Nectarines"	10390	69	-43.93333333	-19.91666667	"Belo Horizonte, Brazil"	"Lallie E. Chudderley"	"+55-168-133-9169"	"SAMER"	"Brazil"	"Minas Gerais"	"Belo Horizonte"	"2010-11-18 00:00:00.000000"	"2010-01-01 00:00:00.000000"	"2010-10-01 00:00:00.000000"	"2010-11-01 00:00:00.000000"	201011	20101118	"18NOV2010"	21.75	0.7	21.05	96.781
 "m"	"MIDDLE EAST"	"Turkey"	"Mardin"	"Yesilli"	"1951-07-12 00:00:00.000000"	99428	"Food"	"Health foods"	"Fruits"	"Figs"	10411	69	-43.93333333	-19.91666667	"Belo Horizonte, Brazil"	"Lallie E. Chudderley"	"+55-168-133-9169"	"SAMER"	"Brazil"	"Minas Gerais"	"Belo Horizonte"	"2010-11-18 00:00:00.000000"	"2010-01-01 00:00:00.000000"	"2010-10-01 00:00:00.000000"	"2010-11-01 00:00:00.000000"	201011	20101118	"18NOV2010"	2.19	0	2.19	100
 
-with "t3ick" as (select "t1jc"."Customer_Gender", "t1jc"."Customer_Region", "t1jc"."Customer_Country", "t1jc"."Customer_State", "t1jc"."Customer_City", "t1jc"."Customer_Date_Of_Birth", "t1jc"."Customer_Id", "t1jc"."Product_Family", "t1jc"."Product_Category", "t1jc"."Product_Subcategory", 
+query TT nosort
+with "t3ick" as (select "t1jc"."Customer_Gender", "t1jc"."Customer_Region", "t1jc"."Customer_Country", "t1jc"."Customer_State", "t1jc"."Customer_City", "t1jc"."Customer_Date_Of_Birth", "t1jc"."Customer_Id", "t1jc"."Product_Family", "t1jc"."Product_Category", "t1jc"."Product_Subcategory",
 "t1jc"."Product_Name", "t1jc"."Product_Id", "t1jc"."Store_Id", "t1jc"."Store_Longitude", "t1jc"."Store_Latitude", "t1jc"."Store_Name", "t1jc"."Store_Manager", "t1jc"."Store_Phone_Number", "t1jc"."Store_Region", "t1jc"."Store_Country", "t1jc"."Store_State", "t1jc"."Store_City",
-"t1jc"."Order_Date", "t1jc"."Year_Begin_Date", "t1jc"."Quarter_Begin_Date", "t1jc"."Month_Begin_Date", "t1jc"."Yyyymm", "t1jc"."Yyyymmdd", "t1jc"."Ddmonyyyy", "t1jc"."Line_Price", "t1jc"."Line_Cost", "t1jc"."Line_Margin", "t1jc"."Line_Margin_Percent" 
+"t1jc"."Order_Date", "t1jc"."Year_Begin_Date", "t1jc"."Quarter_Begin_Date", "t1jc"."Month_Begin_Date", "t1jc"."Yyyymm", "t1jc"."Yyyymmdd", "t1jc"."Ddmonyyyy", "t1jc"."Line_Price", "t1jc"."Line_Cost", "t1jc"."Line_Margin", "t1jc"."Line_Margin_Percent"
 from "lineitem_denormalized_first1k_sanitised" as "t1jc" where "Line_Margin_Percent" = '0x1.7775c28f5c28fp6'), "t3idm" as (select "t1jc"."Customer_Gender", "t1jc"."Customer_Region", "t1jc"."Customer_Country", "t1jc"."Customer_State", "t1jc"."Customer_City",
 "t1jc"."Customer_Date_Of_Birth", "t1jc"."Customer_Id", "t1jc"."Product_Family", "t1jc"."Product_Category", "t1jc"."Product_Subcategory", "t1jc"."Product_Name", "t1jc"."Product_Id", "t1jc"."Store_Id", "t1jc"."Store_Longitude", "t1jc"."Store_Latitude",
 "t1jc"."Store_Name", "t1jc"."Store_Manager", "t1jc"."Store_Phone_Number", "t1jc"."Store_Region", "t1jc"."Store_Country", "t1jc"."Store_State", "t1jc"."Store_City", "t1jc"."Order_Date", "t1jc"."Year_Begin_Date", "t1jc"."Quarter_Begin_Date", "t1jc"."Month_Begin_Date",
@@ -325,6 +332,10 @@ rank() over (order by "c3id2_modecnt_customer_city" desc) as "c3id4_mode_rank" f
 as "t3id5" where "t3id5"."c3id4_mode_rank" = 1) as "t3ida" on 1 = 1) as "t3iec") as "t3iev")) as "t3iew") as "t3if5" on (("t3if4"."c3icl_customer_gender" = "t3if5"."c3iek_customer_city__mode_" or ("t3if4"."c3icl_customer_gender" is null and "t3if5"."c3iek_customer_city__mode_" is null))
 and ("t3if4"."c3icx_mode_customer_state" = "t3if5"."c3iel_measure_values" or ("t3if4"."c3icx_mode_customer_state" is null and "t3if5"."c3iel_measure_values" is null)))) as "t3if6" where "t3if6"."c3iey_customer_gender" is not null group by "t3if6"."c3iex_source_6325213786828233216",
 "t3if6"."c3iey_customer_gender") as "t3ifb") as "t3ife" where "t3ife"."c3ifc_mode_rank" = 1 group by "c3ifd_modegrp_c3if8_modegrp_c3iex_s") as "t3ifh" on ("t3ifg"."c3if7_source_6325213786828233216" = "t3ifh"."c3ifd_modegrp_c3if8_modegrp_c3iex_s" or ("t3ifg"."c3if7_source_6325213786828233216"
-is null and "t3ifh"."c3ifd_modegrp_c3if8_modegrp_c3iex_s" is null)) order by "c3if7_source_6325213786828233216" asc limit 1000 offset 224220;
+is null and "t3ifh"."c3ifd_modegrp_c3if8_modegrp_c3iex_s" is null)) order by "c3if7_source_6325213786828233216" asc limit 1000 offset 224220
+----
 
-ROLLBACK;
+statement ok
+ROLLBACK
+
+
