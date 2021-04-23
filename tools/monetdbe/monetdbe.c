@@ -378,9 +378,9 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		}
 
 		if (m->emode & m_prepare)
-			((monetdbe_result_internal*) *result)->type = Q_PREPARE;
+			(*(monetdbe_result_internal**) result)->type = Q_PREPARE;
 		else
-			((monetdbe_result_internal*) *result)->type = (b->results) ? b->results->query_type : m->type;
+			(*(monetdbe_result_internal**) result)->type = (b->results) ? b->results->query_type : m->type;
 	}
 
 cleanup:
@@ -793,8 +793,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		 */
 		assert(!is_remote||url==NULL);
 		monetdbe_startup(mdbe, url, opts);
-	}
-	else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
+	} else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported");
 	}
 	if (!mdbe->msg)
@@ -1363,11 +1362,12 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 	int prepare_id = 0;
 
-	if (!stmt)
+	if (!stmt) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL");
-	else if (mdbe->mid)
+		assert(mdbe->msg != MAL_SUCCEED); /* help Coverity */
+	} else if (mdbe->mid) {
 		mdbe->msg = monetdbe_query_remote(mdbe, query, NULL, NULL, &prepare_id);
-	else {
+	} else {
 		*stmt = NULL;
 		mdbe->msg = monetdbe_query_internal(mdbe, query, NULL, NULL, &prepare_id, 'S');
 	}
@@ -1448,7 +1448,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		if (!stmt_internal->data[i].vtype)
 			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
 	}
-
 	cq* q = stmt_internal->q;
 
 	MalStkPtr glb = (MalStkPtr) (NULL);
@@ -1460,13 +1459,12 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
-
 	if (result) {
 		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
 
-		((monetdbe_result_internal*) *result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 	}
 cleanup:
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
@@ -1508,7 +1506,8 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 }
 
 static inline void
-cleanup_get_columns_result(size_t column_count, char ** column_names, int *column_types) {
+cleanup_get_columns_result(size_t column_count, char ** column_names, int *column_types)
+{
 		if (column_names) for (size_t c = 0; c < column_count; c++) GDKfree(column_names[c]);
 
 		GDKfree(column_names);
