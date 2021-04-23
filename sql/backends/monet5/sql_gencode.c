@@ -1363,7 +1363,6 @@ cleanup:
 	return res;
 }
 
-/* TODO handle aggr */
 int
 backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
