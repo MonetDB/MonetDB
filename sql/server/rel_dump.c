@@ -1495,12 +1495,6 @@ read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 				rel->p = prop_create(sql->sa, PROP_USED, rel->p);
 			skipWS(r, pos);
 			found = true;
-		} else if (strncmp(r+*pos, "DISTRIBUTE", strlen("DISTRIBUTE")) == 0) {
-			(*pos)+= (int) strlen("DISTRIBUTE");
-			if (!find_prop(rel->p, PROP_DISTRIBUTE))
-				rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
-			skipWS(r, pos);
-			found = true;
 		} else if (strncmp(r+*pos, "GROUPINGS", strlen("GROUPINGS")) == 0) {
 			(*pos)+= (int) strlen("GROUPINGS");
 			if (!find_prop(rel->p, PROP_GROUPINGS))

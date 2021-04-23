@@ -39,6 +39,19 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	freeVariables(be->client, be->mb, NULL, oldvtop, oldvid);
 }
 
+static int
+add_to_rowcount_accumulator(backend *be, int nr)
+{
+	int prev = be->rowcount;
+	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+
+	getArg(q, 0) = be->rowcount = newTmpVariable(be->mb, TYPE_lng);
+	q = pushArgument(be->mb, q, prev);
+	q = pushArgument(be->mb, q, nr);
+
+	return getDestVar(q);
+}
+
 static stmt *
 stmt_selectnil( backend *be, stmt *col)
 {
@@ -4234,8 +4247,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint && !be->first_statement_generated)
-		sql_insert_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, inserts->op4.lval);
+	if (constraint && !be->rowcount)
+		sql_insert_check_null(be, t, inserts->op4.lval);
 
 	l = sa_list(sql->sa);
 
@@ -4247,14 +4260,6 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 /* before */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_insert_triggers(be, up, updates, 0))
-				return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_insert_triggers(be, t, updates, 0))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
@@ -4317,30 +4322,20 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_insert_triggers(be, up, updates, 1))
-				return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
 		ret = ddl;
 		list_prepend(l, ddl);
+		return stmt_list(be, l);
 	} else {
 		ret = cnt;
-	}
-
-	if (be->cur_append) /* building the total number of rows affected across all tables */
-		ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
-
-	if (ddl)
-		return stmt_list(be, l);
-	else
+		if (!be->silent) {
+			/* if there are multiple update statements, update total count, otherwise use the the current count */
+			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
+		}
 		return ret;
+	}
 }
 
 static int
@@ -5164,8 +5159,8 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	list *l = sa_list(sql->sa);
 	node *n;
 
-	if (!be->first_statement_generated)
-		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
+	if (!be->rowcount)
+		sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
@@ -5175,14 +5170,6 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	}
 
 /* before */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_update_triggers(be, up, rows, updates, 0))
-				return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_update_triggers(be, t, rows, updates, 0))
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
@@ -5197,14 +5184,6 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_update_triggers(be, up, rows, updates, 1))
-				return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_update_triggers(be, t, rows, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
@@ -5217,7 +5196,7 @@ static stmt *
 rel2bin_update(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *update = NULL, **updates = NULL, *tids, *s, *ddl = NULL, *pup = NULL, *cnt;
+	stmt *update = NULL, **updates = NULL, *tids, *ddl = NULL, *pup = NULL, *cnt;
 	list *l = sa_list(sql->sa);
 	int nr_cols, updcol, idx_ups = 0;
 	node *m;
@@ -5265,8 +5244,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	if (!be->first_statement_generated)
-		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
+	if (!be->rowcount)
+		sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, ol_length(t->columns));
@@ -5294,14 +5273,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 /* before */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_update_triggers(be, up, tids, updates, 0))
-				return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_update_triggers(be, t, tids, updates, 0)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
@@ -5324,14 +5295,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 /* after */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_update_triggers(be, up, tids, updates, 1))
-				return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_update_triggers(be, t, tids, updates, 1)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
@@ -5342,12 +5305,12 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		list_prepend(l, ddl);
 		cnt = stmt_list(be, l);
 	} else {
-		s = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-		cnt = s;
+		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		if (!be->silent) {
+			/* if there are multiple update statements, update total count, otherwise use the the current count */
+			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, cnt->nr) : cnt->nr;
+		}
 	}
-
-	if (be->cur_append) /* building the total number of rows affected across all tables */
-		cnt->nr = add_to_merge_partitions_accumulator(be, cnt->nr);
 
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
@@ -5539,14 +5502,6 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 /* before */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_delete_triggers(be, up, v, deleted_cols, 0, 1, 3))
-				return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 0, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
@@ -5554,28 +5509,16 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) {
-		list_append(l, stmt_delete(be, t, rows));
+		s = stmt_delete(be, t, rows);
+		if (!be->silent)
+			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	} else { /* delete all */
-		/* first column */
-		s = stmt_table_clear(be, t);
-		list_append(l, s);
+		s = stmt_table_clear(be, t); /* first column */
 	}
 
 /* after */
-#if 0
-	if (be->cur_append && !be->first_statement_generated) {
-		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_delete_triggers(be, up, v, deleted_cols, 1, 1, 3))
-				return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", up->base.name);
-		}
-	}
-#endif
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
-	if (rows)
-		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-	if (be->cur_append) /* building the total number of rows affected across all tables */
-		s->nr = add_to_merge_partitions_accumulator(be, s->nr);
 	return s;
 }
 
@@ -5583,7 +5526,7 @@ static stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *rows = NULL, *stdelete = NULL;
+	stmt *stdelete = NULL, *tids = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
@@ -5593,18 +5536,23 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(0/*ddl statement*/);
 
 	if (rel->r) { /* first construct the deletes relation */
-		rows = subrel_bin(be, rel->r, refs);
+		stmt *rows = subrel_bin(be, rel->r, refs);
 		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
 			return NULL;
+		assert(rows->type == st_list);
+		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
 	}
-	if (rows && rows->type == st_list) {
-		stmt *s = rows;
-		rows = s->op4.lval->h->data;
-	}
-	stdelete = sql_delete(be, t, rows);
+	stdelete = sql_delete(be, t, tids);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
+	if (!stdelete)
+		return NULL;
+
+	if (!be->silent) {
+		/* if there are multiple update statements, update total count, otherwise use the the current count */
+		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
+	}
 	return stdelete;
 }
 
@@ -5761,17 +5709,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		}
 
 		/* before */
-#if 0
-		if (be->cur_append && !be->first_statement_generated) {
-			for (sql_table *up = t->p ; up ; up = up->p) {
-				if (!sql_delete_triggers(be, up, v, deleted_cols, 0, 3, 4)) {
-					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
-					error = 1;
-					goto finalize;
-				}
-			}
-		}
-#endif
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 0, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
@@ -5790,25 +5727,16 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			ret = other;
 
 		/* after */
-#if 0
-		if (be->cur_append && !be->first_statement_generated) {
-			for (sql_table *up = t->p ; up ; up = up->p) {
-				if (!sql_delete_triggers(be, up, v, deleted_cols, 1, 3, 4)) {
-					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
-					error = 1;
-					goto finalize;
-				}
-			}
-		}
-#endif
 		if (!sql_delete_triggers(be, next, v, deleted_cols, 1, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
 		}
 
-		if (be->cur_append) /* building the total number of rows affected across all tables */
-			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
+		if (!be->silent) {
+			/* if there are multiple update statements, update total count, otherwise use the the current count */
+			be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, other->nr) : other->nr;
+		}
 	}
 
 finalize:
@@ -5892,11 +5820,6 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 	stmt *l = NULL, *r = NULL;
 	list *slist = sa_list(sql->sa);
 
-	(void)refs;
-
-	if (find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
-		create_merge_partitions_accumulator(be);
-
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
@@ -5967,11 +5890,7 @@ static stmt *
 rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *l = NULL, *r = NULL;
-	node *n = NULL;
 	list *slist = sa_list(be->mvc->sa);
-
-	if (find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
-		create_merge_partitions_accumulator(be);
 
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
@@ -5982,17 +5901,13 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
 
-	if (rel->exps) {
-		for (n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL, 0, 0, 0);
-			if (!s)
-				return NULL;
-			append(slist, s);
-		}
-	} else { /* if there is no exception condition, just generate a statement list */
-		list_append(slist, l);
-		list_append(slist, r);
+	assert(rel->exps);
+	for (node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!s)
+			return NULL;
+		list_append(slist, s);
 	}
 	return stmt_list(be, slist);
 }
@@ -6369,7 +6284,7 @@ rel_bin(backend *be, sql_rel *rel)
 }
 
 stmt *
-output_rel_bin(backend *be, sql_rel *rel )
+output_rel_bin(backend *be, sql_rel *rel, int top)
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
@@ -6377,22 +6292,23 @@ output_rel_bin(backend *be, sql_rel *rel )
 	stmt *s;
 
 	be->join_idx = 0;
-	if (refs == NULL)
-		return NULL;
+	be->rowcount = 0;
+	be->silent = GDKembedded() || !top;
+
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
+	if (!s)
+		return NULL;
 	if (sqltype == Q_SCHEMA)
-		sql->type = sqltype;  /* reset */
+		sql->type = sqltype; /* reset */
 
-	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
-		s = stmt_output(be, s);
-	if (sqltype == Q_UPDATE && s && (s->type != st_list || be->cur_append)) {
-		if (be->cur_append) { /* finish the output bat */
-			s->nr = be->cur_append;
-			be->cur_append = 0;
-			be->first_statement_generated = false;
+	if (!be->silent) { /* don't generate outputs when we are silent */
+		if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
+			return NULL;
+		} else if (be->rowcount > 0 && sqltype == Q_UPDATE && stmt_affected_rows(be, be->rowcount) < 0) {
+			/* only call stmt_affected_rows outside functions and ddl */
+			return NULL;
 		}
-		s = stmt_affected_rows(be, s);
 	}
 	return s;
 }

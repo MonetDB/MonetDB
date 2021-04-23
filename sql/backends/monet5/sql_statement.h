@@ -137,15 +137,10 @@ typedef struct stmt {
 			 strcmp(sql_func_mod(f->func), "mtime") == 0 || strcmp(sql_func_mod(f->func), "blob") == 0 || \
 			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
 
-extern void create_merge_partitions_accumulator(backend *be);
-extern int add_to_merge_partitions_accumulator(backend *be, int nr);
-
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_none(backend *be);
 
-//#define VAR_DECLARE 1
-#define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
@@ -244,8 +239,8 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
-extern stmt *stmt_output(backend *be, stmt *l);
-extern stmt *stmt_affected_rows(backend *be, stmt *l);
+extern int stmt_output(backend *be, stmt *l);
+extern int stmt_affected_rows(backend *be, int lastnr);
 
 /* flow control statements */
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);

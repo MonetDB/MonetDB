@@ -1159,10 +1159,8 @@ SQLparser(Client c)
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			scanner_query_processed(&(m->scanner));
-			if (be->q) {
-				if (backend_dumpproc(be, c, be->q, r) == NULL)
-					err = 1;
-			}
+			if (be->q && backend_dumpproc(be, c, be->q, r) < 0)
+				err = 1;
 
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;

@@ -117,31 +117,6 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
-void
-create_merge_partitions_accumulator(backend *be)
-{
-	sql_subtype tpe;
-
-	sql_find_subtype(&tpe, "bigint", 0, 0);
-	be->cur_append = constantAtom(be, be->mb, atom_int(be->mvc->sa, &tpe, 0));
-}
-
-int
-add_to_merge_partitions_accumulator(backend *be, int nr)
-{
-	MalBlkPtr mb = be->mb;
-	int help = be->cur_append;
-	InstrPtr q = newStmt(mb, calcRef, plusRef);
-
-	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
-	q = pushArgument(mb, q, help);
-	q = pushArgument(mb, q, nr);
-
-	be->first_statement_generated = true; /* set the first statement as generated */
-
-	return getDestVar(q);
-}
-
 int
 stmt_key(stmt *s)
 {
@@ -2690,7 +2665,7 @@ stmt_list(backend *be, list *l)
 }
 
 static InstrPtr
-dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
+dump_header(mvc *sql, MalBlkPtr mb, list *l)
 {
 	node *n;
 	bool error = false;
@@ -2714,8 +2689,6 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	meta(scalePtr, scaleId, TYPE_int, args);
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return NULL;
-
-	(void) s;
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
@@ -2753,19 +2726,15 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	return list;
 }
 
-stmt *
+int
 stmt_output(backend *be, stmt *lst)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	list *l = lst->op4.lval;
-
 	int cnt = list_length(l), ok = 0;
-	stmt *first;
-	node *n;
-
-	n = l->h;
-	first = n->data;
+	node *n = l->h;
+	stmt *first = n->data;
 
 	/* single value result, has a fast exit */
 	if (cnt == 1 && first->nrcols <= 0 ){
@@ -2782,10 +2751,10 @@ stmt_output(backend *be, stmt *lst)
 		size_t fqtnl;
 		char *fqtn = NULL;
 
-		if(ntn && nsn) {
+		if (ntn && nsn) {
 			fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
 			fqtn = SA_NEW_ARRAY(be->mvc->ta, char, fqtnl);
-			if(fqtn) {
+			if (fqtn) {
 				ok = 1;
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2803,56 +2772,31 @@ stmt_output(backend *be, stmt *lst)
 			}
 		}
 		sa_reset(be->mvc->ta);
-		if(!ok)
-			return NULL;
+		if (!ok)
+			return -1;
 	} else {
-		if ((q = dump_header(be->mvc, mb, lst, l)) == NULL)
-			return NULL;
+		if ((q = dump_header(be->mvc, mb, l)) == NULL)
+			return -1;
 	}
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_output);
-		if (s == NULL) {
-			freeInstruction(q);
-			return NULL;
-		}
-
-		s->op1 = lst;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
+	return 0;
 }
 
-stmt *
-stmt_affected_rows(backend *be, stmt *l)
+int
+stmt_affected_rows(backend *be, int lastnr)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (l->nr < 0)
-		return NULL;
 	q = newStmt(mb, sqlRef, affectedRowsRef);
 	q = pushArgument(mb, q, be->mvc_var);
 	if (q == NULL)
-		return NULL;
+		return -1;
 	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
-	q = pushArgument(mb, q, l->nr);
+	q = pushArgument(mb, q, lastnr);
 	if (q == NULL)
-		return NULL;
+		return -1;
 	be->mvc_var = getDestVar(q);
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_affected_rows);
-		if(!s) {
-			freeInstruction(q);
-			return NULL;
-		}
-		s->op1 = l;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
+	return 0;
 }
 
 stmt *
@@ -3534,7 +3478,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 
 	if (op1->nr < 0)
 		return NULL;
-	if (backend_create_subaggr(be, op) < 0)
+	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = op->func->mod;
 	aggrfunc = op->func->imp;
