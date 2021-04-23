@@ -93,6 +93,8 @@ typedef enum mnstr_flush_level {
 	MNSTR_FLUSH_ALL = 2,  // write all data and also reset compression state
 } mnstr_flush_level;
 
+stream_export const char *mnstr_version(void);
+
 stream_export char *mnstr_error(const stream *s);
 stream_export const char* mnstr_peek_error(const stream *s);
 stream_export mnstr_error_kind mnstr_errnr(const stream *s);

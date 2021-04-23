@@ -235,8 +235,7 @@ mapi_export const char *mapi_get_host(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export const char *mapi_get_user(Mapi mid)
 	__attribute__((__nonnull__(1)));
-mapi_export const char *mapi_get_mapi_version(Mapi mid)
-	__attribute__((__nonnull__(1)));
+mapi_export const char *mapi_get_mapi_version(void);
 mapi_export const char *mapi_get_monet_version(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export const char *mapi_get_motd(Mapi mid)

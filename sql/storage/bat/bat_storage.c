@@ -1320,6 +1320,14 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					ok = LOG_ERR;
 			}
 		} else {
+			if (!BATtordered(i)) {
+				assert(oi == i);
+				BAT *ni = NULL;
+				if (BATsort(&ni, NULL, NULL, i, NULL, NULL, false, false, false) != GDK_SUCCEED)
+					ok = LOG_ERR;
+				if (ni)
+					i = ni;
+			}
 			assert(BATtordered(i));
 			BUN icnt = BATcount(i);
 			oid *o = Tloc(i,0), n = o[0]+1;
@@ -2918,8 +2926,11 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	}
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		if (!isLocalTemp(t))
+			tr->logchanges += (int) cnt;
+	}
 	return slot;
 }
 

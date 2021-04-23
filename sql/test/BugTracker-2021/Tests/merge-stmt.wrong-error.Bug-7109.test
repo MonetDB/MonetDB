@@ -1,0 +1,30 @@
+statement ok
+start transaction
+
+statement ok
+create table ce (id bigint)
+
+statement ok
+insert into ce values (1), (2)
+
+statement ok
+create table attr (id bigint, value text)
+
+statement ok
+insert into attr values (1,'a'),(1,'b'),(2,'a'),(2,'a'),(3,'a'),(3,'b')
+
+statement ok
+merge into attr using ce on ce.id = attr.id when matched then delete
+
+query IT rowsort
+select * from attr
+----
+3
+a
+3
+b
+
+statement ok
+rollback
+
+

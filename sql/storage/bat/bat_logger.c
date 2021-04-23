@@ -2045,7 +2045,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			BAT *objs_nr = temp_descriptor(logger_find_bat(lg, 2113)); /* sys.objects.nr */
 			BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, &int_nil, BATcount(objs_id), PERSISTENT);
 			BAT *b = temp_descriptor(logger_find_bat(lg, 2110)); /* sys.objects */
-			if (objs_id == NULL || objs_nr == NULL || objs_sub == NULL || b == NULL || BUNappend(old_lg->del, &objs_nr->batCacheid, false) != GDK_SUCCEED) {
+			if (objs_id == NULL || objs_nr == NULL || objs_sub == NULL || b == NULL) {
 				bat_destroy(objs_id);
 				bat_destroy(objs_nr);
 				bat_destroy(b);
@@ -2347,9 +2347,9 @@ bl_log_isnew(sqlstore *store)
 }
 
 static int
-bl_tstart(sqlstore *store, ulng commit_ts)
+bl_tstart(sqlstore *store, ulng commit_ts, bool flush)
 {
-	return log_tstart(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, commit_ts, flush) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int

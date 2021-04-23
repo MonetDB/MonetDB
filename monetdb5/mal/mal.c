@@ -41,6 +41,12 @@ MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
 MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER(mal_oltpLock);
 
+const char *
+mal_version(void)
+{
+	return MONETDB5_VERSION;
+}
+
 /*
  * Initialization of the MAL context
  */
@@ -52,6 +58,18 @@ mal_init(char *modules[], int embedded)
  * with a message sent to stderr
  */
 	str err;
+
+	/* check that library that we're linked against is compatible with
+	 * the one we were compiled with */
+	int maj, min, patch;
+	const char *version = GDKlibversion();
+	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
+	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
+		TRC_CRITICAL(MAL_SERVER, "Linked GDK library not compatible with the one this was compiled with\n");
+		TRC_CRITICAL(MAL_SERVER, "Linked version: %s, compiled version: %s\n",
+					 version, GDK_VERSION);
+		return -1;
+	}
 
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		freeException(err);

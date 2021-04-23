@@ -67,7 +67,7 @@ gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 /* mark end of batgroup insert or clear */
 //gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
-gdk_export gdk_return log_tstart(logger *lg, ulng commit_ts);
+gdk_export gdk_return log_tstart(logger *lg, ulng commit_ts, bool flush);
 gdk_export gdk_return log_tend(logger *lg);
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);

@@ -410,7 +410,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		len = sizeof(SQLINTEGER);
 		break;
 	case SQL_DBMS_NAME:
-		sValue = PACKAGE_NAME;
+		sValue = "MonetDB";
 		break;
 	case SQL_DBMS_VER:
 		snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
@@ -438,10 +438,10 @@ MNDBGetInfo(ODBCDbc *dbc,
 	case SQL_DRIVER_ODBC_VER:
 		sValue = MONETDB_ODBC_VER;
 		break;
-	case SQL_DRIVER_VER: {
-		int maj = 0, min = 0, pat = 0;
-		sscanf(PACKAGE_VERSION, "%d.%d.%d", &maj, &min, &pat);
-		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s", maj, min, pat,
+	case SQL_DRIVER_VER:
+		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s",
+			 MONETDB_VERSION_MAJOR, MONETDB_VERSION_MINOR,
+			 MONETDB_VERSION_PATCH,
 #ifdef MONETDB_RELEASE
 			 MONETDB_RELEASE
 #else
@@ -450,7 +450,6 @@ MNDBGetInfo(ODBCDbc *dbc,
 			);
 		sValue = buf;
 		break;
-	}
 	case SQL_DROP_ASSERTION:
 		/* SQL_DA_DROP_ASSERION */
 		break;
