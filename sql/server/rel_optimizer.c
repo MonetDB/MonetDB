@@ -7537,35 +7537,39 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 			if (fmt->type == e_convert)
 				fmt = fmt->l;
 			/* check for simple like expression */
-			if (is_atom(fmt->type)) {
+			if (exp_is_null(fmt)) {
+				isnull = 1;
+			} else if (is_atom(fmt->type)) {
 				atom *fa = NULL;
 
 				if (fmt->l)
 					fa = fmt->l;
-				if (fa && fa->isnull)
-					isnull = 1;
-				else if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
+				if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
 					rewrite = 1;
 			}
 			if (rewrite && !isnull) { /* check escape flag */
-				atom *ea = esc->l;
-
-				if (!is_atom(esc->type) || !ea)
-					rewrite = 0;
-				else if (ea->isnull)
+				if (exp_is_null(esc)) {
 					isnull = 1;
-				else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
-					rewrite = 0;
+				} else {
+					atom *ea = esc->l;
+
+					if (!is_atom(esc->type) || !ea)
+						rewrite = 0;
+					else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
+						rewrite = 0;
+				}
 			}
 			if (rewrite && !isnull) { /* check insensitive flag */
-				atom *ia = isen->l;
-
-				if (!is_atom(isen->type) || !ia)
-					rewrite = 0;
-				else if (ia->isnull)
+				if (exp_is_null(isen)) {
 					isnull = 1;
-				else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
-					rewrite = 0;
+				} else {
+					atom *ia = isen->l;
+
+					if (!is_atom(isen->type) || !ia)
+						rewrite = 0;
+					else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
+						rewrite = 0;
+				}
 			}
 			if (isnull) {
 				list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
@@ -9241,7 +9245,6 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 							}
 						}
 						if (!skip) {
-							//rel_set_exps(prel, exps);
 							append(tables, prel);
 							nrel = prel;
 						}
@@ -9263,13 +9266,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						tables = ntables;
 					}
 				}
-				if (nrel && list_length(t->members) == 1) {
-					nrel = rel_project(v->sql->sa, nrel, rel->exps);
-					/*
-				} else if (nrel) {
-					rel_set_exps(nrel, rel->exps);
-					*/
-				} else if (!nrel) { /* all children tables were pruned, create a dummy relation */
+				if (!nrel) { /* all children tables were pruned, create a dummy relation */
 					list *converted = sa_list(v->sql->sa);
 					nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
 					nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
@@ -9280,18 +9277,16 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						list_append(converted, a);
 					}
 					nrel = rel_project(v->sql->sa, nrel, converted);
+				} else {
+					if (list_length(t->members) == 1)
+						nrel = rel_project(v->sql->sa, nrel, rel->exps);
+					if (sel) {
+						visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
+						sel->l = nrel;
+						nrel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
+					}
 				}
 				rel_destroy(rel);
-				if (sel) {
-					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
-					sel->l = nrel;
-					sel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
-					/*
-					if (iv.changes)
-						sel = rel_visitor_bottomup(&iv, sel, &rel_push_project_up);
-						*/
-					return sel;
-				}
 				return nrel;
 			}
 		}
