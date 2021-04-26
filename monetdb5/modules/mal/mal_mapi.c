@@ -697,7 +697,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 	const char *listenaddr = port < 0 ? "none" : GDKgetenv("mapi_listenaddr");
 
-	if (strNil(usockfile)) {
+	if (strNil(usockfile) || *usockfile == '\0') {
 		usockfile = NULL;
 #ifndef HAVE_SYS_UN_H
 	} else {
