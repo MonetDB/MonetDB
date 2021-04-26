@@ -863,6 +863,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 
 #define BUFLEN 1024
 
+#define STETHOSCOPE	"pystethoscope"
+
 /**
  * Fork stethoscope and detatch, after performing sanity checks. The assumption
  * is that each mserver5 process can have at most one stethoscope process
@@ -878,7 +880,9 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 	size_t pidfnlen;
 	FILE *pidfile;
 	char *profiler_executable;
+#if 0
 	char *beat_frequency = NULL;
+#endif
 	char *tmp_exe;
 	struct stat path_info;
 	int error_code;
@@ -918,7 +922,7 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		return newErr("Cannot find the profiler executable");
 	} else {
 		char *server_filename = "mserver5";
-		char *profiler_filename = "stethoscope";
+		char *profiler_filename = STETHOSCOPE;
 		char *s = strstr(tmp_exe, server_filename);
 		size_t executable_len = 0;
 
@@ -956,10 +960,12 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 	/* find the path that the profiler will be storing files */
 	ckv = getDefaultProps();
 	readAllProps(ckv, (*stats)->path);
+#if 0
 	kv = findConfKey(ckv, PROFILERBEATFREQ);
 	if (kv) {
 		beat_frequency = kv->val;
 	}
+#endif
 	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
@@ -1064,7 +1070,7 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 			len--;
 		buf2[len] = 0;
 
-		char expected_command[] = "stethoscope";
+		char expected_command[] = STETHOSCOPE;
 		size_t command_len = strlen(expected_command);
 		if (strncmp(buf2, expected_command, command_len) == 0) {
 			error = newErr("profiler already running for %s\n", dbname);
@@ -1122,13 +1128,15 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 
 		/* build the arguments */
 		argv[arg_idx++] = profiler_executable;
-		argv[arg_idx++] = "-j";  /* JSON output */
+		argv[arg_idx++] = "-Fjson";  /* JSON output */
 		argv[arg_idx++] = "-d";
 		argv[arg_idx++] = dbname;
+#if 0							/* no such option in pystethoscope */
 		if (beat_frequency) {
 			argv[arg_idx++] = "-b";
 			argv[arg_idx++] = beat_frequency;
 		}
+#endif
 		argv[arg_idx++] = "-o";
 		argv[arg_idx++] = log_filename;
 		/* execute */
