@@ -2158,6 +2158,44 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
+stmt_projectionpath(backend *be, stmt *op1, stmt *op2, stmt *op3)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	sql_subtype *t = tail_type(op3);
+	int type = t->type->localtype;
+
+	if (op1->nr < 0 || op2->nr < 0 || op3->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, algebraRef, projectionpathRef);
+	setVarType(mb, getArg(q, 0), newBatType(type));
+	q = pushArgument(mb, q, op1->nr);
+	q = pushArgument(mb, q, op2->nr);
+	q = pushArgument(mb, q, op3->nr);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_join);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->op1 = op1;
+		s->op2 = op2;
+		s->op3 = op3;
+		s->flag = cmp_project;
+		s->key = 0;
+		s->nrcols = op3->nrcols;
+		s->nr = getDestVar(q);
+		s->q = q;
+		s->tname = op3->tname;
+		s->cname = op3->cname;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_project_delta(backend *be, stmt *col, stmt *upd)
 {
 	InstrPtr q = stmt_project_join(be, col, upd, true);
@@ -2974,7 +3012,10 @@ tail_set_type(stmt *st, sql_subtype *t)
 		case st_join2:
 		case st_joinN:
 			if (st->flag == cmp_project) {
-				st = st->op2;
+				if (st->op3)
+					st = st->op3;
+				else
+					st = st->op2;
 				continue;
 			}
 			return;
@@ -3630,7 +3671,10 @@ tail_type(stmt *st)
 		case st_join2:
 		case st_joinN:
 			if (st->flag == cmp_project) {
-				st = st->op2;
+				if (st->op3)
+					st = st->op3;
+				else
+					st = st->op2;
 				continue;
 			}
 			/* fall through */

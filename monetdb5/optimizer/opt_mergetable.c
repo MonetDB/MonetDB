@@ -1422,18 +1422,29 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 		InstrPtr grp = newInstruction(mb, groupRef,cur?i?subgroupRef:subgroupdoneRef:i?groupRef:groupdoneRef);
 		int ogrp = walk_n_back(mat, g, i);
 		int oext = find_by_parent(ml, ogrp);
-		int ocnt = find_by_parent(ml, oext);
 		int attr = mat[oext].im;
 
 		getArg(grp,0) = mat[ogrp].mv;
 		grp = pushReturn(mb, grp, mat[oext].mv); /* extend */
-		grp = pushReturn(mb, grp, mat[ocnt].mv); /* histo */
 		grp = addArgument(mb, grp, getArg(mat[attr].mi, 0));
 		if (cur)
 			grp = addArgument(mb, grp, getArg(cur, 0));
 		pushInstruction(mb, grp);
 		cur = grp;
 	}
+
+	InstrPtr s = newInstruction(mb, aggrRef, subsumRef);
+	int oext = find_by_parent(ml, g);
+	int ocnt = find_by_parent(ml, oext);
+	getArg(s, 0) = getArg(mat[g].org, 2); /* original variabel */
+	s = addArgument(mb, s, getArg(mat[ocnt].mi, 0)); /* use packed counts */
+	s = addArgument(mb, s, getArg(cur, 0));
+	s = addArgument(mb, s, getArg(cur, 1));
+	s = pushBit(mb, s, 1); /* skip nils */
+	s = pushBit(mb, s, 1);
+	pushInstruction(mb, s);
+	mat[ocnt].packed = 1;
+
 	mat[g].im = -1; /* only pack once */
 }
 
@@ -1541,11 +1552,13 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int cand)
 		/* add result to mats */
 		r0 = addArgument(mb,r0,getArg(q,0));
 		r1 = addArgument(mb,r1,getArg(q,1));
-		r2 = addArgument(mb,r2,getArg(q,2));
+		r2 = addArgument(mb,r2,getArg(q,2)); /* packed cnts */
 
-		r = newInstruction(mb, algebraRef, projectionRef);
+		r = newInstructionArgs(mb, algebraRef, (cand>=0)?projectionpathRef:projectionRef, 3+(cand>=0)?1:0);
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = addArgument(mb, r, getArg(q,1));
+		if (cand >= 0)
+			r = addArgument(mb, r, getArg(ml->v[cand].mi,i));
 		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i)){
 			freeInstruction(r0);
@@ -1645,7 +1658,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int cand, int g
 		/* add result to mats */
 		r0 = addArgument(mb,r0,getArg(q,0));
 		r1 = addArgument(mb,r1,getArg(q,1));
-		r2 = addArgument(mb,r2,getArg(q,2));
+		r2 = addArgument(mb,r2,getArg(q,2)); /* packed cnts */
 
 		r = newInstruction(mb, algebraRef, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
@@ -2191,7 +2204,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (!groupdone && match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef &&
 		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) &&
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
-	 	   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0)) {
+	 	   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
+		   ml.v[n].type != mat_grp) {
 			if(mat_group_new(mb, p, &ml, m, n)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2260,6 +2274,34 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				goto cleanup;
 			}
 			actions++;
+			continue;
+		}
+		/* Handle cases of ext.projection and .projection(grp) */
+		if (match == 3 && getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == projectionpathRef &&
+		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
+		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
+		   (o=is_a_mat(getArg(p,3), &ml)) >= 0 &&
+		   (ml.v[m].type == mat_ext || ml.v[o].type == mat_grp)) {
+			assert(ml.v[m].pushed);
+			if (0 && !ml.v[o].pushed) {
+			//if (!ml.v[o].packed) {
+				if(mat_group_project(mb, p, &ml, m, o)) {
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+			} else {
+				/* project */
+				cp = newInstructionArgs(mb, algebraRef, projectionRef, 3);
+				getArg(cp, 0) = getArg(p, 0);
+				cp = addArgument(mb, cp, getArg(p,1));
+				cp = addArgument(mb, cp, getArg(p,3));
+				if(!cp) {
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+				pushInstruction(mb, cp);
+			}
 			continue;
 		}
 		/* Handle cases of ext.projection and .projection(grp) */

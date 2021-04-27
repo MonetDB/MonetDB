@@ -200,6 +200,7 @@ extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int an
 extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
 extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
 
+extern stmt *stmt_projectionpath(backend *be, stmt *op1, stmt *op2, stmt *op3);
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
