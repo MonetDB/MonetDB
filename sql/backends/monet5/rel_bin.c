@@ -3696,7 +3696,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	list *l, *gbexps = sa_list(sql->sa);
 	node *n, *en;
 	rel_bin_stmt *sub = NULL, *cursub;
-	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *ext2 = NULL, *cnt = NULL;
+	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 
 	assert(rel->l); /* first construct the sub relation */
 	sub = subrel_bin(be, rel->l, refs);
@@ -3758,9 +3758,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			if (aggrstmt && groupby) {
 				if (sub->cand && sub->cand != aggrstmt->cand) {
-					if (!ext2)
-						ext2 = stmt_project(be, ext, sub->cand);
-					aggrstmt = stmt_project(be, ext2, aggrstmt);
+					aggrstmt = stmt_projectionpath(be, ext, sub->cand, aggrstmt);
 				} else
 					aggrstmt = stmt_project(be, ext, aggrstmt);
 				if (list_length(gbexps) == 1)
