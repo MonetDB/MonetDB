@@ -21,9 +21,9 @@
 		tpe val = tpe##_nil;                                                   \
 		msg = pyobject_to_##tpe(&dictEntry, 42, &val);                         \
 		if (msg != MAL_SUCCEED ||                                              \
-			BUNappend(self->cols[i].b, &val, false) != GDK_SUCCEED) {              \
+			BUNappend(self->cols[i].b, &val, false) != GDK_SUCCEED) {          \
 			if (msg == MAL_SUCCEED)                                            \
-				msg = GDKstrdup("BUNappend failed.");                          \
+				msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed."); \
 			goto wrapup;                                                       \
 		}                                                                      \
 	}
@@ -96,7 +96,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			// element that was not matched
 			PyObject *keys = PyDict_Keys(args);
 			if (!keys) {
-				msg = GDKstrdup(MAL_MALLOC_FAIL);
+				msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			for (i = 0; i < (size_t)PyList_Size(keys); i++) {
@@ -197,8 +197,14 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				bat_type = PyType_ToBat(array_type->type_num);
 				Py_DECREF(array);
 
-				self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT);
-				self->cols[self->ncols].name = GDKstrdup(val);
+				if (!(self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT))) {
+					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+				if (!(self->cols[self->ncols].name = GDKstrdup(val))) {
+					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
 				self->cols[self->ncols].def = NULL;
 				if (self->nvals > 0) {
 					// insert NULL values up until the current entry
@@ -206,7 +212,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						if (BUNappend(self->cols[self->ncols].b,
 									  ATOMnilptr(self->cols[self->ncols].b->ttype),
 									  false) != GDK_SUCCEED) {
-							msg = GDKstrdup("BUNappend failed.");
+							msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
 							goto wrapup;
 						}
 					}
@@ -231,7 +237,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					if (msg != MAL_SUCCEED ||
 						BUNappend(self->cols[i].b, val, false) != GDK_SUCCEED) {
 						if (msg == MAL_SUCCEED)
-							msg = GDKstrdup("BUNappend failed.");
+							msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
 						goto wrapup;
 					}
 				GDKfree(val);
@@ -277,7 +283,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							retval = convert_and_append(self->cols[i].b, val, 0);
 							free(val);
 							if (retval != GDK_SUCCEED) {
-								msg = GDKstrdup("BUNappend failed.");
+								msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
 								goto wrapup;
 							}
 						} break;
@@ -292,7 +298,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				size_t iu = 0;
 				if (BATextend(self->cols[i].b, self->nvals + el_count) !=
 					GDK_SUCCEED) {
-					msg = GDKstrdup("Failed to allocate memory to extend BAT.");
+					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "Failed to allocate memory to extend BAT.");
 					goto wrapup;
 				}
 				msg = PyObject_GetReturnValues(dictEntry, ret);
@@ -300,7 +306,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					goto wrapup;
 				}
 				if (ret->array_data == NULL) {
-					msg = GDKstrdup("No return value stored in the structure.");
+					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "No return value stored in the structure.");
 					goto wrapup;
 				}
 				mask = (bool *)ret->mask_data;
@@ -363,7 +369,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			}
 		} else {
 			if (self->cols[i].def != NULL) {
-				msg = GDKstrdup("Inserting into columns with default values is not supported currently.");
+				msg = createException(MAL, "pyapi3.emit", "Inserting into columns with default values is not supported currently.");
 				goto wrapup;
 			}
 			for (ai = 0; ai < (size_t)el_count; ai++) {
@@ -383,6 +389,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 wrapup:
 	if (msg != MAL_SUCCEED) {
 		PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);
+		freeException(msg);
 	} else if (!error) {
 		Py_RETURN_NONE;
 	}
