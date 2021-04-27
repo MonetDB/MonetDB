@@ -11,9 +11,10 @@
 #include "sql.h"
 
 //#define _SQL_OPTIMIZER_DEBUG
-sql5_export str SQLoptimizeQuery(Client c, MalBlkPtr mb);
-sql5_export str SQLoptimizeFunction(Client c, MalBlkPtr mb);
-sql5_export void SQLaddQueryToCache(Client c);
-sql5_export str getSQLoptimizer(mvc *m);
+extern str SQLoptimizeQuery(Client c, MalBlkPtr mb);
+extern str SQLoptimizeFunction(Client c, MalBlkPtr mb);
+extern void SQLaddQueryToCache(Client c);
+extern void SQLremoveQueryFromCache(Client c);
+extern str getSQLoptimizer(mvc *m);
 
 #endif /* _SQL_OPTIMIZER_H_ */

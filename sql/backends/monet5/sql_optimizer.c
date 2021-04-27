@@ -258,3 +258,9 @@ SQLaddQueryToCache(Client c)
 {
 	insertSymbol(c->usermodule, c->curprg);
 }
+
+void
+SQLremoveQueryFromCache(Client c)
+{
+	deleteSymbol(c->usermodule, c->curprg);
+}
