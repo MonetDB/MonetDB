@@ -713,7 +713,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 }
 
 stmt *
-stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
+stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int fake)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -742,7 +742,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
 		q = pushArgument(mb, q, be->mvc_var);
 		if (q == NULL)
 			return NULL;
-		getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
+		int tmpvar = newTmpVariable(mb, TYPE_int);
+		getArg(q, 0) = tmpvar;
+		if (mvc_var_update != NULL)
+			*mvc_var_update = tmpvar;
 		q = pushSchema(mb, q, c->t);
 		q = pushStr(mb, q, c->t->base.name);
 		q = pushStr(mb, q, c->base.name);
@@ -750,7 +753,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
 		q = pushArgument(mb, q, b->nr);
 		if (q == NULL)
 			return NULL;
-		be->mvc_var = getDestVar(q);
+		if (mvc_var_update != NULL)
+			*mvc_var_update = getDestVar(q);
 	} else {
 		return b;
 	}

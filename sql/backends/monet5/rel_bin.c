@@ -4314,14 +4314,17 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		m = m->next;
 	}
 
+	int mvc_var = be->mvc_var;
 	for (n = ol_first_node(t->columns), m = inserts->cols->h; n && m; n = n->next, m = m->next) {
 		stmt *ins = m->data;
 		sql_column *c = n->data;
 
-		insert = stmt_append_col(be, c, pos, ins, rel->flag);
+		if (!stmt_append_col(be, c, pos, ins, &mvc_var, rel->flag)) {
+			be->mvc_var = mvc_var;
+			return NULL;
+		}
 	}
-	if (!insert)
-		return NULL;
+	be->mvc_var = mvc_var;
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
@@ -5889,12 +5892,16 @@ rel2bin_merge(backend *be, sql_rel *rel, list *refs)
 
 	if (is_ddl(r->op)) {
 		assert(r->flag == ddl_list);
-		if (r->l && !(ns = rel2bin_merge_apply_update(be, join, r->l, refs, join_st->left, join_st->right, join_st->jl, join_st->jr, join_st->ld, &rd)))
-			return NULL;
-		list_append(slist, ns);
-		if (r->r && !(ns = rel2bin_merge_apply_update(be, join, r->r, refs, join_st->left, join_st->right, join_st->jl, join_st->jr, join_st->ld, &rd)))
-			return NULL;
-		list_append(slist, ns);
+		if (r->l) {
+			if ((ns = rel2bin_merge_apply_update(be, join, r->l, refs, join_st->left, join_st->right, join_st->jl, join_st->jr, join_st->ld, &rd)) == NULL)
+				return NULL;
+			list_append(slist, ns);
+		}
+		if (r->r) {
+			if ((ns = rel2bin_merge_apply_update(be, join, r->r, refs, join_st->left, join_st->right, join_st->jl, join_st->jr, join_st->ld, &rd)) == NULL)
+				return NULL;
+			list_append(slist, ns);
+		}
 	} else {
 		if (!(ns = rel2bin_merge_apply_update(be, join, r, refs, join_st->left, join_st->right, join_st->jl, join_st->jr, join_st->ld, &rd)))
 			return NULL;
