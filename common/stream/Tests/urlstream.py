@@ -91,4 +91,4 @@ assert err == b''
 
 (code, out, err) = streamcat('/xyzzy')
 assert code != 0
-assert b'hollow voice' in err
+assert b'404' in err
