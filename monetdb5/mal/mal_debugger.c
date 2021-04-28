@@ -43,6 +43,21 @@ typedef struct MDBSTATE{
 #define skipWord(c, X)     while (*(X) && (isalnum((unsigned char) *X))) { X++; } \
 	skipBlanc(c, X);
 
+#define skipModule(C,B)\
+{\
+		skipWord(C, B);	\
+		skipBlanc(C, B);	\
+		c = strchr(B,'.');	\
+		if( c ){	\
+			B = c + 1;	\
+			skipWord(cntxt, B);	\
+			skipBlanc(cntxt, B);	\
+		}	\
+		c = strchr(B,']');	\
+		if (c)	\
+			B = c + 1;	\
+}
+
 /* Utilities
  * Dumping a stack on a file is primarilly used for debugging.
  * Printing the stack requires access to both the symbol table and
@@ -1246,6 +1261,7 @@ retryRead:
 		case 'l':   /* list the current MAL block or module */
 		{
 			int lstng;
+			c = b;
 
 			lstng = LIST_MAL_NAME;
 			if(*b == 'L')
@@ -1255,24 +1271,17 @@ retryRead:
 			if (*b != 0) {
 				/* debug the block context */
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b);
-				mnstr_printf(out, "#Inspect %s\n", b);
+				mnstr_printf(out, "#Inspect %s\n", c);
 
 				if ( m )
 					mb = m;
+				else{
+					mnstr_printf(out, "#MAL block not found '%s'\n", c);
+					break;
+				}
 
-				skipWord(cntxt, b);
-				skipBlanc(cntxt, b);
-				c = strchr(b,'.');
-				if( c){
-					b = c + 1;
-					skipWord(cntxt, b);
-					skipBlanc(cntxt, b);
-				}
-				c = strchr(b,']');
-				if (c){
-					b = c + 1;
+					skipModule(cntxt, b);
 					goto partial;
-				}
 			} else {
 /*
  * Listing the program starts at the pc last given.
@@ -1310,19 +1319,18 @@ partial:
 		case 'o':
 		case 'O':   /* optimizer and scheduler steps */
 		{
-			MalBlkPtr mdot = mb;
+			c = b;
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b) {
 				mnstr_printf(out, "#History of %s\n", b);
-				mdot = mdbLocateMalBlk(cntxt, mb, b);
-				if (mdot != NULL)
-					showMalBlkHistory(out, mdot);
-				else
-					mnstr_printf(out, "#'%s' not found\n", b);
-			} else{
-				showMalBlkHistory(out, mb);
-			}
+				mb = mdbLocateMalBlk(cntxt, mb, b);
+				if (mb == NULL){
+					mnstr_printf(out, "#'%s' not resolved\n", c);
+					break;
+				}
+			} 
+			showMalBlkHistory(out, mb);
 			break;
 		}
 		case 'r':   /* reset program counter */
