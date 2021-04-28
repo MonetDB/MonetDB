@@ -1168,6 +1168,23 @@ exp2bin_coalesce(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *rig
 	return res;
 }
 
+static stmt *
+exp2bin_nullif(backend *be, sql_exp *fe, rel_bin_stmt *left, rel_bin_stmt *right, int depth, int push)
+{
+	list *exps = fe->l;
+	sql_exp *e1 = exps->h->data, *e2 = exps->h->next->data;
+	stmt *s1 = NULL, *s2 = NULL;
+
+	assert(list_length(exps) == 2);
+	/* nullif(e1,e2) -> ifthenelse((e1==e2),NULL,e1) */
+	if (!(s1 = exp_bin(be, e1, left, right, depth+1, 0, push)))
+		return NULL;
+	if (!(s2 = exp_bin(be, e2, left, right, depth+1, 0, push)))
+		return NULL;
+
+	return stmt_nullif(be, s1, s2, left && left->cand ? left->cand : NULL, fe->f);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int depth, int reduce, int push)
 {
@@ -1304,6 +1321,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL;
+		const char *fmod = sql_func_mod(f->func), *ffunc = sql_func_imp(f->func);
 
 		if (f->func->side_effect && left && left->nrcols > 0) {
 			sql_subfunc *f1 = NULL;
@@ -1320,17 +1338,22 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			sql->errstr[0] = '\0';
 		}
 		assert(!e->r);
-		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)
-			return left->cols->h->data;
-		else if (!list_empty(exps)) {
-			unsigned nrcols = 0;
 
-			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
-				return exp2bin_case(be, e, left, right, depth);
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "casewhen") == 0)
+		if (strcmp(fmod, "") == 0 && strcmp(ffunc, "") == 0) {
+			if (strcmp(f->func->base.name, "star") == 0)
+				return left->cols->h->data;
+			if (strcmp(f->func->base.name, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, depth);
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
+			if (strcmp(f->func->base.name, "coalesce") == 0)
 				return exp2bin_coalesce(be, e, left, right, depth);
+			if (strcmp(f->func->base.name, "nullif") == 0)
+				return exp2bin_nullif(be, e, left, right, depth, push);
+		}
+		if (strcmp(fmod, "calc") == 0 && strcmp(ffunc, "ifthenelse") == 0)
+			return exp2bin_case(be, e, left, right, depth);
+
+		if (!list_empty(exps)) {
+			unsigned nrcols = 0;
 
 			assert(list_length(exps) == list_length(f->func->ops) || f->func->type == F_ANALYTIC || f->func->type == F_LOADER || f->func->vararg || f->func->varres);
 			for (en = exps->h; en; en = en->next) {
