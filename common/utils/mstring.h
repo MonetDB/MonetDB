@@ -35,6 +35,7 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
  * --enable-strict, so we just use the (more) expensive way of getting the
  * right answer (rescan the whole string) */
 #if !defined(__GNUC__) || __GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ > 5)
+#if __GNUC__ < 11
 /* This code is correct, but GCC gives a warning in certain
  * conditions, so we disable the warning temporarily.
  * The warning happens e.g. in
@@ -49,6 +50,7 @@ GCC_Pragma("GCC diagnostic push")
 GCC_Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
 		return n + strlen(src + n);
 GCC_Pragma("GCC diagnostic pop")
+#endif
 #endif
 	}
 	return strlen(src);
