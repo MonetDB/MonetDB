@@ -11,27 +11,27 @@
 
 #include "sql.h"
 
-sql5_export str zero_or_one_error(ptr ret, const bat *bid, const bit *err );
-sql5_export str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
-sql5_export str zero_or_one(ptr ret, const bat *bid);
-sql5_export str SQLsubzero_or_one(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
-sql5_export str SQLall(ptr ret, const bat *bid);
-sql5_export str SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLnil(bit *ret, const bat *bid);
-sql5_export str SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str zero_or_one_error(ptr ret, const bat *bid, const bit *err );
+extern str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
+extern str zero_or_one(ptr ret, const bat *bid);
+extern str SQLsubzero_or_one(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
+extern str SQLall(ptr ret, const bat *bid);
+extern str SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLnil(bit *ret, const bat *bid);
+extern str SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_SUBQUERY_H */

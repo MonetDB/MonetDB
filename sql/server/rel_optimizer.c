@@ -162,6 +162,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 	case op_update:
 	case op_delete:
 	case op_truncate:
+	case op_merge:
 		break;
 	}
 	if (alias) { /* we found an expression with the correct name, but
@@ -323,6 +324,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_merge:
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		if (rel->r)
@@ -1222,6 +1224,7 @@ rel_join_order(visitor *v, sql_rel *rel)
 	case op_union:
 	case op_inter:
 	case op_except:
+	case op_merge:
 		rel->l = rel_join_order(v, rel->l);
 		rel->r = rel_join_order(v, rel->r);
 		break;
@@ -2455,6 +2458,7 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_merge:
 	case op_join:
 	case op_left:
 	case op_right:
@@ -6369,6 +6373,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		   order by projections  */
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
+		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
@@ -6903,6 +6908,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_full:
 	case op_semi:
 	case op_anti:
+	case op_merge:
 		rel_exps_mark_used(sql->sa, rel, rel->l);
 		rel_exps_mark_used(sql->sa, rel, rel->r);
 		rel_mark_used(sql, rel->l, 0);
@@ -6995,6 +7001,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_update:
 	case op_delete:
 	case op_truncate:
+	case op_merge:
 
 	case op_select:
 
@@ -7059,6 +7066,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 	case op_full:
 	case op_semi:
 	case op_anti:
+	case op_merge:
 
 		if (rel->l)
 			rel_dce_refs(sql, rel->l, refs);
@@ -7153,6 +7161,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_full:
 	case op_semi:
 	case op_anti:
+	case op_merge:
 		if (rel->l)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (rel->r)
@@ -7250,6 +7259,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	case op_full:
 	case op_semi:
 	case op_anti:
+	case op_merge:
 		if (rel->l)
 			rel->l = rel_add_projects(sql, rel->l);
 		if (rel->r)
@@ -7537,35 +7547,39 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 			if (fmt->type == e_convert)
 				fmt = fmt->l;
 			/* check for simple like expression */
-			if (is_atom(fmt->type)) {
+			if (exp_is_null(fmt)) {
+				isnull = 1;
+			} else if (is_atom(fmt->type)) {
 				atom *fa = NULL;
 
 				if (fmt->l)
 					fa = fmt->l;
-				if (fa && fa->isnull)
-					isnull = 1;
-				else if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
+				if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
 					rewrite = 1;
 			}
 			if (rewrite && !isnull) { /* check escape flag */
-				atom *ea = esc->l;
-
-				if (!is_atom(esc->type) || !ea)
-					rewrite = 0;
-				else if (ea->isnull)
+				if (exp_is_null(esc)) {
 					isnull = 1;
-				else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
-					rewrite = 0;
+				} else {
+					atom *ea = esc->l;
+
+					if (!is_atom(esc->type) || !ea)
+						rewrite = 0;
+					else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
+						rewrite = 0;
+				}
 			}
 			if (rewrite && !isnull) { /* check insensitive flag */
-				atom *ia = isen->l;
-
-				if (!is_atom(isen->type) || !ia)
-					rewrite = 0;
-				else if (ia->isnull)
+				if (exp_is_null(isen)) {
 					isnull = 1;
-				else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
-					rewrite = 0;
+				} else {
+					atom *ia = isen->l;
+
+					if (!is_atom(isen->type) || !ia)
+						rewrite = 0;
+					else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
+						rewrite = 0;
+				}
 			}
 			if (isnull) {
 				list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
@@ -9117,7 +9131,6 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 							}
 						}
 						if (!skip) {
-							//rel_set_exps(prel, exps);
 							append(tables, prel);
 							nrel = prel;
 						}
@@ -9139,13 +9152,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						tables = ntables;
 					}
 				}
-				if (nrel && list_length(t->members) == 1) {
-					nrel = rel_project(v->sql->sa, nrel, rel->exps);
-					/*
-				} else if (nrel) {
-					rel_set_exps(nrel, rel->exps);
-					*/
-				} else if (!nrel) { /* all children tables were pruned, create a dummy relation */
+				if (!nrel) { /* all children tables were pruned, create a dummy relation */
 					list *converted = sa_list(v->sql->sa);
 					nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
 					nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
@@ -9156,18 +9163,16 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						list_append(converted, a);
 					}
 					nrel = rel_project(v->sql->sa, nrel, converted);
+				} else {
+					if (list_length(t->members) == 1)
+						nrel = rel_project(v->sql->sa, nrel, rel->exps);
+					if (sel) {
+						visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
+						sel->l = nrel;
+						nrel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
+					}
 				}
 				rel_destroy(rel);
-				if (sel) {
-					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
-					sel->l = nrel;
-					sel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
-					/*
-					if (iv.changes)
-						sel = rel_visitor_bottomup(&iv, sel, &rel_push_project_up);
-						*/
-					return sel;
-				}
 				return nrel;
 			}
 		}

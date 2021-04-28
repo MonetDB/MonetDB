@@ -1245,7 +1245,6 @@ retryRead:
 		case 'L':
 		case 'l':   /* list the current MAL block or module */
 		{
-			Symbol fs;
 			int lstng;
 
 			lstng = LIST_MAL_NAME;
@@ -1254,52 +1253,25 @@ retryRead:
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b != 0) {
-				/* debug the current block */
+				/* debug the block context */
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b);
+				mnstr_printf(out, "#Inspect %s\n", b);
 
-				if ( m == 0)
-					m = mb;
-				if ( m ){
-					const char *nme = getFunctionId(mb->stmt[0]);
-					str s = strstr(b, nme);
-					if( s ){
-						b = s + strlen(nme);
-						skipBlanc(cntxt,b);
-					}
+				if ( m )
+					mb = m;
+
+				skipWord(cntxt, b);
+				skipBlanc(cntxt, b);
+				c = strchr(b,'.');
+				if( c){
+					b = c + 1;
+					skipWord(cntxt, b);
+					skipBlanc(cntxt, b);
 				}
-				if (isdigit((unsigned char) *b) || *b == '-' || *b == '+')
+				c = strchr(b,']');
+				if (c){
+					b = c + 1;
 					goto partial;
-
-				/* inspect another function */
-				if( strchr(b,'.') ){
-					str modnme = b;
-					str fcnnme;
-					fcnnme = strchr(b,'.');
-					*fcnnme++  = 0;
-					b = fcnnme;
-					skipNonBlanc(cntxt, b);
-					if ( b)
-						*b++  = 0;
-
-					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
-					if (fs == 0) {
-						mnstr_printf(out, "#'%s' not found\n", modnme);
-						continue;
-					}
-					for(; fs; fs = fs->peer)
-					if( strcmp(fcnnme, fs->name)==0) {
-						if( lstng == LIST_MAL_NAME)
-							printFunction(out, fs->def, 0, lstng);
-						else
-							debugFunction(out, fs->def, 0, lstng, 0,mb->stop);
-					}
-					continue;
-				}
-				if (m){
-					if( lstng == LIST_MAL_NAME)
-						printFunction(out, m, 0, lstng);
-					else
-						debugFunction(out, m, 0, lstng, 0,m->stop);
 				}
 			} else {
 /*
@@ -1342,13 +1314,15 @@ partial:
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b) {
+				mnstr_printf(out, "#History of %s\n", b);
 				mdot = mdbLocateMalBlk(cntxt, mb, b);
 				if (mdot != NULL)
 					showMalBlkHistory(out, mdot);
 				else
 					mnstr_printf(out, "#'%s' not found\n", b);
-			} else
+			} else{
 				showMalBlkHistory(out, mb);
+			}
 			break;
 		}
 		case 'r':   /* reset program counter */

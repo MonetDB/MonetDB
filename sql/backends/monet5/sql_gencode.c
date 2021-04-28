@@ -274,8 +274,12 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 
 cleanup:
-	if (res < 0 && added_to_cache)
-		freeSymbol(c->curprg);
+	if (res < 0) {
+		if (!added_to_cache)
+			freeSymbol(c->curprg);
+		else
+			SQLremoveQueryFromCache(c);
+	}
 	memcpy(be, &bebackup, sizeof(backend));
 	c->curprg = symbackup;
 	return res;
@@ -322,8 +326,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	Symbol backup = NULL;
 	const char *local_tbl = prp->value;
 	node *n;
-	int i, q, v, res = 0;
-	int *lret, *rret;
+	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
 	char *lname;
 	sql_rel *r = rel;
 
@@ -678,6 +681,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
+	added_to_cache = 1;
 	// (str) chkProgram(c->usermodule, c->curprg->def);
 	if (!c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
@@ -687,8 +691,12 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 
 	GDKfree(lname);	/* make sure stub is called */
-	if (res == -1) /* on error, remove generated symbol from cache */
-		freeSymbol(c->curprg);
+	if (res < 0) {
+		if (!added_to_cache) /* on error, remove generated symbol from cache */
+			freeSymbol(c->curprg);
+		else
+			SQLremoveQueryFromCache(c);
+	}
 	c->curprg = backup;
 	return res;
 }
@@ -895,8 +903,12 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 	// restore the context for the wrapper code
 cleanup:
-	if (res < 0 && added_to_cache)
-		freeSymbol(c->curprg);
+	if (res < 0) {
+		if (!added_to_cache)
+			freeSymbol(c->curprg);
+		else
+			SQLremoveQueryFromCache(c);
+	}
 	memcpy(be, &bebackup, sizeof(backend));
 	c->curprg = symbackup;
 	return res;
@@ -1190,7 +1202,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
 	Symbol symbackup = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid, res = 0;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid, res = 0, added_to_cache = 0;
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
 	backend bebackup;
@@ -1336,6 +1348,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->unsafeProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
+	added_to_cache = 1;
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeFunction(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
@@ -1357,8 +1370,14 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 
 cleanup:
-	if (res < 0 && !vararg)
-		f->sql--;
+	if (res < 0) {
+		if (!vararg)
+			f->sql--;
+		if (!added_to_cache)
+			freeSymbol(c->curprg);
+		else
+			SQLremoveQueryFromCache(c);
+	}
 	memcpy(be, &bebackup, sizeof(backend));
 	c->curprg = symbackup;
 	return res;

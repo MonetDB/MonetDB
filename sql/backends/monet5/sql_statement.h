@@ -18,10 +18,16 @@
 
 typedef struct rel_bin_stmt {
 	list *cols;
+	struct rel_bin_stmt *left, *right;
+	/* TODO this has to move into a C union */
 	struct stmt *cand, 	/* optional candidate list */
-		 *grp,
-		 *ext,
-		 *cnt;
+		 *grp, /* groups */
+		 *ext, /* group extents */
+		 *cnt, /* group counts */
+		 *jl, /* left result of the join */
+		 *jr, /* right result of the join (not used in semijoins) */
+		 *ld, /* left difference of the join for left and full outer joins */
+		 *rd; /* right difference of the join for right and full outer joins */
 	unsigned int
 	 nrcols:2,
 	 key:1,
@@ -141,7 +147,10 @@ typedef struct stmt {
 } stmt;
 
 extern void stmt_set_nrcols(rel_bin_stmt *s);
-extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *sel, stmt *grp, stmt *ext, stmt *cnt);
+extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand);
+extern rel_bin_stmt *create_rel_bin_group_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt);
+extern rel_bin_stmt *create_rel_bin_join_stmt(sql_allocator *sa, rel_bin_stmt *left, rel_bin_stmt *right, list *cols, stmt *cand, stmt *jl, stmt *jr, stmt *ld, stmt *rd);
+
 extern stmt *stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c);
 
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
