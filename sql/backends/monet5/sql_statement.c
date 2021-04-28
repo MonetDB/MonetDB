@@ -165,12 +165,12 @@ stmt_atom_lng(backend *be, lng i)
 }
 
 stmt *
-stmt_bool(backend *be, int b)
+stmt_bool(backend *be, bit b)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "boolean", 0, 0);
-	return stmt_atom(be, atom_bool(be->mvc->sa, &t, b ? TRUE: FALSE));
+	return stmt_atom(be, is_bit_nil(b) ? atom_general(be->mvc->sa, &t, NULL) : atom_bool(be->mvc->sa, &t, b ? TRUE : FALSE));
 }
 
 static stmt *
@@ -3221,8 +3221,9 @@ stmt_nullif(backend *be, stmt *s1, stmt *s2, stmt *sel, sql_subfunc *op)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	sql_subtype *t = tail_type(s1);
-	int nrcols = s1->nrcols>s2->nrcols ? s1->nrcols:s2->nrcols, pushed = 0;
-	const char *mod = (!nrcols)?calcRef:batcalcRef;
+	int pushed = 0;
+	stmt *o = s1->nrcols > s2->nrcols ? s1 : s2;
+	const char *mod = (!o->nrcols)?calcRef:batcalcRef;
 
 	if (sel && s1->nrcols > 0 && !s1->cand) {
 		s1 = stmt_project_column_on_cand(be, sel, s1);
@@ -3255,11 +3256,16 @@ stmt_nullif(backend *be, stmt *s1, stmt *s2, stmt *sel, sql_subfunc *op)
 			return NULL;
 		}
 		s->op1 = stmt_list(be, list_append(list_append(sa_list(be->mvc->sa), s1), s2));
-		s->nrcols = nrcols;
+		if (o->nrcols) {
+			s->nrcols = o->nrcols;
+			s->aggr = o->aggr;
+		} else {
+			s->key = 1;
+		}
 		s->op4.funcval = op;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = (pushed || (sel && nrcols))?sel:NULL;
+		s->cand = (pushed || (sel && o->nrcols))?sel:NULL;
 		return s;
 	}
 	return NULL;
