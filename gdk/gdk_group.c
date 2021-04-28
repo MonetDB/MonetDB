@@ -629,7 +629,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (cnt == 0) {
 		hseqb = 0;
 	} else {
-		hseqb = ci.seq;
+		hseqb = ci.hseq;
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
