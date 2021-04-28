@@ -881,8 +881,10 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
 		if (external) {
-			return (ssize_t) strcpy_len(*dst, "nil", 4);
+			assert(*len >= strlen("nil") + 1);
+			return (ssize_t) strcpy(*dst, "nil");
 		}
+		assert(*len >= strlen(str_nil) + 1);
 		strcpy(*dst, str_nil);
 		return 1;
 	}

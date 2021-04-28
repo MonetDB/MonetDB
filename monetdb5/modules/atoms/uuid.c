@@ -95,9 +95,11 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 	}
 	if (is_uuid_nil(value)) {
 		if (external) {
-			return (ssize_t) strcpy_len(*retval, "nil", 4);
+			assert(*len >= strlen("nil") + 1);
+			return (ssize_t) strcpy(*retval, "nil");
 		}
-		return (ssize_t) strcpy_len(*retval, str_nil, 2);
+		assert(*len >= strlen(str_nil) + 1);
+		return (ssize_t) strcpy(*retval, str_nil);
 	}
 #ifdef HAVE_UUID
 	uuid_unparse_lower(value->u, *retval);
