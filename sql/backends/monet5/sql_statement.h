@@ -18,16 +18,26 @@
 
 typedef struct rel_bin_stmt {
 	list *cols;
-	struct rel_bin_stmt *left, *right;
-	/* TODO this has to move into a C union */
-	struct stmt *cand, 	/* optional candidate list */
-		 *grp, /* groups */
-		 *ext, /* group extents */
-		 *cnt, /* group counts */
-		 *jl, /* left result of the join */
-		 *jr, /* right result of the join (not used in semijoins) */
-		 *ld, /* left difference of the join for left and full outer joins */
-		 *rd; /* right difference of the join for right and full outer joins */
+
+	struct stmt *cand; /* optional candidate list */
+
+	union {
+		struct { /* group results */
+			struct stmt
+				*grp, /* groups */
+				*ext, /* group extents */
+				*cnt; /* group counts */
+		};
+		struct { /* join results */
+			struct rel_bin_stmt *left, *right; /* the left and right input relations for joins */
+			struct stmt
+				*jl, /* left result of the join */
+				*jr, /* right result of the join (not used in semi-joins) */
+				*ld, /* left difference of the join for left and full outer joins */
+				*rd; /* right difference of the join for right and full outer joins */
+		};
+	};
+
 	unsigned int
 	 nrcols:2,
 	 key:1,
