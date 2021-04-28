@@ -1660,9 +1660,11 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int cand, int g
 		r1 = addArgument(mb,r1,getArg(q,1));
 		r2 = addArgument(mb,r2,getArg(q,2)); /* packed cnts */
 
-		r = newInstruction(mb, algebraRef, projectionRef);
+		r = newInstructionArgs(mb, algebraRef, (cand>=0)?projectionpathRef:projectionRef, 3+(cand>=0)?1:0);
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = addArgument(mb, r, getArg(q,1));
+		if (cand >= 0)
+			r = addArgument(mb, r, getArg(ml->v[cand].mi,i));
 		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i)){
 			freeInstruction(r0);
