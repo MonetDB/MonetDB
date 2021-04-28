@@ -5925,12 +5925,16 @@ rel2bin_merge(backend *be, sql_rel *rel, list *refs)
 
 	if (is_ddl(r->op)) {
 		assert(r->flag == ddl_list);
-		if (r->l && !(ns = rel2bin_merge_apply_update(be, join, r->l, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)))
-			return NULL;
-		list_append(slist, ns);
-		if (r->r && !(ns = rel2bin_merge_apply_update(be, join, r->r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)))
-			return NULL;
-		list_append(slist, ns);
+		if (r->l) {
+			if ((ns = rel2bin_merge_apply_update(be, join, r->l, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)) == NULL)
+				return NULL;
+			list_append(slist, ns);
+		}
+		if (r->r) {
+			if ((ns = rel2bin_merge_apply_update(be, join, r->r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)) == NULL)
+				return NULL;
+			list_append(slist, ns);
+		}
 	} else {
 		if (!(ns = rel2bin_merge_apply_update(be, join, r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)))
 			return NULL;
