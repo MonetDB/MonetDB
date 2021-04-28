@@ -171,6 +171,7 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 {
 	int i = 0;
 
+	setVariableScope(mb);
 	if (s) {
 		mnstr_printf(f, "#Stack '%s' size=%d top=%d\n",
 				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
