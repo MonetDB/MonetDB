@@ -195,7 +195,7 @@ extern stmt *stmt_atom(backend *be, atom *a);
 extern stmt *stmt_atom_string(backend *be, const char *s);
 extern stmt *stmt_atom_int(backend *be, int i);
 extern stmt *stmt_atom_lng(backend *be, lng i);
-extern stmt *stmt_bool(backend *be, int b);
+extern stmt *stmt_bool(backend *be, bit b);
 
 extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, int anti, int is_semantics);
 /* cmp
