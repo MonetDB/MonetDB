@@ -285,15 +285,6 @@ extern str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 extern str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str STRindex_int(int *res, const str *src, const bit *u);
-extern str BATSTRindex_int(bat *res, const bat *src, const bit *u);
-extern str STRindex_sht(sht *res, const str *src, const bit *u);
-extern str BATSTRindex_sht(bat *res, const bat *src, const bit *u);
-extern str STRindex_bte(bte *res, const str *src, const bit *u);
-extern str BATSTRindex_bte(bat *res, const bat *src, const bit *u);
-extern str STRstrings(str *res, const str *src);
-extern str BATSTRstrings(bat *res, const bat *src);
-
 extern str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
