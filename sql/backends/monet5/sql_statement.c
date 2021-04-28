@@ -1349,6 +1349,21 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
 
+	if (!push_cands && sel) {
+		for (node *n = lops->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+
+			if (op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				n->data = stmt_project_column_on_cand(be, sel, op);
+		}
+		for (node *n = rops->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+
+			if (op->nrcols > 0 && !op->cand) /* don't push cands twice */
+				n->data = stmt_project_column_on_cand(be, sel, op);
+		}
+	}
+
 	if (rops->nrcols >= 1) {
 		bit need_not = FALSE;
 		int narg = 3 + list_length(lops->op4.lval) + list_length(rops->op4.lval);
@@ -1367,15 +1382,11 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		for (node *n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
-				op = stmt_project_column_on_cand(be, sel, op);
 			q = pushArgument(mb, q, op->nr);
 		}
 		for (node *n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
-				op = stmt_project_column_on_cand(be, sel, op);
 			q = pushArgument(mb, q, op->nr);
 		}
 		if (push_cands) {
@@ -1424,11 +1435,13 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		for (node *n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
-				op = stmt_project_column_on_cand(be, sel, op);
 			q = pushArgument(mb, q, op->nr);
+		}
 
-			if (push_cands) {
+		if (push_cands) {
+			for (node *n = lops->op4.lval->h; n; n = n->next) {
+				stmt *op = n->data;
+
 				if (!op->cand && op->nrcols && sel) /* don't push cands again */
 					q = pushArgument(mb, q, sel->nr);
 				else {
@@ -1465,7 +1478,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		s->op3 = sel;
 		s->key = lops->nrcols == 0 && rops->nrcols == 0;
 		s->flag = cmp_filter;
-		s->nrcols = lops->nrcols;
+		s->nrcols = MAX(lops->nrcols, rops->nrcols);
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sel;
@@ -3417,6 +3430,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 	prop *p = NULL;
 	sql_allocator *sa = be->mvc->sa;
 	stmt *o = NULL, *s = NULL;
+	int pushed = 0, nrcols = 0;
 
 	/* dump args */
 	if (ops && ops->nr < 0)
@@ -3434,6 +3448,22 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
 		return NULL;
 
+	if (ops && list_length(ops->op4.lval)) {
+		o = ops->op4.lval->h->data;
+		for (node *n = ops->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+
+			if (sel && op->nrcols > 0 && !op->cand) {/* don't push cands twice */
+				n->data = op = stmt_project_column_on_cand(be, sel, op);
+				pushed = 1;
+			}
+			if (o->nrcols < op->nrcols)
+				o = op;
+			if (op->nrcols)
+				nrcols++;
+		}
+	}
+
 	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);
 	else
@@ -3444,14 +3474,9 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 		q = pushStr(mb, q, name);
 	}
 	if (ops && list_length(ops->op4.lval)) {
-		o = ops->op4.lval->h->data;
 		for (node *n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
-				op = stmt_project_column_on_cand(be, sel, op);
-			if (o->nrcols < op->nrcols)
-				o = op;
 			q = pushArgument(mb, q, op->nr);
 		}
 	}
@@ -3476,7 +3501,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 		}
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = sel;
+		s->cand = (pushed || (sel && nrcols))?sel:NULL;
 		return s;
 	}
 	return NULL;
