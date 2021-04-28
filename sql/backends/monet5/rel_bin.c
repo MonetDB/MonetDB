@@ -386,7 +386,7 @@ subrel_project( backend *be, rel_bin_stmt *s, list *refs, sql_rel *rel, bool par
 		s->cand = NULL;
 		list_append(l, s);
 	}
-	s = create_rel_bin_stmt(be->mvc->sa, l, NULL);
+	s = create_rel_bin_stmt(be->mvc->sa, rel, l, NULL);
 	stmt_set_nrcols(s);
 	if (rel && rel_is_ref(rel))
 		refs_update_stmt(refs, rel, s);
@@ -1219,7 +1219,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 						r = stmt_fetch(be, r);
 				}
 				if (r->type == st_list)
-					r = stmt_table(be, create_rel_bin_stmt(sql->sa, r->op4.lval, NULL), 1);
+					r = stmt_table(be, create_rel_bin_stmt(sql->sa, e->l, r->op4.lval, NULL), 1);
 			}
 			s = stmt_return(be, r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_WHILE) {
@@ -1362,7 +1362,8 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 	} 	break;
 	case e_aggr: {
 		list *attr = e->l;
-		stmt *as = NULL, *input_group = right ? right->grp : NULL;
+		bool is_right_groupby = right && is_groupby(right->rel->op);
+		stmt *as = NULL, *input_group = is_right_groupby ? right->grp : NULL;
 		sql_subfunc *a = e->f;
 
 		if (attr && attr->h) {
@@ -1379,7 +1380,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 				if (as && as->nrcols <= 0 && left)
 					as = stmt_const(be, bin_find_smallest_column(be, left), left->cand, as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
-					as = exp_count_no_nil_arg(e, right ? right->ext : NULL, at, as);
+					as = exp_count_no_nil_arg(e, is_right_groupby ? right->ext : NULL, at, as);
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
@@ -1388,11 +1389,11 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					return NULL;
 				append(l, as);
 			}
-			if (need_distinct(e) && ((right && right->grp) || list_length(l) > 1)){
+			if (need_distinct(e) && ((is_right_groupby && right->grp) || list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
-				stmt *ngrp = right ? right->grp : NULL;
-				stmt *next = right ? right->ext : NULL;
-				stmt *ncnt = right ? right->cnt : NULL;
+				stmt *ngrp = is_right_groupby ? right->grp : NULL;
+				stmt *next = is_right_groupby ? right->ext : NULL;
+				stmt *ncnt = is_right_groupby ? right->cnt : NULL;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
 					stmt *g = stmt_group(be, as, right->cand, ngrp, next, ncnt, 1);
@@ -1404,7 +1405,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 					stmt *as = en->data;
 					append(nl, stmt_project(be, next, as));
 				}
-				if (right && right->grp)
+				if (is_right_groupby && right->grp)
 					input_group = stmt_project(be, next, right->grp);
 				l = nl;
 			} else if (need_distinct(e)) {
@@ -1417,13 +1418,13 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		} else {
 			/* count(*) may need the default group (relation) and
 			   and/or an attribute to count */
-			if (right && right->grp) {
+			if (is_right_groupby && right->grp) {
 				as = right->grp;
 				right->cnt->cand = NULL; /* cand has been applied */
 				return right->cnt;
 			} else if (right) {
 				as = bin_find_smallest_column(be, left);
-				as = exp_count_no_nil_arg(e, right->ext, NULL, as);
+				as = exp_count_no_nil_arg(e, is_right_groupby ? right->ext : NULL, NULL, as);
 			} else {
 				/* create dummy single value in a column */
 				as = stmt_atom_lng(be, 0);
@@ -1431,7 +1432,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			}
 		}
 		if (right)
-			s = stmt_aggr(be, as, left->cand, input_group, right->ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+			s = stmt_aggr(be, as, left->cand, input_group, is_right_groupby ? right->ext : NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		else
 			s = stmt_aggr(be, as, left?left->cand:NULL, NULL, NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
@@ -1440,18 +1441,10 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 	case e_column: {
 		if (right) {/* check relation names */
 			s = bin_find_column(be, right, e->l, e->r);
-#if 0
-			if (s && s->nrcols > 0 && depth == 0 && right->cand) /* topmost column reference, needs to be projected on the cand */
-				s = stmt_project_column_on_cand(be, right->cand, s);
-#endif
 		}
 		if (!s && left) {
 			s = bin_find_column(be, left, e->l, e->r);
-#if 0
-			if (s && s->nrcols > 0 && depth == 0 && left->cand) /* topmost column reference, needs to be projected on the cand */
-				s = stmt_project_column_on_cand(be, left->cand, s);
-#endif
-			if (s && right && right->grp) {
+			if (s && right && is_groupby(right->rel->op) && right->grp) {
 				if (left->cand && !s->cand)
 					s = stmt_project(be, left->cand, s);
 				s = stmt_project(be, right->ext, s);
@@ -1780,7 +1773,7 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 }
 
 static rel_bin_stmt *
-rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
+rel2bin_sql_table(backend *be, sql_rel *rel, sql_table *t, list *aliases)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
@@ -1851,7 +1844,7 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 			}
 		}
 	}
-	return create_rel_bin_stmt(sql->sa, l, NULL);
+	return create_rel_bin_stmt(sql->sa, rel, l, NULL);
 }
 
 static rel_bin_stmt *
@@ -1922,7 +1915,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		s->cname = exp_name(exp);
 		list_append(l, s);
 	}
-	return create_rel_bin_stmt(sql->sa, l, dels);
+	return create_rel_bin_stmt(sql->sa, rel, l, dels);
 }
 
 static int
@@ -2106,7 +2099,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				assert(ti->type != 1);
 			}
 		}
-		return create_rel_bin_stmt(sql->sa, l, NULL);
+		return create_rel_bin_stmt(sql->sa, rel, l, NULL);
 	} else if (op) {
 		int i;
 		sql_subfunc *f = op->f;
@@ -2120,7 +2113,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				sql_table *t = rel_ddl_table_get(l);
 
 				if (t)
-					sub = rel2bin_sql_table(be, t, NULL);
+					sub = rel2bin_sql_table(be, l, t, NULL);
 			} else {
 				sub = subrel_bin(be, rel->l, refs);
 			}
@@ -2239,7 +2232,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			}
 		}
 		assert(rel->flag != TABLE_PROD_FUNC || !sub || !(sub->nrcols));
-		sub = create_rel_bin_stmt(sql->sa, l, NULL);
+		sub = create_rel_bin_stmt(sql->sa, rel, l, NULL);
 	} else if (rel->l) { /* handle sub query via function */
 		int i;
 		char name[16], *nme;
@@ -2266,7 +2259,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				s = stmt_fetch(be, s);
 			list_append(l, s);
 		}
-		sub = create_rel_bin_stmt(sql->sa, l, NULL);
+		sub = create_rel_bin_stmt(sql->sa, rel, l, NULL);
 	}
 	if (!sub) {
 		assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
@@ -2675,7 +2668,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			s = stmt_alias(be, s, rnme, nme);
 			list_append(nl, s);
 		}
-		sub = create_rel_bin_stmt(sql->sa, nl, NULL);
+		sub = create_rel_bin_stmt(sql->sa, rel, nl, NULL);
 
 		/* continue with non equi-joins */
 		while(sexps) {
@@ -2756,7 +2749,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
-	return create_rel_bin_join_stmt(sql->sa, left, right, l, NULL, jl, jr, ld, rd);
+	return create_rel_bin_join_stmt(sql->sa, rel, l, NULL, left, right, jl, jr, ld, rd);
 }
 
 static int
@@ -2838,7 +2831,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
-	return create_rel_bin_join_stmt(sql->sa, left, right, l, NULL, join, NULL, NULL, NULL);
+	return create_rel_bin_join_stmt(sql->sa, rel, l, NULL, left, right, join, NULL, NULL, NULL);
 }
 
 static rel_bin_stmt *
@@ -3012,7 +3005,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			s = stmt_alias(be, s, rnme, nme);
 			list_append(nl, s);
 		}
-		sub = create_rel_bin_stmt(sql->sa, nl, NULL);
+		sub = create_rel_bin_stmt(sql->sa, rel, nl, NULL);
 
 		/* continue with non equi-joins */
 		while(sexps) {
@@ -3069,7 +3062,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
-	return create_rel_bin_join_stmt(sql->sa, left, right, l, NULL, join, NULL, NULL, NULL);
+	return create_rel_bin_join_stmt(sql->sa, rel, l, NULL, left, right, join, NULL, NULL, NULL);
 }
 
 static rel_bin_stmt *
@@ -3184,7 +3177,7 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
-	sub = create_rel_bin_stmt(sql->sa, l, NULL);
+	sub = create_rel_bin_stmt(sql->sa, rel, l, NULL);
 
 	sub = rel_rename(be, rel, sub);
 	if (need_distinct(rel))
@@ -3301,7 +3294,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 		c1 = stmt_alias(be, c1, rnme, nme);
 		list_append(stmts, c1);
 	}
-	sub = create_rel_bin_stmt(sql->sa, stmts, NULL);
+	sub = create_rel_bin_stmt(sql->sa, rel, stmts, NULL);
 	return rel_rename(be, rel, sub);
 }
 
@@ -3398,7 +3391,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 		c1 = stmt_alias(be, c1, rnme, nme);
 		list_append(stmts, c1);
 	}
-	sub = create_rel_bin_stmt(sql->sa, stmts, NULL);
+	sub = create_rel_bin_stmt(sql->sa, rel, stmts, NULL);
 	return rel_rename(be, rel, sub);
 }
 
@@ -3479,7 +3472,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			sql_table *t = rel_ddl_table_get(l);
 
 			if (t)
-				sub = rel2bin_sql_table(be, t, rel->exps);
+				sub = rel2bin_sql_table(be, l, t, rel->exps);
 		} else {
 			sub = subrel_bin(be, rel->l, refs);
 			if (sub && sub->pushed) /* no partial candidates yet */
@@ -3492,7 +3485,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	pl = sa_list(sql->sa);
 	if (sub)
 		pl->expected_cnt = list_length(sub->cols);
-	psub = create_rel_bin_stmt(sql->sa, pl, NULL);
+	psub = create_rel_bin_stmt(sql->sa, rel, pl, NULL);
 	int used = 0;
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
@@ -3659,7 +3652,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 	if (sub && !sel)
 		sel = sub->cand;
-	sub = create_rel_bin_stmt(sql->sa, sub->cols, sel);
+	sub = create_rel_bin_stmt(sql->sa, rel, sub->cols, sel);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
 		stmt *s = exp_bin(be, e, sub, NULL, 0, 1, 0);
@@ -3747,7 +3740,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 	/* now aggregate */
 	l = sa_list(sql->sa);
-	cursub = create_rel_bin_group_stmt(sql->sa, l, NULL, grp, ext, cnt);
+	cursub = create_rel_bin_group_stmt(sql->sa, rel, l, NULL, grp, ext, cnt);
 	for( n = rel->exps->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
@@ -3877,7 +3870,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 		 if (!(sample_size = exp_bin(be, rel->exps->h->data, NULL, NULL, 0, 0, 0)))
 			return NULL;
 
-		if (rel->exps->cnt == 2) {
+		if (list_length(rel->exps) == 2) {
 			seed = exp_bin(be, rel->exps->h->next->data, NULL, NULL, 0, 0, 0);
 			if (!seed)
 				return NULL;
@@ -4337,7 +4330,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
 
-	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
 }
 
 static int
@@ -5303,7 +5296,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, ret->nr) : ret->nr;
 	}
 
-	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
 }
 
 static int
@@ -5539,7 +5532,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
 	}
 
-	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
 }
 
 struct tablelist {
@@ -5756,7 +5749,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	if (!truncate)
 		return NULL;
 
-	return create_rel_bin_stmt(sql->sa, sa_list(sql->sa), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, sa_list(sql->sa), NULL);
 }
 
 static rel_bin_stmt *
@@ -5796,7 +5789,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	} else {
 		cnt = stmt_atom_lng(be, 1);
 	}
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), cnt), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), cnt), NULL);
 }
 
 static list *
@@ -5862,12 +5855,12 @@ rel2bin_merge_apply_update(backend *be, sql_rel *join, sql_rel *upd, list *refs,
 		if (!*rd) {
 			*rd = stmt_tdiff(be, stmt_mirror(be, bin_find_smallest_column(be, target_stmt)), jr, NULL);
 		}
-		rel_bin_stmt *s = create_rel_bin_stmt(sql->sa, merge_stmt_join_projections(be, NULL, target_stmt, NULL, NULL, *rd), NULL);
+		rel_bin_stmt *s = create_rel_bin_stmt(sql->sa, join, merge_stmt_join_projections(be, NULL, target_stmt, NULL, NULL, *rd), NULL);
 		refs_update_stmt(refs, join, s); /* project the differences on the target side for inserts */
 
 		return rel2bin_insert(be, upd, refs);
 	} else {
-		rel_bin_stmt *s = create_rel_bin_stmt(sql->sa, merge_stmt_join_projections(be, bt_stmt, is_update(upd->op) ? target_stmt : NULL, jl, is_update(upd->op) ? jr : NULL, NULL), NULL);
+		rel_bin_stmt *s = create_rel_bin_stmt(sql->sa, join, merge_stmt_join_projections(be, bt_stmt, is_update(upd->op) ? target_stmt : NULL, jl, is_update(upd->op) ? jr : NULL, NULL), NULL);
 		refs_update_stmt(refs, join, s); /* project the matched values on both sides for updates and deletes */
 
 		assert(is_update(upd->op) || is_delete(upd->op));
@@ -5907,7 +5900,7 @@ rel2bin_merge(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		list_append(slist, ns);
 	}
-	return create_rel_bin_stmt(sql->sa, slist, NULL);
+	return create_rel_bin_stmt(sql->sa, rel, slist, NULL);
 }
 
 static rel_bin_stmt *
@@ -5929,7 +5922,7 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 		list_append(slist, l);
 	if (r)
 		list_append(slist, r);
-	return create_rel_bin_stmt(sql->sa, slist, NULL);
+	return create_rel_bin_stmt(sql->sa, rel, slist, NULL);
 }
 
 static rel_bin_stmt *
@@ -5950,7 +5943,7 @@ rel2bin_psm(backend *be, sql_rel *rel)
 		else
 			list_append(l, s);
 	}
-	return create_rel_bin_stmt(sql->sa, l, NULL);
+	return create_rel_bin_stmt(sql->sa, rel, l, NULL);
 }
 
 static rel_bin_stmt *
@@ -5981,7 +5974,7 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 			append(slist, s);
 		}
 	}
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, slist)), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, slist)), NULL);
 }
 
 static rel_bin_stmt *
@@ -6008,7 +6001,7 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		list_append(slist, s);
 	}
-	return create_rel_bin_stmt(sql->sa, slist, NULL);
+	return create_rel_bin_stmt(sql->sa, rel, slist, NULL);
 }
 
 static rel_bin_stmt *
@@ -6040,7 +6033,7 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 	append(l, seqname);
 	append(l, seq);
 	append(l, restart);
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
 }
 
 static rel_bin_stmt *
@@ -6059,7 +6052,7 @@ rel2bin_trans(backend *be, sql_rel *rel)
 		if (!name)
 			return NULL;
 	}
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stmt_trans(be, rel->flag, chain, name)), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), stmt_trans(be, rel->flag, chain, name)), NULL);
 }
 
 static rel_bin_stmt *
@@ -6097,7 +6090,7 @@ rel2bin_catalog_schema(backend *be, sql_rel *rel)
 		append(l, ifexists);
 	}
 	append(l, action);
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
 }
 
 static rel_bin_stmt *
@@ -6153,7 +6146,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel)
 		append(l, ifexists);
 	}
 	append(l, action);
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
 }
 
 static rel_bin_stmt *
@@ -6174,7 +6167,7 @@ rel2bin_catalog2(backend *be, sql_rel *rel)
 		}
 		append(l, es);
 	}
-	return create_rel_bin_stmt(sql->sa, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
+	return create_rel_bin_stmt(sql->sa, rel, list_append(sa_list(sql->sa), stmt_catalog(be, rel->flag, l)), NULL);
 }
 
 static rel_bin_stmt *
