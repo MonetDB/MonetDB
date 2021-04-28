@@ -8120,7 +8120,7 @@
 [ "LOUISA ANTHONY"	]
 [ "VERTROUWEN"	]
 #select distinct boatname from "voyages";
-% voc.voyages # table_name
+% .voyages # table_name
 % boatname # name
 % varchar # type
 % 34 # length
