@@ -407,6 +407,8 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 	if ( flg == 0 || step < 0  || first < 0 )
 		return;
 
+	if( mb->errors)
+				mnstr_printf(fd,"#errors seen: %s\n", mb->errors);
 	for (i = first; i < first +step && i < mb->stop; i++){
 		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
 		if (ps) {
