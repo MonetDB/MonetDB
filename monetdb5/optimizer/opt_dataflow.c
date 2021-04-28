@@ -349,10 +349,9 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
 /* dataflow blocks are transparent, because they are always
    executed, either sequentially or in parallel */
 
-static str
-OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+str
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	volatile int interesting_banana = 0;
 	int i,j,k, start, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
 	InstrPtr *sink = NULL, *old = NULL, q;
@@ -362,32 +361,6 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	region_state state = { singleton_region };
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-
-
-	do {
-		if (mb->stop < 2)
-			break;
-		InstrPtr p = mb->stmt[1];
-
-		if (strcmp("joeri", mb->stmt[0]->fcnname) == 0) {
-			interesting_banana = 1;
-		}
-
-		if (p->argc < 2)
-			break;
-
-		if (p->modname != querylogRef || p->fcnname != defineRef)
-			break;
-
-		const char *txt = getVarConstant(mb, getArg(p,1)).val.sval;
-		if (strstr(txt, "value / 2") != 0)
-			interesting_banana = 1;
-	} while (0);
-
-	// if (!interesting_banana)
-	// 	return MAL_SUCCEED;
-
-
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
@@ -509,60 +482,5 @@ wrapup:
 	if(states) GDKfree(states);
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
-	(void) interesting_banana;
-	return msg;
-}
-
-
-
-static stream *
-open_trace_stream(void)
-{
-	char path[4096] = {0};
-	stream *s = NULL;
-
-	char *tst_trace_dir = getenv("JOERITRACE");
-	if (tst_trace_dir) {
-		long t = time(NULL);
-		int p = getpid();
-		sprintf(path, "%s/trace.%ld.%d.log", tst_trace_dir, t, p);
-	} else {
-		strcpy(path, "a");
-	}
-
-	s = open_wastream(path);
-	return s;
-}
-
-str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int list_flags = LIST_MAL_ALL | LIST_MAL_NOCOMMENTS;
-	static stream *s = NULL;
-	static MT_Lock lock = MT_LOCK_INITIALIZER(lock);
-
-	MT_lock_set(&lock);
-
-	if (s == NULL)
-		s = open_trace_stream();
-
-	if (s) {
-		printFunction(s, mb, stk, list_flags);
-		mnstr_printf(s, "\n\n--\n\n");
-		mnstr_flush(s, MNSTR_FLUSH_ALL);
-	}
-	str msg = OPTdataflowImplementation_wrapped(cntxt, mb, stk, p);
-
-	if (s) {
-		if (msg != MAL_SUCCEED) {
-			mnstr_printf(s, "ERROR: %s\n", msg);
-		}
-		printFunction(s, mb, stk, list_flags);
-		mnstr_printf(s, "\n\n------\n\n");
-		mnstr_flush(s, MNSTR_FLUSH_ALL);
-	}
-
-	MT_lock_unset(&lock);
-
 	return msg;
 }
