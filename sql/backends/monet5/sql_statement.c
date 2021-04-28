@@ -205,7 +205,7 @@ stmt_set_nrcols(rel_bin_stmt *s)
 }
 
 rel_bin_stmt *
-create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt)
+create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand)
 {
 	rel_bin_stmt *rs = SA_NEW(sa, rel_bin_stmt);
 
@@ -214,13 +214,38 @@ create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *
 	*rs = (rel_bin_stmt) {
 		.cols = cols,
 		.cand = cand,
-		.grp = grp,
-		.ext = ext,
-		.cnt = cnt,
 		.nrcols = 0
 	};
-
 	stmt_set_nrcols(rs);
+	return rs;
+}
+
+rel_bin_stmt *
+create_rel_bin_group_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt)
+{
+	rel_bin_stmt *rs = create_rel_bin_stmt(sa, cols, cand);
+
+	if (!rs)
+		return NULL;
+	rs->grp = grp;
+	rs->ext = ext;
+	rs->cnt = cnt;
+	return rs;
+}
+
+rel_bin_stmt *
+create_rel_bin_join_stmt(sql_allocator *sa, rel_bin_stmt *left, rel_bin_stmt *right, list *cols, stmt *cand, stmt *jl, stmt *jr, stmt *ld, stmt *rd)
+{
+	rel_bin_stmt *rs = create_rel_bin_stmt(sa, cols, cand);
+
+	if (!rs)
+		return NULL;
+	rs->left = left;
+	rs->right = right;
+	rs->jl = jl;
+	rs->jr = jr;
+	rs->ld = ld;
+	rs->rd = rd;
 	return rs;
 }
 

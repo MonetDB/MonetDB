@@ -96,7 +96,8 @@ rel_destroy_(sql_rel *rel)
 	    is_select(rel->op) ||
 	    is_set(rel->op) ||
 	    is_topn(rel->op) ||
-		is_sample(rel->op)) {
+		is_sample(rel->op) ||
+		is_merge(rel->op)) {
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -104,7 +105,7 @@ rel_destroy_(sql_rel *rel)
 	} else if (is_simple_project(rel->op) || is_groupby(rel->op)) {
 		if (rel->l)
 			rel_destroy(rel->l);
-	} else if (is_modify(rel->op)) {
+	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r)
 			rel_destroy(rel->r);
 	}
@@ -203,6 +204,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_union:
 	case op_inter:
 	case op_except:
+	case op_merge:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		if (i->r)
@@ -1071,6 +1073,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_update:
 	case op_delete:
 	case op_truncate:
+	case op_merge:
 		break;
 	case op_ddl:
 		break;
@@ -1752,6 +1755,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_merge:
 		if (rel_deps(sql, r->l, refs, l) != 0 ||
 			rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
@@ -1960,6 +1964,7 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_merge:
 
 	case op_join:
 	case op_left:
@@ -2160,6 +2165,7 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_merge:
 
 	case op_join:
 	case op_left:
