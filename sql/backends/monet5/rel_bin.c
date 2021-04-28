@@ -4322,14 +4322,16 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		m = m->next;
 	}
 
+	int mvc_var = be->mvc_var;
 	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
 
 		stmt *ins = m->data;
 		sql_column *c = n->data;
 
-		insert = stmt_append_col(be, c, pos, ins, rel->flag);
+		insert = stmt_append_col(be, c, pos, ins, &mvc_var, rel->flag);
 		append(l,insert);
 	}
+	be->mvc_var = mvc_var;
 	if (!insert)
 		return NULL;
 
