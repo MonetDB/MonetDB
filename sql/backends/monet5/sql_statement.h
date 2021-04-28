@@ -17,8 +17,8 @@
 #include "mal_backend.h"
 
 typedef struct rel_bin_stmt {
-	list *cols;
-
+	list *cols; /* list of statements generated from this relation */
+	sql_rel *rel; /* relation of this rel_bin, use the relation type to switch on the union values below */
 	struct stmt *cand; /* optional candidate list */
 
 	union {
@@ -157,9 +157,9 @@ typedef struct stmt {
 } stmt;
 
 extern void stmt_set_nrcols(rel_bin_stmt *s);
-extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, list *cols, stmt *cand);
-extern rel_bin_stmt *create_rel_bin_group_stmt(sql_allocator *sa, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt);
-extern rel_bin_stmt *create_rel_bin_join_stmt(sql_allocator *sa, rel_bin_stmt *left, rel_bin_stmt *right, list *cols, stmt *cand, stmt *jl, stmt *jr, stmt *ld, stmt *rd);
+extern rel_bin_stmt *create_rel_bin_stmt(sql_allocator *sa, sql_rel *rel, list *cols, stmt *cand);
+extern rel_bin_stmt *create_rel_bin_group_stmt(sql_allocator *sa, sql_rel *rel, list *cols, stmt *cand, stmt *grp, stmt *ext, stmt *cnt);
+extern rel_bin_stmt *create_rel_bin_join_stmt(sql_allocator *sa, sql_rel *rel, list *cols, stmt *cand, rel_bin_stmt *left, rel_bin_stmt *right, stmt *jl, stmt *jr, stmt *ld, stmt *rd);
 
 extern stmt *stmt_project_column_on_cand(backend *be, stmt *sel, stmt *c);
 
