@@ -369,6 +369,7 @@ op2string(operator_type op)
 	case op_update:
 	case op_delete:
 	case op_truncate:
+	case op_merge:
 		return "modify op";
 	}
 	return "unknown";
@@ -560,7 +561,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_truncate: {
+	case op_truncate:
+	case op_merge: {
 
 		if (rel->op == op_insert)
 			mnstr_printf(fout, "insert(");
@@ -568,6 +570,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			mnstr_printf(fout, "update(");
 		else if (rel->op == op_delete)
 			mnstr_printf(fout, "delete(");
+		else if (rel->op == op_merge)
+			mnstr_printf(fout, "merge(");
 		else if (rel->op == op_truncate) {
 			assert(list_length(rel->exps) == 2);
 			sql_exp *first = (sql_exp*) rel->exps->h->data, *second = (sql_exp*) rel->exps->h->next->data;
@@ -595,7 +599,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
-		if (rel->op != op_truncate && rel->exps)
+		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 	} 	break;
 	default:
@@ -678,6 +682,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_update:
 	case op_delete:
 	case op_truncate:
+	case op_merge:
 		if (rel->l)
 			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
@@ -1655,6 +1660,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(rel = rel_update(sql, lrel, rrel, NULL, nexps)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
 	}
+
+	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r')
+		return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'i') {
 		*pos += (int) strlen("distinct");

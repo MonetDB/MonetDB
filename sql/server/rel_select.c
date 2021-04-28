@@ -2431,8 +2431,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_INTERSECT: {
 		sql_rel *sq;
 
-		if (is_psm_call(f))
-			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
+		if (is_psm_call(f) || is_sql_merge(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: subqueries not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
 		sq = rel_setquery(query, sc);
@@ -5102,8 +5102,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_SELECT: {
 		sql_rel *r = NULL;
 
-		if (is_psm_call(f))
-			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
+		if (is_psm_call(f) || is_sql_merge(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: subqueries not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
 		if (se->token == SQL_WITH) {
