@@ -1343,7 +1343,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
-	int k, push_cands = strcmp(mod, "algebra") == 0, all_cands_pushed = 1;
+	int k, pushed = 0, push_cands = (f->func->type == F_FUNC || f->func->type == F_FILT) &&
+		(f->func->lang == FUNC_LANG_INT || f->func->lang == FUNC_LANG_MAL) && strcmp(mod, "algebra") == 0;
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
@@ -1368,8 +1369,6 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 
 			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
 				op = stmt_project_column_on_cand(be, sel, op);
-			else if (push_cands && op->nrcols > 0)
-				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
 		for (node *n = rops->op4.lval->h; n; n = n->next) {
@@ -1377,15 +1376,14 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 
 			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
 				op = stmt_project_column_on_cand(be, sel, op);
-			else if (push_cands && op->nrcols > 0)
-				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
 		}
-		if (!all_cands_pushed && push_cands) {
+		if (push_cands) {
 			for (node *n = lops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
+
 				if (op->nrcols) {
-					if (!sel || op->cand)
+					if (!sel || op->cand == sel)
 						q = pushNil(mb, q, TYPE_bat);
 					else
 						q = pushArgument(mb, q, sel->nr);
@@ -1393,36 +1391,25 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 			}
 			for (node *n = rops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
+
 				if (op->nrcols) {
-					if (!sel || op->cand)
+					if (!sel || op->cand == sel)
 						q = pushNil(mb, q, TYPE_bat);
 					else
 						q = pushArgument(mb, q, sel->nr);
 				}
 			}
-			all_cands_pushed = 1;
 		}
 		k = getDestVar(q);
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
-		if (push_cands) {
-			if (sel && !all_cands_pushed)
-				q = pushArgument(mb, q, sel->nr);
-			else
-				q = pushNil(mb, q, TYPE_bat);
-		}
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, anti);
-		if (all_cands_pushed && sel) {
-			int nr = getDestVar(q);
-			q = newStmt(mb, algebraRef, projectionRef);
-			q = pushArgument(mb, q, nr);
-			q = pushArgument(mb, q, sel->nr);
-		}
+		pushed = 1;
 	} else {
 		fimp = sa_strconcat(be->mvc->sa, fimp, selectRef);
 		q = newStmtArgs(mb, mod, convertMultiplexFcn(fimp), 9);
@@ -1439,16 +1426,16 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 
 			if (!push_cands && sel && op->nrcols > 0 && !op->cand) /* don't push cands twice */
 				op = stmt_project_column_on_cand(be, sel, op);
-			else if (push_cands && op->nrcols > 0)
-				all_cands_pushed &= op->cand != NULL;
 			q = pushArgument(mb, q, op->nr);
-		}
-		/* candidate lists */
-		if (push_cands) {
-			if (sel && !all_cands_pushed)
-				q = pushArgument(mb, q, sel->nr);
-			else
-				q = pushNil(mb, q, TYPE_bat);
+
+			if (push_cands) {
+				if (!op->cand && op->nrcols && sel) /* don't push cands again */
+					q = pushArgument(mb, q, sel->nr);
+				else {
+					q = pushNil(mb, q, TYPE_bat);
+					pushed = 1;
+				}
+			}
 		}
 
 		for (node *n = rops->op4.lval->h; n; n = n->next) {
@@ -1458,6 +1445,12 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 		}
 
 		q = pushBit(mb, q, anti);
+	}
+	if (q && sel && push_cands && pushed) {
+		int nr = getDestVar(q);
+		q = newStmt(mb, algebraRef, projectionRef);
+		q = pushArgument(mb, q, nr);
+		q = pushArgument(mb, q, sel->nr);
 	}
 
 	if (q) {
@@ -3231,7 +3224,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = (strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
+	int push_cands = (f->func->type == F_FUNC || f->func->type == F_FILT) && (f->func->lang == FUNC_LANG_INT || f->func->lang == FUNC_LANG_MAL) &&
+		(strcmp(mod, "calc") == 0 || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
 		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
 	int pushed = 0, nrcols = 0;
 	node *n;
@@ -3330,7 +3324,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (push_cands && (f->func->type == F_FUNC || f->func->type == F_FILT) && f->func->lang == FUNC_LANG_INT) {
+		if (push_cands) {
 			for (n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
