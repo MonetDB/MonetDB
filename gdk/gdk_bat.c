@@ -2671,3 +2671,51 @@ BATassertProps(BAT *b)
 		assert(!b->tnil || seennil);
 	}
 }
+
+BAT*
+BATvacuum(BAT* b) {
+	BATcheck(b, NULL);
+	BAT *bn = NULL;
+
+	assert(b->tvarsized);
+
+	bn = COLnew(b->hseqbase, BATttype(b), BATcapacity(b), b->batRole);
+	if (bn == NULL)
+		return NULL;
+
+	bn->tshift = b->tshift;
+	bn->twidth = b->twidth;
+	BUN p, q, r = 0;
+	BATiter bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		const void *t = BUNtail(bi, p);
+
+		if (bunfastapp_nocheck(bn, r, t, Tsize(bn)) != GDK_SUCCEED)
+			goto bunins_failed;
+		r++;
+	}
+	/* set properties that types may have changed */
+	bn->theap->dirty |= BATcount(bn) > 0;
+	BATtseqbase(bn, oid_nil);
+	BATkey(bn, BATtkey(b));
+	bn->tsorted = BATtordered(b);
+	bn->trevsorted = BATtrevordered(b);
+	bn->batDirtydesc = true;
+	bn->tnorevsorted = b->tnorevsorted;
+	if (b->tnokey[0] != b->tnokey[1]) {
+		bn->tnokey[0] = b->tnokey[0];
+		bn->tnokey[1] = b->tnokey[1];
+	} else {
+		bn->tnokey[0] = bn->tnokey[1] = 0;
+	}
+	bn->tnosorted = b->tnosorted;
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+
+	return bn;
+      bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+

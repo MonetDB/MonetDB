@@ -1174,7 +1174,7 @@ gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__((__warn_unused_result__));
-
+gdk_export BAT *BATvacuum(BAT *b);
 /*
  * @- BAT Input/Output
  * @multitable @columnfractions 0.08 0.7

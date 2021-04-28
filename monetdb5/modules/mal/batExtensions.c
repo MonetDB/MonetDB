@@ -272,6 +272,21 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+CMDBATvacuum(bat *r, const bat *bid)
+{
+	BAT *b, *rb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.vacuum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((rb = BATvacuum(b)) == NULL)
+		throw(MAL, "bat.vacuum", GDK_EXCEPTION);
+
+	BBPkeepref(*r = rb->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func batExtensions_init_funcs[] = {
  pattern("bat", "new", CMDBATnew, false, "", args(1,2, batargany("",1),argany("tt",1))),
@@ -301,6 +316,7 @@ mel_func batExtensions_init_funcs[] = {
 #endif
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
+ command("bat", "vacuum", CMDBATvacuum, false, "", args(1,2, batarg("",str),batarg("b",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
