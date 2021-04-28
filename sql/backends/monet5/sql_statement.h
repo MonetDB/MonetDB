@@ -250,6 +250,7 @@ extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
+extern stmt *stmt_nullif(backend *be, stmt *s1, stmt *s2, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op);
