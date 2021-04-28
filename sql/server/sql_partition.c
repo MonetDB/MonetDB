@@ -118,6 +118,7 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 		case op_union:
 		case op_inter:
 		case op_except:
+		case op_merge:
 			if (rel->l)
 				rel_find_table_columns(sql, rel->l, t, cols);
 			if (rel->r)

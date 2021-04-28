@@ -612,7 +612,7 @@ NULL
 NULL
 1804976115
 
-statement ok
+statement error
 merge into t2 using (select * from t1) as t1 on (((((values (false), (false)))and("isauuid"(r'AJr1G'))))or(exists ((select distinct l2t2.c2 from t0 as l2t0, t2 as l2t2 where false group by l2t2.c2, l2t2.c2,
 0.200162480534249) union all (select distinct -25669977 from t1 as l2t1 where false)))) when matched then update set c2 = (coalesce(0.05676984416302433, cast(0.05650992 as bigint)))
 when not matched then insert (c2) values (cast(((0.6603879962021974581176664287340827286243438720703125)<>(0.99667693019570047230359932655119337141513824462890625)) as bigint))
@@ -887,7 +887,7 @@ CREATE TABLE "sys"."t2" ("c2" UUID)
 statement ok
 INSERT INTO "sys"."t2" VALUES ('5a8f807e-47aa-3ddd-9b12-65ec99aa6b89'), ('adb2afe1-0aff-5af0-aee1-bf5dfdafcdaf'), ('4b9d0cdd-fd79-ac10-8ab5-6dd3dddebd8a')
 
-statement ok
+statement error
 MERGE INTO t1 USING (SELECT * FROM t2) AS t2 ON CASE 1 WHEN (VALUES (2)) THEN '6' BETWEEN 0.77 AND 0.28 WHEN 3 THEN TRUE END WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT (c4, c9) VALUES (0.66, true)
 
 statement ok
