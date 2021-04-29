@@ -44,6 +44,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_union:
 	case op_inter:
 	case op_except:
+	case op_merge:
 		if (has_remote_or_replica( rel->l ) ||
 			has_remote_or_replica( rel->r ))
 			return 1;
@@ -262,6 +263,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_union:
 	case op_inter:
 	case op_except:
+	case op_merge:
 		rel->l = replica(sql, rel->l, uri);
 		rel->r = replica(sql, rel->r, uri);
 		break;
@@ -494,6 +496,7 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_merge:
 		l = rel->l = distribute(sql, rel->l);
 		r = rel->r = distribute(sql, rel->r);
 
@@ -612,6 +615,8 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_union:
 	case op_inter:
 	case op_except:
+
+	case op_merge:
 		rel->l = rel_remote_func(sql, rel->l);
 		rel->r = rel_remote_func(sql, rel->r);
 		break;

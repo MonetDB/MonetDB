@@ -19,7 +19,7 @@ ALTER TABLE moveaccrosspartitions ADD TABLE sublimits2 AS PARTITION FROM 101 TO 
 statement ok
 ALTER TABLE moveaccrosspartitions ADD TABLE sublimits3 AS PARTITION FROM 201 TO 300
 
-statement ok
+statement ok rowcount 6
 INSERT INTO moveaccrosspartitions VALUES (50, 'first'), (150, 'second'), (250, 'third'), (60, 'fourth'), (120, 'fifth'), (240, 'sixth')
 
 query IT rowsort

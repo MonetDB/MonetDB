@@ -76,6 +76,7 @@ mal_export MT_Lock  mal_oltpLock ;
 mal_export int mal_init(char *modules[], int embedded);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
+mal_export const char *mal_version(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -92,6 +93,7 @@ mal_export void mal_reset(void);
 #define LIST_MAL_MAPI  32       /* output Mapi compatible output */
 #define LIST_MAL_REMOTE  64       /* output MAL for remote execution */
 #define LIST_MAL_FLOW   128       /* output MAL dataflow dependencies */
+#define LIST_MAL_ALGO	256		  /* output algorithm used */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)

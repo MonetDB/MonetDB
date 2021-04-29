@@ -75,7 +75,9 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 	if (bn == NULL)
 		throw(MAL, "bat.new", GDK_EXCEPTION);
 	*res = bn->batCacheid;
-	BBPkeepref(*res);
+	BATsettrivprop(bn);
+	BBPretain(bn->batCacheid);
+	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -138,13 +140,14 @@ BKCdelete(bat *r, const bat *bid, const oid *h)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.delete", OPERATION_FAILED);
 	if (BUNdelete(b, *h) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -166,7 +169,10 @@ BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -183,7 +189,10 @@ BKCdelete_all(bat *r, const bat *bid)
 	}
 	if( !b->batTransient)
 		BATmsync(b);
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -216,7 +225,10 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 	}
 	if( !b->batTransient)
 		BATmsync(b);
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -257,7 +269,10 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -278,7 +293,10 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -293,7 +311,10 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -320,7 +341,10 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, con
 		BBPunfix(u->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
-	BBPkeepref(*r = b->batCacheid);
+	*r = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(p->batCacheid);
 	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
@@ -508,7 +532,10 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 	}
 	if ((b = setaccess(b, m)) == NULL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
-	BBPkeepref(*res = b->batCacheid);
+	*res = b->batCacheid;
+	BATsettrivprop(b);
+	BBPretain(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

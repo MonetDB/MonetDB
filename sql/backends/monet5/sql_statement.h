@@ -129,6 +129,7 @@ typedef struct stmt {
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
+	list *extra;	/* used for merge statments, this will be cleaned out on the pushcands branch :) */
 } stmt;
 
 /* which MAL modules can push candidates */
@@ -137,15 +138,10 @@ typedef struct stmt {
 			 strcmp(sql_func_mod(f->func), "mtime") == 0 || strcmp(sql_func_mod(f->func), "blob") == 0 || \
 			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
 
-extern void create_merge_partitions_accumulator(backend *be);
-extern int add_to_merge_partitions_accumulator(backend *be, int nr);
-
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_none(backend *be);
 
-//#define VAR_DECLARE 1
-#define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
@@ -158,7 +154,7 @@ extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
 extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
-extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int locked);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked);
 extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
 extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
@@ -244,8 +240,8 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
-extern stmt *stmt_output(backend *be, stmt *l);
-extern stmt *stmt_affected_rows(backend *be, stmt *l);
+extern int stmt_output(backend *be, stmt *l);
+extern int stmt_affected_rows(backend *be, int lastnr);
 
 /* flow control statements */
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);

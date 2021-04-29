@@ -16,7 +16,7 @@ ALTER TABLE tryupdateme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35)
 statement ok
 ALTER TABLE tryupdateme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO tryupdateme VALUES (5, 'first'), (10, 'first'), (20, 'second'), (25, 'second')
 
 query IT rowsort
@@ -81,10 +81,10 @@ second
 25
 second
 
-statement ok
+statement ok rowcount 4
 UPDATE tryupdateme SET b = 'updated' WHERE a % 5 = 0
 
-statement ok
+statement ok rowcount 2
 UPDATE subtable2 SET b = 'something' || b || 'else' WHERE a % 5 = 0
 
 query IT rowsort

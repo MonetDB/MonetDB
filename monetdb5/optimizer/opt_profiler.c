@@ -57,7 +57,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			 getFunctionId(p) == selectNotNilRef) ){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
-		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likeselectRef || getFunctionId(p) == ilikeselectRef)){
+		if( getModuleId(p)== algebraRef && getFunctionId(p)== likeselectRef){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
 		if( getModuleId(p)== algebraRef &&

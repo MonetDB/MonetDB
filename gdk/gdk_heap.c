@@ -124,7 +124,7 @@ HEAPgrow(const Heap *old, size_t size)
  *
  * Normally, we use GDKmalloc for creating a new heap.  Huge heaps,
  * though, come from memory mapped files that we create with a large
- * seek. This is fast, and leads to files-with-holes on Unixes (on
+ * fallocate. This is fast, and leads to files-with-holes on Unixes (on
  * Windows, it actually always performs I/O which is not nice).
  */
 gdk_return
@@ -432,26 +432,12 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		newsize = cap << shift;
 	else
 		newsize = (old->size >> b->tshift) << shift;
-	/* if we have to switch over to mmap, also go over to the full
-	 * width of the offset column so that we don't have to go
-	 * through this function with mmapped files */
-	if (!GDKinmemory(old->farmid) &&
-	    (GDKmem_cursize() + newsize >= GDK_mem_maxsize ||
-	     newsize >= (old->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
-#if SIZEOF_VAR_T == 8
-		shift = 3;
-#else
-		shift = 2;
-#endif
-		width = 1 << shift;
-		if (cap > (old->size >> b->tshift))
-			newsize = cap << shift;
-		else
-			newsize = (old->size >> b->tshift) << shift;
-	}
-	if (b->twidth == width && newsize <= old->size) {
-		/* nothing to do */
-		return GDK_SUCCEED;
+	if (b->twidth == width) {
+		if (newsize <= old->size) {
+			/* nothing to do */
+			return GDK_SUCCEED;
+		}
+		return BATextend(b, newsize >> shift);
 	}
 
 	/* if copyall is set, we need to convert the whole heap, since
@@ -460,6 +446,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	 * indicated by the "free" pointer */
 	n = (copyall ? old->size : old->free) >> b->tshift;
 
+	if (width > b->twidth)
+		MT_thread_setalgorithm(n ? "widen offset heap" : "widen empty offset heap");
 	/* Create a backup copy before widening.
 	 *
 	 * If the file is memory-mapped, this solves a problem that we
@@ -477,53 +465,77 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	else
 		filename++;
 	int exists = 0;
-	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !(exists = file_exists(old->farmid, BAKDIR, filename, NULL)) &&
-	    (old->storage != STORE_MEM ||
-	     GDKmove(old->farmid, BATDIR, old->filename, NULL,
-		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
-		int fd;
-		ssize_t ret = 0;
-		size_t size = n << b->tshift;
-		const char *base = old->base;
-
-		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(old->farmid, old->filename, "wb", "tmp")) < 0)
-			return GDK_FAIL;
-		while (size > 0) {
-			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
-			if (ret < 0)
-				size = 0;
-			size -= ret;
-			base += ret;
+	if (BBP_status(bid) & (BBPEXISTING|BBPDELETED) && width > b->twidth) {
+		char fname[sizeof(old->filename)];
+		char *p = strrchr(old->filename, DIR_SEP);
+		strcpy_len(fname, p ? p + 1 : old->filename, sizeof(fname));
+		p = fname + strlen(fname) - 1;
+		if (*p == 'l') {
+			p++;
+			p[1] = 0;
 		}
-		if (ret < 0 ||
-		    (!(GDKdebug & NOSYNCMASK)
-#if defined(NATIVE_WIN32)
-		     && _commit(fd) < 0
-#elif defined(HAVE_FDATASYNC)
-		     && fdatasync(fd) < 0
-#elif defined(HAVE_FSYNC)
-		     && fsync(fd) < 0
+		for (;;) {
+			exists = file_exists(old->farmid, BAKDIR, fname, NULL);
+			if (exists == -1)
+				return GDK_FAIL;
+			if (exists == 1)
+				break;
+			if (*p == '1')
+				break;
+			if (*p == '2')
+				*p = '1';
+#if SIZEOF_VAR_T == 8
+			else if (*p != '4')
+				*p = '4';
 #endif
-			    ) ||
-		    close(fd) < 0) {
-			/* something went wrong: abandon ship */
-			GDKsyserror("GDKupgradevarheap: syncing heap to disk failed\n");
-			close(fd);
-			GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
-			return GDK_FAIL;
+			else
+				*p = '2';
 		}
-		/* move tmp file to backup directory (without .tmp
-		 * extension) */
-		if (GDKmove(old->farmid, BATDIR, old->filename, "tmp", BAKDIR, filename, NULL) != GDK_SUCCEED) {
-			/* backup failed */
-			GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
-			return GDK_FAIL;
+		if (exists == 0 &&
+		    (old->storage != STORE_MEM ||
+		     GDKmove(old->farmid, BATDIR, old->filename, NULL,
+			     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
+			int fd;
+			ssize_t ret = 0;
+			size_t size = n << b->tshift;
+			const char *base = old->base;
+
+			/* first save heap in file with extra .tmp extension */
+			if ((fd = GDKfdlocate(old->farmid, old->filename, "wb", "tmp")) < 0)
+				return GDK_FAIL;
+			while (size > 0) {
+				ret = write(fd, base, (unsigned) MIN(1 << 30, size));
+				if (ret < 0)
+					size = 0;
+				size -= ret;
+				base += ret;
+			}
+			if (ret < 0 ||
+			    (!(GDKdebug & NOSYNCMASK)
+#if defined(NATIVE_WIN32)
+			     && _commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+			     && fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+			     && fsync(fd) < 0
+#endif
+				    ) ||
+			    close(fd) < 0) {
+				/* something went wrong: abandon ship */
+				GDKsyserror("syncing heap to disk failed\n");
+				close(fd);
+				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
+				return GDK_FAIL;
+			}
+			/* move tmp file to backup directory (without .tmp
+			 * extension) */
+			if (GDKmove(old->farmid, BATDIR, old->filename, "tmp", BAKDIR, filename, NULL) != GDK_SUCCEED) {
+				/* backup failed */
+				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
+				return GDK_FAIL;
+			}
 		}
 	}
-	if (exists == -1)
-		return GDK_FAIL;
 
 	new = GDKmalloc(sizeof(Heap));
 	if (new == NULL)
@@ -535,7 +547,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		.remove = old->remove,
 		.parentid = old->parentid,
 	};
-	memcpy(new->filename, old->filename, sizeof(new->filename));
+	settailname(new, BBP_physical(b->batCacheid), b->ttype, width);
 	if (HEAPalloc(new, newsize, 1, 1) != GDK_SUCCEED) {
 		GDKfree(new);
 		return GDK_FAIL;
@@ -543,92 +555,81 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	/* HEAPalloc initialized .free, so we need to set it after */
 	new->free = old->free << (shift - b->tshift);
 	ATOMIC_INIT(&new->refs, 1);
-	if (new->storage != STORE_MMAP || old->storage != STORE_MMAP) {
-		assert(old->storage == STORE_MEM);
-		switch (width) {
-		case 1:
-			memcpy(new->base, old->base, n);
+	switch (width) {
+	case 1:
+		memcpy(new->base, old->base, n);
 #ifndef NDEBUG
-			/* valgrind */
-			memset(new->base + n, 0, new->size - n);
+		/* valgrind */
+		memset(new->base + n, 0, new->size - n);
 #endif
+		break;
+	case 2:
+		ps = (uint16_t *) new->base;
+		switch (b->twidth) {
+		case 1:
+			pc = (uint8_t *) old->base;
+			for (i = 0; i < n; i++)
+				ps[i] = pc[i];
 			break;
 		case 2:
-			ps = (uint16_t *) new->base;
-			switch (b->twidth) {
-			case 1:
-				pc = (uint8_t *) old->base;
-				for (i = 0; i < n; i++)
-					ps[i] = pc[i];
-				break;
-			case 2:
-				memcpy(ps, old->base, n * 2);
-				break;
-			}
-#ifndef NDEBUG
-			/* valgrind */
-			memset(ps + n, 0, new->size - n * 2);
-#endif
+			memcpy(ps, old->base, n * 2);
 			break;
-		case 4:
-			pi = (uint32_t *) new->base;
-			switch (b->twidth) {
-			case 1:
-				pc = (uint8_t *) old->base;
-				for (i = 0; i < n; i++)
-					pi[i] = pc[i] + GDK_VAROFFSET;
-				break;
-			case 2:
-				ps = (uint16_t *) old->base;
-				for (i = 0; i < n; i++)
-					pi[i] = ps[i] + GDK_VAROFFSET;
-				break;
-			case 4:
-				memcpy(pi, old->base, n * 4);
-				break;
-			}
-#ifndef NDEBUG
-			/* valgrind */
-			memset(pi + n, 0, new->size - n * 4);
-#endif
-			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			pl = (uint64_t *) new->base;
-			switch (b->twidth) {
-			case 1:
-				pc = (uint8_t *) old->base;
-				for (i = 0; i < n; i++)
-					pl[i] = pc[i] + GDK_VAROFFSET;
-				break;
-			case 2:
-				ps = (uint16_t *) old->base;
-				for (i = 0; i < n; i++)
-					pl[i] = ps[i] + GDK_VAROFFSET;
-				break;
-			case 4:
-				pi = (uint32_t *) old->base;
-				for (i = 0; i < n; i++)
-					pl[i] = pi[i];
-				break;
-			case 8:
-				memcpy(pl, old->base, n * 8);
-				break;
-			}
-#ifndef NDEBUG
-			/* valgrind */
-			memset(pl + n, 0, new->size - n * 8);
-#endif
-			break;
-#endif
 		}
 #ifndef NDEBUG
-	} else {
-		/* no need to copy, we're mere extending the length:
-		 * both mmaps refer to the same file */
-		assert(shift == b->tshift);
 		/* valgrind */
-		memset(new->base + old->size, 0, new->size - old->size);
+		memset(ps + n, 0, new->size - n * 2);
+#endif
+		break;
+	case 4:
+		pi = (uint32_t *) new->base;
+		switch (b->twidth) {
+		case 1:
+			pc = (uint8_t *) old->base;
+			for (i = 0; i < n; i++)
+				pi[i] = pc[i] + GDK_VAROFFSET;
+			break;
+		case 2:
+			ps = (uint16_t *) old->base;
+			for (i = 0; i < n; i++)
+				pi[i] = ps[i] + GDK_VAROFFSET;
+			break;
+		case 4:
+			memcpy(pi, old->base, n * 4);
+			break;
+		}
+#ifndef NDEBUG
+		/* valgrind */
+		memset(pi + n, 0, new->size - n * 4);
+#endif
+		break;
+#if SIZEOF_VAR_T == 8
+	case 8:
+		pl = (uint64_t *) new->base;
+		switch (b->twidth) {
+		case 1:
+			pc = (uint8_t *) old->base;
+			for (i = 0; i < n; i++)
+				pl[i] = pc[i] + GDK_VAROFFSET;
+			break;
+		case 2:
+			ps = (uint16_t *) old->base;
+			for (i = 0; i < n; i++)
+				pl[i] = ps[i] + GDK_VAROFFSET;
+			break;
+		case 4:
+			pi = (uint32_t *) old->base;
+			for (i = 0; i < n; i++)
+				pl[i] = pi[i];
+			break;
+		case 8:
+			memcpy(pl, old->base, n * 8);
+			break;
+		}
+#ifndef NDEBUG
+		/* valgrind */
+		memset(pl + n, 0, new->size - n * 8);
+#endif
+		break;
 #endif
 	}
 	MT_lock_set(&b->theaplock);
@@ -636,7 +637,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	b->twidth = width;
 	if (cap > BATcapacity(b))
 		BATsetcapacity(b, cap);
-	HEAPdecref(old, false);
+	HEAPdecref(old, strcmp(old->filename, new->filename) != 0);
 	b->theap = new;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;

@@ -705,22 +705,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *  @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat2,,,,feps}
  */
 
-enum prop_t {
-	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
-	GDK_MIN_POS,		/* BUN position of smallest value  */
-	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
-	GDK_MAX_POS,		/* BUN position of largest value  */
-	GDK_HASH_BUCKETS,	/* last used hash bucket size */
-	GDK_NUNIQUE,		/* number of unique values */
-	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values */
-};
-
-struct PROPrec {
-	enum prop_t id;
-	ValRecord v;
-	struct PROPrec *next;	/* simple chain of properties */
-};
-
 typedef struct PROPrec PROPrec;
 
 /* see also comment near BATassertProps() for more information about
@@ -758,8 +742,9 @@ typedef struct {
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
+#define GDKLIBRARY_TAILN	061043U /* first after Oct2020: str offset heaps names don't take width into account */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061043U /* first after Oct2020 */
+#define GDKLIBRARY		061044U /* first after Oct2020 */
 
 typedef struct BAT {
 	/* static bat properties */
@@ -2130,8 +2115,16 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * properties. They can be used to improve query processing at higher
  * levels.
  */
-
-gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
+enum prop_t {
+	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
+	GDK_MIN_POS,		/* BUN position of smallest value  */
+	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
+	GDK_MAX_POS,		/* BUN position of largest value  */
+	GDK_HASH_BUCKETS,	/* last used hash bucket size */
+	GDK_NUNIQUE,		/* number of unique values */
+	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values */
+};
+gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
 
 /*
  * @- BAT relational operators

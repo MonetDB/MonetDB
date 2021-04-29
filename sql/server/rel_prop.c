@@ -91,7 +91,6 @@ propkind2string( prop *p)
 		PT(FETCH);
 		PT(REMOTE);
 		PT(USED);
-		PT(DISTRIBUTE);
 		PT(GROUPINGS);
 		PT(MIN);
 		PT(MAX);

@@ -25,6 +25,7 @@ struct logger {
 	int tid;		/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
+	bool flushnow;
 	logged_range *pending;
 	logged_range *current;
 

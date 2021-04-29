@@ -1320,6 +1320,14 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					ok = LOG_ERR;
 			}
 		} else {
+			if (!BATtordered(i)) {
+				assert(oi == i);
+				BAT *ni = NULL;
+				if (BATsort(&ni, NULL, NULL, i, NULL, NULL, false, false, false) != GDK_SUCCEED)
+					ok = LOG_ERR;
+				if (ni)
+					i = ni;
+			}
 			assert(BATtordered(i));
 			BUN icnt = BATcount(i);
 			oid *o = Tloc(i,0), n = o[0]+1;
@@ -1578,19 +1586,19 @@ col_min_value(sql_trans *tr, sql_column *col)
 
 	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK), *c;
-		PROPrec *prop1 = NULL, *prop2 = NULL;
+		ValPtr prop1 = NULL, prop2 = NULL;
 
 		if (b && (prop1 = BATgetprop(b, GDK_MIN_VALUE))) {
 			ValRecord cp;
-			res = &(prop1->v);
+			res = prop1;
 
 			if (res && (c = bind_ucol(tr, col, RD_UPD_VAL))) {
 				if ((prop2 = BATgetprop(c, GDK_MIN_VALUE))) {
-					if (VARcalcgt(&cp, res, &(prop2->v)) != GDK_SUCCEED) {
+					if (VARcalcgt(&cp, res, prop2) != GDK_SUCCEED) {
 						BBPunfix(c->batCacheid);
 						return NULL;
 					}
-					res = cp.val.btval == 1 ? &(prop2->v) : res;
+					res = cp.val.btval == 1 ? prop2 : res;
 				} else if (BATcount(c) > 0) {
 					res = NULL;
 				}
@@ -1612,19 +1620,19 @@ col_max_value(sql_trans *tr, sql_column *col)
 
 	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK), *c;
-		PROPrec *prop1 = NULL, *prop2 = NULL;
+		ValPtr prop1 = NULL, prop2 = NULL;
 
 		if (b && (prop1 = BATgetprop(b, GDK_MAX_VALUE))) {
 			ValRecord cp;
-			res = &(prop1->v);
+			res = prop1;
 
 			if (res && (c = bind_ucol(tr, col, RD_UPD_VAL))) {
 				if ((prop2 = BATgetprop(c, GDK_MAX_VALUE))) {
-					if (VARcalclt(&cp, res, &(prop2->v)) != GDK_SUCCEED) {
+					if (VARcalclt(&cp, res, prop2) != GDK_SUCCEED) {
 						BBPunfix(c->batCacheid);
 						return NULL;
 					}
-					res = cp.val.btval == 1 ? &(prop2->v) : res;
+					res = cp.val.btval == 1 ? prop2 : res;
 				} else if (BATcount(c) > 0) {
 					res = NULL;
 				}
@@ -3010,8 +3018,11 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	}
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		if (!isLocalTemp(t))
+			tr->logchanges += (int) cnt;
+	}
 	return slot;
 }
 

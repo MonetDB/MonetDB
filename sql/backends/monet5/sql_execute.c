@@ -515,11 +515,8 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			scanner_query_processed(&(m->scanner));
-			if (be->q) {
-				if (backend_dumpproc(be, c, be->q, r) == NULL) {
-					err = 1;
-				}
-			}
+			if (be->q && backend_dumpproc(be, c, be->q, r) < 0)
+				err = 1;
 
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
@@ -767,7 +764,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* generate MAL code, ignoring any code generation error */
 		setVarType(c->curprg->def, 0, 0);
-		if (backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
+		if (backend_dumpstmt(b, c->curprg->def, rel, 0, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);

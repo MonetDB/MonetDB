@@ -17,11 +17,9 @@ backend_reset(backend *b)
 		.mvc = b->mvc,
 		.client = b->client,
 		.out = b->client->fdout,
-	    .first_statement_generated = false,
 		.output_format = OFMT_CSV,
 		.rowcnt = -1,
 		.last_id = -1,
-		.sizeheader = false
 	};
 	return b;
 }

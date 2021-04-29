@@ -115,7 +115,7 @@ static inline void
 copy_binary_convert_date(void *p)
 {
 	copy_binary_date *pp = (copy_binary_date*)p;
-	copy_binary_convert32(&pp->year);
+	copy_binary_convert16(&pp->year);
 }
 
 

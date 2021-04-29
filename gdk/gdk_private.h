@@ -57,9 +57,9 @@ void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
+ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATgetprop_try(BAT *b, enum prop_t idx)
+ValPtr BATgetprop_try(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
@@ -85,9 +85,9 @@ void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
+ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
@@ -234,6 +234,10 @@ void PROPdestroy(BAT *b)
 gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+const char *gettailname(const BAT *b)
+	__attribute__((__visibility__("hidden")));
+void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
+	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 void strHeap(Heap *d, size_t cap)
@@ -359,6 +363,12 @@ ilog2(BUN x)
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63
+
+struct PROPrec {
+	enum prop_t id;
+	ValRecord v;
+	struct PROPrec *next;	/* simple chain of properties */
+};
 
 struct Imprints {
 	bte bits;		/* how many bits in imprints */
