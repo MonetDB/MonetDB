@@ -882,7 +882,8 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	if (is_hge_nil(*src)) {
 		if (external) {
 			assert(*len >= strlen("nil") + 1);
-			return (ssize_t) strcpy(*dst, "nil");
+			strcpy(*dst, "nil");
+			return 3;
 		}
 		assert(*len >= strlen(str_nil) + 1);
 		strcpy(*dst, str_nil);
