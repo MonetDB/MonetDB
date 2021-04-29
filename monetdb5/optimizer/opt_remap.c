@@ -224,15 +224,23 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		q= getInstrPtr(mq,i);
 		if( q->token== ENDsymbol)
 			break;
+		int add_nils = 0;
 		for(j=0; j<q->argc; j++)
 			if ( upgrade[getArg(q,j)]){
 				if ( blockStart(q) ||
 					 q->barrier== REDOsymbol || q->barrier==LEAVEsymbol )
 					goto terminateMX;
 				if (getModuleId(q)){
-					snprintf(buf,1024,"bat%s",getModuleId(q));
-					setModuleId(q,putName(buf));
-					q->typechk = TYPE_UNKNOWN;
+					if (strncmp(getModuleId(q), "bat", 3) != 0) {
+						snprintf(buf,1024,"bat%s",getModuleId(q));
+						setModuleId(q,putName(buf));
+						q->typechk = TYPE_UNKNOWN;
+					}
+					if (getModuleId(q) == batalgebraRef && (getFunctionId(q) == likeRef || getFunctionId(q) == not_likeRef)) {
+						if (j >= q->retc)
+							add_nils++;
+						continue;
+					}
 					if (q->retc == 1 &&
 						((getModuleId(q) == batcalcRef &&
 						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef)) || getModuleId(q) == batmtimeRef || getModuleId(q) == batstrRef)) {
@@ -288,8 +296,16 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					break;
 				}
 		}
+		if (add_nils) {
+			for(j=0; j<add_nils; j++)
+				q = pushNil(mq, q, TYPE_bat);
+		    /* now see if we can resolve the instruction */
+			typeChecker(cntxt->usermodule,mq,q,i,TRUE);
+			if( q->typechk== TYPE_UNKNOWN)
+				goto terminateMX;
+			actions++;
+		}
 	}
-
 
 	if(mq->errors){
 terminateMX:
