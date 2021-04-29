@@ -626,7 +626,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
 			stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, sel1, stmt_bool(be, 1));
+			predicate = stmt_const(be, predicate, sel1->nrcols?sel1:NULL, stmt_bool(be, 1));
 			if (s->nrcols == 0)
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
 			else
@@ -660,7 +660,7 @@ exp_bin_or(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int
 		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
 			stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, sel2, stmt_bool(be, 1));
+			predicate = stmt_const(be, predicate, sel2->nrcols?sel2:NULL, stmt_bool(be, 1));
 			if (s->nrcols == 0)
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
 			else
