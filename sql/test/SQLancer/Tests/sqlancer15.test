@@ -1,0 +1,45 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DECIMAL(18,3))
+
+statement ok
+COPY 10 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.609
+0.000
+0.706
+0.159
+0.374
+0.484
+0.368
+3.000
+0.990
+0.785
+
+statement ok
+CREATE TABLE "t2" ("c0" DECIMAL(18,3))
+
+statement ok
+COPY 10 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.744
+0.392
+0.870
+0.120
+0.452
+1241972446.000
+0.801
+NULL
+NULL
+0.071
+
+statement ok
+ALTER TABLE t0 ADD COLUMN c2 UUID
+
+statement ok
+UPDATE t2 SET c0 = 1 FROM t0 WHERE (least(TRUE, FALSE) AND 0.63 = t2.c0) OR (0.23 <= 0.1)
+
+statement ok
+ROLLBACK
