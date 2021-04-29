@@ -179,6 +179,55 @@ BATsetdims(BAT *b)
 	b->tvarsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
 
+const char *
+gettailname(const BAT *b)
+{
+	if (b->ttype != TYPE_str)
+		return "tail";
+	switch (b->twidth) {
+	case 1:
+		return "tail1";
+	case 2:
+		return "tail2";
+#if SIZEOF_VAR_T == 8
+	case 4:
+		return "tail4";
+#endif
+	default:
+		return "tail";
+	}
+}
+
+void
+settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
+{
+	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
+		      ".tail", NULL);
+	if (tt == TYPE_str) {
+		switch (width) {
+		case 1:
+			strconcat_len(tail->filename,
+				      sizeof(tail->filename), physnme,
+				      ".tail1", NULL);
+			break;
+		case 2:
+			strconcat_len(tail->filename,
+				      sizeof(tail->filename), physnme,
+				      ".tail2", NULL);
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			strconcat_len(tail->filename,
+				      sizeof(tail->filename), physnme,
+				      ".tail4", NULL);
+			break;
+#endif
+		default:
+			break;
+		}
+	}
+}
+
 /*
  * @- BAT allocation
  * Allocate BUN heap and variable-size atomheaps (see e.g. strHeap).
@@ -223,14 +272,12 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
+	else if (tt == TYPE_str)
+		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
 		goto bailout;
-	}
-	if (bn->theap->storage == STORE_MMAP) {
-		bn->twidth = ATOMsize(bn->ttype);
-		bn->tshift = ATOMelmshift(Tsize(bn));
 	}
 
 	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
@@ -470,6 +517,7 @@ gdk_return
 BATextend(BAT *b, BUN newcap)
 {
 	size_t theap_size;
+	gdk_return rc = GDK_SUCCEED;
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, GDK_FAIL);
@@ -497,17 +545,21 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
-		if (b->ttype == TYPE_str)
-			return GDKupgradevarheap(b, GDK_VAROFFSET, newcap, false);
-		Heap *h = HEAPgrow(b->theap, theap_size);
-		if (h == NULL)
-			return GDK_FAIL;
 		MT_lock_set(&b->theaplock);
-		HEAPdecref(b->theap, false);
-		b->theap = h;
+		if (ATOMIC_GET(&b->theap->refs) == 1) {
+			rc = HEAPextend(b->theap, theap_size, true);
+		} else {
+			MT_lock_unset(&b->theaplock);
+			Heap *h = HEAPgrow(b->theap, theap_size);
+			if (h == NULL)
+				return GDK_FAIL;
+			MT_lock_set(&b->theaplock);
+			HEAPdecref(b->theap, false);
+			b->theap = h;
+		}
 		MT_lock_unset(&b->theaplock);
 	}
-	return GDK_SUCCEED;
+	return rc;
 }
 
 
@@ -680,8 +732,9 @@ BATdestroy(BAT *b)
 static void
 heapmove(Heap *dst, Heap *src)
 {
-	HEAPfree(dst, false);
-	/* copy all fields of src except filename and refs */
+	HEAPfree(dst, strcmp(dst->filename, src->filename) != 0);
+	/* copy all fields of src except refs */
+	strcpy_len(dst->filename, src->filename, sizeof(dst->filename));
 	dst->free = src->free;
 	dst->size = src->size;
 	dst->base = src->base;
@@ -808,9 +861,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				.farmid = BBPselectfarm(role, b->ttype, varheap),
 				.parentid = bn->batCacheid,
 			};
-			strconcat_len(bthp.filename, sizeof(bthp.filename),
-				      BBP_physical(bn->batCacheid),
-				      ".tail", NULL);
+			settailname(&bthp, BBP_physical(bn->batCacheid),
+				    bn->ttype, bn->twidth);
 			strconcat_len(thp.filename, sizeof(thp.filename),
 				      BBP_physical(bn->batCacheid),
 				      ".theap", NULL);
@@ -1049,7 +1101,7 @@ setcolprops(BAT *b, const void *x)
 		}
 		return;
 	} else if (ATOMlinear(b->ttype)) {
-		PROPrec *prop;
+		const ValRecord *prop;
 
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
@@ -1080,7 +1132,7 @@ setcolprops(BAT *b, const void *x)
 			}
 		} else if (!isnil &&
 			   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
-			   ATOMcmp(b->ttype, VALptr(&prop->v), x) < 0) {
+			   ATOMcmp(b->ttype, VALptr(prop), x) < 0) {
 			BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
 			BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){BATcount(b)});
 		}
@@ -1096,7 +1148,7 @@ setcolprops(BAT *b, const void *x)
 				 * smallest non-nil so far */
 				if (!b->tnonil && !isnil &&
 				    (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-				    ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+				    ATOMcmp(b->ttype, VALptr(prop), x) > 0) {
 					BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 				}
@@ -1107,7 +1159,7 @@ setcolprops(BAT *b, const void *x)
 			}
 		} else if (!isnil &&
 			   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-			   ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+			   ATOMcmp(b->ttype, VALptr(prop), x) > 0) {
 			BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
 			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 		}
@@ -1222,7 +1274,7 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator(b);
 	const void *val;
-	PROPrec *prop;
+	const ValRecord *prop;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1240,12 +1292,12 @@ BUNdelete(BAT *b, oid o)
 	if (ATOMlinear(b->ttype) &&
 	    ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
 		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL
-		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0) {
+		    && ATOMcmp(b->ttype, VALptr(prop), val) >= 0) {
 			BATrmprop(b, GDK_MAX_VALUE);
 			BATrmprop(b, GDK_MAX_POS);
 		}
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL
-		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
+		    && ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
 			BATrmprop(b, GDK_MIN_VALUE);
 			BATrmprop(b, GDK_MIN_POS);
 		}
@@ -1345,17 +1397,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		}
 		HASHdelete(b, p, val);	/* first delete old value from hash */
 		if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
-			PROPrec *prop;
+			const ValRecord *prop;
 
 			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
 				if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-				    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
+				    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
 					/* new value is larger than previous
 					 * largest */
 					BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
 					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
 				} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-					   ATOMcmp(b->ttype, VALptr(&prop->v), val) == 0) {
+					   ATOMcmp(b->ttype, VALptr(prop), val) == 0) {
 					/* old value is equal to largest and
 					 * new value is smaller (see above),
 					 * so we don't know anymore which is
@@ -1366,13 +1418,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
 				if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-				    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
+				    ATOMcmp(b->ttype, VALptr(prop), t) > 0) {
 					/* new value is smaller than previous
 					 * smallest */
 					BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
 				} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-					   ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
+					   ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
 					/* old value is equal to smallest and
 					 * new value is larger (see above), so
 					 * we don't know anymore which is the
@@ -2464,29 +2516,29 @@ BATassertProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
-		PROPrec *prop;
+		const ValRecord *prop;
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;
 		bool seennil = false;
 
 		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
-			maxval = VALptr(&prop->v);
+			maxval = VALptr(prop);
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
-			minval = VALptr(&prop->v);
+			minval = VALptr(prop);
 		if ((prop = BATgetprop(b, GDK_MAX_POS)) != NULL) {
 			if (maxval) {
-				assert(prop->v.vtype == TYPE_oid);
-				assert(prop->v.val.oval < b->batCount);
-				valp = BUNtail(bi, prop->v.val.oval);
+				assert(prop->vtype == TYPE_oid);
+				assert(prop->val.oval < b->batCount);
+				valp = BUNtail(bi, prop->val.oval);
 				assert(cmpf(maxval, valp) == 0);
 			}
 		}
 		if ((prop = BATgetprop(b, GDK_MIN_POS)) != NULL) {
 			if (minval) {
-				assert(prop->v.vtype == TYPE_oid);
-				assert(prop->v.val.oval < b->batCount);
-				valp = BUNtail(bi, prop->v.val.oval);
+				assert(prop->vtype == TYPE_oid);
+				assert(prop->val.oval < b->batCount);
+				valp = BUNtail(bi, prop->val.oval);
 				assert(cmpf(minval, valp) == 0);
 			}
 		}

@@ -620,7 +620,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN lo = 0;
 	struct canditer ci;
 	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
-	PROPrec *prop;
+	const ValRecord *prop;
 	lng t0 = 0;
 	const char *algomsg = "";
 
@@ -697,7 +697,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		else {
 			prop = BATgetprop(g, GDK_MAX_VALUE);
 			if (prop)
-				maxgrp = prop->v.val.oval;
+				maxgrp = prop->val.oval;
 			else if (BATordered(g) && BATordered_rev(g))
 				maxgrp = 0;
 		}
@@ -757,7 +757,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
 				prop = BATgetprop(g, GDK_MAX_POS);
 				if (prop)
-					BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &prop->v.val.oval);
+					BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &prop->val.oval);
 			}
 
 			*groups = gn;
@@ -799,7 +799,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (b->thash && b->thash != (Hash *) 1)
 		maxgrps = b->thash->nunique;
 	else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-		maxgrps = prop->v.val.oval;
+		maxgrps = prop->val.oval;
 	else
 		maxgrps = cnt / 10;
 	MT_rwlock_rdunlock(&b->thashlock);

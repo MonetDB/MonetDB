@@ -1538,7 +1538,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			if (!c->base.new || c->base.deleted)
 				continue;
 			if (c->def) {
-				e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
+				e = rel_parse_val(sql, nt->s, c->def, &c->type, sql->emode, NULL);
 			} else {
 				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			}

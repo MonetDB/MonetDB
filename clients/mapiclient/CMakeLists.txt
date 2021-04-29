@@ -75,29 +75,6 @@ target_link_libraries(msqldump
   mprompt
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
-add_executable(stethoscope)
-
-target_sources(stethoscope
-  PRIVATE
-  stethoscope.c
-  eventparser.c
-  eventparser.h)
-
-target_include_directories(stethoscope
-  PRIVATE
-  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
-
-target_link_libraries(stethoscope
-  PRIVATE
-  monetdb_config_header
-  mcutil
-  stream
-  mapi
-  mprompt
-  mutils
-  $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
-  $<$<PLATFORM_ID:Windows>:ws2_32>)
-
 install(TARGETS
   mclient
   msqldump
@@ -112,23 +89,10 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(TARGETS
-  stethoscope
-  RUNTIME
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT tools
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
 install(FILES
   mclient.1
   msqldump.1
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
-  COMPONENT mclient)
+  COMPONENT client)
 
 # vim: set ts=2:sw=2:et

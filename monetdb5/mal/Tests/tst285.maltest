@@ -8,7 +8,7 @@ statement ok
 bat.append(b,"goodbye")
 
 statement ok
-z0:= algebra.likeselect(b,nil:bat[:oid],"%hel%",false)
+z0:= algebra.likeselect(b,nil:bat[:oid],"%hel%","",false,false)
 
 query II rowsort
 io.print(z0)

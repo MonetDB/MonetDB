@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Apr 28 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Merge statements could not produce correct results on complex join
+  conditions, so a renovation was made. As a consequence, subqueries
+  now have to be disabled on merge join conditions.
+
 * Tue Mar 16 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Use of CTEs inside UPDATE and DELETE statements are now more
   restrict. Previously they could be used without any extra specification

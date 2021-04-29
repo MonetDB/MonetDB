@@ -117,7 +117,11 @@ gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
+/* global version number */
 gdk_export const char *GDKversion(void)
+	__attribute__((__const__));
+/* ABI version of GDK library */
+gdk_export const char *GDKlibversion(void)
 	__attribute__((__const__));
 
 // these are used in embedded mode to jump out of GDKfatal

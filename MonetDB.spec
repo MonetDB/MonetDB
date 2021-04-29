@@ -523,7 +523,6 @@ exit 0
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
-%exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %{_libdir}/libmonetdbsql.so*
 %dir %{_libdir}/monetdb5

@@ -39,7 +39,7 @@ BOOL WINAPI
 DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("DllMain %ld (%s)\n", (long) reason, PACKAGE_STRING);
+	ODBCLOG("DllMain %ld (MonetDB %s)\n", (long) reason, MONETDB_VERSION);
 #endif
 	(void) hinstDLL;
 	(void) reason;
