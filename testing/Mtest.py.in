@@ -2940,7 +2940,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
                                     hostname='localhost',
                                     port=int(env['MAPIPORT']),
                                     database=TSTDB,
-                                    language=lang)
+                                    language=lang,
+                                    timeout=TIMEOUT)
                     except KeyboardInterrupt:
                         raise
                     except:

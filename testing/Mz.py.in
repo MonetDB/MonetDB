@@ -1813,7 +1813,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                                     hostname='localhost',
                                     port=int(env['MAPIPORT']),
                                     database=TSTDB,
-                                    language=lang)
+                                    language=lang,
+                                    timeout=TIMEOUT)
                     except:
                         returncode = 'error'
                     else:
