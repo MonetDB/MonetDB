@@ -401,15 +401,17 @@ BATcalcnot(BAT *b, BAT *s)
 			int bits = (ci.seq - b->hseqbase) % 32;
 			ncand = (ncand + 31) / 32;
 			if (bits == 0) {
-				for (i = 0; i < ncand; i++)
+				for (i = 0; i < ncand; i++) {
 					GDK_CHECK_TIMEOUT(timeoffset, counter,
 							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					dst[i] = ~src[i];
+				}
 			} else {
-				for (i = 0; i < ncand; i++)
+				for (i = 0; i < ncand; i++) {
 					GDK_CHECK_TIMEOUT(timeoffset, counter,
 							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
+				}
 			}
 			if (ci.ncand % 32 != 0)
 				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
