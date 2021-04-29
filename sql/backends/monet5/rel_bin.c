@@ -6387,6 +6387,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	}
 	if (s && rel_is_ref(rel)) {
+		/* for now make sure referenced relations get flattend */
+		s = subrel_project(be, s, refs, rel, 0);
 		list_append(refs, rel);
 		list_append(refs, s);
 	}
