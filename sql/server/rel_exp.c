@@ -1646,7 +1646,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, sql_rel **res)
 			if (e->l) {
 				if (rel_base_bind_column2_(rel, e->l, e->r))
 					ne = e;
-			} else if (rel_base_bind_column_(rel, e->r, NULL))
+			} else if (rel_base_bind_column_(rel, e->r))
 				ne = e;
 		} else if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 			if (e->l) {
@@ -3243,6 +3243,7 @@ rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **rel
 		case op_union:
 		case op_inter:
 		case op_except:
+		case op_merge:
 			if (rel->l)
 				rel_set_type_recurse(sql, type, rel->l, relname, expname);
 			if (rel->r)

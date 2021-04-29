@@ -40,7 +40,7 @@ BATunique(BAT *b, BAT *s)
 	int (*cmp)(const void *, const void *);
 	bat parent = 0;
 	struct canditer ci;
-	PROPrec *prop;
+	const ValRecord *prop;
 	const char *algomsg = "";
 	lng t0 = 0;
 
@@ -89,7 +89,7 @@ BATunique(BAT *b, BAT *s)
 		if (b->thash != NULL && b->thash != (Hash *) 1)
 			initsize = b->thash->nunique;
 		else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-			initsize = prop->v.val.oval;
+			initsize = prop->val.oval;
 		MT_rwlock_rdunlock(&b->thashlock);
 	}
 	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);

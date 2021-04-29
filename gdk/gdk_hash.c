@@ -740,7 +740,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	Hash *h = NULL;
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
-	PROPrec *prop;
+	const ValRecord *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
 
 	size_t counter = 0;
@@ -809,11 +809,11 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
  	} else if (!hascand && (prop = BATgetprop_try(b, GDK_NUNIQUE)) != NULL) {
-		assert(prop->v.vtype == TYPE_oid);
-		mask = prop->v.val.oval * 8 / 7;
+		assert(prop->vtype == TYPE_oid);
+		mask = prop->val.oval * 8 / 7;
  	} else if (!hascand && (prop = BATgetprop_try(b, GDK_HASH_BUCKETS)) != NULL) {
-		assert(prop->v.vtype == TYPE_oid);
-		mask = prop->v.val.oval;
+		assert(prop->vtype == TYPE_oid);
+		mask = prop->val.oval;
 		maxmask = HASHmask(ci->ncand);
 		if (mask > maxmask)
 			mask = maxmask;

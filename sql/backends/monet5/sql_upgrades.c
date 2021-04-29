@@ -765,9 +765,8 @@ sql_update_apr2019_sp1(Client c)
 			}
 			BBPunfix(b->batCacheid);
 		}
-	}
-	if (output != NULL)
 		res_tables_destroy(output);
+	}
 
 	return err;		/* usually MAL_SUCCEED */
 }

@@ -18,7 +18,6 @@ typedef enum rel_prop {
 	PROP_FETCH,     /* fetchjoin */
 	PROP_REMOTE,    /* uri for remote execution */
 	PROP_USED,      /* number of times exp is used */
-	PROP_DISTRIBUTE, /* used by merge tables when sql.affectedRows is the sum of several insert/update/delete statements */
 	PROP_GROUPINGS  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
 } rel_prop;
 

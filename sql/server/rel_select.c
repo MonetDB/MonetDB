@@ -1582,15 +1582,17 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 }
 
 static sql_rel *
-rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti, int f)
+rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *r1, sql_exp *r2, sql_exp *r3, char *filter_op, int anti, int f)
 {
 	list *l = sa_list(sql->sa);
 	list *r = sa_list(sql->sa);
 
 	list_append(l, ls);
-	list_append(r, rs);
-	if (rs2)
-		list_append(r, rs2);
+	list_append(r, r1);
+	if (r2)
+		list_append(r, r2);
+	if (r3)
+		list_append(r, r3);
 	return rel_filter(sql, rel, l, r, "sys", filter_op, anti, f);
 }
 
@@ -1706,8 +1708,7 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *
 		}
 	}
 	type = compare_str2type(compare_op);
-	if (type == cmp_filter)
-		return rel_filter_exp_(sql, rel, ls, rs, esc, compare_op, 0, f);
+	assert(type != cmp_filter);
 	return rel_compare_exp_(query, rel, ls, rs, esc, type, need_not, quantifier, f);
 }
 
@@ -2330,8 +2331,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, rel, lo, f, ek), *re, *ee = NULL;
-		char *like = insensitive ? (anti ? "not_ilike" : "ilike") : (anti ? "not_like" : "like");
+		sql_exp *le = rel_value_exp(query, rel, lo, f, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
 			return NULL;
@@ -2348,14 +2348,16 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if ((re = exp_check_type(sql, st, rel ? *rel : NULL, re, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
+		if ((le = exp_check_type(sql, st, rel ? *rel : NULL, le, type_equal)) == NULL)
+			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
 			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
+		} else {
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, "")));
 		}
-		if (ee)
-			return rel_nop_(sql, rel ? *rel : NULL, le, re, ee, NULL, "sys", like, card_value);
-		return rel_binop_(sql, rel ? *rel : NULL, le, re, "sys", like, card_value);
+		return rel_nop_(sql, rel ? *rel : NULL, le, re, ee, ie, "sys", anti ? "not_like" : "like", card_value);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -2429,8 +2431,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_INTERSECT: {
 		sql_rel *sq;
 
-		if (is_psm_call(f))
-			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
+		if (is_psm_call(f) || is_sql_merge(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: subqueries not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
 		sq = rel_setquery(query, sc);
@@ -2585,7 +2587,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek), *re, *ee = NULL;
+		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
 			return NULL;
@@ -2609,7 +2611,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		if ((le = exp_check_type(sql, st, rel, le, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
-		return rel_filter_exp_(sql, rel, le, re, ee, (insensitive ? "ilike" : "like"), anti, f);
+		return rel_filter_exp_(sql, rel, le, re, ee, ie, "like", anti, f);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -2675,8 +2677,19 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
+		sql_rel *or = rel;
 		AtomNode *an = (AtomNode *) sc;
 		sql_exp *e = exp_atom(sql->sa, atom_dup(sql->sa, an->a));
+
+		if (e) {
+			sql_subtype bt;
+
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			e = exp_check_type(sql, &bt, rel, e, type_equal);
+		}
+		if (!e || or != rel)
+			return NULL;
+		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, e, e, e, e, e, NULL, f);
 	}
 	case SQL_IDENT:
@@ -2692,6 +2705,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		}
 		if (!e || or != rel)
 			return NULL;
+		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, e, e, e, e, e, NULL, f);
 	}
 	case SQL_UNION:
@@ -5088,8 +5102,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_SELECT: {
 		sql_rel *r = NULL;
 
-		if (is_psm_call(f))
-			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
+		if (is_psm_call(f) || is_sql_merge(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: subqueries not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
 		if (se->token == SQL_WITH) {
@@ -5265,6 +5279,81 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
+static inline int
+exp_key(sql_exp *e)
+{
+	if (e->alias.name)
+		return hash_key(e->alias.name);
+	return 0;
+}
+
+static list *
+check_distinct_exp_names(mvc *sql, list *exps)
+{
+	list *distinct_exps = NULL;
+	bool duplicates = false;
+
+	if (list_length(exps) < 5) {
+		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
+	} else { /* for longer lists, use hashing */
+		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
+
+		for (node *n = exps->h; n && !duplicates; n = n->next) {
+			sql_exp *e = n->data;
+			int key = ht->key(e);
+			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+
+			for (; he && !duplicates; he = he->chain) {
+				sql_exp *f = he->value;
+
+				if (!exp_equal(e, f))
+					duplicates = true;
+			}
+			hash_add(ht, key, e);
+		}
+	}
+	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
+		return NULL;
+	return exps;
+}
+
+static list *
+group_merge_exps(mvc *sql, list *gexps, list *exps)
+{
+	int nexps = list_length(gexps) + list_length(exps);
+
+	if (nexps < 5) {
+		return list_distinct(list_merge(gexps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
+	} else { /* for longer lists, use hashing */
+		sql_hash *ht = hash_new(sql->ta, nexps, (fkeyvalue)&exp_key);
+
+		for (node *n = gexps->h; n ; n = n->next) { /* first add grouping expressions */
+			sql_exp *e = n->data;
+			int key = ht->key(e);
+
+			hash_add(ht, key, e);
+		}
+
+		for (node *n = exps->h; n ; n = n->next) { /* then test if the new grouping expressions are already there */
+			sql_exp *e = n->data;
+			int key = ht->key(e);
+			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+			bool duplicates = false;
+
+			for (; he && !duplicates; he = he->chain) {
+				sql_exp *f = he->value;
+
+				if (!exp_equal(e, f))
+					duplicates = true;
+			}
+			hash_add(ht, key, e);
+			if (!duplicates)
+				list_append(gexps, e);
+		}
+		return gexps;
+	}
+}
+
 static list *
 rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp )
 {
@@ -5304,8 +5393,10 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 			}
 		}
 		if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
+			if (!(exps = check_distinct_exp_names(sql, exps)))
+				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
 			if (groupby) {
-				groupby->exps = list_distinct(list_merge(groupby->exps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
+				groupby->exps = group_merge_exps(sql, groupby->exps, exps);
 				for (node *n = groupby->exps->h ; n ; n = n->next) {
 					sql_exp *e = n->data;
 
@@ -5317,9 +5408,6 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 					}
 				}
 			}
-			list *distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
-			if (list_length(distinct_exps) != list_length(exps))
-				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
 			return exps;
 		}
 		if (!tname)

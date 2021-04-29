@@ -108,11 +108,14 @@ strCleanHash(Heap *h, bool rebuild)
 	 * started. */
 	memset(newhash, 0, sizeof(newhash));
 	pos = GDK_STRHASHSIZE;
-	while (pos < h->free && pos < GDK_ELIMLIMIT) {
+	while (pos < h->free) {
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
-		pos += pad + extralen;
+		pos += pad;
+		if (pos >= GDK_ELIMLIMIT)
+			break;
+		pos += extralen;
 		s = h->base + pos;
 		if (h->hashash)
 			strhash = ((const BUN *) s)[-1];
@@ -255,7 +258,6 @@ strPut(BAT *b, var_t *dst, const void *V)
 {
 	const char *v = V;
 	Heap *h = b->tvheap;
-	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
 	size_t pos, len = strLen(v);
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
@@ -304,24 +306,23 @@ strPut(BAT *b, var_t *dst, const void *V)
 	}
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
-	if (elimbase == 0) {	/* i.e. h->free < GDK_ELIMLIMIT */
+	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
 		if (pad < sizeof(stridx_t)) {
 			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
-	} else if (extralen == 0) {	/* i.e., h->hashash == FALSE */
-		/* no VARSHIFT and no string hash value stored => no
-		 * padding/alignment needed */
+	} else if (GDK_ELIMBASE(h->free) != 0) {
+		/* no extra padding needed when no hash links needed
+		 * (but only when padding doesn't cross duplicate
+		 * elimination boundary) */
 		pad = 0;
-	} else {
-		/* pad to align on VARALIGN for VARSHIFT and/or string
-		 * hash value */
-		pad &= (GDK_VARALIGN - 1);
 	}
+
+	pad += extralen;
 
 	/* check heap for space (limited to a certain maximum after
 	 * which nils are inserted) */
-	if (h->free + pad + len + extralen >= h->size) {
+	if (h->free + pad + len >= h->size) {
 		size_t newsize = MAX(h->size, 4096);
 
 		/* double the heap size until we have enough space */
@@ -330,11 +331,11 @@ strPut(BAT *b, var_t *dst, const void *V)
 				newsize <<= 1;
 			else
 				newsize += 4 * 1024 * 1024;
-		} while (newsize <= h->free + pad + len + extralen);
+		} while (newsize <= h->free + pad + len);
 
 		assert(newsize);
 
-		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
+		if (h->free + pad + len >= (size_t) VAR_MAX) {
 			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
@@ -346,19 +347,16 @@ strPut(BAT *b, var_t *dst, const void *V)
 		HEAPdecref(h, false);
 		b->tvheap = h = new;
 		MT_lock_unset(&b->theaplock);
-#ifndef NDEBUG
-		/* fill should solve initialization problems within
-		 * valgrind */
-		memset(h->base + h->free, 0, h->size - h->free);
-#endif
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
 	}
 
 	/* insert string */
-	pos = h->free + pad + extralen;
+	pos = h->free + pad;
 	*dst = (var_t) pos;
+	if (pad > 0)
+		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
 	if (h->hashash) {
 		((BUN *) (h->base + pos))[-1] = strhash;
@@ -366,12 +364,12 @@ strPut(BAT *b, var_t *dst, const void *V)
 		((BUN *) (h->base + pos))[-2] = (BUN) len;
 #endif
 	}
-	h->free += pad + len + extralen;
+	h->free += pad + len;
 	h->dirty = true;
 
 	/* maintain hash table */
 	pos -= extralen;
-	if (elimbase == 0) {	/* small string heap: link the next pointer */
+	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
 		/* the stridx_t next pointer directly precedes the
 		 * string and optional (depending on hashash) hash
 		 * value */

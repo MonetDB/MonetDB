@@ -27,6 +27,7 @@ unshare_varsized_heap(BAT *b)
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
+		MT_thread_setalgorithm("unshare vheap");
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		strconcat_len(h->filename, sizeof(h->filename),
@@ -66,7 +67,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 #if SIZEOF_VAR_T == 8
 	unsigned int tiv;	/* tail value-as-int */
 #endif
-	var_t v;		/* value */
+	var_t v = GDK_VAROFFSET; /* value */
 	size_t off;		/* offset within n's string heap */
 	BUN cnt = ci->ncand;
 	BUN oldcnt = BATcount(b);
@@ -80,9 +81,9 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
 	tp = NULL;
-	if ((!GDK_ELIMDOUBLES(b->tvheap) || oldcnt == 0) &&
-	    !GDK_ELIMDOUBLES(n->tvheap) &&
-	    b->tvheap->hashash == n->tvheap->hashash) {
+	if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
+			    !GDK_ELIMDOUBLES(n->tvheap) &&
+			    b->tvheap->hashash == n->tvheap->hashash)) {
 		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
@@ -111,6 +112,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				/* make sure locking happens in a
 				 * predictable order: lowest id
 				 * first */
+				MT_thread_setalgorithm("share vheap, copy heap");
 				if (b->batCacheid < n->batCacheid) {
 					MT_lock_set(&b->theaplock);
 					MT_lock_set(&n->theaplock);
@@ -128,13 +130,40 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				MT_lock_unset(&n->theaplock);
 				b->batDirtydesc = true;
 				toff = 0;
+				v = n->twidth == 1 ? GDK_VAROFFSET + 1 :
+					n->twidth == 2 ? GDK_VAROFFSET + (1 << 9) :
+#if SIZEOF_VAR_T == 8
+					n->twidth != 4 ? (var_t) 1 << 33 :
+#endif
+					(var_t) 1 << 17;
 			} else if (b->tvheap->parentid == n->tvheap->parentid &&
 				   ci->tpe == cand_dense) {
+				MT_thread_setalgorithm("copy heap");
 				toff = 0;
 			} else if (b->tvheap->parentid != bid &&
 				   unshare_varsized_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
+		} else if (oldcnt == 0) {
+			v = n->twidth == 1 ? GDK_VAROFFSET + 1 :
+				n->twidth == 2 ? GDK_VAROFFSET + (1 << 9) :
+#if SIZEOF_VAR_T == 8
+				n->twidth != 4 ? (var_t) 1 << 33 :
+#endif
+				(var_t) 1 << 17;
+			MT_thread_setalgorithm("copy vheap, copy heap");
+			if (b->tvheap->size < n->tvheap->free) {
+				Heap *h = HEAPgrow(b->tvheap, n->tvheap->free);
+				if (h == NULL)
+					return GDK_FAIL;
+				MT_lock_set(&b->theaplock);
+				HEAPdecref(b->tvheap, false);
+				b->tvheap = h;
+				MT_lock_unset(&b->theaplock);
+			}
+			memcpy(b->tvheap->base, n->tvheap->base, n->tvheap->free);
+			b->tvheap->free = n->tvheap->free;
+			toff = 0;
 		}
 		if (toff == ~(size_t) 0 && cnt > 1024 && b->tvheap->free >= n->tvheap->free) {
 			/* If b and n aren't sharing their string
@@ -182,6 +211,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				HEAPdecref(b->tvheap, false);
 				b->tvheap = h;
 				MT_lock_unset(&b->theaplock);
+				MT_thread_setalgorithm("append vheap");
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
 				if (toff > 0) {
@@ -190,15 +220,17 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 					memset(b->tvheap->base, 0,
 					       GDK_STRHASHSIZE);
 				}
+				/* make sure b is wide enough */
+				v = b->tvheap->free;
 			}
 		}
-	} else if (unshare_varsized_heap(b) != GDK_SUCCEED)
+	} else if (b->tvheap != n->tvheap &&
+		   unshare_varsized_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	/* make sure there is (vertical) space in the offset heap, we
-	 * may have to widen the heap later */
-	if (GDKupgradevarheap(b, (var_t) b->tvheap->size, BATcount(b) + cnt,
-			      false) != GDK_SUCCEED)
+	 * may also widen if v was set to some limit above */
+	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (toff == 0 && n->twidth == b->twidth && ci->tpe == cand_dense) {
@@ -226,32 +258,27 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 
 		switch (b->twidth) {
 		case 1:
-			b->ttype = TYPE_bte;
 			tp = &tbv;
 			break;
 		case 2:
-			b->ttype = TYPE_sht;
 			tp = &tsv;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
-			b->ttype = TYPE_int;
 			tp = &tiv;
 			break;
 		case 8:
-			b->ttype = TYPE_lng;
 			tp = &v;
 			break;
 #else
 		case 4:
-			b->ttype = TYPE_int;
 			tp = &v;
 			break;
 #endif
 		default:
 			assert(0);
 		}
-		b->tvarsized = false;
+		MT_thread_setalgorithm("copy offset values");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - n->hseqbase;
@@ -298,8 +325,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				break;
 			}
 		}
-		b->tvarsized = true;
-		b->ttype = TYPE_str;
 	} else if (b->tvheap->free < n->tvheap->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
@@ -309,6 +334,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		 * to use the double elimination mechanism */
 		r = BUNlast(b);
 		oid hseq = n->hseqbase;
+		MT_thread_setalgorithm("insert string values");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - hseq;
@@ -325,6 +351,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		 * n's).  If this is the case, we just copy the
 		 * offset, otherwise we insert normally.  */
 		r = BUNlast(b);
+		MT_thread_setalgorithm("insert string values with check");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - n->hseqbase;
@@ -677,7 +704,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	struct canditer ci;
 	BUN cnt;
 	BUN r;
-	PROPrec *prop = NULL, *nprop;
+	const ValRecord *prop = NULL, *nprop;
 	oid hseq = n->hseqbase;
 	char buf[64];
 	lng t0 = 0;
@@ -727,11 +754,11 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	OIDXdestroy(b);
 	if (BATcount(b) == 0 || (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
 		if ((nprop = BATgetprop(n, GDK_MAX_VALUE)) != NULL) {
-			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) < 0) {
+			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(prop), VALptr(nprop)) < 0) {
 				if (s == NULL) {
-					BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&nprop->v));
+					BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(nprop));
 					if ((nprop = BATgetprop(n, GDK_MAX_POS)) != NULL)
-						BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){nprop->v.val.oval + BATcount(b)});
+						BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){nprop->val.oval + BATcount(b)});
 					else
 						BATrmprop(b, GDK_MAX_POS);
 				} else {
@@ -746,11 +773,11 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	}
 	if (BATcount(b) == 0 || (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
 		if ((nprop = BATgetprop(n, GDK_MIN_VALUE)) != NULL) {
-			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) > 0) {
+			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(prop), VALptr(nprop)) > 0) {
 				if (s == NULL) {
-					BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&nprop->v));
+					BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(nprop));
 					if ((nprop = BATgetprop(n, GDK_MIN_POS)) != NULL)
-						BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){nprop->v.val.oval + BATcount(b)});
+						BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){nprop->val.oval + BATcount(b)});
 					else
 						BATrmprop(b, GDK_MIN_POS);
 				} else {
@@ -1108,8 +1135,8 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	b->tkey = false;
 	b->tnokey[0] = b->tnokey[1] = 0;
 
-	const PROPrec *maxprop = BATgetprop(b, GDK_MAX_VALUE);
-	const PROPrec *minprop = BATgetprop(b, GDK_MIN_VALUE);
+	const ValRecord *maxprop = BATgetprop(b, GDK_MAX_VALUE);
+	const ValRecord *minprop = BATgetprop(b, GDK_MIN_VALUE);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
@@ -1148,12 +1175,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			b->tnil |= isnil;
 			if (maxprop) {
 				if (!isnil &&
-				    atomcmp(VALptr(&maxprop->v), new) < 0) {
+				    atomcmp(VALptr(maxprop), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
 					maxprop = BATsetprop(b, GDK_MAX_VALUE, b->ttype, new);
 					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){updid});
-				} else if (atomcmp(VALptr(&maxprop->v), old) == 0 &&
+				} else if (atomcmp(VALptr(maxprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * largest and new value is
@@ -1167,12 +1194,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 			if (minprop) {
 				if (!isnil &&
-				    atomcmp(VALptr(&minprop->v), new) > 0) {
+				    atomcmp(VALptr(minprop), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
 					minprop = BATsetprop(b, GDK_MIN_VALUE, b->ttype, new);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
-				} else if (atomcmp(VALptr(&minprop->v), old) == 0 &&
+				} else if (atomcmp(VALptr(minprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * smallest and new value is
@@ -1288,7 +1315,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				/* we know min/max of n, so we know
 				 * the new min/max of b if those of n
 				 * are smaller/larger than the old */
-				if (minprop && v <= minprop->v.val.oval) {
+				if (minprop && v <= minprop->val.oval) {
 					BATsetprop(b, GDK_MIN_VALUE, TYPE_oid, &v);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
 				} else {
@@ -1297,7 +1324,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				}
 				for (BUN i = 0, j = BATcount(p); i < j; i++)
 					o[i] = v++;
-				if (maxprop && --v >= maxprop->v.val.oval) {
+				if (maxprop && --v >= maxprop->val.oval) {
 					BATsetprop(b, GDK_MAX_VALUE, TYPE_oid, &v);
 					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){updid + BATcount(p) - 1});
 				} else {
@@ -1310,13 +1337,13 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			 * extreme as those of b, we can replace b's
 			 * min/max, else we don't know what b's new
 			 * min/max are*/
-			PROPrec *prop;
+			const ValRecord *prop;
 			if (maxprop != NULL &&
 			    (prop = BATgetprop(n, GDK_MAX_VALUE)) != NULL &&
-			    atomcmp(VALptr(&maxprop->v), VALptr(&prop->v)) <= 0) {
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&prop->v));
+			    atomcmp(VALptr(maxprop), VALptr(prop)) <= 0) {
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(prop));
 				if ((prop = BATgetprop(n, GDK_MAX_POS)) != NULL)
-					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){prop->v.val.oval + updid});
+					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){prop->val.oval + updid});
 				else
 					BATrmprop(b, GDK_MAX_POS);
 			} else {
@@ -1325,10 +1352,10 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 			if (minprop != NULL &&
 			    (prop = BATgetprop(n, GDK_MIN_VALUE)) != NULL &&
-			    atomcmp(VALptr(&minprop->v), VALptr(&prop->v)) >= 0) {
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&prop->v));
+			    atomcmp(VALptr(minprop), VALptr(prop)) >= 0) {
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(prop));
 				if ((prop = BATgetprop(n, GDK_MIN_POS)) != NULL)
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){prop->v.val.oval + updid});
+					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){prop->val.oval + updid});
 				else
 					BATrmprop(b, GDK_MIN_POS);
 			} else {
@@ -1347,19 +1374,19 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			 * from n, we can also copy the min/max
 			 * properties */
 			if ((minprop = BATgetprop(n, GDK_MIN_VALUE)) != NULL)
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&minprop->v));
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(minprop));
 			else
 				BATrmprop(b, GDK_MIN_VALUE);
 			if ((minprop = BATgetprop(n, GDK_MIN_POS)) != NULL)
-				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &minprop->v.val.oval);
+				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &minprop->val.oval);
 			else
 				BATrmprop(b, GDK_MIN_POS);
 			if ((maxprop = BATgetprop(n, GDK_MAX_VALUE)) != NULL)
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&maxprop->v));
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(maxprop));
 			else
 				BATrmprop(b, GDK_MAX_VALUE);
 			if ((maxprop = BATgetprop(n, GDK_MAX_POS)) != NULL)
-				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &maxprop->v.val.oval);
+				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &maxprop->val.oval);
 			else
 				BATrmprop(b, GDK_MAX_POS);
 			if (BATtdense(n)) {
@@ -1398,12 +1425,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			b->tnil |= isnil;
 			if (maxprop) {
 				if (!isnil &&
-				    atomcmp(VALptr(&maxprop->v), new) < 0) {
+				    atomcmp(VALptr(maxprop), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
 					maxprop = BATsetprop(b, GDK_MAX_VALUE, b->ttype, new);
 					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){updid});
-				} else if (atomcmp(VALptr(&maxprop->v), old) == 0 &&
+				} else if (atomcmp(VALptr(maxprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * largest and new value is
@@ -1417,12 +1444,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 			if (minprop) {
 				if (!isnil &&
-				    atomcmp(VALptr(&minprop->v), new) > 0) {
+				    atomcmp(VALptr(minprop), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
 					minprop = BATsetprop(b, GDK_MIN_VALUE, b->ttype, new);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
-				} else if (atomcmp(VALptr(&minprop->v), old) == 0 &&
+				} else if (atomcmp(VALptr(minprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * smallest and new value is
@@ -2655,7 +2682,7 @@ PROPdestroy(BAT *b)
 	}
 }
 
-PROPrec *
+ValPtr
 BATgetprop_nolock(BAT *b, enum prop_t idx)
 {
 	PROPrec *p;
@@ -2663,7 +2690,7 @@ BATgetprop_nolock(BAT *b, enum prop_t idx)
 	p = b->tprops;
 	while (p && p->id != idx)
 		p = p->next;
-	return p;
+	return p ? &p->v : NULL;
 }
 
 void
@@ -2686,7 +2713,7 @@ BATrmprop_nolock(BAT *b, enum prop_t idx)
 	}
 }
 
-PROPrec *
+ValPtr
 BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	PROPrec *p;
@@ -2715,13 +2742,13 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 		p = NULL;
 	}
 	b->batDirtydesc = true;
-	return p;
+	return p ? &p->v : NULL;
 }
 
-PROPrec *
+ValPtr
 BATgetprop_try(BAT *b, enum prop_t idx)
 {
-	PROPrec *p = NULL;
+	ValPtr p = NULL;
 	if (MT_lock_try(&b->batIdxLock)) {
 		p = BATgetprop_nolock(b, idx);
 		MT_lock_unset(&b->batIdxLock);
@@ -2729,10 +2756,10 @@ BATgetprop_try(BAT *b, enum prop_t idx)
 	return p;
 }
 
-PROPrec *
+ValPtr
 BATgetprop(BAT *b, enum prop_t idx)
 {
-	PROPrec *p;
+	ValPtr p;
 
 	MT_lock_set(&b->batIdxLock);
 	p = BATgetprop_nolock(b, idx);
@@ -2745,13 +2772,13 @@ BATgetprop(BAT *b, enum prop_t idx)
 		case GDK_MIN_VALUE:
 			if ((p = BATgetprop_nolock(b, GDK_MIN_POS)) != NULL) {
 				BATiter bi = bat_iterator(b);
-				p = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, BUNtail(bi, p->v.val.oval));
+				p = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, BUNtail(bi, p->val.oval));
 			}
 			break;
 		case GDK_MAX_VALUE:
 			if ((p = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
 				BATiter bi = bat_iterator(b);
-				p = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, BUNtail(bi, p->v.val.oval));
+				p = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, BUNtail(bi, p->val.oval));
 			}
 			break;
 		default:
@@ -2762,10 +2789,10 @@ BATgetprop(BAT *b, enum prop_t idx)
 	return p;
 }
 
-PROPrec *
+ValPtr
 BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 {
-	PROPrec *p;
+	ValPtr p;
 	MT_lock_set(&b->batIdxLock);
 	p = BATsetprop_nolock(b, idx, type, v);
 	MT_lock_unset(&b->batIdxLock);

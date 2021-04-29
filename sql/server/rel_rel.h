@@ -30,6 +30,7 @@
 #define sql_values       (1 << 14) //ORed
 #define psm_call         (1 << 15) //ORed
 #define sql_or           (1 << 16) //ORed
+#define sql_merge        (1 << 17) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -48,6 +49,7 @@
 #define is_sql_values(X)       ((X & sql_values) == sql_values)
 #define is_psm_call(X)         ((X & psm_call) == psm_call)
 #define is_sql_or(X)           ((X & sql_or) == sql_or)
+#define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 
 extern void rel_set_exps(sql_rel *rel, list *exps);
 extern int project_unsafe(sql_rel *rel, int allow_identity);

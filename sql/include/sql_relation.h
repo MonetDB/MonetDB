@@ -76,6 +76,7 @@ typedef struct expression {
 
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
+#define MERGE_LEFT		16 /* used by merge statements */
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
 #define PSM_SET 1
@@ -161,7 +162,8 @@ typedef enum operator_type {
 	op_insert,	/* insert(l=table, r insert expressions) */
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
-	op_truncate /* truncate(l=table) */
+	op_truncate, /* truncate(l=table) */
+	op_merge
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -197,12 +199,13 @@ typedef enum operator_type {
 #define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) 		(op == op_groupby)
 #define is_topn(op) 		(op == op_topn)
-#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
+#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate || op == op_merge)
 #define is_sample(op) 		(op == op_sample)
 #define is_insert(op) 		(op == op_insert)
 #define is_update(op) 		(op == op_update)
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
+#define is_merge(op) 		(op == op_merge)
 
 /* ZERO on empty sets, needed for sum (of counts)). */
 #define zero_if_empty(e) 	((e)->zero_if_empty)

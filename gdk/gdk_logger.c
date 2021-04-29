@@ -48,7 +48,7 @@ static gdk_return logger_del_bat(logger *lg, log_bid bid);
 
 #define BATSIZE 0
 
-#define LOG_DISABLED(lg) ((lg)->debug&128 || (lg)->inmemory)
+#define LOG_DISABLED(lg) ((lg)->debug&128 || (lg)->inmemory || (lg)->flushnow)
 
 static const char *log_commands[] = {
 	"LOG_START",
@@ -1386,7 +1386,7 @@ bm_subcommit(logger *lg)
 	sizes[i] = 0;
 	n[i++] = 0;		/* n[0] is not used */
 	bids = (const log_bid *) Tloc(catalog_bid, 0);
-	if (!LOG_DISABLED(lg) && lg->catalog_cnt)
+	if (/*!LOG_DISABLED(lg) && */lg->catalog_cnt)
 		cnts = (const lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (const lng *) Tloc(lg->catalog_lid, 0);
@@ -1402,6 +1402,7 @@ bm_subcommit(logger *lg)
 		n[i++] = col;
 	}
 	/* now commit catalog, so it's also up to date on disk */
+	assert(!LOG_DISABLED(lg) || BATcount(catalog_bid) == lg->cnt);
 	sizes[i] = lg->cnt;
 	n[i++] = catalog_bid->batCacheid;
 	sizes[i] = lg->cnt;
@@ -2212,6 +2213,8 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (nr)
+			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
 	}
 
@@ -2222,16 +2225,21 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
 	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset)))
-		return GDK_FAIL;
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+		ok = GDK_FAIL;
+		goto bailout;
+	}
 
 	ok = wt(val, lg->output_log, 1);
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
-	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		const char *err = mnstr_peek_error(lg->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
 	return ok;
 }
 
@@ -2255,6 +2263,8 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (nr)
+			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
 	}
 
@@ -2266,8 +2276,10 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
 	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset)))
-		return GDK_FAIL;
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+		ok = GDK_FAIL;
+		goto bailout;
+	}
 
 	/* if offset is just for the log, but BAT is already sliced, reset offset */
 	if (sliced)
@@ -2303,8 +2315,11 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
-	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		const char *err = mnstr_peek_error(lg->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
 	return ok;
 }
 
@@ -2333,13 +2348,11 @@ log_bat_persists(logger *lg, BAT *b, int id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
+	} else {
+		lg->cnt++;
 	}
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
-	if (LOG_DISABLED(lg)) {
-		logger_unlock(lg);
-		return GDK_SUCCEED;
-	}
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
 	logger_unlock(lg);
 	return r;
@@ -2355,15 +2368,14 @@ log_bat_transient(logger *lg, int id)
 	l.flag = LOG_DESTROY;
 	l.id = id;
 
-	if (LOG_DISABLED(lg)) {
-		logger_unlock(lg);
-		return GDK_SUCCEED;
-	}
-
-	if (log_write_format(lg, &l) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "write failed\n");
-		logger_unlock(lg);
-		return GDK_FAIL;
+	if (!LOG_DISABLED(lg)) {
+		if (log_write_format(lg, &l) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "write failed\n");
+			logger_unlock(lg);
+			return GDK_FAIL;
+		}
+	} else {
+		lg->cnt--;
 	}
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
@@ -2418,8 +2430,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, nr) ||
 	     mnstr_write(lg->output_log, &tpe, 1, 1) != 1){
-		logger_unlock(lg);
-		return GDK_FAIL;
+		ok = GDK_FAIL;
+		goto bailout;
 	}
 	for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 		const oid id = BUNtoid(uid, p);
@@ -2440,8 +2452,11 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
-	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		const char *err = mnstr_peek_error(lg->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
 	logger_unlock(lg);
 	return ok;
 }
@@ -2453,7 +2468,8 @@ log_bat_clear(logger *lg, int id)
 	logformat l;
 
 	if (LOG_DISABLED(lg))
-		return GDK_SUCCEED;
+		return la_bat_update_count(lg, id, 0);
+	//	return GDK_SUCCEED;
 
 	l.flag = LOG_CLEAR;
 	l.id = id;
@@ -2503,14 +2519,18 @@ log_tend(logger *lg)
 	logformat l;
 	gdk_return res = GDK_SUCCEED;
 
-	if (LOG_DISABLED(lg))
-		return GDK_SUCCEED;
-
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tend %d\n", lg->tid);
 
 	l.flag = LOG_END;
 	l.id = lg->tid;
+	if (lg->flushnow) {
+		lg->flushnow = 0;
+		return logger_commit(lg);
+	}
+
+	if (LOG_DISABLED(lg))
+		return GDK_SUCCEED;
 
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
@@ -2677,16 +2697,27 @@ logger_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, ulng commit_ts)
+log_tstart(logger *lg, ulng commit_ts, bool flushnow)
 {
 	logformat l;
 
+	if (flushnow) {
+		lg->id++;
+		logger_close_output(lg);
+		/* start new file */
+		if (logger_open_output(lg) != GDK_SUCCEED)
+			return GDK_FAIL;
+		while (lg->saved_id+1 < lg->id)
+			logger_flush(lg, commit_ts);
+		lg->flushnow = flushnow;
+	}
+	if (lg->current) {
+		lg->current->last_tid = lg->tid+1;
+		lg->current->last_ts = commit_ts;
+	}
+
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
-
-	assert(lg->current);
-	lg->current->last_tid = lg->tid+1;
-	lg->current->last_ts = commit_ts;
 
 	l.flag = LOG_START;
 	l.id = ++lg->tid;
