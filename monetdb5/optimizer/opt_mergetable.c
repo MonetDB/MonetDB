@@ -901,7 +901,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	InstrPtr r;
 	mat_t *mat = ml->v;
 	int *mats = (int*)GDKzalloc(sizeof(int) * args);
-	int nr_mats = 0, first = 0, res = 0;
+	int nr_mats = 0, first = -1, res = 0;
 
 	if (!mats) {
 		return -1;
@@ -911,7 +911,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		mats[j] = is_a_mat(getArg(p,p->retc+j), ml);
 		if (mats[j] != -1) {
 			nr_mats++;
-			if (!first)
+			if (first < 0)
 				first = j;
 		}
 	}

@@ -1,4 +1,4 @@
-import os
+import os, sys
 from subprocess import run, PIPE, CalledProcessError
 
 HOST=os.getenv('HOST')
@@ -17,5 +17,7 @@ if __name__ == '__main__':
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests/ValidateSystemCatalogTables.sql')]
     try:
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
+        sys.stderr.write(p.stdout)
+        sys.stderr.write(p.stderr)
     except CalledProcessError as e:
         raise SystemExit(e.stderr)
