@@ -15,10 +15,12 @@ if(RELEASE_VERSION)
 endif()
 set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB_VERSION_PATCH}")
 
-# Version numbers for the shared libraries that we provide
-# the numbers are: <CURRENT>:<REVISION>:<AGE>
+# Version numbers for the shared libraries that we provide.
 # The scheme used here comes from libtool but is also usable in the
 # current context.
+# The libtool scheme uses values <CURRENT>:<REVISION>:<AGE>, but we
+# have renamed them here to <CURRENT>, <PATCH>, <MINOR> respectively.
+
 # These numbers must be changed according to the following rules
 # (follow them all in order):
 
@@ -36,12 +38,12 @@ set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB
 # In other words
 # X   if there are no code changes, don't change version numbers;
 # FIX if there are changes to the code (bug fixes) but no API changes,
-#     just increment REVISION;
+#     just increment PATCH;
 # NEW if there are only backward compatible API changes (new
-#     interfaces), increment both CURRENT and AGE, and set REVISION to
+#     interfaces), increment both CURRENT and MINOR, and set PATCH to
 #     0;
 # BRK if there are also incompatible API changes (interfaces removed or
-#     changed), increment CURRENT, and set AGE and REVISION to 0.
+#     changed), increment CURRENT, and set MINOR and PATCH to 0.
 #     IMPORTANT: also change debian package names for the relevant
 #     library.  This involves renaming the file in debian/ and
 #     updating references to the package in debian/control.  The version
@@ -50,35 +52,35 @@ set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/utils)
 set(GDK_VERSION_CURRENT "22")
-set(GDK_VERSION_REVISION "3")
-set(GDK_VERSION_AGE "1")
-math(EXPR GDK_VERSION_MAJOR "${GDK_VERSION_CURRENT} - ${GDK_VERSION_AGE}")
-set(GDK_VERSION "${GDK_VERSION_MAJOR}.${GDK_VERSION_AGE}.${GDK_VERSION_REVISION}")
+set(GDK_VERSION_MINOR "1")
+set(GDK_VERSION_PATCH "3")
+math(EXPR GDK_VERSION_MAJOR "${GDK_VERSION_CURRENT} - ${GDK_VERSION_MINOR}")
+set(GDK_VERSION "${GDK_VERSION_MAJOR}.${GDK_VERSION_MINOR}.${GDK_VERSION_PATCH}")
 
 # version of the MAPI library (subdirectory clients/mapilib)
 set(MAPI_VERSION_CURRENT "12")
-set(MAPI_VERSION_REVISION "6")
-set(MAPI_VERSION_AGE "0")
-math(EXPR MAPI_VERSION_MAJOR "${MAPI_VERSION_CURRENT} - ${MAPI_VERSION_AGE}")
-set(MAPI_VERSION "${MAPI_VERSION_MAJOR}.${MAPI_VERSION_AGE}.${MAPI_VERSION_REVISION}")
+set(MAPI_VERSION_MINOR "0")
+set(MAPI_VERSION_PATCH "6")
+math(EXPR MAPI_VERSION_MAJOR "${MAPI_VERSION_CURRENT} - ${MAPI_VERSION_MINOR}")
+set(MAPI_VERSION "${MAPI_VERSION_MAJOR}.${MAPI_VERSION_MINOR}.${MAPI_VERSION_PATCH}")
 
 # version of the MONETDB5 library (subdirectory monetdb5, not including extras or sql)
 set(MONETDB5_VERSION_CURRENT "30")
-set(MONETDB5_VERSION_REVISION "6")
-set(MONETDB5_VERSION_AGE "0")
-math(EXPR MONETDB5_VERSION_MAJOR "${MONETDB5_VERSION_CURRENT} - ${MONETDB5_VERSION_AGE}")
-set(MONETDB5_VERSION "${MONETDB5_VERSION_MAJOR}.${MONETDB5_VERSION_AGE}.${MONETDB5_VERSION_REVISION}")
+set(MONETDB5_VERSION_MINOR "0")
+set(MONETDB5_VERSION_PATCH "6")
+math(EXPR MONETDB5_VERSION_MAJOR "${MONETDB5_VERSION_CURRENT} - ${MONETDB5_VERSION_MINOR}")
+set(MONETDB5_VERSION "${MONETDB5_VERSION_MAJOR}.${MONETDB5_VERSION_MINOR}.${MONETDB5_VERSION_PATCH}")
 
 # version of the MONETDBE library (subdirectory tools/monetdbe)
 set(MONETDBE_VERSION_CURRENT "1")
-set(MONETDBE_VERSION_REVISION "2")
-set(MONETDBE_VERSION_AGE "0")
-math(EXPR MONETDBE_VERSION_MAJOR "${MONETDBE_VERSION_CURRENT} - ${MONETDBE_VERSION_AGE}")
-set(MONETDBE_VERSION "${MONETDBE_VERSION_MAJOR}.${MONETDBE_VERSION_AGE}.${MONETDBE_VERSION_REVISION}")
+set(MONETDBE_VERSION_MINOR "0")
+set(MONETDBE_VERSION_PATCH "2")
+math(EXPR MONETDBE_VERSION_MAJOR "${MONETDBE_VERSION_CURRENT} - ${MONETDBE_VERSION_MINOR}")
+set(MONETDBE_VERSION "${MONETDBE_VERSION_MAJOR}.${MONETDBE_VERSION_MINOR}.${MONETDBE_VERSION_PATCH}")
 
 # version of the STREAM library (subdirectory common/stream)
 set(STREAM_VERSION_CURRENT "14")
-set(STREAM_VERSION_REVISION "4")
-set(STREAM_VERSION_AGE "0")
-math(EXPR STREAM_VERSION_MAJOR "${STREAM_VERSION_CURRENT} - ${STREAM_VERSION_AGE}")
-set(STREAM_VERSION "${STREAM_VERSION_MAJOR}.${STREAM_VERSION_AGE}.${STREAM_VERSION_REVISION}")
+set(STREAM_VERSION_MINOR "0")
+set(STREAM_VERSION_PATCH "4")
+math(EXPR STREAM_VERSION_MAJOR "${STREAM_VERSION_CURRENT} - ${STREAM_VERSION_MINOR}")
+set(STREAM_VERSION "${STREAM_VERSION_MAJOR}.${STREAM_VERSION_MINOR}.${STREAM_VERSION_PATCH}")

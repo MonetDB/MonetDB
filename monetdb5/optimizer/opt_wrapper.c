@@ -150,7 +150,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
 			if (msg) {
-				throw(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
+				throw(MAL, codes[i].nme, SQLSTATE(42000) "Error in optimizer %s: %s", codes[i].nme, msg);
 			}
 			break;
 		}

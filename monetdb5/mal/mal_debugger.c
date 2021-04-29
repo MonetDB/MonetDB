@@ -43,6 +43,21 @@ typedef struct MDBSTATE{
 #define skipWord(c, X)     while (*(X) && (isalnum((unsigned char) *X))) { X++; } \
 	skipBlanc(c, X);
 
+#define skipModule(C,B)\
+{\
+		skipWord(C, B);	\
+		skipBlanc(C, B);	\
+		c = strchr(B,'.');	\
+		if( c ){	\
+			B = c + 1;	\
+			skipWord(cntxt, B);	\
+			skipBlanc(cntxt, B);	\
+		}	\
+		c = strchr(B,']');	\
+		if (c)	\
+			B = c + 1;	\
+}
+
 /* Utilities
  * Dumping a stack on a file is primarilly used for debugging.
  * Printing the stack requires access to both the symbol table and
@@ -156,6 +171,7 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 {
 	int i = 0;
 
+	setVariableScope(mb);
 	if (s) {
 		mnstr_printf(f, "#Stack '%s' size=%d top=%d\n",
 				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
@@ -1245,8 +1261,8 @@ retryRead:
 		case 'L':
 		case 'l':   /* list the current MAL block or module */
 		{
-			Symbol fs;
 			int lstng;
+			c = b;
 
 			lstng = LIST_MAL_NAME;
 			if(*b == 'L')
@@ -1254,53 +1270,19 @@ retryRead:
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b != 0) {
-				/* debug the current block */
+				/* debug the block context */
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b);
+				mnstr_printf(out, "#Inspect %s\n", c);
 
-				if ( m == 0)
-					m = mb;
-				if ( m ){
-					const char *nme = getFunctionId(mb->stmt[0]);
-					str s = strstr(b, nme);
-					if( s ){
-						b = s + strlen(nme);
-						skipBlanc(cntxt,b);
-					}
+				if ( m )
+					mb = m;
+				else{
+					mnstr_printf(out, "#MAL block not found '%s'\n", c);
+					break;
 				}
-				if (isdigit((unsigned char) *b) || *b == '-' || *b == '+')
+
+					skipModule(cntxt, b);
 					goto partial;
-
-				/* inspect another function */
-				if( strchr(b,'.') ){
-					str modnme = b;
-					str fcnnme;
-					fcnnme = strchr(b,'.');
-					*fcnnme++  = 0;
-					b = fcnnme;
-					skipNonBlanc(cntxt, b);
-					if ( b)
-						*b++  = 0;
-
-					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
-					if (fs == 0) {
-						mnstr_printf(out, "#'%s' not found\n", modnme);
-						continue;
-					}
-					for(; fs; fs = fs->peer)
-					if( strcmp(fcnnme, fs->name)==0) {
-						if( lstng == LIST_MAL_NAME)
-							printFunction(out, fs->def, 0, lstng);
-						else
-							debugFunction(out, fs->def, 0, lstng, 0,mb->stop);
-					}
-					continue;
-				}
-				if (m){
-					if( lstng == LIST_MAL_NAME)
-						printFunction(out, m, 0, lstng);
-					else
-						debugFunction(out, m, 0, lstng, 0,m->stop);
-				}
 			} else {
 /*
  * Listing the program starts at the pc last given.
@@ -1338,17 +1320,18 @@ partial:
 		case 'o':
 		case 'O':   /* optimizer and scheduler steps */
 		{
-			MalBlkPtr mdot = mb;
+			c = b;
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b) {
-				mdot = mdbLocateMalBlk(cntxt, mb, b);
-				if (mdot != NULL)
-					showMalBlkHistory(out, mdot);
-				else
-					mnstr_printf(out, "#'%s' not found\n", b);
-			} else
-				showMalBlkHistory(out, mb);
+				mnstr_printf(out, "#History of %s\n", b);
+				mb = mdbLocateMalBlk(cntxt, mb, b);
+				if (mb == NULL){
+					mnstr_printf(out, "#'%s' not resolved\n", c);
+					break;
+				}
+			} 
+			showMalBlkHistory(out, mb);
 			break;
 		}
 		case 'r':   /* reset program counter */
@@ -1441,18 +1424,16 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
 	str oldprompt= cntxt->prompt;
 	int oldtrace = cntxt->itrace;
-	int oldhist = cntxt->curprg->def->keephistory;
 	str msg;
 
 	cntxt->itrace = 'n';
-	cntxt->curprg->def->keephistory = TRUE;
 
 	msg = runMAL(cntxt, mb, 0, 0);
 
-	cntxt->curprg->def->keephistory = oldhist;
 	cntxt->prompt =oldprompt;
 	cntxt->itrace = oldtrace;
 	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
+	removeMalBlkHistory(mb);
 	return msg;
 }
 

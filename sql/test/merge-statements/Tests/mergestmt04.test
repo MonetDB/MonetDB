@@ -1,27 +1,27 @@
 statement ok
 CREATE TABLE food_store (id INT, "name" TEXT, new_item BOOL)
 
-statement ok
+statement ok rowcount 5
 INSERT INTO food_store VALUES (1, 'bread', false), (2, 'coffee', false), (3, 'tea', false), (4, 'butter', false), (5, 'chocolate', false)
 
 statement ok
 CREATE TABLE releases (id INT, reason CLOB)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO releases VALUES (5, 'too warm to eat chocolate'), (6, 'end of chestnuts season')
 
 statement ok
 CREATE TABLE incoming (id INT, "name" CLOB)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO incoming VALUES (6, 'ice cream')
 
-statement ok
+statement ok rowcount 1
 MERGE INTO food_store AS to_update USING releases AS food_updates
   ON to_update.id = food_updates.id
   WHEN MATCHED THEN DELETE
 
-statement ok
+statement ok rowcount 1
 MERGE INTO food_store USING (SELECT id, "name" FROM incoming) AS new_food
   ON food_store.id = new_food.id
   WHEN NOT MATCHED THEN INSERT VALUES (new_food.id, new_food."name", true)
@@ -45,13 +45,13 @@ butter
 ice cream
 1
 
-statement ok
+statement ok rowcount 1
 TRUNCATE incoming
 
-statement ok
+statement ok rowcount 3
 INSERT INTO incoming VALUES (1, 'cookies'), (2, 'cake'), (7, 'peanuts')
 
-statement ok
+statement ok rowcount 3
 MERGE INTO food_store USING (SELECT id, "name" FROM incoming) AS food_updates
   ON food_store.id = food_updates.id
   WHEN NOT MATCHED THEN INSERT VALUES (food_updates.id, food_updates."name", true)
@@ -79,10 +79,10 @@ ice cream
 peanuts
 1
 
-statement ok
+statement ok rowcount 2
 TRUNCATE releases
 
-statement ok
+statement ok rowcount 2
 INSERT INTO releases VALUES (1, 'chocolate cookies'), (1, 'gluten cookies')
 
 statement error

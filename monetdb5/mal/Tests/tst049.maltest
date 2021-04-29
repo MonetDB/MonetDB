@@ -61,7 +61,7 @@ pathfined is fun!
 123456123456
 
 statement ok
-i:= str.like("hello","hello")
+i:= algebra.like("hello","hello","",false)
 
 query T rowsort
 io.print(i)
@@ -69,7 +69,7 @@ io.print(i)
 true
 
 statement ok
-i:= str.like("hello","hell")
+i:= algebra.like("hello","hell","",false)
 
 query T rowsort
 io.print(i)
@@ -77,7 +77,7 @@ io.print(i)
 false
 
 statement ok
-i:= str.like("hello","h_llo")
+i:= algebra.like("hello","h_llo","",false)
 
 query T rowsort
 io.print(i)
@@ -85,7 +85,7 @@ io.print(i)
 true
 
 statement ok
-i:= str.like("hello","%llo")
+i:= algebra.like("hello","%llo","",false)
 
 query T rowsort
 io.print(i)
@@ -93,7 +93,7 @@ io.print(i)
 true
 
 statement ok
-i:= str.like("hello","%___")
+i:= algebra.like("hello","%___","",false)
 
 query T rowsort
 io.print(i)
@@ -101,7 +101,7 @@ io.print(i)
 true
 
 statement ok
-i:= str.like("hello","hxllo")
+i:= algebra.like("hello","hxllo","",false)
 
 query T rowsort
 io.print(i)
@@ -109,7 +109,7 @@ io.print(i)
 false
 
 statement ok
-i:= str.like("tr","t_")
+i:= algebra.like("tr","t_","",false)
 
 query T rowsort
 io.print(i)
@@ -117,7 +117,7 @@ io.print(i)
 true
 
 statement ok
-i:= str.like("trx","t_")
+i:= algebra.like("trx","t_","",false)
 
 query T rowsort
 io.print(i)
@@ -125,7 +125,7 @@ io.print(i)
 false
 
 statement ok
-z:= batalgebra.like(b,"t_")
+z:= batalgebra.like(b,"t_","",false)
 
 query II rowsort
 io.print(z)
@@ -154,7 +154,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%math%")
+z:= mal.manifold("algebra","like",b,"%math%","",false)
 
 query II rowsort
 io.print(z)
@@ -183,7 +183,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%m_th_a%t")
+z:= mal.manifold("algebra","like",b,"%m_th_a%t","",false)
 
 query II rowsort
 io.print(z)
@@ -212,7 +212,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%at%_!")
+z:= mal.manifold("algebra","like",b,"%at%_!","",false)
 
 query II rowsort
 io.print(z)
@@ -241,7 +241,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"1%")
+z:= mal.manifold("algebra","like",b,"1%","",false)
 
 query II rowsort
 io.print(z)
@@ -270,7 +270,7 @@ io.print(z)
 1
 
 statement ok
-z:= mal.manifold("str","like",b,"3%")
+z:= mal.manifold("algebra","like",b,"3%","",false)
 
 query II rowsort
 io.print(z)
@@ -299,7 +299,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%1")
+z:= mal.manifold("algebra","like",b,"%1","",false)
 
 query II rowsort
 io.print(z)
@@ -328,7 +328,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%3")
+z:= mal.manifold("algebra","like",b,"%3","",false)
 
 query II rowsort
 io.print(z)
@@ -357,7 +357,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%1%")
+z:= mal.manifold("algebra","like",b,"%1%","",false)
 
 query II rowsort
 io.print(z)
@@ -386,7 +386,7 @@ io.print(z)
 1
 
 statement ok
-z:= mal.manifold("str","like",b,"%12%")
+z:= mal.manifold("algebra","like",b,"%12%","",false)
 
 query II rowsort
 io.print(z)
@@ -415,7 +415,7 @@ io.print(z)
 1
 
 statement ok
-z:= mal.manifold("str","like",b,"%13%")
+z:= mal.manifold("algebra","like",b,"%13%","",false)
 
 query II rowsort
 io.print(z)
@@ -444,7 +444,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%454%")
+z:= mal.manifold("algebra","like",b,"%454%","",false)
 
 query II rowsort
 io.print(z)
@@ -473,7 +473,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%2%2%")
+z:= mal.manifold("algebra","like",b,"%2%2%","",false)
 
 query II rowsort
 io.print(z)
@@ -502,7 +502,7 @@ io.print(z)
 1
 
 statement ok
-z:= mal.manifold("str","like",b,"_2_3%123")
+z:= mal.manifold("algebra","like",b,"_2_3%123","",false)
 
 query II rowsort
 io.print(z)
@@ -531,7 +531,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"_123%3")
+z:= mal.manifold("algebra","like",b,"_123%3","",false)
 
 query II rowsort
 io.print(z)
@@ -560,7 +560,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%1_3456%")
+z:= mal.manifold("algebra","like",b,"%1_3456%","",false)
 
 query II rowsort
 io.print(z)
@@ -589,7 +589,7 @@ io.print(z)
 1
 
 statement ok
-z:= mal.manifold("str","like",b,"_3456%")
+z:= mal.manifold("algebra","like",b,"_3456%","",false)
 
 query II rowsort
 io.print(z)
@@ -618,7 +618,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like",b,"%23")
+z:= mal.manifold("algebra","like",b,"%23","",false)
 
 query II rowsort
 io.print(z)
@@ -647,7 +647,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like3",b,"%","?")
+z:= mal.manifold("algebra","like",b,"%","?",false)
 
 query II rowsort
 io.print(z)
@@ -676,7 +676,7 @@ io.print(z)
 1
 
 statement ok
-z:= mal.manifold("str","like3",b,"?%","?")
+z:= mal.manifold("algebra","like",b,"?%","?",false)
 
 query II rowsort
 io.print(z)
@@ -705,7 +705,7 @@ io.print(z)
 0
 
 statement ok
-z:= mal.manifold("str","like3",b,".%",".")
+z:= mal.manifold("algebra","like",b,".%",".",false)
 
 query II rowsort
 io.print(z)

@@ -66,7 +66,7 @@ plan UPDATE fluxz
 ----
 update(
 | table("sys"."fluxz") [ "fluxz"."%TID%" NOT NULL ] COUNT 
-| single project (
+| project (
 | | single left outer join (
 | | | semijoin (
 | | | | table("sys"."fluxz") [ "fluxz"."runcat" NOT NULL, "fluxz"."filter" NOT NULL, "fluxz"."%TID%" NOT NULL ] COUNT ,

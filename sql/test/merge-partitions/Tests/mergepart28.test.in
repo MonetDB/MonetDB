@@ -16,7 +16,7 @@ COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USI
 statement ok
 ALTER TABLE ratings ADD TABLE subt2 AS PARTITION FROM 1925 TO 1950
 
-statement ok
+statement ok rowcount 1347
 COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"'
 
 statement ok

@@ -101,11 +101,13 @@ class SQLLogic:
         self.close()
 
     def connect(self, username='monetdb', password='monetdb',
-                hostname='localhost', port=None, database='demo', language='sql'):
+                hostname='localhost', port=None, database='demo',
+                language='sql', timeout=None):
         self.language = language
         self.hostname = hostname
         self.port = port
         self.database = database
+        self.timeout = timeout
         if language == 'sql':
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
@@ -594,6 +596,10 @@ class SQLLogic:
     def parse(self, f, approve=None):
         self.approve = approve
         self.initfile(f)
+        if self.language == 'sql':
+            self.crs.execute(f'call sys.setsession(cast({self.timeout or 0} as bigint))')
+        else:
+            self.crs.execute(f'clients.setsession({self.timeout or 0}:lng)')
         while True:
             skipping = False
             line = self.readline()
@@ -723,6 +729,8 @@ if __name__ == '__main__':
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--language', action='store', default='sql',
+                        help='language to use for testing')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
     parser.add_argument('--verbose', action='store_true',
@@ -740,7 +748,7 @@ if __name__ == '__main__':
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language)
     for test in args:
         try:
             if not opts.nodrop:

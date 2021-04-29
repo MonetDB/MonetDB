@@ -284,7 +284,6 @@ static str
 ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
 	BAT *b, *s = NULL, *bn;
-	const void *nilptr;
 	bit nanti = *anti, nli = *li, nhi = *hi;
 
 	if (!*unknown)
@@ -305,17 +304,20 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	derefStr(b, low);
 	derefStr(b, high);
 	/* here we don't need open ended parts with nil */
-	nilptr = ATOMnilptr(b->ttype);
-	if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
-		low = high;
-		nli = 0;
+	if (!nanti) {
+		const void *nilptr = ATOMnilptr(b->ttype);
+		if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
+			low = high;
+			nli = 0;
+		}
+		if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
+			high = low;
+			nhi = 0;
+		}
+		if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+			nanti = 1;
 	}
-	if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
-		high = low;
-		nhi = 0;
-	}
-	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
-		nanti = !nanti;
+
 	bn = BATselect(b, s, low, high, nli, nhi, nanti);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -972,28 +974,46 @@ ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, 
 static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
-	BAT *b, *s = NULL;
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL, *s = NULL;
+	bool heap_loaded = false;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (!(b = BBPquickdesc(*bid, false))) {
+		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	if (cnd && !is_bat_nil(*cnd) && (s = BATdescriptor(*cnd)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (cnd && !is_bat_nil(*cnd) && !(s = BATdescriptor(*cnd))) {
+		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
+	if (b->ttype == TYPE_void || b->ttype == TYPE_msk || (*ignore_nils && !b->tnonil)) {
+		if (!(b = BATdescriptor(*bid))) { /* has to load the heap */
+			msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		heap_loaded = true;
+	}
+
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
-	} else
-	if (*ignore_nils) {
+		assert(heap_loaded);
+		if (BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "aggr.count", GDK_EXCEPTION);
+			goto bailout;
+		}
+	} else if (*ignore_nils && !b->tnonil) {
+		assert(heap_loaded);
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
 		struct canditer ci;
 		*result = (lng) canditer_init(&ci, b, s);
 	}
+
+bailout:
+	if (b && heap_loaded)
+		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str

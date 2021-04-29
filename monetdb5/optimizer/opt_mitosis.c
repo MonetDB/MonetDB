@@ -151,8 +151,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* if data exceeds memory size,
 		 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
 		 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
-		assert(threads > 0);
-		assert(activeClients > 0);
 		if (rowcnt > m && m / threads / activeClients > 0) {
 			/* create |pieces| > |threads| partitions such that
 			 * |threads| partitions at a time fit in memory,

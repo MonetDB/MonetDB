@@ -19,7 +19,7 @@ CREATE TABLE sublimits5 (a int, b varchar(32))
 statement ok
 ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION FROM 0 TO 100
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testrangelimits VALUES (1, 'first')
 
 statement error
@@ -37,16 +37,16 @@ ALTER TABLE testrangelimits ADD TABLE sublimits4 AS PARTITION FROM 500 TO 600
 statement error
 ALTER TABLE testrangelimits ADD TABLE sublimits5 AS PARTITION FROM -1 TO 1
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testrangelimits VALUES (1, 'a'), (101, 'b'), (401, 'c')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testrangelimits VALUES (50, 'more')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO testrangelimits VALUES (171, 'test')
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testrangelimits VALUES (401, 'another'), (NULL, 'test'), (450, 'to'), (499, 'pass')
 
 statement error
@@ -55,13 +55,13 @@ INSERT INTO testrangelimits VALUES (201, 'oh no')
 statement error
 INSERT INTO testrangelimits VALUES (444, 'another'), (305, 'error'), (4, 'happening')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (2, 'another')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits2 VALUES (102, 'successful')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO sublimits3 VALUES (NULL, 'attempt')
 
 statement error

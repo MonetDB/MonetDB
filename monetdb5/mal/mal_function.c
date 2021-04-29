@@ -407,13 +407,15 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 	if ( flg == 0 || step < 0  || first < 0 )
 		return;
 
+	if( mb->errors)
+				mnstr_printf(fd,"#errors seen: %s\n", mb->errors);
 	for (i = first; i < first +step && i < mb->stop; i++){
 		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
 		if (ps) {
 			if (p->token == REMsymbol)
 				mnstr_printf(fd,"%-40s\n",ps);
 			else {
-				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+				mnstr_printf(fd,"%-40s\t#[%d] %s ",ps, i, (p->blk? p->blk->binding:""));
 				if( flg & LIST_MAL_FLOW){
 					for(j =0; j < p->retc; j++)
 						mnstr_printf(fd,"%d ",getArg(p,j));
@@ -422,9 +424,6 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 					for(; j < p->argc; j++)
 						mnstr_printf(fd,"%d ",getArg(p,j));
 				}
-				// also show type check property
-				if( p->typechk == TYPE_UNKNOWN)
-					mnstr_printf(fd," type check needed ");
 				mnstr_printf(fd,"\n");
 			}
 			GDKfree(ps);

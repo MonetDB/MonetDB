@@ -36,7 +36,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		//res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
-		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, mt->s, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 	} else {
 		assert(0);
@@ -100,7 +100,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		res = list_fetch((*anti_rel)->exps, colr);
 	} else if (isPartitionedByExpressionTable(t)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
-		if (!(res = rel_parse_val(sql, t->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, t->s, t->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 		exp_label(sql->sa, res, ++sql->label);
 		append((*anti_rel)->exps, res);
@@ -557,6 +557,7 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_insert:
 		case op_update:
 		case op_delete:
+		case op_merge:
 			if (rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			if (rel->r)
@@ -869,7 +870,6 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
 		sel = rel_exception(query->sql->sa, sel, anti_rel, list_append(new_exp_list(query->sql->sa), exception));
 	}
-	sel->p = prop_create(query->sql->sa, PROP_DISTRIBUTE, sel->p);
 	return sel;
 }
 
@@ -882,12 +882,7 @@ rel_propagate_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 static sql_rel*
 rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
-	rel = rel_generate_subdeletes(sql, rel, t, changes);
-	if (rel) {
-		rel = rel_exception(sql->sa, rel, NULL, NULL);
-		rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
-	}
-	return rel;
+	return rel_generate_subdeletes(sql, rel, t, changes);
 }
 
 static bool
@@ -924,16 +919,11 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	if (!found_partition_col) { /* easy scenario where the partitioned column is not being updated, just propagate */
 		sel = rel_generate_subupdates(sql, rel, t, changes);
-		if (sel) {
-			sel = rel_exception(sql->sa, sel, NULL, NULL);
-			sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
-		}
 	} else { /* harder scenario, has to insert and delete across partitions. */
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
 
 		deletes = rel_generate_subdeletes(sql, rel, t, changes);
-		deletes = rel_exception(sql->sa, deletes, NULL, NULL);
 		inserts = rel_generate_subinserts(query, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
 		inserts = rel_exception(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
 		return rel_list(sql->sa, deletes, inserts);*/
@@ -1058,7 +1048,6 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 
 		rel = rel_exception(sql->sa, rel, anti_dup, list_append(new_exp_list(sql->sa), exception));
 	}
-	rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
 	return rel;
 }
 

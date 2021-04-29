@@ -351,7 +351,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case CMDcall:
 	case ASSIGNsymbol :
 		// is any variable explicit or used
-		/* this code was meant to make it easy to detect functions whose 
+		/* this code was meant to make it easy to detect functions whose
 		 * result variable was not used anywhere.
 		 * It is not essential
 		for (i = 0; i < p->retc; i++)
@@ -484,12 +484,14 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 		}
 	}
-	const char *algo = MT_thread_getalgorithm();
-	if (algo) {
-		if (!copystring(&t, " # ", &len))
-			return base;
-		if (!copystring(&t, algo, &len))
-			return base;
+	if (flg & LIST_MAL_ALGO) {
+		const char *algo = MT_thread_getalgorithm();
+		if (algo) {
+			if (!copystring(&t, " # ", &len))
+				return base;
+			if (!copystring(&t, algo, &len))
+				return base;
+		}
 	}
 	return base;
 }

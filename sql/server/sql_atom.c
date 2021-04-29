@@ -1278,12 +1278,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 					int tpe = tp->type->localtype;
 					size_t len = (tpe == TYPE_dbl) ? sizeof(dbl) : sizeof(flt);
 					ssize_t res;
-					ptr p;
-
-					if (tpe == TYPE_dbl)
-						p = &(a->data.val.dval);
-					else
-						p = &(a->data.val.fval);
+					ptr p = &(a->data.val);
 					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0) {
 						GDKclrerr();
 						return 0;

@@ -15,7 +15,7 @@ URL=f"jdbc:monetdb://{HOST}:{MAPIPORT}/{TSTDB}?user=monetdb&password=monetdb{JDB
 
 cmd = ['java', 'JDBC_API_Tester', URL]
 try:
-    p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, text=True)
+    p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
 except CalledProcessError as e:
     raise SystemExit(e.stderr)
 
@@ -27,7 +27,3 @@ except CalledProcessError as e:
 #TST=$1
 #
 #java ${TST} "${URL}"
-#
-##!/bin/sh
-#
-#$TSTSRCDIR/Test.SQL.sh $*

@@ -167,6 +167,11 @@ mnstr_init(void)
 	return 0;
 }
 
+const char *
+mnstr_version(void)
+{
+	return STREAM_VERSION;
+}
 
 /* Read at most cnt elements of size elmsize from the stream.  Returns
  * the number of elements actually read or < 0 on failure. */

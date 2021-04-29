@@ -22,37 +22,37 @@ UPDATE testsmallpartitions SET b = 'try update me'
 statement ok
 ALTER TABLE testsmallpartitions ADD TABLE testingme AS PARTITION IN ('100', 300, '400')
 
-statement ok
+statement ok rowcount 0
 DELETE FROM testsmallpartitions
 
-statement ok
+statement ok rowcount 0
 DELETE FROM testsmallpartitions WHERE a < 400
 
-statement ok
+statement ok rowcount 0
 TRUNCATE testsmallpartitions
 
-statement ok
+statement ok rowcount 0
 UPDATE testsmallpartitions SET b = 'updating'
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testsmallpartitions VALUES (100, 'ok'), (100, 'also'), (100, 'ok')
 
-statement ok
+statement ok rowcount 3
 DELETE FROM testsmallpartitions
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testsmallpartitions VALUES (100, 'another'), (100, 'test'), (100, 'todo')
 
-statement ok
+statement ok rowcount 3
 DELETE FROM testsmallpartitions WHERE a < 400
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testsmallpartitions VALUES (100, 'more'), (100, 'testing'), (100, 'please'), (100, 'now')
 
-statement ok
+statement ok rowcount 4
 TRUNCATE testsmallpartitions
 
-statement ok
+statement ok rowcount 4
 INSERT INTO testsmallpartitions VALUES (300, 'just'), (100, 'one'), (300, 'more'), (100, 'insert')
 
 query IT rowsort
@@ -79,10 +79,10 @@ just
 300
 more
 
-statement ok
+statement ok rowcount 0
 UPDATE testsmallpartitions SET b = 'nothing' WHERE a = 0
 
-statement ok
+statement ok rowcount 2
 UPDATE testsmallpartitions SET b = 'another update' WHERE a = 100
 
 query IT rowsort
@@ -109,7 +109,7 @@ just
 300
 more
 
-statement ok
+statement ok rowcount 2
 UPDATE testsmallpartitions SET b = 'change' || 'me' WHERE a = 300
 
 query IT rowsort
@@ -142,10 +142,10 @@ CREATE TABLE testmealso (a int, b varchar(32))
 statement ok
 ALTER TABLE testsmallpartitions ADD TABLE testmealso AS PARTITION IN ('200', 500)
 
-statement ok
+statement ok rowcount 5
 INSERT INTO testsmallpartitions VALUES (100, 'more'), (200, 'data'), (100, 'to'), (400, 'test'), (500, 'on')
 
-statement ok
+statement ok rowcount 2
 UPDATE testsmallpartitions SET b = 'on both partitions' WHERE a = 400 OR a = 200
 
 query IT rowsort
@@ -196,7 +196,7 @@ on both partitions
 500
 on
 
-statement ok
+statement ok rowcount 1
 UPDATE testsmallpartitions SET b = 'just on the second partition' WHERE a = 500
 
 query IT rowsort
@@ -247,7 +247,7 @@ on both partitions
 500
 just on the second partition
 
-statement ok
+statement ok rowcount 0
 UPDATE testsmallpartitions SET b = 'no partition' WHERE a = 1000
 
 query IT rowsort
@@ -298,7 +298,7 @@ on both partitions
 500
 just on the second partition
 
-statement ok
+statement ok rowcount 9
 TRUNCATE testsmallpartitions
 
 query IT rowsort

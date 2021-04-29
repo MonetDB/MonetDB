@@ -352,222 +352,222 @@ select isnull('aa') as fals
 False
 
 query T rowsort
-select not_like('abc', '%b%') as fals
+select not_like('abc', '%b%', '', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_b%') as fals
+select not_like('abc', '_b%', '', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_b_') as fals
+select not_like('abc', '_b_', '', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_c_') as tru
+select not_like('abc', '_c_', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('%b%', 'abc') as tru
+select not_like('%b%', 'abc', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('_b%', 'abc') as tru
+select not_like('_b%', 'abc', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('_b_', 'abc') as tru
+select not_like('_b_', 'abc', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('_c_', 'abc') as tru
+select not_like('_c_', 'abc', '', false) as tru
 ----
 True
 
 statement error
-select not_like('abc', '%b%', '%') as fals
+select not_like('abc', '%b%', '%', false) as fals
 
 query T rowsort
-select not_like('abc', '%b%c', '%') as tru
+select not_like('abc', '%b%c', '%', false) as tru
 ----
 True
 
 statement error
-select not_like('abc', '_b%', '%') as fals
+select not_like('abc', '_b%', '%', false) as fals
 
 query T rowsort
-select not_like('abc', '_b%c', '%') as fals
+select not_like('abc', '_b%c', '%', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_b_', '%') as fals
+select not_like('abc', '_b_', '%', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_c_', '%') as tru
+select not_like('abc', '_c_', '%', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('abc', '%b%', '_') as fals
+select not_like('abc', '%b%', '_', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_b%', '_') as tru
+select not_like('abc', '_b%', '_', false) as tru
 ----
 True
 
 statement error
-select not_like('abc', '_b_', '_') as tru
+select not_like('abc', '_b_', '_', false) as tru
 
 statement error
-select not_like('abc', '_c_', '_') as tru
+select not_like('abc', '_c_', '_', false) as tru
 
 query T rowsort
-select not_like('abc', '%b%', '#') as fals
+select not_like('abc', '%b%', '#', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_b%', '#') as fals
+select not_like('abc', '_b%', '#', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_b_', '#') as fals
+select not_like('abc', '_b_', '#', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_c_', '#') as tru
+select not_like('abc', '_c_', '#', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('ab#c', '%b%', '#') as fals
+select not_like('ab#c', '%b%', '#', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('ab#c', '_b%', '#') as fals
+select not_like('ab#c', '_b%', '#', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('ab#c', '_b_', '#') as tru
+select not_like('ab#c', '_b_', '#', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('ab#c', '_c_', '#') as tru
+select not_like('ab#c', '_c_', '#', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('abc', '%b#%', '#') as tru
+select not_like('abc', '%b#%', '#', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('abc', '_b#%', '#') as tru
+select not_like('abc', '_b#%', '#', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('a_bc', '_#_b_', '#') as fals
+select not_like('a_bc', '_#_b_', '#', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('abc', '_c#_', '#') as tru
+select not_like('abc', '_c#_', '#', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\') as tru
+select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('aabbccdd', '%bc_d%') as fals
+select not_like('aabbccdd', '%bc_d%', '', false) as fals
 ----
 False
 
 query T rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\') as tru
+select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('abc', '%B%') as tru
+select not_like('abc', '%B%', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('abc', '_B%') as tru
+select not_like('abc', '_B%', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_like('abc', '_B_') as tru
+select not_like('abc', '_B_', '', false) as tru
 ----
 True
 
 query T rowsort
-select not_ilike('abc', '%B%') as fals
+select not_like('abc', '%B%', '', true) as fals
 ----
 False
 
 query T rowsort
-select not_ilike('abc', '_B%') as fals
+select not_like('abc', '_B%', '', true) as fals
 ----
 False
 
 query T rowsort
-select not_ilike('abc', '_B_') as fals
+select not_like('abc', '_B_', '', true) as fals
 ----
 False
 
 query T rowsort
-select not_ilike('abc', '_C_') as tru
+select not_like('abc', '_C_', '', true) as tru
 ----
 True
 
 query T rowsort
-select not_ilike('a_bc', '_#_B_', '#') as fals
+select not_like('a_bc', '_#_B_', '#', true) as fals
 ----
 False
 
 query T rowsort
-select not_ilike('aabbccdd', '%bc_d%') as fals
+select not_like('aabbccdd', '%bc_d%', '', true) as fals
 ----
 False
 
 query T rowsort
-select not_ilike('aabbccdd', '%bc\\_d%', '\\') as tru
+select not_like('aabbccdd', '%bc\\_d%', '\\', true) as tru
 ----
 True
 
 statement error
-select like('aabbccdd', '%bc_d%') as tru
+select like('aabbccdd', '%bc_d%', '', false) as tru
 
 query T rowsort
-select "like"('aabbccdd', '%bc_d%') as tru
+select "like"('aabbccdd', '%bc_d%', '', false) as tru
 ----
 True
 
 query T rowsort
-select "ilike"('aabbccdd', '%bc_d%') as tru
+select "like"('aabbccdd', '%bc_d%', '', true) as tru
 ----
 True
 

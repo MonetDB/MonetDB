@@ -71,7 +71,7 @@ io.print(B);
 0
 
 statement ok
-C:= batalgebra.like(S,"hello");
+C:= batalgebra.like(S,"hello","",false);
 
 query II rowsort
 io.print(C);

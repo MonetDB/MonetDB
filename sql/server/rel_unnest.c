@@ -760,7 +760,12 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
 
+		int single = is_single(r);
+		reset_single(r);
+		sql_rel *or = r;
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
+		if (single)
+			set_single(or);
 		r->op = op_join;
 		move_join_exps(sql, rel, r);
 		set_dependent(r);
@@ -2595,8 +2600,10 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rsq) {
 					if (on_right) {
 						sql_rel *join = rel->l; /* the introduced join */
-						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_join);
+						join->r = rel_crossproduct(sql->sa, join->r, rsq, depth?op_right:op_join);
 						set_dependent(join);
+						if (depth)
+							reset_has_nil(le);
 					} else {
 						operator_type op = !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti;
 						(void)rewrite_inner(sql, rel, rsq, &op);
@@ -2944,7 +2951,7 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			/* If the left relation cannot hold the comparison it cannot be pushed to the semi(anti)-join
 			   For now I guess only comparisons or anyequal func can appear here */
 			assert((is_func(e->type) && is_anyequal_func(sf)) || e->type == e_cmp);
-			if ((is_func(e->type) && is_anyequal_func(sf)) || !rel_has_cmp_exp(j->l, e)) {
+			if ((is_func(e->type) && is_anyequal_func(sf)) || !rel_rebind_exp(v->sql, j->l, e)) {
 				if (e->type == e_cmp) {
 					append(j->exps, e);
 				} else {
@@ -3023,7 +3030,9 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (!exp_is_rel(ie)) { /* exists over a constant or a single value */
 				le = exp_atom_bool(v->sql->sa, is_exists(sf)?1:0);
-				if (exp_name(e))
+				if (depth == 0 && is_select(rel->op))
+					le = exp_compare(v->sql->sa, le, exp_atom_bool(v->sql->sa, 1), cmp_equal);
+				else if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
 				v->changes++;
 				return le;
@@ -3076,7 +3085,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				operator_type op = is_exists(sf)?op_semi:op_anti;
 				(void)rewrite_inner(v->sql, rel, sq, &op);
 				v->changes++;
-				return exp_atom_bool(v->sql->sa, 1);
+				return exp_compare(v->sql->sa, exp_atom_bool(v->sql->sa, 1), exp_atom_bool(v->sql->sa, 1), cmp_equal);
 			}
 			v->changes++;
 			return le;
@@ -3625,13 +3634,13 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rewrite_simplify(v, rel);
 	if (rel)
-		rel = rewrite_or_exp(v, rel);
-	if (rel)
 		rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
 	if (rel)
-		rel = rewrite_aggregates(v, rel);
+		rel = rewrite_outer2inner_union(v, rel); /* has to run before rewrite_or_exp */
 	if (rel)
-		rel = rewrite_outer2inner_union(v, rel);
+		rel = rewrite_or_exp(v, rel);
+	if (rel)
+		rel = rewrite_aggregates(v, rel);
 	if (rel)
 		rel = rewrite_values(v, rel);
 	return rel;
