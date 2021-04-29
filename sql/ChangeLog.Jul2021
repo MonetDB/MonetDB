@@ -1,0 +1,45 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Wed Apr 28 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Merge statements could not produce correct results on complex join
+  conditions, so a renovation was made. As a consequence, subqueries
+  now have to be disabled on merge join conditions.
+
+* Tue Mar 16 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Use of CTEs inside UPDATE and DELETE statements are now more
+  restrict. Previously they could be used without any extra specification
+  in the query (eg. with "v1"("c1") as (...) delete from "t"
+  where "t"."c1" = "v1"."c1"), however this was not conformant with the
+  SQL standard. In order to use them, they must be specified in the FROM
+  clause in UPDATE statments or inside a subquery.
+
+* Mon Nov 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added 'schema path' property to user, specifying a list of schemas
+  to be searched on to find SQL objects such as tables and
+  functions. The scoping rules have been updated to support this feature
+  and it now finds SQL objects in the following order:
+   1. On occasions with multiple tables (e.g. add foreign key constraint,
+      add table to a merge table), the child will be searched on the
+      parent's schema.
+   2. For tables only, declared tables on the stack.
+   3. 'tmp' schema if not listed on the 'schema path'.
+   4. Session's current schema.
+   5. Each schema from the 'schema path' in order.
+   6. 'sys' schema if not listed on the 'schema path'.
+  Whenever the full path is specified, ie "schema"."object", no search will
+  be made besides on the explicit schema.
+- To update the schema path ALTER USER x SCHEMA PATH y; statement was added.
+  [SCHEMA PATH string] syntax was added to the CREATE USER statement.
+  The schema path must be a single string where each schema must be between
+  double quotes and separated with a single comma, e.g. '"sch1","sch2"'
+  For every created user, if the schema path is not given, '"sys"' will be
+  the default schema path.
+- Changes in the schema path won't be reflected on currently connected users,
+  therefore they have to re-connect to see the change. Non existent schemas
+  on the path will be ignored.
+
+* Fri Oct 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Leftover STREAM table definition from Datacell extension was removed
+  from the parser. They had no effect anymore.
+
