@@ -148,12 +148,12 @@ gdk_export void *BATmin(BAT *b, void *aggr);
 gdk_export void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);
 gdk_export void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil);
 
-gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
-gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b, BAT *s);
+gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b, BAT *s);
 gdk_export BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 gdk_export BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
-gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
-gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b, BAT *s);
+gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b, BAT *s);
 gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 gdk_export dbl BATcalccovariance_sample(BAT *b1, BAT *b2, BAT *s1, BAT *s2);

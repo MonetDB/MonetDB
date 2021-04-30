@@ -1295,73 +1295,79 @@ ALGreuse(bat *ret, const bat *bid)
 }
 
 /*
- * BAT standard deviation
+ * BAT standard deviation and variance
  */
+static str
+ALGstdvar(dbl *res, const bat *bid, const bat *sid,
+		  dbl (*func)(dbl *, BAT *, BAT *), const char *malfunc)
+{
+	BAT *b, *s = NULL;
+	dbl result;
+
+	if ((b = BATdescriptor(*bid)) == NULL ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	result = (*func)(NULL, b, s);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (is_dbl_nil(result) && GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, malfunc, GDK_EXCEPTION);
+	*res = result;
+	return MAL_SUCCEED;
+}
+
 static str
 ALGstdev(dbl *res, const bat *bid)
 {
-	BAT *b;
-	dbl stdev;
+	return ALGstdvar(res, bid, NULL, BATcalcstdev_sample, "aggr.stdev");
+}
 
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.stdev", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	stdev = BATcalcstdev_sample(NULL, b);
-	BBPunfix(b->batCacheid);
-	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.stdev", GDK_EXCEPTION);
-	*res = stdev;
-	return MAL_SUCCEED;
+static str
+ALGstdev2(dbl *res, const bat *bid, const bat *sid)
+{
+	return ALGstdvar(res, bid, sid, BATcalcstdev_sample, "aggr.stdev");
 }
 
 static str
 ALGstdevp(dbl *res, const bat *bid)
 {
-	BAT *b;
-	dbl stdev;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.stdevp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	stdev = BATcalcstdev_population(NULL, b);
-	BBPunfix(b->batCacheid);
-	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.stdevp", GDK_EXCEPTION);
-	*res = stdev;
-	return MAL_SUCCEED;
+	return ALGstdvar(res, bid, NULL, BATcalcstdev_population, "aggr.stdevp");
 }
 
-/*
- * BAT variance
- */
+static str
+ALGstdevp2(dbl *res, const bat *bid, const bat *sid)
+{
+	return ALGstdvar(res, bid, sid, BATcalcstdev_population, "aggr.stdevp");
+}
+
 static str
 ALGvariance(dbl *res, const bat *bid)
 {
-	BAT *b;
-	dbl variance;
+	return ALGstdvar(res, bid, NULL, BATcalcvariance_sample, "aggr.variance");
+}
 
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.variance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	variance = BATcalcvariance_sample(NULL, b);
-	BBPunfix(b->batCacheid);
-	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.variance", GDK_EXCEPTION);
-	*res = variance;
-	return MAL_SUCCEED;
+static str
+ALGvariance2(dbl *res, const bat *bid, const bat *sid)
+{
+	return ALGstdvar(res, bid, sid, BATcalcvariance_sample, "aggr.variance");
 }
 
 static str
 ALGvariancep(dbl *res, const bat *bid)
 {
-	BAT *b;
-	dbl variance;
+	return ALGstdvar(res, bid, NULL, BATcalcvariance_population,
+					 "aggr.variancep");
+}
 
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.variancep", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	variance = BATcalcvariance_population(NULL, b);
-	BBPunfix(b->batCacheid);
-	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.variancep", GDK_EXCEPTION);
-	*res = variance;
-	return MAL_SUCCEED;
+static str
+ALGvariancep2(dbl *res, const bat *bid, const bat *sid)
+{
+	return ALGstdvar(res, bid, sid, BATcalcvariance_population,
+					 "aggr.variancep");
 }
 
 /*
@@ -1515,9 +1521,13 @@ mel_func algebra_init_funcs[] = {
  command("aggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
  command("aggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
  command("aggr", "stdev", ALGstdev, false, "Gives the standard deviation of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "stdev", ALGstdev2, false, "Gives the standard deviation of all tail values", args(1,3, arg("",dbl),batargany("b",2),batarg("s",oid))),
  command("aggr", "stdevp", ALGstdevp, false, "Gives the standard deviation of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "stdevp", ALGstdevp2, false, "Gives the standard deviation of all tail values", args(1,3, arg("",dbl),batargany("b",2),batarg("s",oid))),
  command("aggr", "variance", ALGvariance, false, "Gives the variance of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "variance", ALGvariance2, false, "Gives the variance of all tail values", args(1,3, arg("",dbl),batargany("b",2),batarg("s",oid))),
  command("aggr", "variancep", ALGvariancep, false, "Gives the variance of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "variancep", ALGvariancep2, false, "Gives the variance of all tail values", args(1,3, arg("",dbl),batargany("b",2),batarg("s",oid))),
  command("aggr", "covariance", ALGcovariance, false, "Gives the covariance of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
  command("aggr", "covariance", ALGcovariance2, false, "Gives the covariance of all tail values", args(1,5, arg("",dbl),batargany("b1",2),batargany("b2",2),batarg("s1",oid),batarg("s2",oid))),
  command("aggr", "covariancep", ALGcovariancep, false, "Gives the covariance of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),

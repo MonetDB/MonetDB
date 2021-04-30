@@ -4098,24 +4098,25 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 /* ---------------------------------------------------------------------- */
 /* standard deviation (both biased and non-biased) */
 
-#define AGGR_STDEV_SINGLE(TYPE)				\
-	do {						\
-		TYPE x;					\
-		for (i = 0; i < cnt; i++) {		\
-			x = ((const TYPE *) values)[i];	\
-			if (is_##TYPE##_nil(x))		\
-				continue;		\
-			n++;				\
-			delta = (dbl) x - mean;		\
-			mean += delta / n;		\
-			m2 += delta * ((dbl) x - mean);	\
-			if (isinf(m2))			\
-				goto overflow;		\
-		}					\
+#define AGGR_STDEV_SINGLE(TYPE)					\
+	do {							\
+		TYPE x;						\
+		for (i = 0; i < ci->ncand; i++) {		\
+			oid o = canditer_next(ci) - ci->hseq;	\
+			x = ((const TYPE *) values)[o];		\
+			if (is_##TYPE##_nil(x))			\
+				continue;			\
+			n++;					\
+			delta = (dbl) x - mean;			\
+			mean += delta / n;			\
+			m2 += delta * ((dbl) x - mean);		\
+			if (isinf(m2))				\
+				goto overflow;			\
+		}						\
 	} while (0)
 
 static dbl
-calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, bool issample)
+calcvariance(dbl *restrict avgp, const void *restrict values, struct canditer *ci, int tp, bool issample)
 {
 	BUN n = 0, i;
 	dbl mean = 0;
@@ -4164,52 +4165,60 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 }
 
 dbl
-BATcalcstdev_population(dbl *avgp, BAT *b)
+BATcalcstdev_population(dbl *avgp, BAT *b, BAT *s)
 {
 	lng t0 = 0;
+	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	canditer_init(&ci, b, s);
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, false);
+			     &ci, b->ttype, false);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
-BATcalcstdev_sample(dbl *avgp, BAT *b)
+BATcalcstdev_sample(dbl *avgp, BAT *b, BAT *s)
 {
 	lng t0 = 0;
+	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	canditer_init(&ci, b, s);
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, true);
+			     &ci, b->ttype, true);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
-BATcalcvariance_population(dbl *avgp, BAT *b)
+BATcalcvariance_population(dbl *avgp, BAT *b, BAT *s)
 {
 	lng t0 = 0;
+	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	canditer_init(&ci, b, s);
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, false);
+			     &ci, b->ttype, false);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return v;
 }
 
 dbl
-BATcalcvariance_sample(dbl *avgp, BAT *b)
+BATcalcvariance_sample(dbl *avgp, BAT *b, BAT *s)
 {
 	lng t0 = 0;
+	struct canditer ci;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	canditer_init(&ci, b, s);
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, true);
+			     &ci, b->ttype, true);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return v;
