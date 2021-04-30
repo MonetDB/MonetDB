@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t0" ("tc0" VARCHAR(32) NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"))
 
-statement ok
+statement ok rowcount 5
 INSERT INTO "t0" VALUES ('1048409847'), ('ph'), ('CV'), ('T\t'), ('!iG&')
 
 statement ok
@@ -33,7 +33,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("tc0" UUID NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"), CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"))
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 c3fc2aee-1e03-50cf-f4c7-e6bbbb3e31a3
@@ -48,7 +48,7 @@ b5a5abcd-bb90-56a2-ffd3-f321403b6e9e
 statement ok
 CREATE TABLE "sys"."t1" ("tc1" VARCHAR(486))
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "0.9918446996922964"
@@ -69,7 +69,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t1" ("tc0" DOUBLE NOT NULL,"tc1" CHARACTER LARGE OBJECT)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -1823648899	""
@@ -113,7 +113,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("tc0" BIGINT NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t2_tc0_unique" UNIQUE ("tc0"))
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1611702516
@@ -121,7 +121,7 @@ COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 -803413833
 921740890
 
-statement error
+statement error 42000!Argument 2 to round function must be positive
 select t2.tc0, scale_down(0.87735366430185102171179778451914899051189422607421875, t2.tc0) from t2
 
 statement ok
@@ -133,7 +133,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("tc0" BIGINT NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"))
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 34818777
@@ -146,7 +146,7 @@ CREATE TABLE "sys"."t1" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t1_tc0_pkey" PRIMA
 statement ok
 CREATE TABLE "sys"."t2" ("tc1" INTERVAL DAY  NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"),CONSTRAINT "t2_tc1_unique" UNIQUE ("tc1"))
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 133611486249600.000
@@ -165,10 +165,10 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace(r'', r'
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!Decimal (0.2.3) doesn't have format (10.2)
 select cast('0.2.3' as decimal(10,2))
 
-statement error
+statement error 42000!Decimal (+0..2) doesn't have format (10.2)
 select cast('+0..2' as decimal(10,2))
 
 statement ok
@@ -200,7 +200,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("tc0" TIME NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t2_tc0_unique" UNIQUE ("tc0"))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 08:19:27
@@ -243,7 +243,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "salesmart" ("city" VARCHAR(100))
 
-statement ok
+statement ok rowcount 9
 INSERT INTO "salesmart" VALUES ('pT펈*1.{'),('1870507234'),('27825'),('/aF⯗u'),('10545346022400.000'),(''),('-1533465369'),(''),('29781')
 
 statement ok
@@ -263,7 +263,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."salesmart"("city" VARCHAR(100))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "b~dEQ~"
@@ -281,7 +281,7 @@ SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true
 1
 1
 
-statement ok
+statement ok rowcount 5
 DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)))
 
 statement ok
@@ -293,7 +293,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL
@@ -307,7 +307,7 @@ NULL
 statement ok
 create view v0(vc0) as (select distinct sql_neg(abs(nullif(interval '2' month, interval '3' month))) where greatest(nullif(4 in (0.42, 0.43), 'v' ilike '|pRd(Wɮ&'), ((interval '3' second) is null) = false))
 
-statement ok
+statement ok rowcount 0
 MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY
 
 statement ok
@@ -322,7 +322,7 @@ CREATE TABLE "sys"."t0" ("tc0" INTEGER NOT NULL,"tc1" TINYINT,CONSTRAINT "t0_tc0
 statement ok
 CREATE TABLE "sys"."t1" ("tc1" DATE)
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1970-01-24
@@ -332,7 +332,7 @@ COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t2" ("tc1" DATE NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1970-01-25
@@ -383,7 +383,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("tc0" BIGINT)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 284462307
@@ -411,7 +411,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("tc0" INTEGER NOT NULL)
 
-statement ok
+statement ok rowcount 6
 COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 604800000
@@ -421,12 +421,12 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 805478917
 94
 
-statement error
+statement error 42000!Digits out of bounds
 select round(t2.tc0, 88) from t2
 
 statement ok
 ROLLBACK
 
-statement error
+statement error 22003!overflow in conversion of 789092170 to bte.
 SELECT round(- (((-443710828)||(1616633099))), 789092170)
 

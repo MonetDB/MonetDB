@@ -43,7 +43,7 @@ CREATE TABLE t1(c1 boolean, c2 tinyint)
 statement ok
 INSERT INTO t1(c2) VALUES(6), (2)
 
-statement error
+statement error 40002!ALTER TABLE: NOT NULL constraint violated for column t1.c1
 ALTER TABLE t1 ALTER c1 SET NOT NULL
 
 statement ok
@@ -288,7 +288,7 @@ True
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!types uuid(0,0) and boolean(1,0) are not equal
 select 1 from (values (1),(2),(3)) x(x) where uuid '55a279B4-f52a-835C-C43c-5E0bd20fFbAB'
 
 statement ok
