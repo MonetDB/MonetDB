@@ -3,30 +3,30 @@ SELECT 1+(SELECT 1)
 ----
 2
 
-query I rowsort
+query T rowsort
 SELECT 1=(SELECT 1)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1<>(SELECT 1)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT 1=(SELECT NULL)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT NULL=(SELECT 1)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT 1)
 ----
-1
+True
 
 statement ok
 DROP TABLE IF EXISTS integers
@@ -34,99 +34,100 @@ DROP TABLE IF EXISTS integers
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT 1) FROM integers
 ----
-1
-1
-1
-1
+True
+True
+True
+True
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT * FROM integers)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT * FROM integers WHERE i IS NULL)
 ----
-1
+True
 
 statement ok
 DROP TABLE integers
 
-query I rowsort
+query T rowsort
 SELECT 1 IN (SELECT 1)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT NULL IN (SELECT 1)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 IN (SELECT NULL)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 IN (SELECT 2)
 ----
-0
+False
 
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO integers VALUES (1), (2), (3)
 
-query I rowsort
+query T rowsort
 SELECT 4 IN (SELECT * FROM integers)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT 1 IN (SELECT * FROM integers)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1 IN (SELECT * FROM integers) FROM integers
 ----
-1
-1
-1
+True
+True
+True
 
-statement ok
+statement ok rowcount 1
 INSERT INTO integers VALUES (NULL)
 
-query I rowsort
+query T rowsort
 SELECT 4 IN (SELECT * FROM integers)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 IN (SELECT * FROM integers)
 ----
-1
+True
 
-query I rowsort
+query I nosort
 SELECT * FROM integers WHERE (4 IN (SELECT * FROM integers)) IS NULL ORDER BY 1
 ----
+NULL
 1
 2
 3
-NULL
 
-query I rowsort
+query I nosort
 SELECT * FROM integers WHERE (i IN (SELECT * FROM integers)) IS NULL ORDER BY 1
 ----
 NULL
 
 statement ok
 DROP TABLE integers
+
 
