@@ -1,7 +1,7 @@
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
 query I rowsort
@@ -17,52 +17,52 @@ SELECT i FROM integers WHERE i > ANY(SELECT i FROM integers)
 2
 3
 
-query II rowsort
+query IT nosort
 SELECT i, i > ANY(SELECT i FROM integers) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
 NULL
 2
-1
+True
 3
-1
-NULL
-NULL
+True
 
-query II rowsort
+query IT nosort
 SELECT i, i > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-0
+False
 2
-1
+True
 3
-1
-NULL
-NULL
+True
 
-query II rowsort
+query IT nosort
 SELECT i, NULL > ANY(SELECT i FROM integers) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
 NULL
 2
 NULL
 3
-NULL
-NULL
 NULL
 
-query II rowsort
+query IT nosort
 SELECT i, NULL > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
 NULL
 2
 NULL
 3
-NULL
-NULL
 NULL
 
 query I rowsort
@@ -72,96 +72,97 @@ SELECT i FROM integers WHERE i = ANY(SELECT i FROM integers)
 2
 3
 
-query II rowsort
+query IT nosort
 SELECT i, i = ANY(SELECT i FROM integers WHERE i>2) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-0
+False
 2
-0
+False
 3
-1
-NULL
-NULL
+True
 
-query II rowsort
+query IT nosort
 SELECT i, i = ANY(SELECT i FROM integers WHERE i>2 OR i IS NULL) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
 NULL
 2
 NULL
 3
-1
-NULL
-NULL
+True
 
-query II rowsort
+query IT nosort
 SELECT i, i <> ANY(SELECT i FROM integers WHERE i>2) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-1
+True
 2
-1
+True
 3
-0
-NULL
-NULL
+False
 
-query II rowsort
+query IT nosort
 SELECT i, i <> ANY(SELECT i FROM integers WHERE i>2 OR i IS NULL) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-1
+True
 2
-1
+True
 3
 NULL
-NULL
-NULL
 
-query II rowsort
+query IT nosort
 SELECT i, i = ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-1
+True
 2
-1
+True
 3
-1
-NULL
-NULL
+True
 
-query II rowsort
+query IT nosort
 SELECT i, i = ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL AND i1.i <> 2) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-1
+True
 2
-0
+False
 3
-1
-NULL
-NULL
+True
 
-query II rowsort
+query IT nosort
 SELECT i, i >= ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL) FROM integers ORDER BY i
 ----
+NULL
+NULL
 1
-1
+True
 2
-1
+True
 3
-1
-NULL
-NULL
+True
 
 statement error
 SELECT i, i >= ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL AND i1.i <> 1 LIMIT 1) FROM integers ORDER BY i
 
-statement error
+statement error 42000!SELECT: subquery must return only one column
 SELECT 1 >= ANY(SELECT 2, 3)
 
 statement ok
 drop table integers
+
 

@@ -1,39 +1,39 @@
-query I rowsort
+query T rowsort
 SELECT 1 = ANY(SELECT 1)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1 = ANY(SELECT NULL)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 = ANY(SELECT 2)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT NULL = ANY(SELECT 2)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 = ALL(SELECT 1)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1 = ALL(SELECT NULL)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 = ALL(SELECT 2)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT NULL = ALL(SELECT 2)
 ----
 NULL
@@ -41,225 +41,225 @@ NULL
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO integers VALUES (1), (2), (3)
 
-query I rowsort
+query T rowsort
 SELECT 2 > ANY(SELECT * FROM integers)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1 > ANY(SELECT * FROM integers)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT 4 > ALL(SELECT * FROM integers)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1 > ALL(SELECT * FROM integers)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT NULL > ANY(SELECT * FROM integers)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT NULL > ALL(SELECT * FROM integers)
 ----
 NULL
 
-statement ok
+statement ok rowcount 1
 INSERT INTO integers VALUES (NULL)
 
-query I rowsort
+query T rowsort
 SELECT 2 > ANY(SELECT * FROM integers)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT 1 > ANY(SELECT * FROM integers)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 4 > ALL(SELECT * FROM integers)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 > ALL(SELECT * FROM integers)
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT NULL > ANY(SELECT * FROM integers)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT NULL > ALL(SELECT * FROM integers)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT '1' = ALL(SELECT NULL)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT '1' = ALL(SELECT '1')
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT '1' = ALL(SELECT '2')
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT time '10:00:00' = ALL(SELECT NULL)
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT time '10:00:00' = ALL(SELECT time '10:00:00')
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT time '10:00:00' = ALL(SELECT time '10:00:01')
 ----
-0
+False
 
-query I rowsort
+query T nosort
 SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i
 ----
-0
-1
-1
-1
+False
+True
+True
+True
 
-query I rowsort
+query T nosort
 SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i
 ----
-0
-0
-1
 NULL
+False
+False
+True
 
-query I rowsort
+query T nosort
 SELECT i=ALL(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i
 ----
-0
-0
-0
-1
+True
+False
+False
+False
 
-query I rowsort
+query I nosort
 SELECT i FROM integers i1 WHERE i=ANY(SELECT i FROM integers WHERE i=i1.i) ORDER BY i
 ----
 1
 2
 3
 
-query I rowsort
+query I nosort
 SELECT i FROM integers i1 WHERE i<>ANY(SELECT i FROM integers WHERE i=i1.i) ORDER BY i
 ----
 
-query I rowsort
+query I nosort
 SELECT i FROM integers i1 WHERE i=ANY(SELECT i FROM integers WHERE i<>i1.i) ORDER BY i
 ----
 
-query I rowsort
+query I nosort
 SELECT i FROM integers i1 WHERE i>ANY(SELECT i FROM integers WHERE i<>i1.i) ORDER BY i
 ----
 2
 3
 
-query I rowsort
+query I nosort
 SELECT i FROM integers i1 WHERE i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) ORDER BY i
 ----
 3
 
-query I rowsort
+query T nosort
 SELECT i=ALL(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i
 ----
-1
-1
-1
-1
+True
+True
+True
+True
 
-query I rowsort
+query T nosort
 SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i
 ----
-0
-1
-1
-1
+False
+True
+True
+True
 
-query I rowsort
+query T nosort
 SELECT i<>ALL(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i
 ----
-0
-0
-0
-1
+True
+False
+False
+False
 
-query I rowsort
+query T nosort
 SELECT i<>ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i
 ----
-0
-0
-0
-0
+False
+False
+False
+False
 
-query I rowsort
+query T nosort
 SELECT i=ANY(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i
 ----
-0
-0
-0
-0
+False
+False
+False
+False
 
-query I rowsort
+query T nosort
 SELECT i>ANY(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i
 ----
-0
-0
-1
-1
+False
+False
+True
+True
 
-query I rowsort
+query T nosort
 SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers) FROM integers i1 ORDER BY i
 ----
-0
-0
 NULL
+False
+False
 NULL
 
-query I rowsort
+query T nosort
 SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i
 ----
-0
-0
-1
 NULL
+False
+False
+True
 
-query I rowsort
+query T nosort
 SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i OR i IS NULL) FROM integers i1 ORDER BY i
 ----
-1
-1
-1
 NULL
+True
+True
+True
 
-query I rowsort
+query T nosort
 SELECT i=ALL(SELECT i FROM integers WHERE i=i1.i OR i IS NULL) FROM integers i1 ORDER BY i
 ----
 NULL
@@ -267,29 +267,30 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query T rowsort
 SELECT MIN(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1
 ----
-0
+False
 
-query I rowsort
+query T rowsort
 SELECT SUM(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT (SELECT SUM(i)+SUM(i1.i) FROM integers)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1
 ----
-1
+True
 
-query I rowsort
+query T nosort
 SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i AND i>10) FROM integers i1 ORDER BY i
 ----
-0
-0
-0
-0
+False
+False
+False
+False
 
 statement ok
 DROP TABLE integers
+
 
