@@ -219,7 +219,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	// No comma at the beginning
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
-				"\"version\":\""VERSION" (hg id: %s)\""
+				"\"version\":\""MONETDB_VERSION" (hg id: %s)\""
 				",\"user\":"OIDFMT
 				",\"clk\":"LLFMT
 				",\"mclk\":%"PRIu64""
@@ -349,6 +349,28 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 								d->tnil,
 								d->tkey))
 						return;
+#define keepprop(NME, LNME)\
+{const void *valp = BATgetprop(d, NME); \
+if ( valp){\
+	cv = VALformat(valp);\
+	if(cv){\
+		char * cvquote = mal_quote(cv, strlen(cv));\
+		ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);\
+		GDKfree(cv);\
+		GDKfree(cvquote);\
+		if (!ok)\
+			return;\
+	}\
+}}
+					keepprop(GDK_MIN_VALUE,"min");
+					keepprop(GDK_MAX_VALUE,"max");
+					keepprop(GDK_MIN_POS,"minpos");
+					keepprop(GDK_MIN_POS,"minpos");
+					keepprop(GDK_MAX_POS,"maxpos");
+					keepprop(GDK_HASH_BUCKETS,"hbuckets");
+					keepprop(GDK_NUNIQUE,"nunique");
+					keepprop(GDK_UNIQUE_ESTIMATE,"nestimate");
+
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
 					if (c)		/* unlikely that this isn't true */

@@ -24,10 +24,14 @@
 #include <ctype.h>
 #include "sql_keyword.h"
 
+/**
+ * Removes all comments before the query. In query comments are kept.
+ */
 char *
 query_cleaned(sql_allocator *sa, const char *query)
 {
-	char *q, *r;
+	char *q, *r, *c = NULL;
+	int lines = 0;
 	int quote = 0;		/* inside quotes ('..', "..", {..}) */
 	bool bs = false;		/* seen a backslash in a quoted string */
 	bool incomment1 = false;	/* inside traditional C style comment */
@@ -42,15 +46,24 @@ query_cleaned(sql_allocator *sa, const char *query)
 		if (incomment1) {
 			if (*query == '/' && query[-1] == '*') {
 				incomment1 = false;
+				if (c == r && lines > 0) {
+					q = r; // reset to beginning
+					lines = 0;
+					continue;
+				}
 			}
+			if (*query == '\n') lines++;
+			*q++ = *query;
 		} else if (incomment2) {
 			if (*query == '\n') {
 				incomment2 = false;
 				inline_comment = false;
 				/* add newline only if comment doesn't
 				 * occupy whole line */
-				if (q > r && q[-1] != '\n')
+				if (q > r && q[-1] != '\n'){
 					*q++ = '\n';
+					lines++;
+				}
 			} else if (inline_comment){
 				*q++ = *query; // preserve in line query comments
 			}
@@ -77,10 +90,14 @@ query_cleaned(sql_allocator *sa, const char *query)
 			incomment2 = true;
 		} else if (*query == '/' && query[1] == '*') {
 			incomment1 = true;
+			c = q;
+			*q++ = *query;
 		} else if (*query == '\n') {
 			/* collapse newlines */
-			if (q > r && q[-1] != '\n')
+			if (q > r && q[-1] != '\n') {
 				*q++ = '\n';
+				lines++;
+			}
 		} else if (*query == ' ' || *query == '\t') {
 			/* collapse white space */
 			if (q > r && q[-1] != ' ')

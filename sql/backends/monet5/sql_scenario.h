@@ -10,9 +10,9 @@
 #define _SQL_SCENARIO_H_
 #include "sql.h"
 
-sql5_export int SQLdebug;
-sql5_export str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLepilogue(void *ret);
+extern int SQLdebug;
+extern str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLepilogue(void *ret);
 
 sql5_export str SQLautocommit(mvc *m);
 sql5_export str SQLtrans(mvc *m);
@@ -26,15 +26,15 @@ sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
 sql5_export str SQLengine(Client c);
 sql5_export str SQLcallback(Client c, str msg);
-sql5_export str handle_error(mvc *m, int pstatus, str msg);
+extern str handle_error(mvc *m, int pstatus, str msg);
 
-sql5_export str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLCacheRemove(Client c, const char *nme);
+extern str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLCacheRemove(Client c, const char *nme);
 sql5_export str SQLescapeString(str s);
 
-sql5_export str SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_SCENARIO_H_ */

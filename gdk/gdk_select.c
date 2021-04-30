@@ -550,53 +550,107 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 
 	if (equi) {
 		*algo = "select: fullscan equi";
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			v = BUNtail(bi,(BUN)(o-hseq));
-			if ((*cmp)(tl, v) == 0) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				v = BUNtail(bi, o-hseq);
+				if ((*cmp)(tl, v) == 0) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				v = BUNtail(bi, o-hseq);
+				if ((*cmp)(tl, v) == 0) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 	} else if (anti) {
 		*algo = "select: fullscan anti";
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			v = BUNtail(bi,(BUN)(o-hseq));
-			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			    ((lval &&
-			      ((c = (*cmp)(tl, v)) > 0 ||
-			       (!li && c == 0))) ||
-			     (hval &&
-			      ((c = (*cmp)(th, v)) < 0 ||
-			       (!hi && c == 0))))) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				v = BUNtail(bi, o-hseq);
+				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+					((lval &&
+					((c = (*cmp)(tl, v)) > 0 ||
+					(!li && c == 0))) ||
+					(hval &&
+					((c = (*cmp)(th, v)) < 0 ||
+					(!hi && c == 0))))) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				v = BUNtail(bi, o-hseq);
+				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+					((lval &&
+					((c = (*cmp)(tl, v)) > 0 ||
+					(!li && c == 0))) ||
+					(hval &&
+					((c = (*cmp)(th, v)) < 0 ||
+					(!hi && c == 0))))) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 	} else {
 		*algo = "select: fullscan range";
-		for (p = 0; p < ci->ncand; p++) {
-			o = canditer_next(ci);
-			v = BUNtail(bi,(BUN)(o-hseq));
-			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			    ((!lval ||
-			      (c = cmp(tl, v)) < 0 ||
-			      (li && c == 0)) &&
-			     (!hval ||
-			      (c = cmp(th, v)) > 0 ||
-			      (hi && c == 0)))) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  maximum, BUN_NONE);
-				cnt++;
+		if (ci->tpe == cand_dense) {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next_dense(ci);
+				v = BUNtail(bi, o-hseq);
+				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+					((!lval ||
+					(c = cmp(tl, v)) < 0 ||
+					(li && c == 0)) &&
+					(!hval ||
+					(c = cmp(th, v)) > 0 ||
+					(hi && c == 0)))) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
+			}
+		} else {
+			for (p = 0; p < ci->ncand; p++) {
+				o = canditer_next(ci);
+				v = BUNtail(bi, o-hseq);
+				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+					((!lval ||
+					(c = cmp(tl, v)) < 0 ||
+					(li && c == 0)) &&
+					(!hval ||
+					(c = cmp(th, v)) > 0 ||
+					(hi && c == 0)))) {
+					buninsfix(bn, dst, cnt, o,
+						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							* (dbl) (ci->ncand-p) * 1.1 + 1024),
+						maximum, BUN_NONE);
+					cnt++;
+				}
 			}
 		}
 	}
@@ -1261,14 +1315,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 
 	if (anti) {
-		PROPrec *prop;
+		const ValRecord *prop;
 		int c;
 
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			c = ATOMcmp(t, tl, VALptr(prop));
 			if (c < 0 || (li && c == 0)) {
 				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-					c = ATOMcmp(t, th, VALptr(&prop->v));
+					c = ATOMcmp(t, th, VALptr(prop));
 					if (c > 0 || (hi && c == 0)) {
 						/* tl..th range fully
 						 * inside MIN..MAX
@@ -1289,11 +1343,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 	} else if (!equi || !lnil) {
-		PROPrec *prop;
+		const ValRecord *prop;
 		int c;
 
 		if (hval && (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, th, VALptr(&prop->v));
+			c = ATOMcmp(t, th, VALptr(prop));
 			if (c < 0 || (!hi && c == 0)) {
 				/* smallest value in BAT larger than
 				 * what we're looking for */
@@ -1311,7 +1365,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		if (lval && (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			c = ATOMcmp(t, tl, VALptr(prop));
 			if (c > 0 || (!li && c == 0)) {
 				/* largest value in BAT smaller than
 				 * what we're looking for */

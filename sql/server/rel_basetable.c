@@ -119,14 +119,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 }
 
 sql_rel *
-rel_base_bind_column_( sql_rel *rel, const char *cname, int *exp_has_nil)
+rel_base_bind_column_( sql_rel *rel, const char *cname)
 {
 	sql_table *t = rel->l;
 	node *n = ol_find_name(t->columns, cname);
-	if (n && exp_has_nil) {
-		sql_column *c = n->data;
-		*exp_has_nil = c->null;
-	}
 	if (n)
 		return rel;
 	return NULL;

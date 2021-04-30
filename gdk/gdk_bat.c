@@ -517,6 +517,7 @@ gdk_return
 BATextend(BAT *b, BUN newcap)
 {
 	size_t theap_size;
+	gdk_return rc = GDK_SUCCEED;
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, GDK_FAIL);
@@ -544,17 +545,21 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
-		if (b->ttype == TYPE_str)
-			return GDKupgradevarheap(b, GDK_VAROFFSET, newcap, false);
-		Heap *h = HEAPgrow(b->theap, theap_size);
-		if (h == NULL)
-			return GDK_FAIL;
 		MT_lock_set(&b->theaplock);
-		HEAPdecref(b->theap, false);
-		b->theap = h;
+		if (ATOMIC_GET(&b->theap->refs) == 1) {
+			rc = HEAPextend(b->theap, theap_size, true);
+		} else {
+			MT_lock_unset(&b->theaplock);
+			Heap *h = HEAPgrow(b->theap, theap_size);
+			if (h == NULL)
+				return GDK_FAIL;
+			MT_lock_set(&b->theaplock);
+			HEAPdecref(b->theap, false);
+			b->theap = h;
+		}
 		MT_lock_unset(&b->theaplock);
 	}
-	return GDK_SUCCEED;
+	return rc;
 }
 
 
@@ -1096,7 +1101,7 @@ setcolprops(BAT *b, const void *x)
 		}
 		return;
 	} else if (ATOMlinear(b->ttype)) {
-		PROPrec *prop;
+		const ValRecord *prop;
 
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
@@ -1127,7 +1132,7 @@ setcolprops(BAT *b, const void *x)
 			}
 		} else if (!isnil &&
 			   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
-			   ATOMcmp(b->ttype, VALptr(&prop->v), x) < 0) {
+			   ATOMcmp(b->ttype, VALptr(prop), x) < 0) {
 			BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
 			BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){BATcount(b)});
 		}
@@ -1143,7 +1148,7 @@ setcolprops(BAT *b, const void *x)
 				 * smallest non-nil so far */
 				if (!b->tnonil && !isnil &&
 				    (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-				    ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+				    ATOMcmp(b->ttype, VALptr(prop), x) > 0) {
 					BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 				}
@@ -1154,7 +1159,7 @@ setcolprops(BAT *b, const void *x)
 			}
 		} else if (!isnil &&
 			   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-			   ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+			   ATOMcmp(b->ttype, VALptr(prop), x) > 0) {
 			BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
 			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 		}
@@ -1269,7 +1274,7 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator(b);
 	const void *val;
-	PROPrec *prop;
+	const ValRecord *prop;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1287,12 +1292,12 @@ BUNdelete(BAT *b, oid o)
 	if (ATOMlinear(b->ttype) &&
 	    ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
 		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL
-		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0) {
+		    && ATOMcmp(b->ttype, VALptr(prop), val) >= 0) {
 			BATrmprop(b, GDK_MAX_VALUE);
 			BATrmprop(b, GDK_MAX_POS);
 		}
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL
-		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
+		    && ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
 			BATrmprop(b, GDK_MIN_VALUE);
 			BATrmprop(b, GDK_MIN_POS);
 		}
@@ -1392,17 +1397,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		}
 		HASHdelete(b, p, val);	/* first delete old value from hash */
 		if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
-			PROPrec *prop;
+			const ValRecord *prop;
 
 			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
 				if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-				    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
+				    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
 					/* new value is larger than previous
 					 * largest */
 					BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
 					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
 				} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-					   ATOMcmp(b->ttype, VALptr(&prop->v), val) == 0) {
+					   ATOMcmp(b->ttype, VALptr(prop), val) == 0) {
 					/* old value is equal to largest and
 					 * new value is smaller (see above),
 					 * so we don't know anymore which is
@@ -1413,13 +1418,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
 				if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-				    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
+				    ATOMcmp(b->ttype, VALptr(prop), t) > 0) {
 					/* new value is smaller than previous
 					 * smallest */
 					BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
 					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
 				} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-					   ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
+					   ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
 					/* old value is equal to smallest and
 					 * new value is larger (see above), so
 					 * we don't know anymore which is the
@@ -2511,29 +2516,29 @@ BATassertProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
-		PROPrec *prop;
+		const ValRecord *prop;
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;
 		bool seennil = false;
 
 		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
-			maxval = VALptr(&prop->v);
+			maxval = VALptr(prop);
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
-			minval = VALptr(&prop->v);
+			minval = VALptr(prop);
 		if ((prop = BATgetprop(b, GDK_MAX_POS)) != NULL) {
 			if (maxval) {
-				assert(prop->v.vtype == TYPE_oid);
-				assert(prop->v.val.oval < b->batCount);
-				valp = BUNtail(bi, prop->v.val.oval);
+				assert(prop->vtype == TYPE_oid);
+				assert(prop->val.oval < b->batCount);
+				valp = BUNtail(bi, prop->val.oval);
 				assert(cmpf(maxval, valp) == 0);
 			}
 		}
 		if ((prop = BATgetprop(b, GDK_MIN_POS)) != NULL) {
 			if (minval) {
-				assert(prop->v.vtype == TYPE_oid);
-				assert(prop->v.val.oval < b->batCount);
-				valp = BUNtail(bi, prop->v.val.oval);
+				assert(prop->vtype == TYPE_oid);
+				assert(prop->val.oval < b->batCount);
+				valp = BUNtail(bi, prop->val.oval);
 				assert(cmpf(minval, valp) == 0);
 			}
 		}

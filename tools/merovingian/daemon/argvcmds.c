@@ -66,7 +66,7 @@ command_help(int argc, char *argv[])
 int
 command_version(void)
 {
-	printf("MonetDB Database Server v%s", VERSION);
+	printf("MonetDB Database Server v%s", MONETDB_VERSION);
 	/* coverity[pointless_string_compare] */
 #ifdef MONETDB_RELEASE
 	printf(" (%s)", MONETDB_RELEASE);
@@ -509,19 +509,26 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 		return(1);
 	}
 
-	/* wait up to 30 seconds for monetdbd to actually stop */
-	for (i = 0; i < 60; i++) {
-		tv.tv_sec = 0;
-		tv.tv_usec = 500000;
-		select(0, NULL, NULL, NULL, &tv);
-		if (kill(daemon, 0) == -1) {
-			/* daemon has died */
-			return(0);
+	int exittimeout = getConfNum(ckv, "exittimeout");
+	if (exittimeout != 0) {
+		if (exittimeout > 0) {
+			/* wait a tad longer for monetdbd to die than for the
+			 * mserver processes */
+			exittimeout += 5;
 		}
-	}
+		for (i = 0; exittimeout < 0 || i < exittimeout * 2; i++) {
+			tv.tv_sec = 0;
+			tv.tv_usec = 500000;
+			select(0, NULL, NULL, NULL, &tv);
+			if (kill(daemon, 0) == -1) {
+				/* daemon has died */
+				return(0);
+			}
+		}
 
-	/* done waiting, use harsher measures */
-	kill(daemon, SIGKILL);
+		/* done waiting, use harsher measures */
+		kill(daemon, SIGKILL);
+	}
 
 	return(0);
 }

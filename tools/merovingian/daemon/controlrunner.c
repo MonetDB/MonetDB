@@ -980,7 +980,7 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
-							   VERSION,
+							   MONETDB_VERSION,
 #ifdef MONETDB_RELEASE
 							   MONETDB_RELEASE
 #else
