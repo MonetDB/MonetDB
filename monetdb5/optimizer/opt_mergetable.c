@@ -1869,6 +1869,8 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			if (ml->v[m].type != mat_tpn || is_slice)
 				getArg(q,1) = getArg(r,0);
 			pushInstruction(mb,q);
+
+			ml->v[piv].pushed = 1;
 		}
 
 		ml->v[piv].type = mat_slc;
@@ -2332,7 +2334,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match == 1 && getModuleId(p) == algebraRef &&
 		    getFunctionId(p) == projectRef &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
-		   (ml.v[m].type == mat_ext)) {
+		   (ml.v[m].type == mat_ext || ml.v[m].type == mat_slc)) {
 			assert(ml.v[m].pushed);
 			cp = copyInstruction(p);
 			if(!cp) {
