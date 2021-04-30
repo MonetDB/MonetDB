@@ -27,14 +27,14 @@ COPY 1 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 3	0.800	""
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select ((((select 1.75) union all (select 4))) between ((select 3 from t1)) and 2) = true
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select cast(sum(count) as bigint) from (select all cast(((((select all -1.75501356E8 from t0 as l3t0 where l3t0.c1) union all (select 1699564541 from t0 as l3t0 where l3t0.c1)))
 not between symmetric ((select -1732113123 from t2 as l3t2, t1 as l3t1 where l3t1.c5)) and (((0)%(6)))) = true as int) as count from t2) as res
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select substr(((select 'i') union all (select 'am')),(select 3 where false), 2) = 'wrong'
 
 statement ok
@@ -168,7 +168,7 @@ COPY 29 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 841884503.000
 0.784
 
-statement error
+statement error GDK reported error: mergejoin: more than one match
 select ((select 1 from t1, t0)) in (2, t1.c0) from t1
 
 statement ok
@@ -335,10 +335,10 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c4" DOUBLE NOT NULL)
 
-statement error
+statement error Math exception: Numerical result out of range
 insert into t0(c4) values(power(1770290607, case when greatest(false, true) then cast(5 as real) end)), (-1.722544153E9)
 
-statement error
+statement error 25005!Current transaction is aborted (please ROLLBACK)
 INSERT INTO t0(c4) VALUES(power(1770290607, CASE WHEN (UUID 'aE792C3f-21e0-323f-1C8A-DfBD3aB655CF') IN (UUID 'b30E22a2-3d7A-1003-BEB6-F9dE845bEAd1',
 UUID '6E391a40-3Fc6-F594-036D-737eCaDC937c') THEN CAST(r'jV㋕<2H' AS REAL) WHEN greatest(FALSE, TRUE) THEN CAST(5 AS REAL) WHEN NOT (TRUE)
 THEN + (3) WHEN NOT (TRUE) THEN least(5, 0.5809714) WHEN NOT (TRUE) THEN ((0.022229422)*(1666367947)) END)), (-1.722544153E9)
