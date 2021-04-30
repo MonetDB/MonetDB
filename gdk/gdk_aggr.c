@@ -4630,75 +4630,76 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	do {								\
 		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
-		while (ncand > 0) {					\
-			ncand--;					\
-			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
-			i = canditer_next(&ci) - b1->hseqbase;		\
+		for (BUN ctr = 0; ctr < ncand; ctr++) {			\
+			gid = gids ? gids[ctr] : (oid) ctr + min;	\
+			i1 = canditer_next(&ci1) - b1->hseqbase;	\
+			i2 = canditer_next(&ci2) - b2->hseqbase;	\
 			if (gid >= min && gid <= max) {			\
 				gid -= min;				\
-				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
+				if (is_##TYPE##_nil(vals1[i1]) || is_##TYPE##_nil(vals2[i2])) { \
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
 					cnts[gid]++;			\
-					delta1[gid] = (dbl) vals1[i] - mean1[gid]; \
+					delta1[gid] = (dbl) vals1[i1] - mean1[gid]; \
 					mean1[gid] += delta1[gid] / cnts[gid]; \
-					delta2[gid] = (dbl) vals2[i] - mean2[gid]; \
+					delta2[gid] = (dbl) vals2[i2] - mean2[gid]; \
 					mean2[gid] += delta2[gid] / cnts[gid]; \
-					m2[gid] += delta1[gid] * ((dbl) vals2[i] - mean2[gid]); \
+					m2[gid] += delta1[gid] * ((dbl) vals2[i2] - mean2[gid]); \
 				}					\
 			}						\
 		}							\
-		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
-				dbls[i] = dbl_nil;			\
+		for (i1 = 0; i1 < ngrp; i1++) {				\
+			if (cnts[i1] == 0 || cnts[i1] == BUN_NONE) {	\
+				dbls[i1] = dbl_nil;			\
 				nils++;					\
-			} else if (cnts[i] == 1) {			\
-				dbls[i] = issample ? dbl_nil : 0;	\
+			} else if (cnts[i1] == 1) {			\
+				dbls[i1] = issample ? dbl_nil : 0;	\
 				nils2++;				\
-			} else if (isinf(m2[i])) {		\
-				goto overflow;		\
+			} else if (isinf(m2[i1])) {			\
+				goto overflow;				\
 			} else {					\
-				dbls[i] = m2[i] / (cnts[i] - issample);	\
+				dbls[i1] = m2[i1] / (cnts[i1] - issample); \
 			}						\
 		}							\
 	} while (0)
 
 static BAT *
-dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
+dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp,
 		  bool skip_nils, bool issample, const char *func)
 {
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, nils = 0, nils2 = 0, ncand;
+	BUN i1, i2, ngrp, nils = 0, nils2 = 0, ncand;
 	BUN *restrict cnts = NULL;
 	dbl *restrict dbls, *restrict mean1, *restrict mean2, *restrict delta1, *restrict delta2, *restrict m2;
 	BAT *bn = NULL;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 	const char *err;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	assert(tp == TYPE_dbl && BATcount(b1) == BATcount(b2) && b1->ttype == b2->ttype && BATtdense(b1) == BATtdense(b2));
-	(void) tp;
-
-	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if (tp != TYPE_dbl) {
+		GDKerror("incompatible return type: must be dbl\n");
+		return NULL;
+	}
+	if ((err = BATgroupaggrinit(b1, g, e, s1, &min, &max, &ngrp, &ci1, &ncand)) != NULL) {
 		GDKerror("%s: %s\n", func, err);
 		return NULL;
 	}
-	if (g == NULL) {
+	canditer_init(&ci2, b2, s2);
+	if (ci2.ncand != ci1.ncand || g == NULL || BATcount(g) != ci1.ncand) {
 		GDKerror("%s: b1, b2 and g must be aligned\n", func);
 		return NULL;
 	}
 
-	if (BATcount(b1) == 0 || ngrp == 0) {
+	if (ci1.ncand == 0 || ngrp == 0) {
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		goto doreturn;
 	}
 
-	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b1) && (e->hseqbase == b1->hseqbase || e->hseqbase == b2->hseqbase))) &&
+	if ((e == NULL || BATcount(e) == ci1.ncand) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil)) &&
 	    (issample || (b1->tnonil && b2->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
@@ -4718,10 +4719,10 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
-	for (i = 0; i < ngrp; i++) {
-		m2[i] = 0;
-		mean1[i] = 0;
-		mean2[i] = 0;
+	for (i1 = 0; i1 < ngrp; i1++) {
+		m2[i1] = 0;
+		mean1[i1] = 0;
+		mean2[i1] = 0;
 	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
@@ -4786,11 +4787,11 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	bn->tnonil = nils == 0;
   doreturn:
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT ",g=" ALGOBATFMT
-		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
+		  ",e=" ALGOOPTBATFMT ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
 		  ",skip_nils=%s,issample=%s -> " ALGOOPTBATFMT
 		  " (%s -- " LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), ALGOBATPAR(g),
-		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  skip_nils ? "true" : "false",
 		  issample ? "true" : "false",
 		  ALGOOPTBATPAR(bn),
@@ -4810,18 +4811,21 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 BAT *
-BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2,
+			  int tp, bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
-	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, true,
+	return dogroupcovariance(b1, b2, g, e, s1, s2, tp, skip_nils, true,
 				 __func__);
 }
 
 BAT *
-BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e,
+			      BAT *s1, BAT *s2, int tp,
+			      bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
-	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, false,
+	return dogroupcovariance(b1, b2, g, e, s1, s2, tp, skip_nils, false,
 				 __func__);
 }
 
@@ -4829,76 +4833,78 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 	do {								\
 		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
-		while (ncand > 0) {					\
-			ncand--;					\
-			gid = gids ? gids[ci.next] : (oid) ci.next + min; \
-			i = canditer_next(&ci) - b1->hseqbase;		\
+		for (BUN ctr = 0; ctr < ncand; ctr++) {			\
+			gid = gids ? gids[ctr] : (oid) ctr + min;	\
+			i1 = canditer_next(&ci1) - b1->hseqbase;	\
+			i2 = canditer_next(&ci2) - b2->hseqbase;	\
 			if (gid >= min && gid <= max) {			\
 				gid -= min;				\
-				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
+				if (is_##TYPE##_nil(vals1[i1]) || is_##TYPE##_nil(vals2[i2])) { \
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
 					cnts[gid]++;			\
-					delta1[gid] = (dbl) vals1[i] - mean1[gid]; \
+					delta1[gid] = (dbl) vals1[i1] - mean1[gid]; \
 					mean1[gid] += delta1[gid] / cnts[gid]; \
-					delta2[gid] = (dbl) vals2[i] - mean2[gid]; \
+					delta2[gid] = (dbl) vals2[i2] - mean2[gid]; \
 					mean2[gid] += delta2[gid] / cnts[gid]; \
-					aux = (dbl) vals2[i] - mean2[gid]; \
+					aux = (dbl) vals2[i2] - mean2[gid]; \
 					up[gid] += delta1[gid] * aux;	\
-					down1[gid] += delta1[gid] * ((dbl) vals1[i] - mean1[gid]); \
+					down1[gid] += delta1[gid] * ((dbl) vals1[i1] - mean1[gid]); \
 					down2[gid] += delta2[gid] * aux; \
 				}					\
 			}						\
 		}							\
-		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
-				dbls[i] = dbl_nil;			\
+		for (i1 = 0; i1 < ngrp; i1++) {				\
+			if (cnts[i1] <= 1 || cnts[i1] == BUN_NONE || down1[i1] == 0 || down2[i1] == 0) { \
+				dbls[i1] = dbl_nil;			\
 				nils++;					\
-			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) {	\
-				goto overflow;		\
+			} else if (isinf(up[i1]) || isinf(down1[i1]) || isinf(down2[i1])) { \
+				goto overflow;				\
 			} else {					\
-				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
-				assert(!is_dbl_nil(dbls[i]));		\
+				dbls[i1] = (up[i1] / cnts[i1]) / (sqrt(down1[i1] / cnts[i1]) * sqrt(down2[i1] / cnts[i1])); \
+				assert(!is_dbl_nil(dbls[i1]));		\
 			}						\
 		}							\
 	} while (0)
 
 BAT *
-BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid gid, min, max;
-	BUN i, ngrp, nils = 0, ncand;
+	BUN i1, i2, ngrp, nils = 0, ncand;
 	BUN *restrict cnts = NULL;
 	dbl *restrict dbls, *restrict mean1, *restrict mean2, *restrict delta1, *restrict delta2, *restrict up, *restrict down1, *restrict down2, aux;
 	BAT *bn = NULL;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 	const char *err;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	assert(tp == TYPE_dbl && BATcount(b1) == BATcount(b2) && b1->ttype == b2->ttype && BATtdense(b1) == BATtdense(b2));
-	(void) tp;
 	(void) abort_on_error;
 
-	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if (tp != TYPE_dbl) {
+		GDKerror("incompatible return type: must be dbl\n");
+		return NULL;
+	}
+	if ((err = BATgroupaggrinit(b1, g, e, s1, &min, &max, &ngrp, &ci1, &ncand)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
-	if (g == NULL) {
-		GDKerror("b1, b2 and g must be aligned\n");
+	canditer_init(&ci2, b2, s2);
+	if (ci2.ncand != ci1.ncand || g == NULL || BATcount(g) != ci1.ncand) {
+		GDKerror("b1, b2 (with candidate lists) and g must be aligned\n");
 		return NULL;
 	}
 
-	if (BATcount(b1) == 0 || ngrp == 0) {
+	if (ci1.ncand == 0 || ngrp == 0) {
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		goto doreturn;
 	}
 
-	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b1) && (e->hseqbase == b1->hseqbase || e->hseqbase == b2->hseqbase))) &&
+	if ((e == NULL || BATcount(e) == ci1.ncand) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		dbl v = dbl_nil;
 		bn = BATconstant(min, TYPE_dbl, &v, ngrp, TRANSIENT);
@@ -4914,15 +4920,17 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	mean1 = GDKmalloc(ngrp * sizeof(dbl));
 	mean2 = GDKmalloc(ngrp * sizeof(dbl));
 
-	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || up == NULL || down1 == NULL || down2 == NULL || cnts == NULL)
+	if (mean1 == NULL || mean2 == NULL ||
+	    delta1 == NULL || delta2 == NULL ||
+	    up == NULL || down1 == NULL || down2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
-	for (i = 0; i < ngrp; i++) {
-		up[i] = 0;
-		down1[i] = 0;
-		down2[i] = 0;
-		mean1[i] = 0;
-		mean2[i] = 0;
+	for (i1 = 0; i1 < ngrp; i1++) {
+		up[i1] = 0;
+		down1[i1] = 0;
+		down2[i1] = 0;
+		mean1[i1] = 0;
+		mean2[i1] = 0;
 	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
@@ -4988,11 +4996,11 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	bn->tnonil = nils == 0;
   doreturn:
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT ",g=" ALGOBATFMT
-		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
+		  ",e=" ALGOOPTBATFMT ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
 		  ",skip_nils=%s -> " ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), ALGOBATPAR(g),
-		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  skip_nils ? "true" : "false",
 		  ALGOOPTBATPAR(bn),
 		  GDKusec() - t0);

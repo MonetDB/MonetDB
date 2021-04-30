@@ -159,9 +159,9 @@ gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int 
 gdk_export dbl BATcalccovariance_sample(BAT *b1, BAT *b2);
 gdk_export dbl BATcalccovariance_population(BAT *b1, BAT *b2);
 gdk_export dbl BATcalccorrelation(BAT *b1, BAT *b2);
-gdk_export BAT *BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
-gdk_export BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
-gdk_export BAT *BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
+gdk_export BAT *BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, bool skip_nils, bool abort_on_error);
+gdk_export BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, bool skip_nils, bool abort_on_error);
+gdk_export BAT *BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s1, BAT *s2, int tp, bool skip_nils, bool abort_on_error);
 
 gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, bool abort_on_error, const char *restrict separator);
 gdk_export gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *restrict separator);
