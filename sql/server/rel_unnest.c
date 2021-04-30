@@ -2600,7 +2600,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rsq) {
 					if (on_right) {
 						sql_rel *join = rel->l; /* the introduced join */
-						join->r = rel_crossproduct(sql->sa, join->r, rsq, depth?op_right:op_join);
+						join->r = rel_crossproduct(sql->sa, join->r, rsq, depth?op_right:op_left);
 						set_dependent(join);
 						if (depth)
 							reset_has_nil(le);

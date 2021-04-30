@@ -3,7 +3,6 @@ BASETABLE
 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
 	-> l		(sql_table)
-	-> r		[ sql_column * (dict table) ] 	-> TODO specified through flag?
 	-> r 		rel_base_t { alias table name, disallowed (read access), bitvector of used columns/tid/idxs
 	-> r		rel_optimizer rel_rename_part puts parent merge table in there
 
@@ -74,7 +73,7 @@ SAMPLE	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> l		is relation
 	-> flag		(0) no flags
 
-INSERT|DELETE|UPDATE|TRUNCATE 	(card MULTI)
+INSERT|DELETE|UPDATE|TRUNCATE 	(card ATOM, AGGR or MULTI (same card as the to be inserted/deleted/updated relation))
 	-> l 		is relation to modify
 	-> r		to be inserted/deleted/updated relation
 			For update the ->r projection joins in current
@@ -93,6 +92,12 @@ INSERT/UPDATE have a special case
 			for inserts/updates with indices a double
 			relation is used as we need to keep access to
 			the bottom value relation
+
+MERGE (card ATOM, AGGR or MULTI (max card of updates))
+	-> l 		left join between the target table and the source
+	-> r		a DDL list with an insert and update/delete, or a single relation update on the target table
+	-> flag		(0) no flags
+	->exps 		empty list, ie not used
 
 Expressions
 

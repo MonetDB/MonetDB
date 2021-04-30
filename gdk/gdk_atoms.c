@@ -955,8 +955,11 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
 		if (external) {
-			return (ssize_t) strcpy_len(*dst, "nil", 4);
+			assert(*len >= strlen("nil") + 1);
+			strcpy(*dst, "nil");
+			return 3;
 		}
+		assert(*len >= strlen(str_nil) + 1);
 		strcpy(*dst, str_nil);
 		return 1;
 	}
@@ -1360,9 +1363,13 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 	}
 	if (is_uuid_nil(*value)) {
 		if (external) {
-			return (ssize_t) strcpy_len(*retval, "nil", 4);
-		}
-		return (ssize_t) strcpy_len(*retval, str_nil, 2);
+			assert(*len >= strlen("nil") + 1);
+			strcpy(*retval, "nil");
+			return 3;
+ 		}
+		assert(*len >= strlen(str_nil) + 1);
+		strcpy(*retval, str_nil);
+		return 1;
 	}
 #ifdef HAVE_UUID
 	uuid_unparse_lower(value->u, *retval);

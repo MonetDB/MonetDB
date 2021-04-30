@@ -93,6 +93,6 @@ install(FILES
   mclient.1
   msqldump.1
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
-  COMPONENT mclient)
+  COMPONENT client)
 
 # vim: set ts=2:sw=2:et

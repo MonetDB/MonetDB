@@ -16,9 +16,7 @@
 		c1 = getRowCnt(mb, getArg(p,W));\
 		c2 = getRowCnt(mb, getArg(p,X));\
 		/* just to ensure that rowcnt was/is never set to -1 */\
-		assert(c1 != (BUN) -1);\
-		assert(c2 != (BUN) -1);\
-		if (c1 == BUN_NONE || c2 == BUN_NONE) \
+		if (c1 == (BUN) -1 || c2 == (BUN) -1 || c1 == BUN_NONE || c2 == BUN_NONE) \
 			continue;\
 		setRowCnt(mb, getArg(p,Z), (Y));\
 }
@@ -138,8 +136,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			/* copy the rows property */
 			c1 = getRowCnt(mb, getArg(p,1));
 			/* just to ensure that rowcnt was/is never set to -1 */
-			assert(c1 != (BUN) -1);
-			if (c1 != BUN_NONE)
+			if (c1 != (BUN) -1 && c1 != BUN_NONE)
 				setRowCnt(mb, getArg(p,0), c1);
 		}
 	}

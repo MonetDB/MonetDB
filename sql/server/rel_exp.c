@@ -3243,6 +3243,7 @@ rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **rel
 		case op_union:
 		case op_inter:
 		case op_except:
+		case op_merge:
 			if (rel->l)
 				rel_set_type_recurse(sql, type, rel->l, relname, expname);
 			if (rel->r)
