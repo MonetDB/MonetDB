@@ -1368,72 +1368,86 @@ ALGvariancep(dbl *res, const bat *bid)
  * BAT covariance
  */
 static str
-ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
+ALG2bataggr(dbl *res, const bat *bid1, const bat *bid2,
+			const bat *sid1, const bat *sid2,
+			dbl (*func)(BAT *, BAT *, BAT *, BAT *),
+			const char *malfunc)
 {
 	BAT *b1, *b2;
-	dbl covariance;
+	BAT *s1 = NULL, *s2 = NULL;
+	dbl result;
 
-	if ((b1 = BATdescriptor(*bid1)) == NULL)
-		throw(MAL, "aggr.covariance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL) {
-		BBPunfix(b1->batCacheid);
-		throw(MAL, "aggr.covariance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((b1 = BATdescriptor(*bid1)) == NULL ||
+		(b2 = BATdescriptor(*bid2)) == NULL ||
+		(sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) ||
+		(sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL)) {
+		if (b1)
+			BBPunfix(b1->batCacheid);
+		if (b2)
+			BBPunfix(b2->batCacheid);
+		if (s1)
+			BBPunfix(s1->batCacheid);
+		if (s2)
+			BBPunfix(s2->batCacheid);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	covariance = BATcalccovariance_sample(b1, b2);
+	result = (*func)(b1, b2, s1, s2);
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
-	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.covariance", GDK_EXCEPTION);
-	*res = covariance;
+	if (s1)
+		BBPunfix(s1->batCacheid);
+	if (s2)
+		BBPunfix(s2->batCacheid);
+	if (is_dbl_nil(result) && GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, malfunc, GDK_EXCEPTION);
+	*res = result;
 	return MAL_SUCCEED;
+}
+
+static str
+ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
+{
+	return ALG2bataggr(res, bid1, bid2, NULL, NULL,
+					   BATcalccovariance_sample, "aggr.covariance");
+}
+
+static str
+ALGcovariance2(dbl *res, const bat *bid1, const bat *bid2, const bat *sid1, const bat *sid2)
+{
+	return ALG2bataggr(res, bid1, bid2, sid1, sid2,
+					   BATcalccovariance_sample, "aggr.covariance");
 }
 
 static str
 ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
 {
-	BAT *b1, *b2;
-	dbl covariance;
+	return ALG2bataggr(res, bid1, bid2, NULL, NULL,
+					   BATcalccovariance_population, "aggr.covariancep");
+}
 
-	if ((b1 = BATdescriptor(*bid1)) == NULL)
-		throw(MAL, "aggr.covariancep", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL) {
-		BBPunfix(b1->batCacheid);
-		throw(MAL, "aggr.covariancep", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	covariance = BATcalccovariance_population(b1, b2);
-	BBPunfix(b1->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.covariancep", GDK_EXCEPTION);
-	*res = covariance;
-	return MAL_SUCCEED;
+static str
+ALGcovariancep2(dbl *res, const bat *bid1, const bat *bid2, const bat *sid1, const bat *sid2)
+{
+	return ALG2bataggr(res, bid1, bid2, sid1, sid2,
+					   BATcalccovariance_population, "aggr.covariancep");
 }
 
 /*
  * BAT correlation
  */
 static str
+ALGcorr2(dbl *res, const bat *bid1, const bat *bid2, const bat *sid1, const bat *sid2)
+{
+	return ALG2bataggr(res, bid1, bid2, sid1, sid2,
+					   BATcalccorrelation, "aggr.corr");
+}
+
+static str
 ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
 {
-	BAT *b1, *b2;
-	dbl covariance;
-
-	if ((b1 = BATdescriptor(*bid1)) == NULL)
-		throw(MAL, "aggr.corr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL) {
-		BBPunfix(b1->batCacheid);
-		throw(MAL, "aggr.corr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	covariance = BATcalccorrelation(b1, b2);
-	BBPunfix(b1->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.corr", GDK_EXCEPTION);
-	*res = covariance;
-	return MAL_SUCCEED;
+	return ALG2bataggr(res, bid1, bid2, NULL, NULL,
+					   BATcalccorrelation, "aggr.corr");
 }
 
 #include "mel.h"
@@ -1505,8 +1519,11 @@ mel_func algebra_init_funcs[] = {
  command("aggr", "variance", ALGvariance, false, "Gives the variance of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  command("aggr", "variancep", ALGvariancep, false, "Gives the variance of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  command("aggr", "covariance", ALGcovariance, false, "Gives the covariance of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
+ command("aggr", "covariance", ALGcovariance2, false, "Gives the covariance of all tail values", args(1,5, arg("",dbl),batargany("b1",2),batargany("b2",2),batarg("s1",oid),batarg("s2",oid))),
  command("aggr", "covariancep", ALGcovariancep, false, "Gives the covariance of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
+ command("aggr", "covariancep", ALGcovariancep2, false, "Gives the covariance of all tail values", args(1,5, arg("",dbl),batargany("b1",2),batargany("b2",2),batarg("s1",oid),batarg("s2",oid))),
  command("aggr", "corr", ALGcorr, false, "Gives the correlation of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
+ command("aggr", "corr", ALGcorr2, false, "Gives the correlation of all tail values", args(1,5, arg("",dbl),batargany("b1",2),batargany("b2",2),batarg("s1",oid),batarg("s2",oid))),
  // sql
  command("aggr", "exist", ALGexist, false, "", args(1,3, arg("",bit),batargany("b",2),argany("h",1))),
  { .imp=NULL }
