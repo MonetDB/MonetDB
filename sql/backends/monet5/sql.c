@@ -4829,6 +4829,31 @@ finalize:
 	return ret;
 }
 
+str
+SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	BAT* b = NULL;
+	BAT* bn = NULL;
+	str msg = NULL;
+	int access = 0;
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *tname = *getArgReference_str(stk, pci, 2);
+	const char *cname = *getArgReference_str(stk, pci, 3);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if ((b = mvc_bind(m, sname, tname, cname, access)) == NULL)
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
+	bn = BATvacuum(b);
+	BBPkeepref(bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	// TODO where to? back in storage
+	return MAL_SUCCEED;
+}
+
 #include "wlr.h"
 #include "sql_cat.h"
 #include "sql_rank.h"
@@ -5909,6 +5934,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
 #endif
+ pattern("sql", "str_column_vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
