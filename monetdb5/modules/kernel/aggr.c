@@ -1075,22 +1075,29 @@ AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep, con
 }
 
 static str
-AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, const bat *eid, const bat *sid, bool skip_nils, bool abort_on_error,
-			 int tp, BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int tp, bool skip_nils, bool abort_on_error),
+AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid,
+			 const bat *eid, const bat *sid1, const bat *sid2, bool skip_nils,
+			 bool abort_on_error, int tp,
+			 BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *,
+						  int tp, bool skip_nils, bool abort_on_error),
 			 const char *malfunc)
 {
-	BAT *b1, *b2, *g, *e, *s, *bn = NULL;
+	BAT *b1, *b2, *g, *e, *s1, *s2, *bn = NULL;
 
 	assert(func != NULL);
 
 	b1 = BATdescriptor(*bid1);
 	b2 = BATdescriptor(*bid2);
-	g = gid ? BATdescriptor(*gid) : NULL;
-	e = eid ? BATdescriptor(*eid) : NULL;
-	s = sid ? BATdescriptor(*sid) : NULL;
+	g = gid && !is_bat_nil(*gid) ? BATdescriptor(*gid) : NULL;
+	e = eid && !is_bat_nil(*eid) ? BATdescriptor(*eid) : NULL;
+	s1 = sid1 && !is_bat_nil(*sid1)? BATdescriptor(*sid1) : NULL;
+	s2 = sid2 && !is_bat_nil(*sid2)? BATdescriptor(*sid2) : NULL;
 
-	if (b1 == NULL || b2 == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL)) {
+	if (b1 == NULL || b2 == NULL ||
+		(gid != NULL && !is_bat_nil(*gid) && g == NULL) ||
+		(eid != NULL && !is_bat_nil(*eid) && e == NULL) ||
+		(sid1 != NULL && !is_bat_nil(*sid1) && s1 == NULL) ||
+		(sid2 != NULL && !is_bat_nil(*sid2) && s2 == NULL)) {
 		if (b1)
 			BBPunfix(b1->batCacheid);
 		if (b2)
@@ -1099,8 +1106,10 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 			BBPunfix(g->batCacheid);
 		if (e)
 			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		if (s1)
+			BBPunfix(s1->batCacheid);
+		if (s2)
+			BBPunfix(s2->batCacheid);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -1111,12 +1120,14 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 			BBPunfix(g->batCacheid);
 		if (e)
 			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		if (s1)
+			BBPunfix(s1->batCacheid);
+		if (s2)
+			BBPunfix(s2->batCacheid);
 		throw(MAL, malfunc, SQLSTATE(42000) "%s requires both arguments of the same type", malfunc);
 	}
 
-	bn = (*func)(b1, b2, g, e, s, tp, skip_nils, abort_on_error);
+	bn = (*func)(b1, b2, g, e, s1, s2, tp, skip_nils, abort_on_error);
 
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
@@ -1124,8 +1135,10 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 		BBPunfix(g->batCacheid);
 	if (e)
 		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	if (s1)
+		BBPunfix(s1->batCacheid);
+	if (s2)
+		BBPunfix(s2->batCacheid);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval = bn->batCacheid;
@@ -1136,55 +1149,55 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 static str
 AGGRcovariance(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, 1, 0, TYPE_dbl, BATgroupcovariance_sample, "aggr.covariance");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, NULL, 1, 0, TYPE_dbl, BATgroupcovariance_sample, "aggr.covariance");
 }
 
 static str
 AGGRsubcovariance(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_sample, "aggr.subcovariance");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_sample, "aggr.subcovariance");
 }
 
 static str
-AGGRsubcovariancecand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+AGGRsubcovariancecand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid1, const bat *sid2, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_sample, "aggr.subcovariance");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, sid1, sid2, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_sample, "aggr.subcovariance");
 }
 
 static str
 AGGRcovariancep(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, 1, 0, TYPE_dbl, BATgroupcovariance_population, "aggr.covariancep");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, NULL, 1, 0, TYPE_dbl, BATgroupcovariance_population, "aggr.covariancep");
 }
 
 static str
 AGGRsubcovariancep(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_population, "aggr.subcovariancep");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_population, "aggr.subcovariancep");
 }
 
 static str
-AGGRsubcovariancepcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+AGGRsubcovariancepcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid1, const bat *sid2, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_population, "aggr.subcovariancep");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, sid1, sid2, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_population, "aggr.subcovariancep");
 }
 
 static str
 AGGRcorr(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, 1, 0, TYPE_dbl, BATgroupcorrelation, "aggr.corr");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, NULL, 1, 0, TYPE_dbl, BATgroupcorrelation, "aggr.corr");
 }
 
 static str
 AGGRsubcorr(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcorrelation, "aggr.subcorr");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcorrelation, "aggr.subcorr");
 }
 
 static str
-AGGRsubcorrcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+AGGRsubcorrcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid1, const bat *sid2, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcorrelation, "aggr.subcorr");
+	return AGGRgrouped2(retval, b1, b2, gid, eid, sid1, sid2, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcorrelation, "aggr.subcorr");
 }
 
 #include "mel.h"
@@ -1297,13 +1310,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",bte),batarg("b2",bte),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "avg", AGGRavg13_dbl, false, "Grouped tail average on sht", args(1,4, batarg("",dbl),batarg("b",sht),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg23_dbl, false, "Grouped tail average on sht, also returns count", args(2,5, batarg("",dbl),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg14_dbl, false, "Grouped tail average on sht", args(1,5, batarg("",dbl),batarg("b",sht),batarg("g",oid),batargany("e",1),arg("scale",int))),
@@ -1330,13 +1343,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",sht),batarg("b2",sht),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "avg", AGGRavg13_dbl, false, "Grouped tail average on int", args(1,4, batarg("",dbl),batarg("b",int),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg23_dbl, false, "Grouped tail average on int, also returns count", args(2,5, batarg("",dbl),batarg("",lng),batarg("b",int),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg14_dbl, false, "Grouped tail average on int", args(1,5, batarg("",dbl),batarg("b",int),batarg("g",oid),batargany("e",1),arg("scale",int))),
@@ -1363,13 +1376,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",int),batarg("b2",int),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "avg", AGGRavg13_dbl, false, "Grouped tail average on lng", args(1,4, batarg("",dbl),batarg("b",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg23_dbl, false, "Grouped tail average on lng, also returns count", args(2,5, batarg("",dbl),batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg14_dbl, false, "Grouped tail average on lng", args(1,5, batarg("",dbl),batarg("b",lng),batarg("g",oid),batargany("e",1),arg("scale",int))),
@@ -1396,13 +1409,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",lng),batarg("b2",lng),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "avg", AGGRavg13_dbl, false, "Grouped tail average on flt", args(1,4, batarg("",dbl),batarg("b",flt),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg23_dbl, false, "Grouped tail average on flt, also returns count", args(2,5, batarg("",dbl),batarg("",lng),batarg("b",flt),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg14_dbl, false, "Grouped tail average on flt", args(1,5, batarg("",dbl),batarg("b",flt),batarg("g",oid),batargany("e",1),arg("scale",int))),
@@ -1429,13 +1442,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",flt),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",flt),batarg("b2",flt),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "avg", AGGRavg13_dbl, false, "Grouped tail average on dbl", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg23_dbl, false, "Grouped tail average on dbl, also returns count", args(2,5, batarg("",dbl),batarg("",lng),batarg("b",dbl),batarg("g",oid),batargany("e",1))),
  command("aggr", "avg", AGGRavg14_dbl, false, "Grouped tail average on dbl", args(1,5, batarg("",dbl),batarg("b",dbl),batarg("g",oid),batargany("e",1),arg("scale",int))),
@@ -1462,13 +1475,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",dbl),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",dbl),batarg("b2",dbl),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "min", AGGRmin3, false, "", args(1,4, batargany("",1),batargany("b",1),batarg("g",oid),batargany("e",2))),
  command("aggr", "max", AGGRmax3, false, "", args(1,4, batargany("",1),batargany("b",1),batarg("g",oid),batargany("e",2))),
  command("aggr", "submin", AGGRsubmin, false, "Grouped minimum aggregate", args(1,5, batarg("",oid),batargany("b",1),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
@@ -1569,13 +1582,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subvariancep", AGGRsubvariancepcand_dbl, false, "Grouped variance (population/biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariance", AGGRcovariance, false, "Covariance sample aggregate", args(1,5, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariance", AGGRsubcovariance, false, "Grouped covariance sample aggregate", args(1,7, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariance", AGGRsubcovariancecand, false, "Grouped covariance sample aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "covariancep", AGGRcovariancep, false, "Covariance population aggregate", args(1,5, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcovariancep", AGGRsubcovariancep, false, "Grouped covariance population aggregate", args(1,7, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcovariancep", AGGRsubcovariancepcand, false, "Grouped covariance population aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "corr", AGGRcorr, false, "Correlation aggregate", args(1,5, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1))),
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,7, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,8, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,9, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s1",oid),batarg("s2",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
 #endif
  { .imp=NULL }
 };
