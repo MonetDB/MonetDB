@@ -129,6 +129,7 @@ typedef struct stmt {
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
+	list *extra;	/* used for merge statments, this will be cleaned out on the pushcands branch :) */
 } stmt;
 
 /* which MAL modules can push candidates */
@@ -153,7 +154,7 @@ extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
 extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
-extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int locked);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked);
 extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
 extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);

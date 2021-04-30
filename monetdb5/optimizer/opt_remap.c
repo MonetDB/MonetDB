@@ -358,7 +358,6 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 
 		/* always restore the allocated function name */
 		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
-		assert(strlen(fcn) <= INT_MAX);
 		getVarConstant(mb, getArg(pci, 2)).len = strlen(fcn);
 
 		if (r) return 1;
