@@ -153,7 +153,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
 		bn->unused = (pieces-1); /* misuse "unused" field */
-		BBPkeepref(*ret = bn->batCacheid);
+		*ret = bn->batCacheid;
+		BATsettrivprop(bn);
+		BBPretain(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		if (b != ob)
 			BBPunfix(ob->batCacheid);
 		if (b)
@@ -189,7 +192,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPkeepref(*ret = b->batCacheid);
 			throw(MAL, "mat.pack", "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");
 		}
-		BBPkeepref(*ret = b->batCacheid);
+		*ret = b->batCacheid;
+		BATsettrivprop(b);
+		BBPretain(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 }

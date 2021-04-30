@@ -288,10 +288,12 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	 * First experiments on tpch SF10- Q7, showed significant decrease in performance
 	 * Also a run against SF-100 did not show improvement in Q7
  	 * Also there are collateral damages in the testweb.
+	 */
+#ifdef ELIMCOMMONPREFIX
 	 if( OPTdeadcodeImplementation(cntxt, mb, 0, 0) == MAL_SUCCEED){
 		actions += OPTprojectionPrefix(cntxt, mb);
 	}
-	 */
+#endif
 
     /* Defense line against incorrect plans */
     if( actions > 0){

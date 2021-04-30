@@ -765,9 +765,8 @@ sql_update_apr2019_sp1(Client c)
 			}
 			BBPunfix(b->batCacheid);
 		}
-	}
-	if (output != NULL)
 		res_tables_destroy(output);
+	}
 
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2346,7 +2345,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *buf = NULL, *err = NULL;
@@ -3568,7 +3567,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_jul2021(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

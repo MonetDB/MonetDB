@@ -101,11 +101,13 @@ class SQLLogic:
         self.close()
 
     def connect(self, username='monetdb', password='monetdb',
-                hostname='localhost', port=None, database='demo', language='sql'):
+                hostname='localhost', port=None, database='demo',
+                language='sql', timeout=None):
         self.language = language
         self.hostname = hostname
         self.port = port
         self.database = database
+        self.timeout = timeout
         if language == 'sql':
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
@@ -594,6 +596,10 @@ class SQLLogic:
     def parse(self, f, approve=None):
         self.approve = approve
         self.initfile(f)
+        if self.language == 'sql':
+            self.crs.execute(f'call sys.setsession(cast({self.timeout or 0} as bigint))')
+        else:
+            self.crs.execute(f'clients.setsession({self.timeout or 0}:lng)')
         while True:
             skipping = False
             line = self.readline()

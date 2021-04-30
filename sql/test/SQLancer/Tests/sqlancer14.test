@@ -619,3 +619,97 @@ DROP TABLE t0
 
 statement ok
 DROP TABLE t1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c1" INTERVAL MONTH NOT NULL,"c3" VARCHAR(55) NOT NULL,"c4" DOUBLE NOT NULL, CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+7	"836999245"	0.5209641695747843
+5	"F~\\v\0156"	0.9120966504084695
+6	""	0.20943431967236137
+4	"zz-N"	1
+8	""	1420885136
+0	"-366705317"	-3
+3	""	0.12048574302018378
+
+query T rowsort
+SELECT t2.c1 FROM t2 FULL OUTER JOIN (SELECT 1 FROM t2) AS sub0 ON '1' AND t2.c1 <> ALL(VALUES (INTERVAL '5' MONTH))
+----
+0
+0
+0
+0
+0
+0
+0
+3
+3
+3
+3
+3
+3
+3
+4
+4
+4
+4
+4
+4
+4
+5
+6
+6
+6
+6
+6
+6
+6
+7
+7
+7
+7
+7
+7
+7
+8
+8
+8
+8
+8
+8
+8
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" VARCHAR(64) NOT NULL,"c1" INT NOT NULL,"c3" REAL NOT NULL,"c5" REAL)
+
+statement ok
+INSERT INTO "t1" VALUES ('-1065519696', 0, 0.035891276, 0.15286948)
+
+query T rowsort
+SELECT t1.c5 FROM t1 WHERE (SELECT 0.0 GROUP BY 9) <> ALL(SELECT 1.2 WHERE FALSE)
+----
+0.15286948
+
+query T rowsort
+SELECT (SELECT 1 FROM t1) <> ALL(SELECT 2 WHERE FALSE) FROM t1
+----
+True
+
+query T rowsort
+SELECT (SELECT 1 GROUP BY 3) <> ALL(SELECT 2 WHERE FALSE) FROM t1
+----
+True
+
+statement ok
+ROLLBACK

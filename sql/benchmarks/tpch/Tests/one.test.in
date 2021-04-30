@@ -239,6 +239,7 @@ select * from lineitem order by l_orderkey, l_linenumber limit 9
 ----
 144 values hashing to 5b3482da1afab8d411eeb26ffee69dd0
 
+#Q1
 query TTRRRRRRRI rowsort
 select
 	l_returnflag,
@@ -264,6 +265,7 @@ order by
 ----
 40 values hashing to ca010c93e0782214d94ae3672cff0445
 
+#Q2
 query RTTITTTT rowsort
 select
 	s_acctbal,
@@ -312,6 +314,7 @@ limit 100
 ----
 32 values hashing to 6da4414767a4d44432fa7066119e9fd3
 
+#Q3
 query IRTI rowsort
 select
 	l_orderkey,
@@ -339,6 +342,7 @@ limit 10
 ----
 40 values hashing to 4e7ad30467c6593d0d1394382ddd96aa
 
+#Q4
 query TI rowsort
 select
 	o_orderpriority,
@@ -364,6 +368,7 @@ order by
 ----
 10 values hashing to 70ba1b85c9dd5acc206ee21658be960a
 
+#Q5
 query TR rowsort
 select
 	n_name,
@@ -392,6 +397,7 @@ order by
 ----
 10 values hashing to 4794136da13b11e843071aab3020e2f7
 
+#Q6
 query R rowsort
 select
 	sum(l_extendedprice * l_discount) as revenue
@@ -405,6 +411,7 @@ where
 ----
 1193053.225
 
+#Q7
 query TTIR rowsort
 select
 	supp_nation,
@@ -448,6 +455,7 @@ order by
 ----
 16 values hashing to 0fb64d817cf5588717821a46eb60b8c3
 
+#Q8
 query IR rowsort
 select
 	o_year,
@@ -492,6 +500,7 @@ order by
 1996
 0.000
 
+#Q9
 query TIR rowsort
 select
 	nation,
@@ -528,6 +537,7 @@ order by
 ----
 519 values hashing to c34d56e84d53578446c2ed39c52b207e
 
+#Q10
 query ITRRTTTT rowsort
 select
 	c_custkey,
@@ -564,6 +574,7 @@ limit 20
 ----
 160 values hashing to 60ee561ad7be1de29a74f2a426423e32
 
+#Q11
 query IR rowsort
 select
 	ps_partkey,
@@ -596,6 +607,7 @@ order by
 1376
 13271249.890
 
+#Q12
 query TII rowsort
 select
 	l_shipmode,
@@ -633,6 +645,7 @@ SHIP
 61
 96
 
+#Q13
 query II rowsort
 select
 	c_count,
@@ -657,6 +670,7 @@ order by
 ----
 66 values hashing to 30b975221c7d5c52ee3b83df6e6bf4a7
 
+#Q14
 query R rowsort
 select
 	100.0 * sum(case
@@ -687,6 +701,7 @@ create view revenue0 (supplier_no, total_revenue) as
 	group by
 		l_suppkey
 
+#Q15
 query ITTTR rowsort
 select
 	s_suppkey,
@@ -717,6 +732,7 @@ Supplier#000000021
 statement ok
 drop view revenue0
 
+#Q16
 query TTII rowsort
 select
 	p_brand,
@@ -751,6 +767,7 @@ order by
 ----
 1184 values hashing to 019c7871f6a5ef57e4e5e84c596d7120
 
+#Q17
 query R rowsort
 select
 	sum(l_extendedprice) / 7.0 as avg_yearly
@@ -772,6 +789,7 @@ where
 ----
 NULL
 
+#Q18
 query TIITRR rowsort
 select
 	c_name,
@@ -809,6 +827,7 @@ limit 100
 ----
 12 values hashing to 427a70fca17edc3d7d421d568c60238c
 
+#Q19
 query R rowsort
 select
 	sum(l_extendedprice* (1 - l_discount)) as revenue
@@ -848,6 +867,7 @@ where
 ----
 22923.028
 
+#Q20
 query TT rowsort
 select
 	s_name,
@@ -890,6 +910,7 @@ order by
 Supplier#000000013
 HK71HQyWoqRWOX8GI FpgAifW,2PoH
 
+#Q21
 query TI rowsort
 select
 	s_name,
@@ -935,6 +956,7 @@ limit 100
 Supplier#000000074
 9
 
+#Q22
 query TIR rowsort
 select
 	cntrycode,

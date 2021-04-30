@@ -358,7 +358,7 @@ main(int argc, char *argv[])
 		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 
-		{"exittimeout",   strdup("60"),            60,                 INT},
+		{"exittimeout",   strdup("60"),            60,                 SINT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
 
 		{"discovery",     strdup("true"),          1,                  BOOLEAN},
@@ -950,7 +950,7 @@ main(int argc, char *argv[])
 	fclose(pidfile);
 
 	{
-		Mfprintf(stdout, "Merovingian %s", VERSION);
+		Mfprintf(stdout, "Merovingian %s", MONETDB_VERSION);
 #ifdef MONETDB_RELEASE
 		Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
 #else
@@ -1069,7 +1069,7 @@ shutdown:
 	/* stop started mservers */
 
 	kv = findConfKey(ckv, "exittimeout");
-	if (d->next != NULL && atoi(kv->val) > 0) {
+	if (d->next != NULL && atoi(kv->val) != 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
 
@@ -1111,7 +1111,7 @@ shutdown:
 
 	/* need to do this here, since the logging thread is shut down as
 	 * next thing */
-	Mfprintf(stdout, "Merovingian %s stopped\n", VERSION);
+	Mfprintf(stdout, "Merovingian %s stopped\n", MONETDB_VERSION);
 
 	_mero_keep_logging = 0;
 	if (tid != 0 && (argp = pthread_join(tid, NULL)) != 0) {

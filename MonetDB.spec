@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.40.0
+%global version 11.42.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -523,7 +523,6 @@ exit 0
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
-%exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %{_libdir}/libmonetdbsql.so*
 %dir %{_libdir}/monetdb5

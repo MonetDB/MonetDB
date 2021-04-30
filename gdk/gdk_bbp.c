@@ -1261,7 +1261,7 @@ BBPexit(void)
 static inline int
 heap_entry(FILE *fp, BAT *b, BUN size)
 {
-	PROPrec *minprop, *maxprop;
+	const ValRecord *minprop, *maxprop;
 	minprop = BATgetprop(b, GDK_MIN_POS);
 	maxprop = BATgetprop(b, GDK_MAX_POS);
 	size_t free = b->theap->free;
@@ -1292,8 +1292,8 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       free,
 		       b->theap->size,
 		       (int) b->theap->newstorage,
-		       minprop ? minprop->v.val.oval : oid_nil,
-		       maxprop ? maxprop->v.val.oval : oid_nil);
+		       minprop ? minprop->val.oval : oid_nil,
+		       maxprop ? maxprop->val.oval : oid_nil);
 }
 
 static inline int
@@ -2398,6 +2398,7 @@ BBPkeepref(bat i)
 		BAT *b;
 
 		if ((b = BBPdescriptor(i)) != NULL) {
+			BATsetaccess(b, BAT_READ);
 			BATsettrivprop(b);
 			if (GDKdebug & (CHECKMASK | PROPMASK))
 				BATassertProps(b);

@@ -888,7 +888,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	InstrPtr r;
 	mat_t *mat = ml->v;
 	int *mats = (int*)GDKzalloc(sizeof(int) * args);
-	int nr_mats = 0, first = 0, res = 0;
+	int nr_mats = 0, first = -1, res = 0;
 
 	if (!mats) {
 		return -1;
@@ -898,7 +898,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		mats[j] = is_a_mat(getArg(p,p->retc+j), ml);
 		if (mats[j] != -1) {
 			nr_mats++;
-			if (!first)
+			if (first < 0)
 				first = j;
 		}
 	}
@@ -2131,7 +2131,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		if (!distinct_topn && match == 1 && bats == 1 && (p->argc-p->retc) == 4 && isTopn(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
+		if (!distinct_topn && match == 1 && bats == 1 && isTopn(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			if(mat_topn(mb, p, &ml, m, -1, -1)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2139,7 +2139,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
-		if (!distinct_topn && match == 3 && bats == 3 && (p->argc-p->retc) == 6 && isTopn(p) &&
+		if (!distinct_topn && match == 3 && bats == 3 && isTopn(p) &&
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
 	 	   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 	 	   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0)) {

@@ -1,0 +1,33 @@
+# ChangeLog file for GDK
+# This file is updated with Maddlog
+
+* Mon Mar 29 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented function BUNreplacemultiincr to replace multiple values
+  in a BAT in one go, starting at a given position.
+- Implemented new function BUNreplacemulti to replace multiple values
+  in a BAT in one go, at the given positions.
+- Removed function BUNinplace, just use BUNreplace, and check whether
+  the BAT argument is of type TYPE_void before calling if you don't
+  want to materialize.
+
+* Mon Mar 15 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a function BUNappendmulti which appends an array of values
+  to a BAT.  It is a generalization of the function BUNappend.
+
+* Thu Feb 25 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the interface of the atom read function.  It now requires an
+  extra pointer to a size_t value that gives the current size of the
+  destination buffer, and when that buffer is too small, it receives the
+  size of the reallocated buffer that is large enough.  In any case,
+  and as before, the return value is a pointer to the destination buffer.
+
+* Fri Jan 29 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Environment variables (sys.env()) must be UTF-8, but since they can
+  contain file names which may not be UTF-8, there is now a mechanism
+  to store the original values outside of sys.env() and store
+  %-escaped (similar to URL escaping) values in the environment.  The
+  key must still be UTF-8.
+
+* Tue Dec  1 2020 Sjoerd Mullender <sjoerd@acm.org>
+- We now save the location of the min and max values when known.
+

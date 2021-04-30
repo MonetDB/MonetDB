@@ -217,6 +217,26 @@ absolute_path(str s)
 static int
 monet_init(opt *set, int setlen, bool embedded)
 {
+	/* check that library that we're linked against is compatible with
+	 * the one we were compiled with */
+	int maj, min, patch;
+	const char *version = GDKlibversion();
+	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
+	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
+		fprintf(stderr, "Linked GDK library not compatible with the one this was compiled with\n");
+		fprintf(stderr, "Linked version: %s, compiled version: %s\n",
+				version, GDK_VERSION);
+		return 0;
+	}
+	version = mal_version();
+	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
+	if (maj != MONETDB5_VERSION_MAJOR || min < MONETDB5_VERSION_MINOR) {
+		fprintf(stderr, "Linked MonetDB5 library not compatible with the one this was compiled with\n");
+		fprintf(stderr, "Linked version: %s, compiled version: %s\n",
+				version, MONETDB5_VERSION);
+		return 0;
+	}
+
 	/* determine Monet's kernel settings */
 	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
 		return 0;

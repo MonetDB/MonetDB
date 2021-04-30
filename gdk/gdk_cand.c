@@ -1023,7 +1023,7 @@ canditer_search(const struct canditer *ci, oid o, bool next)
 		if (p == ci->nvals - 1 && o >= ci->lastbit)
 			return next ? ci->ncand : BUN_NONE;
 		if (next || ci->mask[p] & (1U << o))
-			return count_mask_bits(ci, 0, p) + (o == 0 ? 0 : candmask_pop(ci->mask[p] << (32 - o))) + !(ci->mask[p] & (1U << o));
+			return count_mask_bits(ci, 0, p * 32 + o) + !(ci->mask[p] & (1U << o));
 		break;
 	}
 	return BUN_NONE;

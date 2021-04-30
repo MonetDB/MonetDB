@@ -1,10 +1,9 @@
-query ITTIIII rowsort
-select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+query ITTIII rowsort
+select sessionid, s."username", s."optimizer", s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
 0
 monetdb
 default_pipe
-0
 0
 0
 0

@@ -61,11 +61,9 @@ void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATgetprop(BAT *b, enum prop_t idx)
+ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
-PROPrec *BATgetprop_try(BAT *b, enum prop_t idx)
+ValPtr BATgetprop_try(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
@@ -91,9 +89,9 @@ void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
+ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))

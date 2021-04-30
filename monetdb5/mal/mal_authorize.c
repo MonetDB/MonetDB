@@ -541,7 +541,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	if (!GDKembedded()) {
 		rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	} else {
-		hash = GDKstrdup("hash");
+		if (!(hash = GDKstrdup("hash")))
+			throw(MAL, "addUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* needs force, as SQL makes a view over user */
 	if (BUNappend(user, username, true) != GDK_SUCCEED ||

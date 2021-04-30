@@ -1,0 +1,6 @@
+# ChangeLog file for devel
+# This file is updated with Maddlog
+
+* Thu Apr 15 2021 svetlin <svetlin.stalinov@monetdbsolutions.com>
+- preserve in query comments
+
