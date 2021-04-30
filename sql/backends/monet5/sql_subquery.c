@@ -240,7 +240,7 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!l || !g || !e || (sp && !s)) {
+	if (!l || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (g)
@@ -353,7 +353,7 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!l || !g || !e || (sp && !s)) {
+	if (!l || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (g)
@@ -770,7 +770,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!l || !r || !g || !e || (sp && !s)) {
+	if (!l || !r || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (r)
@@ -831,7 +831,7 @@ SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!l || !r || !rid || !g || !e || (sp && !s)) {
+	if (!l || !r || !rid || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (r)
@@ -1029,7 +1029,7 @@ SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!l || !r || !g || !e || (sp && !s)) {
+	if (!l || !r || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (r)
@@ -1091,7 +1091,7 @@ SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!l || !r || !rid || !g || !e || (sp && !s)) {
+	if (!l || !r || !rid || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (r)
@@ -1183,7 +1183,7 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!b || !g || !e || (sp && !s)) {
+	if (!b || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		if (g)
@@ -1259,7 +1259,7 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sp)
 		s = BATdescriptor(*sp);
 
-	if (!b || !g || !e || (sp && !s)) {
+	if (!b || !g || !e || (sp && !is_bat_nil(*sp) && !s)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		if (g)

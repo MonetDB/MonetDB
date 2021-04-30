@@ -1060,7 +1060,7 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
+stmt_limit(backend *be, stmt *col /* or cands */, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, bool order, bool col_is_cand)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1068,7 +1068,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 
 	if (col->nr < 0 || offset->nr < 0 || limit->nr < 0)
 		return NULL;
-	if (piv && (piv->nr < 0 || gid->nr < 0))
+	if (gid && (piv->nr < 0 || gid->nr < 0))
 		return NULL;
 
 	c = (col) ? col->nr : 0;
@@ -1146,7 +1146,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			return NULL;
 		len = getDestVar(q);
 
-		q = newStmt(mb, algebraRef, subsliceRef);
+		q = newStmt(mb, algebraRef, col_is_cand?sliceRef:subsliceRef);
 		q = pushArgument(mb, q, c);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, len);
@@ -1164,7 +1164,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		l = getDestVar(q);
 	}
 
-	stmt *ns = stmt_create(be->mvc->sa, piv?st_limit2:st_limit);
+	stmt *ns = stmt_create(be->mvc->sa, gid?st_limit2:st_limit);
 	if (ns == NULL) {
 		freeInstruction(q);
 		return NULL;
@@ -3514,7 +3514,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 }
 
 stmt *
-stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+stmt_aggr(backend *be, stmt *op1, stmt *cand, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3525,6 +3525,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subf
 	bool abort_on_error;
 	int *stmt_nr = NULL;
 	int avg = 0, pushed = 0;
+	int can_push = 0;
+	int i;
+	node *n;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3533,6 +3536,16 @@ stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subf
 	mod = op->func->mod;
 	aggrfunc = op->func->imp;
 
+	can_push = (grp && strcmp(mod,"aggr")==0) ||
+		       strcmp(aggrfunc, "avg")==0 || strcmp(aggrfunc, "prod")==0 || strcmp(aggrfunc, "sum")==0 ||
+	           strcmp(aggrfunc, "min")==0 || strcmp(aggrfunc, "max")==0;
+	if (cand && !can_push) {
+		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
+			stmt *op = n->data;
+			if (cand && op->cand != cand && op->nrcols)
+				n->data = stmt_project_column_on_cand(be, cand, op);
+		}
+	}
 	if (strcmp(aggrfunc, "avg") == 0)
 		avg = 1;
 	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
@@ -3601,13 +3614,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subf
 
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
-		if (op1_cand && op1->cand == op1_cand)
-			pushed = 1;
 	} else {
-		int i;
-		node *n;
-
-		/* TODO check all pushed */
 		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
 			stmt *op = n->data;
 
@@ -3615,17 +3622,28 @@ stmt_aggr(backend *be, stmt *op1, stmt *op1_cand, stmt *grp, stmt *ext, sql_subf
 				q = pushArgument(mb, q, stmt_nr[i]);
 			else
 				q = pushArgument(mb, q, op->nr);
-			if (op1_cand && op->cand == op1_cand && op->nrcols)
-				pushed = 1;
 		}
 	}
 	if (grp) {
 		q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, ext->nr);
-		/* push candidates */
-		if (op1_cand && !pushed)
-			q = pushArgument(mb, q, op1_cand->nr);
-		else if (avg)
+	}
+	if (can_push && cand) { /* properly push candidates when needed */
+		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
+			stmt *op = n->data;
+
+			if (op->nrcols) {
+				if (op->cand != cand)
+					q = pushArgument(mb, q, cand->nr);
+				else
+					q = pushNil(mb, q, TYPE_bat);
+			}
+		}
+		pushed = 1;
+	}
+	if (grp) {
+		/* avg api needs nil candidates when we don't push it */
+		if (!pushed && avg)
 			q = pushNil(mb, q, TYPE_bat);
 		if (q == NULL)
 			return NULL;

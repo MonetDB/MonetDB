@@ -42,7 +42,7 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 	if (b == NULL ||
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL) ||
+		(sid != NULL && !is_bat_nil(*sid) && s == NULL) ||
 		(quantile != NULL && q == NULL)) {
 		if (b)
 			BBPunfix(b->batCacheid);
@@ -1004,7 +1004,8 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 	sep = sepid ? BATdescriptor(*sepid) : NULL;
 
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL) || (sepid != NULL && sep == NULL)) {
+		(sid != NULL && !is_bat_nil(*sid) && s == NULL) ||
+		(sepid != NULL && sep == NULL)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		if (g)

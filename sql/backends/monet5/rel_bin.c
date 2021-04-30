@@ -1455,7 +1455,7 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			}
 		}
 		if (right)
-			s = stmt_aggr(be, as, left->cand, input_group, is_right_groupby ? right->ext : NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
+			s = stmt_aggr(be, as, !need_distinct(e)?left->cand:NULL, input_group, is_right_groupby ? right->ext : NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		else
 			s = stmt_aggr(be, as, left?left->cand:NULL, NULL, NULL, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
@@ -3539,11 +3539,6 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		sub = used_cands(sub);
 		psub = used_cands(psub);
 	}
-	if (psub->cand && rel->r) { /* for now we first handle the candidates */
-		if (sub)
-			sub = subrel_project(be, sub, refs, rel, false);
-		psub = subrel_project(be, psub, refs, rel, false);
-	}
 	pl = psub->cols;
 	stmt_set_nrcols(psub);
 
@@ -3570,9 +3565,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, sub->cand, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, true, false);
 			} else { 	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, true, false);
 			}
 			if (!limit)
 				return NULL;
@@ -3587,6 +3582,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		for ( n=pl->h ; n; n = n->next)
 			list_append(npl, stmt_project(be, limit, column(be, n->data)));
 		psub->cols = npl;
+		psub->cand = NULL;
 		stmt_set_nrcols(psub);
 
 		/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
@@ -3596,6 +3592,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			list_append(npl, stmt_project(be, limit, column(be, n->data)));
 		}
 		sub->cols = npl;
+		sub->cand = NULL;
 		stmt_set_nrcols(sub);
 	}
 	if (need_distinct(rel)) {
@@ -3616,6 +3613,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		list *oexps = rel->r;
 		stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
+		/* TODO push cands into sort - project */
+		sub = subrel_project(be, sub, refs, rel, false);
+		psub = subrel_project(be, psub, refs, rel, false);
 		for (en = oexps->h; en; en = en->next) {
 			stmt *orderby = NULL;
 			sql_exp *orderbycole = en->data;
@@ -3819,7 +3819,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	} else {
 		sub = subrel_bin(be, rl, refs);
 	}
-	sub = subrel_project(be, sub, refs, rl, false);
 	if (!sub)
 		return NULL;
 
@@ -3830,7 +3829,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		stmt *limit = NULL, *sc = sub->cols->h->data;
 		const char *cname = column_name(sql->sa, sc);
 		const char *tname = table_name(sql->sa, sc);
-		list *newl = sa_list(sql->sa);
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 		if (le)
@@ -3852,20 +3850,15 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!l || !o)
 			return NULL;
 
-		sc = column(be, sc);
-		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,0);
-
-		for (node *n = sub->cols->h ; n; n = n->next) {
-			stmt *sc = n->data;
-			const char *cname = column_name(sql->sa, sc);
-			const char *tname = table_name(sql->sa, sc);
-
+		if (sub->cand) {
+			limit = stmt_limit(be, sub->cand, NULL, NULL, o, l, 0,0,0,0,false, true);
+		} else {
 			sc = column(be, sc);
-			sc = stmt_project(be, limit, sc);
-			list_append(newl, stmt_alias(be, sc, tname, cname));
+			limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,false, false);
 		}
-		sub->cols = newl;
-		stmt_set_nrcols(sub);
+		/* Now we project, limit early reduces data access */
+		sub = create_rel_bin_stmt(be->mvc->sa, rel, sub->cols, limit);
+		sub = subrel_project(be, sub, refs, rl, false);
 	}
 	return sub;
 }
