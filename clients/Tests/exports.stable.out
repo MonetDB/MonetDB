@@ -31,9 +31,9 @@ BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi
 BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
 BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
 BAT *BATcalccmpcst(BAT *b, const ValRecord *v, BAT *s);
-dbl BATcalccorrelation(BAT *b1, BAT *b2);
-dbl BATcalccovariance_population(BAT *b1, BAT *b2);
-dbl BATcalccovariance_sample(BAT *b1, BAT *b2);
+dbl BATcalccorrelation(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+dbl BATcalccovariance_population(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+dbl BATcalccovariance_sample(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
 BAT *BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error);
 BAT *BATcalccstand(const ValRecord *v, BAT *b, BAT *s);
 BAT *BATcalccstcmp(const ValRecord *v, BAT *b, BAT *s);

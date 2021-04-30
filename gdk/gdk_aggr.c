@@ -4218,9 +4218,11 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 #define AGGR_COVARIANCE_SINGLE(TYPE)					\
 	do {								\
 		TYPE x, y;						\
-		for (i = 0; i < cnt; i++) {				\
-			x = ((const TYPE *) v1)[i];			\
-			y = ((const TYPE *) v2)[i];			\
+		for (i = 0; i < ci1->ncand; i++) {			\
+			oid i1 = canditer_next(ci1) - ci1->hseq;	\
+			oid i2 = canditer_next(ci2) - ci2->hseq;	\
+			x = ((const TYPE *) v1)[i1];			\
+			y = ((const TYPE *) v2)[i2];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
 				continue;				\
 			n++;						\
@@ -4229,13 +4231,14 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			delta2 = (dbl) y - mean2;			\
 			mean2 += delta2 / n;				\
 			m2 += delta1 * ((dbl) y - mean2);		\
-			if (isinf(m2))			\
-				goto overflow;		\
+			if (isinf(m2))					\
+				goto overflow;				\
 		}							\
 	} while (0)
 
 static dbl
-calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
+calccovariance(const void *v1, const void *v2, struct canditer *ci1,
+	       struct canditer *ci2, int tp, bool issample)
 {
 	BUN n = 0, i;
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
@@ -4277,26 +4280,40 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 }
 
 dbl
-BATcalccovariance_population(BAT *b1, BAT *b2)
+BATcalccovariance_population(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
+	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0),
-			       BATcount(b1), b1->ttype, false);
+	canditer_init(&ci1, b1, s1);
+	canditer_init(&ci2, b2, s2);
+	if (ci1.ncand != ci2.ncand) {
+		GDKerror("bats must be aligned\n");
+		return dbl_nil;
+	}
+	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0), &ci1, &ci2,
+			       b1->ttype, false);
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return v;
 }
 
 dbl
-BATcalccovariance_sample(BAT *b1, BAT *b2)
+BATcalccovariance_sample(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
+	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0),
-			      BATcount(b1), b1->ttype, true);
+	canditer_init(&ci1, b1, s1);
+	canditer_init(&ci2, b2, s2);
+	if (ci1.ncand != ci2.ncand) {
+		GDKerror("bats must be aligned\n");
+		return dbl_nil;
+	}
+	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0), &ci1, &ci2,
+			      b1->ttype, true);
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return v;
@@ -4306,8 +4323,10 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 	do {								\
 		TYPE x, y;						\
 		for (i = 0; i < cnt; i++) {				\
-			x = ((const TYPE *) v1)[i];			\
-			y = ((const TYPE *) v2)[i];			\
+			oid o1 = canditer_next(&ci1) - b1->hseqbase;	\
+			oid o2 = canditer_next(&ci2) - b2->hseqbase;	\
+			x = ((const TYPE *) v1)[o1];			\
+			y = ((const TYPE *) v2)[o2];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
 				continue;				\
 			n++;						\
@@ -4319,19 +4338,26 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			up += delta1 * aux;				\
 			down1 += delta1 * ((dbl) x - mean1);		\
 			down2 += delta2 * aux;				\
-			if (isinf(up) || isinf(down1) || isinf(down2))		\
-				goto overflow;		\
+			if (isinf(up) || isinf(down1) || isinf(down2))	\
+				goto overflow;				\
 		}							\
 	} while (0)
 
 dbl
-BATcalccorrelation(BAT *b1, BAT *b2)
+BATcalccorrelation(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
-	BUN n = 0, i, cnt = BATcount(b1);
+	BUN n = 0, i, cnt;
 	dbl mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
 	const void *v1 = (const void *) Tloc(b1, 0), *v2 = (const void *) Tloc(b2, 0);
 	int tp = b1->ttype;
 	lng t0 = 0;
+	struct canditer ci1, ci2;
+
+	cnt = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != cnt) {
+		GDKerror("bats with candidate lists not same size\n");
+		return dbl_nil;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
