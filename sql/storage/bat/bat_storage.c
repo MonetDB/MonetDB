@@ -1478,6 +1478,16 @@ dcount_col(sql_trans *tr, sql_column *c)
 }
 
 static size_t
+count_segs(segment *s)
+{
+	size_t nr = 0;
+
+	for( ; s; s = s->next)
+		nr++;
+	return nr;
+}
+
+static size_t
 count_del(sql_trans *tr, sql_table *t, int access)
 {
 	storage *d;
@@ -1491,6 +1501,8 @@ count_del(sql_trans *tr, sql_table *t, int access)
 		return d->cs.ucnt;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
+	if (access == 10) /* special case for counting the number of segments */
+		return count_segs(d->segs->h);
 	return count_deletes(d->segs->h, tr);
 }
 
