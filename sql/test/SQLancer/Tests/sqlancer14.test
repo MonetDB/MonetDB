@@ -743,3 +743,21 @@ merge into t2 using (select * from t1) as t1 on ((select 1) except (select 2)) w
 
 statement ok
 ROLLBACK
+
+statement ok
+CREATE TABLE t0(c0 boolean, c1 int, c3 boolean)
+
+statement ok rowcount 1
+INSERT INTO t0(c1, c0) VALUES(3, false)
+
+statement ok rowcount 1
+INSERT INTO t0(c3, c1) VALUES(TRUE, 9)
+
+query T rowsort
+SELECT 'a' LIKE ifthenelse(t0.c3, (SELECT 'v' FROM t0 GROUP BY (SELECT 1 FROM t0 HAVING min(least(t0.c0, (SELECT FALSE GROUP BY 3)) AND t0.c3))), 's') FROM t0
+----
+False
+False
+
+statement ok
+DROP TABLE t0
