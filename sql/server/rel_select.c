@@ -2714,6 +2714,9 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
 		sql_rel *sq;
+
+		if (is_psm_call(f) || is_sql_merge(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: set operations not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
 		if (rel)
 			query_push_outer(query, rel, f);
 		sq = rel_setquery(query, sc);
