@@ -713,3 +713,18 @@ True
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" VARCHAR(64) NOT NULL,"c1" INT NOT NULL,"c3" REAL NOT NULL,"c5" REAL)
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH NOT NULL,"c3" VARCHAR(55) NOT NULL,"c4" DOUBLE NOT NULL, CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement error MERGE: subqueries not supported inside MERGE conditions
+merge into t2 using (select * from t1) as t1 on exists (select 1) when matched then delete
+
+statement ok
+ROLLBACK
