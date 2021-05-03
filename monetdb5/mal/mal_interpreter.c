@@ -513,6 +513,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	exceptionVar = -1;
 
 	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
+	/* save, in case this function is called recursively */
+	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
 	MT_thread_set_qry_ctx(&qry_ctx);
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
@@ -1185,7 +1187,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
-			return yieldFactory(mb, pci, stkpc);
+			ret = yieldFactory(mb, pci, stkpc);
+			MT_thread_set_qry_ctx(qry_ctx_save);
+			return ret;
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
 
@@ -1224,6 +1228,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc= mb->stop;
 		}
 	}
+	MT_thread_set_qry_ctx(qry_ctx_save);
 
 	/* if we could not find the exception variable, cascade a new one */
 	if (exceptionVar >= 0) {
