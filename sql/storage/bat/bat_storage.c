@@ -517,7 +517,7 @@ segs_end( segments *segs, sql_trans *tr)
 	segment *s = segs->h, *l = NULL;
 
 	for(;s; s = s->next) {
-		if (VALID_4_READ(s->ts, tr) || (s->deleted && s->oldts && s->ts > TRANSACTION_ID_BASE && s->oldts < tr->ts))
+		if (VALID_4_READ(s->ts, tr) || (s->deleted && s->oldts && s->ts > tr->ts && s->oldts < tr->ts))
 				l = s;
 	}
 	if (!l)
