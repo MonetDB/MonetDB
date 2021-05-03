@@ -1,3 +1,12 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org>
+- When stopping monetdbd using the `monetdbd stop' command, this command
+  now waits for 5 seconds longer than the exittimeout value before it
+  kills the monetdbd daemon instead of only 30 seconds total (or until
+  that daemon stops earlier).  This gives the daemon enough time to
+  terminate the mserver5 processes that it is managing.  If exittimeout
+  is negative, the daemon and the monetdbd process initiating the stop
+  wait indefinitely until the mserver5 processes have stopped.
+
