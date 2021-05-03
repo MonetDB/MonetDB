@@ -104,7 +104,7 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 
 		if (ng)
 			BBPunfix(ng->batCacheid);
-		BATmax(h, &max);
+		BATmax(&max, h, NULL);
 		BBPunfix(h->batCacheid);
 		if (max != lng_nil && max > 1)
 			throw(SQL, "sql.subzero_or_one", SQLSTATE(M0M29) "zero_or_one: cardinality violation, scalar expression expected");

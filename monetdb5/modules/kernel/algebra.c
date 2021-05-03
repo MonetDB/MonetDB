@@ -126,13 +126,16 @@ slice(BAT **retval, BAT *b, lng start, lng end)
  */
 
 static str
-ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+ALGminany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *sid)
 {
 	BAT *b;
+	BAT *s = NULL;
 	ptr p;
 	str msg = MAL_SUCCEED;
 
-	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
+	if (result == NULL ||
+		(b = BATdescriptor(*bid)) == NULL ||
+		(sid == NULL && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
 		throw(MAL, "algebra.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
@@ -141,9 +144,9 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
+			* (ptr *) result = p = BATmin_skipnil(NULL, b, NULL, *skipnil);
 		} else {
-			p = BATmin_skipnil(b, result, *skipnil);
+			p = BATmin_skipnil(result, b, s, *skipnil);
 			if ( p != result )
 				msg = createException(MAL, "algebra.min", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
@@ -155,20 +158,34 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGminany(ptr result, const bat *bid)
+ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
-	bit skipnil = TRUE;
-	return ALGminany_skipnil(result, bid, &skipnil);
+	return ALGminany2_skipnil(result, bid, skipnil, NULL);
 }
 
 static str
-ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+ALGminany(ptr result, const bat *bid)
+{
+	return ALGminany2_skipnil(result, bid, &(bit){TRUE}, NULL);
+}
+
+static str
+ALGminany2(ptr result, const bat *bid, const bat *sid)
+{
+	return ALGminany2_skipnil(result, bid, &(bit){TRUE}, sid);
+}
+
+static str
+ALGmaxany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *sid)
 {
 	BAT *b;
+	BAT *s = NULL;
 	ptr p;
 	str msg = MAL_SUCCEED;
 
-	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
+	if (result == NULL ||
+		(b = BATdescriptor(*bid)) == NULL ||
+		(sid == NULL && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
 		throw(MAL, "algebra.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
@@ -177,9 +194,9 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
+			* (ptr *) result = p = BATmax_skipnil(NULL, b, s, *skipnil);
 		} else {
-			p = BATmax_skipnil(b, result, *skipnil);
+			p = BATmax_skipnil(result, b, NULL, *skipnil);
 			if ( p != result )
 				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
@@ -191,10 +208,21 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
+ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+{
+	return ALGmaxany2_skipnil(result, bid, skipnil, NULL);
+}
+
+static str
 ALGmaxany(ptr result, const bat *bid)
 {
-	bit skipnil = TRUE;
-	return ALGmaxany_skipnil(result, bid, &skipnil);
+	return ALGmaxany2_skipnil(result, bid, &(bit){TRUE}, NULL);
+}
+
+static str
+ALGmaxany2(ptr result, const bat *bid, const bat *sid)
+{
+	return ALGmaxany2_skipnil(result, bid, &(bit){TRUE}, sid);
 }
 
 static str
@@ -1520,6 +1548,10 @@ mel_func algebra_init_funcs[] = {
  command("aggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
  command("aggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
  command("aggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
+ command("aggr", "min", ALGminany2, false, "Return the lowest tail value or nil.", args(1,3, argany("",2),batargany("b",2),batarg("s",oid))),
+ command("aggr", "min", ALGminany2_skipnil, false, "Return the lowest tail value or nil.", args(1,4, argany("",2),batargany("b",2),arg("skipnil",bit),batarg("s",oid))),
+ command("aggr", "max", ALGmaxany2, false, "Return the highest tail value or nil.", args(1,3, argany("",2),batargany("b",2),batarg("s",oid))),
+ command("aggr", "max", ALGmaxany2_skipnil, false, "Return the highest tail value or nil.", args(1,4, argany("",2),batargany("b",2),arg("skipnil",bit),batarg("s",oid))),
  command("aggr", "stdev", ALGstdev, false, "Gives the standard deviation of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  command("aggr", "stdev", ALGstdev2, false, "Gives the standard deviation of all tail values", args(1,3, arg("",dbl),batargany("b",2),batarg("s",oid))),
  command("aggr", "stdevp", ALGstdevp, false, "Gives the standard deviation of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
