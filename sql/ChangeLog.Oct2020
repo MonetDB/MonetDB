@@ -1,8 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org>
-- A bug where a sequence of TRUNCATE TABLE and COPY INTO the just
-  truncated table would result in success being reported to both queries,
-  but the table still being empty afterwards, has been fixed.
-
