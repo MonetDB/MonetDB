@@ -1705,7 +1705,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(ins->batCacheid);
 	}
 	if (BATcount(tid)) {
-		(void)BATmax(tid, &v);
+		(void)BATmax(&v, tid, NULL);
 		v++;
 	}
 	for(;cnt>0; cnt--, v++) {

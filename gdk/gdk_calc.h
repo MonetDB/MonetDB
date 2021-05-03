@@ -143,10 +143,10 @@ gdk_export const char *BATgroupaggrinit(
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
 gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
-gdk_export void *BATmax(BAT *b, void *aggr);
-gdk_export void *BATmin(BAT *b, void *aggr);
-gdk_export void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);
-gdk_export void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil);
+gdk_export void *BATmax(void *aggr, BAT *b, BAT *s);
+gdk_export void *BATmin(void *aggr, BAT *b, BAT *s);
+gdk_export void *BATmax_skipnil(void *aggr, BAT *b, BAT *s, bit skipnil);
+gdk_export void *BATmin_skipnil(void *aggr, BAT *b, BAT *s, bit skipnil);
 
 gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b, BAT *s);
 gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b, BAT *s);

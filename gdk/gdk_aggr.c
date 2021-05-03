@@ -3515,12 +3515,13 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
-BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmin_skipnil(void *aggr, BAT *b, BAT *s, bit skipnil)
 {
 	const ValRecord *prop;
 	const void *res;
-	size_t s;
+	size_t sz;
 	BATiter bi;
+	struct canditer ci;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -3531,9 +3532,10 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		GDKerror("non-linear type");
 		return NULL;
 	}
-	if (BATcount(b) == 0) {
+	if (canditer_init(&ci, b, s) == 0) {
 		res = ATOMnilptr(b->ttype);
-	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+	} else if (ci.tpe == cand_dense && ci.ncand == BATcount(b) &&
+		   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
 		res = VALptr(prop);
 	} else {
 		oid pos;
@@ -3587,14 +3589,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				}
 			}
 		} else {
-			struct canditer ci;
-			BUN ncand = canditer_init(&ci, b, NULL);
-			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, &ci, ncand,
+			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, &ci, ci.ncand,
 					   BATcount(b), skipnil, false);
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
-		} else {
+		} else if (ci.tpe == cand_dense && ci.ncand == BATcount(b)) {
 			bi = bat_iterator(b);
 			res = BUNtail(bi, pos - b->hseqbase);
 			BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
@@ -3602,22 +3602,22 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		}
 	}
 	if (aggr == NULL) {
-		s = ATOMlen(b->ttype, res);
-		aggr = GDKmalloc(s);
+		sz = ATOMlen(b->ttype, res);
+		aggr = GDKmalloc(sz);
 	} else {
-		s = ATOMsize(ATOMtype(b->ttype));
+		sz = ATOMsize(ATOMtype(b->ttype));
 	}
 	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+		memcpy(aggr, res, sz);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
 	return aggr;
 }
 
 void *
-BATmin(BAT *b, void *aggr)
+BATmin(void *aggr, BAT *b, BAT *s)
 {
-	return BATmin_skipnil(b, aggr, 1);
+	return BATmin_skipnil(aggr, b, s, 1);
 }
 
 BAT *
@@ -3629,12 +3629,13 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 void *
-BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmax_skipnil(void *aggr, BAT *b, BAT *s, bit skipnil)
 {
 	const ValRecord *prop;
 	const void *res;
-	size_t s;
+	size_t sz;
 	BATiter bi;
+	struct canditer ci;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -3643,9 +3644,10 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		GDKerror("non-linear type");
 		return NULL;
 	}
-	if (BATcount(b) == 0) {
+	if (canditer_init(&ci, b, s) == 0) {
 		res = ATOMnilptr(b->ttype);
-	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+	} else if (ci.tpe == cand_dense && ci.ncand == BATcount(b) &&
+		   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
 		res = VALptr(prop);
 	} else {
 		oid pos;
@@ -3690,14 +3692,12 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 				}
 			}
 		} else {
-			struct canditer ci;
-			BUN ncand = canditer_init(&ci, b, NULL);
-			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, &ci, ncand,
+			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, &ci, ci.ncand,
 					   BATcount(b), skipnil, false);
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
-		} else {
+		} else if (ci.tpe == cand_dense && ci.ncand == BATcount(b)) {
 			bi = bat_iterator(b);
 			res = BUNtail(bi, pos - b->hseqbase);
 			if (b->tnonil) {
@@ -3707,22 +3707,22 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		}
 	}
 	if (aggr == NULL) {
-		s = ATOMlen(b->ttype, res);
-		aggr = GDKmalloc(s);
+		sz = ATOMlen(b->ttype, res);
+		aggr = GDKmalloc(sz);
 	} else {
-		s = ATOMsize(ATOMtype(b->ttype));
+		sz = ATOMsize(ATOMtype(b->ttype));
 	}
 	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+		memcpy(aggr, res, sz);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
 	return aggr;
 }
 
 void *
-BATmax(BAT *b, void *aggr)
+BATmax(void *aggr, BAT *b, BAT *s)
 {
-	return BATmax_skipnil(b, aggr, 1);
+	return BATmax_skipnil(aggr, b, s, 1);
 }
 
 
