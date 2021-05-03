@@ -23,13 +23,6 @@ __ MonetDB_
 .. _github: https://github.com/MonetDB/MonetDB
 __ github_
 
-If you got a source distribution, please compile and install MonetDB first,
-following the instructions in the file `HowToStart.rst`__ (for Unix)
-or `buildtools/doc/windowsbuild.rst`__ (for Windows).
-
-__ HowToStart.rst
-__ buildtools/doc/windowsbuild.rst
-
 Copyright Notice
 ================
 
