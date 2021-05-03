@@ -335,7 +335,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c4" DOUBLE NOT NULL)
 
-statement error Math exception: Numerical result out of range
+statement error
 insert into t0(c4) values(power(1770290607, case when greatest(false, true) then cast(5 as real) end)), (-1.722544153E9)
 
 statement error 25005!Current transaction is aborted (please ROLLBACK)
