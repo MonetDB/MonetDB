@@ -2382,9 +2382,9 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"drop procedure sys.flush_log();\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop procedure sys.deltas(string);\n"
-							"drop procedure sys.deltas(string, string);\n"
-							"drop procedure sys.deltas(string, string, string);\n");
+							"drop function sys.deltas(string);\n"
+							"drop function sys.deltas(string, string);\n"
+							"drop function sys.deltas(string, string, string);\n");
 			pos += snprintf(buf + pos, bufsize - pos,
 							"create function sys.deltas (\"schema\" string)\n"
 							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
