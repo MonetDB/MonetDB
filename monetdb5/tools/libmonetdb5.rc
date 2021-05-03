@@ -6,8 +6,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #define sversion(major,minor,patch)	#major "." #minor "." #patch "\0"
 
 1 VERSIONINFO
-  FILEVERSION version(11,39,17)
-  PRODUCTVERSION version(11,39,17)
+  FILEVERSION version(11,39,18)
+  PRODUCTVERSION version(11,39,18)
   FILEFLAGSMASK 0x3fL
   FILEFLAGS 0
   FILEOS VOS_NT_WINDOWS32
@@ -21,14 +21,14 @@ BEGIN
       VALUE "Comments", "\0"
       VALUE "CompanyName", "MonetDB B.V.\0"
       VALUE "FileDescription", "MonetDB5 Library DLL\0"
-      VALUE "FileVersion", sversion(11,39,17)
+      VALUE "FileVersion", sversion(11,39,18)
       VALUE "InternalName", "libmonetdb5\0"
       VALUE "LegalCopyright", "Copyright (c) MonetDB B.V. 2008-2021\0"
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "libmonetdb5.dll\0"
       VALUE "PrivateBuild", "\0"
       VALUE "ProductName", "MonetDB5 Server\0"
-      VALUE "ProductVersion", sversion(11,39,17)
+      VALUE "ProductVersion", sversion(11,39,18)
       VALUE "SpecialBuild", "\0"
     END
   END

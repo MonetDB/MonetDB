@@ -65,8 +65,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION version(11,39,17)
- PRODUCTVERSION version(11,39,17)
+ FILEVERSION version(11,39,18)
+ PRODUCTVERSION version(11,39,18)
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -83,12 +83,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "MonetDB B.V."
             VALUE "FileDescription", "MonetDB ODBC Setup DLL"
-            VALUE "FileVersion", sversion(11,39,17)
+            VALUE "FileVersion", sversion(11,39,18)
             VALUE "InternalName", "MonetODBCs.dll"
             VALUE "LegalCopyright", "Copyright (c) MonetDB B.V. 2008-2021"
             VALUE "OriginalFilename", "MonetODBCs.dll"
             VALUE "ProductName", "MonetDB SQL Server"
-            VALUE "ProductVersion", sversion(11,39,17)
+            VALUE "ProductVersion", sversion(11,39,18)
         END
     END
     BLOCK "VarFileInfo"
