@@ -87,9 +87,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -98,15 +96,15 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				dst[i] = FUNC(src[x]);			\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 #define UNARY_2TYPE_FUNC_nilcheck(TYPE1, TYPE2, FUNC, on_overflow)	\
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -118,14 +116,15 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -139,9 +138,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -155,6 +154,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		}							\
 	} while (0)
 
@@ -162,8 +162,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -179,9 +178,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 						on_overflow;		\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -197,6 +196,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 						on_overflow;		\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		}							\
 	} while (0)
 
@@ -206,8 +206,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -220,9 +219,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -235,6 +234,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		}							\
 	} while (0)
 
@@ -242,8 +242,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -252,9 +251,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -263,6 +262,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		}							\
 	} while (0)
 
@@ -270,8 +270,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -282,9 +281,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
 					on_overflow;			\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -295,6 +294,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
 					on_overflow;			\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		}							\
 	} while (0)
 
@@ -302,8 +302,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -328,9 +327,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			for (k = 0; k < ncand; k++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -355,6 +354,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		}							\
 	} while (0)
 
@@ -374,7 +374,6 @@ BATcalcnot(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -401,27 +400,27 @@ BATcalcnot(BAT *b, BAT *s)
 			int bits = (ci.seq - b->hseqbase) % 32;
 			ncand = (ncand + 31) / 32;
 			if (bits == 0) {
-				for (i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
 					dst[i] = ~src[i];
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
-				for (i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
 					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			}
 			if (ci.ncand % 32 != 0)
 				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
 		} else {
-			for (i = 0; i < ncand; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
 				x = canditer_next(&ci) - bhseqbase;
 				mskSetVal(bn, i, !mskGetVal(b, x));
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 		break;
 	case TYPE_bte:
@@ -567,7 +566,6 @@ BATcalcnegate(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -706,7 +704,6 @@ BATcalcabsolute(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -849,7 +846,6 @@ BATcalciszero(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -989,7 +985,6 @@ BATcalcsign(BAT *b, BAT *s)
 	oid x, bhseqbase = b->hseqbase;
 	struct canditer ci;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1123,11 +1118,11 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 #define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
 		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(NULL)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(&ci) - bhseqbase;		\
 			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(NULL));	\
 	} while (0)
 
 static BAT *
@@ -1142,7 +1137,6 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	BUN nils = 0;
 	oid bhseqbase = b->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1204,11 +1198,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 		const void *nil = ATOMnilptr(b->ttype);
 
-		for (i = 0; i < ncand; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(NULL));
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
 			x = canditer_next(&ci) - bhseqbase;
 			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
 		}
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(NULL));
 		break;
 	}
 	}
@@ -1269,9 +1263,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	do {								\
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
-			for (BUN i = 0; i < ncand; i++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1282,10 +1274,10 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 					tbn[i] = p1 OP p2 ? p1 : p2;	\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 		} else {						\
-			for (BUN i = 0; i < ncand; i++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1296,6 +1288,8 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 					tbn[i] = p1 OP p2 ? p1 : p2;	\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 		}							\
 	} while (0)
 
@@ -1309,7 +1303,6 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1367,9 +1360,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1383,10 +1374,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1400,14 +1391,14 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1421,10 +1412,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1438,6 +1429,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		}
 	}
@@ -1475,9 +1468,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	do {								\
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
-			for (BUN i = 0; i < ncand; i++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1492,10 +1483,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 		} else {						\
-			for (BUN i = 0; i < ncand; i++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1510,6 +1501,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 		}							\
 	} while (0)
 
@@ -1523,7 +1516,6 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1581,9 +1573,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1601,10 +1591,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1622,14 +1612,14 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1647,10 +1637,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1668,6 +1658,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		}
 	}
@@ -1704,9 +1696,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 #define MINMAX_CST_TYPE(TYPE, OP)					\
 	do {								\
 		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
-		for (BUN i = 0; i < ncand; i++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+		TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {		\
 			oid x = canditer_next(&ci) - bhseqbase;		\
 			TYPE p1 = tb[x];				\
 			if (is_##TYPE##_nil(p1)) {			\
@@ -1716,6 +1706,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				tbn[i] = p1 OP pp2 ? p1 : pp2;		\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 	} while (0)
 
 BAT *
@@ -1731,7 +1723,6 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1785,9 +1776,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		BATiter bi = bat_iterator(b);
 
 		if (ATOMvarsized(b->ttype)) {
-			for (BUN i = 0; i < ncand; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -1799,12 +1788,12 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			for (BUN i = 0; i < ncand; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -1816,6 +1805,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				memcpy(bcast, p1, width);
 				bcast += width;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 		}
 	}
 	}
@@ -1856,18 +1847,16 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 	do {								\
 		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
 		if (is_##TYPE##_nil(pp2)) {				\
-			for (BUN i = 0; i < ncand; i++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x = canditer_next(&ci) - bhseqbase; \
 				TYPE p1 = tb[x];			\
 				nils |= is_##TYPE##_nil(p1);		\
 				tbn[i] = p1;				\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 		} else {						\
-			for (BUN i = 0; i < ncand; i++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,	\
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {	\
 				oid x = canditer_next(&ci) - bhseqbase; \
 				TYPE p1 = tb[x];			\
 				if (is_##TYPE##_nil(p1)) {		\
@@ -1876,6 +1865,8 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 					tbn[i] = p1 OP pp2 ? p1 : pp2;	\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed)); \
 		}							\
 	} while (0)
 
@@ -1892,7 +1883,6 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1950,49 +1940,49 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 
 		if (ATOMvarsized(b->ttype)) {
 			if (cmp(p2, nil) == 0) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (cmp(p2, nil) == 0) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		}
 	}
@@ -2040,7 +2030,6 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -2098,9 +2087,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -2114,10 +2101,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -2131,14 +2118,14 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -2152,10 +2139,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -2169,6 +2156,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		}
 	}
@@ -2212,7 +2201,6 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -2270,9 +2258,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1->ttype)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2291,10 +2277,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2313,14 +2299,14 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2339,10 +2325,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2361,6 +2347,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		}
 	}
@@ -2407,7 +2395,6 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -2461,9 +2448,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		BATiter bi = bat_iterator(b);
 
 		if (ATOMvarsized(b->ttype)) {
-			for (BUN i = 0; i < ncand; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -2475,12 +2460,12 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			for (BUN i = 0; i < ncand; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -2492,6 +2477,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				memcpy(bcast, p1, width);
 				bcast += width;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 		}
 	}
 	}
@@ -2541,7 +2528,6 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	oid bhseqbase = b->hseqbase;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -2600,49 +2586,49 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 
 		if (ATOMvarsized(b->ttype)) {
 			if (cmp(p2, nil) == 0) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (cmp(p2, nil) == 0) {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			} else {
-				for (BUN i = 0; i < ncand; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+				TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			}
 		}
 	}
@@ -2695,7 +2681,6 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -2703,8 +2688,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -2719,9 +2703,9 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -2736,6 +2720,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -2753,7 +2738,6 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -2761,8 +2745,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -2779,9 +2762,9 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] + rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -2798,6 +2781,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] + rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -4247,7 +4231,6 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	BATiter b1i, b2i;
 	oid candoff1, candoff2;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -4263,9 +4246,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	s = GDKmalloc(slen);
 	if (s == NULL)
 		return BUN_NONE;
-	for (BUN i = 0; i < ncand; i++) {
-		GDK_CHECK_TIMEOUT(timeoffset, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+	TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
@@ -4291,6 +4272,8 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 				goto bunins_failed;
 		}
 	}
+	TIMEOUT_CHECK(timeoffset,
+		      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	GDKfree(s);
 	bn->theap->dirty = true;
 	return nils;
@@ -4595,7 +4578,6 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -4603,8 +4585,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -4619,9 +4600,9 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -4636,6 +4617,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -4653,7 +4635,6 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -4661,8 +4642,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -4679,9 +4659,9 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -4698,6 +4678,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -6356,7 +6337,6 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -6364,8 +6344,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -6381,9 +6360,9 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -6399,6 +6378,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -6416,7 +6396,6 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -6424,8 +6403,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -6443,9 +6421,9 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] * rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -6463,6 +6441,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] * rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -6483,7 +6462,6 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -6491,8 +6469,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -6507,9 +6484,9 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -6524,6 +6501,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
 					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -6542,7 +6520,6 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -6550,8 +6527,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -6566,9 +6542,9 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -6583,6 +6559,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
 					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -6601,7 +6578,6 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -6609,8 +6585,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -6629,9 +6604,9 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -6650,6 +6625,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -6678,7 +6654,6 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -6686,8 +6661,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -6707,9 +6681,9 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -6729,6 +6703,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				dst[k] = (TYPE3) rounddbl(m);		\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -8821,7 +8796,6 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -8829,8 +8803,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -8853,9 +8826,9 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -8878,6 +8851,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -8894,7 +8868,6 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -8902,8 +8875,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -8932,9 +8904,9 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -8963,6 +8935,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -8977,7 +8950,6 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -8985,8 +8957,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -9015,9 +8986,9 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -9046,6 +9017,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -11157,7 +11129,6 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -11165,8 +11136,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -11183,9 +11153,9 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -11202,6 +11172,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -11218,7 +11189,6 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -11226,8 +11196,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -11245,9 +11214,9 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (BUN k = 0; k < ncand; k++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -11265,6 +11234,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -12584,7 +12554,6 @@ xor_typeswitchloop(const void *lft, bool incr1,
 	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -12802,7 +12771,6 @@ or_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -12818,8 +12786,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			for (k = 0; k < ncand; k++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -12829,6 +12796,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 				((bit *) dst)[k] = or3(v1, v2);
 				nils += is_bit_nil(((bit *) dst)[k]);
 			}
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		} else {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, OR);
@@ -13038,7 +13006,6 @@ and_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -13049,8 +13016,7 @@ and_typeswitchloop(const void *lft, bool incr1,
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			for (k = 0; k < ncand; k++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -13060,6 +13026,7 @@ and_typeswitchloop(const void *lft, bool incr1,
 				((bit *) dst)[k] = and3(v1, v2);
 				nils += is_bit_nil(((bit *) dst)[k]);
 			}
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		} else {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
@@ -13283,7 +13250,6 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -13634,7 +13600,6 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	BUN i, j, k, ncand = ci1->ncand;
 	BUN nils = 0;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -14198,9 +14163,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
 		i = j = k = 0;						\
-		for (l = 0; l < ncand; l++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_LOOP_IDX(l, ncand, timeoffset) {		\
 			if (incr1)					\
 				i = canditer_next(ci) - seqbase1;	\
 			if (incr2)					\
@@ -14213,6 +14176,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 					 TYPE);				\
 			nils += is_bit_nil(dst[l]);			\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 static BAT *
@@ -14234,7 +14199,6 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -14307,9 +14271,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 		}
 		nil = ATOMnilptr(tp);
 		i = j = k = 0;
-		for (l = 0; l < ncand; l++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_LOOP_IDX(l, ncand, timeoffset) {
 			if (incr1)
 				i = canditer_next(ci) - seqbase1;
 			if (incr2)
@@ -14329,6 +14291,8 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 			dst[l] = BETWEEN(p1, p2, p3, any);
 			nils += is_bit_nil(dst[l]);
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
 
@@ -14617,9 +14581,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
-		for (i = 0; i < cnt; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
 			if (src[i] && !is_bit_nil(src[i])) {		\
 				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
 			} else {					\
@@ -14628,23 +14590,25 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			k += incr1;					\
 			l += incr2;					\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
-#define IFTHENELSELOOP_msk(TYPE)				\
-	do {							\
-		for (i = 0; i < cnt; i++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,		\
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-			if (n == 32) {				\
-				n = 0;				\
-				mask = src[i / 32];		\
-			}					\
-			((TYPE *) dst)[i] = mask & (1U << n) ?	\
-				((TYPE *) col1)[k] :		\
-				((TYPE *) col2)[l];		\
-			k += incr1;				\
-			l += incr2;				\
-			n++;					\
-		}						\
+#define IFTHENELSELOOP_msk(TYPE)					\
+	do {								\
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+			if (n == 32) {					\
+				n = 0;					\
+				mask = src[i / 32];			\
+			}						\
+			((TYPE *) dst)[i] = mask & (1U << n) ?		\
+				((TYPE *) col1)[k] :			\
+				((TYPE *) col2)[l];			\
+			k += incr1;					\
+			l += incr2;					\
+			n++;						\
+		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 static BAT *
@@ -14661,7 +14625,6 @@ BATcalcifthenelse_intern(BAT *b,
 	const void *p;
 	BUN cnt = b->batCount;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -14690,9 +14653,7 @@ BATcalcifthenelse_intern(BAT *b,
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			const uint32_t *src = Tloc(b, 0);
 			BUN n = cnt / 32;
-			for (i = 0; i <= n; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_LOOP_IDX(i, n + 1, timeoffset) {
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
 				for (BUN j = 0; j < rem; j++) {
@@ -14715,11 +14676,11 @@ BATcalcifthenelse_intern(BAT *b,
 					l += incr2;
 				}
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		} else {
 			const bit *src = Tloc(b, 0);
-			for (i = 0; i < cnt; i++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter,
-						GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 				if (src[i] && !is_bit_nil(src[i])) {
 					if (heap1)
 						p = heap1 + VarHeapVal(col1, k, width1);
@@ -14738,6 +14699,8 @@ BATcalcifthenelse_intern(BAT *b,
 				k += incr1;
 				l += incr2;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 	} else {
 		assert(heap1 == NULL);
@@ -14747,9 +14710,7 @@ BATcalcifthenelse_intern(BAT *b,
 			uint32_t mask = 0;
 			BUN n = 32;
 			if (ATOMtype(tpe) == TYPE_oid) {
-				for (i = 0; i < cnt; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 					if (n == 32) {
 						n = 0;
 						mask = src[i / 32];
@@ -14763,6 +14724,8 @@ BATcalcifthenelse_intern(BAT *b,
 					seq2 += incr2;
 					n++;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else if (ATOMstorage(tpe) == TYPE_msk) {
 				uint32_t v1, v2;
 				if (incr1) {
@@ -14776,9 +14739,7 @@ BATcalcifthenelse_intern(BAT *b,
 					v2 = * (msk *) col2 ? ~0U : 0U;
 				}
 				n = (cnt + 31) / 32;
-				for (i = 0; i < n; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_LOOP_IDX(i, n, timeoffset) {
 					if (incr1)
 						v1 = ((uint32_t *) col1)[i];
 					if (incr2)
@@ -14786,6 +14747,8 @@ BATcalcifthenelse_intern(BAT *b,
 					((uint32_t *) dst)[i] = (src[i] & v1)
 						| (~src[i] & v2);
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else {
 				switch (bn->twidth) {
 				case 1:
@@ -14808,9 +14771,7 @@ BATcalcifthenelse_intern(BAT *b,
 #endif
 					break;
 				default:
-					for (i = 0; i < cnt; i++) {
-						GDK_CHECK_TIMEOUT(timeoffset, counter,
-								GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 						if (n == 32) {
 							n = 0;
 							mask = src[i / 32];
@@ -14825,14 +14786,14 @@ BATcalcifthenelse_intern(BAT *b,
 						l += incr2;
 						n++;
 					}
+					TIMEOUT_CHECK(timeoffset,
+						      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				}
 			}
 		} else {
 			const bit *src = Tloc(b, 0);
 			if (ATOMtype(tpe) == TYPE_oid) {
-				for (i = 0; i < cnt; i++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 					if (src[i] && !is_bit_nil(src[i])) {
 						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
 					} else {
@@ -14843,6 +14804,8 @@ BATcalcifthenelse_intern(BAT *b,
 					seq1 += incr1;
 					seq2 += incr2;
 				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			} else if (ATOMstorage(tpe) == TYPE_msk) {
 				uint32_t v1, v2;
 				uint32_t *d = dst;
@@ -14857,9 +14820,22 @@ BATcalcifthenelse_intern(BAT *b,
 					v2 = * (msk *) col2 ? ~0U : 0U;
 				}
 				i = 0;
-				while (i < cnt) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter,
-							GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_LOOP(cnt / 32, timeoffset) {
+					uint32_t mask = 0;
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i/32];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i/32];
+					for (int n = 0; n < 32; n++) {
+						mask |= (uint32_t) (src[i] != 0) << n;
+					}
+					*d++ = (mask & v1) | (~mask & v2);
+					i += 32;
+				}
+				TIMEOUT_CHECK(timeoffset,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				/* do the last word */
+				if (i < cnt) {
 					uint32_t mask = 0;
 					if (incr1)
 						v1 = ((uint32_t *) col1)[i/32];
@@ -14894,9 +14870,7 @@ BATcalcifthenelse_intern(BAT *b,
 #endif
 					break;
 				default:
-					for (i = 0; i < cnt; i++) {
-						GDK_CHECK_TIMEOUT(timeoffset, counter,
-								GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 						if (src[i] && !is_bit_nil(src[i])) {
 							p = ((const char *) col1) + k * width1;
 						} else {
@@ -14907,6 +14881,8 @@ BATcalcifthenelse_intern(BAT *b,
 						k += incr1;
 						l += incr2;
 					}
+					TIMEOUT_CHECK(timeoffset,
+						      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				}
 			}
 		}
@@ -15142,7 +15118,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	TYPE1 v;							\
 	oid x;								\
 	const TYPE1 div = (TYPE1) scales[scale1];			\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15152,8 +15127,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1) {						\
-			for (i = 0; i < ncand; i++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -15162,6 +15136,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				} else					\
 					dst[i] = (TYPE2) v;		\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
 			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
@@ -15174,8 +15149,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15184,6 +15158,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			} else						\
 				dst[i] = (TYPE2) v / div;		\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -15216,7 +15191,6 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 {									\
 	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15225,8 +15199,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15241,9 +15214,9 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15258,6 +15231,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -15270,7 +15244,6 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 {									\
 	BUN i, nils = 0, ncand = ci->ncand;				\
 	oid x;								\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15279,8 +15252,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15296,9 +15268,9 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -15314,6 +15286,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -15349,7 +15322,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	const TYPE2 min = GDK_##TYPE2##_min / mul;			\
 	const TYPE2 max = GDK_##TYPE2##_max / mul;			\
 	const TYPE2 prec = (TYPE2) scales[precision] / mul;		\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15362,8 +15334,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	*reduce = div > 1;						\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1 && mul == 1) {				\
-			for (i = 0; i < ncand; i++) {			\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -15381,6 +15352,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 					dst[i] = (TYPE2) v;		\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else if (div == 1) {					\
 			for (i = 0; i < ncand; i++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
@@ -15425,8 +15397,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		}							\
 	} else {							\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15447,6 +15418,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
@@ -15468,7 +15440,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	const TYPE2 min = GDK_##TYPE2##_min;				\
 	const TYPE2 max = GDK_##TYPE2##_max;				\
 	const TYPE2 prec = (TYPE2) scales[precision];			\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15477,8 +15448,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15499,9 +15469,9 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
-		for (i = 0; i < ncand; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -15522,48 +15492,48 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }
 
-#define convert2bit_impl(TYPE)					\
-static BUN							\
-convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,	\
-		     struct canditer *restrict ci,		\
-		     oid candoff, bool *reduce)			\
-{								\
-	BUN i, nils = 0, ncand = ci->ncand;			\
-	oid x;							\
-	size_t counter = 0;						\
+#define convert2bit_impl(TYPE)						\
+static BUN								\
+convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
+		     struct canditer *restrict ci,			\
+		     oid candoff, bool *reduce)				\
+{									\
+	BUN i, nils = 0, ncand = ci->ncand;				\
+	oid x;								\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
 	}								\
-								\
-	*reduce = true;						\
-	if (ci->tpe == cand_dense) {				\
-		for (i = 0; i < ncand; i++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
-			x = canditer_next_dense(ci) - candoff;	\
-			if (is_##TYPE##_nil(src[x])) {		\
-				dst[i] = bit_nil;		\
-				nils++;				\
-			} else					\
-				dst[i] = (bit) (src[x] != 0);	\
-		}						\
-	} else {						\
-		for (i = 0; i < ncand; i++) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
-			x = canditer_next(ci) - candoff;	\
-			if (is_##TYPE##_nil(src[x])) {		\
-				dst[i] = bit_nil;		\
-				nils++;				\
-			} else					\
-				dst[i] = (bit) (src[x] != 0);	\
-		}						\
-	}							\
-	return nils;						\
+									\
+	*reduce = true;							\
+	if (ci->tpe == cand_dense) {					\
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
+			x = canditer_next_dense(ci) - candoff;		\
+			if (is_##TYPE##_nil(src[x])) {			\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (bit) (src[x] != 0);		\
+		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+	} else {							\
+		TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {		\
+			x = canditer_next(ci) - candoff;		\
+			if (is_##TYPE##_nil(src[x])) {			\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (bit) (src[x] != 0);		\
+		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+	}								\
+	return nils;							\
 }
 
 #define convertimpl_msk(TYPE)						\
@@ -15576,7 +15546,6 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 	BUN i, j, k;							\
 	uint32_t mask;							\
 	oid x;								\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15586,8 +15555,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 	*reduce = true;							\
 	k = 0;								\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < cnt; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
@@ -15596,6 +15564,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			}						\
 			dst[i] = mask;					\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 		cnt = ci->ncand % 32;					\
 		if (cnt > 0) {						\
 			mask = 0;					\
@@ -15607,8 +15576,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			dst[i] = mask;					\
 		}							\
 	} else {							\
-		for (i = 0; i < cnt; i++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next(ci) - candoff;	\
@@ -15617,6 +15585,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			}						\
 			dst[i] = mask;					\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 		cnt = ci->ncand % 32;					\
 		if (cnt > 0) {						\
 			mask = 0;					\
@@ -15638,7 +15607,6 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 {									\
 	BUN nils = 0;							\
 	BUN k, ncand = ci->ncand;					\
-	size_t counter = 0;						\
 	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (qry_ctx != NULL) {						\
@@ -15655,7 +15623,6 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 		BUN j;							\
 		k = 0;							\
 		for (; i < cnt; i++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			mask = src[i];					\
 			for (j = first; j < 32; j++) {			\
 				dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
@@ -15671,11 +15638,11 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 			}						\
 		}							\
 	} else {							\
-		for (k = 0; k < ncand; k++) {				\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {		\
 			oid x = canditer_next(ci) - candoff;		\
 			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
 	return nils;							\
 }

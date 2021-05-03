@@ -457,7 +457,6 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(rci->tpe == cand_dense);
 	assert(BATcount(r) > 0);
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -712,9 +711,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r2->tnil = false;
 	r2->tnonil = true;
 	if (complex_cand(l)) {
-		for (i = 0; i < lci->ncand; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					TIMEOUT_HANDLER(GDK_FAIL));
+		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
 
 			o = BUNtoid(l, c - l->hseqbase);
@@ -727,10 +724,10 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->tnonil = false;
 			}
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      TIMEOUT_HANDLER(GDK_FAIL));
 	} else {
-		for (i = 0; i < lci->ncand; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					TIMEOUT_HANDLER(GDK_FAIL));
+		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
 
 			o = lvals[c - l->hseqbase];
@@ -743,6 +740,8 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->tnonil = false;
 			}
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      TIMEOUT_HANDLER(GDK_FAIL));
 	}
 	r1->tsorted = true;
 	r1->trevsorted = BATcount(r1) <= 1;
@@ -2494,7 +2493,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			hsh = r->thash;	/* re-initialize inside lock */	\
 		}							\
 		while (lci->next < lci->ncand) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
 			nr = 0;						\
@@ -3324,7 +3323,6 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -3387,8 +3385,6 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	vl = &lval;
 	vr = &rval;
 	for (BUN li = 0; li < lci.ncand; li++) {
-		GDK_CHECK_TIMEOUT(timeoffset, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		lo = canditer_next(&lci);
 		if (lvals)
 			vl = VALUE(l, lo - l->hseqbase);
@@ -3397,7 +3393,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		nr = 0;
 		if (cmp(vl, nil) != 0) {
 			canditer_reset(&rci);
-			for (BUN ri = 0; ri < rci.ncand; ri++) {
+			TIMEOUT_LOOP(rci.ncand, timeoffset) {
 				ro = canditer_next(&rci);
 				if (rvals)
 					vr = VALUE(r, ro - r->hseqbase);
@@ -3436,6 +3432,8 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 				lastr = ro;
 				nr++;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 		if (nr > 1) {
 			r1->tkey = false;

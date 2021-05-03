@@ -25,7 +25,6 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -37,8 +36,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		assert(incr1);
 		assert(tp2 == TYPE_oid || incr2); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
-		for (k = 0; k < ncand; k++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
 			TPE res;
 			i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -68,6 +66,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		break;
 	}
 	case TYPE_bit:
@@ -638,8 +637,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	case TYPE_oid:
 		if (tp2 == TYPE_void) {
 			oid v = * (const oid *) rgt;
-			for (k = 0; k < ncand; k++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				j = canditer_next(ci2) - candoff2;
@@ -669,6 +667,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 					}
 				}
 			}
+			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		} else if (tp2 == TYPE_oid) {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(oid, oid, TPE, OP);
@@ -685,8 +684,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
-		for (k = 0; k < ncand; k++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -709,6 +707,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				dst[k] = OP(x, 0);
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		break;
 	default:
 		if (tp1 != tp2 ||
@@ -737,8 +736,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		if (atomcmp == ATOMcompare(TYPE_dbl))
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
-		for (k = 0; k < ncand; k++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -768,6 +766,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				dst[k] = OP(x, 0);
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		break;
 	}
 
