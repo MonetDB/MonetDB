@@ -299,6 +299,9 @@ class TestCaseResult(object):
         if len(data) == 0 and len(self.data) > 0:
             msg = 'expected empty result!'
             self.fail(msg, data=self.data)
+        if len(data) > 0 and len(self.data) == 0:
+            msg = 'expected result but received empty!'
+            self.fail(msg, data=self.data)
 
         data = list(map(mapfn, data))
         if index is None:
