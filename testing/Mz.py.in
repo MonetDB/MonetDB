@@ -1164,30 +1164,12 @@ def RunTest(env, test, oktests, pSrvr):
                 links.append(os.path.join(TSTTRGDIR, TST + EXT))
 
         TIMEOUT = int(par['TIMEOUT'] * test.get('timeout', 1))
-        CTIMEOUT = 0
-        if   CALL in ["other", "python", "ruby"]:
-            if TIMEOUT > 0:
-                CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-        elif CALL == "sqlXs":
-            test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
-            d = listdir(os.getcwd())
-            for f in d:
-                if test.match(f):
-                    CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "sql"]:
-            CTIMEOUT = CTIMEOUT + TIMEOUT
-        if  CTIMEOUT < TIMEOUT:
-            CTIMEOUT = TIMEOUT
-        STIMEOUT = CTIMEOUT
-        if  SERVER in ["MAL", "SQL"] and TIMEOUT > 0:
-            STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-
 
         TestOutFile = TST+".test.out"
         TestErrFile = TST+".test.err"
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
         exit_code = transform_str_return_code(tres)
 
         if CALL == 'other':
@@ -1678,7 +1660,7 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, PSRVR) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, PSRVR) :
 
     TSTDB = env['TSTDB']
     exe = env['exe']
@@ -1792,10 +1774,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         if SERVER not in ["MAL", "SQL"] or pSrvr.started:
             if  CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST]
-                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST]
-                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 TSTs = []
                 if CALL == "mal":
@@ -1831,7 +1813,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                                     hostname='localhost',
                                     port=int(env['MAPIPORT']),
                                     database=TSTDB,
-                                    language=lang)
+                                    language=lang,
+                                    timeout=TIMEOUT)
                     except:
                         returncode = 'error'
                     else:
@@ -1973,7 +1956,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, length, nomito) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsockets, length, nomito) #
 
 def Check(command, input) :
     global setpgrp

@@ -2125,23 +2125,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     TIMEOUT = int(TIMEOUT * TOf)
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
-        CTIMEOUT = 0
-        if   CALL in ["other", "python", "ruby"]:
-            if TIMEOUT > 0:
-                CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-        elif CALL == "sqlXs":
-            test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
-            d = listdir(os.getcwd())
-            for f in d:
-                if test.match(f):
-                    CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "sql"]:
-            CTIMEOUT = CTIMEOUT + TIMEOUT
-        if  CTIMEOUT < TIMEOUT:
-            CTIMEOUT = TIMEOUT
-        STIMEOUT = CTIMEOUT
-        if  SERVER in ["MAL", "SQL"] and TIMEOUT > 0:
-            STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
 
         ME = ""
 
@@ -2153,7 +2136,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -2776,15 +2759,15 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
         STDOUT.write(".")
     elif verbose:
-        STDOUT.write('%s%s  (<=%d,%d,%d) ...' %
+        STDOUT.write('%s%s  (<=%d) ...' %
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
-                      TIMEOUT, CTIMEOUT, STIMEOUT))
+                      TIMEOUT))
     else:
         if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
@@ -2798,7 +2781,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
         if isatty and TIMEOUT > 0:
-            s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
+            s = '(<=%d)' % TIMEOUT
             STDOUT.write(s + '\b' * len(s))
 
     try:
@@ -2918,10 +2901,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         if SERVER not in ["MAL", "SQL"] or pSrvr.started:
             if   CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST]
-                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST]
-                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 TSTs = []
                 if CALL == "mal":
@@ -2957,7 +2940,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                                     hostname='localhost',
                                     port=int(env['MAPIPORT']),
                                     database=TSTDB,
-                                    language=lang)
+                                    language=lang,
+                                    timeout=TIMEOUT)
                     except KeyboardInterrupt:
                         raise
                     except:
@@ -3104,7 +3088,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
 def Check(command, input) :
     global setpgrp
