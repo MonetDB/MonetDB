@@ -1896,6 +1896,8 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	mvc *sql = query->sql;
 	sql_rel *sq = NULL;
 
+	if (is_psm_call(f) || is_sql_merge(f))
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: subqueries not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
 	if (rel)
 		query_push_outer(query, rel, f);
 	sq = rel_subquery(query, NULL, sc->data.sym, ek);
