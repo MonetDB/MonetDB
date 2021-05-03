@@ -140,31 +140,31 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 	if (start == o->start) {
 		n->start = o->start;
 		n->end = n->start + cnt;
-		o->start = n->end;
 		n->next = o;
 		if (segs->h == o)
 			segs->h = n;
 		if (p)
 			p->next = n;
+		o->start = n->end;
 		return n;
 	} else if (start+cnt == o->end) {
 		n->start = o->end - cnt;
 		n->end = o->end;
-		o->end = n->start;
 		n->next = o->next;
 		o->next = n;
 		if (segs->t == o)
 			segs->t = n;
+		o->end = n->start;
 		return n;
 	}
 	/* 3 way split */
 	n->start = start;
 	n->end = o->end;
-	o->end = n->start;
 	n->next = o->next;
 	o->next = n;
 	if (segs->t == o)
 		segs->t = n;
+	o->end = n->start;
 
 	segment *oo = o;
 	o = n;
@@ -177,11 +177,11 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 	n->deleted = oo->deleted;
 	n->start = start+cnt;
 	n->end = o->end;
-	o->end = n->start;
 	n->next = o->next;
 	o->next = n;
 	if (segs->t == o)
 		segs->t = n;
+	o->end = n->start;
 	return o;
 }
 
@@ -517,7 +517,7 @@ segs_end( segments *segs, sql_trans *tr)
 	segment *s = segs->h, *l = NULL;
 
 	for(;s; s = s->next) {
-		if (VALID_4_READ(s->ts, tr))
+		if (VALID_4_READ(s->ts, tr) || (s->deleted && s->oldts && s->ts > TRANSACTION_ID_BASE && s->oldts < tr->ts))
 				l = s;
 	}
 	if (!l)
@@ -2301,8 +2301,12 @@ clear_del(sql_trans *tr, sql_table *t)
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
 	if (!isTempTable(t)) {
-		if (delete_range(tr, bat, 0, bat->segs->t->end) == LOG_ERR)
+		lock_table(tr->store, t->base.id);
+		if (delete_range(tr, bat, 0, bat->segs->t->end) == LOG_ERR) {
+			unlock_table(tr->store, t->base.id);
 			return LOG_ERR;
+		}
+		unlock_table(tr->store, t->base.id);
 	}
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
