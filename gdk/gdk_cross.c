@@ -27,7 +27,6 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 
 	cnt1 = canditer_init(&ci1, l, sl);
 	cnt2 = canditer_init(&ci2, r, sr);
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -57,9 +56,9 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		bn1->tnonil = true;
 		p = (oid *) Tloc(bn1, 0);
 		for (i = 0; i < cnt1; i++) {
+			GDK_CHECK_TIMEOUT_BODY(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
 			oid x = canditer_next(&ci1);
 			for (j = 0; j < cnt2; j++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(GDK_FAIL));
 				*p++ = x;
 			}
 		}
@@ -73,10 +72,9 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 			bn2->tnil = false;
 			bn2->tnonil = true;
 			p = (oid *) Tloc(bn2, 0);
-			counter = 0;
 			for (i = 0; i < cnt1; i++) {
+				GDK_CHECK_TIMEOUT_BODY(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
 				for (j = 0; j < cnt2; j++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(GDK_FAIL));
 					*p++ = canditer_next(&ci2);
 				}
 				canditer_reset(&ci2);
