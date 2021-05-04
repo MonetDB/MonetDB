@@ -400,8 +400,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	do {								\
 		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
-			for (p = 0; p < ci->ncand; p++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {	\
 				o = canditer_next(ci);			\
 				v = src[o-hseq];			\
 				if (TEST) {				\
@@ -413,8 +412,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}					\
 			}						\
 		} else {						\
-			for (p = 0; p < ci->ncand; p++) {		\
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_LOOP(ci->ncand, timeoffset) {		\
 				o = canditer_next(ci);			\
 				v = src[o-hseq];			\
 				assert(cnt < BATcapacity(bn));		\
@@ -422,6 +420,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				cnt += (TEST) != 0;			\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} while (false)
 
 /* argument list for type-specific core scan select function call */
@@ -574,7 +573,6 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	(void) maximum;
 	(void) use_imprints;
 	(void) lnil;
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -584,8 +582,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (equi) {
 		*algo = "select: fullscan equi";
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((*cmp)(tl, v) == 0) {
@@ -597,8 +594,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((*cmp)(tl, v) == 0) {
@@ -613,8 +609,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} else if (anti) {
 		*algo = "select: fullscan anti";
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
@@ -632,8 +627,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
@@ -654,7 +648,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} else {
 		*algo = "select: fullscan range";
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
@@ -672,7 +666,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
@@ -691,7 +685,11 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	}
+	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	return cnt;
+  bailout:
+	BBPreclaim(bn);
+	return BUN_NONE;
 }
 
 static BUN
@@ -704,7 +702,6 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	var_t pos;
 	BUN p;
 	oid o;
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -726,8 +723,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -738,8 +734,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -756,8 +751,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -768,8 +762,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -786,8 +779,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -798,8 +790,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -816,8 +807,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
 		if (ci->tpe == cand_dense) {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -828,8 +818,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		} else {
-			for (p = 0; p < ci->ncand; p++) {
-			    GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
 					buninsfix(bn, dst, cnt, o,
@@ -843,7 +832,11 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 		break;
 	}
 	}
+	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	return cnt;
+  bailout:
+	BBPreclaim(bn);
+	return BUN_NONE;
 }
 
 /* scan select type switch */
@@ -1943,7 +1936,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	bool use_orderidx = false;
 	const char *algo = NULL;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -2009,9 +2001,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	if (!anti && !symmetric && (BATordered(l) || BATordered_rev(l) || use_orderidx)) {
 		/* left column is sorted, use binary search */
 		sorted = 2;
-		for (BUN i = 0; i < rci->ncand; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_LOOP(rci->ncand, timeoffset) {
 			BUN low, high;
 
 			ro = canditer_next(rci);
@@ -2123,6 +2113,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if (!anti && !symmetric &&
@@ -2144,9 +2135,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 
 		sorted = 2;
 		cnt = 0;
-		for (BUN i = 0; i < rci->ncand; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_LOOP_IDX_DECL(i, rci->ncand, timeoffset) {
 			maxsize = cnt + (rci->ncand - i) * lci->ncand;
 			ro = canditer_next(rci);
 			if (rlvals) {
@@ -2408,6 +2397,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				cnt = ncnt;
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	} else {
 		/* nested loop implementation */
 		const void *vl;
@@ -2418,9 +2408,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		sorted = 1;
 		lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, 0);
 		vl = &lval;
-		for (BUN i = 0; i < lci->ncand; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid lo;
 
 			lo = canditer_next(lci);
@@ -2470,6 +2458,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	}
