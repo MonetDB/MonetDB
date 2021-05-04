@@ -370,7 +370,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					TIMEOUT_HANDLER(GDK_FAIL));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -389,7 +389,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					TIMEOUT_HANDLER(GDK_FAIL));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -420,6 +420,11 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 #if SIZEOF_OID == SIZEOF_INT
@@ -725,7 +730,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 		}
 		TIMEOUT_CHECK(timeoffset,
-			      TIMEOUT_HANDLER(GDK_FAIL));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	} else {
 		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
@@ -741,7 +746,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 		}
 		TIMEOUT_CHECK(timeoffset,
-			      TIMEOUT_HANDLER(GDK_FAIL));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	}
 	r1->tsorted = true;
 	r1->trevsorted = BATcount(r1) <= 1;
@@ -776,6 +781,11 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 /* Implementation of mergejoin (see below) for the special case that

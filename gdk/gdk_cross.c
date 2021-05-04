@@ -56,7 +56,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		bn1->tnonil = true;
 		p = (oid *) Tloc(bn1, 0);
 		for (i = 0; i < cnt1; i++) {
-			GDK_CHECK_TIMEOUT_BODY(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+			GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			oid x = canditer_next(&ci1);
 			for (j = 0; j < cnt2; j++) {
 				*p++ = x;
@@ -73,7 +73,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 			bn2->tnonil = true;
 			p = (oid *) Tloc(bn2, 0);
 			for (i = 0; i < cnt1; i++) {
-				GDK_CHECK_TIMEOUT_BODY(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+				GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				for (j = 0; j < cnt2; j++) {
 					*p++ = canditer_next(&ci2);
 				}
@@ -90,4 +90,9 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 	else
 		TRC_DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT ")\n", ALGOBATPAR(bn1));
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(bn1);
+	BBPreclaim(bn2);
+	return GDK_FAIL;
 }
