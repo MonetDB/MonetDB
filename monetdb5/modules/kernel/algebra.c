@@ -128,15 +128,17 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 static str
 ALGminany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *sid)
 {
-	BAT *b;
-	BAT *s = NULL;
+	BAT *b = NULL, *s = NULL;
 	ptr p;
 	str msg = MAL_SUCCEED;
 
 	if (result == NULL ||
 		(b = BATdescriptor(*bid)) == NULL ||
-		(sid == NULL && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "algebra.min",
@@ -144,7 +146,7 @@ ALGminany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *si
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin_skipnil(NULL, b, NULL, *skipnil);
+			* (ptr *) result = p = BATmin_skipnil(NULL, b, s, *skipnil);
 		} else {
 			p = BATmin_skipnil(result, b, s, *skipnil);
 			if ( p != result )
@@ -154,6 +156,8 @@ ALGminany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *si
 			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -178,15 +182,17 @@ ALGminany2(ptr result, const bat *bid, const bat *sid)
 static str
 ALGmaxany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *sid)
 {
-	BAT *b;
-	BAT *s = NULL;
+	BAT *b = NULL, *s = NULL;
 	ptr p;
 	str msg = MAL_SUCCEED;
 
 	if (result == NULL ||
 		(b = BATdescriptor(*bid)) == NULL ||
-		(sid == NULL && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "algebra.max",
@@ -196,7 +202,7 @@ ALGmaxany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *si
 		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmax_skipnil(NULL, b, s, *skipnil);
 		} else {
-			p = BATmax_skipnil(result, b, NULL, *skipnil);
+			p = BATmax_skipnil(result, b, s, *skipnil);
 			if ( p != result )
 				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
@@ -204,6 +210,8 @@ ALGmaxany2_skipnil(ptr result, const bat *bid, const bit *skipnil, const bat *si
 			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
