@@ -812,11 +812,7 @@ BATprojectchain(BAT **bats)
 				o -= ba[i].hlo;
 				o = ba[i].ci.s ? canditer_idx(&ba[i].ci, o) : ba[i].t[o];
 			}
-			if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
-				goto bunins_failed;
-			if (ATOMputFIX(bn->ttype, d, &o) != GDK_SUCCEED)
-				goto bunins_failed;
-			d++;
+			*d++ = o;
 		}
 	} else if (!ATOMvarsized(tpe)) {
 		const void *v;

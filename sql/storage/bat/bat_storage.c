@@ -2370,6 +2370,7 @@ tr_handle_snapshot( sql_trans *tr, sql_delta *bat)
 		bat->bid = bat->ibid;
 		bat->cnt = bat->ibase = BATcount(ins);
 		bat->ibid = e_bat(ins->ttype);
+		bat->cleared = 0;
 		BATmsync(ins);
 	}
 	bat_destroy(ins);
@@ -2388,6 +2389,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 
 	/* for cleared tables the bid is reset */
 	if (cbat->bid == 0) {
+		assert(cbat->cleared);
 		cbat->bid = obat->bid;
 		if (cbat->bid)
 			temp_dup(cbat->bid);
@@ -2406,7 +2408,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		if(!cur)
 			return LOG_ERR;
 	}
-	if (!obat->bid && tr != gtrans) {
+	if ((!obat->bid || !cbat->bid) && tr != gtrans) {
 		if (obat->next)
 			destroy_bat(obat->next);
 		destroy_delta(obat);
@@ -2418,6 +2420,16 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		cbat->cleared = 0;
 		cbat->name = NULL;
 		cbat->cached = NULL;
+		if (!obat->bid) {
+			cur = temp_descriptor(obat->ibid);
+			if (BATcount(cur) > SNAPSHOT_MINSIZE) {
+				obat->bid = obat->ibid;
+				obat->cnt = obat->ibase = BATcount(cur);
+				obat->ibid = e_bat(cur->ttype);
+				obat->cleared = 0;
+			}
+			bat_destroy(cur);
+		}
 		return ok;
 	}
 	ins = temp_descriptor(cbat->ibid);
