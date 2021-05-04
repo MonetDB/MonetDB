@@ -43,7 +43,7 @@ CREATE TABLE t1(c1 boolean, c2 tinyint)
 statement ok
 INSERT INTO t1(c2) VALUES(6), (2)
 
-statement error
+statement error 40002!ALTER TABLE: NOT NULL constraint violated for column t1.c1
 ALTER TABLE t1 ALTER c1 SET NOT NULL
 
 statement ok
@@ -288,7 +288,7 @@ True
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!types uuid(0,0) and boolean(1,0) are not equal
 select 1 from (values (1),(2),(3)) x(x) where uuid '55a279B4-f52a-835C-C43c-5E0bd20fFbAB'
 
 statement ok
@@ -710,6 +710,73 @@ query T rowsort
 SELECT (SELECT 1 GROUP BY 3) <> ALL(SELECT 2 WHERE FALSE) FROM t1
 ----
 True
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" VARCHAR(64) NOT NULL,"c1" INT NOT NULL,"c3" REAL NOT NULL,"c5" REAL)
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH NOT NULL,"c3" VARCHAR(55) NOT NULL,"c4" DOUBLE NOT NULL, CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement error MERGE: subqueries not supported inside MERGE conditions
+merge into t2 using (select * from t1) as t1 on exists (select 1) when matched then delete
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" VARCHAR(64) NOT NULL,"c1" INT NOT NULL,"c3" REAL NOT NULL,"c5" REAL)
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH NOT NULL,"c3" VARCHAR(55) NOT NULL,"c4" DOUBLE NOT NULL, CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement error MERGE: set operations not supported inside MERGE conditions
+merge into t2 using (select * from t1) as t1 on ((select 1) except (select 2)) when matched then delete
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t0(c0 boolean, c1 int, c3 boolean)
+
+statement ok rowcount 1
+INSERT INTO t0(c1, c0) VALUES(3, false)
+
+statement ok rowcount 1
+INSERT INTO t0(c3, c1) VALUES(TRUE, 9)
+
+query T rowsort
+SELECT 'a' LIKE ifthenelse(t0.c3, (SELECT 'v' FROM t0 GROUP BY (SELECT 1 FROM t0 HAVING min(least(t0.c0, (SELECT FALSE GROUP BY 3)) AND t0.c3))), 's') FROM t0
+----
+False
+False
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0"("c0" CHARACTER LARGE OBJECT, "c4" INTERVAL DAY)
+
+statement ok
+CREATE TABLE "t2"("c0" CHARACTER LARGE OBJECT)
+
+statement ok rowcount 2
+INSERT INTO "t2" VALUES ('X'), ('')
+
+query I rowsort
+select 1 from t0 where t0.c4 <= all(select interval '4' day) and t0.c0 <> all(select t2.c0 from t2)
+----
 
 statement ok
 ROLLBACK

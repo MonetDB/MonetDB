@@ -34,10 +34,11 @@ OPERATION
 =========
 
 When the build-time configuration did not disable this, a *mserver5*
-process presents the user with server startup information and internal
-exceptions due to errors in commands sent by clients. The architecture
-is setup to handle multiple streams of requests. The first thread
-started represents the server, which only writes to standard output.
+process presents the user with a console prompt. On this prompt, MAL
+commands can be executed. The architecture is setup to handle multiple
+streams of requests. The first thread started represents the server,
+which is the console prompt, reading from standard input and writing to
+standard output.
 
 The server thread started remains in existence until all other threads
 die. The server is stopped by sending it a termination signal (SIGINT,
@@ -170,6 +171,14 @@ multiple instances of this flag are OR-ed together.
 
 **--transactions**
    Equivalent to **--debug=**\ *(TMMASK \| DELTAMASK \| TEMMASK)*.
+
+**--read-password-initialize-and-exit**
+   Read an unencrypted password from standard input and use it to set
+   the password for the **monetdb** administrator user, initialize the
+   database, and exit. If the database was already initialized, the
+   administrator password is not changed. This option is used by
+   *monetdbd*\ (1) when creating a new database with an administrator
+   password and should not be used otherwise.
 
 MSERVER5 PARAMETERS
 ===================

@@ -115,7 +115,7 @@ SELECT bdesc FROM branches WHERE cid = (SELECT cid FROM clients WHERE cname = 'R
 Branch Office (East)
 Branch Office (West)
 
-statement error
+statement error 42000!SELECT: subquery must return only one column
 SELECT bdesc FROM branches WHERE cid = (SELECT cid, cname FROM clients WHERE cname = 'Rabbit Foods Inc')
 
 query T rowsort

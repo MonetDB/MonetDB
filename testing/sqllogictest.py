@@ -232,16 +232,16 @@ class SQLLogic:
                 if expected_err_code or expected_err_msg:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
-                    if expected_err_code and expected_err_msg:
+                    if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
                         result.append(err_code_received + '!' + err_msg_received)
                         if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
                             return result
                     else:
-                        if expected_err_code:
+                        if expected_err_code and err_code_received:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
-                        if expected_err_msg:
+                        if expected_err_msg and err_msg_received:
                             result.append(err_msg_received)
                             if expected_err_msg.lower() == err_msg_received.lower():
                                 return result
