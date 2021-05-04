@@ -1,0 +1,20 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c4" INTEGER)
+
+statement ok rowcount 3
+INSERT INTO "t0" VALUES (-6), (6), (1)
+
+statement ok
+CREATE TABLE "t1" ("c4" DOUBLE PRECISION)
+
+statement ok rowcount 3
+INSERT INTO "t1" VALUES (-0.1), (0.3), (0.9)
+
+statement error GDK reported error: BATsubcross: more than one match
+INSERT INTO t0(c4) VALUES(1), ("epoch_ms"(((SELECT TIME '01:00:00' FROM t0 GROUP BY t0.c4) EXCEPT ALL (SELECT DISTINCT TIME '01:00:00' FROM t1))))
+
+statement ok
+ROLLBACK
