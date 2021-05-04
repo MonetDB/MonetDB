@@ -3187,6 +3187,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *cond = l->h->data;
 		sql_exp *then_exp = l->h->next->data;
 		sql_exp *else_exp = l->h->next->next->data;
+		sql_exp *not_cond, *cond_is_null;
 
 		if (exp_has_rel(then_exp) || exp_has_rel(else_exp)) {
 			bool single = false;
@@ -3197,7 +3198,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			//	)[cond]
 			// 	select(
 			// 		project [else]
-			//	)[not(cond)]
+			//	)[not(cond) or cond is null]
 			//) [ cols ]
 			sql_rel *lsq = NULL, *rsq = NULL, *usq = NULL;
 
@@ -3224,10 +3225,15 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			rsq = rel_project(v->sql->sa, rsq, append(sa_list(v->sql->sa), else_exp));
 			cond = exp_copy(v->sql, cond);
 			exp_set_freevar(v->sql, cond, rsq);
+			not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 0), cmp_equal);
+			cond = exp_copy(v->sql, cond);
+			cond_is_null = exp_compare(v->sql->sa, cond, exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(cond), NULL)), cmp_equal);
+			set_has_no_nil(cond_is_null);
+			set_semantics(cond_is_null);
 			set_processed(rsq);
-			rsq = rel_select(v->sql->sa, rsq, exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 0), cmp_equal));
+			rsq = rel_select(v->sql->sa, rsq, exp_or(v->sql->sa, list_append(new_exp_list(v->sql->sa), not_cond), list_append(new_exp_list(v->sql->sa), cond_is_null), 0));
 			usq = rel_setop(v->sql->sa, lsq, rsq, op_union);
-			rel_setop_set_exps(v->sql, usq,append(sa_list(v->sql->sa), exp_ref(v->sql, e)));
+			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)));
 			if (single)
 				set_single(usq);
 			set_processed(usq);
