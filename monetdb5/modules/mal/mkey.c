@@ -329,6 +329,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define MKEYbulk_rotate_xor_hashloop(TPE) \
 	do { \
+		const lng *restrict h = (const lng *) Tloc(hb, 0); \
 		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) { \
 			for (BUN i = 0; i < n; i++) { \
@@ -355,7 +356,6 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	oid off1, off2;
 	BUN n = 0;
 	lng *restrict r;
-	const lng *restrict h;
 
 	(void) cntxt;
 	(void) mb;
@@ -384,7 +384,6 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 
 	r = (lng *) Tloc(bn, 0);
-	h = (const lng *) Tloc(hb, 0);
 
 	off1 = hb->hseqbase;
 	off2 = b->hseqbase;
@@ -400,7 +399,20 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	case TYPE_flt:
 		MKEYbulk_rotate_xor_hashloop(int);
 		break;
-	case TYPE_lng:
+	case TYPE_lng: { /* hb and b areas may overlap, so for this case the 'restrict' keyword cannot be used */
+		const lng *h = (const lng *) Tloc(hb, 0), *v = (const lng *) Tloc(b, 0);
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+			for (BUN i = 0; i < n; i++) {
+				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ MKEYHASH_lng(v[p2]);
+			}
+		} else {
+			for (BUN i = 0; i < n; i++) {
+				oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+				r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ MKEYHASH_lng(v[p2]);
+			}
+		}
+	} break;
 	case TYPE_dbl:
 		MKEYbulk_rotate_xor_hashloop(lng);
 		break;
@@ -411,6 +423,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 #endif
 	case TYPE_str:
 		if (b->tvheap->hashash) {
+			const lng *restrict h = (const lng *) Tloc(hb, 0);
 			BATiter bi = bat_iterator(b);
 
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -430,6 +443,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 		/* fall through */
 	default: {
+		const lng *restrict h = (const lng *) Tloc(hb, 0);
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
