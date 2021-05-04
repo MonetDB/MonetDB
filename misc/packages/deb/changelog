@@ -1,7 +1,6 @@
 monetdb (11.39.17) unstable; urgency=low
 
   * Rebuilt.
-  * GH#2430: JDBC: support for streams
   * GH#3336: DB files not removed if all rows are deleted, even after restart
   * GH#7104: Monetdbe NTILE function does not produce correct ordering
   * GH#7108: Monetdb crashes on query execution
