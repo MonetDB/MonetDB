@@ -11640,6 +11640,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "clients",	"ripemd160sum",	"command clients.ripemd160sum(X_0:str):str ",	"CLTripemd160sum;",	""	]
 [ "clients",	"setListing",	"pattern clients.setListing(X_0:int):int ",	"CLTsetListing;",	""	]
 [ "clients",	"setPassword",	"pattern clients.setPassword(X_0:str, X_1:str):void ",	"CLTsetPassword;",	""	]
+[ "clients",	"setQryTimeoutMicro",	"pattern clients.setQryTimeoutMicro(X_0:lng):void ",	"CLTqueryTimeoutMicro;",	""	]
 [ "clients",	"setScenario",	"pattern clients.setScenario(X_0:str):str ",	"CLTsetScenario;",	""	]
 [ "clients",	"setmemorylimit",	"pattern clients.setmemorylimit(X_0:int):void ",	"CLTsetmemorylimit;",	""	]
 [ "clients",	"setmemorylimit",	"pattern clients.setmemorylimit(X_0:int, X_1:int):void ",	"CLTsetmemorylimit;",	""	]
