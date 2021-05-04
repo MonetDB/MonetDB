@@ -1349,17 +1349,16 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* The output of this function are 7 columns:
  *  - The sqlid of the column
- *  - A flag indicating if the column's upper table is cleared or not.
- *  - Number of read-only values of the column (inherited from the previous transaction).
+ *  - Number of values of the column.
+ *  - Number of segments, indication of the fragmentation
  *  - Number of inserted rows during the current transaction.
  *  - Number of updated rows during the current transaction.
  *  - Number of deletes of the column's table.
  *  - the number in the transaction chain (.i.e for each savepoint a new transaction is added in the chain)
- *  If the table is cleared, the values RDONLY, and RD_UPD_ID and the number of deletes will be 0.
  */
 
 static str
-mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT *col5, BAT *col6, BAT *col7, sql_column *c, bit cleared, lng deletes)
+mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT *col5, BAT *col6, BAT *col7, sql_column *c, lng segments, lng deletes)
 {
 	int level = 0;
 	sqlstore *store = m->session->tr->store;
@@ -1367,15 +1366,14 @@ mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT 
 	lng inserted = (lng) store->storage_api.count_col(m->session->tr, c, 1);
 	lng all = (lng) store->storage_api.count_col(m->session->tr, c, 0);
 	lng updates = (lng) store->storage_api.count_col(m->session->tr, c, 2);
-	lng readonly = all - inserted;
 
 	if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
 		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (BUNappend(col2, &cleared, false) != GDK_SUCCEED) {
+	if (BUNappend(col2, &segments, false) != GDK_SUCCEED) {
 		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (BUNappend(col3, &readonly, false) != GDK_SUCCEED) {
+	if (BUNappend(col3, &all, false) != GDK_SUCCEED) {
 		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BUNappend(col4, &inserted, false) != GDK_SUCCEED) {
@@ -1418,9 +1416,8 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	node *n;
-	bit cleared;
 	BUN nrows = 0;
-	lng deletes;
+	lng deletes, segments;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1459,7 +1456,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	if ((col2 = COLnew(0, TYPE_bit, nrows, TRANSIENT)) == NULL) {
+	if ((col2 = COLnew(0, TYPE_lng, nrows, TRANSIENT)) == NULL) {
 		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -1486,15 +1483,15 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (nrows) {
 		if (tname) {
-			cleared = 0;//(t->cleared != 0);
 			deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
+			segments = (lng) store->storage_api.count_del(m->session->tr, t, 10);
 			if (cname) {
-				if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, cleared, deletes)) != NULL)
+				if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, segments, deletes)) != NULL)
 					goto cleanup;
 			} else {
 				for (n = ol_first_node(t->columns); n ; n = n->next) {
 					c = (sql_column*) n->data;
-					if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, cleared, deletes)) != NULL)
+					if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, segments, deletes)) != NULL)
 						goto cleanup;
 				}
 			}
@@ -1504,14 +1501,13 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 				t = (sql_table *)b;
 				if (isTable(t)) {
-					cleared = 0;//(t->cleared != 0);
 					deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
+					segments = (lng) store->storage_api.count_del(m->session->tr, t, 10);
 
 					for (node *nn = ol_first_node(t->columns); nn ; nn = nn->next) {
 						c = (sql_column*) nn->data;
 
-						if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7,
-										 c, cleared, deletes)) != NULL)
+						if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, segments, deletes)) != NULL)
 							goto cleanup;
 					}
 				}
@@ -4884,9 +4880,9 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),arg("sequence",str),batarg("start",lng))),
  pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),batarg("sequence",str),batarg("start",lng))),
  pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("start",lng))),
- pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("cleared",bit),batarg("readonly",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
- pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("cleared",bit),batarg("readonly",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
- pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("cleared",bit),batarg("readonly",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),
+ pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
+ pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
+ pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),

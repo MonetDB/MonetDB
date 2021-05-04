@@ -13,6 +13,7 @@ import hashlib
 import re
 import sys
 import argparse
+import os
 
 def is_copyfrom_stmt(stmt:str):
     # TODO fix need stronger regex
@@ -111,7 +112,10 @@ def to_sqllogic_test(query, copy_into_data=None):
         if crs.description:
             data = crs.fetchall()
     except (pymonetdb.Error, ValueError) as e:
-        print('statement error')
+        if isinstance(e, pymonetdb.DatabaseError):
+            print('statement error', e.args[0].rstrip(os.linesep))
+        else:
+            print('statement error')
         print(query)
         if copy_into_data is not None:
             print('<COPY_INTO_DATA>')
@@ -119,7 +123,10 @@ def to_sqllogic_test(query, copy_into_data=None):
         print('')
     else:
         if crs.description is None:
-            print('statement ok')
+            if crs.rowcount > -1:
+                print('statement ok rowcount', str(crs.rowcount))
+            else:
+                print('statement ok')
             print(query)
             if copy_into_data is not None:
                 print('<COPY_INTO_DATA>')

@@ -2381,6 +2381,23 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			pos += snprintf(buf + pos, bufsize - pos,
 							"drop procedure sys.flush_log();\n");
 
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop function sys.deltas(string);\n"
+							"drop function sys.deltas(string, string);\n"
+							"drop function sys.deltas(string, string, string);\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+							"create function sys.deltas (\"schema\" string)\n"
+							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
+							"external name sql.deltas;\n"
+
+							"create function sys.deltas (\"schema\" string, \"table\" string)\n"
+							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
+							"external name sql.deltas;\n"
+
+							"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)\n"
+							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
+							"external name sql.deltas;\n");
+
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
 							"delete from sys.dependencies d where d.depend_id = (select id from sys.functions where name = 'getproj4' and schema_id = 2000) and id in (select id from sys._columns where name not in ('proj4text', 'srid'));\n");

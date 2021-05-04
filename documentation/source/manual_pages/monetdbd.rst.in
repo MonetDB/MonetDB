@@ -20,17 +20,17 @@ DESCRIPTION
 meant to be used as daemon, but it also allows to setup and change the
 configuration of a dbfarm. The use of *monetdbd* is either as
 user-oriented way to configure, start and stop a database farm, or to be
-started from a startup script, such as from */etc/init.d/* on Linux
-systems or *smf*\ (5) on Solaris systems, as part of a system startup.
+started from a startup script, such as from *systemd*\ (1) on Linux
+systems, as part of a system startup.
 
 *Monetdbd* is the system formerly known as *merovingian*. It was renamed
 to *monetdbd* since the name *merovingian* proved to be confusing to
 most regular end-users. Internally, *monetdbd* uses the name
 *merovingian* at many places for historical reasons.
 
-A *monetdbd* instance manages one local cluster based, which is a
-directory in the system, referred to as the *dbfarm*. Nowadays, the
-dbfarm location always has to be given as argument to *monetdbd*.
+A *monetdbd* instance manages one local cluster of databases, which is a
+directory in the system, referred to as the *dbfarm*. The dbfarm
+location must always be given as argument to *monetdbd*.
 
 Within its local cluster *monetdbd* takes care of starting up databases
 when necessary, and stopping them either upon request via *monetdb*\ (1)
@@ -57,7 +57,7 @@ The commands for *monetdbd* are **create**, **start**, **stop**,
 initializing a dbfarm, starting and stopping the MonetDB Database
 Server, and retrieving or setting options.
 
-**create dbfarm**
+**create** *dbfarm*
    Initializes a new database farm, such that a MonetDB Database Server
    can be started on that location. All necessary directories are
    attempted to be created, and an initial properties file is created in
@@ -72,7 +72,13 @@ Server, and retrieving or setting options.
 
 **stop** *dbfarm*
    Sends a stop signal to the *monetdbd* process responsible for the
-   given dbfarm.
+   given dbfarm. If the **exittimeout** value is non-zero (see below),
+   all mserver processes will be sent a termination signal. The current
+   process will wait for the manager process to terminate, but sends a
+   SIGKILL signal if waiting takes longer than 5 seconds more than the
+   value of exittimeout. If exittimeout is negative, both monetdbd
+   processes involved will wait until the servers have all terminated
+   and no extra signals are sent.
 
 **get** <**all** \| *property*\ [,\ *property*\ [,..]]> *dbfarm*
    Prints the requested properties, or all known properties, for the
@@ -118,15 +124,32 @@ using the **set** command. The following properties can be set:
    This property specifies which TCP port *monetdbd* should listen to
    for connection requests. Defaults to 50000.
 
-**ipv6**
-   This property forces *monetdbd* to bind connections on IPv6 addresses
-   only. Defaults to false.
-
 **listenaddr**
    This property specifies an address that is allowed to connect to the
-   server. The user can specify one IP(v6) address, or use the 0.0.0.0
-   notation to allow connections from everywhere. Defaults to localhost
-   (127.0.0.1).
+   server. The following possibilities exist:
+
+   **localhost**
+      The server only listens on the IPv4 and IPv6 loopback interface
+      (if available). This is the default.
+
+   **127.0.0.1**
+      The server only listens on the IPv4 loopback interface.
+
+   **::1**
+      The server only listens on the IPv6 loopback interface.
+
+   **all**
+      The server listens on all available IPv4 and IPv6 interfaces.
+
+   **0.0.0.0**
+      The server listens on all available IPv4 interfaces.
+
+   **::**
+      The server listens on all available IPv6 interfaces.
+
+   *hostname*
+      The server listens on the interface designated by *hostname* which
+      is looked up using the normal hostname lookup facilities.
 
 **control**
    For remote management of *monetdbd*, the **control** property
