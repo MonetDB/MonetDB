@@ -151,7 +151,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			o = (oid) (i + seq - d);
 			if (canditer_contains(ci, o)) {
 				buninsfix(bn, dst, cnt, o,
@@ -163,7 +163,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} else {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			o = (oid) (i + seq - d);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
@@ -270,7 +270,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		for (i = 0, dcnt = 0, icnt = 0, p = 0;			\
 		     dcnt < imprints->dictcnt && i <= w - hseq + pr_off && p < ci->ncand; \
 		     dcnt++) {						\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			limit = ((BUN) d[dcnt].cnt) << rpp;		\
 			while (i + limit <= o - hseq + pr_off) {	\
 				i += limit;				\
@@ -408,7 +408,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 					buninsfix(bn, dst, cnt, o,	\
 						  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 							 * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-						  maximum, BUN_NONE); \
+						  maximum, BUN_NONE);	\
 					cnt++;				\
 				}					\
 			}						\
@@ -551,6 +551,9 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 		choose(NAME, ISDENSE, v >= vl && v <= vh, TYPE);	\
 	}								\
 	return cnt;							\
+  bailout:								\
+	BBPreclaim(bn);							\
+	return BUN_NONE;						\
 }
 
 static BUN

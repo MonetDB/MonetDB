@@ -3064,7 +3064,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
-			      TIMEOUT_HANDLER(NULL));			\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 /* calculate group counts with optional candidates list */
@@ -3205,6 +3205,10 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
 		  ci.seq, ncand, GDKusec() - t0);
 	return bn;
+
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 /* calculate group sizes (number of TRUE values) with optional
@@ -3605,6 +3609,10 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 
 	nils = (*minmax)(oids, b, gids, ngrp, min, max, &ci, ncand,
 			 BATcount(b), skip_nils, g && BATtdense(g));
+	if (nils == BUN_NONE) {
+		BBPreclaim(bn);
+		return NULL;
+	}
 
 	BATsetcount(bn, ngrp);
 

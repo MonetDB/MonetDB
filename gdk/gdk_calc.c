@@ -1122,7 +1122,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 			x = canditer_next(&ci) - bhseqbase;		\
 			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(NULL));	\
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 	} while (0)
 
 static BAT *
@@ -1202,7 +1202,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 			x = canditer_next(&ci) - bhseqbase;
 			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
 		}
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(NULL));
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
 	}
@@ -1229,6 +1229,9 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		  notnil ? "true" : "false", ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 BAT *
