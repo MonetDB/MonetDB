@@ -32,7 +32,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for( i = 0; i< slimit; i++){
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
-		if ( getModuleId(p) == algebraRef) {
+		if ( getModuleId(p) == algebraRef && p->retc == 2) {
 			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
 				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
 				 getFunctionId(p) == likejoinRef) {
@@ -47,7 +47,6 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				int is_first_ret_not_used = getVarEolife(mb, getArg(p, p->retc -2)) == i;
 				int is_second_ret_not_used = getVarEolife(mb, getArg(p, p->retc -1)) == i;
 
-				assert(!is_first_ret_not_used || !is_second_ret_not_used);
 				if ( (is_first_ret_not_used || is_second_ret_not_used) && getFunctionId(p) == semijoinRef) {
 					delArgument(p, is_second_ret_not_used ? p->retc -1 : p->retc -2);
 					/* semijoin with a single output is called intersect */
