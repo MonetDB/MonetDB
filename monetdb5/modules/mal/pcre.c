@@ -1792,12 +1792,16 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  anti, #TEST);		\
 		if (!s || BATtdense(s)) {	\
 			for (; p < q; p++) {	\
+                GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+                        GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
 				const char *restrict v = BUNtvar(bi, p - off);	\
 				if (TEST)	\
 					vals[cnt++] = p;	\
 			}		\
 		} else {		\
 			for (; p < ncands; p++) {		\
+                GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+                        GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
 				oid o = canditer_next(ci);		\
 				const char *restrict v = BUNtvar(bi, o - off);	\
 				if (TEST) 	\
@@ -1827,6 +1831,13 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN 
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
 	str msg = MAL_SUCCEED;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci->ncand)) != MAL_SUCCEED)
 		goto bailout;
 
@@ -1851,6 +1862,12 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *r
 	uint32_t *wpat = NULL;
 	str msg = MAL_SUCCEED;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, esc)) != MAL_SUCCEED)
 		goto bailout;
 
@@ -1986,6 +2003,8 @@ bailout:
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
 	do { \
 		for (BUN ri = 0; ri < rci.ncand; ri++) { \
+			GDK_CHECK_TIMEOUT(timeoffset, counter, \
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			ro = canditer_next(&rci); \
 			vr = VALUE(r, ro - r->hseqbase); \
 			nl = 0; \
@@ -2094,6 +2113,13 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	regex_t pcrere = (regex_t) {0};
 	void *pcreex = NULL;
 #endif
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"

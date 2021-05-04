@@ -1,69 +1,5 @@
 stdout of test 'MAL-signatures` in directory 'clients` itself:
 
-
-# 21:44:50 >  
-# 21:44:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33053" "--set" "mapi_usock=/var/tmp/mtest-13793/.s.monetdb.33053" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-devel/var/MonetDB/mTests_clients" "--set" "mal_listing=2" "--set" "embedded_r=yes"
-# 21:44:50 >  
-
-# MonetDB 5 server v11.20.0
-# This is an unreleased version
-# Serving database 'mTests_clients', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.386 GiB available main-memory.
-# Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
-# Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://xps13:39285/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.39285
-# MonetDB/GIS module loaded
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
-# MonetDB/SQL module loaded
-# MonetDB/Python2 module loaded
-# MonetDB/R   module loaded
-
-# 16:10:29 >  
-# 16:10:29 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29643" "--port=32888"
-# 16:10:29 >  
-
 #select * from sys.malfunctions() order by module, "function", address, signature, comment;
 % .%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % module,	function,	signature,	address,	comment # name
@@ -9999,6 +9935,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "clients",	"ripemd160sum",	"command clients.ripemd160sum(X_0:str):str ",	"CLTripemd160sum;",	""	]
 [ "clients",	"setListing",	"pattern clients.setListing(X_0:int):int ",	"CLTsetListing;",	""	]
 [ "clients",	"setPassword",	"pattern clients.setPassword(X_0:str, X_1:str):void ",	"CLTsetPassword;",	""	]
+[ "clients",	"setQryTimeoutMicro",	"pattern clients.setQryTimeoutMicro(X_0:lng):void ",	"CLTqueryTimeoutMicro;",	""	]
 [ "clients",	"setScenario",	"pattern clients.setScenario(X_0:str):str ",	"CLTsetScenario;",	""	]
 [ "clients",	"setmemorylimit",	"pattern clients.setmemorylimit(X_0:int):void ",	"CLTsetmemorylimit;",	""	]
 [ "clients",	"setmemorylimit",	"pattern clients.setmemorylimit(X_0:int, X_1:int):void ",	"CLTsetmemorylimit;",	""	]
@@ -10916,9 +10853,9 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"db_users",	"pattern sql.db_users():bat[:str] ",	"db_users_wrap;",	""	]
 [ "sql",	"delete",	"unsafe pattern sql.delete(X_0:int, X_1:str, X_2:str, X_3:any):int ",	"mvc_delete_wrap;",	""	]
 [ "sql",	"delta",	"command sql.delta(X_0:bat[:any_3], X_1:bat[:oid], X_2:bat[:any_3]):bat[:any_3] ",	"DELTAbat;",	""	]
-[ "sql",	"deltas",	"pattern sql.deltas(X_0:str) (X_1:bat[:int], X_2:bat[:bit], X_3:bat[:lng], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:int]) ",	"mvc_delta_values;",	""	]
-[ "sql",	"deltas",	"pattern sql.deltas(X_0:str, X_1:str) (X_2:bat[:int], X_3:bat[:bit], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:lng], X_8:bat[:int]) ",	"mvc_delta_values;",	""	]
-[ "sql",	"deltas",	"pattern sql.deltas(X_0:str, X_1:str, X_2:str) (X_3:bat[:int], X_4:bat[:bit], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:lng], X_8:bat[:lng], X_9:bat[:int]) ",	"mvc_delta_values;",	""	]
+[ "sql",	"deltas",	"pattern sql.deltas(X_0:str) (X_1:bat[:int], X_2:bat[:lng], X_3:bat[:lng], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:int]) ",	"mvc_delta_values;",	""	]
+[ "sql",	"deltas",	"pattern sql.deltas(X_0:str, X_1:str) (X_2:bat[:int], X_3:bat[:lng], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:lng], X_8:bat[:int]) ",	"mvc_delta_values;",	""	]
+[ "sql",	"deltas",	"pattern sql.deltas(X_0:str, X_1:str, X_2:str) (X_3:bat[:int], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:lng], X_8:bat[:lng], X_9:bat[:int]) ",	"mvc_delta_values;",	""	]
 [ "sql",	"dense_rank",	"pattern sql.dense_rank(X_0:any_1, X_1:bit, X_2:bit):int ",	"SQLdense_rank;",	""	]
 [ "sql",	"diff",	"pattern sql.diff(X_0:any_1):bit ",	"SQLdiff;",	""	]
 [ "sql",	"diff",	"pattern sql.diff(X_0:bit, X_1:any_1):bit ",	"SQLdiff;",	""	]
@@ -11425,8 +11362,3 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "xml",	"subaggr",	"command xml.subaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:xml] ",	"AGGRsubxmlcand;",	""	]
 [ "xml",	"text",	"command xml.text(X_0:xml):str ",	"XMLxmltext;",	""	]
 [ "xml",	"xml",	"command xml.xml(X_0:str):xml ",	"XMLstr2xml;",	""	]
-
-# 12:57:40 >  
-# 12:57:40 >  "Done."
-# 12:57:40 >  
-

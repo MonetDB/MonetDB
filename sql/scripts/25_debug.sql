@@ -73,13 +73,13 @@ create function sys.debugflags()
 	external name mdb."getDebugFlags";
 
 create function sys.deltas ("schema" string)
-	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	returns table ("id" int, "segments" bigint, "all" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
 	external name "sql"."deltas";
 
 create function sys.deltas ("schema" string, "table" string)
-	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	returns table ("id" int, "segments" bigint, "all" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
 	external name "sql"."deltas";
 
 create function sys.deltas ("schema" string, "table" string, "column" string)
-	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	returns table ("id" int, "segments" bigint, "all" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
 	external name "sql"."deltas";
