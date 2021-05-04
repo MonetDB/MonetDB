@@ -2396,7 +2396,9 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 							"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)\n"
 							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
-							"external name sql.deltas;\n");
+							"external name sql.deltas;\n"
+							"update sys.functions set system = true"
+							" where schema_id = 2000 and name = 'deltas';\n");
 
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
