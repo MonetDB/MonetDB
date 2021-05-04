@@ -4225,6 +4225,7 @@ external name sql.deltas;
 create function sys.deltas ("schema" string, "table" string, "column" string)
 returns table (id int, segments bigint, "all" bigint, inserted bigint, updates bigint, deletes bigint, level int)
 external name sql.deltas;
+update sys.functions set system = true where schema_id = 2000 and name = 'deltas';
 delete from sys.dependencies d where d.depend_id = (select id from sys.functions where name = 'getproj4' and schema_id = 2000) and id in (select id from sys._columns where name not in ('proj4text', 'srid'));
 drop function json.isobject(string);
 drop function json.isarray(string);
