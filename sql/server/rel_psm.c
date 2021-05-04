@@ -853,14 +853,22 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;
-			if (!mvc_schema_privs(sql, s))
+			if (!mvc_schema_privs(sql, s)) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
-			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+			}
+			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL)) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
-			if (!func->s)
+			}
+			if (!func->s) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: not allowed to replace system %s %s;", F, fn, func->base.name);
-			if (mvc_drop_func(sql, s, func, 0))
+			}
+			if (mvc_drop_func(sql, s, func, 0)) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 			sf = NULL;
 		} else {
 			if (params) {
@@ -895,9 +903,11 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		for (int i = 0; i < 3; i++) {
 			if (ftpyes[i] != type) {
 				sql_subfunc *found = NULL;
-				if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, ftpyes[i])))
+				if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, ftpyes[i]))) {
+					list_destroy(type_list);
 					return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
-									IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
+									 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
+				}
 				sql->session->status = 0; /* if the function was not found clean the error */
 				sql->errstr[0] = '\0';
 			}
