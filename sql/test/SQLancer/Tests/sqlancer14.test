@@ -761,3 +761,22 @@ False
 
 statement ok
 DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0"("c0" CHARACTER LARGE OBJECT, "c4" INTERVAL DAY)
+
+statement ok
+CREATE TABLE "t2"("c0" CHARACTER LARGE OBJECT)
+
+statement ok rowcount 2
+INSERT INTO "t2" VALUES ('X'), ('')
+
+query I rowsort
+select 1 from t0 where t0.c4 <= all(select interval '4' day) and t0.c0 <> all(select t2.c0 from t2)
+----
+
+statement ok
+ROLLBACK

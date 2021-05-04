@@ -2895,8 +2895,11 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					set_has_no_nil(lnull);
 					le = exp_compare_func(v->sql, le, re, op, 0);
 					le = rel_nop_(v->sql, rel, le, lnull, rnull, NULL, "sys", (quantifier==1)?"any":"all", card_value);
-					if (is_notequal_func(sf))
+					if (is_select(rel->op) && depth == 0) {
+						le = exp_compare(v->sql->sa, le, exp_atom_bool(v->sql->sa, is_notequal_func(sf) ? 0 : 1), cmp_equal);
+					} else if (is_notequal_func(sf)) {
 						le = rel_unop_(v->sql, rel, le, "sys", "not", card_value);
+					}
 				} else if (is_project(rel->op) || depth) {
 					le = exp_compare_func(v->sql, le, re, op, 0);
 				} else {
