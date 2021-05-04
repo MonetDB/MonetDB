@@ -71,7 +71,7 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[14];
 	char fcn[30];
-	char *cname;
+	const char *cname;
 	uint16_t command:1,
 		unsafe:1,
 		retc:6,
@@ -80,7 +80,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 	//char *comment;
 //#endif
 	fptr imp;
-	mel_arg *args;
+	const mel_arg *args;
 } mel_func;
 
 #else
@@ -137,7 +137,7 @@ typedef struct __attribute__((__designated_init__)) mel_func_arg {
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
-int melFunction(bool command, const char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ...);
+int melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ...);
 
 #ifdef SPECS
 typedef struct __attribute__((__designated_init__)) mal_spec{

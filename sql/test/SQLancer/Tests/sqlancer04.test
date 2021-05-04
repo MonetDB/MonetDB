@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTERVAL MONTH NOT NULL)
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 150184010
@@ -43,7 +43,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0"("c0" DATE, "c1" DATE, "c2" INTERVAL SECOND NOT NULL,"c3" TIME NOT NULL)
 
-statement error
+statement error 42000!SELECT: cannot use non GROUP BY column 't0.c0' in query results without an aggregate function
 select case covar_samp(all - (coalesce (cast(-5 as int), coalesce (((cast(0.4 as int))-(coalesce (5, 5))), +
 (case -3 when 0.5 then 5 else 3 end)))), - (- (((coalesce (cast(0.2 as int),
 coalesce (5, 3, -747176383), ((6)%(3)), ((-2)<<(3))))||(-5))))) when case t0.c0 when
@@ -68,7 +68,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL)
 
-statement error
+statement error 42000!types sec_interval(13,0) and int(32,0) are not equal
 SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2)
 
 statement ok
@@ -83,7 +83,7 @@ CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c1" BIGINT NOT NU
 statement ok
 CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" BIGINT)
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "-216073164"	NULL
@@ -116,10 +116,10 @@ ROLLBACK
 statement ok
 CREATE TABLE t0(c0 TIME, UNIQUE(c0))
 
-statement error
+statement error 42000!CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c0' char(222) is not compatible with the referenced UNIQUE KEY column type time(1)
 CREATE TABLE t1(c0 CHAR(222), FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0))
 
-statement error
+statement error 42000!CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c0' int is not compatible with the referenced UNIQUE KEY column type time(1)
 CREATE TABLE t1(c0 int, FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0))
 
 statement ok
@@ -128,10 +128,10 @@ DROP TABLE t0
 statement ok
 CREATE TABLE t0(c0 INTERVAL SECOND, UNIQUE(c0))
 
-statement error
+statement error 42000!CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c2' blob is not compatible with the referenced UNIQUE KEY column type sec_interval(13)
 CREATE TABLE t1(c2 BLOB, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2))
 
-statement error
+statement error 42000!CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c2' time(1) is not compatible with the referenced UNIQUE KEY column type sec_interval(13)
 CREATE TABLE t1(c2 TIME, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2))
 
 statement ok
@@ -170,7 +170,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DOUBLE NOT NULL DEFAULT 0.7383512, "c1" VARCHAR(277),CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.1982342084128137	""
@@ -184,7 +184,7 @@ COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DOUBLE,"c1" VARCHAR(277))
 
-statement ok
+statement ok rowcount 11
 COPY 11 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1839750227	""
@@ -229,10 +229,10 @@ select cbrt(64)
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DATE,"c1" DOUBLE NOT NULL,"c2" DATE NOT NULL)
 
-statement error
+statement error 42000!JOIN: no columns of tables 't0' and 'sub0' match
 select 1 from t0 natural join (select 4 from t0) as sub0
 
-statement error
+statement error 42000!JOIN: no columns of tables 't0' and 'sub0' match
 with sub0 as (select 4 from t0) select 1 from t0 natural join sub0
 
 statement ok
@@ -263,7 +263,7 @@ CREATE TABLE t0(c0 DOUBLE PRIMARY KEY NULL)
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DOUBLE,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 9
 COPY 9 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.21248182395969406
@@ -320,7 +320,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DOUBLE,"c1" INTERVAL MONTH)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	1876068957
@@ -350,7 +350,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" CHAR(240))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "2m^OqPm/3DḞZ02"
@@ -383,7 +383,7 @@ ROLLBACK
 statement ok
 CREATE TABLE "sys"."t1" ("c1" DOUBLE)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 763223864
@@ -394,10 +394,10 @@ COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.6184216877785851
 0.6479886625655562
 
-statement error
+statement error 42S22!SELECT: no such column 't1.c1'
 select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last
 
-statement error
+statement error 42S22!SELECT: no such column 't1.c1'
 select sum(coalesce(coalesce(interval '5' month, interval '3' month), interval '2' month, coalesce(abs(interval '5' month), interval '2' month,
 case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last
 
@@ -487,7 +487,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c0_unique" UNIQUE ("c0")
 )
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	1519431547
@@ -498,7 +498,7 @@ NULL	557549613
 statement ok
 CREATE TABLE "sys"."t1" ("c0" INTERVAL SECOND NOT NULL,"c1" INTERVAL MONTH)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 800031356.000	386570239
@@ -544,7 +544,7 @@ SELECT CASE WHEN 3 THEN cot(COALESCE(3, 4)) END FROM (values(1),(2)) as t0(c0)
 -7.015
 -7.015
 
-statement error
+statement error 22001!value too long for type (var)char(10)
 select coalesce(-1129107763, '1415606329') from (values(1),(2)) as t0(c0)
 
 statement ok
@@ -553,7 +553,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 15
 COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 15:11:18
@@ -575,7 +575,7 @@ COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t2" ("c0" TIME)
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 07:23:20
@@ -587,7 +587,7 @@ COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t3" ("c0" TIME)
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t3" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 16:58:19
@@ -602,7 +602,7 @@ NULL
 statement ok
 CREATE TABLE "sys"."t4" ("c0" INTERVAL SECOND, CONSTRAINT "t4_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t4" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 29578044.000
@@ -710,19 +710,19 @@ ROLLBACK
 statement ok
 CREATE TABLE t2(c0 DOUBLE)
 
-statement ok
+statement ok rowcount 7
 INSERT INTO t2(c0) VALUES(852.0), (-0.31015700674852054), (45), (null), (-1.936408526E9), (0.12208305626734062), (-1.707045885E9)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t2(c0) VALUES(1660989841)
 
-statement ok
+statement ok rowcount 8
 DELETE FROM t2 WHERE TRUE
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t2(c0) VALUES(null)
 
-statement ok
+statement ok rowcount 0
 UPDATE t2 SET c0 = 0.2818413675323882 WHERE sql_min((0.0194696766772712859250304973102174699306488037109375)
 BETWEEN (t2.c0) AND (0.8918001896191873), (t2.c0) NOT IN (-682776732))
 
@@ -735,7 +735,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO "sys"."t0" VALUES (true), (false)
 
 statement ok
@@ -776,7 +776,7 @@ ILIKE(CAST(30792 AS STRING(381))))) as res
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!types bigint(64,0) and sec_interval(13,0) are not equal
 select cast(count(1) as interval second) from (values (false)) as v6(vc0)
 
 statement ok
@@ -785,13 +785,13 @@ CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE)
 statement ok
 ALTER TABLE t1 ADD PRIMARY KEY(c0, c1)
 
-statement ok
+statement ok rowcount 6
 INSERT INTO t1(c1, c0) VALUES(0.3, FALSE), (0.5, true), (0.0, true), (4, false), (1, true), (4, true)
 
-statement ok
+statement ok rowcount 2
 DELETE FROM t1 WHERE NOT t1.c0
 
-statement error
+statement error 40002!UPDATE: PRIMARY KEY constraint 't1.t1_c0_c1_pkey' violated
 UPDATE t1 SET c1 = 0 WHERE t1.c1 > 3
 
 statement ok

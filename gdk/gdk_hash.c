@@ -14,7 +14,7 @@
  * index. NOTE: we alloc the link list as a parallel array to the BUN
  * array; hence the hash link array has the same size as
  * BATcapacity(b) (not BATcount(b)). This allows us in the BUN insert
- * and delete to assume that there is hash space iff there is BUN
+ * and delete to assume that there is hash space if there is BUN
  * space.
  *
  * The hash mask size is a power of two, so we can do bitwise AND on
@@ -672,12 +672,11 @@ BAThashsync(void *arg)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < cnt1; p++) {					\
-			c = hash_##TYPE(h, v + o - b->hseqbase);	\
+		TIMEOUT_LOOP(p, timeoffset) {				\
 			hget = HASHget(h, c);				\
 			if (hget == hnil) {				\
 				if (h->nheads == maxslots)		\
-					break; /* mask too full */	\
+					TIMEOUT_LOOP_BREAK; /* mask too full */	\
 				h->nheads++;				\
 				h->nunique++;				\
 			} else {					\
@@ -693,11 +692,13 @@ BAThashsync(void *arg)
 			HASHput(h, c, p);				\
 			o = canditer_next(ci);				\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < ci->ncand; p++) {				\
+		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {		\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == hnil;			\
@@ -715,7 +716,10 @@ BAThashsync(void *arg)
 			}						\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
+			p++;						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 /* Internal function to create a hash table for the given BAT b.
@@ -738,6 +742,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	BATiter bi = bat_iterator(b);
 	const ValRecord *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 
@@ -869,13 +879,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(uuid);
 			break;
 		default:
-			for (; p < cnt1; p++) {
+			TIMEOUT_LOOP(p, timeoffset) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
 				if (hget == hnil) {
 					if (h->nheads == maxslots)
-						break; /* mask too full */
+						TIMEOUT_LOOP_BREAK; /* mask too full */
 					h->nheads++;
 					h->nunique++;
 				} else {
@@ -893,6 +903,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				HASHput(h, c, p);
 				o = canditer_next(ci);
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			break;
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
@@ -943,7 +955,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(uuid);
 		break;
 	default:
-		for (; p < ci->ncand; p++) {
+		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -960,7 +972,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
 			o = canditer_next(ci);
+			p++;
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
 	if (!hascand) {
@@ -981,6 +996,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		HASHcollisions(b, h, __func__);
 	}
 	return h;
+
+  bailout:
+	GDKfree(h);
+	return NULL;
 }
 
 gdk_return

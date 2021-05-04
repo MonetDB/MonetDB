@@ -1,19 +1,19 @@
 statement ok
 CREATE TABLE t0(tc0 INTERVAL MONTH DEFAULT (INTERVAL '1997904243' MONTH), tc1 TIME UNIQUE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(tc0) VALUES(INTERVAL '444375026' MONTH)
 
-statement ok
+statement ok rowcount 1
 DELETE FROM t0 WHERE TRUE
 
 statement ok
 ALTER TABLE t0 ALTER tc0 SET NOT NULL
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH)
 
-statement ok
+statement ok rowcount 1
 UPDATE t0 SET tc0 = (t0.tc0) WHERE TRUE
 
 statement ok
@@ -25,7 +25,7 @@ CREATE TABLE t2(tc0 TINYINT)
 statement ok
 ALTER TABLE t2 ADD PRIMARY KEY(tc0)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO t2(tc0) VALUES(44), (126), (117)
 
 statement ok
@@ -43,10 +43,10 @@ CREATE TABLE "t2" ("tc0" BIGINT NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("
 statement ok
 CREATE TABLE "t0" ("tc0" TINYINT NOT NULL,"tc2" TINYINT NOT NULL,CONSTRAINT "t0_tc2_tc0_unique" UNIQUE ("tc2", "tc0"),CONSTRAINT "t0_tc2_fkey" FOREIGN KEY ("tc2") REFERENCES "t2" ("tc0"))
 
-statement ok
+statement ok rowcount 0
 update t0 set tc2 = 119, tc0 = cast(t0.tc0 as bigint)
 
-statement ok
+statement ok rowcount 0
 update t0 set tc2 = 119, tc0 = (least(+ (cast(least(0, t0.tc0) as bigint)), sign(scale_down(100, 1)))) where true
 
 statement ok
@@ -61,7 +61,7 @@ CREATE TABLE "sys"."t0" ("c0" TIMESTAMP NOT NULL,"c1" DOUBLE,CONSTRAINT "t0_c0_p
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DECIMAL(12,3))
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 19522599.000
@@ -76,7 +76,7 @@ COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t2" ("c0" TIMESTAMP,"c1" DOUBLE)
 
-statement ok
+statement ok rowcount 2
 COPY 2 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	-869912003
@@ -90,10 +90,10 @@ l1cte1.c1 when 0.4 then l1cte1.c1 when 1.03728474E9 then l1cte1.c1 when 0.2 then
 from t0 as l1t0, t1 as l1t1,cte0 as l1cte0,cte1 as l1cte1 where not (l1cte1.c2)) select distinct least(-1, l0t0.c1)
 from t1 as l0t1, t0 as l0t0,cte0 as l0cte0 where least(cast(l0cte0.c0 as boolean), true))
 
-statement ok
+statement ok rowcount 0
 merge into t0 using (select * from v0) as v0 on true when not matched then insert (c1, c0) values ((select 1 from t1), timestamp '1970-01-20 08:57:27')
 
-statement ok
+statement ok rowcount 0
 merge into t0 using (select * from v0) as v0 on ((r'>\nAH')not like(cast(scale_up(99, 0.1) as string(278))))
 when not matched then insert (c1, c0) values (((((abs(-5))%((select -3 from t1 as l3t1, t2 as l3t2 where true))))
 >>((((values (1), (1)))>>((select distinct 2 from t1 as l3t1 where false))))), ifthenelse(abs(0.3) =
@@ -110,7 +110,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BIGINT)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1096730569
@@ -122,7 +122,7 @@ statement ok
 create view v0(vc0, vc1, vc2) as (values (uuid '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', ((case when true then lower(r'e') end)ilike(cast(sql_sub(interval '1600798007' month, interval '854525416' month) as string(583)))),
 cast((greatest(time '12:29:42', time '00:13:46')) not between asymmetric (sql_min(time '01:00:00', time '08:31:00')) and (greatest(time '00:12:32', time '11:40:56')) as bigint)))
 
-statement ok
+statement ok rowcount 4
 MERGE INTO t1 USING (SELECT * FROM v0) AS v0 ON (((COALESCE(24656, 0.42848459531531180033425698638893663883209228515625, 1153747454, 0.04253046482486677604128999519161880016326904296875, 417897684))%(((-4.65033856E8)/(98)))))
 NOT BETWEEN SYMMETRIC (+ (NULLIF(-1338511329, 12))) AND (CASE WHEN CASE TIME '06:02:29' WHEN TIME '22:17:20' THEN TRUE ELSE TRUE END THEN "second"(INTERVAL '1243665924' DAY) WHEN (FALSE) = TRUE THEN CASE WHEN FALSE THEN -116446524
 WHEN TRUE THEN 1702709680 WHEN r'TRUE' THEN 1255285064 END
@@ -149,13 +149,13 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("c0" BOOLEAN NOT NULL DEFAULT false, CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t2(c0) VALUES((((((((least(r' ]', r'3''')) IS NULL)OR((((TIMESTAMP '1969-12-20 19:22:32') BETWEEN SYMMETRIC (TIMESTAMP '1969-12-29 05:03:02') AND (TIMESTAMP '1970-01-14 15:38:43'))OR
 (CASE FALSE WHEN FALSE THEN TRUE WHEN TRUE THEN TRUE WHEN FALSE THEN FALSE WHEN FALSE THEN TRUE ELSE TRUE END)))))OR
 (COALESCE((TIMESTAMP '1969-12-11 14:58:21') BETWEEN SYMMETRIC (TIMESTAMP '1970-01-09 21:56:14') AND (TIMESTAMP '1970-01-01 01:00:14'),
 ((0.26488915)>(1.345373227E9)), sql_min(FALSE, TRUE)))))AND("isauuid"(r'45456452')))), (TRUE)
 
-statement error
+statement error 40002!INSERT INTO: PRIMARY KEY constraint 't2.t2_c0_pkey' violated
 INSERT INTO t2 VALUES (COALESCE(1 BETWEEN 2 AND 3, 1))
 
 statement ok
@@ -167,7 +167,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DOUBLE NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 10
 COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.19726593583228624
@@ -281,7 +281,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("c0" BIGINT,"c1" BIGINT,"c2" REAL)
 
-statement ok
+statement ok rowcount 21
 COPY 21 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	46	NULL
@@ -385,7 +385,7 @@ create or replace view v74(vc0, vc1) as (values (-1, 0.014)) with check option
 statement ok
 create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10)) with check option
 
-statement error
+statement error 22003!overflow in calculation 1XOR-9223372036854775807.
 select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null
 
 statement ok
@@ -404,7 +404,7 @@ create or replace view v84(vc0, vc1) as (values (cast(not (least(false, false)) 
 when - (0.17724898013816237) then -1847868202 else - (-7.96515311E8) end else 0.854441498295166 end), (cast(not (false) as int),
 greatest(scale_up(+ (48), 0.9562314161003085), ((- (85))+(- (-1290129393)))))) with check option
 
-statement error
+statement error 22003!overflow in calculation 1XOR-9223372036854775807.
 select all count(all least(((null)*(v74.vc1)), cast(0.7407841 as bigint))) from v74 cross join v84 join (values
 (cast(cast(((-1660927937)+(-1322418229)) as bigint) as string)), (cast(case upper(r'#+6') when least(r'', r'l9O+,s5?')
 then r'0.8101890506861533' when greatest(r'', r'B+') then sql_max(r'?''', r'E|!H4p') else cast(0.6526341396196464 as string(381))
@@ -423,7 +423,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3),"c1" VARCHAR(253))
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -804767602.000	".c("
@@ -437,7 +437,7 @@ NULL	"UXNW/#綒"
 statement ok
 CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3),"c1" VARCHAR(253),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.120	"0.2251036314022229"
@@ -544,7 +544,7 @@ create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) wi
 statement ok
 create view v24(vc0) as (values (0.22)) with check option
 
-statement error
+statement error 42000!Argument 2 to round function cannot be null
 select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>(least(cast(26 as bigint),
 cast(-507871984 as bigint)))), 1 from v21
 join v18 on ((scale_down(v18.vc0, null))>(cast(((0.33)
@@ -557,10 +557,10 @@ group by greatest(-432, ((24)|(32))), least(((((r'RJᦈ4[[h\340\272\246')like(r'
 statement ok
 ROLLBACK
 
-statement error
+statement error 22003!overflow in calculation -1.7976931348623157e+308/0.98067827792867723.
 select (-1.7976931348623157E308)/(0.98067827792867723335490381941781379282474517822265625)
 
-statement error
+statement error 22003!Overflow in round
 values (round(-1.4999792343698102e+308, 15)),(1.2)
 
 statement ok
@@ -573,7 +573,7 @@ CREATE TABLE "sys"."t2" ("c0" REAL NOT NULL, "c1" DECIMAL(15,3),
 	CONSTRAINT "t2_c0_c1_unique" UNIQUE ("c0", "c1")
 )
 
-statement ok
+statement ok rowcount 33
 COPY 33 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 26	0.991
@@ -613,7 +613,7 @@ COPY 33 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1")
 
-statement error
+statement error 22012!division by zero.
 update t2 set c1 = 0.012 where (((t2.c0)%(t2.c1))) between symmetric (coalesce(-1053, 991)) and (((0.6974)+(183)))
 
 statement ok
@@ -625,7 +625,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" REAL NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 10
 COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 4.2328605e+08
@@ -731,7 +731,7 @@ create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as sm
 statement ok
 create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), r'䝀i8jPo' where not (false))
 
-statement error
+statement error 22003!overflow in conversion of 220424338 to sht.
 select all v0.vc2, greatest(min(all least(-266013300, 864326131)), -1183805674), greatest(-544857133, + (v0.vc2)) from v0, v1
 inner join (values (+ (88)), (greatest(0.8732546822607857, greatest(1933292715, -525885982))), (case when (-1466474216) in
 (-1504372996, 417052418, 94) then least(28288, 1447812316) when cast(r'' as boolean) then "second"(time '14:18:59') else
@@ -745,19 +745,19 @@ ROLLBACK
 statement ok
 CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t1(c0) VALUES(true)
 
-statement ok
+statement ok rowcount 1
 TRUNCATE t1
 
 statement ok
 ALTER TABLE t1 ADD PRIMARY KEY(c0, c1)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO t1(c1, c0) VALUES(7,true),(5,false),(2,true),(4,false)
 
-statement error
+statement error 40002!UPDATE: PRIMARY KEY constraint 't1.t1_c0_c1_pkey' violated
 UPDATE t1 SET c1 = 0 WHERE t1.c1 BETWEEN SYMMETRIC 3 AND t1.c1
 
 statement ok

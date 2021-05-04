@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t1" ("c0" BIGINT NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t1(c0) VALUES(2), (+ ((VALUES (sql_min(3, 4)))))
 
 query I rowsort
@@ -20,7 +20,7 @@ statement ok
 CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, "c1" VARCHAR(143),
 	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t0_c0_unique" UNIQUE ("c0"), CONSTRAINT "t0_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 21:19:08	""
@@ -34,13 +34,13 @@ COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c1"))
 
-statement ok
+statement ok rowcount 1
 insert into t1 values ('')
 
-statement error
+statement error 40002!INSERT INTO: FOREIGN KEY constraint 't1.t1_c0_fkey' violated
 insert into t1(c0) values ((select 'a')), ('b')
 
-statement error
+statement error 40002!INSERT INTO: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
 insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'')
 
 statement ok
@@ -52,7 +52,7 @@ DROP TABLE t0
 statement ok
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 false	0.458
@@ -66,7 +66,7 @@ false	0.502
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
 
-statement ok
+statement ok rowcount 10
 COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	0.000
@@ -80,19 +80,19 @@ NULL	0.374
 true	NULL
 true	NULL
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0))
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where (select 1 from t1) like cast(t1.c1 as clob)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where cast(t1.c1 as clob) between 'b' and ((select 'A' from t0))
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where ((select 'A' from t0)) between cast(t1.c1 as clob) and 'a'
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where cast(t1.c1 as clob) between ((select 1 from t0)) and 'c'
 
 statement ok
@@ -107,13 +107,13 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t0" ("c0" DOUBLE PRECISION,"c2" BIGINT)
 
-statement ok
+statement ok rowcount 5
 INSERT INTO "t0" VALUES (NULL, 4), (NULL, 6), (NULL, 0), (NULL, 2), (NULL, 1)
 
 statement ok
 CREATE TABLE "t2" ("c0" DOUBLE PRECISION,"c1" bigint,"c2" BIGINT,"c4" REAL)
 
-statement ok
+statement ok rowcount 14
 INSERT INTO "t2" VALUES (4, 0, 6, NULL),(0.692789052132086, -1, 9, NULL),(2, 0, 6, NULL),(0.9469594820593024, 1, NULL, NULL),(NULL, 0, 6, NULL),
 (0.39272912837466945, 8, NULL, NULL),(NULL, NULL, 4, NULL),(2, 0, 6, NULL),(-1596101049, 0, 6, NULL),(-1951243968, 0, 6, NULL),(NULL, 0, 6, NULL),
 (NULL, 0, 6, NULL),(NULL, 0, 6, NULL),(NULL, 0, 6, NULL)
@@ -136,19 +136,19 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t0" ("c0" REAL,"c1" BOOLEAN,"c3" DOUBLE PRECISION)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO "t0" VALUES (NULL, false, NULL)
 
 statement ok
 CREATE TABLE "t1" ("c0" REAL)
 
-statement ok
+statement ok rowcount 12
 INSERT INTO "t1" VALUES (2),(2),(2),(2),(2),(2),(2),(0.27167553),(0.67248166),(0.7818908),(-9.1086214e+08),(-0.9899925)
 
 statement ok
 CREATE TABLE "t2" ("c0" REAL,"c1" BOOLEAN)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO "t2" VALUES (-1.2357439e+08, false), (0.16160075, false), (NULL, true)
 
 query R rowsort
@@ -174,14 +174,14 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" BINARY LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 8
 INSERT INTO "sys"."t0" VALUES (BINARY LARGE OBJECT 'F4BECB7E'),(BINARY LARGE OBJECT ''),(BINARY LARGE OBJECT 'E0'),(BINARY LARGE OBJECT 'B0'),(BINARY LARGE OBJECT 'A0FA'),
 (BINARY LARGE OBJECT 'E67D3FC0'),(BINARY LARGE OBJECT 'A324'),(BINARY LARGE OBJECT '49E0')
 
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BINARY LARGE OBJECT)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO "sys"."t1" VALUES (BINARY LARGE OBJECT ''), (BINARY LARGE OBJECT 'A0'), (BINARY LARGE OBJECT '')
 
 query T rowsort
@@ -249,7 +249,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c1" TINYINT,"c2" CHAR(22),"c4" INTEGER)
 
-statement ok
+statement ok rowcount 7
 INSERT INTO "sys"."t1" VALUES (NULL, NULL, 0),(NULL, NULL, -391221783),(NULL, NULL, -1107653660),(NULL, NULL, 0),(7, 'cTR'' Abp', 0),(7, 'cTR'' Abp', 1),(7, 'cTR'' Abp', -1)
 
 query T rowsort
@@ -283,14 +283,14 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t1" ("c0" SMALLINT NOT NULL,"c2" SMALLINT)
 
-statement ok
+statement ok rowcount 30
 INSERT INTO "t1" VALUES (4, NULL),(3, 4),(3, 5),(2, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(3, NULL),(5, NULL),
 (0, 8),(3, NULL),(8, 7),(-1, 6),(3, -3),(7, 7),(0, 1),(8, NULL),(9, NULL),(9, NULL),(-1, NULL),(2, NULL),(7, 8),(1, 2)
 
 statement ok
 CREATE TABLE "t2" ("c0" SMALLINT)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO "t2" VALUES (NULL), (NULL), (0)
 
 query I rowsort
@@ -584,7 +584,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) NOT NULL,"c2" UUID,"c3" CHARACTER LARGE OBJECT,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.790	NULL	"-1900689153"
@@ -601,7 +601,7 @@ CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,"c2" UUID,CONSTRAINT "t1_c0
 statement ok
 CREATE TABLE "sys"."t2" ("c2" BIGINT)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 5
@@ -612,7 +612,7 @@ NULL
 NULL
 1804976115
 
-statement error
+statement error 42000!MERGE: subqueries not supported inside MERGE conditions
 merge into t2 using (select * from t1) as t1 on (((((values (false), (false)))and("isauuid"(r'AJr1G'))))or(exists ((select distinct l2t2.c2 from t0 as l2t0, t2 as l2t2 where false group by l2t2.c2, l2t2.c2,
 0.200162480534249) union all (select distinct -25669977 from t1 as l2t1 where false)))) when matched then update set c2 = (coalesce(0.05676984416302433, cast(0.05650992 as bigint)))
 when not matched then insert (c2) values (cast(((0.6603879962021974581176664287340827286243438720703125)<>(0.99667693019570047230359932655119337141513824462890625)) as bigint))
@@ -626,7 +626,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t2" ("c0" TINYINT)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO "t2" VALUES (1), (0)
 
 query T rowsort
@@ -887,7 +887,7 @@ CREATE TABLE "sys"."t2" ("c2" UUID)
 statement ok
 INSERT INTO "sys"."t2" VALUES ('5a8f807e-47aa-3ddd-9b12-65ec99aa6b89'), ('adb2afe1-0aff-5af0-aee1-bf5dfdafcdaf'), ('4b9d0cdd-fd79-ac10-8ab5-6dd3dddebd8a')
 
-statement error
+statement error 42000!MERGE: subqueries not supported inside MERGE conditions
 MERGE INTO t1 USING (SELECT * FROM t2) AS t2 ON CASE 1 WHEN (VALUES (2)) THEN '6' BETWEEN 0.77 AND 0.28 WHEN 3 THEN TRUE END WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT (c4, c9) VALUES (0.66, true)
 
 statement ok
