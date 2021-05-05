@@ -76,3 +76,30 @@ UPDATE t0 SET c1 = (SELECT t1.c0 FROM t0, t1 GROUP BY t1.c0)
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" INTERVAL DAY)
+
+statement ok rowcount 5
+COPY 5 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+148591026288000.000
+345600.000
+604800.000
+172800.000
+86400.000
+
+statement ok rowcount 5
+TRUNCATE TABLE t1
+
+statement ok rowcount 1
+INSERT INTO t1(c2) VALUES(INTERVAL '5' DAY)
+
+statement ok
+SELECT t1.c2 FROM t1 WHERE 3 IS NOT NULL OR ((SELECT TRUE) EXCEPT ALL (SELECT TRUE FROM t1))
+
+statement ok
+ROLLBACK
