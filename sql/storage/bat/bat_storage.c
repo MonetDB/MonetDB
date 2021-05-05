@@ -3039,10 +3039,8 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 	if (pos%32)
 		*dst=cur;
 	BATsetcount(b, nr);
-	if (!(bn = BATmaskedcands(start, nr, b, true))) {
-		BBPreclaim(b);
-		return NULL;
-	}
+	bn = BATmaskedcands(start, nr, b, true);
+	BBPreclaim(b);
 	(void)pos;
 	assert (pos == nr);
 	return bn;
