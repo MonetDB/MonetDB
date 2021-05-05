@@ -37,16 +37,15 @@ static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 #define VALID_4_READ(TS,tr) \
 	(TS == tr->tid || (tr->parent && tr_version_of_parent(tr, TS)) || TS < tr->ts)
 
+#define SEG_VALID_4_DELETE(seg,tr) \
+	(!seg->deleted && VALID_4_READ(seg->ts, tr))
+
 #define SEG_IS_DELETED(seg,tr) \
 	((seg->deleted && VALID_4_READ(seg->ts, tr)) || \
 	 (!seg->deleted && seg->oldts && seg->ts != tr->tid && seg->ts > TRANSACTION_ID_BASE && seg->oldts < tr->ts))
-#define SEG_VALID(seg,tr) \
-	((!seg->deleted && VALID_4_READ(seg->ts, tr)) || (seg->deleted != d && seg->oldts < tr->ts))
 
-#define SEG_VALID_4_WRITE(seg,tr,d) \
-	(seg->deleted != d && VALID_4_READ(seg->ts, tr))
-
-#define SEG_VALID_4_DELETE(seg,tr) SEG_VALID_4_WRITE(seg,tr,true)
+#define SEG_IS_VALID(seg, tr) \
+		(VALID_4_READ(seg->ts, tr) || (seg->deleted && seg->oldts && seg->ts > tr->ts && seg->oldts < tr->ts))
 
 static void
 lock_table(sqlstore *store, sqlid id)
@@ -517,7 +516,7 @@ segs_end( segments *segs, sql_trans *tr)
 	segment *s = segs->h, *l = NULL;
 
 	for(;s; s = s->next) {
-		if (VALID_4_READ(s->ts, tr) || (s->deleted && s->oldts && s->ts > tr->ts && s->oldts < tr->ts))
+		if (SEG_IS_VALID(s, tr))
 				l = s;
 	}
 	if (!l)
