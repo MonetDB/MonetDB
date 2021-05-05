@@ -2129,12 +2129,12 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						rel = l;
 					}
 					rel = rel_add_identity(v->sql, rel, &id); /* identity function needed */
-					(void) id;
 					assert(id);
 
 					sql_rel *l = rel;
 					sql_rel *r = rel_dup(rel);
-					list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+					list *exps = rel_projections(v->sql, rel, NULL, 1, 0); /* TID column must not be included */
+					list_append(exps, exp_ref(v->sql, id)); /* but identity must */
 
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
@@ -2145,8 +2145,10 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 					if (!(r = rewrite_or_exp(v, r)))
 						return NULL;
 
-					list *ls = rel_projections(v->sql, rel, NULL, 1, 1);
-					list *rs = rel_projections(v->sql, rel, NULL, 1, 1);
+					list *ls = rel_projections(v->sql, rel, NULL, 1, 0);
+					list_append(ls, exp_ref(v->sql, id));
+					list *rs = rel_projections(v->sql, rel, NULL, 1, 0);
+					list_append(rs, exp_ref(v->sql, id));
 					if (!(rel = rel_setop_check_types(v->sql, l, r, ls, rs, op_union)))
 						return NULL;
 					rel_setop_set_exps(v->sql, rel, exps);
