@@ -98,8 +98,10 @@ TRUNCATE TABLE t1
 statement ok rowcount 1
 INSERT INTO t1(c2) VALUES(INTERVAL '5' DAY)
 
-statement ok
+query T rowsort
 SELECT t1.c2 FROM t1 WHERE 3 IS NOT NULL OR ((SELECT TRUE) EXCEPT ALL (SELECT TRUE FROM t1))
+----
+5
 
 statement ok
 ROLLBACK
