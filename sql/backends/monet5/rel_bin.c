@@ -6428,7 +6428,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	be->join_idx = 0;
 	be->rowcount = 0;
-	be->silent = GDKembedded() || !top;
+	be->silent = !top;
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
