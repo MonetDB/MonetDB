@@ -81,6 +81,21 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t2" ("c0" INTERVAL SECOND)
+
+statement ok rowcount 3
+INSERT INTO "t2" VALUES (INTERVAL '1' SECOND), (INTERVAL '3' SECOND), (INTERVAL '3' SECOND);
+
+statement ok rowcount 0
+update t2 set c0 = INTERVAL '5' SECOND where isauuid('a') or (values (time '05:52:51')) is null
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t1" ("c2" INTERVAL DAY)
 
 statement ok rowcount 5
