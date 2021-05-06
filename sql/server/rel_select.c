@@ -2031,7 +2031,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 		}
 		if (!e) {
-			if (add_select && (*rel) && !is_project((*rel)->op) && !is_select((*rel)->op))
+			if (add_select && rel && *rel && !is_project((*rel)->op) && !is_select((*rel)->op))
 				*rel = rel_select(sql->sa, *rel, NULL);
 			e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 		}
