@@ -2459,6 +2459,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
+		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
 			if (sq)
