@@ -138,12 +138,12 @@ union (
 | project (
 | | select (
 | | | table("sys"."mt1") [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1022" as "%3"."%3") ]
+| | ) [ "test"."id" in (bigint "1", bigint "1022") ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
 | | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1022" as "%3"."%3") ]
+| | ) [ "test"."id" in (bigint "1", bigint "1022") ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 
@@ -153,7 +153,7 @@ plan select * from test where id in (1, 1000)
 project (
 | select (
 | | table("sys"."mt2") [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1000" as "%3"."%3") ]
+| ) [ "test"."id" in (bigint "1", bigint "1000") ]
 ) [ "test"."id", "test"."posx" ]
 
 statement ok
