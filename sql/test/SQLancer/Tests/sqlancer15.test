@@ -162,6 +162,46 @@ INSERT INTO "t2" VALUES (false, DATE '1970-01-01', 0.42016214),(true, DATE '1970
 (true, DATE '1970-01-01', NULL),(false, DATE '1970-01-01', 0.2627602),(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL)
 
 query I rowsort
+SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)));
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t0, t2 WHERE t0.c2 = CASE WHEN t2.c2 THEN 1 WHEN t2.c6 = ANY(SELECT t2.c6 FROM t2) THEN 5 END
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
 SELECT 1 FROM t0, t2 WHERE t0.c2 BETWEEN 0 AND CASE WHEN t2.c2 THEN 1 WHEN t2.c4 = ANY(SELECT t2.c4 FROM t2) THEN 2 END
 ----
 1
