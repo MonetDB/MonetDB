@@ -3300,14 +3300,14 @@ str
 dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[2];
+	BAT *t[3];
 	bat id;
 
 	(void) cntxt;
 	(void) mb;
-	if (TRACEtable(cntxt, t) != 2)
+	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i< 2; i++)
+	for(i=0; i < 3; i++)
 	if( t[i]){
 		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
@@ -4940,7 +4940,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "rt_credentials", sql_rt_credentials_wrap, false, "Return the remote table credentials for the given table", args(3,4, batarg("uri",str),batarg("username",str),batarg("hash",str),arg("tablename",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
  pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
- pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(2,2, batarg("ticks",lng),batarg("stmt",str))),
+ pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(3,3, batarg("ticks",lng),batarg("stmt",str),batarg("stmt",str))),
  pattern("sql", "analyze", sql_analyze, true, "", args(1,3, arg("",void),arg("minmax",int),arg("sample",lng))),
  pattern("sql", "analyze", sql_analyze, true, "", args(1,4, arg("",void),arg("minmax",int),arg("sample",lng),arg("sch",str))),
  pattern("sql", "analyze", sql_analyze, true, "", args(1,5, arg("",void),arg("minmax",int),arg("sample",lng),arg("sch",str),arg("tbl",str))),

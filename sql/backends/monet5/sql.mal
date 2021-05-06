@@ -413,7 +413,8 @@ comment "dump the optimizer rewrite statistics";
 
 pattern dump_trace()(
 	ticks:bat[:lng],
-	stmt:bat[:str])
+	stmt:bat[:str],
+	event:bat[:str])
 address dump_trace
 comment "dump the trace statistics";
 
