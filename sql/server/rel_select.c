@@ -1937,7 +1937,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	dnode *n = dl->h->next, *dn = NULL;
 	sql_exp *le = NULL, *re, *e = NULL;
 	list *ll = sa_list(sql->sa);
-	int is_tuple = 0;
+	int is_tuple = 0, add_select = 0;
 
 	/* complex case */
 	if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
@@ -1987,6 +1987,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				re = exp_rel_label(sql, re);
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
+				add_select = 1;
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
 			}
@@ -2029,8 +2030,11 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			if (!e && (le = exp_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
 				return NULL;
 		}
-		if (!e)
+		if (!e) {
+			if (add_select && (*rel) && !is_project((*rel)->op) && !is_select((*rel)->op))
+				*rel = rel_select(sql->sa, *rel, NULL);
 			e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
+		}
 	}
 	return e;
 }
