@@ -9275,7 +9275,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"droporderindex",	"unsafe pattern sql.droporderindex(X_0:str, X_1:str, X_2:str):void ",	"sql_droporderindex;",	""	]
 [ "sql",	"dump_cache",	"pattern sql.dump_cache() (X_0:bat[:str], X_1:bat[:int]) ",	"dump_cache;",	""	]
 [ "sql",	"dump_opt_stats",	"pattern sql.dump_opt_stats() (X_0:bat[:str], X_1:bat[:int]) ",	"dump_opt_stats;",	""	]
-[ "sql",	"dump_trace",	"pattern sql.dump_trace() (X_0:bat[:lng], X_1:bat[:str]) ",	"dump_trace;",	""	]
+[ "sql",	"dump_trace",	"pattern sql.dump_trace() (X_0:bat[:lng], X_1:bat[:str], X_2:bat[:str]) ",	"dump_trace;",	""	]
 [ "sql",	"emptybind",	"pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1]) ",	"mvc_bind_wrap;",	""	]
 [ "sql",	"emptybind",	"pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1] ",	"mvc_bind_wrap;",	""	]
 [ "sql",	"emptybind",	"pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1]) ",	"mvc_bind_wrap;",	""	]
