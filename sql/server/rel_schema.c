@@ -1831,8 +1831,6 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
-	if (strcmp(iname, TID + 1) == 0) /* an index named 'TID%' could interfere with '%TID%' */
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: name '%s' not allowed", iname);
 	if (isView(t) || isMergeTable(t) || isRemote(t))
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":isMergeTable(t)?"merge table":"remote table", tname);
 	nt = dup_sql_table(sql->sa, t);
