@@ -84,7 +84,7 @@ statement ok
 CREATE TABLE "t2" ("c0" INTERVAL SECOND)
 
 statement ok rowcount 3
-INSERT INTO "t2" VALUES (INTERVAL '1' SECOND), (INTERVAL '3' SECOND), (INTERVAL '3' SECOND);
+INSERT INTO "t2" VALUES (INTERVAL '1' SECOND), (INTERVAL '3' SECOND), (INTERVAL '3' SECOND)
 
 statement ok rowcount 0
 update t2 set c0 = INTERVAL '5' SECOND where isauuid('a') or (values (time '05:52:51')) is null
@@ -138,6 +138,65 @@ COPY 5 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 
 statement ok rowcount 1
 INSERT INTO t0(c0) VALUES (EXISTS (SELECT FALSE) AND FALSE)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c2" BIGINT NOT NULL,CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t0_c2_unique" UNIQUE ("c2"))
+
+statement ok rowcount 19
+INSERT INTO "t0" VALUES (-379229224),(0),(1),(385713029),(-1267052829232070784),(2),(9),(1031484581),(5),(1240848166),(-326279290),(4),(8),(3),
+(1525535569),(-2056321524),(-2008727810),(-909418544),(6)
+
+statement ok
+CREATE TABLE "t2" ("c2" BOOLEAN NOT NULL,"c6" DATE NOT NULL,"c4" REAL)
+
+statement ok rowcount 16
+INSERT INTO "t2" VALUES (false, DATE '1970-01-01', 0.42016214),(true, DATE '1970-01-01', 0.8693425),(true, DATE '1970-01-01', -4.752201e+08),
+(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-08', 0.06673173),(false, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL),
+(true, DATE '1970-01-01', 0.91617733),(false, DATE '1970-01-01', 0.9449981),(true, DATE '1970-01-01', -1.092508e+09),(true, DATE '1970-01-14', NULL),
+(true, DATE '1970-01-01', NULL),(false, DATE '1970-01-01', 0.2627602),(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL)
+
+query I rowsort
+SELECT 1 FROM t0, t2 WHERE t0.c2 BETWEEN 0 AND CASE WHEN t2.c2 THEN 1 WHEN t2.c4 = ANY(SELECT t2.c4 FROM t2) THEN 2 END
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
