@@ -2129,13 +2129,24 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						rel = l;
 					}
 					rel = rel_add_identity(v->sql, rel, &id); /* identity function needed */
-					(void) id;
-					assert(id);
+					const char *idrname = exp_relname(id), *idname = exp_name(id);
+					list *tids = NULL, *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+
+					for( node *n = exps->h ; n ; ) {
+						node *next = n->next;
+						sql_exp *e = n->data;
+
+						if (strcmp(exp_name(e), TID) == 0) { /* remove TID references and later restore them with identity function references */
+							if (!tids)
+								tids = sa_list(v->sql->sa);
+							list_append(tids, exp_alias(v->sql->sa, exp_relname(e), TID, idrname, idname, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+							list_remove_node(exps, NULL, n);
+						}
+						n = next;
+					}
 
 					sql_rel *l = rel;
 					sql_rel *r = rel_dup(rel);
-					list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
-
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
 					if (!(l = rewrite_or_exp(v, l)))
@@ -2144,14 +2155,13 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 					r->exps = e->r;
 					if (!(r = rewrite_or_exp(v, r)))
 						return NULL;
-
-					list *ls = rel_projections(v->sql, rel, NULL, 1, 1);
-					list *rs = rel_projections(v->sql, rel, NULL, 1, 1);
-					if (!(rel = rel_setop_check_types(v->sql, l, r, ls, rs, op_union)))
+					if (!(rel = rel_setop_check_types(v->sql, l, r, exps_copy(v->sql, exps), exps_copy(v->sql, exps), op_union)))
 						return NULL;
 					rel_setop_set_exps(v->sql, rel, exps);
 					set_processed(rel);
 					rel = rel_distinct(rel);
+					if (tids) /* restore TIDs with identity function references */
+						rel = rel_project(v->sql->sa, rel, list_merge(rel_projections(v->sql, rel, NULL, 1, 1), tids, NULL));
 					v->changes++;
 					return rel;
 				}
@@ -2449,6 +2459,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
+		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
 			if (sq)

@@ -82,6 +82,7 @@ typedef struct CLIENT {
 	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
 	BAT *profticks;
 	BAT *profstmt;
+	BAT *profevents;
 
 	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
 	/*
