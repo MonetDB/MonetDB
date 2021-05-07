@@ -95,6 +95,13 @@ with SQLTestCase() as mdb1:
         mdb1.execute("delete from integers where i < 101;").assertRowCount(170) # 101 - 200, 101 - 300
         mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(300,)])
         mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
+        mdb1.execute("insert into integers (select value from generate_series(41,161,1));").assertRowCount(120) # 101 - 200, 101 - 300, 41 - 160
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(420,)])
+        mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
+        mdb1.execute("delete from integers where i between 91 and 120;").assertRowCount(70) # 121 - 200, 121 - 300, 41 - 90, 121 - 160
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(350,)])
+        mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
+
         mdb1.execute('commit;').assertSucceeded()
 
         mdb1.execute("drop table integers;")
