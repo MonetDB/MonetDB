@@ -2403,7 +2403,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
-		--BBP_desc(i)->batSharecnt;
+		if (BBP_desc(i)->batSharecnt == 0) {
+			GDKerror("%s: %s does not have any shares.\n", func, BBPname(i));
+			assert(0);
+		} else {
+			--BBP_desc(i)->batSharecnt;
+		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
 		return refs;

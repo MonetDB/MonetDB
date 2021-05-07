@@ -36,6 +36,8 @@ virtualize(BAT *bn)
 	       (((bn->ttype == TYPE_void && !is_oid_nil(bn->tseqbase)) ||
 		 bn->ttype == TYPE_oid) &&
 		bn->tkey && bn->tsorted));
+	assert(BBP_refs(bn->batCacheid) == 1);
+	assert(BBP_lrefs(bn->batCacheid) == 0);
 	/* since bn has unique and strictly ascending values, we can
 	 * easily check whether the column is dense */
 	if (bn && bn->ttype == TYPE_oid &&
