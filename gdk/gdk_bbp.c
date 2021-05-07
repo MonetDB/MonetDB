@@ -3055,7 +3055,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		/* there is a situation where the move may fail,
 		 * namely if this heap was not supposed to be existing
 		 * before, i.e. after a BATmaterialize on a persistent
-		 * bat as a workaround, do not complain about move
+		 * bat; as a workaround, do not complain about move
 		 * failure if the source file is nonexistent
 		 */
 		if (mvret != GDK_SUCCEED && file_exists(h->farmid, srcdir, nme, ext)) {
