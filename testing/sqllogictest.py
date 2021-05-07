@@ -571,8 +571,9 @@ class SQLLogic:
         '''parse strings like @connection(id=con1, ...)
         '''
         res = dict()
+        s = s.strip()
         if not (s.startswith('@connection(') and s.endswith(')')):
-            self.raise_error('invalid connection string!')
+            self.raise_error(f'ERROR: invalid connection string {s}!')
         params = s[12:-1].split(',')
         for p in params:
             p = p.strip()
@@ -610,7 +611,7 @@ class SQLLogic:
             conn = None
             # look for connection string
             if line.startswith('@connection'):
-                conn_params = parse_connection_string(line)
+                conn_params = self.parse_connection_string(line)
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
                 self.writeline(line)
                 line = self.readline()
