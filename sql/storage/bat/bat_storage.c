@@ -34,18 +34,30 @@ static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldes
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
+/* valid
+ * !deleted && VALID_4_READ(TS, tr)				existing or newly created segment
+ *  deleted && TS > tr->ts && OLDTS < tr->ts		deleted after current transaction
+ */
+
 #define VALID_4_READ(TS,tr) \
 	(TS == tr->tid || (tr->parent && tr_version_of_parent(tr, TS)) || TS < tr->ts)
+
+/* when changed, check if the old status is still valid */
+#define OLD_VALID_4_READ(TS,OLDTS,tr) \
+		(OLDTS && TS != tr->tid && TS > tr->ts && OLDTS < tr->ts)
 
 #define SEG_VALID_4_DELETE(seg,tr) \
 	(!seg->deleted && VALID_4_READ(seg->ts, tr))
 
+/* Delete (in current trans or by some other finised transaction, or re-used segment which used to be deleted */
 #define SEG_IS_DELETED(seg,tr) \
-	((seg->deleted && VALID_4_READ(seg->ts, tr)) || \
-	 (!seg->deleted && seg->oldts && seg->ts != tr->tid && seg->ts > TRANSACTION_ID_BASE && seg->oldts < tr->ts))
+	((seg->deleted && (VALID_4_READ(seg->ts, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
+	 (!seg->deleted && OLD_VALID_4_READ(seg->ts, seg->oldts, tr)))
 
+/* A segment is part of the current transaction is someway or is deleted by some other transaction but use to be valid */
 #define SEG_IS_VALID(seg, tr) \
-		(VALID_4_READ(seg->ts, tr) || (seg->deleted && seg->oldts && seg->ts > tr->ts && seg->oldts < tr->ts))
+		((!seg->deleted && VALID_4_READ(seg->ts, tr)) || \
+		 (seg->deleted && OLD_VALID_4_READ(seg->ts, seg->oldts, tr)))
 
 static void
 lock_table(sqlstore *store, sqlid id)
@@ -129,7 +141,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 
 	n->oldts = 0;
 	if (o->ts == tr->tid) {
-		n->ts = 0;
+		n->ts = 1;
 		n->deleted = true;
 	} else {
 		n->oldts = o->ts;
@@ -493,6 +505,21 @@ count_inserts( segment *s, sql_trans *tr)
 
 	for(;s; s = s->next) {
 		if (!s->deleted && s->ts == tr->tid)
+			cnt += s->end - s->start;
+	}
+	return cnt;
+}
+
+static size_t
+count_deletes_in_range( segment *s, sql_trans *tr, BUN start, BUN end)
+{
+	size_t cnt = 0;
+
+	for(;s && s->end <= start; s = s->next)
+		;
+
+	for(;s && s->start < end; s = s->next) {
+		if (SEG_IS_DELETED(s, tr)) /* assume aligned s->end and end */
 			cnt += s->end - s->start;
 	}
 	return cnt;
@@ -2322,7 +2349,9 @@ clear_table(sql_trans *tr, sql_table *t)
 	sql_column *c = n->data;
 	BUN sz = count_col(tr, c, 0);
 
-	sz -= count_del(tr, t, 0);
+	//sz -= count_del(tr, t, 0);
+	storage *d = tab_timestamp_storage(tr, t);
+	sz -= count_deletes_in_range(d->segs->h, tr, 0, sz);
 	if ((clear_del(tr, t)) == BUN_NONE)
 		return BUN_NONE;
 
@@ -2988,7 +3017,7 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 			continue;
 		if (s->start >= end)
 			break;
-		msk m = !(SEG_IS_DELETED(s, tr));
+		msk m = (SEG_IS_VALID(s, tr));
 		size_t lnr = s->end-s->start;
 		if (s->start < start)
 			lnr -= (start - s->start);
