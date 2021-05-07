@@ -6124,9 +6124,6 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		list_split_aggr_and_project(sql, aexps, e->l);
 		return e;
 	case e_atom:
-		if (e->f)
-			list_split_aggr_and_project(sql, aexps, e->f);
-		return e;
 	case e_column: /* constants and columns shouldn't be rewriten */
 	case e_psm:
 		return e;
@@ -7879,9 +7876,6 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_atom:
-		if (e->f)
-			split_exps(sql, e->f, rel);
-		return e;
 	case e_psm:
 		return e;
 	}
@@ -8000,9 +7994,6 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_atom:
-		if (e->f)
-			select_split_exp(sql, e->f, rel);
-		return e;
 	case e_psm:
 		return e;
 	}
