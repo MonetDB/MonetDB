@@ -102,6 +102,45 @@ with SQLTestCase() as mdb1:
         mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(350,)])
         mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
 
+        mdb1.execute("delete from integers where i between 131 and 140 or i < 91;").assertRowCount(80) # 121 - 130, 141 - 200, 121 - 130, 141 - 300, 121 - 130, 141 - 160
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(270,)])
+        mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
+        mdb1.execute("insert into integers (select value from generate_series(41,51,1));").assertRowCount(10) # 121 - 130, 141 - 200, 121 - 130, 141 - 300, 121 - 130, 141 - 160, 41 - 50
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(280,)])
+        mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
+        mdb1.execute("delete from integers where i > 99;").assertRowCount(270) # 41 - 50
+        mdb1.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
         mdb1.execute('commit;').assertSucceeded()
+
+        mdb1.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('TRUNCATE integers;').assertRowCount(10)
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(0,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute("insert into integers (select value from generate_series(1,101,1));").assertRowCount(100) # 1 - 100
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(100,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute("insert into integers (select value from generate_series(1,31,1));").assertRowCount(30) # 1 - 100, 1 - 30
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(130,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute('DELETE FROM integers WHERE i between 11 and 20;').assertRowCount(20) # 1 - 10, 21 - 100, 1 - 10, 21 - 30
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(110,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute('DELETE FROM integers WHERE i between 1 and 10 or i between 91 and 100;').assertRowCount(30) # 21 - 90, 21 - 30
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(80,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute("insert into integers (select value from generate_series(1,11,1));").assertRowCount(10) # 21 - 90, 21 - 30, 1 - 10
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(90,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute("TRUNCATE integers;").assertRowCount(90)
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(0,)])
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(41,),(42,),(43,),(44,),(45,),(46,),(47,),(48,),(49,),(50,)])
+        mdb1.execute('commit;').assertSucceeded()
+
+        mdb1.execute('SELECT i FROM integers;').assertDataResultMatch([])
+        mdb2.execute('SELECT i FROM integers;').assertDataResultMatch([])
 
         mdb1.execute("drop table integers;")
