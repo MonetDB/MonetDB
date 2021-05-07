@@ -89,7 +89,35 @@ sqllogic protocol a bit further::
     hash-threshold number
     halt
 
-Alternatively ``.sql`` scripts can be converted to sqllogic tests (.test) with ``Mconvert.py``.
+Consider the following single client connection example::
+
+    statement ok
+    create table foo(a int)
+
+    statement ok
+    insert into foo values (1), (2), (3)
+
+    query I rowsort
+    select sum(a) from foo
+    ----
+    6
+
+, the same assertions could be made from multiple clients as follows::
+
+    statement ok
+    create table foo(a int)
+
+    @connection(id=1, username=monetdb, password=monetdb)
+    statement ok
+    insert into foo values (1), (2), (3)
+
+    @connection(id=2, username=monetdb, password=monetdb)
+    query I rowsort
+    select sum(a) from foo
+    ----
+    6
+
+Alternatively existing ``.sql`` scripts can be converted to sqllogic tests (.test) with ``Mconvert.py``.
 For example::
 
     $Mconvert.py  --auto <module>/Tests <convert_me>.sql
