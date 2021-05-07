@@ -80,10 +80,10 @@ with SQLTestCase() as mdb1:
 
         mdb1.execute("insert into integers (select value from generate_series(1,201,1));").assertRowCount(200) # 1 - 20, 1 - 20, 1 - 200
         mdb1.execute('start transaction;').assertSucceeded()
-        mdb1.execute("delete from integers where i < 21;").assertRowCount(60) # 1 - 180
+        mdb1.execute("delete from integers where i < 21;").assertRowCount(60) # 21 - 200
         mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(180,)])
         mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(240,)])
-        mdb1.execute("insert into integers (select value from generate_series(11,301,1));").assertRowCount(290) # 1 - 180, 11 - 300
+        mdb1.execute("insert into integers (select value from generate_series(11,301,1));").assertRowCount(290) # 21 - 200, 11 - 300
         mdb1.execute('commit;').assertSucceeded()
 
         mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
@@ -92,8 +92,8 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
         mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
-        mdb1.execute("delete from integers where i < 101;").assertRowCount(190) # 101 - 180, 101 - 300
-        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(280,)])
+        mdb1.execute("delete from integers where i < 101;").assertRowCount(170) # 101 - 200, 101 - 300
+        mdb1.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(300,)])
         mdb2.execute('SELECT count(*) FROM integers;').assertDataResultMatch([(470,)])
         mdb1.execute('commit;').assertSucceeded()
 
