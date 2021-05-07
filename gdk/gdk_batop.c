@@ -398,6 +398,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			r++;
 		}
 	}
+	assert(b->batCapacity >= b->batCount);
 	b->theap->dirty = true;
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
