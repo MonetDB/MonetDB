@@ -3183,7 +3183,7 @@ bm_commit(logger *lg, lng save_id)
 		BATloop(lg->freed, p, q) {
 			lng lid = lids[p];
 
-			if (lid < save_id && (
+			if (lid > save_id && (
 				BUNappend(nfreed, bids+p, false) != GDK_SUCCEED ||
 				BUNappend(nfreed_lid, &lid, false) != GDK_SUCCEED)) {
 				logbat_destroy(n);
