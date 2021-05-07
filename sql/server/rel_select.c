@@ -1937,7 +1937,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	dnode *n = dl->h->next, *dn = NULL;
 	sql_exp *le = NULL, *re, *e = NULL;
 	list *ll = sa_list(sql->sa);
-	int is_tuple = 0;
+	int is_tuple = 0, add_select = 0;
 
 	/* complex case */
 	if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
@@ -1987,11 +1987,15 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				re = exp_rel_label(sql, re);
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
+				add_select = 1;
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
 			}
 			append(vals, re);
 		}
+
+		if (list_empty(vals))
+			return sql_error(sql, 02, SQLSTATE(42000) "The list of values for IN operator cannot be empty");
 
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
@@ -2002,13 +2006,27 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
-			sql_subtype super;
+			sql_subtype super, *le_tpe = exp_subtype(le), *values_tpe = NULL;
 
-			if (!(values = exp_values_set_supertype(sql, values, exp_subtype(le))))
-				return NULL;
-			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
-				return NULL;
-			supertype(&super, exp_subtype(values), exp_subtype(le));
+			for (node *m = vals->h; m; m = m->next) { /* first get values supertype */
+				sql_exp *e = m->data;
+				sql_subtype *tpe = exp_subtype(e);
+
+				if (values_tpe && tpe) {
+					supertype(&super, values_tpe, tpe);
+					*values_tpe = super;
+				} else if (!values_tpe && tpe) {
+					super = *tpe;
+					values_tpe = &super;
+				}
+			}
+			if (!le_tpe)
+				le_tpe = values_tpe;
+			if (!values_tpe)
+				values_tpe = le_tpe;
+			if (!le_tpe || !values_tpe)
+				return sql_error(sql, 01, SQLSTATE(42000) "For the IN operator, both sides must have a type defined");
+			supertype(&super, values_tpe, le_tpe); /* compute supertype */
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
 			if ((is_sql_where(f) || is_sql_having(f)) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
@@ -2026,11 +2044,20 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					e = exp_in(sql->sa, le, vals, (sc->token == SQL_IN) ? cmp_in : cmp_notin);
 				}
 			}
-			if (!e && (le = exp_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
-				return NULL;
+			if (!e) { /* after computing supertype, check types for each IN value */
+				for (node *n = vals->h ; n ; n = n->next)
+					if ((n->data = exp_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
+						return NULL;
+				values->tpe = *exp_subtype(vals->h->data);
+				if (!(le = exp_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)))
+					return NULL;
+			}
 		}
-		if (!e)
+		if (!e) {
+			if (add_select && rel && *rel && !is_project((*rel)->op) && !is_select((*rel)->op))
+				*rel = rel_select(sql->sa, *rel, NULL);
 			e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
+		}
 	}
 	return e;
 }
@@ -2444,7 +2471,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_having(f) | ( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op) || is_joinop((*rel)->op)))))
+		if (ek.card < card_set && sq->card >= CARD_AGGR && (is_sql_sel(f) | is_sql_having(f) | ( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op) || is_joinop((*rel)->op)))))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
@@ -6064,7 +6091,7 @@ rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 	rel = rel_query(query, rel, sq, toplevel, ek);
 	stack_pop_frame(sql);
 
-	if (rel && ek.type == type_relation && ek.card < card_set && rel->card >= CARD_MULTI)
+	if (rel && ek.type == type_relation && ek.card < card_set && rel->card >= CARD_AGGR)
 		return rel_zero_or_one(sql, rel, ek);
 	return rel;
 }

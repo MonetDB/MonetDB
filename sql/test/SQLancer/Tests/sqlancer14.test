@@ -902,3 +902,22 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((CASE WHEN '0' THEN 9 ELSE -
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" BINARY LARGE OBJECT NOT NULL,"c2" BIGINT NOT NULL,"c3" CHAR(423))
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" TINYINT)
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" TIME,"c3" BIGINT)
+
+statement ok rowcount 2
+insert into t0(c0, c2, c3) values(blob 'C0', 3, case 8 when 0.8 then 'sd' else cast(uuid '4C0cA58A-f54F-fc4F-C0c9-6909aDd7Ed52' > all(select all uuid 'cDbE28DB-FDcc-eeCa-E089-feD9D8CA7FC6'
+from t1 as l3t1, t2 as l3t2 where false) as string(922)) end), (blob 'Ba35f6f1', + (dayofyear(timestamp '1970-01-01 01:00:00')), '')
+
+statement ok
+ROLLBACK

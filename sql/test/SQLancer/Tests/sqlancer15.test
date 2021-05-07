@@ -1,0 +1,257 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c4" INTEGER)
+
+statement ok rowcount 3
+INSERT INTO "t0" VALUES (-6), (6), (1)
+
+statement ok
+CREATE TABLE "t1" ("c4" DOUBLE PRECISION)
+
+statement ok rowcount 3
+INSERT INTO "t1" VALUES (-0.1), (0.3), (0.9)
+
+statement error GDK reported error: BATsubcross: more than one match
+INSERT INTO t0(c4) VALUES(1), ("epoch_ms"(((SELECT TIME '01:00:00' FROM t0 GROUP BY t0.c4) EXCEPT ALL (SELECT DISTINCT TIME '01:00:00' FROM t1))))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c1" TINYINT,"c2" BIGINT,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok rowcount 1
+INSERT INTO t0(c1) VALUES(3)
+
+statement ok
+CREATE TABLE "t1" ("c0" DOUBLE,"c1" TINYINT)
+
+statement ok rowcount 3
+COPY 3 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.08609425065477394	-1
+NULL	NULL
+-45	NULL
+
+statement ok
+CREATE TABLE "t2" ("c1" TINYINT,"c3" REAL,"c4" BIGINT)
+
+statement ok rowcount 20
+COPY 20 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	-1189531030
+NULL	NULL	-1721683267
+NULL	0.35263324	NULL
+NULL	2.0905742e+09	NULL
+NULL	0.34408945	NULL
+NULL	0.44041038	NULL
+0	8.0997114e+08	1848957376
+1	NULL	NULL
+9	NULL	NULL
+7	NULL	NULL
+9	0.08480057	NULL
+-5	0.15051073	1833181788
+-1	NULL	1269327700
+7	NULL	999905610
+NULL	0.98237896	NULL
+NULL	0.41320944	NULL
+8	NULL	NULL
+3	NULL	NULL
+NULL	NULL	NULL
+NULL	0.8227772	NULL
+
+statement ok rowcount 3
+TRUNCATE t1
+
+statement ok rowcount 20
+INSERT INTO t1(c0,c1) (SELECT 0.92, NULL FROM t2)
+
+statement ok rowcount 1
+UPDATE t0 SET c1 = (SELECT t1.c0 FROM t0, t1 GROUP BY t1.c0)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" INTERVAL SECOND)
+
+statement ok rowcount 3
+INSERT INTO "t2" VALUES (INTERVAL '1' SECOND), (INTERVAL '3' SECOND), (INTERVAL '3' SECOND)
+
+statement ok rowcount 0
+update t2 set c0 = INTERVAL '5' SECOND where isauuid('a') or (values (time '05:52:51')) is null
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" INTERVAL DAY)
+
+statement ok rowcount 5
+COPY 5 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+148591026288000.000
+345600.000
+604800.000
+172800.000
+86400.000
+
+statement ok rowcount 5
+TRUNCATE TABLE t1
+
+statement ok rowcount 1
+INSERT INTO t1(c2) VALUES(INTERVAL '5' DAY)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE 3 IS NOT NULL OR ((SELECT TRUE) EXCEPT ALL (SELECT TRUE FROM t1))
+----
+5
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" TINYINT,"c3" BIGINT,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok
+COPY 5 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+4	8
+7	NULL
+2	NULL
+6	NULL
+9	6
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES (EXISTS (SELECT FALSE) AND FALSE)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c2" BIGINT NOT NULL,CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t0_c2_unique" UNIQUE ("c2"))
+
+statement ok rowcount 19
+INSERT INTO "t0" VALUES (-379229224),(0),(1),(385713029),(-1267052829232070784),(2),(9),(1031484581),(5),(1240848166),(-326279290),(4),(8),(3),
+(1525535569),(-2056321524),(-2008727810),(-909418544),(6)
+
+statement ok
+CREATE TABLE "t2" ("c2" BOOLEAN NOT NULL,"c6" DATE NOT NULL,"c4" REAL)
+
+statement ok rowcount 16
+INSERT INTO "t2" VALUES (false, DATE '1970-01-01', 0.42016214),(true, DATE '1970-01-01', 0.8693425),(true, DATE '1970-01-01', -4.752201e+08),
+(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-08', 0.06673173),(false, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL),
+(true, DATE '1970-01-01', 0.91617733),(false, DATE '1970-01-01', 0.9449981),(true, DATE '1970-01-01', -1.092508e+09),(true, DATE '1970-01-14', NULL),
+(true, DATE '1970-01-01', NULL),(false, DATE '1970-01-01', 0.2627602),(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL)
+
+query I rowsort
+SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)));
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t0, t2 WHERE t0.c2 = CASE WHEN t2.c2 THEN 1 WHEN t2.c6 = ANY(SELECT t2.c6 FROM t2) THEN 5 END
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t0, t2 WHERE t0.c2 BETWEEN 0 AND CASE WHEN t2.c2 THEN 1 WHEN t2.c4 = ANY(SELECT t2.c4 FROM t2) THEN 2 END
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c2" INTEGER)
+
+statement ok
+CREATE TABLE "t2" ("c5" BINARY LARGE OBJECT)
+
+statement ok rowcount 1
+insert into t0(c2) values(ifthenelse((select false from t2 having max(greatest((values (blob '')), t2.c5) = blob 'fa8D')), (select 1), 3))
+
+statement ok
+ROLLBACK
