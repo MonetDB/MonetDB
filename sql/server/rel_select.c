@@ -3954,11 +3954,9 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 	assert(res);
 	list_append(args, res);
 	list *types = sa_list(sql->sa);
-	if (!opt_cond_exp)
-		types = append(sa_list(sql->sa), condtype);
 	types = append(append(types, restype), restype);
-	sql_subfunc *ifthenelse = find_func(sql, NULL, opt_cond_exp?"casewhen":"ifthenelse", list_length(types), F_FUNC, NULL, NULL);
-	res = exp_op(sql->sa, args, ifthenelse);
+	sql_subfunc *case_func = find_func(sql, NULL, opt_cond_exp?"casewhen":"case", list_length(types), F_FUNC, NULL, NULL);
+	res = exp_op(sql->sa, args, case_func);
 	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
 	return res;
 }
