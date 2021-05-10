@@ -518,10 +518,9 @@ static void
 objectversion_destroy_recursive(sqlstore* store, objectversion *ov)
 {
 	if (ov->id_based_older && ov->id_based_older == ov->name_based_older) {
-			objectversion_destroy_recursive(store, ov->id_based_older);
-		}
-
-		objectversion_destroy(store, ov->os, ov);
+		objectversion_destroy_recursive(store, ov->id_based_older);
+	}
+	objectversion_destroy(store, ov->os, ov);
 }
 
 static int

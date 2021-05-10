@@ -1902,12 +1902,6 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 		e->r = NULL;
 	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
 
-	if (is_values(e) && list_length(exp_get_values(e))==1) { /* list of values with 1 element are redundant */
-		sql_exp *val = ((list*)e->f)->h->data;
-		if (exp_name(e))
-			exp_prop_alias(v->sql->sa, val, e);
-		e = val;
-	}
 	if (!(e = exp_physical_types(v, rel, e, depth))) /* for decimals and intervals we need to adjust the scale for some operations */
 		return NULL;
 	if (!rel->l)
@@ -2459,6 +2453,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
+		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
 			if (sq)
@@ -3186,7 +3181,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	sf = e->f;
 	/* TODO also handle ifthenelse with more than 3 arguments */
-	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
+	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
 		list *l = e->l;
 
 		/* remove unecessary = true expressions under ifthenelse */
