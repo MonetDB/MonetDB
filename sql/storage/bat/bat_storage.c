@@ -768,7 +768,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	if (!is_new && !cs->cleared) {
 		BAT *ui, *uv;
 
-		if (cs_real_update_bats(cs, &ui, &uv) == LOG_ERR)
+		if (cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
 			return LOG_ERR;
 
 		/* handle updates on just inserted bits */
@@ -899,7 +899,7 @@ cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *u
 	if (!inplace) {
 		BAT *ui, *uv;
 
-		if (cs_real_update_bats(cs, &ui, &uv) == LOG_ERR)
+		if (cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
 			return LOG_ERR;
 
 		assert(BATcount(ui) == BATcount(uv));
@@ -1015,7 +1015,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool update)
 	if(!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if(dup_bat(tr, c->t, obat, bat, c->type.type->localtype) == LOG_ERR)
+	if(dup_bat(tr, c->t, obat, bat, c->type.type->localtype) != LOG_OK)
 		return NULL;
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
@@ -1277,7 +1277,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 	for (; seg; p = seg, seg = seg->next) {
 		if (seg->start <= rid && seg->end > rid) {
 			if (!SEG_VALID_4_DELETE(seg,tr))
-					return LOG_ERR;
+				return LOG_CONFLICT;
 			(void)split_segment(s->segs, seg, p, tr, rid, 1, true);
 			break;
 		}
@@ -1301,7 +1301,7 @@ delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
 				cnt -= lcnt;
 				continue;
 			} else if (!SEG_VALID_4_DELETE(seg, tr))
-				return LOG_ERR;
+				return LOG_CONFLICT;
 			seg = split_segment(s->segs, seg, p, tr, start, lcnt, true);
 			start += lcnt;
 			cnt -= lcnt;
@@ -1309,7 +1309,7 @@ delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
 		if (start+cnt <= seg->end)
 			break;
 	}
-	return LOG_OK;;
+	return LOG_OK;
 }
 
 static int
@@ -1338,12 +1338,11 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 						cur++;
 						continue;
 					}
-					if (delete_range(tr, s, f, cur-f) == LOG_ERR)
-						ok = LOG_ERR;
+					ok = delete_range(tr, s, f, cur-f);
 					f = cur = l;
 				}
-				if (ok == LOG_OK && delete_range(tr, s, f, cur-f) == LOG_ERR)
-					ok = LOG_ERR;
+				if (ok == LOG_OK)
+					ok = delete_range(tr, s, f, cur-f);
 			}
 		} else {
 			if (!BATtordered(i)) {
@@ -1363,8 +1362,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					lcnt++;
 					n++;
 				} else {
-					if (delete_range(tr, s, n-lcnt, lcnt) == LOG_ERR)
-						ok = LOG_ERR;
+					ok = delete_range(tr, s, n-lcnt, lcnt);
 					lcnt = 0;
 				}
 				if (!lcnt) {
@@ -1372,16 +1370,14 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					lcnt = 1;
 				}
 			}
-			if (lcnt && ok == LOG_OK) {
-				if (delete_range(tr, s, n-lcnt, lcnt) == LOG_ERR)
-					ok = LOG_ERR;
-			}
+			if (lcnt && ok == LOG_OK)
+				ok = delete_range(tr, s, n-lcnt, lcnt);
 		}
 	}
 	if (i != oi)
 		bat_destroy(i);
-	if (ok == LOG_ERR)
-		return LOG_ERR;
+	if (ok != LOG_OK)
+		return ok;
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return ok;
@@ -1906,10 +1902,13 @@ static int
 load_storage(sql_trans *tr, storage *s, sqlid id)
 {
 	int ok = load_cs(tr, &s->cs, TYPE_msk, id);
-	BAT *b = temp_descriptor(s->cs.bid), *ib = b;
+	BAT *b = NULL, *ib = NULL;
 
-	if (!b)
+	if (ok != LOG_OK)
+		return ok;
+	if (!(b = temp_descriptor(s->cs.bid)))
 		return LOG_ERR;
+	ib = b;
 
 	if (b->ttype == TYPE_msk || mask_cand(b))
 		b = BATunmask(b);
@@ -1920,8 +1919,7 @@ load_storage(sql_trans *tr, storage *s, sqlid id)
 		if (BATtdense(b)) {
 			size_t start = b->tseqbase;
 			size_t cnt = BATcount(b);
-			if (delete_range(tr, s, start, cnt) == LOG_ERR)
-				return LOG_ERR;
+			ok = delete_range(tr, s, start, cnt);
 		} else {
 			assert(BATtordered(b));
 			BUN icnt = BATcount(b);
@@ -1932,8 +1930,8 @@ load_storage(sql_trans *tr, storage *s, sqlid id)
 					lcnt++;
 					n++;
 				} else {
-					if (delete_range(tr, s, n-lcnt, lcnt) == LOG_ERR)
-						return LOG_ERR;
+					if ((ok = delete_range(tr, s, n-lcnt, lcnt)) != LOG_OK)
+						break;
 					lcnt = 0;
 				}
 				if (!lcnt) {
@@ -1941,14 +1939,13 @@ load_storage(sql_trans *tr, storage *s, sqlid id)
 					lcnt = 1;
 				}
 			}
-			if (lcnt) {
-				if (delete_range(tr, s, n-lcnt, lcnt) == LOG_ERR)
-					return LOG_ERR;
-			}
+			if (lcnt && ok == LOG_OK)
+				ok = delete_range(tr, s, n-lcnt, lcnt);
 		}
-		for (segment *seg = s->segs->h; seg; seg = seg->next)
-			if (seg->ts == tr->tid)
-				seg->ts = 1;
+		if (ok == LOG_OK)
+			for (segment *seg = s->segs->h; seg; seg = seg->next)
+				if (seg->ts == tr->tid)
+					seg->ts = 1;
 	} else {
 		if (ok == LOG_OK) {
 			s->segs = new_segments(tr, BATcount(quick_descriptor(s->cs.bid)));
@@ -2318,19 +2315,24 @@ clear_storage(sql_trans *tr, storage *s)
 	return sz;
 }
 
+/* this function returns BUN_NONE on LOG_ERR and BUN_NONE - 1 on LOG_CONFLICT */
 static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
-	int in_transaction = segments_in_transaction(tr, t);
+	int in_transaction = segments_in_transaction(tr, t), ok;
 	storage *bat;
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
 	if (!isTempTable(t)) {
 		lock_table(tr->store, t->base.id);
-		if (delete_range(tr, bat, 0, bat->segs->t->end) == LOG_ERR) {
+		if ((ok = delete_range(tr, bat, 0, bat->segs->t->end)) != LOG_OK) {
 			unlock_table(tr->store, t->base.id);
-			return LOG_ERR;
+			if (ok == LOG_ERR)
+				return BUN_NONE;
+			if (ok == LOG_CONFLICT)
+				return BUN_NONE - 1;
+			assert(0);
 		}
 		unlock_table(tr->store, t->base.id);
 	}
@@ -2341,19 +2343,19 @@ clear_del(sql_trans *tr, sql_table *t)
 	return LOG_OK;
 }
 
+/* this function returns BUN_NONE on LOG_ERR and BUN_NONE - 1 on LOG_CONFLICT */
 static BUN
 clear_table(sql_trans *tr, sql_table *t)
 {
-
 	node *n = ol_first_node(t->columns);
 	sql_column *c = n->data;
-	BUN sz = count_col(tr, c, 0);
+	BUN sz = count_col(tr, c, 0), clear_ok;
 
 	//sz -= count_del(tr, t, 0);
 	storage *d = tab_timestamp_storage(tr, t);
 	sz -= count_deletes_in_range(d->segs->h, tr, 0, sz);
-	if ((clear_del(tr, t)) == BUN_NONE)
-		return BUN_NONE;
+	if ((clear_ok = clear_del(tr, t)) >= BUN_NONE - 1)
+		return clear_ok;
 
 	if (isTempTable(t)) { /* temp tables switch too new bats */
 		for (; n; n = n->next) {

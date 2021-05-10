@@ -1855,6 +1855,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	mvc *m = NULL;
 	str msg;
+	BUN clear_res;
 	lng *res = getArgReference_lng(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
@@ -1869,9 +1870,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
-	*res = mvc_clear_table(m, t);
-	if (*res == BUN_NONE)
-		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "clear failed");
+	clear_res = mvc_clear_table(m, t);
+	if (clear_res >= BUN_NONE - 1)
+		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
+	*res = (lng) clear_res;
 	return MAL_SUCCEED;
 }
 
@@ -1885,9 +1887,8 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	ptr ins = getArgReference(stk, pci, 4);
-	int tpe = getArgType(mb, pci, 4);
+	int tpe = getArgType(mb, pci, 4), log_res;
 	BAT *b = NULL;
-
 	sql_schema *s;
 	sql_table *t;
 
@@ -1920,10 +1921,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
-	if (store->storage_api.delete_tab(m->session->tr, t, b, tpe) != LOG_OK)
-		throw(SQL, "sql.delete", SQLSTATE(3F000) "delete failed");
+	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (log_res != LOG_OK)
+		throw(SQL, "sql.delete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 

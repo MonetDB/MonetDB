@@ -143,4 +143,19 @@ with SQLTestCase() as mdb1:
         mdb1.execute('SELECT i FROM integers;').assertDataResultMatch([])
         mdb2.execute('SELECT i FROM integers;').assertDataResultMatch([])
 
+        mdb1.execute('insert into integers (select value from generate_series(1,11,1));').assertRowCount(10)
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('delete from integers where i = 10;').assertRowCount(1)
+        mdb2.execute('delete from integers where i = 10;').assertFailed(err_code="42000", err_message="Delete failed due to conflict with another transaction")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('delete from integers where i = 9;').assertRowCount(1)
+        mdb2.execute('truncate integers').assertFailed(err_code="42000", err_message="Table clear failed due to conflict with another transaction")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
         mdb1.execute("drop table integers;")
