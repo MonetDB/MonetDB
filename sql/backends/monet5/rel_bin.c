@@ -1268,7 +1268,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		else if (!list_empty(exps)) {
 			unsigned nrcols = 0;
 
-			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
+			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
 			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
@@ -2778,11 +2778,11 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		assert(list_length(mexps) == 1);
 		for( en = mexps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
-			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL, 0, 1, 0), *rs;
+			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
 			if (!ls)
 				return NULL;
 
-			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 1, 0)))
+			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
 				return NULL;
 
 			if (ls->nrcols == 0)
@@ -2881,14 +2881,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 				if (equality_only) {
 					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid, swap = 0;
-					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 1, 0);
+					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 
 					if (!l) {
 						swap = 1;
 						clean_mal_statements(be, oldstop, oldvtop, oldvid);
-						l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 0, 1, 0);
+						l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 					}
-					r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
+					r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0);
 
 					if (swap) {
 						stmt *t = l;

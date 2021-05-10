@@ -31,7 +31,7 @@ list_find_func_id(list *ids, sqlid id)
 }
 
 /*Function to create a dependency*/
-void
+int
 sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_dependency depend_type)
 {
 	assert(id && depend_id);
@@ -42,13 +42,15 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_depend
 	sql_column *c_dep_id = find_sql_column(t, "depend_id");
 	sql_column *c_dep_type = find_sql_column(t, "depend_type");
 	sht dtype = (sht) depend_type;
+	int log_res = LOG_OK;
 
 	if (is_oid_nil(store->table_api.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &dtype, NULL)))
-		store->table_api.table_insert(tr, t, &id, &depend_id, &dtype);
+		log_res = store->table_api.table_insert(tr, t, &id, &depend_id, &dtype);
+	return log_res;
 }
 
 /*Function to drop the dependencies on depend_id*/
-void
+int
 sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 {
 	sqlstore *store = tr->store;
@@ -57,15 +59,17 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column * dep_dep_id = find_sql_column(deps, "depend_id");
 	rids *rs;
+	int log_res = LOG_OK;
 
 	rs = store->table_api.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
-	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs))
-		store->table_api.table_delete(tr, deps, rid);
+	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(rs))
+		log_res = store->table_api.table_delete(tr, deps, rid);
 	store->table_api.rids_destroy(rs);
+	return log_res;
 }
 
 /*Function to drop the dependency between object and target, ie obj_id/depend_id*/
-void
+int
 sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_dependency depend_type)
 {
 	sqlstore *store = tr->store;
@@ -77,11 +81,13 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_depe
 	sql_column *dep_dep_type = find_sql_column(deps, "depend_type");
 	sht dtype = (sht) depend_type;
 	rids *rs;
+	int log_res = LOG_OK;
 
 	rs = store->table_api.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &dtype, &dtype, NULL);
-	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs))
-		store->table_api.table_delete(tr, deps, rid);
+	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(rs))
+		log_res = store->table_api.table_delete(tr, deps, rid);
 	store->table_api.rids_destroy(rs);
+	return log_res;
 }
 
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/

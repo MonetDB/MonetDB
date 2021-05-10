@@ -435,6 +435,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	if (b->twidth == width) {
 		if (newsize <= old->size) {
 			/* nothing to do */
+			if (cap > b->batCapacity)
+				BATsetcapacity(b, cap);
 			return GDK_SUCCEED;
 		}
 		return BATextend(b, newsize >> shift);

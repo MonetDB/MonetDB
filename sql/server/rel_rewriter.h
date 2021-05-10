@@ -16,6 +16,11 @@
 #define is_ifthenelse_func(sf) (strcmp((sf)->func->base.name, "ifthenelse") == 0)
 #define is_isnull_func(sf) (strcmp((sf)->func->base.name, "isnull") == 0)
 #define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0)
+#define is_caselike_func(sf) (strcmp((sf)->func->base.name, "case") == 0 || \
+                          strcmp((sf)->func->base.name, "casewhen") == 0 || \
+                          strcmp((sf)->func->base.name, "coalesce") == 0 || \
+                          strcmp((sf)->func->base.name, "nullif") == 0)
+#define is_case_func(sf) (strcmp((sf)->func->base.name, "case") == 0)
 
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 extern sql_rel *rewrite_simplify(visitor *v, sql_rel *rel);
