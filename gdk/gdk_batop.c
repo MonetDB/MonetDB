@@ -1294,10 +1294,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		 * there are no nils in b afterward if there weren't
 		 * any in either b or n to begin with */
 		b->tnonil &= n->tnonil;
-		if (b->thash != NULL && b->thash != (Hash *) 1) {
-			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
-				HASHdelete(b, i, Tloc(b, i));
-		}
+		/* if there is no hash, we don't start the loop, if
+		 * there is only a persisted hash, it will get destroyed
+		 * in the first iteration, after which there is no hash
+		 * and the loop ends */
+		for (BUN i = updid, j = updid + BATcount(p); i < j && b->thash; i++)
+			HASHdelete(b, i, Tloc(b, i));
 		if (n->ttype == TYPE_void) {
 			assert(b->ttype == TYPE_oid);
 			oid *o = Tloc(b, updid);
@@ -1366,7 +1368,11 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			memcpy(Tloc(b, updid), Tloc(n, 0),
 			       BATcount(p) * b->twidth);
 		}
-		if (b->thash != NULL && b->thash != (Hash *) 1) {
+		/* either we have a hash that was updated above, or we
+		 * have no hash; we cannot have the case where there is
+		 * only a persisted (unloaded) hash since it would have
+		 * been destroyed above */
+		if (b->thash != NULL) {
 			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
 				HASHinsert(b, i, Tloc(b, i));
 		}
