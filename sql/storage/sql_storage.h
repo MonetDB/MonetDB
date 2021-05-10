@@ -16,6 +16,7 @@
 
 #define LOG_OK		0
 #define LOG_ERR		(-1)
+#define LOG_CONFLICT	(-2)
 
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
 #define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)

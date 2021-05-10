@@ -1515,8 +1515,10 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
 		return NULL;
 	}
 
-	if (isTable(t))
-		store->storage_api.create_del(tr, t);
+	if (isTable(t) && store->storage_api.create_del(tr, t) != LOG_OK) {
+		table_destroy(store, t);
+		return NULL;
+	}
 	return t;
 }
 

@@ -925,7 +925,7 @@ str
 WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sname, tname;
-	int i;
+	int i, log_res;
 	mvc *m=NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -965,7 +965,9 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	store->storage_api.delete_tab(m->session->tr, t, ins, TYPE_bat);
+	log_res = store->storage_api.delete_tab(m->session->tr, t, ins, TYPE_bat);
+	if (log_res != LOG_OK)
+		msg = createException(MAL, "WLRdelete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
 	return msg;
@@ -1082,6 +1084,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg= MAL_SUCCEED;
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
+	BUN res;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
@@ -1095,6 +1098,8 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s",*sname,*tname);
-	(void) mvc_clear_table(m, t);
+	res = mvc_clear_table(m, t);
+	if (res >= BUN_NONE - 1)
+		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
