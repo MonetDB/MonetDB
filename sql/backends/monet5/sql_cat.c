@@ -234,14 +234,19 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;
 		case -2:
+		case -3:
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) 
+									"ALTER TABLE: failed due to conflict with another transaction");
+			break;
+		case -10:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: minimum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
 			break;
-		case -3:
+		case -11:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: maximum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
 			break;
-		case -4:
+		case -12:
 			assert(err);
 			if (is_bit_nil(err->with_nills)) {
 				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
@@ -380,19 +385,30 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
-	switch (errcode) {
-		case 0:
-			break;
-		case -1:
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-									"ALTER TABLE: the new partition is conflicting with the existing partition %s.%s",
-									err->t->s->base.name, err->base.name);
-			break;
-		default:
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-									"ALTER TABLE: value at position %d length is higher than %d",
-									(errcode * -1) - 1, STORAGE_MAX_VALUE_LENGTH);
-			break;
+	if (errcode <= -10) {
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+								  "ALTER TABLE: value at position %d length is higher than %d",
+								  (errcode * -1) - 10, STORAGE_MAX_VALUE_LENGTH);
+	} else {
+		switch (errcode) {
+			case 0:
+				break;
+			case -1:
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			case -2:
+			case -3:
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) 
+										  "ALTER TABLE: failed due to conflict with another transaction");
+				break;
+			case -4:
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+										"ALTER TABLE: the new partition is conflicting with the existing partition %s.%s",
+										err->t->s->base.name, err->base.name);
+				break;
+			default:
+				assert(0);
+		}
 	}
 
 finish:
