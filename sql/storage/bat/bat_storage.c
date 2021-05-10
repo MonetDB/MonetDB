@@ -2062,6 +2062,8 @@ log_create_del(sql_trans *tr, sql_change *change)
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 
+	if (t->base.deleted)
+		return ok;
 	assert(!isTempTable(t));
 	ok = log_create_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
 	if (ok == LOG_OK) {
@@ -2359,7 +2361,6 @@ clear_table(sql_trans *tr, sql_table *t)
 	sql_column *c = n->data;
 	BUN sz = count_col(tr, c, 0), clear_ok;
 
-	//sz -= count_del(tr, t, 0);
 	storage *d = tab_timestamp_storage(tr, t);
 	sz -= count_deletes_in_range(d->segs->h, tr, 0, sz);
 	if ((clear_ok = clear_del(tr, t)) >= BUN_NONE - 1)
