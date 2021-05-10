@@ -891,9 +891,16 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				}
 			}
 		}
-		if (mvc_drop_column(sql, t, col, drop_action)) {
-			sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
-			return SQL_ERR;
+		switch (mvc_drop_column(sql, t, col, drop_action)) {
+			case -1:
+				sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected\n", action);
+				return SQL_ERR;
+			default:
+				break;
 		}
 		col->base.deleted = 1;
 	} 	break;
