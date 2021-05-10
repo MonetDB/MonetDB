@@ -165,4 +165,12 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
+        mdb1.execute('alter table integers add column j int;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table integers drop column j;').assertSucceeded()
+        mdb2.execute('alter table integers drop column j;').assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
         mdb1.execute("drop table integers;")
