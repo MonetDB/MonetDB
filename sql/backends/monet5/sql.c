@@ -1669,8 +1669,8 @@ mvc_append_column(sql_trans *t, sql_column *c, size_t pos, BAT *ins)
 {
 	sqlstore *store = t->store;
 	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat, 0);
-	if (res != LOG_OK)
-		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
+	if (res != LOG_OK) /* the conflict case should never happen, but leave it here */
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
