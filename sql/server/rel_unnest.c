@@ -1902,12 +1902,6 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 		e->r = NULL;
 	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
 
-	if (is_values(e) && list_length(exp_get_values(e))==1) { /* list of values with 1 element are redundant */
-		sql_exp *val = ((list*)e->f)->h->data;
-		if (exp_name(e))
-			exp_prop_alias(v->sql->sa, val, e);
-		e = val;
-	}
 	if (!(e = exp_physical_types(v, rel, e, depth))) /* for decimals and intervals we need to adjust the scale for some operations */
 		return NULL;
 	if (!rel->l)
