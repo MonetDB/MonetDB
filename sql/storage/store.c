@@ -3397,13 +3397,14 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 	sht dep_type = 0;
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
 	node *n;
+	int res = 0;
 
 	if (!dep)
-		return DEPENDENCY_CHECK_ERROR;
+		return -1;
 
 	n = dep->h;
 
-	while (n) {
+	while (n && !res) {
 		dep_id = *(sqlid*) n->data;
 		dep_type = (sql_dependency) *(sht*) n->next->data;
 
@@ -3411,61 +3412,55 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 
 			switch (dep_type) {
 				case SCHEMA_DEPENDENCY:
-					if (sql_trans_drop_schema(tr, dep_id, DROP_CASCADE))
-						return DEPENDENCY_CHECK_ERROR;
+					res = sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
 					break;
 				case TABLE_DEPENDENCY:
 				case VIEW_DEPENDENCY: {
-										  sql_table *t = sql_trans_find_table(tr, dep_id);
-										  if (t && sql_trans_drop_table_id(tr, t->s, dep_id, DROP_CASCADE))
-												return DEPENDENCY_CHECK_ERROR;
-									  } break;
+					sql_table *t = sql_trans_find_table(tr, dep_id);
+					if (t)
+						res = sql_trans_drop_table_id(tr, t->s, dep_id, DROP_CASCADE);
+					} break;
 				case COLUMN_DEPENDENCY: {
-											if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
-												sql_table *t = sql_trans_find_table(tr, dep_id);
-												if (t && sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE))
-													return DEPENDENCY_CHECK_ERROR;
-											}
-										} break;
+					if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
+						sql_table *t = sql_trans_find_table(tr, dep_id);
+						if (t)
+							res = sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+					}
+					} break;
 				case TRIGGER_DEPENDENCY: {
-										  sql_trigger *t = sql_trans_find_trigger(tr, dep_id);
-										  if (t && !list_find_id(tr->dropped, t->t->base.id) && /* table not jet dropped */
-											  sql_trans_drop_trigger(tr, t->t->s, dep_id, DROP_CASCADE))
-												return DEPENDENCY_CHECK_ERROR;
-										 } break;
+					sql_trigger *t = sql_trans_find_trigger(tr, dep_id);
+					if (t && !list_find_id(tr->dropped, t->t->base.id)) /* table not yet dropped */
+						 res = sql_trans_drop_trigger(tr, t->t->s, dep_id, DROP_CASCADE);
+					} break;
 				case KEY_DEPENDENCY:
 				case FKEY_DEPENDENCY: {
-										  sql_key *k = sql_trans_find_key(tr, dep_id);
-										  if (k && !list_find_id(tr->dropped, k->t->base.id) && /* table not jet dropped */
-										      sql_trans_drop_key(tr, k->t->s, dep_id, DROP_CASCADE))
-												return DEPENDENCY_CHECK_ERROR;
-									  } break;
+					sql_key *k = sql_trans_find_key(tr, dep_id);
+					if (k && !list_find_id(tr->dropped, k->t->base.id)) /* table not yet dropped */
+						res = sql_trans_drop_key(tr, k->t->s, dep_id, DROP_CASCADE);
+					} break;
 				case INDEX_DEPENDENCY: {
-										  sql_idx *i = sql_trans_find_idx(tr, dep_id);
-										  if (i && !list_find_id(tr->dropped, i->t->base.id) && /* table not jet dropped */
-										      sql_trans_drop_idx(tr, i->t->s, dep_id, DROP_CASCADE))
-												return DEPENDENCY_CHECK_ERROR;
-									   } break;
+					sql_idx *i = sql_trans_find_idx(tr, dep_id);
+					if (i && !list_find_id(tr->dropped, i->t->base.id)) /* table not yet dropped */
+						res = sql_trans_drop_idx(tr, i->t->s, dep_id, DROP_CASCADE);
+					} break;
 				case PROC_DEPENDENCY:
 				case FUNC_DEPENDENCY: {
-										  sql_func *f = sql_trans_find_func(tr, dep_id);
-										  if (sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE))
-												return DEPENDENCY_CHECK_ERROR;
-									  } break;
+					sql_func *f = sql_trans_find_func(tr, dep_id);
+					res = sql_trans_drop_func(tr, f->s, dep_id, DROP_CASCADE);
+					} break;
 				case TYPE_DEPENDENCY: {
-										  sql_type *t = sql_trans_find_type(tr, NULL, dep_id);
-										  if (sql_trans_drop_type(tr, t->s, dep_id, DROP_CASCADE))
-												return DEPENDENCY_CHECK_ERROR;
-									  } break;
+					sql_type *t = sql_trans_find_type(tr, NULL, dep_id);
+					res = sql_trans_drop_type(tr, t->s, dep_id, DROP_CASCADE);
+					} break;
 				case USER_DEPENDENCY:  /*TODO schema and users dependencies*/
-									  break;
+					break;
 			}
 		}
 
 		n = n->next->next;
 	}
 	list_destroy(dep);
-	return DEPENDENCY_CHECK_OK;
+	return res;
 }
 
 static int
@@ -3538,8 +3533,8 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
 		return res;
 
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, i->base.id, INDEX_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, i->base.id, INDEX_DEPENDENCY)))
+		return res;
 	return 0;
 }
 
@@ -3592,8 +3587,8 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	if ((res = sql_trans_drop_dependencies(tr, k->base.id)))
 		return res;
 
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY)))
+		return res;
 	return 0;
 }
 
@@ -3631,8 +3626,8 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 		return res;
 	if ((res = sql_trans_drop_any_comment(tr, seq->base.id)))
 		return res;
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, seq->base.id, SEQ_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, seq->base.id, SEQ_DEPENDENCY)))
+		return res;
 	return 0;
 }
 
@@ -3761,8 +3756,8 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	if ((res = sys_drop_statistics(tr, col)))
 		return res;
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY)))
+		return res;
 	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY)))
 		return res;
 	return 0;
@@ -3955,8 +3950,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if ((res = sys_drop_columns(tr, t, drop_action)))
 		return res;
 
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, t->base.id, !isView(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, t->base.id, !isView(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY)))
+		return res;
 	return 0;
 }
 
@@ -3978,8 +3973,8 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 	if ((res = sql_trans_drop_dependencies(tr, type->base.id)))
 		return res;
 
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, type->base.id, TYPE_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, type->base.id, TYPE_DEPENDENCY)))
+		return res;
 	return 0;
 }
 
@@ -4017,8 +4012,8 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	if ((res = sql_trans_drop_obj_priv(tr, func->base.id)))
 		return res;
 
-	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)))
+		return res;
 	return 0;
 }
 
