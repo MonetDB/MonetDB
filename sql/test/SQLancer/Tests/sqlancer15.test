@@ -255,3 +255,25 @@ insert into t0(c2) values(ifthenelse((select false from t2 having max(greatest((
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INT)
+
+statement ok rowcount 2
+INSERT INTO "t0" VALUES (3), (2)
+
+query IIIIII rowsort
+select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3;
+----
+3
+1
+2
+3
+4
+5
+
+statement ok
+ROLLBACK
