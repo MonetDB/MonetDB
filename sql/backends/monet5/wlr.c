@@ -851,11 +851,12 @@ str
 WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sname, tname, cname;
-	int tpe,i;
+	int tpe,i, log_res = LOG_OK;
 	mvc *m=NULL;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
+	sql_idx *idx;
 	BAT *ins = 0;
 	str msg = MAL_SUCCEED;
 
@@ -910,12 +911,12 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat, 1);
-	} else if (cname[0] == '%') {
-		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i)
-			store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1);
+		log_res = store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat, 1);
+	} else if (cname[0] == '%' && (idx = mvc_bind_idx(m, s, cname + 1)) != NULL) {
+		log_res = store->storage_api.append_idx(m->session->tr, idx, (size_t)pos, ins, tpe, 1);
 	}
+	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
+		msg = createException(MAL, "WLRappend", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
 	return msg;
@@ -993,10 +994,11 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
+	sql_idx *i;
 	BAT *upd = 0, *tids=0;
 	str msg= MAL_SUCCEED;
 	oid o;
-	int tpe = getArgType(mb,pci,5);
+	int tpe = getArgType(mb,pci,5), log_res = LOG_OK;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
@@ -1062,13 +1064,12 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATmsync(tids);
 	BATmsync(upd);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
-	} else if (cname[0] == '%') {
-		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i)
-			store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
+		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
 	}
-
+	if (log_res != LOG_OK)
+		msg = createException(MAL, "WLRupdate", "Update failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 cleanup:
 	BBPunfix(((BAT *) tids)->batCacheid);
 	BBPunfix(((BAT *) upd)->batCacheid);
