@@ -997,18 +997,21 @@ destroy_delta(sql_delta *b, bool recursive)
 }
 
 static sql_delta *
-bind_col_data(sql_trans *tr, sql_column *c, bool update)
+bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 {
 	sql_delta *obat = ATOMIC_PTR_GET(&c->data);
 
 	if (isTempTable(c->t))
 		obat = temp_col_timestamp_delta(tr, c);
 
-	if (obat->cs.ts == tr->tid || !update)
+	if (obat->cs.ts == tr->tid || !update_conflict) /* on append there are no conflicts */
 		return obat;
-	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(c->t))
+	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(c->t)) {
 		/* abort */
+		if (update_conflict)
+			*update_conflict = true;
 		return NULL;
+	}
 	assert(!isTempTable(c->t));
 	obat = timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
 	sql_delta* bat = ZNEW(sql_delta);
@@ -1045,10 +1048,11 @@ update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_ne
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
+	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if ((delta = bind_col_data(tr, c, true)) == NULL)
-		return LOG_ERR;
+	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
@@ -1058,25 +1062,28 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 }
 
 static sql_delta *
-bind_idx_data(sql_trans *tr, sql_idx *i, bool update)
+bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 {
 	sql_delta *obat = ATOMIC_PTR_GET(&i->data);
 
 	if (isTempTable(i->t))
 		obat = temp_idx_timestamp_delta(tr, i);
 
-	if (obat->cs.ts == tr->tid || !update)
+	if (obat->cs.ts == tr->tid || !update_conflict)
 		return obat;
-	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(i->t))
+	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(i->t)) {
 		/* abort */
+		if (update_conflict)
+			*update_conflict = true;
 		return NULL;
+	}
 	assert(!isTempTable(i->t));
 	obat = timestamp_delta(tr, ATOMIC_PTR_GET(&i->data));
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if(dup_bat(tr, i->t, obat, bat, (oid_index(i->type))?TYPE_oid:TYPE_lng) == LOG_ERR)
+	if(dup_bat(tr, i->t, obat, bat, (oid_index(i->type))?TYPE_oid:TYPE_lng) != LOG_OK)
 		return NULL;
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
@@ -1092,10 +1099,11 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool update)
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
+	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
-	if ((delta = bind_idx_data(tr, i, true)) == NULL)
-		return LOG_ERR;
+	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
@@ -1239,7 +1247,7 @@ append_col(sql_trans *tr, sql_column *c, size_t offset, void *i, int tpe, size_t
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 	int in_transaction = segments_in_transaction(tr, c->t);
 
-	if ((delta = bind_col_data(tr, c, false)) == NULL)
+	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
 		return LOG_ERR;
 
 	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
@@ -1256,7 +1264,7 @@ append_idx(sql_trans *tr, sql_idx * i, size_t offset, void *data, int tpe, size_
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 	int in_transaction = segments_in_transaction(tr, i->t);
 
-	if ((delta = bind_idx_data(tr, i, false)) == NULL)
+	if ((delta = bind_idx_data(tr, i, NULL)) == NULL)
 		return LOG_ERR;
 
 	assert(delta && (!isTempTable(i->t) || delta->cs.ts == tr->tid));
@@ -2276,7 +2284,7 @@ clear_col(sql_trans *tr, sql_column *c)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if ((delta = bind_col_data(tr, c, false)) == NULL)
+	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
 		return BUN_NONE;
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
@@ -2292,7 +2300,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
-	if ((delta = bind_idx_data(tr, i, false)) == NULL)
+	if ((delta = bind_idx_data(tr, i, NULL)) == NULL)
 		return BUN_NONE;
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);

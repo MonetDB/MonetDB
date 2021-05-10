@@ -153,8 +153,15 @@ with SQLTestCase() as mdb1:
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('update integers set i = 2 where i = 1;').assertRowCount(1)
+        mdb2.execute('update integers set i = 2 where i = 1;').assertFailed(err_code="42000", err_message="Update failed due to conflict with another transaction")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('delete from integers where i = 9;').assertRowCount(1)
-        mdb2.execute('truncate integers').assertFailed(err_code="42000", err_message="Table clear failed due to conflict with another transaction")
+        mdb2.execute('truncate integers;').assertFailed(err_code="42000", err_message="Table clear failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
