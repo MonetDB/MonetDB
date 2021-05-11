@@ -968,6 +968,16 @@ bailout:
 	return msg;
 }
 
+static str
+CLTgetSessionID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	*getArgReference_int(stk,pci,0) = cntxt->idx;
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func clients_init_funcs[] = {
  pattern("clients", "setListing", CLTsetListing, false, "Turn on/off echo of MAL instructions:\n1 - echo input,\n2 - show mal instruction,\n4 - show details of type resolutoin, \n8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
@@ -1019,6 +1029,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "setPassword", CLTsetPassword, false, "Set the password for the given user", args(1,3, arg("",void),arg("user",str),arg("pass",str))),
  pattern("clients", "checkPermission", CLTcheckPermission, false, "Check permission for a user, requires hashed password (backendsum)", args(1,3, arg("",void),arg("usr",str),arg("pw",str))),
  pattern("clients", "getUsers", CLTgetUsers, false, "return a BAT with user id and one with name available in the system", args(2,2, batarg("",oid),batarg("",str))),
+ pattern("clients", "current_sessionid", CLTgetSessionID, false, "return current session ID", args(1,1, arg("",int))),
  { .imp=NULL }
 };
 #include "mal_import.h"
