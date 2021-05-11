@@ -139,7 +139,7 @@ key_destroy(sqlstore *store, sql_key *k)
 	_DELETE(k);
 }
 
-static void
+void
 idx_destroy(sqlstore *store, sql_idx * i)
 {
 	assert(i->base.refcnt > 0);
@@ -173,7 +173,7 @@ trigger_destroy(sqlstore *store, sql_trigger *t)
 	_DELETE(t);
 }
 
-static void
+void
 column_destroy(sqlstore *store, sql_column *c)
 {
 	assert(c->base.refcnt > 0);
@@ -195,7 +195,7 @@ int_destroy(sqlstore *store, int *v)
 	_DELETE(v);
 }
 
-static void
+void
 table_destroy(sqlstore *store, sql_table *t)
 {
 	assert(t->base.refcnt > 0);
@@ -5335,11 +5335,11 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	if ((res = sys_drop_column(tr, col, drop_action)))
 		return res;
 
-	ol_del(t->columns, store, n);
-
-	if (!isNew(col))
-		if (store->storage_api.drop_col(tr, col) != LOG_OK)
+	if (!isNew(col) && !isTempTable(col->t))
+		if (store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base)) != LOG_OK)
 			return -3;
+
+	ol_del(t->columns, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
@@ -5951,13 +5951,13 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if (!isTempTable(i->t) && (res = sys_drop_idx(tr, i, drop_action)))
 		return res;
 
+	if (!isNew(i) && !isTempTable(i->t))
+		if (store->storage_api.drop_idx(tr, (sql_idx*)dup_base(&i->base)) != LOG_OK)
+			return -3;
+
 	node *n = ol_find_name(i->t->idxs, i->base.name);
 	if (n)
 		ol_del(i->t->idxs, store, n);
-
-	if (!isNew(i))
-		if (store->storage_api.drop_idx(tr, i) != LOG_OK)
-			return -3;
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);

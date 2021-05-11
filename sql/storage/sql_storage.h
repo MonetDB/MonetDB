@@ -365,6 +365,10 @@ extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, char **min, char **max);
 
+extern void column_destroy(struct sqlstore *store, sql_column *c);
+extern void idx_destroy(struct sqlstore *store, sql_idx * i);
+extern void table_destroy(struct sqlstore *store, sql_table *t);
+
 extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt);
 extern sql_key * sql_trans_key_done(sql_trans *tr, sql_key *k);
 

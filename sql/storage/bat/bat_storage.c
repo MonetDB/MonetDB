@@ -2143,7 +2143,11 @@ log_destroy_col_(sql_trans *tr, sql_column *c)
 static int
 log_destroy_col(sql_trans *tr, sql_change *change)
 {
-	return log_destroy_col_(tr, (sql_column*)change->obj);
+	sql_column *c = (sql_column*)change->obj;
+	int res = log_destroy_col_(tr, c);
+	change->obj = NULL;
+	column_destroy(tr->store, c);
+	return res;
 }
 
 static int
@@ -2172,7 +2176,11 @@ log_destroy_idx_(sql_trans *tr, sql_idx *i)
 static int
 log_destroy_idx(sql_trans *tr, sql_change *change)
 {
-	return log_destroy_idx_(tr, (sql_idx*)change->obj);
+	sql_idx *i = (sql_idx*)change->obj;
+	int res = log_destroy_idx_(tr, i);
+	change->obj = NULL;
+	idx_destroy(tr->store, i);
+	return res;
 }
 
 static int
@@ -2248,25 +2256,19 @@ drop_del(sql_trans *tr, sql_table *t)
 static int
 drop_col(sql_trans *tr, sql_column *c)
 {
-	int ok = LOG_OK;
-
-	if (!isNew(c) && !isTempTable(c->t)) {
-		sql_delta *d = ATOMIC_PTR_GET(&c->data);
-		trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, &log_destroy_col);
-	}
-	return ok;
+	assert(!isNew(c) && !isTempTable(c->t));
+	sql_delta *d = ATOMIC_PTR_GET(&c->data);
+	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, &log_destroy_col);
+	return LOG_OK;
 }
 
 static int
 drop_idx(sql_trans *tr, sql_idx *i)
 {
-	int ok = LOG_OK;
-
-	if (!isNew(i) && !isTempTable(i->t)) {
-		sql_delta *d = ATOMIC_PTR_GET(&i->data);
-		trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, &log_destroy_idx);
-	}
-	return ok;
+	assert(!isNew(i) && !isTempTable(i->t));
+	sql_delta *d = ATOMIC_PTR_GET(&i->data);
+	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, &log_destroy_idx);
+	return LOG_OK;
 }
 
 
@@ -2897,6 +2899,9 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	(void)Store;
 	sql_column *c = (sql_column*)change->obj;
 
+	if (!c) /* cleaned earlier */
+		return 1;
+
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&c->data) != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
@@ -2918,6 +2923,9 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	(void)Store;
 	sql_idx *i = (sql_idx*)change->obj;
+
+	if (!i) /* cleaned earlier */
+		return 1;
 
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&i->data) != change->data || isTempTable(i->t)) /* data is freed by commit */
