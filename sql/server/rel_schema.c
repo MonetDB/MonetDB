@@ -22,6 +22,7 @@
 #include "sql_partition.h"
 
 #include "mal_authorize.h"
+#include "mal_exception.h"
 
 sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)

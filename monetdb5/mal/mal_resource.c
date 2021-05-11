@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "mal_resource.h"
 #include "mal_private.h"
+#include "mal_instruction.h"
 
 /* Memory based admission does not seem to have a major impact so far. */
 static lng memorypool = 0;      /* memory claimed by concurrent threads */
