@@ -196,6 +196,7 @@ functionality of MonetDB.
 %files devel
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
+%{_includedir}/monetdb/copybinary.h
 %{_includedir}/monetdb/gdk*.h
 %{_includedir}/monetdb/matomic.h
 %{_includedir}/monetdb/mstring.h
@@ -628,6 +629,7 @@ This package contains files needed to develop SQL extensions.
 %package embedded
 Summary: MonetDB as an embedded library
 Group: Applications/Databases
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description embedded
 MonetDB is a database management system that is developed from a
@@ -636,7 +638,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the library to turn MonetDB into an embeddable
-library.  Also see %{name}-embedded-devel to use this in a program.
+library, also known as MonetDBe.  Also see %{name}-embedded-devel to
+use this in a program.
 
 %files embedded
 %{_libdir}/libmonetdbe.so.*
@@ -661,6 +664,24 @@ program that uses MonetDB as an embeddable library.
 %{_libdir}/libmonetdbe.so
 %{_includedir}/monetdb/monetdbe.h
 %{_libdir}/pkgconfig/monetdbe.pc
+
+%package embedded-tests
+Summary: MonetDBe tests package
+Group: Applications/Databases
+Requires: %{name}-embedded%{?_isa} = %{version}-%{release}
+
+%description embedded-tests
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains some test programs using the %{name}-embedded
+package.  You probably don't need this, unless you are a developer.
+
+%files embedded-tests
+%defattr(-,root,root)
+%{_bindir}/example_proxy
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System
