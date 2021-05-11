@@ -230,7 +230,8 @@ merge_segments(segments *segs, sql_trans *tr, sql_change *change, ulng commit_ts
 	segment *cur = segs->h, *seg = NULL;
 	for (; cur; cur = cur->next) {
 		if (cur->ts == tr->tid) {
-			cur->oldts = 0;
+			if (!cur->deleted)
+				cur->oldts = 0;
 			cur->ts = commit_ts;
 		}
 		if (cur->ts <= oldest && cur->ts < TRANSACTION_ID_BASE) { /* possibly merge range */
@@ -301,6 +302,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 			}
 		}
 	}
+	bat_destroy(b);
 	return LOG_OK;
 }
 
@@ -538,14 +540,16 @@ count_deletes( segment *s, sql_trans *tr)
 }
 
 static size_t
-segs_end( segments *segs, sql_trans *tr)
+segs_end( segments *segs, sql_trans *tr, sql_table *table)
 {
+	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
 	for(;s; s = s->next) {
 		if (SEG_IS_VALID(s, tr))
 				l = s;
 	}
+	unlock_table(tr->store, table->base.id);
 	if (!l)
 		return 0;
 	return l->end;
@@ -569,7 +573,7 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return count_inserts(d->segs->h, tr);
 	if (access == QUICK || isTempTable(c->t))
 		return d->segs->t?d->segs->t->end:0;
-	return segs_end(d->segs, tr);
+	return segs_end(d->segs, tr, c->t);
 }
 
 static size_t
@@ -590,7 +594,7 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 		return count_inserts(d->segs->h, tr);
 	if (access == QUICK || isTempTable(i->t))
 		return d->segs->t?d->segs->t->end:0;
-	return segs_end(d->segs, tr);
+	return segs_end(d->segs, tr, i->t);
 }
 
 static BAT *
@@ -671,20 +675,6 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	sql_delta *d = idx_timestamp_delta(tr, i);
 	size_t cnt = count_idx(tr, i, 0);
 	return cs_bind_bat( &d->cs, access, cnt);
-}
-
-static void *					/* BAT * */
-bind_del(sql_trans *tr, sql_table *t, int access)
-{
-	assert(access == QUICK || tr->active);
-	if (!isTable(t))
-		return NULL;
-	storage *d = tab_timestamp_storage(tr, t);
-	if (access == RD_UPD_ID || access == RD_UPD_VAL) {
-		return cs_bind_ubat( &d->cs, access, TYPE_msk);
-	} else {
-		return cs_bind_bat( &d->cs, access, d->segs->t?d->segs->t->end:0);
-	}
 }
 
 static int
@@ -1718,7 +1708,7 @@ create_col(sql_trans *tr, sql_column *c)
 		/* alter ? */
 		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
 			storage *s = ATOMIC_PTR_GET(&fc->t->data);
-			cnt = segs_end(s->segs, tr);
+			cnt = segs_end(s->segs, tr, c->t);
 		}
 		if (cnt && fc != c) {
 			sql_delta *d = ATOMIC_PTR_GET(&fc->data);
@@ -2151,10 +2141,8 @@ log_destroy_col_(sql_trans *tr, sql_column *c)
 }
 
 static int
-log_destroy_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+log_destroy_col(sql_trans *tr, sql_change *change)
 {
-	(void) commit_ts;
-	(void) oldest;
 	return log_destroy_col_(tr, (sql_column*)change->obj);
 }
 
@@ -2182,13 +2170,10 @@ log_destroy_idx_(sql_trans *tr, sql_idx *i)
 }
 
 static int
-log_destroy_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+log_destroy_idx(sql_trans *tr, sql_change *change)
 {
-	(void) commit_ts;
-	(void) oldest;
 	return log_destroy_idx_(tr, (sql_idx*)change->obj);
 }
-
 
 static int
 destroy_del(sqlstore *store, sql_table *t)
@@ -2214,18 +2199,13 @@ log_destroy_storage(sql_trans *tr, storage *bat, sqlid id)
 }
 
 static int
-log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+log_destroy_del(sql_trans *tr, sql_change *change)
 {
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
-	assert(!isTempTable(t));
-	storage *dbat = ATOMIC_PTR_GET(&t->data);
-	(void) commit_ts;
-	(void) oldest;
-	if (dbat->cs.ts < tr->ts) /* no changes ? */
-		return ok;
-	ok = log_destroy_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
 
+	assert(!isTempTable(t));
+	ok = log_destroy_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
 	if (ok == LOG_OK) {
 		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 			sql_column *c = n->data;
@@ -2242,6 +2222,53 @@ log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	}
 	return ok;
 }
+
+static int
+commit_destroy_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	(void)tr;
+	(void)change;
+	(void)commit_ts;
+	(void)oldest;
+	return 0;
+}
+
+static int
+drop_del(sql_trans *tr, sql_table *t)
+{
+	int ok = LOG_OK;
+
+	if (!isNew(t) && !isTempTable(t)) {
+		storage *bat = ATOMIC_PTR_GET(&t->data);
+		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, &log_destroy_del);
+	}
+	return ok;
+}
+
+static int
+drop_col(sql_trans *tr, sql_column *c)
+{
+	int ok = LOG_OK;
+
+	if (!isNew(c) && !isTempTable(c->t)) {
+		sql_delta *d = ATOMIC_PTR_GET(&c->data);
+		trans_add(tr, &c->base, d, &tc_gc_del, &commit_destroy_del, &log_destroy_col);
+	}
+	return ok;
+}
+
+static int
+drop_idx(sql_trans *tr, sql_idx *i)
+{
+	int ok = LOG_OK;
+
+	if (!isNew(i) && !isTempTable(i->t)) {
+		sql_delta *d = ATOMIC_PTR_GET(&i->data);
+		trans_add(tr, &i->base, d, &tc_gc_del, &commit_destroy_del, &log_destroy_idx);
+	}
+	return ok;
+}
+
 
 static BUN
 clear_cs(sql_trans *tr, column_storage *cs)
@@ -2452,7 +2479,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	if (isTempTable(t))
 		return LOG_OK;
-	size_t end = segs_end(segs, tr);
+	size_t end = segs_end(segs, tr, t);
 	for (segment *cur = segs->h; cur && ok; cur = cur->next) {
 		if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 			for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
@@ -3094,7 +3121,7 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 
 	if (!s)
 		return NULL;
-	size_t nr = segs_end(s->segs, tr);
+	size_t nr = segs_end(s->segs, tr, t);
 
 	if (!nr)
 		return BATdense(0, 0, 0);
@@ -3121,7 +3148,6 @@ bat_storage_init( store_functions *sf)
 {
 	sf->bind_col = &bind_col;
 	sf->bind_idx = &bind_idx;
-	sf->bind_del = &bind_del;
 	sf->bind_cands = &bind_cands;
 
 	sf->claim_tab = &claim_tab;
@@ -3146,18 +3172,17 @@ bat_storage_init( store_functions *sf)
 	sf->idx_dup = &idx_dup;
 	sf->del_dup = &del_dup;
 
-	sf->create_col = &create_col;
+	sf->create_col = &create_col;	/* create and add too change list */
 	sf->create_idx = &create_idx;
 	sf->create_del = &create_del;
 
-	sf->destroy_col = &destroy_col;
+	sf->destroy_col = &destroy_col;	/* free resources */
 	sf->destroy_idx = &destroy_idx;
 	sf->destroy_del = &destroy_del;
 
-	/* change into drop_* */
-	sf->log_destroy_col = &log_destroy_col;
-	sf->log_destroy_idx = &log_destroy_idx;
-	sf->log_destroy_del = &log_destroy_del;
+	sf->drop_col = &drop_col;		/* add drop too change list */
+	sf->drop_idx = &drop_idx;
+	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
 }

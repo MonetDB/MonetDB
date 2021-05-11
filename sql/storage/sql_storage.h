@@ -124,7 +124,6 @@ typedef struct table_functions {
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
-typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
 /*
@@ -179,9 +178,13 @@ typedef int (*destroy_col_fptr) (struct sqlstore *store, sql_column *c);
 typedef int (*destroy_idx_fptr) (struct sqlstore *store, sql_idx *i);
 typedef int (*destroy_del_fptr) (struct sqlstore *store, sql_table *t);
 
-typedef int (*log_destroy_col_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*log_destroy_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*log_destroy_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+/*
+-- drop a persistent table, ie add to the list of changes
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*drop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*drop_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*drop_del_fptr) (sql_trans *tr, sql_table *t);
 
 typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
@@ -196,7 +199,6 @@ typedef struct store_functions {
 
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
-	bind_del_fptr bind_del;
 	bind_cands_fptr bind_cands;
 
 	append_col_fptr append_col;
@@ -228,9 +230,9 @@ typedef struct store_functions {
 	destroy_idx_fptr destroy_idx;
 	destroy_del_fptr destroy_del;
 
-	log_destroy_col_fptr log_destroy_col;
-	log_destroy_idx_fptr log_destroy_idx;
-	log_destroy_del_fptr log_destroy_del;
+	drop_col_fptr drop_col;
+	drop_idx_fptr drop_idx;
+	drop_del_fptr drop_del;
 
 	clear_table_fptr clear_table;
 
