@@ -1255,6 +1255,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		p++;
 	}
+	if (b->theap)
+		b->theap->dirty |= count > 0;
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
