@@ -2329,7 +2329,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
  * should simply introduce a versioning scheme.
  */
 gdk_return
-log_bat_persists(logger *lg, BAT *b, int id)
+log_bat_persists(logger *lg, BAT *b, log_id id)
 {
 	logger_lock(lg);
 	bte ta = find_type(lg, b->ttype);
@@ -2359,7 +2359,7 @@ log_bat_persists(logger *lg, BAT *b, int id)
 }
 
 gdk_return
-log_bat_transient(logger *lg, int id)
+log_bat_transient(logger *lg, log_id id)
 {
 	logger_lock(lg);
 	log_bid bid = internal_find_bat(lg, id);

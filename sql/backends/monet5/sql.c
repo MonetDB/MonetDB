@@ -1226,6 +1226,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
 	b = mvc_bind(m, sname, tname, cname, access);
 	if (b && b->ttype != coltype) {
 		BBPunfix(b->batCacheid);
@@ -1233,7 +1236,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
+			sqlstore *store = m->session->tr->store;
 			BUN cnt = BATcount(b), psz;
+			cnt = store->storage_api.count_col(m->session->tr, c, 0);
 			/* partitioned access */
 			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
@@ -1669,8 +1674,8 @@ mvc_append_column(sql_trans *t, sql_column *c, size_t pos, BAT *ins)
 {
 	sqlstore *store = t->store;
 	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat, 0);
-	if (res != LOG_OK)
-		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
+	if (res != LOG_OK) /* the conflict case should never happen, but leave it here */
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
@@ -1726,10 +1731,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *cname = *getArgReference_str(stk, pci, 4);
 	lng pos = *(lng*)getArgReference_lng(stk, pci, 5);
 	ptr ins = getArgReference(stk, pci, 6);
-	int tpe = getArgType(mb, pci, 6), err = 0;
+	int tpe = getArgType(mb, pci, 6), log_res = LOG_OK;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
+	sql_idx *i;
 	BAT *b = 0;
 
 	*res = 0;
@@ -1762,18 +1768,14 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		if (store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe, 1) != LOG_OK)
-			err = 1;
-	} else if (cname[0] == '%') {
-		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i && store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1) != LOG_OK)
-			err = 1;
+		log_res = store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe, 1);
+	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
+		log_res = store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1);
 	}
-	if (err)
-		throw(SQL, "sql.append", SQLSTATE(42S02) "append failed");
-	if (b) {
+	if (b)
 		BBPunfix(b->batCacheid);
-	}
+	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
@@ -1790,10 +1792,11 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Tids = *getArgReference_bat(stk, pci, 5);
 	bat Upd = *getArgReference_bat(stk, pci, 6);
 	BAT *tids, *upd;
-	int tpe = getArgType(mb, pci, 6), err = 0;
+	int tpe = getArgType(mb, pci, 6), log_res = LOG_OK;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
+	sql_idx *i;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1833,17 +1836,14 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmsync(tids);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		if (store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat) != LOG_OK)
-			err = 1;
-	} else if (cname[0] == '%') {
-		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i && store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat) != LOG_OK)
-			err = 1;
+		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
+		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
 	}
 	BBPunfix(tids->batCacheid);
 	BBPunfix(upd->batCacheid);
-	if (err)
-		throw(SQL, "sql.update", SQLSTATE(42S02) "update failed");
+	if (log_res != LOG_OK)
+		throw(SQL, "sql.update", SQLSTATE(42000) "Update failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
@@ -1855,6 +1855,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	mvc *m = NULL;
 	str msg;
+	BUN clear_res;
 	lng *res = getArgReference_lng(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
@@ -1869,9 +1870,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
-	*res = mvc_clear_table(m, t);
-	if (*res == BUN_NONE)
-		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "clear failed");
+	clear_res = mvc_clear_table(m, t);
+	if (clear_res >= BUN_NONE - 1)
+		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
+	*res = (lng) clear_res;
 	return MAL_SUCCEED;
 }
 
@@ -1885,9 +1887,8 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	ptr ins = getArgReference(stk, pci, 4);
-	int tpe = getArgType(mb, pci, 4);
+	int tpe = getArgType(mb, pci, 4), log_res;
 	BAT *b = NULL;
-
 	sql_schema *s;
 	sql_table *t;
 
@@ -1920,10 +1921,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
-	if (store->storage_api.delete_tab(m->session->tr, t, b, tpe) != LOG_OK)
-		throw(SQL, "sql.delete", SQLSTATE(3F000) "delete failed");
+	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (log_res != LOG_OK)
+		throw(SQL, "sql.delete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
