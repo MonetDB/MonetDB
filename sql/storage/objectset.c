@@ -752,7 +752,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		objectversion *co = name_based_node->ov;
 		objectversion *oo = get_valid_object_name(tr, co);
 		if (co != oo) { /* conflict ? */
-			return -1;
+			return -3;
 		}
 
 		assert(ov != oo); // Time loops are not allowed
@@ -766,7 +766,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
-				return -1; /*conflict with cleaner or write-write conflict*/
+				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
 
@@ -802,7 +802,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		objectversion *co = id_based_node->ov;
 		objectversion *oo = get_valid_object_id(tr, co);
 		if (co != oo) { /* conflict ? */
-			return -1;
+			return -3;
 		}
 
 		assert(ov != oo); // Time loops are not allowed
@@ -816,7 +816,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
-				return -1; /*conflict with cleaner or write-write conflict*/
+				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
 
@@ -843,24 +843,25 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 static int /*ok, error (name existed) and conflict (added before) */
 os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
+	int res = 0;
 	objectversion *ov = SA_ZNEW(os->sa, objectversion);
 	ov->ts = tr->tid;
 	ov->b = b;
 	ov->os = os;
 
-	if (os_add_id_based(os, tr, b->id, ov)) {
+	if ((res = os_add_id_based(os, tr, b->id, ov))) {
 		_DELETE(ov);
-		return -1;
+		return res;
 	}
 
-	if (os_add_name_based(os, tr, name, ov)) {
+	if ((res = os_add_name_based(os, tr, name, ov))) {
 		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
-		return -1;
+		return res;
 	}
 
 	if (!os->temporary)
 		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
-	return 0;
+	return res;
 }
 
 int
@@ -885,7 +886,7 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		objectversion *oo = get_valid_object_name(tr, co);
 		ov->name_based_head = oo->name_based_head;
 		if (co != oo) { /* conflict ? */
-			return -1;
+			return -3;
 		}
 		ov->name_based_older = oo;
 
@@ -916,7 +917,7 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		objectversion *oo = get_valid_object_id(tr, co);
 		ov->id_based_head = oo->id_based_head;
 		if (co != oo) { /* conflict ? */
-			return -1;
+			return -3;
 		}
 		ov->id_based_older = oo;
 
@@ -937,25 +938,26 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 static int
 os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
+	int res = 0;
 	objectversion *ov = SA_ZNEW(os->sa, objectversion);
 	os_atmc_set_state(ov, deleted);
 	ov->ts = tr->tid;
 	ov->b = b;
 	ov->os = os;
 
-	if (os_del_id_based(os, tr, b->id, ov)) {
+	if ((res = os_del_id_based(os, tr, b->id, ov))) {
 		_DELETE(ov);
-		return -1;
+		return res;
 	}
 
-	if (os_del_name_based(os, tr, name, ov)) {
+	if ((res = os_del_name_based(os, tr, name, ov))) {
 		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
-		return -1;
+		return res;
 	}
 
 	if (!os->temporary)
 		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
-	return 0;
+	return res;
 }
 
 int

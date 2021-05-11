@@ -185,7 +185,15 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a range partition table");
 		if (isListPartitionTable(mt))
 			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a list partition table");
-		sql_trans_add_table(sql->session->tr, mt, pt);
+		switch (sql_trans_add_table(sql->session->tr, mt, pt)) {
+			case -1:
+				return createException(SQL,"sql.alter_table_add_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				return createException(SQL,"sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+			default:
+				break;
+		}
 	}
 	return msg;
 }
@@ -471,7 +479,15 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 		if (access && table_has_updates(sql->session->tr, t))
 			throw(SQL,"sql.alter_table_set_access",SQLSTATE(40000) "ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
 
-		mvc_access(sql, t, access);
+		switch (mvc_access(sql, t, access)) {
+			case -1:
+				throw(SQL,"sql.alter_table_set_access",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.alter_table_set_access",SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+			default:
+				break;
+		}
 		if (access == 0 && (msg = sql_drop_statistics(sql, t)))
 			return msg;
 	}
@@ -749,7 +765,15 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
-	sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle);
+	switch (sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle)) {
+		case -1:
+			throw(SQL,"sql.alter_seq",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.alter_seq",SQLSTATE(42000) "ALTER SEQUENCE: transaction conflict detected");
+		default:
+			break;
+	}
 	if (nseq->minvalue && nseq->maxvalue && nseq->maxvalue < seq->minvalue)
 		throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
 	if (val) {
@@ -759,8 +783,17 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value lesser than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
 		if (nseq->maxvalue && *val > nseq->maxvalue)
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value higher than the maximum ("LLFMT" > "LLFMT")", *val, nseq->maxvalue);
-		if (!sql_trans_sequence_restart(sql->session->tr, nseq, *val))
-			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: failed to restart sequence %s.%s", sname, nseq->base.name);
+		switch (sql_trans_sequence_restart(sql->session->tr, nseq, *val)) {
+			case -1:
+				throw(SQL,"sql.alter_seq",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.alter_seq",SQLSTATE(42000) "ALTER SEQUENCE: transaction conflict detected");
+			case -4:
+				throw(SQL,"sql.alter_seq",SQLSTATE(42000) "ALTER SEQUENCE: failed to restart sequence %s.%s", sname, nseq->base.name);
+			default:
+				break;
+		}
 	}
 	return MAL_SUCCEED;
 }
@@ -983,7 +1016,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 						throw(SQL,"sql.alter_table", SQLSTATE(40000) "NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column '%s' as its part of the PRIMARY KEY\n", c->base.name);
 				}
 			}
-			mvc_null(sql, nc, c->null);
+			switch (mvc_null(sql, nc, c->null)) {
+				case -1:
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.alter_table", SQLSTATE(42000) "NOT NULL CONSTRAINT: transaction conflict detected");
+				default:
+					break;
+			}
 			/* for non empty check for nulls */
 			sqlstore *store = sql->session->tr->store;
 			if (c->null == 0) {
@@ -996,13 +1037,30 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
-		if (c->def != nc->def)
-			mvc_default(sql, nc, c->def);
+		if (c->def != nc->def) {
+			switch (mvc_default(sql, nc, c->def)) {
+				case -1:
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.alter_table", SQLSTATE(42000) "DEFAULT: transaction conflict detected");
+				default:
+					break;
+			}
+		}
 
 		if (c->storage_type != nc->storage_type) {
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
-			mvc_storage(sql, nc, c->storage_type);
+			switch (mvc_storage(sql, nc, c->storage_type)) {
+				case -1:
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE transaction conflict detected");
+				default:
+					break;
+			}
 		}
 	}
 	/* handle new columns */
@@ -1012,8 +1070,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 
 		if (c->base.deleted) /* skip */
 			continue;
-		if (mvc_copy_column(sql, nt, c) == NULL)
-			throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create column %s.%s", c->t->base.name, c->base.name);
+		switch (mvc_copy_column(sql, nt, c, NULL)) {
+			case -1:
+				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts with another transaction", s->base.name, t->base.name, c->base.name);
+			default:
+				break;
+		}
 	}
 	if (t->idxs) {
 		/* alter drop index */
@@ -1060,8 +1125,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (r != GDK_SUCCEED)
 					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
-			if (mvc_copy_idx(sql, nt, i) == NULL)
-				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create index %s.%s", i->t->base.name, i->base.name);
+			switch (mvc_copy_idx(sql, nt, i, NULL)) {
+				case -1:
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts with another transaction", s->base.name, t->base.name, i->base.name);
+				default:
+					break;
+			}
 		}
 	}
 	if (t->keys) {
@@ -1079,7 +1151,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 							throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						case -2:
 						case -3:
-							throw(SQL,"sql.alter_table",SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+							throw(SQL,"sql.alter_table",SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts with another transaction", s->base.name, t->base.name, k->base.name);
 						default:
 							break;
 					}
@@ -1088,7 +1160,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				str err;
 				if ((err = sql_partition_validate_key(sql, t, k, "ALTER")))
 					return err;
-				mvc_copy_key(sql, nt, k);
+				switch (mvc_copy_key(sql, nt, k, NULL)) {
+					case -1:
+						throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					case -2:
+					case -3:
+						throw(SQL,"sql.alter_table",SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts with another transaction", s->base.name, t->base.name, k->base.name);
+					default:
+						break;
+				}
 			}
 		}
 	}
@@ -1767,8 +1847,15 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_schema(sql, new_name))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if (!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
-		throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	switch (sql_trans_rename_schema(sql->session->tr, s->base.id, new_name)) {
+		case -1:
+			throw(SQL,"sql.rename_schema", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: transaction conflict detected");
+		default:
+			break;
+	}
 	if (s == cur_schema(sql)) /* change current session schema name */
 		if (!mvc_set_schema(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1809,8 +1896,15 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_bind_table(sql, s, ntable_name))
 			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", ntable_name, oschema_name);
 
-		if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, ntable_name))
-			throw(SQL, "sql.rename_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		switch (sql_trans_rename_table(sql->session->tr, s, t->base.id, ntable_name)) {
+			case -1:
+				throw(SQL,"sql.rename_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.rename_table", SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+			default:
+				break;
+		}
 	} else { //changing the schema of the table
 		assert(strcmp(otable_name, ntable_name) == 0);
 
@@ -1839,8 +1933,15 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_bind_table(sql, s, otable_name))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: table '%s' on schema '%s' already exists", otable_name, nschema_name);
 
-		if (!sql_trans_set_table_schema(sql->session->tr, t->base.id, o, s))
-			throw(SQL, "sql.rename_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		switch (sql_trans_set_table_schema(sql->session->tr, t->base.id, o, s)) {
+			case -1:
+				throw(SQL,"sql.rename_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.rename_table", SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+			default:
+				break;
+		}
 	}
 
 	return msg;
@@ -1881,7 +1982,14 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
 
-	if (!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
-		throw(SQL, "sql.rename_column",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	switch (sql_trans_rename_column(sql->session->tr, t, old_name, new_name)) {
+		case -1:
+			throw(SQL,"sql.rename_column", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.rename_column", SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+		default:
+			break;
+	}
 	return msg;
 }
