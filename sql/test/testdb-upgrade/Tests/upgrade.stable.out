@@ -4354,87 +4354,84 @@ BEGIN
     INSERT INTO sys.dump_statements VALUES ( (SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
     RETURN sys.dump_statements;
 END;
-UPDATE sys.functions f SET system = true WHERE
+UPDATE sys.functions SET system = true WHERE
+    system <> true AND
     schema_id = 2000 AND
-    (
-        (
-            type = (select function_type_id from sys.function_types where function_type_name = 'Function returning a table') AND
-            name in (
-                'dump_database',
-                'describe_table',
-                'describe_columns',
-                'describe_function'
-            )
-        ) OR
-        (
-            type = (select function_type_id from sys.function_types where function_type_name = 'Scalar function') AND
-            name in (
-                'sq',
-                'dq',
-                'fqn',
-                'alter_table',
-                'replace_first',
-                'schema_guard',
-                'get_merge_table_partition_expressions',
-                'get_remote_table_expressions',
-                'esc',
-                'prepare_esc',
-                'current_size_dump_statements',
-                'describe_type'
-            )
-        ) OR
-        (
-            type = (select function_type_id from sys.function_types where function_type_keyword = 'PROCEDURE') AND
-            name in (
-                'eval',
-                '_dump_table_data',
-                'dump_table_data'
-            )
-        )
-);
-UPDATE sys._tables SET system = true WHERE 
+    type = 5 AND
+    name in (
+        'describe_columns',
+        'describe_function',
+        'describe_table',
+        'dump_database'
+    );
+UPDATE sys.functions SET system = true WHERE
+    system <> true AND
     schema_id = 2000 AND
-    (
-        (
-            type = (select table_type_id from sys.table_types where table_type_name = 'TABLE') AND
-            name = 'dump_statements'
-        ) OR
-        (
-            type = (select table_type_id from sys.table_types where table_type_name = 'VIEW') AND
-            name in (
-                'describe_constraints',
-                'describe_indices',
-                'describe_column_defaults',
-                'describe_foreign_keys',
-                'describe_tables',
-                'describe_triggers',
-                'describe_comments',
-                'fully_qualified_functions',
-                'describe_privileges',
-                'describe_user_defined_types',
-                'describe_partition_tables',
-                'describe_sequences',
-                'describe_functions',
-                'dump_create_roles',
-                'dump_create_users',
-                'dump_create_schemas',
-                'dump_add_schemas_to_users',
-                'dump_grant_user_privileges',
-                'dump_table_constraint_type',
-                'dump_indices',
-                'dump_column_defaults',
-                'dump_foreign_keys',
-                'dump_partition_tables',
-                'dump_sequences',
-                'dump_start_sequences',
-                'dump_functions',
-                'dump_tables',
-                'dump_triggers',
-                'dump_comments',
-                'dump_user_defined_types',
-                'dump_privileges',
-                'dump_statements')
-        )
+    type = 1 AND
+    name in (
+        'alter_table',
+        'describe_type',
+        'dq',
+        'esc',
+        'fqn',
+        'get_merge_table_partition_expressions',
+        'get_remote_table_expressions',
+        'prepare_esc',
+        'replace_first',
+        'schema_guard',
+        'sq'
+    );
+UPDATE sys.functions SET system = true WHERE
+    system <> true AND
+    schema_id = 2000 AND
+    type = 2 AND
+    name in (
+        '_dump_table_data',
+        'dump_table_data',
+        'eval'
+    );
+UPDATE sys._tables SET system = true WHERE
+    system <> true AND
+    schema_id = 2000 AND
+    type = 0 AND
+    name = 'dump_statements';
+UPDATE sys._tables SET system = true WHERE
+    system <> true AND
+    schema_id = 2000 AND
+    type = 1 AND
+    name in (
+        'describe_column_defaults',
+        'describe_comments',
+        'describe_constraints',
+        'describe_foreign_keys',
+        'describe_functions',
+        'describe_indices',
+        'describe_partition_tables',
+        'describe_privileges',
+        'describe_sequences',
+        'describe_tables',
+        'describe_triggers',
+        'describe_user_defined_types',
+        'dump_add_schemas_to_users',
+        'dump_column_defaults',
+        'dump_comments',
+        'dump_create_roles',
+        'dump_create_schemas',
+        'dump_create_users',
+        'dump_foreign_keys',
+        'dump_functions',
+        'dump_grant_user_privileges',
+        'dump_indices',
+        'dump_partition_tables',
+        'dump_privileges',
+        'dump_sequences',
+        'dump_start_sequences',
+        'dump_statements',
+        'dump_table_constraint_type',
+        'dump_tables',
+        'dump_triggers',
+        'dump_user_defined_types',
+        'fully_qualified_functions'
     );
 DROP VIEW sys.dependency_schemas_on_users;
 DROP VIEW sys.users;
