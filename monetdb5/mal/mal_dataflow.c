@@ -31,6 +31,8 @@
 #include "mal_internal.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
+#include "mal_exception.h"
+#include "mal_function.h"
 
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */

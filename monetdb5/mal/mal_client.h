@@ -11,7 +11,7 @@
 
 #include "mal.h"
 
-#include "mal_resolve.h"
+#include "mal_module.h"
 
 #define SCENARIO_PROPERTIES 8
 
