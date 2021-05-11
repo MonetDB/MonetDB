@@ -60,7 +60,6 @@ command_help(int argc, char *argv[])
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release,\n");
 		printf("    status, start, stop, kill,\n");
-		printf("    profilerstart, profilerstop,\n");
 		printf("    snapshot,\n");
 		printf("    set, get, inherit,\n");
 		printf("    discover, help, version\n");
@@ -97,14 +96,6 @@ command_help(int argc, char *argv[])
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
-	} else if (strcmp(argv[1], "profilerstart") == 0) {
-		printf("Usage: monetdb profilerstart database [database ...]\n");
-		printf("  Starts the collection of profiling events. The property\n");
-		printf("  \""PROFILERLOGPROPERTY"\" should be set. Use the \"profilerstop\"\n");
-		printf("  command to stop the profiler.\n");
-	} else if (strcmp(argv[1], "profilerstop") == 0) {
-		printf("Usage: monetdb profilerstop database [database ...]\n");
-		printf("  Stops the collection of profiling events.\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-lc] [expression ...]\n");
 		printf("  Shows the state of a given glob-style database match, or\n");
@@ -1701,20 +1692,6 @@ command_release(int argc, char *argv[])
 	return simple_command(argc, argv, "release", "taken database out of maintenance mode", true);
 }
 
-static int
-command_profilerstart(int argc, char *argv[])
-{
-	fprintf(stderr, "The command \"profilerstart\" is deprecated and will be removed in a future MonetDB version.\n");
-	return simple_command(argc, argv, "profilerstart", "started profiler", true);
-}
-
-static int
-command_profilerstop(int argc, char *argv[])
-{
-	fprintf(stderr, "The command \"profilerstop\" is deprecated and will be removed in a future MonetDB version.\n");
-	return simple_command(argc, argv, "profilerstop", "stopped profiler", true);
-}
-
 /* Snapshot this single database to the given file */
 static void
 snapshot_create_adhoc(sabdb *databases, char *filename) {
@@ -2577,10 +2554,6 @@ main(int argc, char *argv[])
 		retval = command_lock(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "release") == 0) {
 		retval = command_release(argc - i, &argv[i]);
-	} else if (strcmp(argv[i], "profilerstart") == 0) {
-		retval = command_profilerstart(argc - i, &argv[i]);
-	} else if (strcmp(argv[i], "profilerstop") == 0) {
-		retval = command_profilerstop(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "status") == 0) {
 		retval = command_status(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "start") == 0) {
