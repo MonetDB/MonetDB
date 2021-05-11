@@ -761,22 +761,19 @@ BATsave(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
-	BAT bs;
-	Heap hs, vhs;
-	BAT *b = bd;
-	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
+	bool dosync = (BBP_status(bd->batCacheid) & BBPPERSISTENT) != 0;
 
-	assert(!GDKinmemory(b->theap->farmid));
-	BATcheck(b, GDK_FAIL);
+	assert(!GDKinmemory(bd->theap->farmid));
+	BATcheck(bd, GDK_FAIL);
 
-	assert(b->batCacheid > 0);
+	assert(bd->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
-	if (isVIEW(b)) {
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
+	if (isVIEW(bd)) {
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBPname(VIEWtparent(bd)));
 		return GDK_FAIL;
 	}
-	if (!BATdirty(b)) {
+	if (!BATdirty(bd)) {
 		return GDK_SUCCEED;
 	}
 
@@ -784,11 +781,13 @@ BATsave(BAT *bd)
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
 	MT_lock_set(&bd->theaplock);
-	bs = *b;
-	b = &bs;
-	hs = *bd->theap;
+	MT_rwlock_rdlock(&bd->thashlock);
+	BAT bs = *bd;
+	BAT *b = &bs;
+	Heap hs = *bd->theap;
 	HEAPincref(&hs);
 	b->theap = &hs;
+	Heap vhs;
 	if (b->tvheap) {
 		vhs = *bd->tvheap;
 		HEAPincref(&vhs);
@@ -806,8 +805,6 @@ BATsave(BAT *bd)
 	    && b->tvarsized
 	    && err == GDK_SUCCEED)
 		err = HEAPsave(b->tvheap, nme, "theap", dosync);
-	if (b->thash && b->thash != (Hash *) 1)
-		BAThashsave(b, dosync);
 
 	HEAPdecref(b->theap, false);
 	if (b->tvheap)
@@ -815,9 +812,10 @@ BATsave(BAT *bd)
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
-		MT_lock_unset(&bd->theaplock);
-		return GDK_SUCCEED;
+		if (b->thash && b->thash != (Hash *) 1)
+			BAThashsave(b, dosync);
 	}
+	MT_rwlock_rdunlock(&bd->thashlock);
 	MT_lock_unset(&bd->theaplock);
 	return err;
 }

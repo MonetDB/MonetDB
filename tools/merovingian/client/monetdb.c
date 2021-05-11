@@ -1704,12 +1704,14 @@ command_release(int argc, char *argv[])
 static int
 command_profilerstart(int argc, char *argv[])
 {
+	fprintf(stderr, "The command \"profilerstart\" is deprecated and will be removed in a future MonetDB version.\n");
 	return simple_command(argc, argv, "profilerstart", "started profiler", true);
 }
 
 static int
 command_profilerstop(int argc, char *argv[])
 {
+	fprintf(stderr, "The command \"profilerstop\" is deprecated and will be removed in a future MonetDB version.\n");
 	return simple_command(argc, argv, "profilerstop", "stopped profiler", true);
 }
 

@@ -722,7 +722,7 @@ project (
 query T rowsort
 plan select CASE WHEN null = null THEN NULL ELSE null END
 ----
-) [ "sys"."ifthenelse"(boolean "NULL", smallint "NULL", smallint "NULL") ]
+) [ "sys"."case"(boolean "NULL", smallint "NULL", smallint "NULL") ]
 project (
 |  [ boolean "true" ]
 
@@ -736,7 +736,7 @@ project (
 query T rowsort
 plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
-) [ "sys"."ifthenelse"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
+) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
 project (
 |  [ boolean "true" ]
 
@@ -750,7 +750,7 @@ project (
 query T rowsort
 plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
-) [ "sys"."ifthenelse"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
+) [ "sys"."case"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
 project (
 |  [ boolean "true" ]
 

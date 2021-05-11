@@ -919,7 +919,9 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 	tmp_exe = strdup(_mero_mserver);
 	if (tmp_exe == NULL) {
 		pthread_mutex_unlock(&dp->fork_lock);
-		return newErr("Cannot find the profiler executable");
+		return newErr("Cannot find the profiler executable\n"
+					  "    The python implementation of stethoscope needs"
+					  " to be in the same directory as mserver5.");
 	} else {
 		char *server_filename = "mserver5";
 		char *profiler_filename = STETHOSCOPE;
@@ -944,7 +946,9 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		 * this since if the file were to disappear between this check
 		 * and the use, things won't fall apart */
 		if (stat(profiler_executable, &path_info) == -1) {
-			error = newErr("Cannot find profiler executable");
+			error = newErr("Cannot find the profiler executable\n"
+						   "    The python implementation of stethoscope needs"
+						   " to be in the same directory as mserver5.");
 			goto cleanup;
 		}
 #endif

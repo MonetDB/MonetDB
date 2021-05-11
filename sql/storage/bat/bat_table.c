@@ -252,8 +252,6 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
 }
 
-
-
 /* returns table rids, for the given select ranges */
 static rids *
 rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...)

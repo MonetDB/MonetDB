@@ -677,6 +677,8 @@ static void ctl_handle_client(
 			} else if (strncmp(p, "profilerstart", strlen("profilerstart")) == 0) {
 				char *log_path = NULL;
 				char *e = fork_profiler(q, &stats, &log_path);
+				Mfprintf(_mero_ctlout, "The command \"profilerstart\" is deprecated"
+						 " and will be removed in a future MonetDB version.\n");
 				if (e != NULL) {
 					Mfprintf(_mero_ctlerr, "%s: failed to start the profiler "
 							 "database '%s': %s\n", origin, q, getErrMsg(e));
@@ -697,6 +699,8 @@ static void ctl_handle_client(
 					free(log_path);
 			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
 				char *e = shutdown_profiler(q, &stats);
+				Mfprintf(_mero_ctlout, "The command \"profilerstop\" is deprecated"
+						 " and will be removed in a future MonetDB version.\n");
 				if (e != NULL) {
 					Mfprintf(_mero_ctlerr, "%s: failed to shutdown the profiler "
 							 "database '%s': %s\n", origin, q, getErrMsg(e));
