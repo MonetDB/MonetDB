@@ -183,20 +183,6 @@ return code of *monetdb*\ (1) indicates failure if one of the databases
 had a failure, even though the operation on other databases was
 successful.
 
-**profilerstart**\ *database*\ **[**\ *database*\ **...]**
-
-**profilerstop**\ *database*\ **[**\ *database*\ **...]**
-
-Starts or stops the collection of profiling logs for the given database.
-The property **profilerlogpath** must be set for the given database, and
-it should point to a directory where the logs will be gathered. The
-filenames of the logs have the format:
-*proflog_<database>_YYYY-MM-DD_HH-MM-SS.json* where the last part is the
-date and time when the collection started. Please note that a file
-recording the pid of the profiler is written in the log directory,
-therefore each database needs to have a different **profilerlogpath**
-value.
-
 **monetdb snapshot write**\ *dbname*
    Takes a snapshot of the given database and writes it to stdout.
 
