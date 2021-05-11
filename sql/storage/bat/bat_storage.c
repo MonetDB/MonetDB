@@ -2252,7 +2252,7 @@ drop_col(sql_trans *tr, sql_column *c)
 
 	if (!isNew(c) && !isTempTable(c->t)) {
 		sql_delta *d = ATOMIC_PTR_GET(&c->data);
-		trans_add(tr, &c->base, d, &tc_gc_del, &commit_destroy_del, &log_destroy_col);
+		trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, &log_destroy_col);
 	}
 	return ok;
 }
@@ -2264,7 +2264,7 @@ drop_idx(sql_trans *tr, sql_idx *i)
 
 	if (!isNew(i) && !isTempTable(i->t)) {
 		sql_delta *d = ATOMIC_PTR_GET(&i->data);
-		trans_add(tr, &i->base, d, &tc_gc_del, &commit_destroy_del, &log_destroy_idx);
+		trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, &log_destroy_idx);
 	}
 	return ok;
 }
