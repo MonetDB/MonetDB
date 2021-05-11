@@ -2810,7 +2810,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	if (ot->keys)
 		for (n = ol_first_node(ot->keys); n; n = n->next) {
 			sql_key *k = NULL;
-			
+
 			if ((res = key_dup(tr, n->data, t, &k)) || (res = ol_add(t->keys, &k->base)))
 				goto cleanup;
 		}
@@ -5610,13 +5610,14 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syskey = find_sql_table(tr, syss, "keys");
 	sql_fkey *fk = NULL;
+	sql_table *dup = NULL;
 
 	if (isTempTable(t))
 		return NULL;
 
-	t = new_table(tr, t);
-	if (!t)
+	if ((res = new_table(tr, t, &dup)))
 		return NULL;
+	t = dup;
 	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(tr->sa, sql_ukey)
 	: (sql_key *) SA_ZNEW(tr->sa, sql_fkey);
 
