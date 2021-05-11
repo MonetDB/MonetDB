@@ -213,11 +213,11 @@ extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int
 extern int mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
 sql_export sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
 extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, unsigned int digits);
-extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
-extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
-extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
-extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
-extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
+extern int mvc_null(mvc *c, sql_column *col, int flag);
+extern int mvc_default(mvc *c, sql_column *col, char *val);
+extern int mvc_drop_default(mvc *c, sql_column *col);
+extern int mvc_storage(mvc *c, sql_column *col, char *storage);
+extern int mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
@@ -293,10 +293,10 @@ extern void sqlvar_set_number(sql_var *var, lng v);
 
 #define get_string_global_var(m, val) (sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), val)))
 
-extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
-extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
-extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
-extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
+extern int mvc_copy_column(mvc *m, sql_table *t, sql_column *c, sql_column **cres);
+extern int mvc_copy_key(mvc *m, sql_table *t, sql_key *k, sql_key **kres);
+extern int mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, sql_idx **ires);
+extern int mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres);
 
 extern sql_rel *sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt);
 
