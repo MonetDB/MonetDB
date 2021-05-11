@@ -1261,13 +1261,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
-				BAT *c = mvc_bind(m, sname, tname, cname, 0);
-				if (c == NULL) {
+				BAT *s = mvc_bind(m, sname, tname, cname, 0);
+				if (s == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
 					      sname,tname,cname);
 				}
-				cnt = BATcount(c);
+				cnt = BATcount(s);
+				cnt = store->storage_api.count_col(m->session->tr, c, 0);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
 				if (l > cnt)
@@ -1277,7 +1278,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				BBPunfix(c->batCacheid);
+				BBPunfix(s->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1567,12 +1568,16 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sqlstore *store = m->store;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_idx *i = mvc_bind_idx(m, s, iname);
 	b = mvc_bind_idxbat(m, sname, tname, iname, access);
 	if (b && b->ttype != coltype)
 		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,iname);
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
+			cnt = store->storage_api.count_idx(m->session->tr, i, 0);
 			/* partitioned access */
 			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
@@ -1593,12 +1598,13 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
-				BAT *c = mvc_bind_idxbat(m, sname, tname, iname, 0);
-				if ( c == NULL) {
+				BAT *s = mvc_bind_idxbat(m, sname, tname, iname, 0);
+				if ( s == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
 				}
-				cnt = BATcount(c);
+				cnt = BATcount(s);
+				cnt = store->storage_api.count_idx(m->session->tr, i, 0);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
 				if (l > cnt)
@@ -1608,7 +1614,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				BBPunfix(c->batCacheid);
+				BBPunfix(s->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);

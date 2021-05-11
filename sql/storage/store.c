@@ -5038,6 +5038,11 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	} else if (n)
 		cs_del(&tr->localtmps, tr->store, n, 0);
 
+	sqlstore *store = tr->store;
+	if (isTable(t) && !isNew(t))
+		if (store->storage_api.drop_del(tr, t) != LOG_OK)
+			return -3;
+
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
@@ -5210,6 +5215,11 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		return res;
 
 	ol_del(t->columns, store, n);
+
+	if (!isNew(col))
+		if (store->storage_api.drop_col(tr, col) != LOG_OK)
+			return -3;
+
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
@@ -5466,6 +5476,9 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	if (isTempTable(t))
 		return NULL;
 
+	t = new_table(tr, t);
+	if (!t)
+		return NULL;
 	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(tr->sa, sql_ukey)
 	: (sql_key *) SA_ZNEW(tr->sa, sql_fkey);
 
@@ -5809,6 +5822,10 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	node *n = ol_find_name(i->t->idxs, i->base.name);
 	if (n)
 		ol_del(i->t->idxs, store, n);
+
+	if (!isNew(i))
+		if (store->storage_api.drop_idx(tr, i) != LOG_OK)
+			return -3;
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
