@@ -19,5 +19,110 @@ SELECT
 ----
 
 statement ok
-ROLLBACK
+CREATE TABLE "mytables" ("id" INTEGER,"name" VARCHAR(1024),"schema_id" INTEGER,"query" VARCHAR(1048576),"type" SMALLINT,"system" BOOLEAN,"commit_action" SMALLINT,"access" SMALLINT)
 
+statement ok rowcount 60
+COPY 60 RECORDS INTO "mytables" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+2001	"schemas"	2000	NULL	0	true	0	0
+2007	"types"	2000	NULL	0	true	0	0
+2016	"functions"	2000	NULL	0	true	0	0
+2028	"args"	2000	NULL	0	true	0	0
+2037	"sequences"	2000	NULL	0	true	0	0
+2047	"table_partitions"	2000	NULL	0	true	0	0
+2053	"range_partitions"	2000	NULL	0	true	0	0
+2059	"value_partitions"	2000	NULL	0	true	0	0
+2063	"dependencies"	2000	NULL	0	true	0	0
+2067	"_tables"	2000	NULL	0	true	0	0
+2076	"_columns"	2000	NULL	0	true	0	0
+2087	"keys"	2000	NULL	0	true	0	0
+2094	"idxs"	2000	NULL	0	true	0	0
+2099	"triggers"	2000	NULL	0	true	0	0
+2110	"objects"	2000	NULL	0	true	0	0
+2115	"_tables"	2114	NULL	0	true	2	0
+2124	"_columns"	2114	NULL	0	true	2	0
+2135	"keys"	2114	NULL	0	true	2	0
+2142	"idxs"	2114	NULL	0	true	2	0
+2147	"triggers"	2114	NULL	0	true	2	0
+2158	"objects"	2114	NULL	0	true	2	0
+5199	"tables"	2000	"s"	1	true	0	0
+5209	"columns"	2000	"dd"	1	true	0	0
+5228	"comments"	2000	NULL	0	true	0	0
+5233	"db_user_info"	2000	NULL	0	true	0	0
+5240	"users"	2000	"create v3;"	1	true	0	0
+5245	"user_role"	2000	NULL	0	true	0	0
+5248	"auths"	2000	NULL	0	true	0	0
+5252	"privileges"	2000	NULL	0	true	0	0
+5442	"querylog_catalog"	2000	"create view sys.querylog_catalog as select * from sys.querylog_catalog();"	1	true	0	0
+5453	"querylog_calls"	2000	"create view sys.querylog_calls as select * from sys.querylog_calls();"	1	true	0	0
+5471	"querylog_history"	2000	"create view sys.querylo3r;"	1	true	0	0
+5488	"tracelog"	2000	"create view sys.tracelog as select * from sys.tracelog();"	1	true	0	0
+5529	"ids"	2000	"cs;"	1	true	0	0
+5537	"dependency_types"	2000	NULL	0	true	0	1
+5547	"dependencies_vw"	2000	"create view sys.depeid;"	1	true	0	0
+5553	"dependency_owners_on_schemas"	2000	"create view sys.dependency_ossys.as.name;"	1	true	0	0
+5712	"dependency_keys_on_foreignkeys"	2000	"create view sys.dependency_keys_on_fors3r by k.name, fk.name;"	1	true	0	0
+5721	"dependency_tables_on_procedures"	2000	"create vid.id, p.id;"	1	true	0	0
+5730	"dependency_views_on_procedures"	2000	"create view sys.dependency_views_on_procedures 3ame, p.id;"	1	true	0	0
+5760	"dependency_columns_on_types"	2000	"create view , c.id;"	1	true	0	0
+7995	"dump_create_roles"	2000	"create view sys.ds;"	1	true	0	0
+7998	"dump_create_users"	2000	"create view sys.dumphot';"	1	true	0	0
+8001	"dump_create_schemas"	2000	"create view sys.dump_create_schemas a2alse;"	1	true	0	0
+8004	"dump_add_schemas_to_users"	2000	"create view sys.dump_add_schemas_ts';"	1	true	0	0
+8007	"dump_grant_user_privileges"	2000	"create v22.id = ur.role_id;"	1	true	0	0
+8010	"dump_table_constraint_type"	2000	"create vie2e;"	1	true	0	0
+8013	"dump_indices"	2000	"create v3 tbl;"	1	true	0	0
+8016	"dump_column_defaults"	2000	"create2aults;"	1	true	0	0
+8019	"dump_foreign_keys"	2000	"create vs"	1	true	0	0
+8022	"dump_partition_tables"	2000	"crs"	1	true	0	0
+8025	"dump_sequences"	2000	"cs;"	1	true	0	0
+8028	"dump_start_sequences"	2000	"create view sys.dquences;"	1	true	0	0
+8032	"dump_functions"	2000	"create view sys.dump_fscribe_functions f;"	1	true	0	0
+8036	"dump_tables"	2000	"create view sys.du2;"	1	true	0	0
+8039	"dump_triggers"	2000	"create view sys.dump_trigriggers;"	1	true	0	0
+8042	"dump_comments"	2000	"create view sys.dumpments c;"	1	true	0	0
+8045	"dump_user_defined_types"	2000	"create view sys.dump_user_definedes;"	1	true	0	0
+8048	"dump_privileges"	2000	"crs;"	1	true	0	0
+8064	"dump_statements"	2000	NULL	0	true	0	0
+
+statement ok rowcount 1
+UPDATE "mytables" SET system = true WHERE
+    schema_id = 2000 AND
+    type = 0 AND
+    name in (
+        'describe_constraints',
+        'describe_indices',
+        'describe_column_defaults',
+        'describe_foreign_keys',
+        'describe_tables',
+        'describe_triggers',
+        'describe_comments',
+        'fully_qualified_functions',
+        'describe_privileges',
+        'describe_user_defined_types',
+        'describe_partition_tables',
+        'describe_sequences',
+        'describe_functions',
+        'dump_create_roles',
+        'dump_create_users',
+        'dump_create_schemas',
+        'dump_add_schemas_to_users',
+        'dump_grant_user_privileges',
+        'dump_table_constraint_type',
+        'dump_indices',
+        'dump_column_defaults',
+        'dump_foreign_keys',
+        'dump_partition_tables',
+        'dump_sequences',
+        'dump_start_sequences',
+        'dump_functions',
+        'dump_tables',
+        'dump_triggers',
+        'dump_comments',
+        'dump_user_defined_types',
+        'dump_privileges',
+        'dump_statements'
+    )
+
+statement ok
+ROLLBACK
