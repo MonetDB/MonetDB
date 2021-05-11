@@ -1320,6 +1320,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	    BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
+	BBPretain(new->batCacheid);
 	return GDK_SUCCEED;
 }
 
