@@ -154,6 +154,7 @@
 \dSf sys."covar_pop"
 \dSf sys."covar_samp"
 \dSf sys."createorderindex"
+\dSf sys."current_sessionid"
 \dSf sys."date_to_str"
 \dSf sys."date_trunc"
 \dSf sys."db_users"
@@ -566,6 +567,7 @@ SYSTEM PROCEDURE        sys.createorderindex
 SYSTEM WINDOW           sys.cume_dist
 SYSTEM FUNCTION         sys.curdate
 SYSTEM FUNCTION         sys.current_date
+SYSTEM FUNCTION         sys.current_sessionid
 SYSTEM FUNCTION         sys.current_time
 SYSTEM FUNCTION         sys.current_timestamp
 SYSTEM FUNCTION         sys.curtime
@@ -1127,6 +1129,7 @@ create window covar_samp(e1 real, e2 real) returns double external name "sql"."c
 create window covar_samp(e1 smallint, e2 smallint) returns double external name "sql"."covariance";
 create window covar_samp(e1 tinyint, e2 tinyint) returns double external name "sql"."covariance";
 create procedure sys.createorderindex(sys string, tab string, col string) external name sql.createorderindex;
+create function sys.current_sessionid() returns int external name clients.current_sessionid;
 create function date_to_str(d date, format string) returns string external name mtime."date_to_str";
 create function sys.date_trunc(txt string, t timestamp with time zone) returns timestamp with time zone external name sql.date_trunc;
 create function sys.date_trunc(txt string, t timestamp) returns timestamp external name sql.date_trunc;
@@ -2650,6 +2653,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"cume_dist",	"SYSTEM",	"cume_dist",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	true,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"curdate",	"SYSTEM",	"current_date",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"date",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"current_date",	"SYSTEM",	"current_date",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"date",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"current_sessionid",	"SYSTEM",	"create function sys.current_sessionid() returns int external name clients.current_sessionid;",	"clients",	"MAL",	"Scalar function",	true,	false,	false,	true,	"result",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"current_time",	"SYSTEM",	"current_time",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"timetz",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"current_timestamp",	"SYSTEM",	"current_timestamp",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"timestamptz",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"curtime",	"SYSTEM",	"current_time",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"timetz",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5311,6 +5315,7 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"current_sessionid",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"date_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"date_trunc",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"date_trunc",	"public",	"EXECUTE",	"monetdb",	0	]
