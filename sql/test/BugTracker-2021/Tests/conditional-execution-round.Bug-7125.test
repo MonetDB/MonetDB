@@ -1,0 +1,103 @@
+statement ok
+start transaction
+
+statement ok
+create table round_test(category String null,colorby String null,stddev_dep_delay double null,usl double null,lsl double null)
+
+statement ok rowcount 13
+insert into round_test values ('2017_6','NK',108.939,8258.0,-64.0),('2017_6','VX',null,8258.0,-63.0),
+('2017_6','EV',101.249,8258.0,-64.0),('2017_6','UA',112.307,8258.0,-64.0),('2017_6','F9',null,8409.0,-64.0),
+('2017_6','B6',null,8258.0,-64.0),('2017_6','OO',158.159,8258.0,-64.0),('2017_6','WN',null,8258.0,-64.0),
+('2017_6','AA',160.657,8258.0,-64.0),('2017_6','DL',44.279,8258.0,-63.0),('2017_6','AS',null,8258.0,-64.0),
+('2017_6','HA',0.0,8258.0,-64.0),('2017_6',null,null,null,null)
+
+query TTRRRR rowsort
+select a.*,
+case when stddev_dep_delay is null or stddev_dep_delay=0
+then -9999
+else round(((usl - lsl) / (6 * stddev_dep_delay)), 3) end as pp_dep_delay
+from round_test a
+----
+2017_6
+AA
+160.657
+8258.000
+-64.000
+8.633
+2017_6
+AS
+NULL
+8258.000
+-64.000
+-9999.000
+2017_6
+B6
+NULL
+8258.000
+-64.000
+-9999.000
+2017_6
+DL
+44.279
+8258.000
+-63.000
+31.320
+2017_6
+EV
+101.249
+8258.000
+-64.000
+13.699
+2017_6
+F9
+NULL
+8409.000
+-64.000
+-9999.000
+2017_6
+HA
+0.000
+8258.000
+-64.000
+-9999.000
+2017_6
+NK
+108.939
+8258.000
+-64.000
+12.732
+2017_6
+NULL
+NULL
+NULL
+NULL
+-9999.000
+2017_6
+OO
+158.159
+8258.000
+-64.000
+8.770
+2017_6
+UA
+112.307
+8258.000
+-64.000
+12.350
+2017_6
+VX
+NULL
+8258.000
+-63.000
+-9999.000
+2017_6
+WN
+NULL
+8258.000
+-64.000
+-9999.000
+
+statement ok
+rollback
+
+
