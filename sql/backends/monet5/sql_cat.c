@@ -1982,7 +1982,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
 
-	switch (sql_trans_rename_column(sql->session->tr, t, old_name, new_name)) {
+	switch (sql_trans_rename_column(sql->session->tr, t, col->base.id, old_name, new_name)) {
 		case -1:
 			throw(SQL,"sql.rename_column", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:

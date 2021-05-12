@@ -352,7 +352,7 @@ extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
-extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const char *new_name);
+extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name);
 extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action);
 extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
