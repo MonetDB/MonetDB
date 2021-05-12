@@ -3924,6 +3924,8 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 	if (is_oid_nil(obj_oid))
 		return -1;
 
+	if ((res = store->table_api.table_delete(tr, sysobj, obj_oid)))
+		return res;
 	if (isRangePartitionTable(mt)) {
 		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
 		oid rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->member, NULL);
@@ -3945,8 +3947,6 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 		return res;
 
 	if ((res = os_del(mt->s->parts, tr, pt->base.name, dup_base(&pt->base))))
-		return res;
-	if ((res = store->table_api.table_delete(tr, sysobj, obj_oid)))
 		return res;
 	return 0;
 }
@@ -4456,6 +4456,11 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 
 	assert(!strNil(new_name));
 
+	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &id, NULL);
+	assert(!is_oid_nil(rid));
+	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) new_name)))
+		return res;
+
 	/* delete schema, add schema */
 	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
 		return res;
@@ -4464,12 +4469,6 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 		return res;
 	}
 
-	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
-	assert(!is_oid_nil(rid));
-	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) new_name))) {
-		schema_destroy(store, ns);
-		return res;
-	}
 	return res;
 }
 
@@ -4840,6 +4839,11 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	assert(!strNil(new_name));
 
+	rid = store->table_api.column_find_row(tr, find_sql_column(systable, "id"), &id, NULL);
+	assert(!is_oid_nil(rid));
+	if ((res = store->table_api.column_update_value(tr, find_sql_column(systable, "name"), rid, (void*) new_name)))
+		return res;
+
 	if (isGlobal(t)) {
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
@@ -4848,11 +4852,6 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 		if (n)
 			cs_del(&tr->localtmps, tr->store, n, t->base.flags);
 	}
-
-	rid = store->table_api.column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
-	assert(!is_oid_nil(rid));
-	if ((res = store->table_api.column_update_value(tr, find_sql_column(systable, "name"), rid, (void*) new_name)))
-		return res;
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup)))
 		return res;
@@ -5243,7 +5242,7 @@ drop_sql_key(sql_table *t, sqlid id, int drop_action)
 }
 
 int
-sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const char *new_name)
+sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name)
 {
 	sqlstore *store = tr->store;
 	sql_table *syscolumn = find_sql_table(tr, find_sql_schema(tr, isGlobal(t)?"sys":"tmp"), "_columns");
@@ -5254,17 +5253,17 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 
 	assert(!strNil(new_name));
 
+	rid = store->table_api.column_find_row(tr, find_sql_column(syscolumn, "id"), &id, NULL);
+	assert(!is_oid_nil(rid));
+	if ((res = store->table_api.column_update_value(tr, find_sql_column(syscolumn, "name"), rid, (void*) new_name)))
+		return res;
+
 	if ((res = new_table(tr, t, &dup)))
 		return res;
 	t = dup;
 	if (!(n = ol_find_name(t->columns, old_name)))
 		return -1;
 	sql_column *c = n->data;
-
-	rid = store->table_api.column_find_row(tr, find_sql_column(syscolumn, "id"), &c->base.id, NULL);
-	assert(!is_oid_nil(rid));
-	if ((res = store->table_api.column_update_value(tr, find_sql_column(syscolumn, "name"), rid, (void*) new_name)))
-		return res;
 
 	_DELETE(c->base.name);
 	c->base.name = SA_STRDUP(tr->sa, new_name);
