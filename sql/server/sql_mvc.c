@@ -1412,60 +1412,60 @@ mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
 	return NO_DEPENDENCY;
 }
 
-sql_column *
+int
 mvc_null(mvc *m, sql_column *col, int isnull)
 {
 	TRC_DEBUG(SQL_TRANS, "Null: %s %d\n", col->base.name, isnull);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->null = isnull;
-		return col;
+		return 0;
 	}
 	return sql_trans_alter_null(m->session->tr, col, isnull);
 }
 
-sql_column *
+int
 mvc_default(mvc *m, sql_column *col, char *val)
 {
 	TRC_DEBUG(SQL_TRANS, "Default: %s %s\n", col->base.name, val);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->def = val?sa_strdup(m->sa, val):NULL;
-		return col;
+		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);
 	}
 }
 
-sql_column *
+int
 mvc_drop_default(mvc *m, sql_column *col)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop default: %s\n", col->base.name);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->def = NULL;
-		return col;
+		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, NULL);
 	}
 }
 
-sql_column *
+int
 mvc_storage(mvc *m, sql_column *col, char *storage)
 {
 	TRC_DEBUG(SQL_TRANS, "Storage: %s %s\n", col->base.name, storage);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->storage_type = storage?sa_strdup(m->sa, storage):NULL;
-		return col;
+		return 0;
 	} else {
 		return sql_trans_alter_storage(m->session->tr, col, storage);
 	}
 }
 
-sql_table *
+int
 mvc_access(mvc *m, sql_table *t, sht access)
 {
 	TRC_DEBUG(SQL_TRANS, "Access: %s %d\n", t->base.name, access);
 	if (t->persistence == SQL_DECLARED_TABLE) {
 		t->access = access;
-		return t;
+		return 0;
 	}
 	return sql_trans_alter_access(m->session->tr, t, access);
 }
@@ -1491,28 +1491,28 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 	return sql_trans_is_duplicate_eliminated(m->session->tr, col);
 }
 
-sql_column *
-mvc_copy_column( mvc *m, sql_table *t, sql_column *c)
+int
+mvc_copy_column(mvc *m, sql_table *t, sql_column *c, sql_column **cres)
 {
-	return sql_trans_copy_column(m->session->tr, t, c);
+	return sql_trans_copy_column(m->session->tr, t, c, cres);
 }
 
-sql_key *
-mvc_copy_key(mvc *m, sql_table *t, sql_key *k)
+int
+mvc_copy_key(mvc *m, sql_table *t, sql_key *k, sql_key **kres)
 {
-	return sql_trans_copy_key(m->session->tr, t, k);
+	return sql_trans_copy_key(m->session->tr, t, k, kres);
 }
 
-sql_idx *
-mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
+int
+mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, sql_idx **ires)
 {
-	return sql_trans_copy_idx(m->session->tr, t, i);
+	return sql_trans_copy_idx(m->session->tr, t, i, ires);
 }
 
-sql_trigger *
-mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
+int
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 {
-	return sql_trans_copy_trigger(m->session->tr, t, tr);
+	return sql_trans_copy_trigger(m->session->tr, t, tr, tres);
 }
 
 sql_rel *

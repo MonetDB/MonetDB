@@ -5695,10 +5695,22 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 					assert(s->base.id == sche->base.id);
 					if ((seq = find_sql_sequence(tr, s, seq_name))) {
-						if (!sql_trans_sequence_restart(tr, seq, seq->start)) {
-							sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
-							error = 1;
-							goto finalize;
+						switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
+							case -1:
+								sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								error = 1;
+								goto finalize;
+							case -2:
+							case -3:
+								sql_error(sql, 02, SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
+								error = 1;
+								goto finalize;
+							case -4:
+								sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
+								error = 1;
+								goto finalize;
+							default:
+								break;
 						}
 					}
 				}

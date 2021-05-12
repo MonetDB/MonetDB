@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue May 11 2021 Sjoerd Mullender <sjoerd@acm.org>
+- There is now a function sys.current_sessionid() to return the session
+  ID of the current session.  This ID corresponds with the sessionid in
+  the sys.queue() result.
+
 * Wed Apr 28 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Merge statements could not produce correct results on complex join
   conditions, so a renovation was made. As a consequence, subqueries

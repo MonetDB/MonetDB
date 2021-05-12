@@ -173,4 +173,27 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table integers rename to goodluck;').assertSucceeded()
+        mdb2.execute('alter table integers rename to badluck;').assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
+        mdb1.execute('rollback;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table integers add column k int;').assertSucceeded()
+        mdb2.execute('alter table integers add column k int;').assertFailed(err_code="42000", err_message="ALTER TABLE: sys_integers_k conflicts with another transaction")
+        mdb1.execute('rollback;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('create function mytest() returns int return 1;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('create or replace function mytest() returns int return 2;').assertSucceeded()
+        mdb2.execute('create or replace function mytest() returns int return 3;').assertFailed(err_code="42000", err_message="CREATE OR REPLACE FUNCTION: transaction conflict detected")
+        mdb1.execute('drop function mytest();').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
         mdb1.execute("drop table integers;")

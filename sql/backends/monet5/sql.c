@@ -329,14 +329,13 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
 	}
 
-	osa = sql->sa;
-	sql->sa = sql->ta;
-
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
 								t->sz, t->properties);
 	if (!nt)
 		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' name conflicts", action, t->base.name);
 
+	osa = sql->sa;
+	sql->sa = sql->ta;
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -371,12 +370,20 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	}
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
+		sql_column *c = n->data, *copied = NULL;
 
-		if (copied == NULL) {
-			sa_reset(sql->ta);
-			sql->sa = osa;
-			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+		switch (mvc_copy_column(sql, nt, c, &copied)) {
+			case -1:
+				sa_reset(sql->ta);
+				sql->sa = osa;
+				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				sa_reset(sql->ta);
+				sql->sa = osa;
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+			default:
+				break;
 		}
 		if (isPartitionedByColumnTable(t) && c->base.id == t->part.pcol->base.id)
 			nt->part.pcol = copied;
@@ -405,9 +412,17 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	if (t->idxs) {
 		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
-			if (!mvc_copy_idx(sql, nt, i)) {
-				sql->sa = osa;
-				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
+
+			switch (mvc_copy_idx(sql, nt, i, NULL)) {
+				case -1:
+					sql->sa = osa;
+					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					sql->sa = osa;
+					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
+				default:
+					break;
 			}
 		}
 	}
@@ -422,18 +437,33 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				return err;
 			}
-			if (!mvc_copy_key(sql, nt, k)) {
-				sql->sa = osa;
-				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
+			switch (mvc_copy_key(sql, nt, k, NULL)) {
+				case -1:
+					sql->sa = osa;
+					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					sql->sa = osa;
+					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
+				default:
+					break;
 			}
 		}
 	}
 	if (t->triggers) {
 		for (n = ol_first_node(t->triggers); n; n = n->next) {
 			sql_trigger *tr = n->data;
-			if (mvc_copy_trigger(sql, nt, tr)) {
-				sql->sa = osa;
-				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
+
+			switch (mvc_copy_trigger(sql, nt, tr, NULL)) {
+				case -1:
+					sql->sa = osa;
+					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					sql->sa = osa;
+					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
+				default:
+					break;
 			}
 		}
 	}
@@ -1041,11 +1071,18 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
 	if (seq->maxvalue && start > seq->maxvalue)
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
-	if (sql_trans_sequence_restart(m->session->tr, seq, start)) {
-		*res = start;
-		return MAL_SUCCEED;
+	switch (sql_trans_sequence_restart(m->session->tr, seq, start)) {
+		case -1:
+			throw(SQL,"sql.restart",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.restart",SQLSTATE(42000) "RESTART SEQUENCE: transaction conflict detected");
+		case -4:
+			throw(SQL,"sql.restart",SQLSTATE(HY050) "Cannot (re)start sequence %s.%s", sname, seqname);
+		default:
+			*res = start;
 	}
-	throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s", sname, seqname);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1160,9 +1197,19 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
 			goto bailout;
 		}
-		if (!sql_trans_seqbulk_restart(m->session->tr, sb, nstart)) {
-			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot restart sequence %s.%s", nsname, nseqname);
-			goto bailout;
+		switch (sql_trans_seqbulk_restart(m->session->tr, sb, nstart)) {
+			case -1:
+				msg = createException(SQL,"sql.restart",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			case -2:
+			case -3:
+				msg = createException(SQL,"sql.restart",SQLSTATE(42000) "RESTART SEQUENCE: transaction conflict detected");
+				goto bailout;
+			case -4:
+				msg = createException(SQL,"sql.restart",SQLSTATE(HY050) "Cannot restart sequence %s.%s", nsname, nseqname);
+				goto bailout;
+			default:
+				break;
 		}
 		if (BUNappend(r, &nstart, false) != GDK_SUCCEED) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1261,13 +1308,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
-				BAT *c = mvc_bind(m, sname, tname, cname, 0);
-				if (c == NULL) {
+				BAT *s = mvc_bind(m, sname, tname, cname, 0);
+				if (s == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
 					      sname,tname,cname);
 				}
-				cnt = BATcount(c);
+				cnt = BATcount(s);
+				cnt = store->storage_api.count_col(m->session->tr, c, 0);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
 				if (l > cnt)
@@ -1277,7 +1325,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				BBPunfix(c->batCacheid);
+				BBPunfix(s->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1567,12 +1615,16 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sqlstore *store = m->store;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_idx *i = mvc_bind_idx(m, s, iname);
 	b = mvc_bind_idxbat(m, sname, tname, iname, access);
 	if (b && b->ttype != coltype)
 		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,iname);
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
+			cnt = store->storage_api.count_idx(m->session->tr, i, 0);
 			/* partitioned access */
 			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
@@ -1593,12 +1645,13 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
-				BAT *c = mvc_bind_idxbat(m, sname, tname, iname, 0);
-				if ( c == NULL) {
+				BAT *s = mvc_bind_idxbat(m, sname, tname, iname, 0);
+				if ( s == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
 				}
-				cnt = BATcount(c);
+				cnt = BATcount(s);
+				cnt = store->storage_api.count_idx(m->session->tr, i, 0);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
 				if (l > cnt)
@@ -1608,7 +1661,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				BBPunfix(c->batCacheid);
+				BBPunfix(s->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
