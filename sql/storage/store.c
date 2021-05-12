@@ -5336,8 +5336,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		return res;
 
 	if (!isNew(col) && !isTempTable(col->t))
-		if (store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base)) != LOG_OK)
-			return -3;
+		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
+			return res;
 
 	ol_del(t->columns, store, n);
 
@@ -5952,8 +5952,8 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		return res;
 
 	if (!isNew(i) && !isTempTable(i->t))
-		if (store->storage_api.drop_idx(tr, (sql_idx*)dup_base(&i->base)) != LOG_OK)
-			return -3;
+		if ((res = store->storage_api.drop_idx(tr, (sql_idx*)dup_base(&i->base))))
+			return res;
 
 	node *n = ol_find_name(i->t->idxs, i->base.name);
 	if (n)
