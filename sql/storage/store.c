@@ -5153,8 +5153,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 
 	sqlstore *store = tr->store;
 	if (isTable(t) && !isNew(t))
-		if (store->storage_api.drop_del(tr, t) != LOG_OK)
-			return -3;
+		if ((res = store->storage_api.drop_del(tr, t)))
+			return res;
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
