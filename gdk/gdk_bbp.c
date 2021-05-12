@@ -2275,7 +2275,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
-		--BBP_desc(i)->batSharecnt;
+		if (BBP_desc(i)->batSharecnt == 0) {
+			GDKerror("%s: %s does not have any shares.\n", func, BBPname(i));
+			assert(0);
+		} else {
+			--BBP_desc(i)->batSharecnt;
+		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
 		return refs;
@@ -3012,7 +3017,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		/* there is a situation where the move may fail,
 		 * namely if this heap was not supposed to be existing
 		 * before, i.e. after a BATmaterialize on a persistent
-		 * bat as a workaround, do not complain about move
+		 * bat; as a workaround, do not complain about move
 		 * failure if the source file is nonexistent
 		 */
 		if (mvret != GDK_SUCCEED && file_exists(h->farmid, srcdir, nme, ext)) {

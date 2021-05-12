@@ -982,6 +982,10 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 
 	if (jt->error)
 		return idx;
+	if (THRhighwater()) {
+		jt->error = createException(MAL, "json.parser", "expression too complex to parse");
+		return idx;
+	}
 	skipblancs(j);
 	switch (*j) {
 	case '{':
