@@ -2014,6 +2014,25 @@ store_resume_log(sqlstore *store)
 	MT_lock_unset(&store->flush);
 }
 
+static void
+store_pending_changes(sqlstore *store, ulng commit_ts, ulng oldest)
+{
+	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
+		for(node *n=store->changes->h; n; ) {
+			node *next = n->next;
+			sql_change *c = n->data;
+
+			if (!c->cleanup) {
+				_DELETE(c);
+			} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+				list_remove_node(store->changes, store, n);
+				_DELETE(c);
+			}
+			n = next;
+		}
+	}
+}
+
 void
 store_manager(sqlstore *store)
 {
@@ -2026,6 +2045,14 @@ store_manager(sqlstore *store)
 		int res;
 
 		if (store->logger_api.changes(store) <= 0) {
+			if (ATOMIC_GET(&store->nr_active) == 0) {
+				store_lock(store);
+				if (ATOMIC_GET(&store->nr_active) == 0) {
+					ulng oldest = store_timestamp(store)+1;
+					store_pending_changes(store, oldest, oldest);
+				}
+				store_unlock(store);
+			}
 			if (GDKexiting())
 				break;
 			const int sleeptime = 100;
@@ -3389,20 +3416,7 @@ sql_trans_commit(sql_trans *tr)
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
-	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
-		for(node *n=store->changes->h; n; ) {
-			node *next = n->next;
-			sql_change *c = n->data;
-
-			if (!c->cleanup) {
-				_DELETE(c);
-			} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
-				list_remove_node(store->changes, store, n);
-				_DELETE(c);
-			}
-			n = next;
-		}
-	}
+	store_pending_changes(store, commit_ts, oldest);
 	if (tr->changes) {
 		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
 		int flush = (tr->logchanges > min_changes && !store->changes);
