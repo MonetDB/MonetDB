@@ -2281,24 +2281,24 @@ BATmode(BAT *b, bool transient)
 		MT_lock_set(&GDKswapLock(bid));
 		if (!transient) {
 			if (!(BBP_status(bid) & BBPDELETED))
-				BBP_status_on(bid, BBPNEW, "BATmode");
+				BBP_status_on(bid, BBPNEW);
 			else
-				BBP_status_on(bid, BBPEXISTING, "BATmode");
-			BBP_status_off(bid, BBPDELETED, "BATmode");
+				BBP_status_on(bid, BBPEXISTING);
+			BBP_status_off(bid, BBPDELETED);
 		} else if (!b->batTransient) {
 			if (!(BBP_status(bid) & BBPNEW))
-				BBP_status_on(bid, BBPDELETED, "BATmode");
-			BBP_status_off(bid, BBPPERSISTENT, "BATmode");
+				BBP_status_on(bid, BBPDELETED);
+			BBP_status_off(bid, BBPPERSISTENT);
 		}
 		/* session bats or persistent bats that did not
 		 * witness a commit yet may have been saved */
 		if (b->batCopiedtodisk) {
 			if (!transient) {
-				BBP_status_off(bid, BBPTMP, "BATmode");
+				BBP_status_off(bid, BBPTMP);
 			} else {
 				/* TMcommit must remove it to
 				 * guarantee free space */
-				BBP_status_on(bid, BBPTMP, "BATmode");
+				BBP_status_on(bid, BBPTMP);
 			}
 		}
 		b->batTransient = transient;
