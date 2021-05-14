@@ -314,11 +314,17 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
-		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		if (!(k = (sql_key*)mvc_create_ukey(sql, t, name, kt))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return res;
+		}
 		k->base.new = 1;
 
 		mvc_create_kc(sql, k, cs);
-		mvc_create_ukey_done(sql, k);
+		if (!mvc_create_ukey_done(sql, k)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return res;
+		}
 		res = SQL_OK;
 	} 	break;
 	case SQL_FOREIGN_KEY: {
@@ -372,7 +378,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 			return res;
 		}
-		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		if (!(fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+			return res;
+		}
 		fk->k.base.new = 1;
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
@@ -568,7 +577,10 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 			return SQL_ERR;
 		}
-		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		if (!(fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255))) {
+			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+			return SQL_ERR;
+		}
 		fk->k.base.new = 1;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
@@ -618,7 +630,10 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			return SQL_ERR;
 		}
 
-		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		if (!(k = (sql_key*)mvc_create_ukey(sql, t, name, kt))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return SQL_ERR;
+		}
 		k->base.new = 1;
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
@@ -632,7 +647,10 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			}
 			(void) mvc_create_kc(sql, k, c);
 		}
-		mvc_create_ukey_done(sql, k);
+		if (!mvc_create_ukey_done(sql, k)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return SQL_ERR;
+		}
 	} 	break;
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
@@ -1926,7 +1944,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		sname = t->s->base.name;
 
 	/* add index here */
-	i = mvc_create_idx(sql, nt, iname, itype);
+	if (!(i = mvc_create_idx(sql, nt, iname, itype)))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: transaction conflict detected");
 	i->base.new = 1;
 	for (n = column_list->h; n; n = n->next) {
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
