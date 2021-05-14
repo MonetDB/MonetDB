@@ -26,7 +26,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_storage.h"
 #include "mutils.h"
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -620,6 +619,16 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * merely copies the data into place.  Failure to read or write the
  * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
+static void
+DESCclean(BAT *b)
+{
+	b->batDirtyflushed = DELTAdirty(b);
+	b->batDirtydesc = false;
+	b->theap->dirty = false;
+	if (b->tvheap)
+		b->tvheap->dirty = false;
+}
+
 static BAT *
 DESCload(int i)
 {
@@ -647,16 +656,6 @@ DESCload(int i)
 	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
-}
-
-void
-DESCclean(BAT *b)
-{
-	b->batDirtyflushed = DELTAdirty(b);
-	b->batDirtydesc = false;
-	b->theap->dirty = false;
-	if (b->tvheap)
-		b->tvheap->dirty = false;
 }
 
 /* spawning the background msync should be done carefully
