@@ -185,6 +185,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 	r1->tsorted = true;
 	r1->trevsorted = true;
 	r1->tseqbase = 0;
+	r1->theap->dirty = true;
 	*r1p = r1;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, size, TRANSIENT);
@@ -198,6 +199,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		r2->tsorted = true;
 		r2->trevsorted = true;
 		r2->tseqbase = 0;
+		r2->theap->dirty = true;
 		*r2p = r2;
 	}
 	return maxsize;

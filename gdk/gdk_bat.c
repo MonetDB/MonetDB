@@ -1243,6 +1243,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	b->theap->dirty |= count > 0;
 	for (BUN i = 0; i < count; i++) {
 		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
 			(void *) ((char *) values + i * Tsize(b));
@@ -1255,8 +1256,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		p++;
 	}
-	if (b->theap)
-		b->theap->dirty |= count > 0;
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1756,6 +1755,7 @@ BATsetcount(BAT *b, BUN cnt)
 
 	b->batCount = cnt;
 	b->batDirtydesc = true;
+	b->theap->dirty |= b->ttype != TYPE_void;
 	if (b->theap->parentid == b->batCacheid)
 		b->theap->free = tailsize(b, cnt);
 	if (b->ttype == TYPE_void)
