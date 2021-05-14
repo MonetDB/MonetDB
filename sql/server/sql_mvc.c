@@ -1203,20 +1203,12 @@ mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orienta
 	return i;
 }
 
-sql_trigger *
-mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ )
-{
-	sql_trans_create_tc(m->session->tr, i, c);
-	return i;
-}
-
 int
 mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop trigger: %s %s\n", s->base.name, tri->base.name);
 	return sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
-
 
 sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
