@@ -1318,6 +1318,7 @@ BATnegcands(BUN nr, BAT *odels)
 	};
     	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
+	dels->dirty = true;
 	if (odels->ttype == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
@@ -1382,6 +1383,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	};
     	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
+	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	if (selected) {
 		if (nr <= BATcount(masked))
@@ -1502,9 +1504,10 @@ BATunmask(BAT *b)
 			HEAPfree(dels, true);
 			GDKfree(dels);
 		} else {
+			dels->free = sizeof(ccand_t) + n * sizeof(oid);
+			dels->dirty = true;
 			ATOMIC_INIT(&dels->refs, 1);
 			bn->tvheap = dels;
-			bn->tvheap->free = sizeof(ccand_t) + n * sizeof(oid);
 		}
 		BATsetcount(bn, n=BATcount(b));
 		bn->tseqbase = tseq;
