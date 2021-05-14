@@ -990,8 +990,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 			sql->params = NULL;
 			if (create) {
-				if (!(f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE)))
-					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: %s function %s.%s not bound", F, slang, s->base.name, fname);
 			}
@@ -1002,8 +1001,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 			if (create) { /* needed for recursive functions */
 				q = query_cleaned(sql->ta, q);
-				if (!(sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE)))
-					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE);
 			}
 			sql->session->schema = s;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
@@ -1031,8 +1029,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql->params = NULL;
 			if (create) {
 				q = query_cleaned(sql->ta, q);
-				if (!(f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE)))
-					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			} else {
