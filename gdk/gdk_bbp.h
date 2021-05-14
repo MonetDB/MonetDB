@@ -81,16 +81,16 @@ gdk_export void BBPshare(bat b);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
-#define BBP_status_set(bid, mode, nme)		\
+#define BBP_status_set(bid, mode)		\
 	do {					\
 		BBP_status(bid) = mode;		\
 	} while (0)
 
-#define BBP_status_on(bid, flags, nme)					\
-		BBP_status_set(bid, BBP_status(bid) | flags, nme)
+#define BBP_status_on(bid, flags)					\
+		BBP_status_set(bid, BBP_status(bid) | flags)
 
-#define BBP_status_off(bid, flags, nme)					\
-		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme)
+#define BBP_status_off(bid, flags)					\
+		BBP_status_set(bid, BBP_status(bid) & ~(flags))
 
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
