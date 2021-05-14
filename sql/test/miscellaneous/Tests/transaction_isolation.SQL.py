@@ -175,7 +175,7 @@ with SQLTestCase() as mdb1:
 
         mdb1.execute("CREATE schema another").assertSucceeded()
         mdb1.execute("CREATE TABLE longs (i bigint);").assertSucceeded()
-        mdb1.execute("insert into longs values (1),(2),(3),(NULL);").assertSucceeded()
+        mdb1.execute("insert into longs values (1),(2),(3);").assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
@@ -208,6 +208,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
+        mdb1.execute("truncate integers;").assertSucceeded()
         mdb1.execute("drop table integers;")
         mdb1.execute("drop table longs;")
         mdb1.execute("drop schema another;")
