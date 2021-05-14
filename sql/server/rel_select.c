@@ -2695,13 +2695,18 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_exp(query, rel, sc->data.sym, f);
 		}
+		sql_rel *or = rel;
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 
-		if (!le)
+		if (le) {
+			sql_subtype bt;
+
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			le = exp_check_type(sql, &bt, rel, le, type_equal);
+		}
+		if (!le || or != rel)
 			return NULL;
-		if (!(le = rel_unop_(sql, rel, le, "sys", "not", card_value)))
-			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
 	}
 	case SQL_ATOM: {
