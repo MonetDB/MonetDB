@@ -771,8 +771,9 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 	}
 
-	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu,size=%zu)\n",
-		  nme, ext, (int) h->storage, h->free, h->size);
+	TRC_DEBUG(HEAP, "HEAPload(%s%s%s,storage=%d,free=%zu,size=%zu)\n",
+		  nme, ext ? "." : "", ext ? ext : "",
+		  (int) h->storage, h->free, h->size);
 
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
