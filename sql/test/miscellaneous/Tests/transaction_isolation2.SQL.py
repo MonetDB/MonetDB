@@ -52,6 +52,14 @@ with SQLTestCase() as mdb1:
         mdb2.execute('rollback;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('CREATE schema mysch;').assertSucceeded()
+        mdb2.execute('CREATE schema mysch;').assertFailed(err_code="42000", err_message="CREATE SCHEMA: transaction conflict detected")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('DROP schema mysch;').assertSucceeded()
         mdb1.execute("drop table integers;").assertSucceeded()
         mdb1.execute("drop table longs;").assertSucceeded()
         mdb1.execute("drop table doubles;").assertSucceeded()

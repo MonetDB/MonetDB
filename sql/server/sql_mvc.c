@@ -1035,14 +1035,11 @@ mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 	return trigger;
 }
 
-sql_type *
+int
 mvc_create_type(mvc *sql, sql_schema *s, const char *name, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
-	sql_type *t = NULL;
-
 	TRC_DEBUG(SQL_TRANS, "Create type: %s\n", name);
-	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
-	return t;
+	return sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 }
 
 int

@@ -4158,7 +4158,7 @@ sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 	return 0;
 }
 
-sql_type *
+int
 sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
 	sqlstore *store = tr->store;
@@ -4166,10 +4166,10 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 	sql_table *systype;
 	int localtype = ATOMindex(impl);
 	sql_class eclass = EC_EXTERNAL;
-	int eclass_cast = (int) eclass;
+	int eclass_cast = (int) eclass, res = 0;
 
 	if (localtype < 0)
-		return NULL;
+		return -4;
 	t = SA_ZNEW(tr->sa, sql_type);
 	systype = find_sql_table(tr, find_sql_schema(tr, "sys"), "types");
 	base_init(tr->sa, &t->base, next_oid(tr->store), TR_NEW, impl);
@@ -4181,12 +4181,11 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 	t->localtype = localtype;
 	t->s = s;
 
-	if (os_add(s->types, tr, t->base.name, &t->base)) {
-		return NULL;
-	}
-	if (store->table_api.table_insert(tr, systype, &t->base.id, &t->base.name, &t->sqlname, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id))
-		return NULL;
-	return t;
+	if ((res = os_add(s->types, tr, t->base.name, &t->base)))
+		return res;
+	if ((res = store->table_api.table_insert(tr, systype, &t->base.id, &t->base.name, &t->sqlname, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id)))
+		return res;
+	return 0;
 }
 
 int
@@ -5619,7 +5618,8 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	nk->type = kt;
 	nk->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nk->t = t;
-	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : hash_idx);
+	if (!(nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : hash_idx)))
+		return NULL;
 	nk->idx->key = nk;
 
 	fk = (sql_fkey *) nk;
@@ -5786,7 +5786,8 @@ sql_trans_key_done(sql_trans *tr, sql_key *k)
 	}
 
 	/* we need to create an index */
-	k->idx = sql_trans_create_idx(tr, k->t, k->base.name, hash_idx);
+	if (!(k->idx = sql_trans_create_idx(tr, k->t, k->base.name, hash_idx)))
+		return NULL;
 	k->idx->key = k;
 
 	for (n=k->columns->h; n; n = n->next) {
