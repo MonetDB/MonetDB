@@ -235,7 +235,6 @@ extern sql_idx *mvc_create_ic(mvc *m, sql_idx * i, sql_column *c);
 extern int mvc_drop_idx(mvc *c, sql_schema *s, sql_idx * i);
 
 extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
-extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 /*dependency control*/

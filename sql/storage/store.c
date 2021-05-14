@@ -6006,23 +6006,6 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 	return nt;
 }
 
-sql_trigger *
-sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
-{
-	sqlstore *store = tr->store;
-	sql_kc *ic = SA_ZNEW(tr->sa, sql_kc);
-	int nr = list_length(i->columns);
-	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
-	sql_table *systc = find_sql_table(tr, syss, "objects");
-
-	assert(c);
-	ic->c = c;
-	list_append(i->columns, ic);
-	if (store->table_api.table_insert(tr, systc, &i->base.id, &ic->c->base.name, &nr, ATOMnilptr(TYPE_int)))
-		return NULL;
-	return i;
-}
-
 int
 sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {

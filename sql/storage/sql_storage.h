@@ -380,7 +380,6 @@ extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*
 extern int sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
-extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);
