@@ -1374,8 +1374,6 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	}
 	if (i != oi)
 		bat_destroy(i);
-	if (ok != LOG_OK)
-		return ok;
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return ok;
@@ -2358,27 +2356,24 @@ clear_storage(sql_trans *tr, storage *s)
 static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
-	int in_transaction = segments_in_transaction(tr, t), ok;
+	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	storage *bat;
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
 	if (!isTempTable(t)) {
 		lock_table(tr->store, t->base.id);
-		if ((ok = delete_range(tr, bat, 0, bat->segs->t->end)) != LOG_OK) {
-			unlock_table(tr->store, t->base.id);
-			if (ok == LOG_ERR)
-				return BUN_NONE;
-			if (ok == LOG_CONFLICT)
-				return BUN_NONE - 1;
-			assert(0);
-		}
+		ok = delete_range(tr, bat, 0, bat->segs->t->end);
 		unlock_table(tr->store, t->base.id);
 	}
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
-	if (isTempTable(t))
+	if (ok == LOG_OK && isTempTable(t))
 		return clear_storage(tr, bat);
+	if (ok == LOG_ERR)
+		return BUN_NONE;
+	if (ok == LOG_CONFLICT)
+		return BUN_NONE - 1;
 	return LOG_OK;
 }
 
@@ -2969,7 +2964,7 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 static BUN
 claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 {
-	int in_transaction = segments_in_transaction(tr, t);
+	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
@@ -2978,7 +2973,7 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	/* when claiming an segment use atomic CAS */
-	for (segment *seg = s->segs->h, *p = NULL; seg; p = seg, seg = seg->next) {
+	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = seg->next) {
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* re-use old deleted or rolledback append */
 
 			if ((seg->end - seg->start) >= cnt) {
@@ -2992,9 +2987,8 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 					break;
 				}
 				/* we claimed part of the old segment, the split off part needs too stay deleted */
-				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL) {
-					return BUN_NONE;
-				}
+				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL)
+					ok = LOG_ERR;
 			}
 			seg->ts = tr->tid;
 			seg->deleted = false;
@@ -3003,7 +2997,7 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 			break;
 		}
 	}
-	if (!reused) {
+	if (ok == LOG_OK && !reused) {
 		if (s->segs->t && s->segs->t->ts == tr->tid && !s->segs->t->deleted) {
 			slot = s->segs->t->end;
 			s->segs->t->end += cnt;
@@ -3021,7 +3015,9 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (!isLocalTemp(t))
 			tr->logchanges += (int) cnt;
 	}
-	return slot;
+	if (ok == LOG_OK)
+		return slot;
+	return BUN_NONE;
 }
 
 /*
