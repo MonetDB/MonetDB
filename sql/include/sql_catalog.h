@@ -196,6 +196,7 @@ typedef enum commit_action_t {
 } ca_t;
 
 typedef int sqlid;
+typedef void *sql_store;
 
 typedef struct sql_base {
 	int flags;			/* todo change into bool new */
@@ -224,9 +225,8 @@ typedef struct changeset {
 typedef struct objlist {
 	list *l;
 	sql_hash *h;
+	sql_store store;
 } objlist;
-
-typedef void *sql_store;
 
 struct sql_trans;
 struct sql_change;
@@ -262,7 +262,7 @@ extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_tra
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
 
-extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy);
+extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store);
 extern void ol_destroy(objlist *ol, sql_store store);
 extern int ol_add(objlist *ol, sql_base *data);
 extern void ol_del(objlist *ol, sql_store store, node *data);
