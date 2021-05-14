@@ -32,21 +32,22 @@ BAT *
 virtualize(BAT *bn)
 {
 	/* input must be a valid candidate list or NULL */
-	if(bn && ((bn->ttype != TYPE_void && bn->ttype != TYPE_oid) || !bn->tkey || !bn->tsorted)) {
+	if (bn == NULL)
+		return NULL;
+	if ((bn->ttype != TYPE_void && bn->ttype != TYPE_oid) || !bn->tkey || !bn->tsorted) {
 		fprintf(stderr, "#bn type %d nil %d key %d sorted %d\n",
-				bn->ttype, is_oid_nil(bn->tseqbase),
-				bn->tkey, bn->tsorted);
+			bn->ttype, is_oid_nil(bn->tseqbase),
+			bn->tkey, bn->tsorted);
 		fflush(stderr);
 	}
-	assert(bn == NULL ||
-	       (((bn->ttype == TYPE_void && !is_oid_nil(bn->tseqbase)) ||
-		 bn->ttype == TYPE_oid) &&
-		bn->tkey && bn->tsorted));
+	assert(((bn->ttype == TYPE_void && !is_oid_nil(bn->tseqbase)) ||
+		bn->ttype == TYPE_oid) &&
+	       bn->tkey && bn->tsorted);
 	assert(BBP_refs(bn->batCacheid) == 1);
 	assert(BBP_lrefs(bn->batCacheid) == 0);
 	/* since bn has unique and strictly ascending values, we can
 	 * easily check whether the column is dense */
-	if (bn && bn->ttype == TYPE_oid &&
+	if (bn->ttype == TYPE_oid &&
 	    (BATcount(bn) <= 1 ||
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
