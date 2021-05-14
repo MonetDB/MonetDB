@@ -2441,7 +2441,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 		}
-		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
+		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
 			return NULL;
