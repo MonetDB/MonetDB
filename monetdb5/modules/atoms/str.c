@@ -3230,7 +3230,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 			int c;
 
 			UTF8_GETCHAR(c, src);
-			if ((c & 0x80) == 0) {
+			if (c < 192) { /* the first 191 characters in unicode are trivial to convert */
 				/* for ASCII characters we don't need to do a hash
 				 * lookup */
 				if (lower_to_upper) {

@@ -1,0 +1,36 @@
+stdout of test 'lowercase-crylic.Bug-7126` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 15:33:54 >  
+# 15:33:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=39171" "--set" "mapi_usock=/var/tmp/mtest-317429/.s.monetdb.39171" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 15:33:54 >  
+
+# MonetDB 5 server v11.39.18 (hg id: af88b10dddb7)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2021', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.343 GiB available main-memory of which we use 12.504 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2021 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://fedora:39171/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-317429/.s.monetdb.39171
+# MonetDB/GIS module loaded
+# MonetDB/R   module loaded
+# MonetDB/SQL module loaded
+
+# 15:33:54 >  
+# 15:33:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-317429" "--port=39171"
+# 15:33:54 >  
+
+#select lower('ASDFasdfФЫВАфыва'), upper('ASDFasdfФЫВАфыва'), lower('ÀA'), upper('àa');
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% varchar,	varchar,	varchar,	varchar # type
+% 16,	16,	2,	2 # length
+[ "asdfasdfфывафыва",	"ASDFASDFФЫВАФЫВА",	"àa",	"ÀA"	]
+
+# 15:33:54 >  
+# 15:33:54 >  "Done."
+# 15:33:54 >  
+
