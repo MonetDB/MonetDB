@@ -1676,19 +1676,6 @@ BBPindex(const char *nme)
 	return BBP_find(nme, true);
 }
 
-BAT *
-BBPgetdesc(bat i)
-{
-	if (is_bat_nil(i))
-		return NULL;
-	if (i < 0)
-		i = -i;
-	if (i != 0 && i < (bat) ATOMIC_GET(&BBPsize) && i && BBP_logical(i)) {
-		return BBP_desc(i);
-	}
-	return NULL;
-}
-
 /*
  * @+ BBP Update Interface
  * Operations to insert, delete, clear, and modify BBP entries.
@@ -2675,9 +2662,8 @@ BBPquickdesc(bat bid, bool delaccess)
 	}
 	if ((b = BBP_cache(bid)) != NULL)
 		return b;	/* already cached */
-	b = (BAT *) BBPgetdesc(bid);
-	if (b == NULL ||
-	    complexatom(b->ttype, delaccess)) {
+	b = BBP_desc(bid);
+	if (complexatom(b->ttype, delaccess)) {
 		b = BATload_intern(bid, true);
 	}
 	return b;
@@ -3488,8 +3474,13 @@ persistent_bat(bat bid)
 static BAT *
 getdesc(bat bid)
 {
-	BAT *b = BBPgetdesc(bid);
+	BAT *b = NULL;
 
+	if (is_bat_nil(bid))
+		return NULL;
+	assert(bid > 0);
+	if (bid < (bat) ATOMIC_GET(&BBPsize) && BBP_logical(bid))
+		b = BBP_desc(bid);
 	if (b == NULL)
 		BBPclear(bid);
 	return b;
