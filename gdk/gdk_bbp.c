@@ -1558,6 +1558,7 @@ BBPdump(void)
 		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
 			continue;
 		BAT *b = BBP_desc(i);
+		unsigned status = BBP_status(i);
 		fprintf(stderr,
 			"# %d: " ALGOOPTBATFMT " "
 			"refs=%d lrefs=%d "
@@ -1566,7 +1567,7 @@ BBPdump(void)
 			ALGOOPTBATPAR(b),
 			BBP_refs(i),
 			BBP_lrefs(i),
-			BBP_status(i),
+			status,
 			BBP_cache(i) ? "" : " not cached");
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
@@ -1581,7 +1582,7 @@ BBPdump(void)
 					HEAPmemsize(b->theap),
 					HEAPvmsize(b->theap),
 					b->theap->farmid,
-					b->theap->dirty ? "(Dirty)" : "");
+					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->theap);
 					cvm += HEAPvmsize(b->theap);
@@ -1896,7 +1897,7 @@ BBPcacheit(BAT *bn, bool lock)
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
-	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING);
+	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING | BBPSWAPPED);
 	BBP_status_set(i, mode);
 	BBP_desc(i) = bn;
 
