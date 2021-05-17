@@ -1392,7 +1392,7 @@ typedef struct {
 	bat next;		/* next BBP slot in linked list */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
-	volatile unsigned status; /* status mask used for spin locking */
+	ATOMIC_TYPE status;	/* status mask used for spin locking */
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
 
@@ -1424,7 +1424,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_desc(i)	BBP_record(i).desc
 #define BBP_refs(i)	BBP_record(i).refs
 #define BBP_lrefs(i)	BBP_record(i).lrefs
-#define BBP_status(i)	BBP_record(i).status
+#define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
 #define BBP_pid(i)	BBP_record(i).pid
 #define BATgetId(b)	BBP_logical((b)->batCacheid)
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')

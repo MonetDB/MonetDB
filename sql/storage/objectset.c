@@ -61,6 +61,7 @@ typedef struct objectset {
 	struct sql_hash *id_map;
 	bool temporary;
 	bool unique;	/* names are unique */
+	sql_store store;
 } objectset;
 
 static int
@@ -614,7 +615,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
@@ -622,7 +623,8 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 		.sa = sa,
 		.destroy = destroy,
 		.temporary = temporary,
-		.unique = unique
+		.unique = unique,
+		.store = store
 	};
 	os->destroy = destroy;
 	MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
@@ -850,6 +852,8 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->os = os;
 
 	if ((res = os_add_id_based(os, tr, b->id, ov))) {
+		if (os->destroy)
+			os->destroy(os->store, ov->b);
 		_DELETE(ov);
 		return res;
 	}
@@ -946,6 +950,8 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->os = os;
 
 	if ((res = os_del_id_based(os, tr, b->id, ov))) {
+		if (os->destroy)
+			os->destroy(os->store, ov->b);
 		_DELETE(ov);
 		return res;
 	}

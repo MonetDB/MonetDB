@@ -68,8 +68,6 @@ Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *re
 	__attribute__((__visibility__("hidden")));
 gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
-gdk_return BAThashsave(BAT *b, bool dosync)
-	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 bool BATiscand(BAT *b)
@@ -95,8 +93,6 @@ gdk_return BBPcacheit(BAT *bn, bool lock)
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
-	__attribute__((__visibility__("hidden")));
-BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));

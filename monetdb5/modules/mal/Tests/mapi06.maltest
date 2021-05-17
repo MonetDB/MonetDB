@@ -16,5 +16,5 @@ io.print("done")
 "done"
 
 statement ok
-mapi.disconnect(mid)
+mapi.destroy(mid)
 

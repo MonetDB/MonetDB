@@ -579,64 +579,6 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	return l;
 }
 
-static int
-table_vacuum(sql_trans *tr, sql_table *t)
-{
-	sqlstore *store = tr->store;
-	BAT *tids = delta_cands(tr, t);
-	BAT **cols;
-	node *n;
-	size_t cnt = 0;
-
-	if (!tids)
-		return SQL_ERR;
-	cnt = BATcount(tids);
-	cols = NEW_ARRAY(BAT*, ol_length(t->columns));
-	if (!cols) {
-		bat_destroy(tids);
-		return SQL_ERR;
-	}
-	for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
-		BAT *v = store->storage_api.bind_col(tr, c, RDONLY);
-
-		if (v == NULL ||
-		    (cols[c->colnr] = BATproject(tids, v)) == NULL) {
-			BBPunfix(tids->batCacheid);
-			for (n = ol_first_node(t->columns); n; n = n->next) {
-				if (n->data == c)
-					break;
-				bat_destroy(cols[((sql_column *) n->data)->colnr]);
-			}
-			bat_destroy(v);
-			_DELETE(cols);
-			return SQL_ERR;
-		}
-		BBPunfix(v->batCacheid);
-	}
-	BBPunfix(tids->batCacheid);
-	sql_trans_clear_table(tr, t);
-	size_t offset = store->storage_api.claim_tab(tr, t, cnt);
-	assert(offset == 0);
-	for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
-		int ok;
-
-		ok = store->storage_api.append_col(tr, c, offset, cols[c->colnr], TYPE_bat, 0);
-		BBPunfix(cols[c->colnr]->batCacheid);
-		if (ok != LOG_OK) {
-			for (n = n->next; n; n = n->next) {
-				c = n->data;
-				BBPunfix(cols[c->colnr]->batCacheid);
-			}
-			_DELETE(cols);
-			return SQL_ERR;
-		}
-	}
-	_DELETE(cols);
-	return SQL_OK;
-}
-
 void
 bat_table_init( table_functions *tf )
 {
@@ -652,7 +594,6 @@ bat_table_init( table_functions *tf )
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
-	tf->table_vacuum = table_vacuum;
 
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;

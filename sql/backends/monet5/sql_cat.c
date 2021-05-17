@@ -512,8 +512,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 	if (isView(t))
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 
-	tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query);
-	if (tri) {
+	if ((tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query))) {
 		char *buf;
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
@@ -539,6 +538,8 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			else
 				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
 		}
+	} else {
+		throw(SQL,"sql.create_trigger", SQLSTATE(42000) "CREATE TRIGGER: transaction conflict detected");
 	}
 	return MAL_SUCCEED;
 }
@@ -746,7 +747,8 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
 	if (seq->minvalue && seq->maxvalue && seq->maxvalue < seq->minvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
-	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
+	if (!sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped))
+		throw(SQL,"sql.create_seq",SQLSTATE(42000) "CREATE SEQUENCE: transaction conflict detected");
 	return NULL;
 }
 
@@ -897,8 +899,8 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 	if (strlen(fname) >= IDLENGTH)
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: name '%s' too large for the backend", F, fname);
-	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
-	assert(nf);
+	if (!(nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)))
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
@@ -1253,7 +1255,8 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", get_string_global_var(sql, "current_user"));
 	if (mvc_bind_schema(sql, sname))
 		throw(SQL,"sql.create_schema", SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", sname);
-	(void) mvc_create_schema(sql, sname, auth_id, sql->user_id);
+	if (!mvc_create_schema(sql, sname, auth_id, sql->user_id))
+		throw(SQL,"sql.create_schema",SQLSTATE(42000) "CREATE SCHEMA: transaction conflict detected");
 	return msg;
 }
 
@@ -1401,8 +1404,17 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (schema_bind_type(sql, s, name))
 		throw(SQL,"sql.create_type", SQLSTATE(42S02) "CREATE TYPE: type '%s' already exists", name);
-	if (!mvc_create_type(sql, s, name, 0, 0, 0, impl))
-		throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: unknown external type '%s'", impl);
+	switch (mvc_create_type(sql, s, name, 0, 0, 0, impl)) {
+		case -1:
+			throw(SQL,"sql.create_type", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: transaction conflict detected");
+		case -4:
+			throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: unknown external type '%s'", impl);
+		default:
+			break;
+	}
 	return msg;
 }
 
@@ -1982,7 +1994,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
 
-	switch (sql_trans_rename_column(sql->session->tr, t, old_name, new_name)) {
+	switch (sql_trans_rename_column(sql->session->tr, t, col->base.id, old_name, new_name)) {
 		case -1:
 			throw(SQL,"sql.rename_column", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:

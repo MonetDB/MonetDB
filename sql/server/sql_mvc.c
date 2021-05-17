@@ -1035,14 +1035,11 @@ mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 	return trigger;
 }
 
-sql_type *
+int
 mvc_create_type(mvc *sql, sql_schema *s, const char *name, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
-	sql_type *t = NULL;
-
 	TRC_DEBUG(SQL_TRANS, "Create type: %s\n", name);
-	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
-	return t;
+	return sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 }
 
 int
@@ -1206,20 +1203,12 @@ mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orienta
 	return i;
 }
 
-sql_trigger *
-mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ )
-{
-	sql_trans_create_tc(m->session->tr, i, c);
-	return i;
-}
-
 int
 mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop trigger: %s %s\n", s->base.name, tri->base.name);
 	return sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
-
 
 sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
@@ -1332,7 +1321,7 @@ mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, uns
 sql_column *
 mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
-	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
+	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->base.name);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->store, m->sa, t, name, tpe);

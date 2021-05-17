@@ -301,10 +301,10 @@ checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p, States
 			return sqlBreakpoint(mb, first, p);
 		default:
 			// serious corruption has occurred.
-			assert(0 && "corrupted region_type");
+			assert(0);			/* corrupted region_type */
 			abort();
 	}
-	assert(0 && "unreachable");
+	assert(0);					/* unreachable */
 	return true;
 }
 

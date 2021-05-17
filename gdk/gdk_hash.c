@@ -564,8 +564,8 @@ BATcheckhash(BAT *b)
 	return ret;
 }
 
-gdk_return
-BAThashsave(BAT *b, bool dosync)
+static gdk_return
+BAThashsave_intern(BAT *b, bool dosync)
 {
 	int fd;
 	gdk_return rc = GDK_SUCCEED;
@@ -585,14 +585,8 @@ BAThashsave(BAT *b, bool dosync)
 		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
-		((size_t *) hp->base)[0] = (size_t) HASH_VERSION;
-		((size_t *) hp->base)[1] = (size_t) (h->heaplink.free / h->width);
-		((size_t *) hp->base)[2] = (size_t) h->nbucket;
-		((size_t *) hp->base)[3] = (size_t) h->width;
-		((size_t *) hp->base)[4] = (size_t) BATcount(b);
-		((size_t *) hp->base)[5] = (size_t) h->nunique;
-		((size_t *) hp->base)[6] = (size_t) h->nheads;
 		if (!b->theap->dirty &&
+		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
@@ -634,6 +628,22 @@ BAThashsave(BAT *b, bool dosync)
 	return rc;
 }
 
+gdk_return
+BAThashsave(BAT *b, bool dosync)
+{
+	Hash *h = b->thash;
+	if (h == NULL)
+		return GDK_SUCCEED;
+	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
+	((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
+	((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
+	((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
+	((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
+	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
+	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
+	return BAThashsave_intern(b, dosync);
+}
+
 #ifdef PERSISTENTHASH
 static void
 BAThashsync(void *arg)
@@ -644,7 +654,7 @@ BAThashsync(void *arg)
 	 * lock, and only lock if it isn't; however, it's very
 	 * unlikely that that is the case, so we don't */
 	MT_rwlock_rdlock(&b->thashlock);
-	BAThashsave(b, true);
+	BAThashsave_intern(b, true);
 	MT_rwlock_rdunlock(&b->thashlock);
 	BBPunfix(b->batCacheid);
 }
@@ -1041,6 +1051,14 @@ BAThash(BAT *b)
 		}
 #ifdef PERSISTENTHASH
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
+			Hash *h = b->thash;
+			((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
+			((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
+			((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
+			((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
+			((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
+			((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
+			((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];

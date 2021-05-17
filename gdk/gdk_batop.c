@@ -540,6 +540,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 	uint32_t boff = b->batCount % 32;
 	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
 	b->batCount += ci->ncand;
+	b->theap->dirty = true;
 	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	if (ci->tpe == cand_dense) {
 		uint32_t *np;
