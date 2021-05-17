@@ -1,0 +1,29 @@
+stderr of test 'batcalc-between-undefined.Bug-7129` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 17:25:33 >  
+# 17:25:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=39463" "--set" "mapi_usock=/var/tmp/mtest-552279/.s.monetdb.39463" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 17:25:33 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_listenaddr = all
+# cmdline opt 	mapi_port = 39463
+# cmdline opt 	mapi_usock = /var/tmp/mtest-552279/.s.monetdb.39463
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_c = true
+
+# 17:25:33 >  
+# 17:25:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-552279" "--port=39463"
+# 17:25:33 >  
+
+
+# 17:25:34 >  
+# 17:25:34 >  "Done."
+# 17:25:34 >  
+

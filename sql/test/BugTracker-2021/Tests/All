@@ -5,4 +5,5 @@ ntile-wrong-result.Bug-7104
 union-groupby.Bug-7108
 merge-stmt.wrong-error.Bug-7109
 remote-table-groupby.Bug-7110
-lowercase-crylic.Bug-7126
+lowercase-cryllic.Bug-7126
+batcalc-between-undefined.Bug-7129
