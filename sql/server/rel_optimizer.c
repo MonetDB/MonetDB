@@ -3939,17 +3939,19 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (((strcmp(lf->func->base.name, ">=") == 0 || strcmp(lf->func->base.name, ">") == 0) && list_length(lfexps) == 2) &&
 				    ((strcmp(rf->func->base.name, "<=") == 0 || strcmp(rf->func->base.name, "<") == 0) && list_length(rfexps) == 2)
 				    && exp_equal(list_fetch(lfexps,0), list_fetch(rfexps,0)) == 0) {
-					sql_exp *ne = exp_compare2(v->sql->sa,
-							list_fetch(lfexps, 0),
-							list_fetch(lfexps, 1),
-							list_fetch(rfexps, 1),
-							compare_funcs2range(lf->func->base.name, rf->func->base.name));
-					if (ne) {
+					sql_exp *e1 = list_fetch(lfexps, 0), *e2 = list_fetch(lfexps, 1), *e3 = list_fetch(rfexps, 1), *ne = NULL;
+					sql_subtype *t1 = exp_subtype(e1), *t3 = exp_subtype(e3), super;
+
+					supertype(&super, t1, t3); /* e1 and e2 must have the same type */
+					if ((e1 = exp_check_type(v->sql, &super, rel, e1, type_equal)) &&
+						(e2 = exp_check_type(v->sql, &super, rel, e2, type_equal)) &&
+						(e3 = exp_check_type(v->sql, &super, rel, e3, type_equal)) &&
+						(ne = exp_compare2(v->sql->sa, e1, e2, e3, compare_funcs2range(lf->func->base.name, rf->func->base.name)))) {
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
 						e = ne;
+						v->changes++;
 					}
-					v->changes++;
 				}
 			}
 		}
