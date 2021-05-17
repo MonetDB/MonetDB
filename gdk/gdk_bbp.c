@@ -2309,14 +2309,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		}
 	}
 
-	/* Make sure we do not unload bats which have more rows than marked persistent */
-	if (b && BBP_lrefs(i) > 0 && DELTAdirty(b)) {
-		b->batDirtydesc = true;
-		b->theap->dirty = true;
-		if (b->tvheap)
-			b->tvheap->dirty = true;
-	}
-
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
@@ -2330,7 +2322,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
 		TRC_DEBUG(BAT_, "%s set to unloading BAT %d\n", func, i);
 		BBP_status_on(i, BBPUNLOADING);
-		assert(!b || BBP_lrefs(i) == 0 || !DELTAdirty(b));
 		swap = true;
 	}
 
@@ -2616,7 +2607,6 @@ BBPfree(BAT *b)
 	}
 	/* clearing bits can be done without the lock */
 	TRC_DEBUG(BAT_, "turn off unloading %d\n", bid);
-	assert(!b || BBP_lrefs(bid) == 0 || !DELTAdirty(b));
 	BBP_status_off(bid, BBPUNLOADING);
 	BBP_unload_dec();
 
