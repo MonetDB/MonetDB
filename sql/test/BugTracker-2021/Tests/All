@@ -7,4 +7,5 @@ merge-stmt.wrong-error.Bug-7109
 remote-table-groupby.Bug-7110
 conditional-execution-round.Bug-7125
 lowercase-cryllic.Bug-7126
+subquery-missing.Bug-7128
 batcalc-between-undefined.Bug-7129
