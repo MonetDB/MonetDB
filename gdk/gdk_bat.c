@@ -1755,7 +1755,7 @@ BATsetcount(BAT *b, BUN cnt)
 
 	b->batCount = cnt;
 	b->batDirtydesc = true;
-	b->theap->dirty |= b->ttype != TYPE_void;
+	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid;
 	if (b->theap->parentid == b->batCacheid)
 		b->theap->free = tailsize(b, cnt);
 	if (b->ttype == TYPE_void)
