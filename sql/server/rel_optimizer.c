@@ -3966,10 +3966,14 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_subtype *t1 = exp_subtype(e1), *t3 = exp_subtype(e3), super;
 
 					supertype(&super, t1, t3); /* e1 and e2 must have the same type */
-					if ((e1 = exp_check_type(v->sql, &super, rel, e1, type_equal)) &&
-						(e2 = exp_check_type(v->sql, &super, rel, e2, type_equal)) &&
-						(e3 = exp_check_type(v->sql, &super, rel, e3, type_equal)) &&
-						(ne = exp_compare2(v->sql->sa, e1, e2, e3, compare_funcs2range(lf->func->base.name, rf->func->base.name)))) {
+					if (!(e1 = exp_check_type(v->sql, &super, rel, e1, type_equal)) ||
+						!(e2 = exp_check_type(v->sql, &super, rel, e2, type_equal)) ||
+						!(e3 = exp_check_type(v->sql, &super, rel, e3, type_equal))) {
+							v->sql->session->status = 0;
+							v->sql->errstr[0] = 0;
+							return e;
+						}
+					if ((ne = exp_compare2(v->sql->sa, e1, e2, e3, compare_funcs2range(lf->func->base.name, rf->func->base.name)))) {
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
 						e = ne;
