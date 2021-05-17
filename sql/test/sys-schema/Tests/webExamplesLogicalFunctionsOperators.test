@@ -220,7 +220,7 @@ True
 query T rowsort
 plan select not(true), not(null), not(false), "and"(true, false), "or"(true, false), "xor"(true, false), "all"(true, false, true), "any"(true, false, true)
 ----
-) [ "sys"."not"(boolean "true") NOT NULL, "sys"."not"("sys"."="(boolean "NULL", boolean "true")), "sys"."not"(boolean "false") NOT NULL, "sys"."and"(boolean "true", boolean "false"), "sys"."or"(boolean "true", boolean "false"), "sys"."xor"(boolean "true", boolean "false") NOT NULL, "sys"."all"(boolean "true", boolean "false", boolean "true"), "sys"."any"(boolean "true", boolean "false", boolean "true") ]
+) [ "sys"."not"(boolean "true") NOT NULL, "sys"."not"(boolean "NULL"), "sys"."not"(boolean "false") NOT NULL, "sys"."and"(boolean "true", boolean "false"), "sys"."or"(boolean "true", boolean "false"), "sys"."xor"(boolean "true", boolean "false") NOT NULL, "sys"."all"(boolean "true", boolean "false", boolean "true"), "sys"."any"(boolean "true", boolean "false", boolean "true") ]
 project (
 |  [ boolean "true" ]
 

@@ -173,10 +173,22 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
+        mdb1.execute("CREATE schema another").assertSucceeded()
+        mdb1.execute("CREATE TABLE longs (i bigint);").assertSucceeded()
+        mdb1.execute("insert into longs values (1),(2),(3);").assertSucceeded()
+
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table integers rename to goodluck;').assertSucceeded()
+        mdb2.execute('alter table longs set schema another;').assertSucceeded()
         mdb2.execute('alter table integers rename to badluck;').assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
+        mdb1.execute('rollback;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table integers set schema another;').assertSucceeded()
+        mdb2.execute('alter table integers rename to another;').assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
         mdb1.execute('rollback;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
@@ -196,4 +208,10 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
+        mdb1.execute("update integers set i = 3 where i = 2;").assertRowCount(2)
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([(3,),(3,),(3,),(4,),(5,),(6,),(7,),(8,)])
+        mdb1.execute("truncate integers;").assertRowCount(8)
+        mdb2.execute('SELECT i FROM integers order by i;').assertDataResultMatch([])
         mdb1.execute("drop table integers;")
+        mdb1.execute("drop table longs;")
+        mdb1.execute("drop schema another;")

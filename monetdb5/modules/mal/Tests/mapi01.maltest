@@ -7,52 +7,52 @@ port := calc.int(fs)
 statement ok
 mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal")
 
-statement error
-mapi.rpc(mid,"rb:= bat.new(:int); bat.setName(rb,\"rbat\");")
+statement ok
+mapi.rpc(mid,"rb:= bat.new(:int); bat.setName(rb,\"rbat\");");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,1);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,1);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,3);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,3);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,5);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,5);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,6);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,6);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,7);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,7);");
 
-statement error
-mapi.rpc(mid,"c1:=algebra.select(rb,nil:bat[:oid],0,12,true,true,false);c:=algebra.projection(c1,rb);")
+statement ok
+mapi.rpc(mid,"c1:=algebra.select(rb,nil:bat[:oid],0,12,true,true,false);c:=algebra.projection(c1,rb);");
 
-statement error
-c:bat[:int]:= mapi.rpc(mid, "io.print(c);")
+statement ok
+c:bat[:int]:= mapi.rpc(mid, "io.print(c);");
 
-statement error
-io.print(c)
+statement ok
+io.print(c);
 
-statement error
-mapi.rpc(mid,"c1:=algebra.select(rb,nil:bat[:oid],0,4,true,true,false);")
+statement ok
+mapi.rpc(mid,"c1:=algebra.select(rb,nil:bat[:oid],0,4,true,true,false);");
 
-statement error
-c:bat[:int]:= mapi.rpc(mid, "io.print(c1);")
+statement ok
+c:bat[:int]:= mapi.rpc(mid, "io.print(c1);");
 
-statement error
-io.print(c)
+statement ok
+io.print(c);
 
-statement error
-b:bat[:int]:= mapi.bind(mid,"rbat")
+statement ok
+b:bat[:int]:= mapi.bind(mid,"rbat");
 
 query T rowsort
 io.print(b)
 ----
 NULL
 
-statement error
-mapi.rpc(mid,"d:=algebra.select(b,nil:bat[:oid],5,10,true,true,false);")
+statement ok
+mapi.rpc(mid,"d:=algebra.select(b,nil:bat[:oid],5,10,true,true,false);");
 
 statement ok
 low:= 5+1
@@ -60,24 +60,24 @@ low:= 5+1
 statement ok
 mapi.put(mid,"low",low)
 
-statement error
-mapi.rpc(mid,"e:=algebra.select(b,d,low,7,true,true,false);")
+statement ok
+mapi.rpc(mid,"e:=algebra.select(b,d,low,7,true,true,false);");
 
-statement error
-mapi.rpc(mid,"i:=aggr.count(e);")
+statement ok
+mapi.rpc(mid,"i:=aggr.count(e);");
 
-statement error
-i:lng:= mapi.rpc(mid,"io.print(i);")
+statement ok
+i:lng:= mapi.rpc(mid,"io.print(i);");
 
-statement error
-io.printf(" count %d\n",i)
+statement ok
+io.printf(" count %d\n",i);
 
-statement error
-d:bat[:int]:= mapi.rpc(mid,"e1:=algebra.projection(e,b);io.print(e1);")
+statement ok
+d:bat[:int]:= mapi.rpc(mid,"e1:=algebra.projection(e,b);io.print(e1);");
 
-statement error
+statement ok
 io.print(d)
 
 statement ok
-mapi.disconnect(mid)
+mapi.destroy(mid)
 

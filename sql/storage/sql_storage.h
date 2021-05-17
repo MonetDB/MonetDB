@@ -50,7 +50,6 @@ typedef void (*column_find_string_end_fptr)(ptr cbat);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
-typedef int (*table_vacuum_fptr)(sql_trans *tr, sql_table *t);
 
 typedef struct rids {
 	BUN cur;
@@ -103,7 +102,6 @@ typedef struct table_functions {
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
-	table_vacuum_fptr table_vacuum;
 
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
@@ -322,7 +320,7 @@ extern sql_trans *sql_trans_destroy(sql_trans *tr);
 //extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 
-extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
+extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
 extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
@@ -354,7 +352,7 @@ extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
-extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const char *new_name);
+extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name);
 extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action);
 extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
@@ -382,7 +380,6 @@ extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*
 extern int sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
-extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);

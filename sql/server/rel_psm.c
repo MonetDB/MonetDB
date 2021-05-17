@@ -906,20 +906,14 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	}
 
 	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
-		sql_ftype ftpyes[3] = {F_FUNC, F_AGGR, F_FILT};
-
-		for (int i = 0; i < 3; i++) {
-			if (ftpyes[i] != type) {
-				sql_subfunc *found = NULL;
-				if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, ftpyes[i]))) {
-					list_destroy(type_list);
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
-									 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
-				}
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-			}
+		sql_subfunc *found = NULL;
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC))) {
+			list_destroy(type_list);
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
+							 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
 		}
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
 
 	list_destroy(type_list);

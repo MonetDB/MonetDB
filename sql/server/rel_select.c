@@ -483,7 +483,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 
 		if (a->type.type->eclass == EC_ANY && atp)
 			ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-		else if (t && ntp->digits == 0 && (!strcmp(a->type.type->sqlname, "char") || !strcmp(a->type.type->sqlname, "varchar")))
+		else if (t && ntp->digits == 0 && (!strcmp(a->type.type->base.name, "char") || !strcmp(a->type.type->base.name, "varchar")))
 			ntp = sql_create_subtype(sql->sa, a->type.type, type_digits_to_char_digits(t), 0);
 		if (!(e = exp_check_type(sql, ntp, rel, e, type_equal)))
 			return NULL;
@@ -494,7 +494,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		append(nexps, e);
 
 		/* for (var)char returning functions the output type will be the biggest string found except for fix_scale cases */
-		if (res && res->digits == 0 && (t = exp_subtype(e)) && (!strcmp(res->type->sqlname, "char") || !strcmp(res->type->sqlname, "varchar"))) {
+		if (res && res->digits == 0 && (t = exp_subtype(e)) && (!strcmp(res->type->base.name, "char") || !strcmp(res->type->base.name, "varchar"))) {
 			unsigned int tdigits = type_digits_to_char_digits(t);
 			if (sf->func->fix_scale == DIGITS_ADD) {
 				rdigits += tdigits;
@@ -511,7 +511,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && res) {
 		if (res->type->eclass == EC_ANY && atp)
 			sf->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-		else if (res->digits == 0 && (!strcmp(res->type->sqlname, "char") || !strcmp(res->type->sqlname, "varchar")))
+		else if (res->digits == 0 && (!strcmp(res->type->base.name, "char") || !strcmp(res->type->base.name, "varchar")))
 			res->digits = rdigits;
 	}
 	return nexps;
@@ -1296,7 +1296,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		int scale_diff = ((int) ct->scale - (int) et->scale);
 
 		if (scale_diff) {
-			sql_subtype *it = sql_bind_localtype(et->type->base.name);
+			sql_subtype *it = sql_bind_localtype(et->type->impl);
 			sql_subfunc *c = NULL;
 			bool swapped = false;
 
@@ -1325,7 +1325,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		}
 	} else if (always && et->scale) {	/* scale down */
 		int scale_diff = -(int) et->scale;
-		sql_subtype *it = sql_bind_localtype(et->type->base.name);
+		sql_subtype *it = sql_bind_localtype(et->type->impl);
 		sql_subfunc *c = sql_bind_func(sql, "sys", "scale_down", et, it, F_FUNC);
 
 		if (c) {
@@ -1397,14 +1397,14 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 			digits = 64;
 #endif
 
-		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
+		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
 		if (nlt.digits < scaleL) {
 		    sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
 			return NULL;
 		}
 		l = exp_check_type( sql, &nlt, rel, l, type_equal);
 
-		sql_find_subtype(res, lt->type->sqlname, digits, scale);
+		sql_find_subtype(res, lt->type->base.name, digits, scale);
 	}
 	return l;
 }
@@ -1867,7 +1867,7 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 		exists_func = sql_bind_func(sql, "sys", "sql_not_exists", t, NULL, F_FUNC);
 
 	if (!exists_func)
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->sqlname);
+		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->base.name);
 	res = exp_unop(sql->sa, le, exists_func);
 	set_has_no_nil(res);
 	return res;
@@ -2441,7 +2441,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 		}
-		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
+		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
 			return NULL;
@@ -2696,12 +2696,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return rel_logical_exp(query, rel, sc->data.sym, f);
 		}
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
+		sql_subtype bt;
 
-		if (!le)
+		sql_find_subtype(&bt, "boolean", 0, 0);
+		if (!le || !(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
-		if (!(le = rel_unop_(sql, rel, le, "sys", "not", card_value)))
-			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
 	}
 	case SQL_ATOM: {
@@ -2887,7 +2887,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 		found = false; /* reset found */
 	}
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s unary operator %s%s%s'%s'(%s)",
-					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, t ? t->type->sqlname : "?");
+					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, t ? t->type->base.name : "?");
 }
 
 static sql_exp *
@@ -3021,8 +3021,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 				t1 = exp_subtype(l);
 			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such binary operator %s%s%s'%s'(%s,%s)",
-								 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, exp_subtype(l)->type->sqlname,
-								 exp_subtype(r)->type->sqlname);
+								 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, exp_subtype(l)->type->base.name,
+								 exp_subtype(r)->type->base.name);
 			}
 		}
 	}
@@ -3219,7 +3219,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	}
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s binary operator %s%s%s'%s'(%s,%s)",
 					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname,
-					 exp_subtype(l)->type->sqlname, exp_subtype(r)->type->sqlname);
+					 exp_subtype(l)->type->base.name, exp_subtype(r)->type->base.name);
 }
 
 static sql_exp *
@@ -3834,7 +3834,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 
 		if (exps->h) {
 			sql_exp *e = exps->h->data;
-			type = exp_subtype(e)->type->sqlname;
+			type = exp_subtype(e)->type->base.name;
 		}
 
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: %s aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname), found ? "insufficient privileges for" : "no such",
