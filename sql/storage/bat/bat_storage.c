@@ -865,6 +865,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			res = LOG_ERR;
 		else if (BATreplace(b, otids, updates, true) != GDK_SUCCEED)
 			res = LOG_ERR;
+		BBP_status_off(b->batCacheid, BBPHOT);
 		bat_destroy(b);
 	}
 	if (otids != tids)
