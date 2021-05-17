@@ -1,0 +1,39 @@
+stdout of test 'subquery-missing.Bug-7128` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 18:50:58 >  
+# 18:50:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=35534" "--set" "mapi_usock=/var/tmp/mtest-727849/.s.monetdb.35534" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_c=true"
+# 18:50:58 >  
+
+# MonetDB 5 server v11.39.18 (hg id: af88b10dddb7)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2021', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.343 GiB available main-memory of which we use 12.504 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2021 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://fedora:35534/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-727849/.s.monetdb.35534
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 18:50:58 >  
+# 18:50:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-727849" "--port=35534"
+# 18:50:58 >  
+
+#start transaction;
+#create table t_qh ( c_f INTEGER , c_y2 INTEGER , c_i768 INTEGER , c_tqx TEXT , primary key(c_f, c_y2), unique(c_y2) );
+#select ref_1.c_i768 as c0 from t_qh as ref_1 cross join (select ref_2.c_i768 as c0 from t_qh as ref_2 inner join t_qh as
+#ref_3 on (1=1) where ref_3.c_f <> ref_3.c_y2) as subq_0 where ref_1.c_y2 < ( select ref_1.c_f as c0 from t_qh as ref_4
+#where (EXISTS ( select distinct ref_5.c_i768 as c0 from t_qh as ref_5)) and (ref_1.c_i768 between ref_4.c_y2 and ref_1.c_y2));
+% sys. # table_name
+% c0 # name
+% int # type
+% 1 # length
+#rollback;
+
+# 18:50:58 >  
+# 18:50:58 >  "Done."
+# 18:50:58 >  
+

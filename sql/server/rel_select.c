@@ -1548,7 +1548,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	list *r = sa_list(sql->sa);
 
 	list_append(l, ls);
-	list_append(r, rs);
+	list_append(r, rs);	
 	if (rs2)
 		list_append(r, rs2);
 	return rel_filter(sql, rel, l, r, "sys", filter_op, anti, f);
@@ -1562,7 +1562,7 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) &&
 		(exp_is_atom(rs) || (rs2 && exp_is_atom(ls)) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 		(!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
-		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card || rs->card == rs2->card)) || rel->processed)  /* bin compare op */
+		if (ls->card == rs->card || (rs2 && (ls->card == rs2->card || rs->card == rs2->card)) || rel->processed) /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		return push_select_exp(sql, rel, e, ls, L, f);
