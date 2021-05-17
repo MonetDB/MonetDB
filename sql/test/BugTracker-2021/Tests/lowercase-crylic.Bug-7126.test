@@ -1,0 +1,9 @@
+query TTTT rowsort
+select lower('ASDFasdfФЫВАфыва'), upper('ASDFasdfФЫВАфыва'), lower('ÀA¿'), upper('àa¿')
+----
+asdfasdf@@@@@@@@
+ASDFASDF@@@@@@@@
+@a@
+@A@
+
+
