@@ -94,8 +94,6 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-BAT *BBPgetdesc(bat i)
-	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
