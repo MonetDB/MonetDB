@@ -1548,7 +1548,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	list *r = sa_list(sql->sa);
 
 	list_append(l, ls);
-	list_append(r, rs);	
+	list_append(r, rs);
 	if (rs2)
 		list_append(r, rs2);
 	return rel_filter(sql, rel, l, r, "sys", filter_op, anti, f);
