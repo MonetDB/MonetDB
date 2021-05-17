@@ -395,7 +395,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				} else {
 					msg = createException(MAL, "pyapi3.eval",
 										  SQLSTATE(PY000) "Unsupported SQL Type: %s",
-										  inp->sql_subtype->type->sqlname);
+										  inp->sql_subtype->type->base.name);
 				}
 				goto wrapup;
 		}
@@ -1176,7 +1176,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 			return createException(
 				MAL, "pyapi3.eval",
 				"Convert To SQL Type: Unrecognized SQL type %s (%d).",
-				sql_subtype->type->sqlname, (int) sql_subtype->type->eclass);
+				sql_subtype->type->base.name, (int) sql_subtype->type->eclass);
 	}
 	if (res == MAL_SUCCEED) {
 		*ret_bat = BATdescriptor(result_bat);

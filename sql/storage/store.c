@@ -80,7 +80,7 @@ type_destroy(sqlstore *store, sql_type *t)
 	assert(t->base.refcnt > 0);
 	if (--(t->base.refcnt) > 0)
 		return;
-	_DELETE(t->sqlname);
+	_DELETE(t->impl);
 	_DELETE(t->base.name);
 	_DELETE(t);
 }
@@ -778,17 +778,17 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	ptr cbat;
 
 	tid = store->table_api.column_find_sqlid(tr, find_sql_column(types, "id"), rid);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "systemname"), rid, &cbat);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "sqlname"), rid, &cbat);
 	base_init(tr->sa, &t->base, tid, 0, v);
 	store->table_api.column_find_string_end(cbat);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "sqlname"), rid, &cbat);
-	t->sqlname = SA_STRDUP(tr->sa, v);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "systemname"), rid, &cbat);
+	t->impl = SA_STRDUP(tr->sa, v);
 	store->table_api.column_find_string_end(cbat);
 	t->digits = store->table_api.column_find_int(tr, find_sql_column(types, "digits"), rid);
 	t->scale = store->table_api.column_find_int(tr, find_sql_column(types, "scale"), rid);
 	t->radix = store->table_api.column_find_int(tr, find_sql_column(types, "radix"), rid);
 	t->eclass = (sql_class)store->table_api.column_find_int(tr, find_sql_column(types, "eclass"), rid);
-	t->localtype = ATOMindex(t->base.name);
+	t->localtype = ATOMindex(t->impl);
 	t->bits = 0;
 	t->s = s;
 	return t;
@@ -1002,7 +1002,7 @@ load_schema(sql_trans *tr, oid rid)
 		s->owner = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "owner"), rid);
 
 		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, store);
-		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, false, store);
+		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true, store);
 		s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false, store);
 		s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true, store);
 		s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, store);
@@ -1246,7 +1246,8 @@ insert_schemas(sql_trans *tr)
 			for (o = t->columns->l->h; o; o = o->next) {
 				sql_column *c = o->data;
 
-				store->table_api.table_insert(tr, syscolumn, &c->base.id, &c->base.name, &c->type.type->sqlname, &c->type.digits, &c->type.scale, &t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil);
+				store->table_api.table_insert(tr, syscolumn, &c->base.id, &c->base.name, &c->type.type->base.name, &c->type.digits, &c->type.scale,
+											  &t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil);
 			}
 		}
 	}
@@ -1261,7 +1262,7 @@ insert_types(sql_trans *tr, sql_table *systype)
 		int radix = t->radix, eclass = (int) t->eclass;
 		sqlid next_schema = t->s ? t->s->base.id : 0;
 
-		store->table_api.table_insert(tr, systype, &t->base.id, &t->base.name, &t->sqlname, &t->digits, &t->scale, &radix, &eclass, &next_schema);
+		store->table_api.table_insert(tr, systype, &t->base.id, &t->impl, &t->base.name, &t->digits, &t->scale, &radix, &eclass, &next_schema);
 	}
 }
 
@@ -1281,7 +1282,7 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 			snprintf(buf, sizeof(buf), arg_def, next_number);
 			next_name = buf;
 		}
-		store->table_api.table_insert(tr, sysarg, &id, &funcid, &next_name, &a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &next_number);
+		store->table_api.table_insert(tr, sysarg, &id, &funcid, &next_name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &next_number);
 	}
 }
 
@@ -1392,13 +1393,13 @@ dup_sql_type(sql_trans *tr, sql_schema *s, sql_subtype *oc, sql_subtype *nc)
 
 		if (s->base.id == nc->type->s->base.id) {
 			/* Current user type belongs to current schema. So search there for current user type. */
-			lt = find_sql_type(tr, s, nc->type->sqlname);
+			lt = find_sql_type(tr, s, nc->type->base.name);
 		} else {
 			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
-			lt = sql_trans_bind_type(tr, NULL, nc->type->sqlname);
+			lt = sql_trans_bind_type(tr, NULL, nc->type->base.name);
 		}
 		if (lt == NULL)
-			GDKfatal("SQL type %s missing", nc->type->sqlname);
+			GDKfatal("SQL type %s missing", nc->type->base.name);
 		sql_init_subtype(nc, lt, nc->digits, nc->scale);
 	}
 }
@@ -1544,7 +1545,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 	s->owner = owner;
 	s->system = TRUE;
 	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, store);
-	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, false, store);
+	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true, store);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false, store);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true, store);
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, store);
@@ -3191,7 +3192,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
-		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->sqlname,
+		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
 					&col->type.digits, &col->type.scale, &t->base.id,
 					(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
 					(col->storage_type) ? &col->storage_type : &strnil))) {
@@ -4172,8 +4173,8 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 		return -4;
 	t = SA_ZNEW(tr->sa, sql_type);
 	systype = find_sql_table(tr, find_sql_schema(tr, "sys"), "types");
-	base_init(tr->sa, &t->base, next_oid(tr->store), TR_NEW, impl);
-	t->sqlname = SA_STRDUP(tr->sa, sqlname);
+	base_init(tr->sa, &t->base, next_oid(tr->store), TR_NEW, sqlname);
+	t->impl = SA_STRDUP(tr->sa, impl);
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
@@ -4183,7 +4184,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 
 	if ((res = os_add(s->types, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, systype, &t->base.id, &t->base.name, &t->sqlname, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id)))
+	if ((res = store->table_api.table_insert(tr, systype, &t->base.id, &t->impl, &t->base.name, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id)))
 		return res;
 	return 0;
 }
@@ -4285,13 +4286,13 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid(tr->store);
-		if (store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number))
+		if (store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number))
 			return NULL;
 	}
 	if (t->ops) for (n = t->ops->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid(tr->store);
-		if (store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number))
+		if (store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number))
 			return NULL;
 	}
 	return t;
@@ -4420,7 +4421,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->owner = owner;
 	s->system = FALSE;
 	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true, store);
-	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), false, store);
+	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), true, store);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, isTempSchema(s), false, store);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true, store);
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true, store);
@@ -5193,7 +5194,8 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 			return NULL;
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
-		if (store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))
+		if (store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &col->type.digits, &col->type.scale,
+			&t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))
 			return NULL;
 	}
 

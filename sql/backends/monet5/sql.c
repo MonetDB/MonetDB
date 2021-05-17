@@ -802,7 +802,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			if (BUNappend(types, value.tpe.type->sqlname, false) != GDK_SUCCEED) {
+			if (BUNappend(types, value.tpe.type->base.name, false) != GDK_SUCCEED) {
 				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
@@ -3879,7 +3879,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
 										goto bailout;
 								}
-								if (BUNappend(type, c->type.type->sqlname, false) != GDK_SUCCEED)
+								if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
 									goto bailout;
 
 								/*printf(" cnt "BUNFMT, BATcount(bs)); */
@@ -4653,7 +4653,7 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 					rname = ATOMnilptr(TYPE_str);
 
 				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED ||
-					BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED ||
+					BUNappend(type, t->type->base.name, false) != GDK_SUCCEED ||
 					BUNappend(digits, &t->digits, false) != GDK_SUCCEED ||
 					BUNappend(scale, &t->scale, false) != GDK_SUCCEED ||
 					BUNappend(isinout, &inout, false) != GDK_SUCCEED ||
@@ -4674,7 +4674,7 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 				sql_subtype *t = &a->type;
 
 				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED ||
-					BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED ||
+					BUNappend(type, t->type->base.name, false) != GDK_SUCCEED ||
 					BUNappend(digits, &(t->digits), false) != GDK_SUCCEED ||
 					BUNappend(scale, &(t->scale), false) != GDK_SUCCEED ||
 					BUNappend(isinout, &inout, false) != GDK_SUCCEED ||
