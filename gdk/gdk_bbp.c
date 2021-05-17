@@ -1837,7 +1837,7 @@ BBPinsert(BAT *bn)
 	bn->batCacheid = i;
 	bn->creator_tid = MT_getpid();
 
-	BBP_status_set(i, BBPDELETING);
+	BBP_status_set(i, BBPDELETING|BBPHOT);
 	BBP_cache(i) = NULL;
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
@@ -2183,15 +2183,17 @@ incref(bat i, bool logical, bool lock)
 		assert(tp >= 0);
 		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
+		unsigned flag = BBPHOT;
 		if (refs == 1 && (tp || tvp)) {
 			/* If this is a view, we must load the parent
 			 * BATs, but we must do that outside of the
 			 * lock.  Set the BBPLOADING flag so that
 			 * other threads will wait until we're
 			 * done. */
-			BBP_status_on(i, BBPLOADING);
+			flag |= BBPLOADING;
 			load = true;
 		}
+		BBP_status_on(i, flag);
 	}
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
@@ -2313,7 +2315,10 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory(b->theap->farmid)))) {
+	     (b == NULL ||
+	      (BATdirty(b) && (BBP_status(i) & BBPHOT)) ||
+	      (BBP_status(i) & (BBPPERSISTENT | BBPHOT)) == BBPHOT ||
+	      GDKinmemory(b->theap->farmid)))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
