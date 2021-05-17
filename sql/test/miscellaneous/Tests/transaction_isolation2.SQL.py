@@ -59,7 +59,15 @@ with SQLTestCase() as mdb1:
         mdb2.execute('rollback;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('CREATE TYPE myurl EXTERNAL NAME url;').assertSucceeded()
+        mdb2.execute('CREATE TYPE myurl EXTERNAL NAME url;').assertFailed(err_code="42000", err_message="CREATE TYPE: transaction conflict detected")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('DROP schema mysch;').assertSucceeded()
+        mdb1.execute('DROP TYPE myurl;').assertSucceeded()
         mdb1.execute("drop table integers;").assertSucceeded()
         mdb1.execute("drop table longs;").assertSucceeded()
         mdb1.execute("drop table doubles;").assertSucceeded()
