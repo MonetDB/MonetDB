@@ -492,7 +492,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 				buf = tmp;
 			}
 
-			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
+			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->base.name, t->digits, t->scale, n->next?',':' ');
 		}
 		s = buf;
 	}

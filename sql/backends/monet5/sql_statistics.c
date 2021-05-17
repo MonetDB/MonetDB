@@ -307,7 +307,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						GDKfree(minval);
 						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 					}
-					if ((log_res = store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted)) != LOG_OK) {
+					if ((log_res = store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->base.name, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted)) != LOG_OK) {
 						GDKfree(maxval);
 						GDKfree(minval);
 						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");

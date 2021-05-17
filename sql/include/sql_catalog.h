@@ -355,8 +355,8 @@ typedef enum sql_class {
 	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
 } sql_class;
 
-#define has_tz(e,n)		(EC_TEMP_TZ(e))
-#define type_has_tz(t)		has_tz((t)->type->eclass, (t)->type->sqlname)
+#define has_tz(e)			(EC_TEMP_TZ(e))
+#define type_has_tz(t)		has_tz((t)->type->eclass)
 #define EC_VARCHAR(e)		((e)==EC_CHAR||(e)==EC_STRING)
 #define EC_INTERVAL(e)		((e)==EC_MONTH||(e)==EC_SEC)
 #define EC_NUMBER(e)		((e)==EC_POS||(e)==EC_NUM||EC_INTERVAL(e)||(e)==EC_DEC||(e)==EC_FLT)
@@ -374,7 +374,7 @@ typedef enum sql_class {
 typedef struct sql_type {
 	sql_base base;
 
-	char *sqlname;
+	char *impl; /* backend correspondent type */
 	unsigned int digits;
 	unsigned int scale;	/* indicates how scale is used in functions */
 	int localtype;		/* localtype, need for coersions */

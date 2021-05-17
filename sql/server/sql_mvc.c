@@ -1321,7 +1321,7 @@ mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, uns
 sql_column *
 mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
-	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
+	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->base.name);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->store, m->sa, t, name, tpe);

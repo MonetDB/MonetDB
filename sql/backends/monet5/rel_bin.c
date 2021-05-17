@@ -91,7 +91,7 @@ sql_unop_(backend *be, const char *fname, stmt *rs)
 		*/
 		return stmt_unop(be, rs, NULL, f);
 	} else if (rs) {
-		char *type = tail_type(rs)->type->sqlname;
+		char *type = tail_type(rs)->type->base.name;
 
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
 	}
@@ -1644,14 +1644,14 @@ check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 	}
 	if (err) {
 		stmt *res = sql_error(sql, 03, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
-			fromtype->type->sqlname,
+			fromtype->type->base.name,
 			fromtype->digits,
 			fromtype->scale,
-			fromtype->type->base.name,
-			t->type->sqlname,
+			fromtype->type->impl,
+			t->type->base.name,
 			t->digits,
 			t->scale,
-			t->type->base.name
+			t->type->impl
 		);
 		return res;
 	}
