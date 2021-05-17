@@ -2394,16 +2394,14 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"drop function sys.deltas(string, string, string);\n");
 			pos += snprintf(buf + pos, bufsize - pos,
 							"create function sys.deltas (\"schema\" string)\n"
-							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
-							"external name sql.deltas;\n"
-
+							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
+							"external name \"sql\".\"deltas\";\n"
 							"create function sys.deltas (\"schema\" string, \"table\" string)\n"
-							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
-							"external name sql.deltas;\n"
-
+							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
+							"external name \"sql\".\"deltas\";\n"
 							"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)\n"
-							"returns table (id int, segments bigint, \"all\" bigint, inserted bigint, updates bigint, deletes bigint, level int)\n"
-							"external name sql.deltas;\n"
+							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
+							"external name \"sql\".\"deltas\";\n"
 							"update sys.functions set system = true"
 							" where schema_id = 2000 and name = 'deltas';\n");
 
