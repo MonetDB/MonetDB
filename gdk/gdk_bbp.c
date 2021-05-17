@@ -361,12 +361,15 @@ BBPextend(int idx, bool buildhash)
 
 	/* make sure the new size is at least BBPsize large */
 	while (BBPlimit < (bat) ATOMIC_GET(&BBPsize)) {
-		assert(BBP[BBPlimit >> BBPINITLOG] == NULL);
-		BBP[BBPlimit >> BBPINITLOG] = GDKzalloc(BBPINIT * sizeof(BBPrec));
-		if (BBP[BBPlimit >> BBPINITLOG] == NULL) {
+		BUN limit = BBPlimit >> BBPINITLOG;
+		assert(BBP[limit] == NULL);
+		BBP[limit] = GDKzalloc(BBPINIT * sizeof(BBPrec));
+		if (BBP[limit] == NULL) {
 			GDKerror("failed to extend BAT pool\n");
 			return GDK_FAIL;
 		}
+		for (BUN i = 0; i < BBPINIT; i++)
+			ATOMIC_INIT(&BBP[limit][i].status, 0);
 		BBPlimit += BBPINIT;
 	}
 
@@ -719,7 +722,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
-		BBP_status(bid) = BBPEXISTING;	/* do we need other status bits? */
+		BBP_status_set(bid, BBPEXISTING);	/* do we need other status bits? */
 	}
 	return GDK_SUCCEED;
 }

@@ -87,15 +87,17 @@ typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_DESTROY(var)	((void) 0)
-#define ATOMIC_GET(var)		atomic_load(var)
+#define ATOMIC_DESTROY(var)		((void) 0)
+#define ATOMIC_GET(var)			atomic_load(var)
 #define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_CAS(var, exp, des)	atomic_compare_exchange_strong(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	atomic_fetch_add(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)		(atomic_fetch_add(var, 1) + 1)
-#define ATOMIC_DEC(var)		(atomic_fetch_sub(var, 1) - 1)
+#define ATOMIC_INC(var)			(atomic_fetch_add(var, 1) + 1)
+#define ATOMIC_DEC(var)			(atomic_fetch_sub(var, 1) - 1)
+#define ATOMIC_OR(var, val)		atomic_fetch_or(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_AND(var, val)	atomic_fetch_and(var, (ATOMIC_BASE_TYPE) (val))
 
 #ifdef __INTEL_COMPILER
 typedef volatile atomic_address ATOMIC_PTR_TYPE;
@@ -166,8 +168,10 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 #define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)		_InterlockedIncrement64(var)
-#define ATOMIC_DEC(var)		_InterlockedDecrement64(var)
+#define ATOMIC_INC(var)			_InterlockedIncrement64(var)
+#define ATOMIC_DEC(var)			_InterlockedDecrement64(var)
+#define ATOMIC_OR(var, val)		_InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_AND(var, val)	_InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
 
 #else
 
@@ -179,25 +183,23 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 #define ATOMIC_GET(var)			_InlineInterlockedExchangeAdd64(var, 0)
 #define ATOMIC_SET(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-static inline bool
-ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
-{
-	ATOMIC_BASE_TYPE old;
-	old = _InterlockedCompareExchange64(var, des, *exp);
-	if (old == *exp)
-		return true;
-	*exp = old;
-	return false;
-}
-#define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	_InlineInterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	_InlineInterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)		_InlineInterlockedIncrement64(var)
-#define ATOMIC_DEC(var)		_InlineInterlockedDecrement64(var)
+#define ATOMIC_INC(var)			_InlineInterlockedIncrement64(var)
+#define ATOMIC_DEC(var)			_InlineInterlockedDecrement64(var)
+#define ATOMIC_OR(var, val)		_InlineInterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_AND(var, val)	_InlineInterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
 #else
 #define ATOMIC_GET(var)			_InterlockedExchangeAdd64(var, 0)
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_INC(var)			_InterlockedIncrement64(var)
+#define ATOMIC_DEC(var)			_InterlockedDecrement64(var)
+#define ATOMIC_OR(var, val)		_InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_AND(var, val)	_InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+#endif
 static inline bool
 ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 {
@@ -209,11 +211,6 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 	return false;
 }
 #define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)		_InterlockedIncrement64(var)
-#define ATOMIC_DEC(var)		_InterlockedDecrement64(var)
-#endif
 
 #endif
 
@@ -259,14 +256,16 @@ typedef volatile int ATOMIC_TYPE;
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_DESTROY(var)	((void) 0)
 
-#define ATOMIC_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
+#define ATOMIC_GET(var)			__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_XCG(var, val)	__atomic_exchange_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_CAS(var, exp, des)	__atomic_compare_exchange_n(var, exp, (ATOMIC_BASE_TYPE) (des), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 #define ATOMIC_ADD(var, val)	__atomic_fetch_add(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_INC(var)		__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
-#define ATOMIC_DEC(var)		__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
+#define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)#
+define ATOMIC_INC(var)			__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
+#define ATOMIC_DEC(var)			__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
+#define ATOMIC_OR(var, val)		__atomic_fetch_or(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_AND(var, val)	__atomic_fetch_and(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
@@ -396,6 +395,30 @@ ATOMIC_DEC(ATOMIC_TYPE *var)
 	pthread_mutex_unlock(&var->lck);
 	return new;
 }
+
+static inline ATOMIC_BASE_TYPE
+ATOMIC_OR(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
+{
+	ATOMIC_BASE_TYPE old;
+	pthread_mutex_lock(&var->lck);
+	old = var->val;
+	var->val += val;
+	pthread_mutex_unlock(&var->lck);
+	return old;
+}
+#define ATOMIC_OR(var, val)	ATOMIC_OR(var, (ATOMIC_BASE_TYPE) (val))
+
+static inline ATOMIC_BASE_TYPE
+ATOMIC_AND(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
+{
+	ATOMIC_BASE_TYPE old;
+	pthread_mutex_lock(&var->lck);
+	old = var->val;
+	var->val += val;
+	pthread_mutex_unlock(&var->lck);
+	return old;
+}
+#define ATOMIC_AND(var, val)	ATOMIC_AND(var, (ATOMIC_BASE_TYPE) (val))
 
 typedef struct {
 	void *val;
