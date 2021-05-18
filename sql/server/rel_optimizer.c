@@ -3916,6 +3916,21 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 	return nexps;
 }
 
+static int
+is_numeric_upcast(sql_exp *e)
+{
+	if (is_convert(e->type)) {
+		sql_subtype *f = exp_fromtype(e);
+		sql_subtype *t = exp_totype(e);
+
+		if (f->type->eclass == t->type->eclass && EC_COMPUTE(f->type->eclass)) {
+			if (f->type->localtype < t->type->localtype)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static sql_exp *
 rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -3934,28 +3949,32 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (is_func(l->type) && is_func(r->type)) {
 				list *lfexps = l->l;
 				list *rfexps = r->l;
-				sql_subfunc *lf = l->f;
-				sql_subfunc *rf = r->f;
+				sql_subfunc *lff = l->f;
+				sql_subfunc *rff = r->f;
 
-				if (((strcmp(lf->func->base.name, ">=") == 0 || strcmp(lf->func->base.name, ">") == 0) && list_length(lfexps) == 2) &&
-				    ((strcmp(rf->func->base.name, "<=") == 0 || strcmp(rf->func->base.name, "<") == 0) && list_length(rfexps) == 2)
-				    && exp_equal(list_fetch(lfexps,0), list_fetch(rfexps,0)) == 0) {
-					sql_exp *e1 = list_fetch(lfexps, 0), *e2 = list_fetch(lfexps, 1), *e3 = list_fetch(rfexps, 1), *ne = NULL;
-					sql_subtype *t1 = exp_subtype(e1), *t3 = exp_subtype(e3), super;
+				if (((strcmp(lff->func->base.name, ">=") == 0 || strcmp(lff->func->base.name, ">") == 0) && list_length(lfexps) == 2) &&
+				    ((strcmp(rff->func->base.name, "<=") == 0 || strcmp(rff->func->base.name, "<") == 0) && list_length(rfexps) == 2)) {
+					sql_exp *le = list_fetch(lfexps,0), *lf = list_fetch(rfexps,0);
+					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf);
 
-					supertype(&super, t1, t3); /* e1 and e2 must have the same type */
-					if (!(e1 = exp_check_type(v->sql, &super, rel, e1, type_equal)) ||
-						!(e2 = exp_check_type(v->sql, &super, rel, e2, type_equal)) ||
-						!(e3 = exp_check_type(v->sql, &super, rel, e3, type_equal))) {
-							v->sql->session->status = 0;
-							v->sql->errstr[0] = 0;
-							return e;
+					if (exp_equal(c_le?le->l:le, c_lf?lf->l:lf) == 0) {
+						sql_exp *re = list_fetch(lfexps, 1), *rf = list_fetch(rfexps, 1), *ne = NULL;
+						sql_subtype super;
+
+						supertype(&super, exp_subtype(le), exp_subtype(lf)); /* le/re and lf/rf must have the same type */
+						if (!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
+							!(re = exp_check_type(v->sql, &super, rel, re, type_equal)) ||
+							!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal))) {
+								v->sql->session->status = 0;
+								v->sql->errstr[0] = 0;
+								return e;
+							}
+						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->base.name, rff->func->base.name)))) {
+							if (exp_name(e))
+								exp_prop_alias(v->sql->sa, ne, e);
+							e = ne;
+							v->changes++;
 						}
-					if ((ne = exp_compare2(v->sql->sa, e1, e2, e3, compare_funcs2range(lf->func->base.name, rf->func->base.name)))) {
-						if (exp_name(e))
-							exp_prop_alias(v->sql->sa, ne, e);
-						e = ne;
-						v->changes++;
 					}
 				}
 			}
@@ -8085,23 +8104,8 @@ rel_split_select(visitor *v, sql_rel *rel, int top)
 	return rel;
 }
 
-static int
-is_numeric_upcast(sql_exp *e)
-{
-	if (is_convert(e->type)) {
-		sql_subtype *f = exp_fromtype(e);
-		sql_subtype *t = exp_totype(e);
-
-		if (f->type->eclass == t->type->eclass && EC_COMPUTE(f->type->eclass)) {
-			if (f->type->localtype < t->type->localtype)
-				return 1;
-		}
-	}
-	return 0;
-}
-
 static list *
-exp_merge_range(visitor *v, list *exps)
+exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 {
 	node *n, *m;
 	for (n=exps->h; n; n = n->next) {
@@ -8111,8 +8115,8 @@ exp_merge_range(visitor *v, list *exps)
 
 		/* handle the and's in the or lists */
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
-			e->l = exp_merge_range(v, e->l);
-			e->r = exp_merge_range(v, e->r);
+			e->l = exp_merge_range(v, rel, e->l);
+			e->r = exp_merge_range(v, rel, e->r);
 		/* only look for gt, gte, lte, lt */
 		} else if (n->next &&
 		    e->type == e_cmp && e->flag < cmp_equal && !e->f &&
@@ -8121,12 +8125,14 @@ exp_merge_range(visitor *v, list *exps)
 				sql_exp *f = m->data;
 				sql_exp *lf = f->l;
 				sql_exp *rf = f->r;
+				int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf);
 
 				if (f->type == e_cmp && f->flag < cmp_equal && !f->f &&
 				    rf->card == CARD_ATOM && !is_anti(f) &&
-				    exp_match_exp(le, lf)) {
+				    exp_match_exp(c_le?le->l:le, c_lf?lf->l:lf)) {
 					sql_exp *ne;
 					int swap = 0, lt = 0, gt = 0;
+					sql_subtype super;
 					/* for now only   c1 <[=] x <[=] c2 */
 
 					swap = lt = (e->flag == cmp_lt || e->flag == cmp_lte);
@@ -8140,6 +8146,15 @@ exp_merge_range(visitor *v, list *exps)
 					   (f->flag == cmp_lt ||
 					    f->flag == cmp_lte))
 						continue;
+
+					supertype(&super, exp_subtype(le), exp_subtype(lf));
+					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
+						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
+						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
+							v->sql->session->status = 0;
+							v->sql->errstr[0] = 0;
+							continue;
+						}
 					if (!swap)
 						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(e->flag, f->flag));
 					else
@@ -8149,7 +8164,7 @@ exp_merge_range(visitor *v, list *exps)
 					list_remove_data(exps, NULL, f);
 					list_append(exps, ne);
 					v->changes++;
-					return exp_merge_range(v, exps);
+					return exp_merge_range(v, rel, exps);
 				}
 			}
 		} else if (n->next &&
@@ -8167,6 +8182,7 @@ exp_merge_range(visitor *v, list *exps)
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
 					int c_re = is_numeric_upcast(re), c_rf = is_numeric_upcast(rf);
 					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf), c;
+					sql_subtype super;
 
 					/* both swapped ? */
 					if (exp_match_exp(c_re?re->l:re, c_rf?rf->l:rf)) {
@@ -8211,12 +8227,15 @@ exp_merge_range(visitor *v, list *exps)
 						continue;
 					if (lt && (ff == cmp_lt || ff == cmp_lte))
 						continue;
-					if (c_le) {
-						rf = exp_convert(v->sql->sa, rf, exp_subtype(rf), exp_subtype(le));
-					} else if (c_lf) {
-						le = exp_convert(v->sql->sa, le, exp_subtype(le), exp_subtype(lf));
-						re = exp_convert(v->sql->sa, re, exp_subtype(re), exp_subtype(lf));
-					}
+
+					supertype(&super, exp_subtype(le), exp_subtype(lf));
+					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
+						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
+						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
+							v->sql->session->status = 0;
+							v->sql->errstr[0] = 0;
+							continue;
+						}
 					if (!swap)
 						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(ef, ff));
 					else
@@ -8226,7 +8245,7 @@ exp_merge_range(visitor *v, list *exps)
 					list_remove_data(exps, NULL, f);
 					list_append(exps, ne);
 					v->changes++;
-					return exp_merge_range(v, exps);
+					return exp_merge_range(v, rel, exps);
 				}
 			}
 		}
@@ -9605,7 +9624,7 @@ rel_optimize_select_and_joins_bottomup(visitor *v, sql_rel *rel)
 		return rel;
 	int level = *(int*) v->data;
 
-	rel->exps = exp_merge_range(v, rel->exps);
+	rel->exps = exp_merge_range(v, rel, rel->exps);
 	if (v->value_based_opt)
 		rel = rel_reduce_casts(v, rel);
 	rel = rel_select_cse(v, rel);
