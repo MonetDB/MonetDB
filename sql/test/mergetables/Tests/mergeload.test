@@ -1,24 +1,24 @@
 statement ok
 CREATE TABLE part1 ( x double, y double, z double)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 0.0 0.0 0.0
-1.0 0.0 0.0
-0.0 1.0 0.0
-1.0 1.0 0.0
+1.0 0.0 0.0 
+0.0 1.0 0.0 
+1.0 1.0 0.0 
 
 statement ok
 CREATE TABLE part2 ( x double, y double, z double)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 2.0 0.0 0.0
-3.0 0.0 0.0
-2.0 1.0 0.0
-3.0 1.0 0.0
+3.0 0.0 0.0 
+2.0 1.0 0.0 
+3.0 1.0 0.0 
 
 statement ok
 CREATE MERGE TABLE complete ( x double, y double, z double)

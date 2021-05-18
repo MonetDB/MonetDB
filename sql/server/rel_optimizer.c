@@ -19,6 +19,7 @@
 #include "rel_rewriter.h"
 #include "rel_remote.h"
 #include "sql_mvc.h"
+#include "sql_privileges.h"
 #include "gdk_time.h"
 
 typedef struct global_props {
@@ -8978,16 +8979,21 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					for (node *nt = t->members->h; nt; nt = nt->next) {
 						sql_part *pd = nt->data;
 						sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, pd->member);
-						sql_rel *prel = rel_basetable(v->sql, pt, tname), *bt = NULL;
-						int skip = 0;
+						sql_rel *prel = NULL, *bt = NULL;
+						int skip = 0, allowed = 1;
 						list *exps = NULL;
 						sqlstore *store = v->sql->session->tr->store;
 
+						/* At the moment we throw an error in the optimizer, but later this rewriter should move out from the optimizers */
+						if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
+							return sql_error(v->sql, 02, SQLSTATE(42000) "The %s '%s.%s' should have at least one table associated",
+											 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 						/* Do not include empty partitions */
 						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 0))
 							continue;
-
-						prel = rel_rename_part(v->sql, prel, rel, tname, t);
+						prel = rel_rename_part(v->sql, rel_basetable(v->sql, pt, tname), rel, tname, t);
+						if (!table_privs(v->sql, pt, PRIV_SELECT)) /* Test for privileges */
+							allowed = 0;
 
 						exps = sa_list(v->sql->sa);
 						for (node *n = rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
@@ -8997,8 +9003,12 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 							bool first_attempt = true;
 							atom *cmin = NULL, *cmax = NULL, *rmin = NULL, *rmax = NULL;
 							list *inlist = NULL;
+							char *cname = e->r;
 
 							assert(e && e->type == e_column);
+							if (!allowed && cname[0] != '%' && !column_privs(v->sql, mvc_bind_column(v->sql, pt, cname), PRIV_SELECT))
+								return sql_error(v->sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(v->sql, "current_user"),
+												 pt->s->base.name, pt->base.name, TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, t->base.name);
 							if (cols && sel && ATOMlinear(exp_subtype(e)->type->localtype))
 								for (node *nn = cols->h ; nn && !skip; nn = nn->next) { /* test if it passes all predicates around it */
 									if (nn->data == e) {
@@ -9008,7 +9018,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 											list *values = next->values;
 
 											if (!col) /* first predicate around the column */
-												col = name_find_column(prel, e->l, e->r, -2, &bt);
+												col = name_find_column(prel, e->l, cname, -2, &bt);
 
 											/* I don't handle cmp_in or cmp_notin cases with anti or null semantics yet */
 											if (next->flag == cmp_in && (next->anti || next->semantics))
@@ -9241,9 +9251,9 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 									i++;
 								}
 							if (!skip) {
-								sql_exp *ne = exps_bind_column2(prel->exps, e->l, e->r, NULL);
+								sql_exp *ne = exps_bind_column2(prel->exps, e->l, cname, NULL);
 								assert(ne);
-								exp_setname(v->sql->sa, ne, e->l, e->r);
+								exp_setname(v->sql->sa, ne, e->l, cname);
 								append(exps, ne);
 							}
 						}
