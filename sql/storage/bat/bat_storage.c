@@ -258,6 +258,8 @@ segments_in_transaction(sql_trans *tr, sql_table *t)
 	storage *s = ATOMIC_PTR_GET(&t->data);
 	segment *seg = s->segs->h;
 
+	if (seg && s->segs->t->ts == tr->tid)
+		return 1;
 	for (; seg ; seg=seg->next) {
 		if (seg->ts == tr->tid)
 			return 1;
