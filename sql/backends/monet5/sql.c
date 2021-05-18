@@ -1703,11 +1703,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (i && store_funcs.append_idx(m->session->tr, i, ins, tpe) != LOG_OK)
 			err = 1;
 	}
+	if (b)
+		BBPunfix(b->batCacheid);
 	if (err)
 		throw(SQL, "sql.append", SQLSTATE(42S02) "append failed");
-	if (b) {
-		BBPunfix(b->batCacheid);
-	}
 	return MAL_SUCCEED;
 }
 
@@ -1818,7 +1817,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	ptr ins = getArgReference(stk, pci, 4);
-	int tpe = getArgType(mb, pci, 4);
+	int tpe = getArgType(mb, pci, 4), log_res = LOG_OK;
 	BAT *b = NULL;
 
 	sql_schema *s;
@@ -1852,10 +1851,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
-	if (store_funcs.delete_tab(m->session->tr, t, b, tpe) != LOG_OK)
-		throw(SQL, "sql.delete", SQLSTATE(3F000) "delete failed");
+	log_res = store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (log_res != LOG_OK)
+		throw(SQL, "sql.delete", SQLSTATE(3F000) "delete failed");
 	return MAL_SUCCEED;
 }
 
@@ -2381,8 +2381,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *o;
 		gdk_return ret = BATsort(&o, NULL, NULL, d, NULL, NULL, false, false, false);
 		BBPunfix(d->batCacheid);
-		if (ret != GDK_SUCCEED)
+		if (ret != GDK_SUCCEED) {
+			BBPunfix(tids->batCacheid);
 			throw(MAL, "sql.tids", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 
 		/* TODO handle dense o, ie full range out of the dense tids, could be at beginning or end (reduce range of tids)
 		 * else materialize */
