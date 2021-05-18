@@ -86,8 +86,9 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 	oid r1seq, r1end;						\
 	oid r2seq, r2end;						\
 									\
-	if ((!ci || (ci->tpe == cand_dense && BATtdense(l))) && \
-	     l->tnonil && r1->ttype && !BATtdense(r1) && !r2) \
+	if (r2 == NULL &&						\
+	    (!ci || (ci->tpe == cand_dense && BATtdense(l))) &&		\
+	    l->tnonil && r1->ttype && !BATtdense(r1))			\
 		return project1_##TYPE(bn, l, r1);			\
 	MT_thread_setalgorithm(__func__);				\
 	r1t = (const TYPE *) Tloc(r1, 0);				\
