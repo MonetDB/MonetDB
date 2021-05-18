@@ -7,10 +7,10 @@ CREATE MERGE TABLE table2 (b varchar(32)) PARTITION BY VALUES ON (b)
 statement ok
 CREATE TABLE another (b varchar(32))
 
-statement error
+statement error 42000!ALTER TABLE: a range partition is required while adding under a RANGE PARTITION TABLE
 ALTER TABLE table1 ADD TABLE another
 
-statement error
+statement error 42000!ALTER TABLE: a value partition is required while adding under a LIST PARTITION TABLE
 ALTER TABLE table2 ADD TABLE another
 
 statement ok
@@ -65,25 +65,25 @@ SELECT a FROM another1
 NULL
 NULL
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.another1 stores every possible value
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.another1 stores every possible value
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE WITH NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.another1 stores every possible value
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 1 TO 2
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.another1 stores every possible value
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FOR NULL VALUES
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
 ALTER TABLE table1 SET TABLE another1 AS PARTITION FROM 1 TO 2
 
 statement ok
 ALTER TABLE table1 SET TABLE another1 AS PARTITION FROM 1 TO 3 WITH NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.another1 stores null values and only one partition can store null values at the time
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 3 TO 4 WITH NULL VALUES
 
 statement ok
@@ -101,19 +101,19 @@ DELETE FROM another1 WHERE a IS NULL
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 1 to 2 and absolute min value to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 1 TO 2
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to -1 and absolute min value to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE TO -1
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to absolute max value and absolute min value to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 10 TO RANGE MAXVALUE
 
 statement ok
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FOR NULL VALUES
 
-statement ok
+statement ok rowcount 2
 TRUNCATE table1
 
 statement ok rowcount 2
@@ -122,10 +122,10 @@ INSERT INTO table1 VALUES (2), (NULL)
 statement ok rowcount 1
 INSERT INTO another1 VALUES (3)
 
-statement error
+statement error M0M29!INSERT: table sys.another1 is part of merge table sys.table1 and the insert violates the partition range of values
 INSERT INTO another1 VALUES (NULL)
 
-statement error
+statement error M0M29!INSERT: table sys.another2 is part of merge table sys.table1 and the insert violates the partition range of values
 INSERT INTO another2 VALUES (2)
 
 statement ok rowcount 1
@@ -192,7 +192,7 @@ ALTER TABLE table1 DROP TABLE another2
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO 10 WITH NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 0 to 5 and absolute min value to 10 from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 0 to 5
 
 query I rowsort
@@ -216,19 +216,19 @@ NULL
 statement ok
 ALTER TABLE table1 DROP TABLE another1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.another2' isn't part of RANGE PARTITION TABLE 'sys.table1'
 ALTER TABLE table1 DROP TABLE another2
 
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 0 to 5 and absolute min value to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 0 to 5
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to 2 and absolute min value to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE to 2
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 2 to absolute max value and absolute min value to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 2 to RANGE MAXVALUE
 
 query I rowsort
@@ -252,43 +252,43 @@ NULL
 statement ok
 ALTER TABLE table1 DROP TABLE another1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.another2' isn't part of RANGE PARTITION TABLE 'sys.table1'
 ALTER TABLE table1 DROP TABLE another2
 
-statement ok
+statement ok rowcount 2
 TRUNCATE another1
 
-statement ok
+statement ok rowcount 2
 TRUNCATE another2
 
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO 2
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to 1 and absolute min value to 2 from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE TO 1
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 0 to 1 and absolute min value to 2 from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 0 TO 1
 
 statement ok
 ALTER TABLE table1 DROP TABLE another1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.another2' isn't part of RANGE PARTITION TABLE 'sys.table1'
 ALTER TABLE table1 DROP TABLE another2
 
 statement ok
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 2 TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to absolute max value and 2 to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 10 TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 1 to 3 and 2 to absolute max value from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 1 TO 3
 
 statement ok
 ALTER TABLE table1 DROP TABLE another1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.another2' isn't part of RANGE PARTITION TABLE 'sys.table1'
 ALTER TABLE table1 DROP TABLE another2
 
 statement ok
@@ -303,40 +303,40 @@ ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 0 TO 10
 statement ok
 ALTER TABLE table1 ADD TABLE another4 AS PARTITION FOR NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: -100 to -1 and absolute min value to 0 from table sys.another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM -100 TO -1
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to -1 and absolute min value to 0 from table sys.another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO -1
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to 0 and absolute min value to 0 from table sys.another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO 0
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to absolute max value and absolute min value to 0 from table sys.another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 0 to 0 and absolute min value to 0 from table sys.another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 0 TO 0
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to 10 and 10 to absolute max value from table sys.another2
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO 10
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to 11 and 10 to absolute max value from table sys.another2
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO 11
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to absolute max value and 10 to absolute max value from table sys.another2
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 20 to absolute max value and 10 to absolute max value from table sys.another2
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 20 TO RANGE MAXVALUE
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 9 to 10 and 0 to 10 from table sys.another3
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 9 TO 10
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 9 to 10 and 0 to 10 from table sys.another3
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 9 TO 10 WITH NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.another4 stores null values and only one partition can store null values at the time
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FOR NULL VALUES
 
 statement ok
@@ -351,7 +351,7 @@ ALTER TABLE table1 DROP TABLE another3
 statement ok
 ALTER TABLE table1 DROP TABLE another4
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.another5' isn't part of RANGE PARTITION TABLE 'sys.table1'
 ALTER TABLE table1 DROP TABLE another5
 
 statement ok

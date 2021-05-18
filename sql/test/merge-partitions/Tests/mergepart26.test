@@ -19,7 +19,7 @@ ALTER TABLE testnestedtables ADD TABLE subnested1 AS PARTITION FROM -100 TO 0
 statement ok rowcount 3
 INSERT INTO sub1 VALUES (2, 'going'), (4, 'very'), (6, 'good')
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the expression outside the partition range
 ALTER TABLE subnested1 ADD TABLE sub1 AS PARTITION IN (1, 3, 5, 7)
 
 statement ok
@@ -61,7 +61,7 @@ ALTER TABLE testagain ADD TABLE subnn AS PARTITION IN (7, 9, 10, 11, 12, 13)
 statement ok rowcount 4
 INSERT INTO sub1 VALUES (2, 2), (4, 4), (5, 5), (6, 6)
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the expression outside the partition range
 ALTER TABLE subnn ADD TABLE sub1 AS PARTITION FROM 0 TO 8
 
 statement ok
