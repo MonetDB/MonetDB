@@ -544,6 +544,8 @@ count_deletes( segment *s, sql_trans *tr)
 static size_t
 segs_end( segments *segs, sql_trans *tr, sql_table *table)
 {
+	size_t cnt = 0;
+
 	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
@@ -551,10 +553,10 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 		if (SEG_IS_VALID(s, tr))
 				l = s;
 	}
+	if (l)
+		cnt = l->end;
 	unlock_table(tr->store, table->base.id);
-	if (!l)
-		return 0;
-	return l->end;
+	return cnt;
 }
 
 static size_t
