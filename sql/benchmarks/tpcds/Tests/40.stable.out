@@ -35,7 +35,7 @@ stdout of test '40` in directory 'sql/benchmarks/tpcds` itself:
 #           END) AS sales_after
 #FROM catalog_sales
 #LEFT OUTER JOIN catalog_returns ON (cs_order_number = cr_order_number
-% sys.warehouse,	sys.item,	.,	. # table_name
+% sys.warehouse,	.item,	.,	. # table_name
 % w_state,	i_item_id,	sales_before,	sales_after # name
 % char,	char,	decimal,	decimal # type
 % 2,	16,	20,	20 # length
