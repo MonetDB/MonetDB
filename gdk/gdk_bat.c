@@ -201,31 +201,31 @@ gettailname(const BAT *b)
 void
 settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 {
-	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
-		      ".tail", NULL);
 	if (tt == TYPE_str) {
 		switch (width) {
 		case 1:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail1", NULL);
-			break;
+			return;
 		case 2:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail2", NULL);
-			break;
+			return;
 #if SIZEOF_VAR_T == 8
 		case 4:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail4", NULL);
-			break;
+			return;
 #endif
 		default:
 			break;
 		}
 	}
+	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
+		      ".tail", NULL);
 }
 
 /*
