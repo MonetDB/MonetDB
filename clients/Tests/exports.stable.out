@@ -206,6 +206,7 @@ BAT *BATunmask(BAT *b);
 BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 void BBPclear(bat bid);
+void BBPcold(bat i);
 BAT *BBPdescriptor(bat b);
 int BBPfix(bat b);
 bat BBPindex(const char *nme);

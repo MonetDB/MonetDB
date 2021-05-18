@@ -2112,6 +2112,18 @@ BBPspin(bat i, const char *s, unsigned event)
 	}
 }
 
+void
+BBPcold(bat i)
+{
+	if (!is_bat_nil(i)) {
+		BAT *b = BBP_cache(i);
+		if (b == NULL)
+			b = BBP_desc(i);
+		if (b == NULL || b->batRole == PERSISTENT)
+			BBP_status_off(i, BBPHOT);
+	}
+}
+
 /* This function can fail if the input parameter (i) is incorrect
  * (unlikely), of if the bat is a view, this is a physical (not
  * logical) incref (i.e. called through BBPfix(), and it is the first

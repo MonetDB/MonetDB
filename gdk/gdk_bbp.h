@@ -80,6 +80,7 @@ gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(bat i);
 gdk_export void BBPshare(bat b);
+gdk_export void BBPcold(bat i);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
