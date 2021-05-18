@@ -240,7 +240,7 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
  * filenames.
  */
 BAT *
-COLnew(oid hseq, int tt, BUN cap, role_t role)
+COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 {
 	BAT *bn;
 
@@ -272,15 +272,18 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
-	else if (tt == TYPE_str)
+	else if (tt == TYPE_str) {
+		if (width != 0)
+			bn->twidth = width;
 		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
+	}
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
 		goto bailout;
 	}
 
-	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		goto bailout;
 	}
 	DELTAinit(bn);
@@ -300,6 +303,12 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	MT_rwlock_destroy(&bn->thashlock);
 	GDKfree(bn);
 	return NULL;
+}
+
+BAT *
+COLnew(oid hseq, int tt, BUN cap, role_t role)
+{
+	return COLnew_intern(hseq, tt, cap, role, 0);
 }
 
 BAT *
