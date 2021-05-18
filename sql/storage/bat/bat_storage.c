@@ -337,7 +337,7 @@ temp_dup_cs(column_storage *cs, ulng tid, int type)
 	bat_destroy(b);
 	cs->uibid = e_bat(TYPE_oid);
 	cs->uvbid = e_bat(type);
-	cs->ucnt = cs->cnt = 0;
+	cs->ucnt = 0;
 	cs->cleared = 0;
 	cs->ts = tid;
 	cs->refcnt = 1;
@@ -1648,7 +1648,6 @@ new_persistent_delta( sql_delta *bat)
 static void
 create_delta( sql_delta *d, BAT *b)
 {
-	d->cs.cnt = BATcount(b);
 	bat_set_access(b, BAT_READ);
 	d->cs.bid = temp_create(b);
 	d->cs.uibid = d->cs.uvbid = 0;
@@ -1719,7 +1718,6 @@ create_col(sql_trans *tr, sql_column *c)
 				if(bat->cs.bid == BID_NIL)
 					ok = LOG_ERR;
 			}
-			bat->cs.cnt = d->cs.cnt;
 			if (d->cs.uibid) {
 				bat->cs.uibid = e_bat(TYPE_oid);
 				if (bat->cs.uibid == BID_NIL)
@@ -1838,7 +1836,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			if(bat->cs.bid == BID_NIL)
 				ok = LOG_ERR;
 		}
-		bat->cs.cnt = d->cs.cnt;
 		bat->cs.ucnt = 0;
 		if (!isNew(c))
 			bat->cs.alter = 1;
@@ -2348,7 +2345,6 @@ clear_storage(sql_trans *tr, storage *s)
 
 	clear_cs(tr, &s->cs);
 	s->cs.cleared = 1;
-	s->cs.cnt = 0;
 	if (s->segs)
 		destroy_segments(s->segs);
 	s->segs = new_segments(tr, 0);
