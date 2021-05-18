@@ -874,6 +874,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (garbage[i] >= 0) {
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
+							BBPcold(bid);
 							BBPrelease(bid);
 						}
 					}
@@ -1394,6 +1395,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
+		BBPcold(bid);
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);
