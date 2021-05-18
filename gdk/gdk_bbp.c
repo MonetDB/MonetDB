@@ -2137,7 +2137,7 @@ incref(bat i, bool logical, bool lock)
 	 * reference, getting the parent BAT descriptor is
 	 * superfluous, but not too expensive, so we do it anyway. */
 	if (!logical && (b = BBP_desc(i)) != NULL) {
-		if (b->theap->parentid != i) {
+		if (b->theap && b->theap->parentid != i) {
 			pb = BATdescriptor(b->theap->parentid);
 			if (pb == NULL)
 				return 0;
@@ -2179,7 +2179,7 @@ incref(bat i, bool logical, bool lock)
 		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		tp = b->theap->parentid == i ? 0 : b->theap->parentid;
+		tp = b->theap == NULL || b->theap->parentid == i ? 0 : b->theap->parentid;
 		assert(tp >= 0);
 		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
@@ -2307,6 +2307,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			if (b && refs == 0) {
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
+				if (tp || tvp)
+					BBP_status_on(i, BBPHOT);
 			}
 		}
 	}

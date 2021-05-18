@@ -795,7 +795,7 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->theap->base == NULL) {
+	if (b->ttype != TYPE_void && b->theap->base == NULL) {
 		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
 			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
