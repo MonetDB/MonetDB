@@ -10,7 +10,7 @@ ALTER TABLE trydropme ADD COLUMN failing int
 statement ok
 ALTER TABLE trydropme DROP COLUMN b
 
-statement error
+statement error 42000!ALTER TABLE: cannot drop column 'cc': is the partitioned column on the table 'trydropme'
 ALTER TABLE trydropme DROP COLUMN cc
 
 statement ok
@@ -22,7 +22,7 @@ CREATE MERGE TABLE nexttest (a int, b int, cc varchar(32), dd real) PARTITION BY
 statement ok
 ALTER TABLE nexttest DROP COLUMN cc
 
-statement error
+statement error 42000!DROP FUNCTION: there are database objects dependent on function dosomething;
 DROP FUNCTION dosomething
 
 statement ok
@@ -34,7 +34,7 @@ CREATE TABLE subtable2 (a int, b int, dd real)
 statement ok rowcount 1
 INSERT INTO subtable1 VALUES (4, 2, 1.2)
 
-statement error
+statement error 22018!conversion of string 'ups' to type lng failed.
 ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN ('ups')
 
 statement ok
@@ -43,16 +43,16 @@ ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN (1, 2, 10)
 statement ok
 ALTER TABLE nexttest ADD TABLE subtable2 AS PARTITION IN (11, 12, 20)
 
-statement error
+statement error 42000!ALTER TABLE: cannot drop column from MERGE TABLE 'nexttest' while it has partitions
 ALTER TABLE nexttest DROP COLUMN dd
 
-statement error
+statement error 42000!ALTER TABLE: cannot add column to MERGE TABLE 'nexttest' while it has partitions
 ALTER TABLE nexttest ADD COLUMN again int
 
-statement error
+statement error 42000!ALTER TABLE: cannot drop column from a PARTITION of a MERGE or REPLICA TABLE 'subtable1'
 ALTER TABLE subtable1 DROP COLUMN dd
 
-statement error
+statement error 42000!ALTER TABLE: cannot add column to a PARTITION of a MERGE or REPLICA TABLE 'subtable1'
 ALTER TABLE subtable1 ADD COLUMN again int
 
 statement ok
@@ -61,7 +61,7 @@ ALTER TABLE nexttest DROP TABLE subtable1
 statement ok
 ALTER TABLE nexttest DROP TABLE subtable2
 
-statement error
+statement error 42000!ALTER TABLE: cannot drop column 'a': the expression used in 'nexttest' depends on it
 ALTER TABLE nexttest DROP COLUMN a
 
 statement ok
@@ -85,7 +85,7 @@ DROP FUNCTION dosomething
 statement ok
 CREATE FUNCTION dosomethingelse(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i); END
 
-statement error
+statement error 42000!SELECT: no such unary operator 'dosomethingelse'(int)
 CREATE MERGE TABLE nexttest (a int, dd real) PARTITION BY VALUES USING (dosomethingelse(a))
 
 statement ok
@@ -94,13 +94,13 @@ CREATE TABLE subtable3 (a int, dd real)
 statement ok rowcount 1
 INSERT INTO subtable3 VALUES (0, 1.68)
 
-statement error
+statement error 42S02!ALTER TABLE: no such table 'nexttest'
 ALTER TABLE nexttest ADD TABLE subtable3 AS PARTITION IN (1, 2, 10)
 
 statement ok
 DROP TABLE subtable3
 
-statement error
+statement error 42S02!DROP TABLE: no such table 'nexttest'
 DROP TABLE nexttest
 
 statement ok

@@ -16,10 +16,10 @@ CREATE FUNCTION addtwo(a tinyint) RETURNS TINYINT BEGIN RETURN a + 2; END
 statement ok
 ALTER TABLE testagain ADD TABLE sublimits1 AS PARTITION IN (2, -2, addone(0), 1 + 2)
 
-statement error
+statement error 42000!ALTER TABLE: there are duplicated values in the list
 ALTER TABLE testagain ADD TABLE sublimits2 AS PARTITION IN (addone(10), addone(9) + 1)
 
-statement error
+statement error 42000!ALTER TABLE: the new partition is conflicting with the existing partition sys.sublimits1
 ALTER TABLE testagain ADD TABLE sublimits2 AS PARTITION IN (50, '60', addone(0))
 
 statement ok
@@ -69,7 +69,7 @@ CREATE TABLE sublimits2 (a int, b varchar(32))
 statement ok
 ALTER TABLE testing ADD TABLE sublimits1 AS PARTITION FROM 28 + 2 TO 72 - 2
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 69 to 538 and 30 to 70 from table sys.sublimits1
 ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION FROM 100 - 31 TO 440 + 98
 
 statement ok

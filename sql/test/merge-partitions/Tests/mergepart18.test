@@ -10,21 +10,21 @@ CREATE TABLE subt2 (a int, b varchar(32))
 statement ok
 ALTER TABLE updateme ADD TABLE subt2 AS PARTITION FROM '201' TO '300'
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.subt1' isn't part of RANGE PARTITION TABLE 'sys.updateme'
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '1' TO '100'
 
 statement ok
 ALTER TABLE updateme ADD TABLE subt1 AS PARTITION FROM '1' TO '100'
 
-query TTI rowsort
+query TTT rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 1
 100
-0
+False
 201
 300
-0
+False
 
 statement ok rowcount 1
 INSERT INTO updateme VALUES (1, 'first')
@@ -52,7 +52,7 @@ query IT rowsort
 SELECT a, b FROM subt2
 ----
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
 
 statement ok rowcount 2
@@ -61,20 +61,20 @@ DELETE FROM updateme
 statement ok
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
 
-query TTI rowsort
+query TTT rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -100
 0
-0
+False
 201
 300
-0
+False
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO updateme VALUES (1, 'ups')
 
-statement error
+statement error M0M29!INSERT: table sys.subt1 is part of merge table sys.updateme and the insert violates the partition range of values
 INSERT INTO subt1 VALUES (1, 'ups')
 
 statement ok rowcount 2
@@ -89,39 +89,39 @@ START TRANSACTION
 statement ok
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-1' TO '200'
 
-query TTI rowsort
+query TTT rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -1
 200
-0
+False
 201
 300
-0
+False
 
 statement ok rowcount 1
 INSERT INTO updateme VALUES (199, 'third')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO updateme VALUES (301, 'wrong')
 
 statement ok
 ROLLBACK
 
-query TTI rowsort
+query TTT rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -100
 0
-0
+False
 201
 300
-0
+False
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO updateme VALUES (150, 'fourth')
 
-statement error
+statement error M0M29!INSERT: table sys.subt1 is part of merge table sys.updateme and the insert violates the partition range of values
 INSERT INTO subt1 VALUES (150, 'fourth')
 
 statement ok rowcount 1
