@@ -13,13 +13,13 @@ create table t2(x double)
 statement ok
 create table t3(x double)
 
-statement ok
+statement ok rowcount 1
 insert into t1 values(1)
 
-statement ok
+statement ok rowcount 1
 insert into t2 values(1)
 
-statement ok
+statement ok rowcount 1
 insert into t3 values(1)
 
 statement ok
