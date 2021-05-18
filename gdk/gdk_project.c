@@ -663,7 +663,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		}
 		tpe = TYPE_oid;
 	}
-	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
+	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1->twidth : 0);
 	if (bn == NULL) {
 		goto doreturn;
 	}
