@@ -243,6 +243,7 @@ typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char
 
 typedef void (*logger_destroy_fptr) (struct sqlstore *store);
 typedef int (*logger_flush_fptr) (struct sqlstore *store, lng save_id);
+typedef int (*logger_activate_fptr) (struct sqlstore *store);
 typedef int (*logger_cleanup_fptr) (struct sqlstore *store);
 
 typedef int (*logger_changes_fptr)(struct sqlstore *store);
@@ -273,6 +274,7 @@ typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_destroy_fptr destroy;
 	logger_flush_fptr flush;
+	logger_activate_fptr activate;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
