@@ -2098,6 +2098,27 @@ logger_cleanup_range(logger *lg)
 }
 
 gdk_return
+logger_activate(logger *lg)
+{
+	if (LOG_DISABLED(lg)) {
+		if (lg->saved_id+1 == lg->id) {
+			lg->saved_id++;
+			lg->saved_tid = lg->tid;
+			logger_cleanup_range(lg);
+		}
+		return GDK_SUCCEED;
+	}
+	if (lg->end > 0 && lg->saved_id+1 == lg->id) {
+		lg->id++;
+		logger_close_output(lg);
+		/* start new file */
+		if (logger_open_output(lg) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+gdk_return
 logger_flush(logger *lg, ulng ts)
 {
 	ulng lid = logger_next_logfile(lg, ts);
