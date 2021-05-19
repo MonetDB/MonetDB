@@ -125,4 +125,13 @@ UPDATE "mytables" SET system = true WHERE
     )
 
 statement ok
+create table t_qh(c_f INTEGER, c_y2 INTEGER)
+
+statement ok rowcount 3
+insert into t_qh values (1,1), (2,2), (3,3)
+
+statement error GDK reported error: BATsubcross: more than one match
+select 1 from t_qh where 3 = (select c_y2 union all select c_f)
+
+statement ok
 ROLLBACK
