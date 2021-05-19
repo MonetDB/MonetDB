@@ -2331,6 +2331,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	    (BBP_lrefs(i) > 0 &&
 	     (b == NULL ||
 	      (BATdirty(b) && (BBP_status(i) & BBPHOT)) ||
+	      (BBP_status(i) & BBPSYNCING) || /* no swap during (sub)commit */
 	      (BBP_status(i) & (BBPPERSISTENT | BBPHOT)) == BBPHOT ||
 	      GDKinmemory(b->theap->farmid)))) {
 		/* bat cannot be swapped out */
@@ -3097,6 +3098,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	gdk_return ret = GDK_SUCCEED;
 	int t0 = 0, t1 = 0;
 	str bakdir, deldir;
+	const bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 	if(!(bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)))
 		return GDK_FAIL;
@@ -3115,18 +3117,40 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
+			if (lock)
+				MT_lock_set(&GDKswapLock(i));
+			/* set flag that we're syncing, i.e. that we'll
+			 * be between moving heap to backup dir and
+			 * saving the new version */
+			BBP_status_on(i, BBPSYNCING);
+			/* wait until unloading is finished before
+			 * attempting to make a backup */
+			while (BBP_status(i) & BBPUNLOADING) {
+				if (lock)
+					MT_lock_unset(&GDKswapLock(i));
+				BBPspin(i, __func__, BBPUNLOADING);
+				if (lock)
+					MT_lock_set(&GDKswapLock(i));
+			}
 			BAT *b = dirty_bat(&i, subcommit != NULL);
 			if (i <= 0)
 				break;
 			if (BBP_status(i) & BBPEXISTING) {
-				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)
+				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
+					BBP_status_off(i, BBPSYNCING);
+					if (lock)
+						MT_lock_unset(&GDKswapLock(i));
 					break;
+				}
 			} else if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
 				char o[10];
 				char *f;
 				snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
 				f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
 				if (f == NULL) {
+					BBP_status_off(i, BBPSYNCING);
+					if (lock)
+						MT_lock_unset(&GDKswapLock(i));
 					ret = GDK_FAIL;
 					goto bailout;
 				}
@@ -3135,6 +3159,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				GDKfree(f);
 				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
 				if (f == NULL) {
+					BBP_status_off(i, BBPSYNCING);
+					if (lock)
+						MT_lock_unset(&GDKswapLock(i));
 					ret = GDK_FAIL;
 					goto bailout;
 				}
@@ -3142,6 +3169,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
 				GDKfree(f);
 			}
+			if (lock)
+				MT_lock_unset(&GDKswapLock(i));
 		}
 		if (idx < cnt)
 			ret = GDK_FAIL;
@@ -3162,6 +3191,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				if (b != NULL && BATsave(b) != GDK_SUCCEED)
 					break;	/* write error */
 			}
+			/* we once again have a saved heap */
+			BBP_status_off(i, BBPSYNCING);
 		}
 		if (idx < cnt)
 			ret = GDK_FAIL;
