@@ -194,7 +194,7 @@ typedef struct MALBLK {
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	int		workers;
-	int		memory;
+	lng		memory;
 	lng starttime;			/* track when the query started, for resource management */
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
