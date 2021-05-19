@@ -2969,19 +2969,18 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
-	int reused = 0, enabled = 0;
+	int reused = 0;
 
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	/* when claiming an segment use atomic CAS */
-	if (enabled)
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = seg->next) {
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* re-use old deleted or rolledback append */
 
 			if ((seg->end - seg->start) >= cnt) {
 
 				/* if previous is claimed before we could simply adjust the end/start */
-				if (enabled && p && p->ts == tr->tid && !p->deleted) {
+				if (p && p->ts == tr->tid && !p->deleted) {
 					slot = p->end;
 					p->end += cnt;
 					seg->start += cnt;
