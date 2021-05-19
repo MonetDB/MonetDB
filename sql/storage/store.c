@@ -2045,6 +2045,7 @@ store_manager(sqlstore *store)
 					ulng oldest = store_timestamp(store)+1;
 					store_pending_changes(store, oldest, oldest);
 				}
+				store->logger_api.activate(store); /* rotate too new log file */
 				store_unlock(store);
 			}
 			if (GDKexiting())
