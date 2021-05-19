@@ -734,6 +734,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			/* no need to lock bn, it's ours */
 			assert(r1->tvheap->parentid > 0);
 			BBPshare(r1->tvheap->parentid);
+			/* there is no file, so we don't need to remove it */
+			HEAPdecref(bn->tvheap, false);
 			bn->tvheap = r1->tvheap;
 			HEAPincref(r1->tvheap);
 			MT_lock_unset(&r1->theaplock);
