@@ -234,8 +234,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
 
-			wrk = QRYqueue[i].workers;
-			mem = QRYqueue[i].memory;
+			if( QRYqueue[i].mb)
+				wrk = QRYqueue[i].mb->workers;
+			else
+				wrk = QRYqueue[i].workers;
+			if( QRYqueue[i].mb)
+				mem = 1 + QRYqueue[i].mb->memory / LL_CONSTANT(1048576);
+			else
+				mem = QRYqueue[i].memory;
 			if ( BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
 				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
 				goto bailout;
