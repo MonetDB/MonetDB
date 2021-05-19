@@ -270,7 +270,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (!GDKembedded())
 		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
 	QRYqueue[qhead].idx = cntxt->idx;
-	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
+	QRYqueue[qhead].memory = (lng) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
 	QRYqueue[qhead].workers = (int) 1;	/* this is the first one */
 	QRYqueue[qhead].status = "running";
 	QRYqueue[qhead].cntxt = cntxt;
