@@ -308,18 +308,19 @@ statment_score(stmt *c)
 static stmt *
 bin_find_smallest_column(backend *be, stmt *sub)
 {
-	stmt *res = NULL;
-	int best_score = 0;
+	stmt *res = sub->op4.lval->h->data;
+	int best_score = statment_score(sub->op4.lval->h->data);
 
-	for (node *n = sub->op4.lval->h ; n ; n = n->next) {
-		stmt *c = n->data;
-		int next_score = statment_score(c);
+	if (sub->op4.lval->h->next)
+		for (node *n = sub->op4.lval->h->next ; n ; n = n->next) {
+			stmt *c = n->data;
+			int next_score = statment_score(c);
 
-		if (next_score >= best_score) {
-			res = c;
-			best_score = next_score;
+			if (next_score > best_score) {
+				res = c;
+				best_score = next_score;
+			}
 		}
-	}
 	if (res->nrcols == 0)
 		return const_column(be, res);
 	return res;
