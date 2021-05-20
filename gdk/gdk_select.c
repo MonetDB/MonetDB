@@ -839,7 +839,6 @@ scanselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	assert(!hval || th != NULL);
 	assert(!equi || (li && hi && !anti));
 	assert(!anti || lval || hval);
-	assert( anti || lval || hval || !b->tnonil);
 	assert(b->ttype != TYPE_void || equi || b->tnonil);
 
 #ifndef NDEBUG
