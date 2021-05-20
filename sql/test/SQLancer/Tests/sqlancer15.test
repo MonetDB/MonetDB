@@ -433,6 +433,16 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT (least((SELECT DISTINCT 
 statement ok
 ROLLBACK
 
+query T rowsort
+SELECT t2.c2 FROM (VALUES(BLOB 'A0'), (BLOB 'ed4D5CCdF0'), (BLOB 'B9'), (BLOB 'e520'), (BLOB ''), (BLOB '7820')) t2(c2) WHERE least(t2.c2, t2.c2) NOT BETWEEN BLOB 'F0' AND BLOB '09'
+----
+(empty)
+7820
+A0
+B9
+E520
+ED4D5CCDF0
+
 statement ok
 START TRANSACTION
 
