@@ -437,6 +437,48 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t0(c0 INTERVAL MONTH, c2 INTERVAL MONTH)
+
+statement ok
+CREATE TABLE t1(c0 DECIMAL, c2 TIME, c3 INTERVAL MONTH)
+
+statement ok rowcount 2
+INSERT INTO t0(c2) VALUES(INTERVAL '7' MONTH), (INTERVAL '-4' MONTH)
+
+statement ok rowcount 1
+INSERT INTO t1(c3) VALUES(INTERVAL '9' MONTH)
+
+statement ok rowcount 7
+INSERT INTO t1(c0) VALUES(0.5), (0.6), (0.55), (0.56), (0.57), (0.7), (0.25)
+
+statement ok
+ALTER TABLE t1 DROP c3
+
+statement ok rowcount 9
+INSERT INTO t1(c2, c0) VALUES(TIME '01:00:00', 0.8), (TIME '01:00:00', 0.10), (TIME '18:41:00', 0.9), (TIME '23:12:18', 0.78), (TIME '02:03:53', 0.86), (NULL, 0.78), (TIME '01:00:00', 0.34), (TIME '07:17:50', 0.43), (TIME '01:00:00', -1)
+
+statement ok rowcount 5
+INSERT INTO t1(c0) VALUES(0.98), (0.42), (0.63), (0.46), (0.33)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE t1.c2 <> ALL(SELECT TIME '02:53:29' FROM t0)
+----
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+02:03:53
+07:17:50
+18:41:00
+23:12:18
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c3" INTERVAL SECOND)
 
 statement ok rowcount 9
