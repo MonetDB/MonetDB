@@ -3330,6 +3330,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->sa = NULL;
 	tr->store = store;
 	tr->tid = store_transaction_id(store);
+	MT_lock_init(&tr->lock, "trans_lock");
 
 	if (name) {
 		if (!parent)
