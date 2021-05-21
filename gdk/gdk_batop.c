@@ -340,7 +340,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(ni, p);
 			if (bunfastappVAR(b, tp) != GDK_SUCCEED)
-				goto bunins_failed;
+				return GDK_FAIL;
 			r++;
 		}
 	} else {
@@ -393,7 +393,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				b->batCount++;
 			} else {
 				if (bunfastappVAR(b, tp) != GDK_SUCCEED)
-					goto bunins_failed;
+					return GDK_FAIL;
 			}
 			r++;
 		}
@@ -405,10 +405,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		HASHappend(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	return GDK_SUCCEED;
-      bunins_failed:
-	b->tvarsized = true;
-	b->ttype = TYPE_str;
-	return GDK_FAIL;
 }
 
 static gdk_return

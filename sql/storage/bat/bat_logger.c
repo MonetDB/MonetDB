@@ -2325,6 +2325,14 @@ bl_flush(sqlstore *store, lng save_id)
 }
 
 static int
+bl_activate(sqlstore *store)
+{
+	if (store->logger)
+		return logger_activate(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return LOG_OK;
+}
+
+static int
 bl_changes(sqlstore *store)
 {
 	return (int) MIN(logger_changes(store->logger), GDK_int_max);
@@ -2745,6 +2753,7 @@ bat_logger_init( logger_functions *lf )
 	lf->create = bl_create;
 	lf->destroy = bl_destroy;
 	lf->flush = bl_flush;
+	lf->activate = bl_activate;
 	lf->changes = bl_changes;
 	lf->get_sequence = bl_get_sequence;
 	lf->log_isnew = bl_log_isnew;

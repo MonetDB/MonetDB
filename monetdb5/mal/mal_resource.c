@@ -82,7 +82,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		t = IMPSimprintsize(b);
 		if( t > itotal)
 			itotal = t;
-		/* We should also consider the ordered index and mosaic */
+		t = b->torderidx && b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;
+		if( t > itotal)
+			itotal = t;
+		/* We should also consider the mosaic */
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
 		if ( total < itotal)

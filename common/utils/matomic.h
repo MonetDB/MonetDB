@@ -402,7 +402,7 @@ ATOMIC_OR(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 	ATOMIC_BASE_TYPE old;
 	pthread_mutex_lock(&var->lck);
 	old = var->val;
-	var->val += val;
+	var->val |= val;
 	pthread_mutex_unlock(&var->lck);
 	return old;
 }
@@ -414,7 +414,7 @@ ATOMIC_AND(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 	ATOMIC_BASE_TYPE old;
 	pthread_mutex_lock(&var->lck);
 	old = var->val;
-	var->val += val;
+	var->val &= val;
 	pthread_mutex_unlock(&var->lck);
 	return old;
 }

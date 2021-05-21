@@ -139,6 +139,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 				*(sht *) v = (sht) depend_type;
 			} else {
 				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
 				return NULL;
 			}
 			list_append(dep_list, v);

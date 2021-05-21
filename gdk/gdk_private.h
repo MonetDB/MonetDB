@@ -121,6 +121,9 @@ BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict val
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
+BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
+	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
 void gdk_bbp_reset(void)

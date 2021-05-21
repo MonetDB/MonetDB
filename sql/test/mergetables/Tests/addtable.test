@@ -1,16 +1,16 @@
 statement ok
 create table tmp1(i int)
 
-statement ok
+statement ok rowcount 1
 insert into tmp1 values(1)
 
 statement ok
 create table tmp2(i int)
 
-statement ok
+statement ok rowcount 1
 insert into tmp2 values(2)
 
-statement error
+statement error 42S02!ALTER TABLE: cannot add table 'sys.tmp2' to TABLE 'sys.tmp1'
 alter table tmp1 add table tmp2
 
 query I rowsort

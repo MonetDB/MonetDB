@@ -1346,7 +1346,6 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
-			list *sexps;
 			sql_rel *sl = s->l, *sr = s->r, *n;
 
 			sl = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
@@ -1363,12 +1362,11 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			s->l = rel;
 			s->r = n;
 			if (is_join(rel->op)) {
-				sexps = sa_list(sql->sa);
-				for (node *m = d->exps->h; m; m = m->next) {
-					sql_exp *e = m->data, *pe;
+				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
+				for (node *m = dexps->h; m; m = m->next) {
+					sql_exp *e = m->data;
 
-					pe = exp_ref(sql, e);
-					append(sexps, pe);
+					list_append(sexps, exp_ref(sql, e));
 				}
 				s->exps = list_merge(sexps, s->exps, (fdup)NULL);
 			}

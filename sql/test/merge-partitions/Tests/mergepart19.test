@@ -10,7 +10,7 @@ CREATE TABLE subt2 (a int, b varchar(32))
 statement ok
 ALTER TABLE testme ADD TABLE subt2 AS PARTITION IN ('11', '12', '13')
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.subt1' isn't part of LIST PARTITION TABLE 'sys.testme'
 ALTER TABLE testme SET TABLE subt1 AS PARTITION IN ('21', '22', '23')
 
 statement ok
@@ -52,7 +52,7 @@ query IT rowsort
 SELECT a, b FROM subt2
 ----
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition list of values
 ALTER TABLE testme SET TABLE subt1 AS PARTITION IN ('44', '45', '46')
 
 statement ok rowcount 2
@@ -71,10 +71,10 @@ SELECT value FROM value_partitions
 32
 33
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition list of values
 INSERT INTO testme VALUES (1, 'wrong')
 
-statement error
+statement error M0M29!INSERT: table sys.subt1 is part of merge table sys.testme and the insert violates the partition list of values
 INSERT INTO subt1 VALUES (1, 'insert')
 
 statement ok rowcount 3
@@ -105,7 +105,7 @@ SELECT value FROM value_partitions
 statement ok rowcount 1
 INSERT INTO testme VALUES (52, 'third')
 
-statement error
+statement error M0M29!INSERT: table sys.subt1 is part of merge table sys.testme and the insert violates the partition list of values
 INSERT INTO subt1 VALUES (60, 'wrong')
 
 statement ok
@@ -121,10 +121,10 @@ SELECT value FROM value_partitions
 32
 33
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition list of values
 INSERT INTO testme VALUES (51, 'wrong')
 
-statement error
+statement error M0M29!INSERT: table sys.subt1 is part of merge table sys.testme and the insert violates the partition list of values
 INSERT INTO subt1 VALUES (53, 'again')
 
 statement ok rowcount 1

@@ -19,19 +19,19 @@ INSERT INTO testme VALUES (-150, 'first'), (103, 'second'), (450, 'third'), (301
 statement ok rowcount 4
 UPDATE testme SET b = 'b' || b || 'e'
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE testme SET a = a + 1
 
 statement ok rowcount 2
 UPDATE sublimits1 SET b = 'a' || b || 'f'
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE sublimits1 SET a = a * 3
 
 statement ok rowcount 2
 UPDATE sublimits2 SET b = 'a' || b || 'f'
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE sublimits2 SET a = a * 3
 
 query IT rowsort

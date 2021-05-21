@@ -1930,16 +1930,26 @@ store_exit(sqlstore *store)
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
 
 	if (store->cat) {
-		MT_lock_unset(&store->flush);
-		MT_lock_unset(&store->lock);
+		while (ATOMIC_GET(&store->nr_active) > 0) {
+			const int sleeptime = 100;
+			MT_lock_unset(&store->flush);
+			MT_lock_unset(&store->lock);
+			MT_sleep_ms(sleeptime);
+			MT_lock_set(&store->lock);
+			MT_lock_set(&store->flush);
+		}
 		if (store->changes) {
 			ulng oldest = store_timestamp(store)+1;
 			for(node *n=store->changes->h; n; n = n->next) {
 				sql_change *c = n->data;
 
-				if (c->cleanup && !c->cleanup(store, c, oldest, oldest))
-					assert(0);
-				else
+				if (c->cleanup && !c->cleanup(store, c, oldest, oldest)) {
+					/* try again with newer oldest, should cleanup any pending issues */
+					if (!c->cleanup(store, c, oldest+1, oldest+1))
+						printf("not deleted\n");
+					else
+						_DELETE(c);
+				} else
 					_DELETE(c);
 			}
 			list_destroy(store->changes);
@@ -1948,8 +1958,6 @@ store_exit(sqlstore *store)
 		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
 		sequences_exit();
-		MT_lock_set(&store->lock);
-		MT_lock_set(&store->flush);
 	}
 	store->logger_api.destroy(store);
 
@@ -2045,6 +2053,7 @@ store_manager(sqlstore *store)
 					ulng oldest = store_timestamp(store)+1;
 					store_pending_changes(store, oldest, oldest);
 				}
+				store->logger_api.activate(store); /* rotate too new log file */
 				store_unlock(store);
 			}
 			if (GDKexiting())
@@ -3321,6 +3330,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->sa = NULL;
 	tr->store = store;
 	tr->tid = store_transaction_id(store);
+	MT_lock_init(&tr->lock, "trans_lock");
 
 	if (name) {
 		if (!parent)
