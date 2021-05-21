@@ -589,6 +589,23 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t1(c2 CLOB)
+
+statement ok rowcount 3
+INSERT INTO t1(c2) VALUES('aaa'), ('y2qxeM9H'), (')pI')
+
+query T rowsort
+SELECT min(NULL) FROM t1 GROUP BY (0.5834739146589698)|(232)
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c3" INTERVAL SECOND)
 
 statement ok rowcount 9
