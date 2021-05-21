@@ -3939,8 +3939,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint && !be->first_statement_generated)
-		sql_insert_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, inserts->op4.lval);
+	if (constraint)
+		sql_insert_check_null(be, t, inserts->op4.lval);
 
 	l = sa_list(sql->sa);
 
@@ -4831,8 +4831,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	list *l = sa_list(sql->sa);
 	node *n;
 
-	if (!be->first_statement_generated)
-		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
+	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
@@ -4932,8 +4931,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	if (!be->first_statement_generated)
-		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
+	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, list_length(t->columns.set));
