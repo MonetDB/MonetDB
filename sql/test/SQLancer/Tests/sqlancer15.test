@@ -606,6 +606,23 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH)
+
+statement ok rowcount 1
+INSERT INTO "t2" VALUES (INTERVAL '0' MONTH)
+
+query I rowsort
+SELECT 1 FROM t2 LEFT JOIN (SELECT 2 FROM t2) AS sub0 ON (SELECT NULL FROM t2) LIKE t2.c1
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t1" ("c2" BINARY LARGE OBJECT)
 
 statement ok rowcount 10
