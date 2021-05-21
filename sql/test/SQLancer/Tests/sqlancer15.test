@@ -489,6 +489,24 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t0(c0 smallint NOT NULL, c2 bigint)
+
+statement ok
+CREATE TABLE t1(c0 smallint, c3 tinyint, c4 smallint)
+
+statement ok
+INSERT INTO t1(c4) VALUES(8)
+
+statement error INSERT INTO: NOT NULL constraint violated for column t0.c0
+MERGE INTO t0 USING (SELECT * FROM t1) AS t1 ON TRUE WHEN MATCHED THEN UPDATE SET c0 = t0.c2, c2 = 1 WHEN NOT MATCHED THEN INSERT (c2, c0) VALUES (4, t1.c3)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c3" INTERVAL SECOND)
 
 statement ok rowcount 9
