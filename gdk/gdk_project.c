@@ -741,16 +741,12 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			MT_lock_unset(&r1->theaplock);
 		} else {
 			/* make copy of string heap */
-			bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->tvheap == NULL)
-				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
-			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
