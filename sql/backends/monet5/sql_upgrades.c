@@ -2383,7 +2383,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"create function sys.current_sessionid() returns int\n"
 							"external name clients.current_sessionid;\n"
 							"grant execute on function sys.current_sessionid to public;\n"
-							"update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'current_sessionid' = %d;\n", (int) F_FUNC);
+							"update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'current_sessionid' and type = %d;\n", (int) F_FUNC);
 
 			/* 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,

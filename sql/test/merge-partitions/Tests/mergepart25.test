@@ -7,40 +7,40 @@ CREATE MERGE TABLE testmeplease (a int, b varchar(32)) PARTITION BY RANGE USING 
 statement ok
 CREATE TABLE sub1 (a int, b varchar(32))
 
-statement error
+statement error 42000!UPDATE: range partitioned table 'testmeplease' has no partitions set
 UPDATE testmeplease SET a = a + 1 WHERE a = 1
 
-statement error
+statement error 42000!UPDATE: range partitioned table 'testmeplease' has no partitions set
 UPDATE testmeplease SET b = 'I should fail'
 
 statement ok
 ALTER TABLE testmeplease ADD TABLE sub1 AS PARTITION FROM -100 TO 100
 
-statement ok
+statement ok rowcount 0
 UPDATE testmeplease SET a = 99 WHERE a = 2
 
-statement error
+statement error 42000!UPDATE: Update a column used by the partition's expression is not possible at the moment
 UPDATE testmeplease SET b = 'I should fail again'
 
 statement ok rowcount 3
 INSERT INTO testmeplease VALUES (1, '1'), (2, '2'), (3, '3')
 
-statement error
+statement error 22018!conversion of string 'cannot cast me' to type int failed.
 INSERT INTO testmeplease VALUES (1, 'cannot cast me')
 
-statement error
+statement error 22018!conversion of string 'cannot cast me' to type int failed.
 INSERT INTO sub1 VALUES (1, 'cannot cast me')
 
 statement ok rowcount 1
 UPDATE testmeplease SET a = 150 WHERE a = 3
 
-statement error
+statement error 42000!UPDATE: Update a column used by the partition's expression is not possible at the moment
 UPDATE testmeplease SET b = 'Cannot update me' WHERE a = 3
 
-statement error
+statement error 42000!UPDATE: Update a column used by the partition's expression is not possible at the moment
 UPDATE sub1 SET b = 'Cannot update me'
 
-statement error
+statement error 42000!UPDATE: Update a column used by the partition's expression is not possible at the moment
 UPDATE sub1 SET a = 30, b = '30' WHERE a = 1
 
 statement ok rowcount 1

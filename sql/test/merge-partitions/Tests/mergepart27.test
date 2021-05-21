@@ -10,7 +10,7 @@ ALTER TABLE subt1 SET READ ONLY
 statement ok
 ALTER TABLE checkreadonly ADD TABLE subt1 AS PARTITION FROM 1 TO 100
 
-statement error
+statement error 42000!INSERT: cannot insert read only table 'subt1'
 INSERT INTO checkreadonly VALUES (1, 'wrong')
 
 statement ok
@@ -34,7 +34,7 @@ CREATE MERGE TABLE checksequence (a int auto_increment, b varchar(32)) PARTITION
 statement ok
 CREATE TABLE subt1 (a int auto_increment, b varchar(32))
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table column DEFAULT value doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checksequence ADD TABLE subt1 AS PARTITION FROM 1 TO 100
 
 statement ok
@@ -52,7 +52,7 @@ CREATE TABLE subt1 (a int default '2', b clob default 'else')
 statement ok
 CREATE TABLE subt2 (a int default '1', b clob default 'something')
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table column DEFAULT value doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkdefault ADD TABLE subt1 AS PARTITION FROM 1 TO 100
 
 statement ok
@@ -73,13 +73,13 @@ DROP TABLE subt1
 statement ok
 DROP TABLE subt2
 
-statement error
+statement error 42000!CREATE TABLE: sys.checkkeys: in a partitioned table, the primary key's columns must match the columns used in the partition definition
 CREATE MERGE TABLE checkkeys (a int PRIMARY KEY, b varchar(32)) PARTITION BY RANGE USING (b || 'ups')
 
-statement error
+statement error 42000!CREATE TABLE: sys.checkkeys: in a partitioned table, the primary key's columns must match the columns used in the partition definition
 CREATE MERGE TABLE checkkeys (a int, b varchar(32) PRIMARY KEY) PARTITION BY RANGE USING (a + 1)
 
-statement error
+statement error 42000!CREATE TABLE: sys.checkkeys: in a partitioned table, the primary key's columns must match the columns used in the partition definition
 CREATE MERGE TABLE checkkeys (a int, b int, PRIMARY KEY(a, b)) PARTITION BY RANGE USING (a + 1)
 
 statement ok
@@ -88,10 +88,10 @@ CREATE MERGE TABLE checkkeys (a int, b int, PRIMARY KEY(a, b)) PARTITION BY RANG
 statement ok
 DROP TABLE checkkeys
 
-statement error
+statement error 42000!CREATE TABLE: sys.checkkeys: in a partitioned table, the primary key's columns must match the columns used in the partition definition
 CREATE MERGE TABLE checkkeys (a int PRIMARY KEY, b varchar(32)) PARTITION BY RANGE ON (b)
 
-statement error
+statement error 42000!CREATE TABLE: sys.checkkeys: in a partitioned table, the primary key's columns must match the columns used in the partition definition
 CREATE MERGE TABLE checkkeys (a int, b varchar(32) PRIMARY KEY) PARTITION BY RANGE ON (a)
 
 statement ok
@@ -118,7 +118,7 @@ CREATE TABLE subt1 (a int PRIMARY KEY, b varchar(32))
 statement ok
 CREATE TABLE subt2 (a int, b varchar(32) PRIMARY KEY)
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table key doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkkeys ADD TABLE subt1 AS PARTITION FROM 1 TO 100
 
 statement ok
@@ -127,22 +127,22 @@ ALTER TABLE subt1 ADD FOREIGN KEY (b) REFERENCES otherref (othermeme)
 statement ok
 ALTER TABLE checkkeys ADD TABLE subt1 AS PARTITION FROM 1 TO 100
 
-statement error
+statement error 42000!ALTER TABLE: cannot drop constraint from a PARTITION of a MERGE or REPLICA TABLE 'subt1'
 ALTER TABLE subt1 DROP CONSTRAINT subt1_b_fkey
 
-statement error
+statement error 42000!ALTER TABLE: cannot add constraint to a PARTITION of a MERGE or REPLICA TABLE 'subt1'
 ALTER TABLE subt1 ADD FOREIGN KEY (a) REFERENCES referenceme (mememe)
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table column NULL check doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkkeys ADD TABLE subt2 AS PARTITION FROM 101 TO 200
 
-statement error
+statement error 42000!ALTER TABLE: cannot drop constraint from MERGE TABLE 'checkkeys' while it has partitions
 ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_b_fkey
 
-statement error
+statement error 42000!ALTER TABLE: cannot add constraint to MERGE TABLE 'checkkeys' while it has partitions
 ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe)
 
-statement error
+statement error 42000!ALTER TABLE: cannot add constraint to MERGE TABLE 'checkkeys' while it has partitions
 ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme)
 
 statement ok
@@ -163,7 +163,7 @@ CREATE TABLE subt3 (a int PRIMARY KEY, b varchar(32), FOREIGN KEY (a) REFERENCES
 statement ok
 CREATE TABLE another (mememe int PRIMARY KEY)
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table key's columns doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION FROM 1 TO 100
 
 statement ok
@@ -187,10 +187,10 @@ ALTER TABLE subt3 DROP CONSTRAINT subt3_a_fkey
 statement ok
 ALTER TABLE subt3 ADD FOREIGN KEY (a) REFERENCES another (mememe)
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table key doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION FROM 1 TO 100
 
-statement error
+statement error 42000!CREATE TABLE: sys.checkunique: in a partitioned table, the unique key's columns must match the columns used in the partition definition
 CREATE MERGE TABLE checkunique (a int unique, b varchar(32)) PARTITION BY RANGE ON (b)
 
 statement ok
@@ -199,7 +199,7 @@ CREATE MERGE TABLE checkunique (a int unique, b varchar(32)) PARTITION BY RANGE 
 statement ok
 CREATE TABLE subt4 (a int, b varchar(32) unique)
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table key's columns doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE checkunique ADD TABLE subt4 AS PARTITION FROM 1 TO 2
 
 statement ok

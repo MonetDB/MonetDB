@@ -795,15 +795,48 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
-		if (err == GDK_SUCCEED && b->ttype)
-			err = HEAPsave(b->theap, nme, gettailname(b), dosync);
-	if (b->tvheap
-	    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
-	    && b->ttype
-	    && b->tvarsized
-	    && err == GDK_SUCCEED)
-		err = HEAPsave(b->tvheap, nme, "theap", dosync);
+	if (b->ttype != TYPE_void && b->theap->base == NULL) {
+		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
+		if (dosync && !(GDKdebug & NOSYNCMASK)) {
+			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
+			if (
+#if defined(NATIVE_WIN32)
+				_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+				fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+				fsync(fd) < 0
+#endif
+				)
+				GDKsyserror("sync failed for %s.%s\n", nme,
+					    gettailname(b));
+			close(fd);
+			if (b->tvheap) {
+				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+				if (
+#if defined(NATIVE_WIN32)
+					_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+					fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+					fsync(fd) < 0
+#endif
+					)
+					GDKsyserror("sync failed for %s.theap\n", nme);
+				close(fd);
+			}
+		}
+	} else {
+		if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
+			if (err == GDK_SUCCEED && b->ttype)
+				err = HEAPsave(b->theap, nme, gettailname(b), dosync);
+		if (b->tvheap
+		    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
+		    && b->ttype
+		    && b->tvarsized
+		    && err == GDK_SUCCEED)
+			err = HEAPsave(b->tvheap, nme, "theap", dosync);
+	}
 
 	HEAPdecref(b->theap, false);
 	if (b->tvheap)
@@ -836,7 +869,6 @@ BATload_intern(bat bid, bool lock)
 	b = DESCload(bid);
 
 	if (b == NULL) {
-		assert(0);
 		return NULL;
 	}
 	assert(!GDKinmemory(b->theap->farmid));
@@ -845,7 +877,6 @@ BATload_intern(bat bid, bool lock)
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
-		assert(0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
@@ -863,7 +894,6 @@ BATload_intern(bat bid, bool lock)
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
-		assert(0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
@@ -883,7 +913,6 @@ BATload_intern(bat bid, bool lock)
 		HEAPfree(b->theap, false);
 		if (b->tvheap)
 			HEAPfree(b->tvheap, false);
-		assert(0);
 		return NULL;
 	}
 	return b;

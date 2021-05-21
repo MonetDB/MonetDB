@@ -497,9 +497,10 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		if (res && res->digits == 0 && (t = exp_subtype(e)) && (!strcmp(res->type->base.name, "char") || !strcmp(res->type->base.name, "varchar"))) {
 			unsigned int tdigits = type_digits_to_char_digits(t);
 			if (sf->func->fix_scale == DIGITS_ADD) {
-				rdigits += tdigits;
-				if (rdigits >= (unsigned int) INT_MAX)
+				unsigned int nvalue = rdigits + tdigits;
+				if (nvalue < rdigits || nvalue >= (unsigned int) INT32_MAX)
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", sf->func->base.name);
+				rdigits = nvalue;
 			} else if (sf->func->fix_scale == INOUT && n == exps->h) {
 				rdigits = tdigits;
 			} else {
@@ -1604,7 +1605,7 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) &&
 		(exp_is_atom(rs) || (rs2 && exp_is_atom(ls)) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 		(!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
-		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card || rs->card == rs2->card)) || rel->processed)  /* bin compare op */
+		if (ls->card == rs->card || (rs2 && (ls->card == rs2->card || rs->card == rs2->card)) || rel->processed) /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		return push_select_exp(sql, rel, e, ls, L, f);
@@ -3045,9 +3046,13 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			exp_sum_scales(f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			sql_subtype *res = f->res->h->data;
-			res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
-			if (res->digits >= (unsigned int) INT_MAX)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", fname);
+			if (t1->digits && t2->digits) {
+				res->digits = t1->digits + t2->digits;
+				if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", fname);
+			} else {
+				res->digits = 0;
+			}
 		}
 		if (card == card_relation && l->card > CARD_ATOM) {
 			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(l), NULL, F_AGGR);
@@ -3160,9 +3165,13 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 						exp_sum_scales(f, l, r);
 					} else if (f->func->fix_scale == DIGITS_ADD) {
 						sql_subtype *res = f->res->h->data;
-						res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
-						if (res->digits >= (unsigned int) INT32_MAX)
-							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", fname);
+						if (t1->digits && t2->digits) {
+							res->digits = t1->digits + t2->digits;
+							if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
+								return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", fname);
+						} else {
+							res->digits = 0;
+						}
 					}
 					return exp_binop(sql->sa, l, r, f);
 				}

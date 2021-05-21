@@ -336,6 +336,15 @@ project (
 ) [ tinyint "1" ]
 
 query T nosort
+PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
+----
+project (
+| select (
+| | table("sys"."another_t") [ "another_t"."col1" ] COUNT 
+| ) [ bigint "1" < bigint["another_t"."col1"] < bigint "2" BETWEEN  ]
+) [ tinyint "1" ]
+
+query T nosort
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
