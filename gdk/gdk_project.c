@@ -176,7 +176,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
-	if ((!lci || (lci->tpe == cand_dense && BATtdense(l))) && r1->ttype && !BATtdense(r1) && !r2) {
+	if ((!lci || (lci->tpe == cand_dense && BATtdense(l))) && r1->ttype && !BATtdense(r1) && !r2 &&	l->tnonil) {
 		if (sizeof(oid) == sizeof(lng))
 			return project1_lng(bn, l, r1);
 		else
