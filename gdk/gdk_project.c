@@ -176,7 +176,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
-	if ((!lci || (lci->tpe == cand_dense && BATtdense(l))) && r1->ttype && !BATtdense(r1) && !r2) {
+	if ((!lci || (lci->tpe == cand_dense && BATtdense(l))) && r1->ttype && !BATtdense(r1) && !r2 &&	l->tnonil) {
 		if (sizeof(oid) == sizeof(lng))
 			return project1_lng(bn, l, r1);
 		else
@@ -734,21 +734,19 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			/* no need to lock bn, it's ours */
 			assert(r1->tvheap->parentid > 0);
 			BBPshare(r1->tvheap->parentid);
+			/* there is no file, so we don't need to remove it */
+			HEAPdecref(bn->tvheap, false);
 			bn->tvheap = r1->tvheap;
 			HEAPincref(r1->tvheap);
 			MT_lock_unset(&r1->theaplock);
 		} else {
 			/* make copy of string heap */
-			bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->tvheap == NULL)
-				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
-			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}

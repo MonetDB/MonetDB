@@ -2497,7 +2497,7 @@ rel_remove_redundant_join(visitor *v, sql_rel *rel)
 			p = l;
 			j = p->l;
 		}
-		if (!p || !j || !is_join(j->op))
+		if (!p || !j || j->op != rel->op)
 			return rel;
 		/* j must have b->l (ie table) */
 		sql_rel *jl = j->l, *jr = j->r;

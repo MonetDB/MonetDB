@@ -308,18 +308,19 @@ statment_score(stmt *c)
 static stmt *
 bin_find_smallest_column(backend *be, stmt *sub)
 {
-	stmt *res = NULL;
-	int best_score = 0;
+	stmt *res = sub->op4.lval->h->data;
+	int best_score = statment_score(sub->op4.lval->h->data);
 
-	for (node *n = sub->op4.lval->h ; n ; n = n->next) {
-		stmt *c = n->data;
-		int next_score = statment_score(c);
+	if (sub->op4.lval->h->next)
+		for (node *n = sub->op4.lval->h->next ; n ; n = n->next) {
+			stmt *c = n->data;
+			int next_score = statment_score(c);
 
-		if (next_score >= best_score) {
-			res = c;
-			best_score = next_score;
+			if (next_score > best_score) {
+				res = c;
+				best_score = next_score;
+			}
 		}
-	}
 	if (res->nrcols == 0)
 		return const_column(be, res);
 	return res;
@@ -4258,7 +4259,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint && !be->rowcount)
+	if (constraint)
 		sql_insert_check_null(be, t, inserts->op4.lval);
 
 	l = sa_list(sql->sa);
@@ -5172,8 +5173,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	list *l = sa_list(sql->sa);
 	node *n;
 
-	if (!be->rowcount)
-		sql_update_check_null(be, t, updates);
+	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
@@ -5257,8 +5257,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	if (!be->rowcount)
-		sql_update_check_null(be, t, updates);
+	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, ol_length(t->columns));
