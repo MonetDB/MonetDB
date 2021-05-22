@@ -1258,7 +1258,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			if (cnt > 1) {
 				bn->tsorted = bn->trevsorted = false;
-				bn->tnosorted = bn->tnorevsorted = true;
+				bn->tnosorted = bn->tnorevsorted = 0;
 				bn->tkey = false;
 				bn->tnonil = false;
 				bn->tnil = false;
