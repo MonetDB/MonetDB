@@ -2781,8 +2781,10 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			int quantifier = e->flag;
 
 			/* possibly this is already done ? */
-			if (exp_has_rel(ile))
+			if (exp_has_rel(ile)) {
+				depth += exp_rel_depth(ile);
 				lsq = exp_rel_get_rel(v->sql->sa, ile); /* get subquery */
+			}
 
 			if (lsq)
 				le = exp_rel_update_exp(v->sql, ile);

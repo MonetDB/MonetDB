@@ -592,12 +592,64 @@ statement ok
 CREATE TABLE t1(c2 CLOB)
 
 statement ok rowcount 3
-INSERT INTO t1(c2) VALUES('aaa'), ('y2qxeM9H'), (')pI')
+INSERT INTO t1(c2) VALUES('aaa'), ('y2qxM9H'), (')pI')
 
 query T rowsort
 SELECT min(NULL) FROM t1 GROUP BY (0.5834739146589698)|(232)
 ----
 NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH)
+
+statement ok rowcount 1
+INSERT INTO "t2" VALUES (INTERVAL '0' MONTH)
+
+query I rowsort
+SELECT 1 FROM t2 LEFT JOIN (SELECT 2 FROM t2) AS sub0 ON (SELECT NULL FROM t2) LIKE t2.c1
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" BINARY LARGE OBJECT)
+
+statement ok rowcount 10
+COPY 10 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+F4F8002D
+0F19E7F0
+C4C26CEA
+40
+C94AECE0
+5D
+F0
+2B40
+BF2B3A
+D8
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE NULLIF(t1.c2, (SELECT BLOB 'AA' WHERE FALSE))>(VALUES (BLOB 'CEf278cE'))
+----
+D8
+F0
+F4F8002D
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NULLIF(t1.c2, (SELECT BLOB 'AA' WHERE FALSE))>(VALUES (BLOB 'CEf278cE')) AS INT) as count FROM t1) as res
+----
+3
 
 statement ok
 ROLLBACK
