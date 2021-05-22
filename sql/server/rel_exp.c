@@ -2046,6 +2046,29 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 	return xp;
 }
 
+int
+exp_rel_depth(sql_exp *e)
+{
+	if (!e)
+		return 0;
+	switch(e->type){
+	case e_func:
+	case e_aggr:
+	case e_cmp:
+		return 1;
+	case e_convert:
+		return 0;
+	case e_psm:
+		if (exp_is_rel(e))
+			return 0;
+		return 1;
+	case e_atom:
+	case e_column:
+		return 0;
+	}
+	return 0;
+}
+
 sql_rel *
 exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 {
