@@ -1234,7 +1234,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *l;
 
 		if (from->type->localtype == 0) {
-			l = stmt_atom(be, atom_general(sql->sa, to, NULL));
+			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, depth+1, 0, push);
+			if (l)
+				l = stmt_atom(be, atom_general(sql->sa, to, NULL));
 		} else {
 			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, depth+1, 0, push);
 		}
