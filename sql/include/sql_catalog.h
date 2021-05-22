@@ -316,6 +316,7 @@ typedef struct sql_trans {
 	ulng tid;			/* transaction id */
 
 	sql_store store;	/* keep link into the global store */
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	list *changes;		/* list of changes */
 	int logchanges;		/* count number of changes to be applied too the wal */
 

@@ -79,9 +79,11 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 	change->cleanup = cleanup;
 	change->commit = commit;
 	change->log = log;
+	MT_lock_set(&tr->lock);
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	if (log)
 		tr->logchanges++;
+	MT_lock_unset(&tr->lock);
 }
 
 int

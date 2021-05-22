@@ -3550,7 +3550,7 @@ drop procedure sys.vacuum(string, string);
 create function sys.current_sessionid() returns int
 external name clients.current_sessionid;
 grant execute on function sys.current_sessionid to public;
-update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'current_sessionid' = 1;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'current_sessionid' and type = 1;
 drop procedure sys.flush_log();
 drop function sys.deltas(string);
 drop function sys.deltas(string, string);

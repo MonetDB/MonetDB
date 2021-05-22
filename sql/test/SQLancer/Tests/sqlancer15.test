@@ -433,6 +433,175 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT (least((SELECT DISTINCT 
 statement ok
 ROLLBACK
 
+query T rowsort
+SELECT t2.c2 FROM (VALUES(BLOB 'A0'), (BLOB 'ed4D5CCdF0'), (BLOB 'B9'), (BLOB 'e520'), (BLOB ''), (BLOB '7820')) t2(c2) WHERE least(t2.c2, t2.c2) NOT BETWEEN BLOB 'F0' AND BLOB '09'
+----
+(empty)
+7820
+A0
+B9
+E520
+ED4D5CCDF0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL MONTH, c2 INTERVAL MONTH)
+
+statement ok
+CREATE TABLE t1(c0 DECIMAL, c2 TIME, c3 INTERVAL MONTH)
+
+statement ok rowcount 2
+INSERT INTO t0(c2) VALUES(INTERVAL '7' MONTH), (INTERVAL '-4' MONTH)
+
+statement ok rowcount 1
+INSERT INTO t1(c3) VALUES(INTERVAL '9' MONTH)
+
+statement ok rowcount 7
+INSERT INTO t1(c0) VALUES(0.5), (0.6), (0.55), (0.56), (0.57), (0.7), (0.25)
+
+statement ok
+ALTER TABLE t1 DROP c3
+
+statement ok rowcount 9
+INSERT INTO t1(c2, c0) VALUES(TIME '01:00:00', 0.8), (TIME '01:00:00', 0.10), (TIME '18:41:00', 0.9), (TIME '23:12:18', 0.78), (TIME '02:03:53', 0.86), (NULL, 0.78), (TIME '01:00:00', 0.34), (TIME '07:17:50', 0.43), (TIME '01:00:00', -1)
+
+statement ok rowcount 5
+INSERT INTO t1(c0) VALUES(0.98), (0.42), (0.63), (0.46), (0.33)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE t1.c2 <> ALL(SELECT TIME '02:53:29' FROM t0)
+----
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+02:03:53
+07:17:50
+18:41:00
+23:12:18
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 smallint NOT NULL, c2 bigint)
+
+statement ok
+CREATE TABLE t1(c0 smallint, c3 tinyint, c4 smallint)
+
+statement ok
+INSERT INTO t1(c4) VALUES(8)
+
+statement error INSERT INTO: NOT NULL constraint violated for column t0.c0
+MERGE INTO t0 USING (SELECT * FROM t1) AS t1 ON TRUE WHEN MATCHED THEN UPDATE SET c0 = t0.c2, c2 = 1 WHEN NOT MATCHED THEN INSERT (c2, c0) VALUES (4, t1.c3)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" TINYINT,"c2" BIGINT,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_c2_unique" UNIQUE ("c0", "c2"),CONSTRAINT "t0_c2_c0_unique" UNIQUE ("c2", "c0"))
+
+statement ok rowcount 27
+COPY 27 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1	1387424266
+2	0
+6	3634984454
+9	4
+NULL	9
+NULL	0
+NULL	611858669
+NULL	7
+3	1
+0	1317354363
+NULL	5
+NULL	0
+NULL	5
+NULL	3
+NULL	0
+NULL	8
+7	NULL
+NULL	4
+NULL	7
+NULL	5
+NULL	3
+NULL	9
+NULL	-10538834904
+NULL	-1305419631
+NULL	NULL
+NULL	2
+NULL	NULL
+
+statement ok
+CREATE TABLE "t1" ("c0" DOUBLE NOT NULL,"c3" TINYINT,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok rowcount 21
+COPY 21 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.8376401275906128	NULL
+0.7629541543404468	NULL
+8	NULL
+0.16645741874792763	NULL
+124929929.23213053	8
+0.9235567828803988	3
+0.03242632919661814	8
+5.342823187177086	7
+-286476790.76211333	NULL
+0.5506963799172256	NULL
+4	NULL
+1	NULL
+-0	8
+-1.57151353e+09	8
+-0.903317038799036	NULL
+0.15904894751992874	NULL
+0.9264127967998556	NULL
+0.7141061795496624	NULL
+0.7396064226766994	NULL
+0.711	NULL
+0.21684918803285913	NULL
+
+query I rowsort
+select 1 from t1 right outer join (select distinct 4*t1.c3 from t1 left outer join (select 2) as sub0 on false) as sub0 on false
+----
+1
+1
+1
+1
+
+query I rowsort
+select cast(((true) = true) = false as int) as count from t1 right outer join (select distinct ((((4)^(-7)))*(case 611858669 when 9 then 2 when 1387424266 then t1.c3 end))
+from t1 left outer join (select cast(8 as double precision), case 8 when 4 then 0.0 when 303400756 then 0.11124314 when 0.9 then 0.3 when 1142205063 then -1571513530 end where false) as sub0 on not (true)) as sub0 on false
+----
+0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t1(c2 CLOB)
+
+statement ok rowcount 3
+INSERT INTO t1(c2) VALUES('aaa'), ('y2qxeM9H'), (')pI')
+
+query T rowsort
+SELECT min(NULL) FROM t1 GROUP BY (0.5834739146589698)|(232)
+----
+NULL
+
+statement ok
+ROLLBACK
+
 statement ok
 START TRANSACTION
 
