@@ -1256,6 +1256,14 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			//set default flags
 			BATsettrivprop(bn);
 
+			if (cnt > 1) {
+				bn->tsorted = bn->trevsorted = false;
+				bn->tnosorted = bn->tnorevsorted = true;
+				bn->tkey = false;
+				bn->tnonil = false;
+				bn->tnil = false;
+			}
+
 			if (store_funcs.append_col(m->session->tr, c, bn, TYPE_bat) != 0) {
 				bn->theap.base = prev_base;
 				bn->theap.size = prev_size;
