@@ -595,7 +595,7 @@ statement ok rowcount 3
 INSERT INTO t1(c2) VALUES('aaa'), ('y2qxM9H'), (')pI')
 
 query T rowsort
-SELECT min(NULL) FROM t1 GROUP BY (0.5834739146589698)|(232)
+SELECT min(NULL) FROM t1 GROUP BY (0.58)|(232)
 ----
 NULL
 
