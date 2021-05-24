@@ -19,8 +19,9 @@
 #define tr_none		0
 #define tr_readonly	1
 #define tr_writable	2
-#define tr_serializable 4
-#define tr_append 	8
+#define tr_snapshot 4
+#define tr_serializable 8
+#define tr_append 	16
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -318,6 +319,7 @@ typedef struct sql_trans {
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	list *changes;		/* list of changes */
+	list *predicates;	/* list of read predicates logged during update transactions */
 	int logchanges;		/* count number of changes to be applied too the wal */
 
 	int active;			/* is active transaction */

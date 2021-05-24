@@ -3222,6 +3222,11 @@ sql_trans_rollback(sql_trans *tr)
 	sqlstore *store = tr->store;
 	ulng commit_ts = 0; /* invalid ts, ie rollback */
 
+	if (tr->predicates) {
+		list_destroy(tr->predicates);
+		tr->predicates = NULL;
+	}
+
 	/* move back deleted */
 	if (tr->localtmps.dset) {
 		for(node *n=tr->localtmps.dset->h; n; ) {
@@ -3401,6 +3406,15 @@ sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 	return tr;
 }
 
+static int
+sql_trans_valid(sql_trans *tr)
+{
+		printf("# handle prediates\n");
+		list_destroy(tr->predicates);
+		tr->predicates = NULL;
+		return 0;
+}
+
 int
 sql_trans_commit(sql_trans *tr)
 {
@@ -3408,6 +3422,9 @@ sql_trans_commit(sql_trans *tr)
 	sqlstore *store = tr->store;
 	ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 	ulng oldest = store_oldest_given_max(store, commit_ts);
+
+	if (tr->predicates && !sql_trans_valid(tr))
+			return LOG_ERR;
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
