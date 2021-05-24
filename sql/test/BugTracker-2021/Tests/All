@@ -9,3 +9,4 @@ lowercase-cryllic.Bug-7126
 unnest-union.Bug-7127
 subquery-missing.Bug-7128
 batcalc-between-undefined.Bug-7129
+batappend-undefined.Bug-7130

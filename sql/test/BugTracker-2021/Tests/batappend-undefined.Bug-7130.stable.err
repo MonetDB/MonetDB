@@ -1,0 +1,35 @@
+stderr of test 'batappend-undefined.Bug-7130` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 14:39:22 >  
+# 14:39:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=37036" "--set" "mapi_usock=/var/tmp/mtest-27053/.s.monetdb.37036" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 14:39:22 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_listenaddr = all
+# cmdline opt 	mapi_port = 37036
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27053/.s.monetdb.37036
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_c = true
+
+# 14:39:23 >  
+# 14:39:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27053" "--port=37036"
+# 14:39:23 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27774/.s.monetdb.32515
+QUERY = select (subq_0.c0 = case when EXISTS ( select ref_15.c0 as c6 from t_amy as ref_15) then subq_0.c1 else subq_0.c1 end) as c4 from (select ref_12.c_f as c0, 30 as c1 from t_qh as ref_12) as subq_0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-29298/.s.monetdb.35652
+QUERY = select (select (select 1 where subq_0.c0 = (select subq_0.c1 from t_qh)) from (select 320, 1) subq_0(c0,c1)) from (select 2) subq_0(c3);
+ERROR = !GDK reported error: BATsubcross: more than one match
+
+# 14:39:23 >  
+# 14:39:23 >  "Done."
+# 14:39:23 >  
+

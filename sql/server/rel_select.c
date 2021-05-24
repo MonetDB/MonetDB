@@ -943,10 +943,13 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			node *n,*m;
 			sql_rel *rel;
 
-			if (sql->emode == m_deps)
+			if (sql->emode == m_deps) {
 				rel = rel_basetable(sql, t, tname);
-			else
+			} else {
 				rel = rel_parse(sql, t->s, t->query, m_instantiate);
+				if (rel)
+					rel = rel_unnest(sql, rel);
+			}
 
 			if (!rel)
 				return NULL;

@@ -1,0 +1,65 @@
+stdout of test 'batappend-undefined.Bug-7130` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 14:39:22 >  
+# 14:39:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=37036" "--set" "mapi_usock=/var/tmp/mtest-27053/.s.monetdb.37036" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Oct2020/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 14:39:22 >  
+
+# MonetDB 5 server v11.39.18 (hg id: af88b10dddb7)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2021', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.342 GiB available main-memory of which we use 12.504 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2021 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://fedora:37036/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27053/.s.monetdb.37036
+# MonetDB/GIS module loaded
+# MonetDB/R   module loaded
+# MonetDB/SQL module loaded
+
+# 14:39:23 >  
+# 14:39:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27053" "--port=37036"
+# 14:39:23 >  
+
+#start transaction;
+#create table t_qh ( c_f INTEGER , c_y2 INTEGER , c_i768 INTEGER , c_tqx TEXT , c_mknkhml TEXT, primary key(c_f, c_y2), unique(c_y2) );
+#insert into t_qh values (1,1,1,'a','a'),(2,2,2,'b','b'),(3,3,3,'c','c');
+[ 3	]
+#create table t_ckfystsc ( c_kvhq5p INTEGER , c_aifpl INTEGER , c_jf6 TEXT , c_f31ix TEXT NOT NULL, c_lo0zqfe TEXT , c_zv INTEGER , c_l153 INTEGER , primary key(c_zv), unique(c_zv) );
+#insert into t_ckfystsc values (1,1,'a','a','a',1,1),(2,2,'b','b','b',2,2),(3,3,'c','c','c',3,3);
+[ 3	]
+#create view t_vehkuero as select distinct abs( cast(subq_0.c1 as INTEGER)) as c0 from (select ref_0.c_f as c0, ref_0.c_f as c1, ref_0.c_i768 as c2, ref_0.c_y2 as c3 from t_qh as ref_0) 
+#as subq_0 where cast(nullif('zdo', 'apqonv1a') as CHAR) like 'aou%2' AND length( cast(case when subq_0.c1 = ( select subq_0.c3 as c0 from t_qh as ref_6
+#where (subq_0.c0 <> ( select subq_0.c0 as c0 from t_qh as ref_7)) ) then 'xk' else 'xk' end as CHAR)) <> subq_0.c0;
+#select 1000 in (select 2 from t_vehkuero) from (select 1 as c0 from t_ckfystsc) as subq_0;
+% .%15 # table_name
+% %15 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+#select case when subq_0.c0 in ( select ref_5.c_tqx as c0 from t_qh as ref_5 where ref_5.c_y2 in ( select ref_6.c_y2 as c0 from t_qh as ref_6 union select 2 as c0 from t_vehkuero as ref_7))
+#then cast(nullif(subq_0.c0, subq_0.c0) as CHAR) else cast(nullif(subq_0.c0, subq_0.c0) as CHAR) end as c0 from (select ref_0.c_lo0zqfe as c0, ref_0.c_aifpl as c1 from t_ckfystsc as ref_0) as subq_0;
+% . # table_name
+% c0 # name
+% char # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#drop table t_qh cascade;
+#create table t_qh ( c_f INTEGER , c_y2 INTEGER , c_i768 INTEGER , c_tqx INTEGER , primary key(c_i768), unique(c_y2) );
+#insert into t_qh values (1,1,1,1),(2,2,2,2),(3,3,3,3);
+[ 3	]
+#create view t_amy as select ref_1.c_f as c0 from t_qh as ref_0 cross join t_qh as ref_1 left outer join (select ref_2.c_i768 as c0, sum( cast(ref_3.c_f as INTEGER)) as c1, count(*) as c2 from t_qh as ref_2
+#left outer join t_qh as ref_3 on (ref_2.c_f < ref_2.c_f) where ref_2.c_i768 > ref_3.c_y2 group by ref_2.c_i768) as subq_0 on (ref_0.c_y2 < ref_1.c_f) where ref_0.c_f <> ( select ref_4.c_i768 as c0 from t_qh
+#as ref_4 cross join t_qh as ref_5 where EXISTS ( select ref_6.c_i768 as c0, ref_1.c_i768 as c1, ref_6.c_y2 as c2 from t_qh as ref_6 where subq_0.c0 < ( select subq_0.c1 as c0 from t_qh as ref_7
+#rollback;
+
+# 14:39:23 >  
+# 14:39:23 >  "Done."
+# 14:39:23 >  
+
