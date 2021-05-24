@@ -1688,18 +1688,17 @@ int
 mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
+
+	b->rowcnt = val;
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
+
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
 	 * commands, since they don't get a stream to suppress their output.
 	 * If we would fail on having no stream here, those internal commands
 	 * fail too.
 	 */
-	if (!s)
-		return 0;
-
-	b->rowcnt = val;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
-	if(GDKembedded())
+	if(!s || GDKembedded())
 		return 0;
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
