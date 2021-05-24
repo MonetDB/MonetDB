@@ -18,6 +18,7 @@
 #include "rel_updates.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "rel_predicates.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -4340,6 +4341,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+	/* update predicate list */
+	rel_predicates(be, rel);
 	if (ddl) {
 		ret = ddl;
 		list_prepend(l, ddl);
@@ -5328,6 +5331,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
+	rel_predicates(be, rel);
 	return cnt;
 }
 
@@ -5567,6 +5571,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
 	}
+	rel_predicates(be, rel);
 	return stdelete;
 }
 
