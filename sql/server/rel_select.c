@@ -996,6 +996,8 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 					rel_base_disallow(rel);
 			} else {
 				rel = rel_parse(sql, t->s, t->query, m_instantiate);
+				if (rel)
+					rel = rel_unnest(sql, rel);
 			}
 
 			if (!rel)
