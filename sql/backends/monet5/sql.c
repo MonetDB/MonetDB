@@ -5465,6 +5465,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "min", SQLmin, false, "return the minimum of groups", args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "max", SQLmax, false, "return the maximum of groups", args(1,7, argany("",1),argany("b",1),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "max", SQLmax, false, "return the maximum of groups",args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("sql", "count", SQLbasecount, false, "return count of basetable", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "count", SQLcount, false, "return count of groups", args(1,8, arg("",lng),argany("b",1),arg("ignils",bit),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "count", SQLcount, false,"return count of groups",args(1,8, batarg("",lng),batargany("b",1),arg("ignils",bit),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",lng),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),

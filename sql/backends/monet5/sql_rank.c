@@ -1202,6 +1202,30 @@ SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *res = getArgReference_lng(stk, pci, 0);
+	str sname = *getArgReference_str(stk, pci, 1);
+	str tname = *getArgReference_str(stk, pci, 2);
+	mvc *m = NULL;
+	str msg;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = s?mvc_bind_table(m, s, tname):NULL;
+	if (!t || !isTable(t) || isMergeTable(t) || isReplicaTable(t))
+		return createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot find table %s.%s", sname, tname);
+	sql_column *c = ol_first_node(t->columns)->data;
+	sqlstore *store = m->session->tr->store;
+
+	*res = store->storage_api.count_col(m->session->tr, c, 0) - store->storage_api.count_del(m->session->tr, t, 0);
+	return msg;
+}
+
+str
 SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;

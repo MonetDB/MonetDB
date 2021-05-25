@@ -9652,6 +9652,30 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_basecount(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && rel->l && !rel->r && list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
+		sql_rel *bt = rel->l;
+		sql_exp *e = rel->exps->h->data;
+		if (is_basetable(bt->op) && !e->l) { /* count(*) */
+			/* change into select cnt('schema','table') */;
+			sql_table *t = bt->l;
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC);
+			list *exps = sa_list(v->sql->sa);
+			append(exps, exp_atom_str(v->sql->sa, t->s->base.name, sql_bind_localtype("str")));
+			append(exps, exp_atom_str(v->sql->sa, t->base.name, sql_bind_localtype("str")));
+			sql_exp *ne = exp_op(v->sql->sa, exps, cf);
+
+			ne = exp_propagate(v->sql->sa, ne, e);
+			exp_setname(v->sql->sa, ne, exp_find_rel_name(e), exp_name(e));
+			return rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), ne));
+		}
+		return rel;
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_optimize_projections(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
@@ -9665,6 +9689,7 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
+	rel = rel_basecount(v, rel);
 	return rel;
 }
 
