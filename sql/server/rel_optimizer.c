@@ -9658,6 +9658,8 @@ rel_basecount(visitor *v, sql_rel *rel)
 		if (is_basetable(bt->op) && !e->l) { /* count(*) */
 			/* change into select cnt('schema','table') */;
 			sql_table *t = bt->l;
+			if (isMergeTable(t) || isReplicaTable(t))
+				return rel;
 			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC);
 			list *exps = sa_list(v->sql->sa);
 			append(exps, exp_atom_str(v->sql->sa, t->s->base.name, sql_bind_localtype("str")));
