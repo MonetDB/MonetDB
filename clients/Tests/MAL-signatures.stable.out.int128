@@ -12547,6 +12547,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"corr",	"pattern sql.corr(X_0:int, X_1:int, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):dbl ",	"SQLcorr;",	""	]
 [ "sql",	"corr",	"pattern sql.corr(X_0:lng, X_1:lng, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):dbl ",	"SQLcorr;",	""	]
 [ "sql",	"corr",	"pattern sql.corr(X_0:sht, X_1:sht, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):dbl ",	"SQLcorr;",	""	]
+[ "sql",	"count",	"pattern sql.count(X_0:str, X_1:str):lng ",	"SQLbasecount;",	""	]
 [ "sql",	"count",	"pattern sql.count(X_0:any_1, X_1:bit, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):lng ",	"SQLcount;",	""	]
 [ "sql",	"covariance",	"pattern sql.covariance(X_0:bte, X_1:bte, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):dbl ",	"SQLcovar_samp;",	""	]
 [ "sql",	"covariance",	"pattern sql.covariance(X_0:dbl, X_1:dbl, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):dbl ",	"SQLcovar_samp;",	""	]
