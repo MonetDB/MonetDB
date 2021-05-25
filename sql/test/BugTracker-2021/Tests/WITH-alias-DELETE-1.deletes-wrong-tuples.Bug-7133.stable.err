@@ -1,0 +1,37 @@
+stderr of test 'WITH-alias-DELETE-1.deletes-wrong-tuples.Bug-7133` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 14:48:57 >  
+# 14:48:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=38559" "--set" "mapi_usock=/var/tmp/mtest-711137/.s.monetdb.38559" "--forcemito" "--dbpath=/export/scratch1/home/zhang/monetdb/mdb-nst/Oct2020/var/MonetDB/mTests_sql_test_BugTracker-2021" "--set" "embedded_r=yes" "--set" "embedded_c=true"
+# 14:48:57 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/home/zhang/monetdb/mdb-nst/Oct2020/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_listenaddr = all
+# cmdline opt 	mapi_port = 38559
+# cmdline opt 	mapi_usock = /var/tmp/mtest-711137/.s.monetdb.38559
+# cmdline opt 	gdk_dbpath = /export/scratch1/home/zhang/monetdb/mdb-nst/Oct2020/var/MonetDB/mTests_sql_test_BugTracker-2021
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_c = true
+
+
+
+
+
+
+# 14:48:58 >  
+# 14:48:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-711137" "--port=38559"
+# 14:48:58 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-711137/.s.monetdb.38559
+ACTION= mapi_query_done
+
+
+# 14:49:09 >  
+# 14:49:09 >  "Done."
+# 14:49:09 >  
+
