@@ -9,6 +9,7 @@
 /* (author) M.L. Kersten
  */
 #include "monetdb_config.h"
+#include "mal_exception.h"
 #include "mal_resource.h"
 #include "mal_private.h"
 #include "mal_instruction.h"
