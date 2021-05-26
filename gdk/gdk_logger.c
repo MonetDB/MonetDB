@@ -2183,7 +2183,6 @@ logger_flush(logger *lg, ulng ts)
 		}
 		logger_unlock(lg);
 	}
-	assert(res==LOG_OK);
 	if (lid && res == LOG_OK)
 		logger_cleanup_range(lg);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
