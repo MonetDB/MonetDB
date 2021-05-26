@@ -658,6 +658,35 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
+
+statement ok
+CREATE TABLE t1(c0 INTERVAL DAY, c1 BIGINT)
+
+statement ok rowcount 2
+INSERT INTO t1(c1) VALUES(3), (5)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
+
+statement ok rowcount 3
+TRUNCATE t0
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
+
+query T rowsort
+SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
+----
+8 days
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c3" TIMESTAMP)
 
 statement ok rowcount 10
