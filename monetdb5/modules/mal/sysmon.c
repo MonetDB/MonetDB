@@ -195,7 +195,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( i == qhead)
 				break;
 		}
-		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || 
+		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN ||
 					strcmp(cntxt->username, QRYqueue[i].username) == 0) ){
 			qtag = (lng) QRYqueue[i].tag;
 			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
@@ -239,9 +239,9 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else
 				wrk = QRYqueue[i].workers;
 			if( QRYqueue[i].mb)
-				mem = 1 + QRYqueue[i].mb->memory / LL_CONSTANT(1048576);
+				mem = (int)(1 + QRYqueue[i].mb->memory / LL_CONSTANT(1048576));
 			else
-				mem = QRYqueue[i].memory;
+				mem = (int)QRYqueue[i].memory;
 			if ( BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
 				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
 				goto bailout;
