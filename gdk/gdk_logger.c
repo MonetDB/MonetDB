@@ -2460,7 +2460,9 @@ logger_destroy(logger *lg)
 		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
-		if (logger_cleanup(lg) != GDK_SUCCEED)
+		if (lg->changes &&
+		    (logger_restart(lg) != GDK_SUCCEED ||
+		     logger_cleanup(lg) != GDK_SUCCEED))
 			TRC_CRITICAL(GDK, "logger_cleanup failed\n");
 
 		/* free resources */

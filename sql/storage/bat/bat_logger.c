@@ -1073,15 +1073,9 @@ bl_destroy(void)
 {
 	logger *l = bat_logger;
 
+	logger_destroy(l);
+
 	bat_logger = NULL;
-	if (l) {
-		close_stream(l->log);
-		GDKfree(l->fn);
-		GDKfree(l->dir);
-		GDKfree(l->local_dir);
-		GDKfree(l->buf);
-		GDKfree(l);
-	}
 }
 
 static int
