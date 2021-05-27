@@ -678,7 +678,7 @@ INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
 query T rowsort
 SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
 ----
-8 days
+8
 
 statement ok
 ROLLBACK
