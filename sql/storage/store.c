@@ -2323,6 +2323,8 @@ store_exit(void)
 	if (spares > 0)
 		destroy_spare_transactions();
 
+	if (gtrans)
+		trans_cleanup(gtrans);
 	logger_funcs.destroy();
 
 	/* Open transactions have a link to the global transaction therefore
