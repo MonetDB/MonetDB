@@ -8,7 +8,8 @@
 create function sys.tracelog()
 	returns table (
 		ticks bigint,		-- time in microseconds
-		stmt string		-- actual statement executed
+		stmt string,	-- actual statement executed
+		event string
 	)
 	external name sql.dump_trace;
 

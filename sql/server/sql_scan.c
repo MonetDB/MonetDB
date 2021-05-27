@@ -1225,6 +1225,8 @@ valid_ident(const char *restrict s, char *restrict dst)
 			return false;
 	}
 	dst[p] = '\0';
+	if (strcmp(dst, TID + 1) == 0) /* an index named 'TID%' could interfere with '%TID%' */
+		return false;
 	return true;
 }
 

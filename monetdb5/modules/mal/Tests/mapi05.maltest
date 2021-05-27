@@ -7,8 +7,8 @@ port := calc.int(fs)
 statement ok
 mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal")
 
-statement error
-mapi.query(mid,"io.print(1);")
+statement ok
+mapi.query(mid,"io.print(1);");
 
 query T rowsort
 io.print("done")
@@ -16,5 +16,5 @@ io.print("done")
 "done"
 
 statement ok
-mapi.disconnect(mid)
+mapi.destroy(mid)
 

@@ -18,7 +18,7 @@ SELECT COUNT(*) from value_partitions
 ----
 3
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition list of values
 INSERT INTO anothertest VALUES (4, 'wrong')
 
 statement ok
@@ -46,7 +46,7 @@ ALTER TABLE anothertest DROP TABLE subtest2
 statement ok rowcount 1
 INSERT INTO subtest2 VALUES (-5, 'oh no')
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition list of values
 ALTER TABLE anothertest ADD TABLE subtest2 AS PARTITION IN ('12', '-1', '100')
 
 query I rowsort

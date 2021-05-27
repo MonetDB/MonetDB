@@ -43,7 +43,7 @@ CREATE TABLE t1(c1 boolean, c2 tinyint)
 statement ok
 INSERT INTO t1(c2) VALUES(6), (2)
 
-statement error
+statement error 40002!ALTER TABLE: NOT NULL constraint violated for column t1.c1
 ALTER TABLE t1 ALTER c1 SET NOT NULL
 
 statement ok
@@ -288,7 +288,7 @@ True
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!types uuid(0,0) and boolean(1,0) are not equal
 select 1 from (values (1),(2),(3)) x(x) where uuid '55a279B4-f52a-835C-C43c-5E0bd20fFbAB'
 
 statement ok
@@ -710,6 +710,214 @@ query T rowsort
 SELECT (SELECT 1 GROUP BY 3) <> ALL(SELECT 2 WHERE FALSE) FROM t1
 ----
 True
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" VARCHAR(64) NOT NULL,"c1" INT NOT NULL,"c3" REAL NOT NULL,"c5" REAL)
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH NOT NULL,"c3" VARCHAR(55) NOT NULL,"c4" DOUBLE NOT NULL, CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement error MERGE: subqueries not supported inside MERGE conditions
+merge into t2 using (select * from t1) as t1 on exists (select 1) when matched then delete
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" VARCHAR(64) NOT NULL,"c1" INT NOT NULL,"c3" REAL NOT NULL,"c5" REAL)
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH NOT NULL,"c3" VARCHAR(55) NOT NULL,"c4" DOUBLE NOT NULL, CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement error MERGE: set operations not supported inside MERGE conditions
+merge into t2 using (select * from t1) as t1 on ((select 1) except (select 2)) when matched then delete
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t0(c0 boolean, c1 int, c3 boolean)
+
+statement ok rowcount 1
+INSERT INTO t0(c1, c0) VALUES(3, false)
+
+statement ok rowcount 1
+INSERT INTO t0(c3, c1) VALUES(TRUE, 9)
+
+query T rowsort
+SELECT 'a' LIKE ifthenelse(t0.c3, (SELECT 'v' FROM t0 GROUP BY (SELECT 1 FROM t0 HAVING min(least(t0.c0, (SELECT FALSE GROUP BY 3)) AND t0.c3))), 's') FROM t0
+----
+False
+False
+
+statement ok
+DROP TABLE t0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0"("c0" CHARACTER LARGE OBJECT, "c4" INTERVAL DAY)
+
+statement ok
+CREATE TABLE "t2"("c0" CHARACTER LARGE OBJECT)
+
+statement ok rowcount 2
+INSERT INTO "t2" VALUES ('X'), ('')
+
+query I rowsort
+select 1 from t0 where t0.c4 <= all(select interval '4' day) and t0.c0 <> all(select t2.c0 from t2)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c2" INTERVAL MONTH NOT NULL)
+
+statement ok
+INSERT INTO "t2" VALUES (INTERVAL '1005575652' MONTH),(INTERVAL '808548760' MONTH),(INTERVAL '6' MONTH),(INTERVAL '6' MONTH),(INTERVAL '2' MONTH),(INTERVAL '5' MONTH),(INTERVAL '-806508569' MONTH),
+(INTERVAL '6' MONTH),(INTERVAL '0' MONTH),(INTERVAL '3' MONTH),(INTERVAL '0' MONTH),(INTERVAL '3' MONTH),(INTERVAL '6' MONTH),(INTERVAL '5' MONTH),(INTERVAL '9' MONTH),(INTERVAL '9' MONTH),
+(INTERVAL '9' MONTH),(INTERVAL '6' MONTH),(INTERVAL '3' MONTH),(INTERVAL '4' MONTH),(INTERVAL '8' MONTH),(INTERVAL '9' MONTH),(INTERVAL '4' MONTH),(INTERVAL '2106373240' MONTH),
+(INTERVAL '-2142385196' MONTH),(INTERVAL '-1' MONTH),(INTERVAL '6' MONTH),(INTERVAL '1' MONTH),(INTERVAL '9' MONTH),(INTERVAL '7' MONTH),(INTERVAL '7' MONTH),(INTERVAL '8' MONTH),
+(INTERVAL '4' MONTH),(INTERVAL '9' MONTH),(INTERVAL '2' MONTH),(INTERVAL '-31924182' MONTH),(INTERVAL '8' MONTH),(INTERVAL '4' MONTH),(INTERVAL '-1648452957' MONTH),(INTERVAL '9' MONTH),
+(INTERVAL '-1648452957' MONTH),(INTERVAL '386411834' MONTH),(INTERVAL '7' MONTH),(INTERVAL '9' MONTH),(INTERVAL '5' MONTH),(INTERVAL '0' MONTH)
+
+query I rowsort
+SELECT 1 FROM t2 WHERE (CASE WHEN true and true THEN 9 ELSE 6 END) NOT IN ((VALUES (5), (3)))
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t2 WHERE (CASE WHEN '0' THEN 9 ELSE -1789688463 END) NOT IN (-1, (VALUES (281921255), (-1868657623)), 2)
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((CASE WHEN '0' THEN 9 ELSE -1789688463 END) NOT IN (-1, (VALUES (281921255), (-1868657623)), 2) AS INT) as count FROM t2) as res
+----
+46
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" BINARY LARGE OBJECT NOT NULL,"c2" BIGINT NOT NULL,"c3" CHAR(423))
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" TINYINT)
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" TIME,"c3" BIGINT)
+
+statement ok rowcount 2
+insert into t0(c0, c2, c3) values(blob 'C0', 3, case 8 when 0.8 then 'sd' else cast(uuid '4C0cA58A-f54F-fc4F-C0c9-6909aDd7Ed52' > all(select all uuid 'cDbE28DB-FDcc-eeCa-E089-feD9D8CA7FC6'
+from t1 as l3t1, t2 as l3t2 where false) as string(922)) end), (blob 'Ba35f6f1', + (dayofyear(timestamp '1970-01-01 01:00:00')), '')
 
 statement ok
 ROLLBACK

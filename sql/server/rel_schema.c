@@ -22,6 +22,7 @@
 #include "sql_partition.h"
 
 #include "mal_authorize.h"
+#include "mal_exception.h"
 
 sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
@@ -314,11 +315,17 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
-		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		if (!(k = (sql_key*)mvc_create_ukey(sql, t, name, kt))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return res;
+		}
 		k->base.new = 1;
 
 		mvc_create_kc(sql, k, cs);
-		mvc_create_ukey_done(sql, k);
+		if (!mvc_create_ukey_done(sql, k)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return res;
+		}
 		res = SQL_OK;
 	} 	break;
 	case SQL_FOREIGN_KEY: {
@@ -372,7 +379,10 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 			return res;
 		}
-		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		if (!(fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+			return res;
+		}
 		fk->k.base.new = 1;
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
@@ -387,7 +397,17 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		*used |= (1<<COL_NULL);
 
-		mvc_null(sql, cs, null);
+		switch (mvc_null(sql, cs, null)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
 		res = SQL_OK;
 	} 	break;
 	case SQL_CHECK: {
@@ -444,7 +464,17 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 							atom *a = exp_value(sql, e);
 
 							if (atom_null(a)) {
-								mvc_default(sql, cs, NULL);
+								switch (mvc_default(sql, cs, NULL)) {
+									case -1:
+										(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+										return SQL_ERR;
+									case -2:
+									case -3:
+										(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+										return SQL_ERR;
+									default:
+										break;
+								}
 								break;
 							}
 						}
@@ -457,7 +487,17 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
 						return SQL_ERR;
 					} else {
-						mvc_default(sql, cs, r);
+						switch (mvc_default(sql, cs, r)) {
+							case -1:
+								(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								return SQL_ERR;
+							case -2:
+							case -3:
+								(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+								return SQL_ERR;
+							default:
+								break;
+						}
 					}
 				} 	break;
 				case SQL_NOT_NULL:
@@ -470,7 +510,17 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					}
 					used |= (1<<COL_NULL);
 
-					mvc_null(sql, cs, null);
+					switch (mvc_null(sql, cs, null)) {
+						case -1:
+							(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							return SQL_ERR;
+						case -2:
+						case -3:
+							(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+							return SQL_ERR;
+						default:
+							break;
+					}
 				} 	break;
 				default: {
 					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
@@ -528,7 +578,10 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 			return SQL_ERR;
 		}
-		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		if (!(fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255))) {
+			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+			return SQL_ERR;
+		}
 		fk->k.base.new = 1;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
@@ -578,7 +631,10 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			return SQL_ERR;
 		}
 
-		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		if (!(k = (sql_key*)mvc_create_ukey(sql, t, name, kt))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return SQL_ERR;
+		}
 		k->base.new = 1;
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
@@ -592,7 +648,10 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			}
 			(void) mvc_create_kc(sql, k, c);
 		}
-		mvc_create_ukey_done(sql, k);
+		if (!mvc_create_ukey_done(sql, k)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return SQL_ERR;
+		}
 	} 	break;
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
@@ -774,7 +833,17 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			(void) sql_error(sql, 02, SQLSTATE(42000) "%s: incorrect default value '%s'\n", action, err?err:"");
 			return SQL_ERR;
 		}
-		mvc_default(sql, c, r);
+		switch (mvc_default(sql, c, r)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+				return SQL_ERR;
+			default:
+				break;
+		}
 	}
 	break;
 	case SQL_STORAGE:
@@ -788,7 +857,17 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
-		mvc_storage(sql, c, storage_type);
+		switch (mvc_storage(sql, c, storage_type)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
 	}
 	break;
 	case SQL_NOT_NULL:
@@ -803,7 +882,17 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
-		mvc_null(sql, c, null);
+		switch (mvc_null(sql, c, null)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
 	} 	break;
 	case SQL_DROP_DEFAULT:
 	{
@@ -813,7 +902,17 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
-		mvc_drop_default(sql,c);
+		switch (mvc_drop_default(sql, c)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+				return SQL_ERR;
+			default:
+				break;
+		}
 	} 	break;
 	case SQL_LIKE:
 	{
@@ -891,9 +990,16 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				}
 			}
 		}
-		if (mvc_drop_column(sql, t, col, drop_action)) {
-			sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
-			return SQL_ERR;
+		switch (mvc_drop_column(sql, t, col, drop_action)) {
+			case -1:
+				sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected\n", action);
+				return SQL_ERR;
+			default:
+				break;
 		}
 		col->base.deleted = 1;
 	} 	break;

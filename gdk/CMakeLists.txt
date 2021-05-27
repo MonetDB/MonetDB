@@ -53,7 +53,7 @@ target_sources(bat
   gdk_string.c
   gdk_qsort.c
   gdk_qsort_impl.h
-  gdk_storage.c gdk_storage.h
+  gdk_storage.c
   gdk_bat.c
   gdk_delta.c gdk_delta.h
   gdk_cross.c

@@ -196,6 +196,7 @@ typedef enum commit_action_t {
 } ca_t;
 
 typedef int sqlid;
+typedef void *sql_store;
 
 typedef struct sql_base {
 	int flags;			/* todo change into bool new */
@@ -224,9 +225,8 @@ typedef struct changeset {
 typedef struct objlist {
 	list *l;
 	sql_hash *h;
+	sql_store store;
 } objlist;
-
-typedef void *sql_store;
 
 struct sql_trans;
 struct sql_change;
@@ -247,7 +247,7 @@ typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng 
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -262,7 +262,7 @@ extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_tra
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
 
-extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy);
+extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store);
 extern void ol_destroy(objlist *ol, sql_store store);
 extern int ol_add(objlist *ol, sql_base *data);
 extern void ol_del(objlist *ol, sql_store store, node *data);
@@ -316,6 +316,7 @@ typedef struct sql_trans {
 	ulng tid;			/* transaction id */
 
 	sql_store store;	/* keep link into the global store */
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	list *changes;		/* list of changes */
 	int logchanges;		/* count number of changes to be applied too the wal */
 
@@ -355,8 +356,8 @@ typedef enum sql_class {
 	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
 } sql_class;
 
-#define has_tz(e,n)		(EC_TEMP_TZ(e))
-#define type_has_tz(t)		has_tz((t)->type->eclass, (t)->type->sqlname)
+#define has_tz(e)			(EC_TEMP_TZ(e))
+#define type_has_tz(t)		has_tz((t)->type->eclass)
 #define EC_VARCHAR(e)		((e)==EC_CHAR||(e)==EC_STRING)
 #define EC_INTERVAL(e)		((e)==EC_MONTH||(e)==EC_SEC)
 #define EC_NUMBER(e)		((e)==EC_POS||(e)==EC_NUM||EC_INTERVAL(e)||(e)==EC_DEC||(e)==EC_FLT)
@@ -374,7 +375,7 @@ typedef enum sql_class {
 typedef struct sql_type {
 	sql_base base;
 
-	char *sqlname;
+	char *impl; /* backend correspondent type */
 	unsigned int digits;
 	unsigned int scale;	/* indicates how scale is used in functions */
 	int localtype;		/* localtype, need for coersions */

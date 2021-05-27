@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Oct2020-SP4/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Oct2020-SP5/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -196,6 +196,7 @@ functionality of MonetDB.
 %files devel
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
+%{_includedir}/monetdb/copybinary.h
 %{_includedir}/monetdb/gdk*.h
 %{_includedir}/monetdb/matomic.h
 %{_includedir}/monetdb/mstring.h
@@ -628,6 +629,7 @@ This package contains files needed to develop SQL extensions.
 %package embedded
 Summary: MonetDB as an embedded library
 Group: Applications/Databases
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description embedded
 MonetDB is a database management system that is developed from a
@@ -636,7 +638,8 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the library to turn MonetDB into an embeddable
-library.  Also see %{name}-embedded-devel to use this in a program.
+library, also known as MonetDBe.  Also see %{name}-embedded-devel to
+use this in a program.
 
 %files embedded
 %{_libdir}/libmonetdbe.so.*
@@ -661,6 +664,24 @@ program that uses MonetDB as an embeddable library.
 %{_libdir}/libmonetdbe.so
 %{_includedir}/monetdb/monetdbe.h
 %{_libdir}/pkgconfig/monetdbe.pc
+
+%package embedded-tests
+Summary: MonetDBe tests package
+Group: Applications/Databases
+Requires: %{name}-embedded%{?_isa} = %{version}-%{release}
+
+%description embedded-tests
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains some test programs using the %{name}-embedded
+package.  You probably don't need this, unless you are a developer.
+
+%files embedded-tests
+%defattr(-,root,root)
+%{_bindir}/example_proxy
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System
@@ -827,6 +848,40 @@ else
 fi
 
 %changelog
+* Mon May 03 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.17-20210503
+- Rebuilt.
+- GH#3336: DB files not removed if all rows are deleted, even after restart
+- GH#7104: Monetdbe NTILE function does not produce correct ordering
+- GH#7108: Monetdb crashes on query execution
+- GH#7109: MERGE Statement incorrectly reports that input relation matches
+  multiple rows
+- GH#7110: Monetdb Query parsing consistency issues in the latest release
+  (Remote Table)
+
+* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.17-20210503
+- gdk: A bug that would very occasionally produce an error "strPut: incorrectly
+  encoded UTF-8", even when no incorrectly coded characters are used
+  at all, has been fixed.  It was the result of a rare combination of
+  strings having been added to the column that caused essentially an
+  off-by-one type of error to occur.
+
+* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.17-20210503
+- merovingian: When stopping monetdbd using the `monetdbd stop' command, this command
+  now waits for 5 seconds longer than the exittimeout value before it
+  kills the monetdbd daemon instead of only 30 seconds total (or until
+  that daemon stops earlier).  This gives the daemon enough time to
+  terminate the mserver5 processes that it is managing.  If exittimeout
+  is negative, the daemon and the monetdbd process initiating the stop
+  wait indefinitely until the mserver5 processes have stopped.
+
+* Mon May  3 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.17-20210503
+- sql: A bug where a sequence of TRUNCATE TABLE and COPY INTO the just
+  truncated table would result in success being reported to both queries,
+  but the table still being empty afterwards, has been fixed.
+
+* Fri Apr 23 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.17-20210503
+- NT: Added the monetdbe library to the Windows installer.
+
 * Fri Apr 02 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.15-20210402
 - Rebuilt.
 - GH#6786: function json.isvalid(js json) is not useful, could be removed

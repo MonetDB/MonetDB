@@ -69,7 +69,7 @@ query IT rowsort
 SELECT column_id, expression FROM table_partitions
 ----
 
-statement error
+statement error 42000!SELECT: no such unary operator 'iamdummy'(int)
 CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (iamdummy(a))
 
 statement ok
@@ -93,19 +93,19 @@ ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 11 TO 20
 statement ok
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 1 TO 10
 
-statement error
+statement error 22018!conversion of string 'abc' to type int failed.
 ALTER TABLE testme ADD TABLE subtable3 AS PARTITION FROM 'abc' TO 'cde'
 
 statement ok rowcount 4
 INSERT INTO testme VALUES (1, 'first'), (10, 'second'), (2, 'third'), (15, 'fourth')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testme VALUES (12, 'this'), (6, 'not'), (50, 'ok')
 
 statement ok rowcount 1
 INSERT INTO subtable1 VALUES (12, 'sixth')
 
-statement error
+statement error M0M29!INSERT: table sys.subtable1 is part of merge table sys.testme and the insert violates the partition range of values
 INSERT INTO subtable1 VALUES (2, 'seventh')
 
 query IT rowsort
@@ -191,7 +191,7 @@ CREATE TABLE subtable1 (a int)
 statement ok
 ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 INSERT INTO testme VALUES (1)
 
 statement ok
@@ -206,9 +206,9 @@ DROP TABLE subtable1
 statement ok
 DROP FUNCTION iamdummy
 
-statement error
+statement error 42000!SUM: aggregate functions not allowed on an unique value
 CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (SUM(a))
 
-statement error
+statement error 42000!CREATE MERGE TABLE: error compiling expression 'SQL feature not yet available for expressions and default values: WINDOW'
 CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (AVG(a) OVER ())
 

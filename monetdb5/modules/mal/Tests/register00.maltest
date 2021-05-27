@@ -1,6 +1,6 @@
-statement error
-language.register("user","mytest","io.print(\"hello world\");","first test")
+statement ok
+language.register("user","mytest","io.print(\"hello world\");","first test");
 
-statement error
-mdb.list("user","mytest")
+statement ok
+mdb.list("user","mytest");
 

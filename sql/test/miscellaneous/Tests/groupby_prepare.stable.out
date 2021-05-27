@@ -144,7 +144,7 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	3,	3 # length
-[ "tinyint",	1,	0,	"",	"%10",	"%10"	]
+[ "tinyint",	1,	0,	"",	"%11",	"%11"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #drop table tab0;

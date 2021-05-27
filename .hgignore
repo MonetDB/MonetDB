@@ -47,6 +47,7 @@ tags
 *.pyo
 *.rej
 *.orig
+compile_commands.json
 
 # package building on Mac OS X
 MacOSX/build

@@ -720,8 +720,7 @@ IMPSimprintsize(BAT *b)
 {
 	lng sz = 0;
 	if (b->timprints && b->timprints != (Imprints *) 1) {
-		sz = b->timprints->impcnt * b->timprints->bits / 8;
-		sz += b->timprints->dictcnt * sizeof(cchdc_t);
+		sz = (lng) b->timprints->imprints.free;
 	}
 	return sz;
 }

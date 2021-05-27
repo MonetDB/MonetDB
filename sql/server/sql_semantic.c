@@ -957,26 +957,26 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		char *tpe = "varchar";
 		unsigned int digits = 0;
 		if (!EC_VARCHAR(lclass)) {
-			tpe = r->type->sqlname;
+			tpe = r->type->base.name;
 			digits = (!l->digits)?0:r->digits;
 		} else if (!EC_VARCHAR(rclass)) {
-			tpe = l->type->sqlname;
+			tpe = l->type->base.name;
 			digits = (!r->digits)?0:l->digits;
 		} else { /* both */
-			tpe = !strcmp(l->type->base.name, "clob")?l->type->sqlname:!strcmp(r->type->base.name, "clob")?r->type->sqlname:
-			(l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+			tpe = !strcmp(l->type->base.name, "clob")?l->type->base.name:!strcmp(r->type->base.name, "clob")?r->type->base.name:
+			(l->type->base.id > r->type->base.id)?l->type->base.name:r->type->base.name;
 			digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
 		}
 		sql_find_subtype(super, tpe, digits, 0);
 	/* case b blob */
-	} else if ((lc=strcmp(l->type->sqlname, "blob")) == 0 || (rc=strcmp(r->type->sqlname, "blob")) == 0) {
+	} else if ((lc=strcmp(l->type->base.name, "blob")) == 0 || (rc=strcmp(r->type->base.name, "blob")) == 0) {
 		if (!lc)
 			*super = *l;
 		else
 			*super = *r;
 	/* case c all exact numeric */
 	} else if (EC_EXACTNUM(lclass) && EC_EXACTNUM(rclass)) {
-		char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+		char *tpe = (l->type->base.id > r->type->base.id)?l->type->base.name:r->type->base.name;
 		unsigned int digits = sql_max(l->digits, r->digits);
 		unsigned int scale = sql_max(l->scale, r->scale);
 
@@ -1008,7 +1008,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		} else if (!EC_APPNUM(rclass)) {
 			*super = *l;
 		} else { /* both */
-			char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+			char *tpe = (l->type->base.id > r->type->base.id)?l->type->base.name:r->type->base.name;
 			unsigned int digits = sql_max(l->digits, r->digits); /* bits precision */
 			sql_find_subtype(super, tpe, digits, 0);
 		}
@@ -1026,7 +1026,7 @@ sql_subtype *
 supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 {
 	/* first find super type */
-	char *tpe = r->type->sqlname;
+	char *tpe = r->type->base.name;
 	unsigned int radix = (unsigned int) r->type->radix;
 	unsigned int digits = 0;
 	unsigned int idigits = i->digits;
@@ -1038,21 +1038,21 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	lsuper = *r;
 	/* EC_STRING class is superior to EC_CHAR */
 	if (EC_VARCHAR(i->type->eclass) && EC_VARCHAR(r->type->eclass)) {
-		if (!strcmp(i->type->sqlname, "clob") || !strcmp(r->type->sqlname, "clob")) {
-			lsuper = !strcmp(i->type->sqlname, "clob") ? *i : *r;
+		if (!strcmp(i->type->base.name, "clob") || !strcmp(r->type->base.name, "clob")) {
+			lsuper = !strcmp(i->type->base.name, "clob") ? *i : *r;
 			radix = lsuper.type->radix;
-			tpe = lsuper.type->sqlname;
+			tpe = lsuper.type->base.name;
 			eclass = lsuper.type->eclass;
 		} else {
 			lsuper = i->type->base.id > r->type->base.id ? *i : *r;
 			radix = lsuper.type->radix;
-			tpe = lsuper.type->sqlname;
+			tpe = lsuper.type->base.name;
 			eclass = lsuper.type->eclass;
 		}
 	} else if (i->type->base.id > r->type->base.id || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		lsuper = *i;
 		radix = i->type->radix;
-		tpe = i->type->sqlname;
+		tpe = i->type->base.name;
 		eclass = i->type->eclass;
 	}
 	if (EC_VARCHAR(lsuper.type->eclass))
@@ -1079,8 +1079,8 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		}
 	}
 	/* handle OID horror */
-	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0) {
-		tpe = i->type->sqlname;
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->base.name, "oid") == 0) {
+		tpe = i->type->base.name;
 		eclass = EC_POS;
 	}
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
