@@ -2127,13 +2127,13 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			cminu = NULL;
 			if (ret != GDK_SUCCEED) {
 				BBPunfix(res->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 
 			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false, false);
 			BBPunfix(res->batCacheid);
 			if (ret != GDK_SUCCEED) {
-				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 			res = u;
 		} else {
@@ -3141,19 +3141,13 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	if ((b = BATdescriptor(bid)) == NULL) {
+	if (!(b = BBPquickdesc(bid, false)))
 		throw(MAL, "batcalc.identity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATdense(b->hseqbase, s, BATcount(b));
-	if (bn != NULL) {
-		*ns = s + BATcount(b);
-		BBPunfix(b->batCacheid);
-		BBPkeepref(*res = bn->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "batcalc.identity", SQLSTATE(45001) "Internal error");
-
+	if (!(bn = BATdense(b->hseqbase, s, BATcount(b))))
+		throw(MAL, "batcalc.identity", GDK_EXCEPTION);
+	*ns = s + BATcount(b);
+	BBPkeepref(*res = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 /*

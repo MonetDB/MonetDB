@@ -2052,6 +2052,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
 			int add_r = 0;
+			list *rcopy = NULL;
 
 			/* only push topn/sample once */
 			x = ul;
@@ -2065,8 +2066,15 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			if (x && x->op == rel->op)
 				return rel;
 
-			if (list_length(ul->exps) > list_length(r->exps))
+			if (list_length(ul->exps) > list_length(r->exps)) {
 				add_r = 1;
+				rcopy = exps_copy(v->sql, r->r);
+				for (node *n = rcopy->h ; n ; n = n->next) {
+					sql_exp *e = n->data;
+					set_descending(e);
+					set_nulls_first(e);
+				}
+			}
 			ul = rel_dup(ul);
 			ur = rel_dup(ur);
 			if (!is_project(ul->op))
@@ -2083,7 +2091,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ul->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
 			if (add_r)
-				ul->exps = list_merge(ul->exps, exps_copy(v->sql, r->r), NULL);
+				ul->exps = list_distinct(list_merge(ul->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
 			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
@@ -2092,19 +2100,18 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ur->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
 			if (add_r)
-				ur->exps = list_merge(ur->exps, exps_copy(v->sql, r->r), NULL);
+				ur->exps = list_distinct(list_merge(ur->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
 			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
-			/* TODO the list of expressions of u don't match ul and ur */
 			u->exps = exps_alias(v->sql, r->exps);
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
 			if (add_r)
-				u->exps = list_merge(u->exps, exps_copy(v->sql, r->r), NULL);
+				u->exps = list_distinct(list_merge(u->exps, rcopy, NULL), (fcmp) exp_equal, (fdup) NULL);
 			if (need_distinct(r)) {
 				set_distinct(ul);
 				set_distinct(ur);
@@ -4921,10 +4928,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			return rel;
 		if (right && is_left(lop))
 			return rel;
-		nsexps = rel->exps;
-		rel->exps = NULL; /* prepare to delete relation */
-		njexps = l->exps;
-		l->exps = NULL;
+		nsexps = exps_copy(v->sql, rel->exps);
+		njexps = exps_copy(v->sql, l->exps);
 		if (left)
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), rel_dup(r), op);
 		else
