@@ -20,13 +20,18 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng), m = 0;
-	/*     per op estimate:   4 args + 2 res*/
+	/*     estimate size per operator estimate:   4 args + 2 res*/
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	/* if the user has associated limitation on the number of threads, respect it in the
+     * generation of the number of partitions. Beware, they may lead to larger pieces, it only
+     * limits the CPU power */
+	if( cntxt->workerlimit)
+		threads= cntxt->workerlimit;
 	//if ( optimizerIsApplied(mb,"mitosis") )
 		//return 0;
 	(void) cntxt;
@@ -149,8 +154,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (cntxt->memorylimit == 0 || pieces <= 1){
 */
 	if (pieces <= 1){
-		/* the old allocation scheme */
-		m = GDK_mem_maxsize / argsize;
+		/* We haven't assigned the number of pieces.*/
+
+		/* respect the memory limit size set for the user */
+		if( cntxt->memorylimit)
+			m = cntxt->memorylimit * 1024 *1024 / argsize;
+		else
+			m = GDK_mem_maxsize / argsize;
+
 		/* if data exceeds memory size,
 		 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
 		 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
