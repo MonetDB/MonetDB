@@ -19,6 +19,7 @@
 #include "mal_type.h"
 #include "mal_private.h"
 #include "mal_internal.h"
+#include "mal_function.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
@@ -771,10 +772,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				if (ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
-					//garbageCollector(cntxt, pci->blk, nstk, 0);
-					for (ii = 0; ii < nstk->stktop; ii++)
-						if (ATOMextern(nstk->stk[ii].vtype))
-							GDKfree(nstk->stk[ii].val.pval);
+					garbageCollector(cntxt, pci->blk, nstk, 0);
 					arg = q->retc;
 					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
 						lhs = &nstk->stk[q->argv[arg]];
@@ -882,6 +880,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (garbage[i] >= 0) {
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
+							BBPcold(bid);
 							BBPrelease(bid);
 						}
 					}
@@ -1405,6 +1404,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
+		BBPcold(bid);
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);

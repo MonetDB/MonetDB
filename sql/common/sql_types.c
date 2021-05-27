@@ -268,14 +268,14 @@ sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsign
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
 
-		if (t->sqlname[0] == name[0] && strcmp(t->sqlname, name) == 0) {
+		if (t->base.name[0] == name[0] && strcmp(t->base.name, name) == 0) {
 			if ((digits && t->digits >= digits) || (digits == t->digits)) {
 				sql_init_subtype(res, t, digits, scale);
 				return 1;
 			}
 			for (m = n->next; m; m = m->next) {
 				t = m->data;
-				if (strcmp(t->sqlname, name) != 0) {
+				if (strcmp(t->base.name, name) != 0) {
 					break;
 				}
 				n = m;
@@ -311,7 +311,7 @@ sql_bind_localtype(const char *name)
 	while (n) {
 		sql_subtype *t = n->data;
 
-		if (strcmp(t->type->base.name, name) == 0) {
+		if (strcmp(t->type->impl, name) == 0) {
 			return t;
 		}
 		n = n->next;
@@ -343,7 +343,7 @@ type_cmp(sql_type *t1, sql_type *t2)
 		return res;
 
 	/* sql base types need the same 'sql' name */
-	return (strcmp(t1->sqlname, t2->sqlname));
+	return (strcmp(t1->base.name, t2->base.name));
 }
 
 int
@@ -393,11 +393,11 @@ sql_subtype_string(sql_allocator *sa, sql_subtype *t)
 	char buf[BUFSIZ];
 
 	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->sqlname, t->digits, t->scale);
+		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
 	else if (t->digits && t->type->radix != 2)
-		snprintf(buf, BUFSIZ, "%s(%u)", t->type->sqlname, t->digits);
+		snprintf(buf, BUFSIZ, "%s(%u)", t->type->base.name, t->digits);
 	else
-		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
+		snprintf(buf, BUFSIZ, "%s", t->type->base.name);
 	return sa_strdup(sa, buf);
 }
 
@@ -418,7 +418,7 @@ subtype2string2(sql_allocator *sa, sql_subtype *tpe) /* distinguish char(n), dec
 		case EC_DEC:
 			return sql_subtype_string(sa, tpe);
 		default:
-			snprintf(buf, BUFSIZ, "%s", tpe->type->sqlname);
+			snprintf(buf, BUFSIZ, "%s", tpe->type->base.name);
 	}
 	return sa_strdup(sa, buf);
 }
@@ -599,20 +599,20 @@ sql_bind_alias(const char *alias)
 static sqlid local_id = 1;
 
 static sql_type *
-sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *name)
+sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *impl)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
-	base_init(sa, &t->base, local_id++, 0, name);
-	t->sqlname = sa_strdup(sa, sqlname);
+	base_init(sa, &t->base, local_id++, 0, sqlname);
+	t->impl = sa_strdup(sa, impl);
 	t->digits = digits;
 	t->scale = scale;
-	t->localtype = ATOMindex(t->base.name);
+	t->localtype = ATOMindex(t->impl);
 	t->radix = radix;
 	t->eclass = eclass;
 	t->s = NULL;
-	if (!keyword_exists(t->sqlname) && !EC_INTERVAL(eclass))
-		(void) keywords_insert(t->sqlname, KW_TYPE);
+	if (!keyword_exists(t->base.name) && !EC_INTERVAL(eclass))
+		(void) keywords_insert(t->base.name, KW_TYPE);
 	list_append(types, t);
 
 	list_append(localtypes, sql_create_subtype(sa, t, 0, 0));
@@ -791,7 +791,7 @@ sqltypeinit( sql_allocator *sa)
 	PTR = *t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
 
 	BIT = *t++ = sql_create_type(sa, "BOOLEAN", 1, 0, 2, EC_BIT, "bit");
-	sql_create_alias(sa, BIT->sqlname, "BOOL");
+	sql_create_alias(sa, BIT->base.name, "BOOL");
 
 	strings = t;
 	/* create clob type first, so functions by default will bind to the clob version which doesn't require length validation on some cases */
@@ -950,10 +950,11 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
-	/* nullif, coalesce and casewhen don't have a backend implementation */
+	/* nullif, coalesce, casewhen and case don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "coalesce", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "casewhen", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "case", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	/* needed for count(*) and window functions without input col */
 	sql_create_func(sa, "star", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 0);
 
@@ -1215,7 +1216,7 @@ sqltypeinit( sql_allocator *sa)
 
 	/* functions for interval types */
 	for (t = dates; *t != TME; t++) {
-		sql_subtype *lt = sql_bind_localtype((*t)->base.name);
+		sql_subtype *lt = sql_bind_localtype((*t)->impl);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
@@ -1258,7 +1259,7 @@ sqltypeinit( sql_allocator *sa)
 		if (*t == OID)
 			continue;
 
-		lt = sql_bind_localtype((*t)->base.name);
+		lt = sql_bind_localtype((*t)->impl);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);

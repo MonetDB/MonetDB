@@ -10,7 +10,7 @@ CREATE TABLE sublimits2 (a int, b varchar(32))
 statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (0, 'dummy')
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
 ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES
 
 statement ok rowcount 1
@@ -25,10 +25,10 @@ INSERT INTO testme VALUES (NULL, 'first'), (NULL, NULL)
 statement ok rowcount 2
 INSERT INTO sublimits1 VALUES (NULL, 'second'), (NULL, NULL)
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testme VALUES (2, 'third')
 
-statement error
+statement error M0M29!INSERT: table sys.sublimits1 is part of merge table sys.testme and the insert violates the partition range of values
 INSERT INTO sublimits1 VALUES (2, 'third')
 
 query IT rowsort
@@ -55,10 +55,10 @@ first
 NULL
 second
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.sublimits1 stores null values and only one partition can store null values at the time
 ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FOR NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.sublimits1 stores null values and only one partition can store null values at the time
 ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500' WITH NULL VALUES
 
 statement ok

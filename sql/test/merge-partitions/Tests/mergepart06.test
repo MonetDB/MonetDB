@@ -22,7 +22,7 @@ ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION FROM 0 TO 100
 statement ok rowcount 1
 INSERT INTO testrangelimits VALUES (1, 'first')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testrangelimits VALUES (1000, 'ups')
 
 statement ok
@@ -34,7 +34,7 @@ ALTER TABLE testrangelimits ADD TABLE sublimits3 AS PARTITION FROM 401 TO 500 WI
 statement ok
 ALTER TABLE testrangelimits ADD TABLE sublimits4 AS PARTITION FROM 500 TO 600
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: -1 to 1 and 0 to 100 from table sys.sublimits1
 ALTER TABLE testrangelimits ADD TABLE sublimits5 AS PARTITION FROM -1 TO 1
 
 statement ok rowcount 3
@@ -49,10 +49,10 @@ INSERT INTO testrangelimits VALUES (171, 'test')
 statement ok rowcount 4
 INSERT INTO testrangelimits VALUES (401, 'another'), (NULL, 'test'), (450, 'to'), (499, 'pass')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testrangelimits VALUES (201, 'oh no')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testrangelimits VALUES (444, 'another'), (305, 'error'), (4, 'happening')
 
 statement ok rowcount 1
@@ -64,13 +64,13 @@ INSERT INTO sublimits2 VALUES (102, 'successful')
 statement ok rowcount 1
 INSERT INTO sublimits3 VALUES (NULL, 'attempt')
 
-statement error
+statement error M0M29!INSERT: table sys.sublimits3 is part of merge table sys.testrangelimits and the insert violates the partition range of values
 INSERT INTO sublimits3 VALUES (2, 'will')
 
-statement error
+statement error M0M29!INSERT: table sys.sublimits1 is part of merge table sys.testrangelimits and the insert violates the partition range of values
 INSERT INTO sublimits1 VALUES (202, 'fail')
 
-statement error
+statement error M0M29!INSERT: table sys.sublimits2 is part of merge table sys.testrangelimits and the insert violates the partition range of values
 INSERT INTO sublimits2 VALUES (NULL, 'again')
 
 query IT rowsort

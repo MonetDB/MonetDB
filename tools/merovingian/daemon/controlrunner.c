@@ -401,10 +401,7 @@ static void ctl_handle_client(
 
 				// Kill it appropriately
 				if (strcmp(p, "stop") == 0) {
-					/* make an attempt to shut down the profiler first. */
-					if ((e = shutdown_profiler(q, &stats)) != NULL) {
-						free(e);
-					} else if (stats != NULL)
+					if (stats != NULL)
 						msab_freeStatus(&stats);
 					/* then kill it */
 					if (dp)
@@ -674,43 +671,6 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
-			} else if (strncmp(p, "profilerstart", strlen("profilerstart")) == 0) {
-				char *log_path = NULL;
-				char *e = fork_profiler(q, &stats, &log_path);
-				if (e != NULL) {
-					Mfprintf(_mero_ctlerr, "%s: failed to start the profiler "
-							 "database '%s': %s\n", origin, q, getErrMsg(e));
-					len = snprintf(buf2, sizeof(buf2),
-								   "%s\n", getErrMsg(e));
-					send_client("!");
-					freeErr(e);
-				} else {
-					len = snprintf(buf2, sizeof(buf2), "OK\n");
-					send_client("=");
-					Mfprintf(_mero_ctlout, "%s: started profiler for '%s'\n",
-							 origin, q);
-					Mfprintf(_mero_ctlout, "%s: logs at: %s\n",
-							 origin, log_path);
-				}
-				msab_freeStatus(&stats);
-				if (log_path)
-					free(log_path);
-			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
-				char *e = shutdown_profiler(q, &stats);
-				if (e != NULL) {
-					Mfprintf(_mero_ctlerr, "%s: failed to shutdown the profiler "
-							 "database '%s': %s\n", origin, q, getErrMsg(e));
-					len = snprintf(buf2, sizeof(buf2),
-								   "%s\n", getErrMsg(e));
-					send_client("!");
-					freeErr(e);
-				} else {
-					len = snprintf(buf2, sizeof(buf2), "OK\n");
-					send_client("=");
-					Mfprintf(_mero_ctlout, "%s: profiler shut down for '%s'\n",
-							 origin, q);
-				}
-				msab_freeStatus(&stats);
 			} else if (strncmp(p, "snapshot create adhoc ", strlen("snapshot create adhoc ")) == 0) {
 				char *dest = p + strlen("snapshot create adhoc ");
 				Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);

@@ -127,3 +127,7 @@ grant execute on function sys.prepared_statements_args to public;
 
 create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
 grant select on sys.prepared_statements_args to public;
+
+create function sys.current_sessionid() returns int
+external name clients.current_sessionid;
+grant execute on function sys.current_sessionid to public;

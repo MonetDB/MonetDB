@@ -5,10 +5,18 @@ create table testnull (
 	v varchar(1024)
 )
 
-statement ok
+statement ok rowcount 1
 copy 1 records into testnull from stdin using delimiters ',',E'\n',''''
 <COPY_INTO_DATA>
 1,'test','Nullen RA'
-select * from testnull;
-drop table testnull;
+
+query ITT rowsort
+select * from testnull
+----
+1
+test
+Nullen RA
+
+statement ok
+drop table testnull
 

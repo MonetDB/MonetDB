@@ -73,7 +73,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
         sys.stderr.write(line)
         xit = 1
     if len(cltout) != 2 or cltout[0] != 'START TRANSACTION;' or cltout[1] != 'COMMIT;':
-        sys.stderr.writelines(cltout)
+        sys.stderr.write('\n'.join(cltout))
         xit = 1
 else:
     sys.stdout.writelines(srvout)

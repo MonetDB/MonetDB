@@ -255,3 +255,494 @@ insert into t0(c2) values(ifthenelse((select false from t2 having max(greatest((
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INT)
+
+statement ok rowcount 2
+INSERT INTO "t0" VALUES (3), (2)
+
+query IIIIII rowsort
+select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3;
+----
+3
+1
+2
+3
+4
+5
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0"("c0" INTERVAL MONTH NOT NULL,"c1" VARCHAR(32),"c2" UUID NOT NULL,"c4" DOUBLE PRECISION,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
+
+statement ok
+CREATE TABLE "t2"("c0" INTERVAL MONTH,"c1" VARCHAR(32),"c2" UUID,"c4" BIGINT)
+
+statement ok rowcount 30
+COPY 30 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	NULL	5
+NULL	NULL	9fb1ebc7-5c9a-dabd-042d-5064ff9cf1dd	NULL
+9	NULL	6f4ac015-cdd9-afdb-af35-fbeeae732624	5
+NULL	"^"	ed8bcd01-e547-d3c1-db18-db2bfef70dd4	NULL
+NULL	"0.8715628341541751"	dbab81e0-ed0f-6e46-1f7d-783faa5d82c1	NULL
+NULL	""	b6063d03-7f3b-3f5c-988f-d48c7682fb15	NULL
+NULL	NULL	c426906d-be9f-de95-e717-c035788495ff	NULL
+NULL	""	NULL	NULL
+447562315	"H"	NULL	NULL
+NULL	NULL	NULL	-1249992320
+NULL	NULL	NULL	NULL
+NULL	NULL	NULL	6
+NULL	"Eu&d6^"	db08251d-81e6-e1a3-2b3a-faefbdb169bc	0
+NULL	NULL	103a870c-62bd-edbf-2901-e7cdcbcfb0ef	NULL
+NULL	NULL	bbceaf7c-4cbc-3bc5-26e8-d7c8bdcfd1c3	NULL
+NULL	NULL	af85b0fd-7804-fdd3-f0bb-ad9c2cfce2a5	3
+0	NULL	be7b374e-bdfe-ddd6-ccec-15eadcf6e31a	7
+7	NULL	0f8777ea-d8fb-c266-b9f5-7deffe29dfbf	0
+2	NULL	ec34a9f6-f179-8a15-beeb-1e7dbf1e7d9d	1
+NULL	NULL	ef1e4ad5-ac3a-b8fa-c0ad-f8a8c9a4d6ce	4
+3	NULL	1b7edee4-18d1-b6cf-5dc1-6f15a6db2d9d	157047355
+NULL	"\naVK"	f8af6a8e-0464-1f2f-ffae-d92a10898ba6	1
+-896957269	"b"	c2137ac8-3ed8-3936-f08b-4b0ebd6aac3b	3
+5	NULL	NULL	NULL
+NULL	"C"	NULL	NULL
+NULL	""	NULL	NULL
+NULL	"s"	NULL	NULL
+NULL	"0.24717874352374636"	NULL	NULL
+NULL	"0.3763977961825439"	NULL	NULL
+5	NULL	85df3b1d-ff3f-0a1d-2cba-dc37cabe66de	0
+
+query T rowsort
+SELECT t2.c0 FROM t2 WHERE '' <> ALL(SELECT '7' FROM t0 WHERE FALSE)
+----
+-896957269
+0
+2
+3
+447562315
+5
+5
+7
+9
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST('' <> ALL(SELECT '7' FROM t0 WHERE FALSE) AS INT) as count FROM t2) as res
+----
+30
+
+query I rowsort
+SELECT CAST((SELECT '1' WHERE TRUE) <> ALL(SELECT '7' FROM t0 WHERE FALSE) AS INT) FROM t2
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" REAL,"c1" REAL,CONSTRAINT "t1_c1_c0_unique" UNIQUE ("c1", "c0"))
+
+statement ok rowcount 9
+INSERT INTO "t1" VALUES (0.05303705, 0.012799261),(0.8875537, 0.81233525),(-0.26150206, 1.6048732e+09),(NULL, 0.75787866),(0.6425521, NULL),(NULL, -0.8071348),(0.18594263, NULL),(0.35998943, NULL),(0.70466465, NULL)
+
+statement ok
+CREATE TABLE "t2" ("c0" TIME NOT NULL,"c3" INT)
+
+statement ok rowcount 4
+INSERT INTO "t2" VALUES (TIME '01:00:11', 2),(TIME '14:47:53', NULL),(TIME '23:26:05', NULL),(TIME '10:49:08', NULL)
+
+query R rowsort
+SELECT t1.c1 FROM t1 WHERE NOT (least((SELECT DISTINCT TRUE FROM t2 WHERE FALSE), (VALUES (FALSE))))
+----
+-0.807
+0.013
+0.758
+0.812
+1604873200.000
+NULL
+NULL
+NULL
+NULL
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT (least((SELECT DISTINCT TRUE FROM t2 WHERE FALSE), (VALUES (FALSE)))) AS INT) as count FROM t1) as res
+----
+9
+
+statement ok
+ROLLBACK
+
+query T rowsort
+SELECT t2.c2 FROM (VALUES(BLOB 'A0'), (BLOB 'ed4D5CCdF0'), (BLOB 'B9'), (BLOB 'e520'), (BLOB ''), (BLOB '7820')) t2(c2) WHERE least(t2.c2, t2.c2) NOT BETWEEN BLOB 'F0' AND BLOB '09'
+----
+(empty)
+7820
+A0
+B9
+E520
+ED4D5CCDF0
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL MONTH, c2 INTERVAL MONTH)
+
+statement ok
+CREATE TABLE t1(c0 DECIMAL, c2 TIME, c3 INTERVAL MONTH)
+
+statement ok rowcount 2
+INSERT INTO t0(c2) VALUES(INTERVAL '7' MONTH), (INTERVAL '-4' MONTH)
+
+statement ok rowcount 1
+INSERT INTO t1(c3) VALUES(INTERVAL '9' MONTH)
+
+statement ok rowcount 7
+INSERT INTO t1(c0) VALUES(0.5), (0.6), (0.55), (0.56), (0.57), (0.7), (0.25)
+
+statement ok
+ALTER TABLE t1 DROP c3
+
+statement ok rowcount 9
+INSERT INTO t1(c2, c0) VALUES(TIME '01:00:00', 0.8), (TIME '01:00:00', 0.10), (TIME '18:41:00', 0.9), (TIME '23:12:18', 0.78), (TIME '02:03:53', 0.86), (NULL, 0.78), (TIME '01:00:00', 0.34), (TIME '07:17:50', 0.43), (TIME '01:00:00', -1)
+
+statement ok rowcount 5
+INSERT INTO t1(c0) VALUES(0.98), (0.42), (0.63), (0.46), (0.33)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE t1.c2 <> ALL(SELECT TIME '02:53:29' FROM t0)
+----
+01:00:00
+01:00:00
+01:00:00
+01:00:00
+02:03:53
+07:17:50
+18:41:00
+23:12:18
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 smallint NOT NULL, c2 bigint)
+
+statement ok
+CREATE TABLE t1(c0 smallint, c3 tinyint, c4 smallint)
+
+statement ok
+INSERT INTO t1(c4) VALUES(8)
+
+statement error INSERT INTO: NOT NULL constraint violated for column t0.c0
+MERGE INTO t0 USING (SELECT * FROM t1) AS t1 ON TRUE WHEN MATCHED THEN UPDATE SET c0 = t0.c2, c2 = 1 WHEN NOT MATCHED THEN INSERT (c2, c0) VALUES (4, t1.c3)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" TINYINT,"c2" BIGINT,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_c2_unique" UNIQUE ("c0", "c2"),CONSTRAINT "t0_c2_c0_unique" UNIQUE ("c2", "c0"))
+
+statement ok rowcount 27
+COPY 27 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1	1387424266
+2	0
+6	3634984454
+9	4
+NULL	9
+NULL	0
+NULL	611858669
+NULL	7
+3	1
+0	1317354363
+NULL	5
+NULL	0
+NULL	5
+NULL	3
+NULL	0
+NULL	8
+7	NULL
+NULL	4
+NULL	7
+NULL	5
+NULL	3
+NULL	9
+NULL	-10538834904
+NULL	-1305419631
+NULL	NULL
+NULL	2
+NULL	NULL
+
+statement ok
+CREATE TABLE "t1" ("c0" DOUBLE NOT NULL,"c3" TINYINT,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok rowcount 21
+COPY 21 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.8376401275906128	NULL
+0.7629541543404468	NULL
+8	NULL
+0.16645741874792763	NULL
+124929929.23213053	8
+0.9235567828803988	3
+0.03242632919661814	8
+5.342823187177086	7
+-286476790.76211333	NULL
+0.5506963799172256	NULL
+4	NULL
+1	NULL
+-0	8
+-1.57151353e+09	8
+-0.903317038799036	NULL
+0.15904894751992874	NULL
+0.9264127967998556	NULL
+0.7141061795496624	NULL
+0.7396064226766994	NULL
+0.711	NULL
+0.21684918803285913	NULL
+
+query I rowsort
+select 1 from t1 right outer join (select distinct 4*t1.c3 from t1 left outer join (select 2) as sub0 on false) as sub0 on false
+----
+1
+1
+1
+1
+
+query I rowsort
+select cast(((true) = true) = false as int) as count from t1 right outer join (select distinct ((((4)^(-7)))*(case 611858669 when 9 then 2 when 1387424266 then t1.c3 end))
+from t1 left outer join (select cast(8 as double precision), case 8 when 4 then 0.0 when 303400756 then 0.11124314 when 0.9 then 0.3 when 1142205063 then -1571513530 end where false) as sub0 on not (true)) as sub0 on false
+----
+0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t1(c2 CLOB)
+
+statement ok rowcount 3
+INSERT INTO t1(c2) VALUES('aaa'), ('y2qxM9H'), (')pI')
+
+query T rowsort
+SELECT min(NULL) FROM t1 GROUP BY (0.58)|(232)
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c1" INTERVAL MONTH)
+
+statement ok rowcount 1
+INSERT INTO "t2" VALUES (INTERVAL '0' MONTH)
+
+query I rowsort
+SELECT 1 FROM t2 LEFT JOIN (SELECT 2 FROM t2) AS sub0 ON (SELECT NULL FROM t2) LIKE t2.c1
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" BINARY LARGE OBJECT)
+
+statement ok rowcount 10
+COPY 10 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+F4F8002D
+0F19E7F0
+C4C26CEA
+40
+C94AECE0
+5D
+F0
+2B40
+BF2B3A
+D8
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE NULLIF(t1.c2, (SELECT BLOB 'AA' WHERE FALSE))>(VALUES (BLOB 'CEf278cE'))
+----
+D8
+F0
+F4F8002D
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NULLIF(t1.c2, (SELECT BLOB 'AA' WHERE FALSE))>(VALUES (BLOB 'CEf278cE')) AS INT) as count FROM t1) as res
+----
+3
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
+
+statement ok
+CREATE TABLE t1(c0 INTERVAL DAY, c1 BIGINT)
+
+statement ok rowcount 2
+INSERT INTO t1(c1) VALUES(3), (5)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
+
+statement ok rowcount 3
+TRUNCATE t0
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
+
+query T rowsort
+SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
+----
+8 days
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c3" TIMESTAMP)
+
+statement ok rowcount 10
+INSERT INTO "t0" VALUES (NULL),(TIMESTAMP '1969-12-12 05:35:15.000000'),(TIMESTAMP '1970-01-01 01:00:00.000000'),(NULL),(TIMESTAMP '1970-01-01 01:00:00.000000'),
+(TIMESTAMP '1970-01-20 20:06:22.000000'),(TIMESTAMP '1969-12-23 08:46:37.000000'),(TIMESTAMP '1970-01-01 01:00:00.000000'),(NULL),(TIMESTAMP '1970-01-01 01:00:00.000000')
+
+query T rowsort
+SELECT t0.c3 FROM t0 WHERE (NOT FALSE OR (SELECT TRUE WHERE FALSE)) AND NOT "isauuid"('1')
+----
+1969-12-12 05:35:15
+1969-12-23 08:46:37
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+1970-01-20 20:06:22
+NULL
+NULL
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c3" INTERVAL SECOND)
+
+statement ok rowcount 9
+INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
+(INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
+
+query T rowsort
+SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
+----
+False
+
+query T rowsort
+SELECT t0.c3 FROM t0 WHERE ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1)
+----
+0:00:00
+0:00:01
+0:00:01
+0:00:04
+0:00:06
+0:00:06
+0:00:09
+0:00:09
+NULL
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1) AS INT) as count FROM t0) as res
+----
+9
+
+statement ok
+ROLLBACK
+

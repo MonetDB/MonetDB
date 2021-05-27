@@ -1346,7 +1346,6 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
-			list *sexps;
 			sql_rel *sl = s->l, *sr = s->r, *n;
 
 			sl = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
@@ -1363,12 +1362,11 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			s->l = rel;
 			s->r = n;
 			if (is_join(rel->op)) {
-				sexps = sa_list(sql->sa);
-				for (node *m = d->exps->h; m; m = m->next) {
-					sql_exp *e = m->data, *pe;
+				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
+				for (node *m = dexps->h; m; m = m->next) {
+					sql_exp *e = m->data;
 
-					pe = exp_ref(sql, e);
-					append(sexps, pe);
+					list_append(sexps, exp_ref(sql, e));
 				}
 				s->exps = list_merge(sexps, s->exps, (fdup)NULL);
 			}
@@ -1830,11 +1828,11 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = (int) rt->scale; /* shift with scale */
-					sql_subtype *it = sql_bind_localtype(lt->type->base.name);
+					sql_subtype *it = sql_bind_localtype(lt->type->impl);
 					sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", lt, it, F_FUNC);
 
 					if (!c) {
-						TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->base.name);
+						TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->impl);
 						return NULL;
 					}
 #ifdef HAVE_HGE
@@ -1863,21 +1861,21 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 #endif
 
 					if (lt->type->eclass == EC_SEC) {
-						sql_subtype *it = sql_bind_localtype(lt->type->base.name);
+						sql_subtype *it = sql_bind_localtype(lt->type->impl);
 						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_up", lt, it, F_FUNC);
 
 						if (!c) {
-							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->base.name);
+							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->impl);
 							return NULL;
 						}
 						atom *a = atom_int(v->sql->sa, it, val);
 						ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 					} else { /* EC_MONTH */
-						sql_subtype *it = sql_bind_localtype(rt->type->base.name);
+						sql_subtype *it = sql_bind_localtype(rt->type->impl);
 						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", rt, it, F_FUNC);
 
 						if (!c) {
-							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->base.name);
+							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->impl);
 							return NULL;
 						}
 						atom *a = atom_int(v->sql->sa, it, val);
@@ -1902,12 +1900,6 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 		e->r = NULL;
 	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
 
-	if (is_values(e) && list_length(exp_get_values(e))==1) { /* list of values with 1 element are redundant */
-		sql_exp *val = ((list*)e->f)->h->data;
-		if (exp_name(e))
-			exp_prop_alias(v->sql->sa, val, e);
-		e = val;
-	}
 	if (!(e = exp_physical_types(v, rel, e, depth))) /* for decimals and intervals we need to adjust the scale for some operations */
 		return NULL;
 	if (!rel->l)
@@ -2664,7 +2656,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rsq) {
 					if (on_right) {
 						sql_rel *join = rel->l; /* the introduced join */
-						join->r = rel_crossproduct(sql->sa, join->r, rsq, depth?op_right:op_left);
+						join->r = rel_crossproduct(sql->sa, join->r, rsq, (depth && is_select(rel->op))?op_right:op_left);
 						set_dependent(join);
 						if (depth)
 							reset_has_nil(join->r, le);
@@ -2789,8 +2781,10 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			int quantifier = e->flag;
 
 			/* possibly this is already done ? */
-			if (exp_has_rel(ile))
+			if (exp_has_rel(ile)) {
+				depth += exp_rel_depth(ile);
 				lsq = exp_rel_get_rel(v->sql->sa, ile); /* get subquery */
+			}
 
 			if (lsq)
 				le = exp_rel_update_exp(v->sql, ile);
@@ -3071,7 +3065,7 @@ exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
 		exists_func = sql_bind_func(sql, "sys", "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
 
 	if (!exists_func)
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
+		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->base.name);
 	if (ne) { /* correlated case */
 		ne = rel_unop_(sql, NULL, ne, "sys", "isnull", card_value);
 		set_has_no_nil(ne);
@@ -3187,7 +3181,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	sf = e->f;
 	/* TODO also handle ifthenelse with more than 3 arguments */
-	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
+	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
 		list *l = e->l;
 
 		/* remove unecessary = true expressions under ifthenelse */

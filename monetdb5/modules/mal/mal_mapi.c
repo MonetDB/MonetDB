@@ -1052,6 +1052,9 @@ SERVERdisconnectALL(int *key){
 				GDKfree(SERVERsessions[i].dbalias);
 			SERVERsessions[i].dbalias = NULL;
 			*key = SERVERsessions[i].key;
+			if( SERVERsessions[i].hdl)
+				mapi_close_handle(SERVERsessions[i].hdl);
+			SERVERsessions[i].hdl= NULL;
 			mapi_disconnect(SERVERsessions[i].mid);
 		}
 
@@ -1074,6 +1077,9 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 					GDKfree(SERVERsessions[i].dbalias);
 				SERVERsessions[i].dbalias = NULL;
 				*key = SERVERsessions[i].key;
+				if( SERVERsessions[i].hdl)
+					mapi_close_handle(SERVERsessions[i].hdl);
+				SERVERsessions[i].hdl= NULL;
 				mapi_disconnect(SERVERsessions[i].mid);
 				break;
 		}
@@ -1205,6 +1211,9 @@ SERVERdisconnect(void *ret, int *key){
 	Mapi mid;
 	(void) ret;
 	accessTest(*key, "disconnect");
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
+	SERVERsessions[i].hdl= NULL;
 	mapi_disconnect(mid);
 	if( SERVERsessions[i].dbalias)
 		GDKfree(SERVERsessions[i].dbalias);
@@ -1219,6 +1228,10 @@ SERVERdestroy(void *ret, int *key){
 	Mapi mid;
 	(void) ret;
 	accessTest(*key, "destroy");
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
+	SERVERsessions[i].hdl= NULL;
+	mapi_disconnect(mid);
 	mapi_destroy(mid);
 	SERVERsessions[i].c= 0;
 	if( SERVERsessions[i].dbalias)
@@ -1233,6 +1246,9 @@ SERVERreconnect(void *ret, int *key){
 	Mapi mid;
 	(void) ret;
 	accessTest(*key, "destroy");
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
+	SERVERsessions[i].hdl= NULL;
 	mapi_reconnect(mid);
 	return MAL_SUCCEED;
 }
@@ -1719,10 +1735,13 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_flt:
 			case TYPE_dbl:
 			case TYPE_str:
-				if(SERVERfieldAnalysis(fld,getVarType(mb,getArg(pci,j)),&stk->stk[pci->argv[j]]) < 0)
+				if(SERVERfieldAnalysis(fld,getVarType(mb,getArg(pci,j)),&stk->stk[pci->argv[j]]) < 0) {
+					mapi_close_handle(hdl);
 					throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 				break;
 			default:
+				mapi_close_handle(hdl);
 				throw(MAL, "mapi.rpc",
 						"Missing type implementation ");
 			/* all the other basic types come here */
@@ -1730,6 +1749,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		i++;
 	}
+	mapi_close_handle(hdl);
 	if( i>1)
 		throw(MAL, "mapi.rpc","Too many answers");
 	return MAL_SUCCEED;
@@ -1762,19 +1782,24 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	catchErrors("mapi.rpc");
 
 	b= COLnew(0,tt,256, TRANSIENT);
-	if ( b == NULL)
+	if ( b == NULL) {
+		mapi_close_handle(hdl);
 		throw(MAL,"mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		if(SERVERfieldAnalysis(fld2, tt, &tval) < 0) {
 			BBPreclaim(b);
+			mapi_close_handle(hdl);
 			throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b,VALptr(&tval), false) != GDK_SUCCEED) {
 			BBPreclaim(b);
+			mapi_close_handle(hdl);
 			throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
+	mapi_close_handle(hdl);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 

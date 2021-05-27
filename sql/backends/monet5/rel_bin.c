@@ -91,7 +91,7 @@ sql_unop_(backend *be, const char *fname, stmt *rs)
 		*/
 		return stmt_unop(be, rs, NULL, f);
 	} else if (rs) {
-		char *type = tail_type(rs)->type->sqlname;
+		char *type = tail_type(rs)->type->base.name;
 
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
 	}
@@ -293,18 +293,19 @@ statment_score(stmt *c)
 static stmt *
 bin_find_smallest_column(backend *be, rel_bin_stmt *st)
 {
-	stmt *res = NULL;
-	int best_score = 0;
+	stmt *res = st->cols->h->data;
+	int best_score = statment_score(st->cols->h->data);
 
-	for (node *n = st->cols->h ; n ; n = n->next) {
-		stmt *c = n->data;
-		int next_score = statment_score(c);
+	if (st->cols->h->next)
+		for (node *n = st->cols->h->next ; n ; n = n->next) {
+			stmt *c = n->data;
+			int next_score = statment_score(c);
 
-		if (next_score >= best_score) {
-			res = c;
-			best_score = next_score;
+			if (next_score > best_score) {
+				res = c;
+				best_score = next_score;
+			}
 		}
-	}
 	if (res->nrcols == 0)
 		res = const_column(be, res);
 	return res;
@@ -1308,7 +1309,9 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		stmt *l;
 
 		if (from->type->localtype == 0) {
-			l = stmt_atom(be, atom_general(sql->sa, to, NULL));
+			l = exp_bin(be, e->l, left, right, depth+1, 0, push);
+			if (l)
+				l = stmt_atom(be, atom_general(sql->sa, to, NULL));
 		} else {
 			l = exp_bin(be, e->l, left, right, depth+1, 0, push);
 		}
@@ -1342,6 +1345,8 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 		if (strcmp(fmod, "") == 0 && strcmp(ffunc, "") == 0) {
 			if (strcmp(f->func->base.name, "star") == 0)
 				return left->cols->h->data;
+			if (strcmp(f->func->base.name, "case") == 0)
+				return exp2bin_case(be, e, left, right, depth);
 			if (strcmp(f->func->base.name, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, depth);
 			if (strcmp(f->func->base.name, "coalesce") == 0)
@@ -1349,8 +1354,6 @@ exp_bin(backend *be, sql_exp *e, rel_bin_stmt *left, rel_bin_stmt *right, int de
 			if (strcmp(f->func->base.name, "nullif") == 0)
 				return exp2bin_nullif(be, e, left, right, depth, push);
 		}
-		if (strcmp(fmod, "calc") == 0 && strcmp(ffunc, "ifthenelse") == 0)
-			return exp2bin_case(be, e, left, right, depth);
 
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -1732,14 +1735,14 @@ check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 	}
 	if (err) {
 		stmt *res = sql_error(sql, 03, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
-			fromtype->type->sqlname,
+			fromtype->type->base.name,
 			fromtype->digits,
 			fromtype->scale,
-			fromtype->type->base.name,
-			t->type->sqlname,
+			fromtype->type->impl,
+			t->type->base.name,
 			t->digits,
 			t->scale,
-			t->type->base.name
+			t->type->impl
 		);
 		return res;
 	}
@@ -4272,7 +4275,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint && !be->rowcount)
+	if (constraint)
 		sql_insert_check_null(be, t, inserts->cols);
 
 	updates = table_update_stmts(sql, t, &len);
@@ -5168,8 +5171,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	int i, nr_cols = ol_length(t->columns);
 	node *n;
 
-	if (!be->rowcount)
-		sql_update_check_null(be, t, updates);
+	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, NULL);
@@ -5253,8 +5255,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	if (!be->rowcount)
-		sql_update_check_null(be, t, updates);
+	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, ol_length(t->columns));
@@ -5679,10 +5680,22 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 					assert(s->base.id == sche->base.id);
 					if ((seq = find_sql_sequence(tr, s, seq_name))) {
-						if (!sql_trans_sequence_restart(tr, seq, seq->start)) {
-							sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
-							error = 1;
-							goto finalize;
+						switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
+							case -1:
+								sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								error = 1;
+								goto finalize;
+							case -2:
+							case -3:
+								sql_error(sql, 02, SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
+								error = 1;
+								goto finalize;
+							case -4:
+								sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
+								error = 1;
+								goto finalize;
+							default:
+								break;
 						}
 					}
 				}

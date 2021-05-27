@@ -7,12 +7,12 @@ port := calc.int(fs)
 statement ok
 mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal")
 
-statement error
-s:str:= mapi.rpc(mid,"io.print(123456);")
-
-statement error
-io.print(s)
+statement ok
+s:str:= mapi.rpc(mid,"io.print(123456);");
 
 statement ok
-mapi.disconnect(mid)
+io.print(s);
+
+statement ok
+mapi.destroy(mid)
 

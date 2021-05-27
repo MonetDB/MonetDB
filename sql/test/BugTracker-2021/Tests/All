@@ -5,3 +5,11 @@ ntile-wrong-result.Bug-7104
 union-groupby.Bug-7108
 merge-stmt.wrong-error.Bug-7109
 remote-table-groupby.Bug-7110
+conditional-execution-round.Bug-7125
+lowercase-cryllic.Bug-7126
+unnest-union.Bug-7127
+subquery-missing.Bug-7128
+batcalc-between-undefined.Bug-7129
+batappend-undefined.Bug-7130
+WITH-alias-DELETE-1.deletes-wrong-tuples.Bug-7133
+WITH-alias-DELETE-2.deletes-too-many-tuples.Bug-7133

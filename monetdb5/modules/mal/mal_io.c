@@ -43,6 +43,7 @@
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mutils.h"
+#include "mal_exception.h"
 
 #define MAXFORMAT 64*1024
 

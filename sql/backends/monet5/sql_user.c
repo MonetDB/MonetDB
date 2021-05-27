@@ -28,14 +28,22 @@ static int
 monet5_drop_user(ptr _mvc, str user)
 {
 	mvc *m = (mvc *) _mvc;
-	oid rid;
-	sql_schema *sys;
-	sql_table *users;
-	sql_column *users_name;
+	oid rid, grant_user;
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *users = find_sql_table(m->session->tr, sys, "db_user_info");
+	sql_column *users_name = find_sql_column(users, "name");
 	str err;
 	Client c = MCgetClient(m->clientid);
+	sqlstore *store = m->session->tr->store;
+	int log_res = LOG_OK;
 
-	oid grant_user = c->user;
+	rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
+	if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(m->session->tr, users, rid)) != LOG_OK) {
+		(void) sql_error(m, 02, "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		return FALSE;
+	}
+
+	grant_user = c->user;
 	c->user = MAL_ADMIN;
 	err = AUTHremoveUser(c, user);
 	c->user = grant_user;
@@ -44,14 +52,6 @@ monet5_drop_user(ptr _mvc, str user)
 		freeException(err);
 		return FALSE;
 	}
-	sys = find_sql_schema(m->session->tr, "sys");
-	users = find_sql_table(m->session->tr, sys, "db_user_info");
-	users_name = find_sql_column(users, "name");
-
-	sqlstore *store = m->session->tr->store;
-	rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
-	if (!is_oid_nil(rid))
-		store->table_api.table_delete(m->session->tr, users, rid);
 	/* FIXME: We have to ignore this inconsistency here, because the
 	 * user was already removed from the system authorisation. Once
 	 * we have warnings, we could issue a warning about this
@@ -336,6 +336,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
 	str err;
+	int res = LOG_OK;
 
 	if (passwd != NULL) {
 		str pwd = NULL;
@@ -414,11 +415,17 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
-		/* FIXME: we don't really check against the backend here */
 		oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
-		if (is_oid_nil(rid))
+		if (is_oid_nil(rid)) {
+			(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
+				 "your database is damaged, auth not found in SQL catalog");
 			return FALSE;
-		store->table_api.column_update_value(m->session->tr, users_schema, rid, &schema_id);
+		}
+		if ((res = store->table_api.column_update_value(m->session->tr, users_schema, rid, &schema_id))) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return (FALSE);
+		}
 	}
 
 	if (schema_path) {
@@ -434,9 +441,16 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		}
 
 		oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
-		if (is_oid_nil(rid))
+		if (is_oid_nil(rid)) {
+			(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
+				 "your database is damaged, auth not found in SQL catalog");
 			return FALSE;
-		store->table_api.column_update_value(m->session->tr, sp, rid, schema_path);
+		}
+		if ((res = store->table_api.column_update_value(m->session->tr, sp, rid, schema_path))) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return (FALSE);
+		}
 	}
 
 	return TRUE;
@@ -454,6 +468,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_column *users_name = find_sql_column(info, "name");
 	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
+	int res = LOG_OK;
 
 	if ((err = AUTHchangeUsername(c, olduser, newuser)) !=MAL_SUCCEED) {
 		(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
@@ -468,7 +483,11 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 				 "your database is damaged, user not found in SQL catalog");
 		return (FALSE);
 	}
-	store->table_api.column_update_value(m->session->tr, users_name, rid, newuser);
+	if ((res = store->table_api.column_update_value(m->session->tr, users_name, rid, newuser))) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+						 res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		return (FALSE);
+	}
 
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, olduser, NULL);
 	if (is_oid_nil(rid)) {
@@ -476,8 +495,11 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 				 "your database is damaged, auth not found in SQL catalog");
 		return (FALSE);
 	}
-	store->table_api.column_update_value(m->session->tr, auths_name, rid, newuser);
-
+	if ((res = store->table_api.column_update_value(m->session->tr, auths_name, rid, newuser))) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+						 res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		return (FALSE);
+	}
 	return (TRUE);
 }
 

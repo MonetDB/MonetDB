@@ -826,13 +826,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				actions++;
 			}
 		} else if (isIntersect(p) && p->retc == 1 && lastbat == 4) {
-		/* c = delta(b, uid, uvl, ins)
+		/* l = delta(b, uid, uvl)
 		 * s = intersect(l, r, li, ..)
 		 *
 		 * nc = intersect(b, r, li..)
-		 * ni = intersect(ins, r, li..)
 		 * nu = intersect(uvl, r, ..)
-		 * s = subdelta(nc, uid, nu, ni);
+		 * s = subdelta(nc, li, uid, nu);
 		 */
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
@@ -844,13 +843,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(p);
-				InstrPtr t = copyInstruction(p);
 				InstrPtr u = copyInstruction(q);
 
-				if( r == NULL || s == NULL || t== NULL ||u == NULL){
+				if( r == NULL || s == NULL || u == NULL){
 					freeInstruction(r);
 					freeInstruction(s);
-					freeInstruction(t);
 					freeInstruction(u);
 					GDKfree(vars);
 					GDKfree(nvars);
@@ -873,21 +870,17 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
 				s->typechk = TYPE_UNKNOWN;
-        			s->fcn = NULL;
-        			s->blk = NULL;
+        		s->fcn = NULL;
+        		s->blk = NULL;
 				pushInstruction(mb,s);
-				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
-				setVarCList(mb,getArg(t,0));
-				getArg(t, 1) = getArg(q, 4); /* inserts */
-				pushInstruction(mb,t);
 
 				setFunctionId(u, subdeltaRef);
 				getArg(u, 0) = getArg(p,0);
 				getArg(u, 1) = getArg(r,0);
 				getArg(u, 2) = getArg(p,3); /* pre-cands */
 				getArg(u, 3) = getArg(q,2); /* update ids */
-				getArg(u, 4) = getArg(s,0);
-				u = pushArgument(mb, u, getArg(t,0));
+				//getArg(u, 4) = getArg(s,0);
+				p = pushArgument(mb, u, getArg(s,0)); /* push at end */
 				u->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,u);
 				oclean[i] = 1;
