@@ -1142,25 +1142,20 @@ SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BATdescriptor(*bid)))
-			throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (!(b = BBPquickdesc(*bid, false)))
+			throw(SQL, "aggr.exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		count = BATcount(b) != 0;
 	}
 	if (isaBatType(getArgType(mb, pci, 0))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		if ((r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
-			if (b)
-				BBPunfix(b->batCacheid);
+		if (!(r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)))
 			throw(SQL, "aggr.exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 		BBPkeepref(*res = r->batCacheid);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = count;
 	}
 
-	if (b)
-		BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1218,25 +1213,20 @@ SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BATdescriptor(*bid)))
-			throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (!(b = BBPquickdesc(*bid, false)))
+			throw(SQL, "aggr.not_exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		count = BATcount(b) == 0;
 	}
 	if (isaBatType(getArgType(mb, pci, 0))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		if ((r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
-			if (b)
-				BBPunfix(b->batCacheid);
+		if (!(r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)))
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 		BBPkeepref(*res = r->batCacheid);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = count;
 	}
 
-	if (b)
-		BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
