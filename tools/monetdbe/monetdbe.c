@@ -2093,6 +2093,14 @@ remote_cleanup:
 			//set default flags
 			BATsettrivprop(bn);
 
+			if (cnt > 1) {
+				bn->tsorted = bn->trevsorted = false;
+				bn->tnosorted = bn->tnorevsorted = 0;
+				bn->tkey = false;
+				bn->tnonil = false;
+				bn->tnil = false;
+			}
+
 			if (store->storage_api.append_col(m->session->tr, c, pos, bn, TYPE_bat, 0) != 0) {
 				bn->theap->base = prev_base;
 				bn->theap->size = prev_size;

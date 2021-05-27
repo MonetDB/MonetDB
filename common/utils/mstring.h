@@ -29,7 +29,10 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 			if ((dst[i] = src[i]) == 0)
 				return i;
 		}
-		dst[n - 1] = 0;
+		/* for correctness, the decrement isn't needed (just assigning 0
+		 * to dst[n-1] would be sufficient), but to work around a too
+		 * strict GNU C compiler, we do need it */
+		dst[--n] = 0;
 /* in some versions of GCC (at least gcc (Ubuntu 7.5.0-3ubuntu1~18.04)
  * 7.5.0), the error just can't be turned off when using
  * --enable-strict, so we just use the (more) expensive way of getting the

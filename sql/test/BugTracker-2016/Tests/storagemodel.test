@@ -1,8 +1,8 @@
 statement ok
 create table bug3923(i integer)
 
-query TTTTTITTI rowsort
-select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes > 0, phash, imprints from storage('sys','_tables')
+query TTTTTITI rowsort
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints from storage('sys','_tables')
 ----
 sys
 _tables
@@ -10,7 +10,6 @@ access
 smallint
 writable
 2
-False
 False
 0
 sys
@@ -20,7 +19,6 @@ smallint
 writable
 2
 False
-False
 0
 sys
 _tables
@@ -28,7 +26,6 @@ id
 int
 writable
 4
-False
 False
 0
 sys
@@ -38,7 +35,6 @@ varchar
 writable
 99
 False
-False
 0
 sys
 _tables
@@ -46,7 +42,6 @@ query
 varchar
 writable
 99
-False
 False
 0
 sys
@@ -56,7 +51,6 @@ int
 writable
 4
 False
-False
 0
 sys
 _tables
@@ -65,7 +59,6 @@ boolean
 writable
 1
 False
-False
 0
 sys
 _tables
@@ -73,7 +66,6 @@ type
 smallint
 writable
 2
-False
 False
 0
 
@@ -115,8 +107,8 @@ set schema bug3923schema
 statement ok
 create table bug3923(i integer)
 
-query TTTTTITTI rowsort
-select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes > 0, phash, imprints from sys.storage('sys','_tables')
+query TTTTTITI rowsort
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints from sys.storage('sys','_tables')
 ----
 sys
 _tables
@@ -124,7 +116,6 @@ access
 smallint
 writable
 2
-False
 False
 0
 sys
@@ -134,7 +125,6 @@ smallint
 writable
 2
 False
-False
 0
 sys
 _tables
@@ -142,7 +132,6 @@ id
 int
 writable
 4
-False
 False
 0
 sys
@@ -152,7 +141,6 @@ varchar
 writable
 99
 False
-False
 0
 sys
 _tables
@@ -160,7 +148,6 @@ query
 varchar
 writable
 99
-False
 False
 0
 sys
@@ -170,7 +157,6 @@ int
 writable
 4
 False
-False
 0
 sys
 _tables
@@ -178,7 +164,6 @@ system
 boolean
 writable
 1
-True
 False
 0
 sys
@@ -187,7 +172,6 @@ type
 smallint
 writable
 2
-False
 False
 0
 
