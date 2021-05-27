@@ -271,7 +271,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
 	QRYqueue[qhead].idx = cntxt->idx;
 	/* give the MB upperbound by addition of 1 MB */
-	QRYqueue[qhead].memory = 1 + (lng) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
+	QRYqueue[qhead].memory = 1 + (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
 	QRYqueue[qhead].workers = (int) 1;	/* this is the first one */
 	QRYqueue[qhead].status = "running";
 	QRYqueue[qhead].cntxt = cntxt;
@@ -306,7 +306,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].workers = mb->workers;
 			/* give the MB upperbound by addition of 1 MB */
-			QRYqueue[i].memory = 1 + (lng)(mb->memory / LL_CONSTANT(1048576));
+			QRYqueue[i].memory = 1 + (int)(mb->memory / LL_CONSTANT(1048576));
 			QRYqueue[i].cntxt = 0;
 			QRYqueue[i].stk = 0;
 			QRYqueue[i].mb = 0;

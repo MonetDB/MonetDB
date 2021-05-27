@@ -34,7 +34,7 @@ typedef struct QRYQUEUE{
 	str username;
 	int idx;
 	int workers;
-	lng memory;
+	int memory;
 	lng ticks;
 	time_t start;
 	time_t finished;
