@@ -3196,7 +3196,6 @@ bm_commit(logger *lg, lng save_id)
 				"#commit deleted (snapshot) %s (%d)\n",
 				name, bid);
 		if (BUNappend(n, name, false) != GDK_SUCCEED) {
-			logbat_destroy(lb);
 			logbat_destroy(n);
 			return GDK_FAIL;
 		}
