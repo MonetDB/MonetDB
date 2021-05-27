@@ -45,6 +45,7 @@ project1_##TYPE(BAT *restrict bn, BAT *restrict l, BAT *restrict r1)	\
 		for (lo = 0, hi = BATcount(l); lo < hi; lo++) 		\
 			bt[lo] = r1t[lo];				\
 	} else {							\
+		assert(l->ttype);\
 		const oid *restrict ot = (const oid *) Tloc(l, 0);	\
 		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
 			oid o = ot[lo];					\
@@ -85,7 +86,9 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 	oid r1seq, r1end;						\
 	oid r2seq, r2end;						\
 									\
-	if ((!ci || ci->tpe == cand_dense) && l->tnonil && !r2)		\
+	if (r2 == NULL &&						\
+	    (!ci || (ci->tpe == cand_dense && BATtdense(l))) &&		\
+	    l->tnonil && r1->ttype && !BATtdense(r1))			\
 		return project1_##TYPE(bn, l, r1);			\
 	MT_thread_setalgorithm(__func__);				\
 	r1t = (const TYPE *) Tloc(r1, 0);				\
@@ -173,7 +176,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
-	if ((!lci || lci->tpe == cand_dense) && r1->ttype && !BATtdense(r1) && !r2) {
+	if ((!lci || (lci->tpe == cand_dense && BATtdense(l))) && r1->ttype && !BATtdense(r1) && !r2 &&	l->tnonil) {
 		if (sizeof(oid) == sizeof(lng))
 			return project1_lng(bn, l, r1);
 		else
@@ -661,7 +664,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		}
 		tpe = TYPE_oid;
 	}
-	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
+	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1->twidth : 0);
 	if (bn == NULL) {
 		goto doreturn;
 	}
@@ -731,21 +734,19 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			/* no need to lock bn, it's ours */
 			assert(r1->tvheap->parentid > 0);
 			BBPshare(r1->tvheap->parentid);
+			/* there is no file, so we don't need to remove it */
+			HEAPdecref(bn->tvheap, false);
 			bn->tvheap = r1->tvheap;
 			HEAPincref(r1->tvheap);
 			MT_lock_unset(&r1->theaplock);
 		} else {
 			/* make copy of string heap */
-			bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->tvheap == NULL)
-				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
-			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}

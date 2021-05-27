@@ -42,40 +42,40 @@ SELECT COUNT(*) from range_partitions
 ----
 1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.subtable1' is already part of RANGE PARTITION TABLE 'sys.testme'
 ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10
 
 statement ok
 CREATE TABLE wrongtable (a int, b varchar(32), c real)
 
-statement error
+statement error 3F000!ALTER RANGE PARTITION TABLE: to be added table doesn't match RANGE PARTITION TABLE definition
 ALTER TABLE testme ADD TABLE wrongtable AS PARTITION FROM 5 TO 6
 
 statement ok
 CREATE TABLE subtable2 (a int, b varchar(32))
 
-statement error
+statement error 42000!ALTER TABLE: cannot add a value partition into a RANGE PARTITION TABLE
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2')
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 7 to 9 and 5 to 10 from table sys.subtable1
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 7 TO 9
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 5 to 5 and 5 to 10 from table sys.subtable1
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.subtable2' isn't part of RANGE PARTITION TABLE 'sys.testme'
 ALTER TABLE testme DROP TABLE subtable2
 
-statement error
+statement error 42000!DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)
 DROP TABLE subtable1
 
-statement error
+statement error 2BM37!ALTER TABLE: unable to set schema of table 'testme' (there are database objects which depend on it)
 ALTER TABLE testme SET SCHEMA other_schema
 
-statement error
+statement error 2BM37!ALTER TABLE: unable to set schema of table 'subtable1' (there are database objects which depend on it)
 ALTER TABLE subtable1 SET SCHEMA other_schema
 
-statement error
+statement error 2BM37!ALTER TABLE: unable to rename table 'subtable1' (there are database objects which depend on it)
 ALTER TABLE subtable1 RENAME TO subtable3
 
 statement ok
@@ -84,7 +84,7 @@ ALTER TABLE testme DROP TABLE subtable1
 statement ok
 ALTER TABLE subtable1 SET SCHEMA other_schema
 
-statement error
+statement error 42000!ALTER TABLE: all children tables of 'sys.testme' must be part of schema 'sys'
 ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION FROM 4 TO 23
 
 statement ok

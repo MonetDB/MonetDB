@@ -12,7 +12,6 @@
 #include "utils.h"
 
 #define MEROPROPFILE ".merovingian_properties"
-#define PROFILERLOGPROPERTY "profilerlogpath"
 #define PROFILERBEATFREQ "profilerbeatfreq"
 
 confkeyval *getDefaultProps(void);

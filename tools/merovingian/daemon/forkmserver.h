@@ -13,8 +13,6 @@
 #include "merovingian.h" /* err */
 
 err forkMserver(const char* database, sabdb** stats, bool force);
-err fork_profiler(const char *database, sabdb **stats, char **log_path);
-err shutdown_profiler(const char *dbname, sabdb **stats);
 
 #endif
 

@@ -94,10 +94,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 
 		/* locate the largest non-partitioned table */
-		if (getModuleId(p) != sqlRef || (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef))
+		if (getModuleId(p) != sqlRef ||
+				(getFunctionId(p) != bindRef &&
+				 getFunctionId(p) != bindidxRef &&
+				 getFunctionId(p) != tidRef))
 			continue;
 		/* don't split insert BATs */
-		if (getVarConstant(mb, getArg(p, 5)).val.ival == 1)
+		if (p->argc > 5 && getVarConstant(mb, getArg(p, 5)).val.ival == 1)
 			continue;
 		if (p->argc > 6)
 			continue;  /* already partitioned */

@@ -164,7 +164,7 @@ addAtom( mel_atom *atoms)
 }
 
 static str
-makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
+makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 {
 	int tpe = TYPE_any;//, l;
 
@@ -245,7 +245,7 @@ addFunctions(mel_func *fcn){
 		}
 		int i;
 		for (i = 0; i<fcn->retc; i++ ){
-			mel_arg *a = fcn->args+i;
+			const mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
 			if( msg)
 				return msg;
@@ -266,7 +266,7 @@ addFunctions(mel_func *fcn){
 		}
 		/* add the arguments */
 		for (i = fcn->retc; i<fcn->argc; i++ ){
-			mel_arg *a = fcn->args+i;
+			const mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
 			if( msg)
 				return msg;
@@ -311,7 +311,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, const char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ... )
+melFunction(bool command, const char *mod, const char *fcn, fptr imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
 {
 	int i, idx;
 	Module c;

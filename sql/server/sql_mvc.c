@@ -1035,14 +1035,11 @@ mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 	return trigger;
 }
 
-sql_type *
+int
 mvc_create_type(mvc *sql, sql_schema *s, const char *name, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
-	sql_type *t = NULL;
-
 	TRC_DEBUG(SQL_TRANS, "Create type: %s\n", name);
-	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
-	return t;
+	return sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 }
 
 int
@@ -1206,20 +1203,12 @@ mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orienta
 	return i;
 }
 
-sql_trigger *
-mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ )
-{
-	sql_trans_create_tc(m->session->tr, i, c);
-	return i;
-}
-
 int
 mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop trigger: %s %s\n", s->base.name, tri->base.name);
 	return sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
-
 
 sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
@@ -1300,8 +1289,15 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 			return AUTHres;
 	}
 
-	if (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
-		throw(SQL, "sql.mvc_drop_table", SQLSTATE(42000) "Transaction conflict while dropping table %s.%s", s->base.name, t->base.name);
+	switch (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT)) {
+		case -1:
+			throw(SQL,"sql.mvc_drop_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL, "sql.mvc_drop_table", SQLSTATE(42000) "Transaction conflict while dropping table %s.%s", s->base.name, t->base.name);
+		default:
+			break;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1325,7 +1321,7 @@ mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, uns
 sql_column *
 mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
-	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
+	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->base.name);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->store, m->sa, t, name, tpe);
@@ -1405,60 +1401,60 @@ mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
 	return NO_DEPENDENCY;
 }
 
-sql_column *
+int
 mvc_null(mvc *m, sql_column *col, int isnull)
 {
 	TRC_DEBUG(SQL_TRANS, "Null: %s %d\n", col->base.name, isnull);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->null = isnull;
-		return col;
+		return 0;
 	}
 	return sql_trans_alter_null(m->session->tr, col, isnull);
 }
 
-sql_column *
+int
 mvc_default(mvc *m, sql_column *col, char *val)
 {
 	TRC_DEBUG(SQL_TRANS, "Default: %s %s\n", col->base.name, val);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->def = val?sa_strdup(m->sa, val):NULL;
-		return col;
+		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);
 	}
 }
 
-sql_column *
+int
 mvc_drop_default(mvc *m, sql_column *col)
 {
 	TRC_DEBUG(SQL_TRANS, "Drop default: %s\n", col->base.name);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->def = NULL;
-		return col;
+		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, NULL);
 	}
 }
 
-sql_column *
+int
 mvc_storage(mvc *m, sql_column *col, char *storage)
 {
 	TRC_DEBUG(SQL_TRANS, "Storage: %s %s\n", col->base.name, storage);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->storage_type = storage?sa_strdup(m->sa, storage):NULL;
-		return col;
+		return 0;
 	} else {
 		return sql_trans_alter_storage(m->session->tr, col, storage);
 	}
 }
 
-sql_table *
+int
 mvc_access(mvc *m, sql_table *t, sht access)
 {
 	TRC_DEBUG(SQL_TRANS, "Access: %s %d\n", t->base.name, access);
 	if (t->persistence == SQL_DECLARED_TABLE) {
 		t->access = access;
-		return t;
+		return 0;
 	}
 	return sql_trans_alter_access(m->session->tr, t, access);
 }
@@ -1484,28 +1480,28 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 	return sql_trans_is_duplicate_eliminated(m->session->tr, col);
 }
 
-sql_column *
-mvc_copy_column( mvc *m, sql_table *t, sql_column *c)
+int
+mvc_copy_column(mvc *m, sql_table *t, sql_column *c, sql_column **cres)
 {
-	return sql_trans_copy_column(m->session->tr, t, c);
+	return sql_trans_copy_column(m->session->tr, t, c, cres);
 }
 
-sql_key *
-mvc_copy_key(mvc *m, sql_table *t, sql_key *k)
+int
+mvc_copy_key(mvc *m, sql_table *t, sql_key *k, sql_key **kres)
 {
-	return sql_trans_copy_key(m->session->tr, t, k);
+	return sql_trans_copy_key(m->session->tr, t, k, kres);
 }
 
-sql_idx *
-mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
+int
+mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, sql_idx **ires)
 {
-	return sql_trans_copy_idx(m->session->tr, t, i);
+	return sql_trans_copy_idx(m->session->tr, t, i, ires);
 }
 
-sql_trigger *
-mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
+int
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 {
-	return sql_trans_copy_trigger(m->session->tr, t, tr);
+	return sql_trans_copy_trigger(m->session->tr, t, tr, tres);
 }
 
 sql_rel *

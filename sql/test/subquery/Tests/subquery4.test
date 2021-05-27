@@ -1,19 +1,19 @@
 statement ok
 CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100)
 
 statement ok
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888)
 
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
 statement ok
@@ -39,25 +39,25 @@ FROM integers i1
 1
 1
 
-statement error
+statement error 42000!SELECT: subquery must return only one column
 SELECT
 	(SELECT 1,1 UNION ALL SELECT 2,2)
 FROM integers i1
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT i FROM integers i1 ORDER BY (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT
 	(SELECT 1 UNION ALL SELECT 2)
 FROM integers i1
 
-statement error
+statement error 42000!MIN: aggregate functions not allowed in functions in FROM
 SELECT
 	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
 FROM integers i1
 
-statement error
+statement error 42000!MAX: window function 'max' not allowed in functions in FROM
 SELECT
 	(SELECT i2.i FROM evilfunction(MAX(i1.i) OVER ()) as i2(i))
 FROM integers i1
@@ -83,7 +83,7 @@ SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1))
 1
 1
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT
 	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
 FROM integers i1
@@ -103,16 +103,16 @@ FROM integers i1
 3
 NULL
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false)
 
-statement error
+statement error 42000!SELECT: subquery must return only one column
 SELECT i FROM integers WHERE (SELECT true, false)
 
-statement error
+statement error 42000!SELECT: subquery must return only one column
 SELECT i FROM integers WHERE (SELECT true, false UNION ALL SELECT false, true)
 
 query I rowsort
@@ -137,7 +137,7 @@ FROM integers i1
 ----
 1
 
-query I rowsort
+query I nosort
 SELECT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST
 ----
 1
@@ -145,7 +145,7 @@ SELECT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULL
 1
 NULL
 
-query I rowsort
+query I nosort
 SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i)) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST
 ----
 1
@@ -153,7 +153,7 @@ SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i)) mycalc FROM integers i1 ORD
 1
 NULL
 
-query I rowsort
+query I nosort
 SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) FROM integers i1 ORDER BY 1 NULLS LAST
 ----
 1
@@ -161,13 +161,13 @@ SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) FROM integers
 1
 NULL
 
-query I rowsort
+query I nosort
 SELECT DISTINCT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST
 ----
 1
 NULL
 
-query I rowsort
+query I nosort
 SELECT DISTINCT CAST((SELECT SUM(i1.i) OVER ()) AS BIGINT) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST
 ----
 1
@@ -182,11 +182,10 @@ SELECT i FROM integers WHERE i IN ((SELECT 1), (SELECT i FROM another_t))
 2
 3
 
-statement error
+statement error 42000!Subquery has too few columns
 SELECT i FROM integers WHERE (i,i) IN ((SELECT 1,2), (SELECT i UNION ALL SELECT 2))
 
 query I rowsort
- 
 SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2
 ----
 36
@@ -196,10 +195,10 @@ SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1 INNER JOIN int
 ----
 12
 
-statement error
+statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
 SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (SELECT SUM(i2.i + i1.i)) > 0
 
-statement error
+statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 SELECT i1.i, i2.i FROM integers i1, integers i2 HAVING (SELECT SUM(i2.i + i1.i)) > 0
 
 query I rowsort
@@ -207,19 +206,19 @@ SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, inte
 ----
 36
 
-query I rowsort
+query T rowsort
 SELECT NOT EXISTS(SELECT i1.i) from integers i1
 ----
-0
-0
-0
-0
+False
+False
+False
+False
 
 query II rowsort
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i)
 ----
 
-query II rowsort
+query II nosort
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = EXISTS (SELECT i2.i) ORDER BY i1.i NULLS LAST, i2.i NULLS LAST
 ----
 1
@@ -255,7 +254,7 @@ NULL
 NULL
 NULL
 
-query II rowsort
+query II nosort
 SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i) ORDER BY i1.i NULLS LAST, i2.i NULLS LAST
 ----
 1
@@ -283,22 +282,22 @@ NULL
 3
 NULL
 
-query I rowsort
+query T rowsort
 SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t
 ----
-0
+False
 
 query I rowsort
 SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1))
 ----
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT (SELECT 1 UNION ALL SELECT 2), (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 SELECT 1 HAVING (SELECT 1 UNION SELECT 2)
 
 statement ok
@@ -309,7 +308,7 @@ begin
 	return myvar;
 end
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select iamok()
 
 statement ok
@@ -320,7 +319,7 @@ begin
 	return ovar;
 end
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select iamok()
 
 statement ok
@@ -332,7 +331,7 @@ begin
 	return abc;
 end
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select iamok()
 
 statement ok
@@ -343,22 +342,22 @@ begin
 	return aa;
 end
 
-statement error
+statement error 21000!Cardinality violation, scalar value expected
 select iamok()
 
 statement ok
 drop function iamok
 
-statement error
+statement error 42000!MIN: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)
 UPDATE another_T SET col1 = MIN(col1)
 
-statement error
+statement error 42000!SUM: aggregate functions not allowed in WHERE clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2)
 
-statement error
+statement error 42000!SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses
 UPDATE another_T SET col3 = (SELECT MAX(col5))
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales)
 
 query I rowsort
@@ -369,37 +368,37 @@ SELECT col4 FROM another_T
 186
 26
 
-statement error
+statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2))
 
-statement ok
+statement ok rowcount 0
 UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT COUNT(col3 + ColID) FROM tbl_ProductSales)
 
-statement error
+statement error 42000!AVG: aggregate functions not allowed in WHERE clause
 UPDATE another_T SET col8 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i))
 
-statement error
+statement error 42000!AVG: aggregate functions not allowed in WHERE clause
 UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i))
 
-statement error
+statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 DELETE FROM another_T WHERE col1 = COUNT(col2)
 
-statement error
+statement error 42000!SELECT: aggregate functions not allowed in WHERE clause
 DELETE FROM another_T WHERE col7 = (SELECT MIN(col3))
 
-statement ok
+statement ok rowcount 0
 DELETE FROM another_T WHERE col8 = (SELECT AVG(col6 + ColID) FROM tbl_ProductSales)
 
-statement error
+statement error 42000!AVG: aggregate functions not allowed in WHERE clause
 DELETE FROM another_T WHERE col2 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i))
 
-statement error
+statement error 42000!AVG: window function 'avg' not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)
 UPDATE another_T SET col1 = AVG(col1) OVER ()
 
-statement error
+statement error 42000!COUNT: window function 'count' not allowed in WHERE clause
 UPDATE another_T SET col2 = 1 WHERE col1 = COUNT(col2) OVER ()
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T SET col3 = (SELECT SUM(col5) OVER ())
 
 query I rowsort
@@ -410,37 +409,37 @@ SELECT col3 FROM another_T
 555
 5555
 
-statement error
+statement error GDK reported error: mergejoin: more than one match
 UPDATE another_T SET col4 = (SELECT MIN(col4 + ColID) OVER () FROM tbl_ProductSales)
 
-statement ok
+statement ok rowcount 0
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT MAX(col2) OVER ())
 
-statement error
+statement error GDK reported error: mergejoin: more than one match
 UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT MIN(col3 + ColID) OVER () FROM tbl_ProductSales)
 
-statement error
+statement error 42000!AVG: window function 'avg' not allowed in WHERE clause
 DELETE FROM another_T WHERE col1 = AVG(col2) OVER ()
 
-statement ok
+statement ok rowcount 0
 DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ())
 
-statement error
+statement error GDK reported error: mergejoin: more than one match
 DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 UPDATE another_T SET col5 = (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 DELETE FROM another_T WHERE col1 = (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8)
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T SET (col5, col6) = (SELECT MIN(10), MAX(col5) OVER (PARTITION BY col1))
 
 query II rowsort
@@ -455,25 +454,25 @@ SELECT col5, col6 FROM another_T
 10
 5555
 
-statement error
+statement error GDK reported error: BATsubcross: more than one match
 UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2)
 
-statement error
+statement error 42000!UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 1)
 UPDATE another_T SET (col7, col8) = (SELECT 1 UNION ALL SELECT 2)
 
-statement error
+statement error 42000!UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 3)
 UPDATE another_T SET (col7, col8) = (SELECT 1,2,3)
 
-statement error
+statement error 42000!UPDATE: Multiple assignments to same column 'col5'
 UPDATE another_T SET col5 = 1, col5 = 6
 
-statement error
+statement error 42000!UPDATE: Multiple assignments to same column 'col5'
 UPDATE another_T SET (col5, col6) = ((select 1,2)), col5 = 6
 
-statement error
+statement error 42000!SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses
 UPDATE another_T SET (col5, col6) = (SELECT MIN(col1), MAX(col2))
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T SET col7 = (SELECT NTILE(col1) OVER ())
 
 query I rowsort
@@ -484,13 +483,13 @@ SELECT col7 FROM another_T
 1
 1
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T SET (col5, col6) = (SELECT NTILE(col1) OVER (), MAX(col3) OVER (PARTITION BY col4))
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T t1 SET (col1, col2) = (SELECT MIN(t1.col3 + tb.ColID), MAX(tb.ColID) FROM tbl_ProductSales tb)
 
-statement ok
+statement ok rowcount 4
 UPDATE another_T t1 SET (col3, col4) = (SELECT COUNT(tb.ColID), SUM(tb.ColID) FROM tbl_ProductSales tb)
 
 query IIIIII rowsort
@@ -521,30 +520,30 @@ SELECT col1, col2, col3, col4, col5, col6 FROM another_T
 1
 5
 
-statement error
+statement error 42000!MAX: window function 'max' not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)
 CREATE PROCEDURE iambroken()
 BEGIN
 	DECLARE x INT;
 	SET x = MAX(1) over ();
 END
 
-statement error
+statement error 42000!MIN: missing group by
 CREATE PROCEDURE iambroken()
 BEGIN
 	DECLARE y int;
 	SET y = MIN(1);
 END
 
-statement error
+statement error 42000!INSERT INTO: column 'col1' specified more than once
 INSERT INTO another_T (col1,col1) VALUES (1,1)
 
-statement error
+statement error 42000!SUM: missing group by
 INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8)
 
-statement error
+statement error 42000!AVG: window function 'avg' not allowed on an unique value
 INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO another_T VALUES ((SELECT SUM(1)),(SELECT SUM(2) OVER ()),3,4,5,6,7,8)
 
 query IIIIIIII rowsort
@@ -594,25 +593,25 @@ SELECT * FROM another_T
 statement ok
 CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END
 
-statement error
+statement error 42000!COUNT: missing group by
 CALL crashme(COUNT(1))
 
-statement error
+statement error 42000!COUNT: window function 'count' not allowed in CALL
 CALL crashme(COUNT(1) OVER ())
 
-statement error
+statement error 42000!CALL: subqueries not supported inside CALL statements
 CALL crashme((SELECT COUNT(1)))
 
-statement error
+statement error 42000!CALL: subqueries not supported inside CALL statements
 CALL crashme((SELECT COUNT(1) OVER ()))
 
-statement error
+statement error 42000!CALL: subqueries not supported inside CALL statements
 CALL crashme((SELECT 1 UNION ALL SELECT 2))
 
-statement error
+statement error 42000!SELECT: no such window function 'row_number'(any)
 SELECT row_number(1) OVER () FROM integers i1
 
-statement error
+statement error 42000!SELECT: no such window function 'ntile'(any, tinyint)
 SELECT ntile(1,1) OVER () FROM integers i1
 
 statement ok
@@ -661,11 +660,11 @@ BEGIN
 	RETURN n;
 END
 
-query II rowsort
+query TT rowsort
 SELECT debugme(1), debugme(2)
 ----
-0
-1
+False
+True
 
 statement ok
 DROP FUNCTION debugme
@@ -708,4 +707,5 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
+
 

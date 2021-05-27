@@ -32,7 +32,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for( i = 0; i< slimit; i++){
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
-		if ( getModuleId(p) == algebraRef) {
+		if ( getModuleId(p) == algebraRef && p->retc == 2) {
 			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
 				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
 				 getFunctionId(p) == likejoinRef) {
@@ -47,11 +47,25 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				int is_first_ret_not_used = getVarEolife(mb, getArg(p, p->retc -2)) == i;
 				int is_second_ret_not_used = getVarEolife(mb, getArg(p, p->retc -1)) == i;
 
-				assert(!is_first_ret_not_used || !is_second_ret_not_used);
-				if ( (is_first_ret_not_used || is_second_ret_not_used) && getFunctionId(p) == semijoinRef) {
+				if (getFunctionId(p) == semijoinRef && ((is_first_ret_not_used && getVarConstant(mb, getArg(p, 7)).val.btval != 1/*not single*/) || is_second_ret_not_used)) {
+					/* Can't swap arguments on single semijoins */
+					if (is_first_ret_not_used) {
+						/* semijoin with just the right output is a join */
+						getArg(p, 2) ^= getArg(p, 3); /* swap join inputs */
+						getArg(p, 3) ^= getArg(p, 2);
+						getArg(p, 2) ^= getArg(p, 3);
+
+						getArg(p, 4) ^= getArg(p, 5); /* swap candidate lists */
+						getArg(p, 5) ^= getArg(p, 4);
+						getArg(p, 4) ^= getArg(p, 5);
+						setFunctionId(p, joinRef);
+						delArgument(p, 7); /* delete 'max_one' argument */
+					} else {
+						/* semijoin with just the left output is an intersection */
+						setFunctionId(p, intersectRef);
+					}
+
 					delArgument(p, is_second_ret_not_used ? p->retc -1 : p->retc -2);
-					/* semijoin with a single output is called intersect */
-					setFunctionId(p,intersectRef);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 					actions++;
 					continue;
@@ -61,7 +75,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					actions++;
 					continue;
 				} else if (is_first_ret_not_used && (getFunctionId(p) == joinRef || (getFunctionId(p) == thetajoinRef && isVarConstant(mb, getArg(p, 6))) ||
-						   (getFunctionId(p) == crossRef && isVarConstant(mb, getArg(p, 4)) && getVarConstant(mb, getArg(p, 4)).val.btval != 1))) {
+						   (getFunctionId(p) == crossRef && getVarConstant(mb, getArg(p, 4)).val.btval != 1/*not single*/))) {
 					/* Can't swap arguments on single cross products */
 					/* swap join inputs */
 					getArg(p, 2) ^= getArg(p, 3);

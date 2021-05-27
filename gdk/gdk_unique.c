@@ -44,6 +44,13 @@ BATunique(BAT *b, BAT *s)
 	const char *algomsg = "";
 	lng t0 = 0;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -101,6 +108,8 @@ BATunique(BAT *b, BAT *s)
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
 		for (i = 0; i < ci.ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
 			v = VALUE(o - b->hseqbase);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
@@ -118,6 +127,8 @@ BATunique(BAT *b, BAT *s)
 		if (seen == NULL)
 			goto bunins_failed;
 		for (i = 0; i < ci.ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
 			val = ((const unsigned char *) vals)[o - b->hseqbase];
 			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
@@ -142,6 +153,8 @@ BATunique(BAT *b, BAT *s)
 		if (seen == NULL)
 			goto bunins_failed;
 		for (i = 0; i < ci.ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
 			val = ((const unsigned short *) vals)[o - b->hseqbase];
 			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
@@ -183,6 +196,8 @@ BATunique(BAT *b, BAT *s)
 		}
 		hs = b->thash;
 		for (i = 0; i < ci.ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -238,6 +253,8 @@ BATunique(BAT *b, BAT *s)
 			goto bunins_failed;
 		}
 		for (i = 0; i < ci.ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
 			v = VALUE(o - b->hseqbase);
 			prb = HASHprobe(hs, v);

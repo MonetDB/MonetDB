@@ -51,6 +51,9 @@
 #define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
 #define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING)
 
+#define BBPHOT		4096	/* bat is "hot", i.e. is still in active use */
+#define BBPSYNCING	8192
+
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
@@ -78,19 +81,18 @@ gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(bat i);
 gdk_export void BBPshare(bat b);
+gdk_export void BBPcold(bat i);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
-#define BBP_status_set(bid, mode, nme)		\
-	do {					\
-		BBP_status(bid) = mode;		\
-	} while (0)
+#define BBP_status_set(bid, mode)			\
+	ATOMIC_SET(&BBP_record(bid).status, mode)
 
-#define BBP_status_on(bid, flags, nme)					\
-		BBP_status_set(bid, BBP_status(bid) | flags, nme)
+#define BBP_status_on(bid, flags)			\
+	ATOMIC_OR(&BBP_record(bid).status, flags)
 
-#define BBP_status_off(bid, flags, nme)					\
-		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme)
+#define BBP_status_off(bid, flags)			\
+	ATOMIC_AND(&BBP_record(bid).status, ~(flags))
 
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
