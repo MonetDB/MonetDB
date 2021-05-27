@@ -286,7 +286,7 @@ static sql_rel *
 rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
 	sql_rel *rel = rel_basetable(query->sql, t, name);
-	rel_base_use_all(query->sql, rel);
+	rel_base_use_all(query->sql, rel, 0);
 	rel = rewrite_basetable(query->sql, rel);
 	return rel_insert(query->sql, rel, inserts);
 }
@@ -1183,8 +1183,8 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 				if (rel_base_has_column_privileges(sql, r) == 0)
 					return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'",
 									 get_string_global_var(sql, "current_user"), tname);
-				rel_base_use_tid(sql, r);
 			}
+			rel_base_use_tid(sql, r);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
@@ -1250,8 +1250,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		if (rel_base_has_column_privileges(sql, bt) == 0)
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
 							 get_string_global_var(sql, "current_user"), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
-		rel_base_use_tid(sql, bt);
-		list_append(bt->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 	}
 	joined = table_ref(query, NULL, tref, 0, NULL);
 	if (!bt || !joined)
@@ -1279,6 +1277,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN MATCHED clause is allowed");
 			processed |= MERGE_UPDATE_DELETE;
 
+			rel_base_use_tid(sql, bt);
 			if (uptdel == SQL_UPDATE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "update", 0))
 					return NULL;
