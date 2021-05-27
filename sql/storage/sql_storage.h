@@ -16,6 +16,7 @@
 
 #define LOG_OK		0
 #define LOG_ERR		(-1)
+#define LOG_CONFLICT	(-2)
 
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
 #define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
@@ -49,7 +50,6 @@ typedef void (*column_find_string_end_fptr)(ptr cbat);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
-typedef int (*table_vacuum_fptr)(sql_trans *tr, sql_table *t);
 
 typedef struct rids {
 	BUN cur;
@@ -102,7 +102,6 @@ typedef struct table_functions {
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
-	table_vacuum_fptr table_vacuum;
 
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
@@ -123,7 +122,6 @@ typedef struct table_functions {
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
-typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
 /*
@@ -178,9 +176,13 @@ typedef int (*destroy_col_fptr) (struct sqlstore *store, sql_column *c);
 typedef int (*destroy_idx_fptr) (struct sqlstore *store, sql_idx *i);
 typedef int (*destroy_del_fptr) (struct sqlstore *store, sql_table *t);
 
-typedef int (*log_destroy_col_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*log_destroy_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*log_destroy_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+/*
+-- drop a persistent table, ie add to the list of changes
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*drop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*drop_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*drop_del_fptr) (sql_trans *tr, sql_table *t);
 
 typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
@@ -195,7 +197,6 @@ typedef struct store_functions {
 
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
-	bind_del_fptr bind_del;
 	bind_cands_fptr bind_cands;
 
 	append_col_fptr append_col;
@@ -227,9 +228,9 @@ typedef struct store_functions {
 	destroy_idx_fptr destroy_idx;
 	destroy_del_fptr destroy_del;
 
-	log_destroy_col_fptr log_destroy_col;
-	log_destroy_idx_fptr log_destroy_idx;
-	log_destroy_del_fptr log_destroy_del;
+	drop_col_fptr drop_col;
+	drop_idx_fptr drop_idx;
+	drop_del_fptr drop_del;
 
 	clear_table_fptr clear_table;
 
@@ -242,6 +243,7 @@ typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char
 
 typedef void (*logger_destroy_fptr) (struct sqlstore *store);
 typedef int (*logger_flush_fptr) (struct sqlstore *store, lng save_id);
+typedef int (*logger_activate_fptr) (struct sqlstore *store);
 typedef int (*logger_cleanup_fptr) (struct sqlstore *store);
 
 typedef int (*logger_changes_fptr)(struct sqlstore *store);
@@ -272,6 +274,7 @@ typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_destroy_fptr destroy;
 	logger_flush_fptr flush;
+	logger_activate_fptr activate;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
@@ -319,7 +322,7 @@ extern sql_trans *sql_trans_destroy(sql_trans *tr);
 //extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 
-extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
+extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
 extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
@@ -331,36 +334,40 @@ extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
 extern void sql_trans_update_schemas(sql_trans *tr);
 
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner);
-extern sql_schema *sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
+extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
 sql_export sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
-extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
+extern int sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
 extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
 extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
 
-extern sql_table *sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
-extern sql_table *sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
+extern int sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
+extern int sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
 extern int sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
 
 extern int sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action);
 extern int sql_trans_drop_table_id(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
-extern sql_table *sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
+extern int sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
-extern sql_column *sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const char *new_name);
+extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name);
 extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action);
-extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
-extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
-extern sql_column *sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
+extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
+extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
+extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, char **min, char **max);
+
+extern void column_destroy(struct sqlstore *store, sql_column *c);
+extern void idx_destroy(struct sqlstore *store, sql_idx * i);
+extern void table_destroy(struct sqlstore *store, sql_table *t);
 
 extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt);
 extern sql_key * sql_trans_key_done(sql_trans *tr, sql_key *k);
@@ -375,7 +382,6 @@ extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*
 extern int sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
-extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);
@@ -383,9 +389,9 @@ extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);
 extern sql_sequence *create_sql_sequence(struct sqlstore *store, sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
 extern int sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
-extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
-extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
-extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
+extern int sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
+extern int sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
+extern int sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
 extern sql_session * sql_session_create(struct sqlstore *store, sql_allocator *sa, int autocommit);
 extern void sql_session_destroy(sql_session *s);
@@ -394,9 +400,9 @@ extern int sql_trans_begin(sql_session *s);
 extern int sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
-extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
-extern void sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
-extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern int sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern int sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
+extern int sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sql_dependency depend_type, list *ignore_ids);
 extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sql_dependency depend_type);
 extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
@@ -419,10 +425,10 @@ extern void drop_sql_column(sql_table *t, sqlid id, int drop_action);
 extern void drop_sql_idx(sql_table *t, sqlid id);
 extern void drop_sql_key(sql_table *t, sqlid id, int drop_action);
 
-extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c);
-extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
-extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
-extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri);
+extern int sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c, sql_column **cres);
+extern int sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres);
+extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires);
+extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
 
 #define NR_TABLE_LOCKS 64
 #define TRANSACTION_ID_BASE	(1ULL<<63)

@@ -943,7 +943,7 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 		if (g)
 			BBPunfix(g->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.sort", OPERATION_FAILED);
+		throw(MAL, "algebra.sort", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
 	if (o)

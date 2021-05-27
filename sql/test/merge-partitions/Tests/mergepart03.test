@@ -43,7 +43,7 @@ ALTER TABLE listparts DROP TABLE subtable2
 statement ok rowcount 1
 INSERT INTO subtable2 VALUES (-5, 'oh no')
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM '-1' TO 12000
 
 query I rowsort

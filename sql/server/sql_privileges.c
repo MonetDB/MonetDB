@@ -215,8 +215,8 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	return NULL;
 }
 
-static void
-sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
+static char *
+sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable, const char *op, const char *call)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
 	sql_table *privs = find_sql_table(sql->session->tr, ss, "privileges");
@@ -227,6 +227,7 @@ sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid gran
 	sqlstore *store = tr->store;
 	rids *A;
 	oid rid = oid_nil;
+	int log_res = LOG_OK;
 
 	(void) grantor;
 	(void) grantable;
@@ -235,9 +236,12 @@ sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid gran
 	A = store->table_api.rids_select(tr, priv_auth, &auth_id, &auth_id, priv_priv, &privilege, &privilege, priv_obj, &obj_id, &obj_id, NULL );
 
 	/* remove them */
-	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A))
-		store->table_api.table_delete(tr, privs, rid);
+	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
+		log_res = store->table_api.table_delete(tr, privs, rid);
 	store->table_api.rids_destroy(A);
+	if (log_res != LOG_OK)
+		throw(SQL, op, SQLSTATE(42000) "%s: failed%s", call, log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	return NULL;
 }
 
 char *
@@ -257,8 +261,7 @@ sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gr
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
 		throw(SQL, "sql.revoke_global", SQLSTATE(01006) "REVOKE: User/role '%s' unknown", grantee);
-	sql_delete_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
-	return NULL;
+	return sql_delete_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant, "sql.revoke_global", "REVOKE");
 }
 
 char *
@@ -269,6 +272,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
+	char *msg = NULL;
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "REVOKE", false)))
 		throw(SQL,"sql.revoke_table","%s", sql->errstr);
@@ -298,17 +302,18 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	if (grantee_id <= 0)
 		 throw(SQL,"sql.revoke_table", SQLSTATE(01006) "REVOKE: User/role '%s' unknown", grantee);
 	if (privs == all) {
-		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_SELECT, grantor, grant);
-		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant);
-		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant);
-		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant);
-		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_TRUNCATE, grantor, grant);
+		if ((msg = sql_delete_priv(sql, grantee_id, t->base.id, PRIV_SELECT, grantor, grant, "sql.revoke_table", "REVOKE")) ||
+			(msg = sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant, "sql.revoke_table", "REVOKE")) ||
+			(msg = sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant, "sql.revoke_table", "REVOKE")) ||
+			(msg = sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant, "sql.revoke_table", "REVOKE")) ||
+			(msg = sql_delete_priv(sql, grantee_id, t->base.id, PRIV_TRUNCATE, grantor, grant, "sql.revoke_table", "REVOKE")))
+			return msg;
 	} else if (!c) {
-		sql_delete_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
+		msg = sql_delete_priv(sql, grantee_id, t->base.id, privs, grantor, grant, "sql.revoke_table", "REVOKE");
 	} else {
-		sql_delete_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+		msg = sql_delete_priv(sql, grantee_id, c->base.id, privs, grantor, grant, "sql.revoke_table", "REVOKE");
 	}
-	return NULL;
+	return msg;
 }
 
 char *
@@ -334,8 +339,7 @@ sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fu
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
 		throw(SQL, "sql.revoke_func", SQLSTATE(01006) "REVOKE: User/role '%s' unknown", grantee);
-	sql_delete_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
-	return NULL;
+	return sql_delete_priv(sql, grantee_id, f->base.id, privs, grantor, grant, "sql.revoke_func", "REVOKE");
 }
 
 static bool
@@ -376,18 +380,22 @@ sql_drop_role(mvc *m, str auth)
 	sqlstore *store = m->session->tr->store;
 	rids *A;
 	oid rid;
+	int log_res = LOG_OK;
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(auths, "name"), auth, NULL);
 	if (is_oid_nil(rid))
 		throw(SQL, "sql.drop_role", SQLSTATE(0P000) "DROP ROLE: no such role '%s'", auth);
-	store->table_api.table_delete(m->session->tr, auths, rid);
+	if ((log_res = store->table_api.table_delete(m->session->tr, auths, rid)) != LOG_OK)
+		throw(SQL, "sql.drop_role", SQLSTATE(42000) "DROP ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 	/* select user roles of this role_id */
 	A = store->table_api.rids_select(tr, find_sql_column(user_roles, "role_id"), &role_id, &role_id, NULL);
 	/* remove them */
-	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A))
-		store->table_api.table_delete(tr, user_roles, rid);
+	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
+		log_res = store->table_api.table_delete(tr, user_roles, rid);
 	store->table_api.rids_destroy(A);
+	if (log_res != LOG_OK)
+		throw(SQL, "sql.drop_role", SQLSTATE(42000) "DROP ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return NULL;
 }
 
@@ -553,6 +561,7 @@ sql_revoke_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	sql_column *roles_login_id = find_sql_column(roles, "login_id");
 	sqlid role_id, grantee_id;
 	sqlstore *store = m->session->tr->store;
+	int log_res = LOG_OK;
 
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (is_oid_nil(rid))
@@ -567,15 +576,17 @@ sql_revoke_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 
 	if (!admin) {
 		rid = store->table_api.column_find_row(m->session->tr, roles_login_id, &grantee_id, roles_role_id, &role_id, NULL);
-		if (!is_oid_nil(rid))
-			store->table_api.table_delete(m->session->tr, roles, rid);
-		else
+		if (!is_oid_nil(rid)) {
+			if ((log_res = store->table_api.table_delete(m->session->tr, roles, rid)) != LOG_OK)
+				throw(SQL, "sql.revoke_role", SQLSTATE(42000) "REVOKE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		} else
 			throw(SQL,"sql.revoke_role", SQLSTATE(01006) "REVOKE: User '%s' does not have ROLE '%s'", grantee, role);
 	}
 	rid = sql_privilege_rid(m, grantee_id, role_id, PRIV_ROLE_ADMIN);
-	if (!is_oid_nil(rid))
-		store->table_api.table_delete(m->session->tr, privs, rid);
-	else if (admin)
+	if (!is_oid_nil(rid)) {
+		if ((log_res = store->table_api.table_delete(m->session->tr, privs, rid)) != LOG_OK)
+			throw(SQL, "sql.revoke_role", SQLSTATE(42000) "REVOKE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	} else if (admin)
 		throw(SQL,"sql.revoke_role", SQLSTATE(01006) "REVOKE: User '%s' does not have ROLE '%s'", grantee, role);
 	return NULL;
 }
@@ -769,6 +780,8 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 	sqlstore *store = tr->store;
 	rids *A;
 	oid rid;
+	int log_res = LOG_OK;
+	char *msg = NULL;
 
 	if (!list_find(deleted_users, &user_id, (fcmp) &id_cmp)) {
 		if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
@@ -779,45 +792,54 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 		/* select privileges of this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(privs, "auth_id"), &user_id, &user_id, NULL);
 		/* remove them */
-		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A))
-			store->table_api.table_delete(tr, privs, rid);
+		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
+			log_res = store->table_api.table_delete(tr, privs, rid);
 		store->table_api.rids_destroy(A);
+		if (log_res != LOG_OK)
+			throw(SQL, "sql.drop_user", SQLSTATE(42000) "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 		/* select privileges granted by this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(privs, "grantor"), &user_id, &user_id, NULL);
 		/* remove them */
-		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A))
-			store->table_api.table_delete(tr, privs, rid);
+		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
+			log_res = store->table_api.table_delete(tr, privs, rid);
 		store->table_api.rids_destroy(A);
+		if (log_res != LOG_OK)
+			throw(SQL, "sql.drop_user", SQLSTATE(42000) "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 		/* delete entry from auths table */
 		rid = store->table_api.column_find_row(tr, find_sql_column(auths, "name"), user, NULL);
 		if (is_oid_nil(rid))
 			throw(SQL, "sql.drop_user", SQLSTATE(0P000) "DROP USER: no such user role '%s'", user);
-		store->table_api.table_delete(tr, auths, rid);
+		if ((log_res = store->table_api.table_delete(tr, auths, rid)) != LOG_OK)
+			throw(SQL, "sql.drop_user", SQLSTATE(42000) "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 		/* select user roles of this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(user_roles, "login_id"), &user_id, &user_id, NULL);
 		/* remove them */
-		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A))
-			store->table_api.table_delete(tr, user_roles, rid);
+		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
+			log_res = store->table_api.table_delete(tr, user_roles, rid);
 		store->table_api.rids_destroy(A);
+		if (log_res != LOG_OK)
+			throw(SQL, "sql.drop_user", SQLSTATE(42000) "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 		list_append(deleted_users, &user_id);
 
 		/* select users created by this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(auths, "grantor"), &user_id, &user_id, NULL);
 		/* remove them and continue the deletion */
-		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A)) {
+		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK && msg; rid = store->table_api.rids_next(A)) {
 			sqlid nuid = store->table_api.column_find_sqlid(tr, find_sql_column(auths, "id"), rid);
 			char* nname = store->table_api.column_find_value(tr, find_sql_column(auths, "name"), rid);
 
-			sql_drop_granted_users(sql, nuid, nname, deleted_users);
-			store->table_api.table_delete(tr, auths, rid);
+			if (!(msg = sql_drop_granted_users(sql, nuid, nname, deleted_users)))
+				log_res = store->table_api.table_delete(tr, auths, rid);
 		}
 		store->table_api.rids_destroy(A);
+		if (!msg && log_res != LOG_OK)
+			throw(SQL, "sql.drop_user", SQLSTATE(42000) "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
-	return NULL;
+	return msg;
 }
 
 char *

@@ -185,6 +185,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 	r1->tsorted = true;
 	r1->trevsorted = true;
 	r1->tseqbase = 0;
+	r1->theap->dirty = true;
 	*r1p = r1;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, size, TRANSIENT);
@@ -198,6 +199,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		r2->tsorted = true;
 		r2->trevsorted = true;
 		r2->tseqbase = 0;
+		r2->theap->dirty = true;
 		*r2p = r2;
 	}
 	return maxsize;
@@ -338,6 +340,12 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BBPunfix(bn->batCacheid);
 		return GDK_FAIL;
 	}
+	r1->tsorted = true;
+	r1->trevsorted = lci->ncand == 1;
+	r1->tseqbase = BATcount(bn) == 1 && lci->tpe == cand_dense ? o : oid_nil;
+	r1->tkey = BATcount(bn) == 1;
+	r1->tnil = false;
+	r1->tnonil = true;
 	BAT *r2 = NULL;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
@@ -346,15 +354,6 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			BBPreclaim(r1);
 			return GDK_FAIL;
 		}
-	}
-
-	r1->tsorted = true;
-	r1->trevsorted = lci->ncand == 1;
-	r1->tseqbase = BATcount(bn) == 1 && lci->tpe == cand_dense ? o : oid_nil;
-	r1->tkey = BATcount(bn) == 1;
-	r1->tnil = false;
-	r1->tnonil = true;
-	if (r2) {
 		r2->tsorted = lci->ncand == 1 || BATcount(bn) == 1;
 		r2->trevsorted = BATcount(bn) == 1;
 		r2->tseqbase = lci->ncand == 1 && BATtdense(bn) ? bn->tseqbase : oid_nil;
@@ -1860,7 +1859,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		lordering = l->tsorted && (r->tsorted || !equal_order) ? 1 : -1;
 		rordering = equal_order ? lordering : -lordering;
 		if (!l->tnonil && !nil_matches && !nil_on_miss) {
-			nl = binsearch(NULL, 0, l->ttype, lvals, lvars, lwidth, 0, BATcount(l), nil, l->tsorted ? 1 : -1, 1);
+			nl = binsearch(NULL, 0, l->ttype, lvals, lvars, lwidth, 0, BATcount(l), nil, l->tsorted ? 1 : -1, l->tsorted ? 1 : 0);
 			nl = canditer_search(lci, nl + l->hseqbase, true);
 			if (l->tsorted) {
 				canditer_setidx(lci, nl);

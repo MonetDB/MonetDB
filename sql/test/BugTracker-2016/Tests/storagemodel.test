@@ -1,8 +1,8 @@
 statement ok
 create table bug3923(i integer)
 
-query TTTTTIITI rowsort
-select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables')
+query TTTTTITI rowsort
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints from storage('sys','_tables')
 ----
 sys
 _tables
@@ -10,7 +10,6 @@ access
 smallint
 writable
 2
-0
 False
 0
 sys
@@ -19,7 +18,6 @@ commit_action
 smallint
 writable
 2
-0
 False
 0
 sys
@@ -28,7 +26,6 @@ id
 int
 writable
 4
-0
 False
 0
 sys
@@ -37,7 +34,6 @@ name
 varchar
 writable
 99
-0
 False
 0
 sys
@@ -46,7 +42,6 @@ query
 varchar
 writable
 99
-0
 False
 0
 sys
@@ -55,7 +50,6 @@ schema_id
 int
 writable
 4
-0
 False
 0
 sys
@@ -64,7 +58,6 @@ system
 boolean
 writable
 1
-0
 False
 0
 sys
@@ -73,17 +66,16 @@ type
 smallint
 writable
 2
-0
 False
 0
 
 statement ok
 call storagemodelinit()
 
-statement ok
+statement ok rowcount 1
 update storagemodelinput set "count" =10000 where "table" ='bug3923'
 
-statement ok
+statement ok rowcount 1
 update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
 
 query TTTTIIIIIITTT rowsort
@@ -100,7 +92,7 @@ int
 2000
 0
 True
-True
+NULL
 True
 
 statement ok
@@ -115,8 +107,8 @@ set schema bug3923schema
 statement ok
 create table bug3923(i integer)
 
-query TTTTTIITI rowsort
-select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables')
+query TTTTTITI rowsort
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints from sys.storage('sys','_tables')
 ----
 sys
 _tables
@@ -124,7 +116,6 @@ access
 smallint
 writable
 2
-0
 False
 0
 sys
@@ -133,7 +124,6 @@ commit_action
 smallint
 writable
 2
-0
 False
 0
 sys
@@ -142,7 +132,6 @@ id
 int
 writable
 4
-0
 False
 0
 sys
@@ -151,7 +140,6 @@ name
 varchar
 writable
 99
-0
 False
 0
 sys
@@ -160,7 +148,6 @@ query
 varchar
 writable
 99
-0
 False
 0
 sys
@@ -169,7 +156,6 @@ schema_id
 int
 writable
 4
-0
 False
 0
 sys
@@ -178,7 +164,6 @@ system
 boolean
 writable
 1
-0
 False
 0
 sys
@@ -187,17 +172,16 @@ type
 smallint
 writable
 2
-0
 False
 0
 
 statement ok
 call sys.storagemodelinit()
 
-statement ok
+statement ok rowcount 1
 update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'
 
-statement ok
+statement ok rowcount 1
 update sys.storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
 
 query TTTTIIIIIITTT rowsort
@@ -214,10 +198,9 @@ int
 2000
 0
 True
-True
+NULL
 True
 
 statement ok
 drop table bug3923
-
 

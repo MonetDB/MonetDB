@@ -13,28 +13,28 @@ alter table test add table mt1
 statement ok
 alter table test add table mt2
 
-statement ok
+statement ok rowcount 1
 insert into mt1 values (1021, 12.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt1 values (1022, 13.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt1 values (1023, 14.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt1 values (1024, 15.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt2 values (1, 1.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt2 values (2, 1.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt2 values (3, 1.4)
 
-statement ok
+statement ok rowcount 1
 insert into mt2 values (4, 1.4)
 
 statement ok

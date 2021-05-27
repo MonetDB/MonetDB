@@ -852,6 +852,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type)) != NULL && create) {
 		if (replace) {
+			int res = 0;
 			sql_func *func = sf->func;
 			if (!mvc_schema_privs(sql, s)) {
 				list_destroy(type_list);
@@ -865,9 +866,16 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: not allowed to replace system %s %s;", F, fn, func->base.name);
 			}
-			if (mvc_drop_func(sql, s, func, 0)) {
-				list_destroy(type_list);
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			res = mvc_drop_func(sql, s, func, 0);
+			list_destroy(type_list);
+			switch (res) {
+				case -1:
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: transaction conflict detected", F);
+				default:
+					break;
 			}
 			sf = NULL;
 		} else {
@@ -898,20 +906,14 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	}
 
 	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
-		sql_ftype ftpyes[3] = {F_FUNC, F_AGGR, F_FILT};
-
-		for (int i = 0; i < 3; i++) {
-			if (ftpyes[i] != type) {
-				sql_subfunc *found = NULL;
-				if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, ftpyes[i]))) {
-					list_destroy(type_list);
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
-									 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
-				}
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-			}
+		sql_subfunc *found = NULL;
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC))) {
+			list_destroy(type_list);
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
+							 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
 		}
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
 
 	list_destroy(type_list);
@@ -1293,8 +1295,15 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
 		if ((st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 			if (replace) {
-				if (mvc_drop_trigger(sql, ss, st))
-					return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
+				switch (mvc_drop_trigger(sql, ss, st)) {
+					case -1:
+						return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
+					case -2:
+					case -3:
+						return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
+					default:
+						break;
+				}
 			} else {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
 			}

@@ -16,13 +16,13 @@ alter table m add table t2
 statement ok
 alter table m drop table t1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.t1' isn't part of MERGE TABLE 'sys.m'
 alter table m drop table t1
 
 statement ok
 DROP table t1
 
-statement error
+statement error 42S02!ALTER TABLE: no such table 't1'
 alter table m drop table t1
 
 statement ok

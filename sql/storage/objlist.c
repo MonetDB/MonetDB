@@ -20,12 +20,13 @@ node_key( node *n )
 }
 
 objlist *
-ol_new(sql_allocator *sa, destroy_fptr destroy)
+ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store)
 {
 	objlist *ol = SA_NEW(sa, objlist);
 	*ol = (objlist) {
 		.l = list_new(sa, (fdestroy)destroy),
-		.h = hash_new(sa, 16, (fkeyvalue)&node_key)
+		.h = hash_new(sa, 16, (fkeyvalue)&node_key),
+		.store = store
 	};
 	return ol;
 }
@@ -44,8 +45,11 @@ int
 ol_add(objlist *ol, sql_base *data)
 {
 	list *l = list_append(ol->l, data);
-	if (!l)
+	if (!l) {
+		if (ol->l->destroy)
+			ol->l->destroy(ol->store, data);
 		return -1;
+	}
 	node *n = l->t;
 	assert(n->data == data);
 	int sz = list_length(ol->l);
@@ -54,10 +58,12 @@ ol_add(objlist *ol, sql_base *data)
 		ol->h = hash_new(ol->l->sa, 4*sz, (fkeyvalue)&node_key);
 		for (node *n = ol->l->h; n; n = n->next) {
 			if (hash_add(ol->h, base_key(n->data), n) == NULL)
+				/* No need too clean, ie expect a full transaction rollback */
 				return -1;
 		}
 	} else {
 		if (hash_add(ol->h, base_key(data), n) == NULL)
+			/* No need too clean, ie expect a full transaction rollback */
 			return -1;
 	}
 	return 0;

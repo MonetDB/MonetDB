@@ -7037,6 +7037,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "clients",	"changePassword",	"pattern clients.changePassword(X_0:str, X_1:str):void ",	"CLTchangePassword;",	""	]
 [ "clients",	"changeUsername",	"pattern clients.changeUsername(X_0:str, X_1:str):void ",	"CLTchangeUsername;",	""	]
 [ "clients",	"checkPermission",	"pattern clients.checkPermission(X_0:str, X_1:str):void ",	"CLTcheckPermission;",	""	]
+[ "clients",	"current_sessionid",	"pattern clients.current_sessionid():int ",	"CLTgetSessionID;",	""	]
 [ "clients",	"getId",	"pattern clients.getId():int ",	"CLTgetClientId;",	""	]
 [ "clients",	"getInfo",	"pattern clients.getInfo() (X_0:bat[:str], X_1:bat[:str]) ",	"CLTInfo;",	""	]
 [ "clients",	"getLogins",	"command clients.getLogins() (X_0:bat[:oid], X_1:bat[:str]) ",	"CLTLogin;",	""	]

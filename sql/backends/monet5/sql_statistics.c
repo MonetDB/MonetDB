@@ -30,6 +30,7 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	sql_table *sysstats;
 	sql_column *statsid;
 	oid rid;
+	int log_res = LOG_OK;
 
 	tr = m->session->tr;
 	sys = mvc_bind_schema(m, "sys");
@@ -64,9 +65,8 @@ sql_drop_statistics(mvc *m, sql_table *t)
 			sql_column *c = ncol->data;
 
 			rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
-			if (!is_oid_nil(rid) &&
-			    store->table_api.table_delete(tr, sysstats, rid) != LOG_OK)
-				throw(SQL, "sql_drop_statistics", "delete failed");
+			if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK)
+				throw(SQL, "sql.sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		}
 	}
 	return MAL_SUCCEED;
@@ -89,7 +89,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int argc = pci->argc;
 	int width = 0;
 	int minmax = *getArgReference_int(stk, pci, 1);
-	int sfnd = 0, tfnd = 0, cfnd = 0;
+	int sfnd = 0, tfnd = 0, cfnd = 0, log_res = LOG_OK;
 	sql_schema *sys;
 	sql_table *sysstats;
 	sql_column *statsid;
@@ -302,15 +302,15 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					BBPunfix(bn->batCacheid);
 					ts = timestamp_current();
-					if (!is_oid_nil(rid) && store->table_api.table_delete(tr, sysstats, rid) != LOG_OK) {
+					if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK) {
 						GDKfree(maxval);
 						GDKfree(minval);
-						throw(SQL, "analyze", "delete failed");
+						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 					}
-					if (store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted) != LOG_OK) {
+					if ((log_res = store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->base.name, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted)) != LOG_OK) {
 						GDKfree(maxval);
 						GDKfree(minval);
-						throw(SQL, "analyze", "insert failed");
+						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 					}
 				}
 			}

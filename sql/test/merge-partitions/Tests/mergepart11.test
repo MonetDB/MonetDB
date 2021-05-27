@@ -62,7 +62,7 @@ sixth
 250
 third
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE moveaccrosspartitions SET a = a + 1 WHERE a % 50 = 0
 
 query IT rowsort
@@ -105,7 +105,7 @@ sixth
 250
 third
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE moveaccrosspartitions SET a = a - 50, b = 'p' || b || 's' WHERE a % 60 = 0
 
 query IT rowsort
@@ -148,7 +148,7 @@ sixth
 250
 third
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE moveaccrosspartitions SET a = a - 60 WHERE a % 10 = 0
 
 query IT rowsort
@@ -191,7 +191,7 @@ sixth
 250
 third
 
-statement error
+statement error 42000!UPDATE: Update on the partitioned column is not possible at the moment
 UPDATE moveaccrosspartitions SET a = a + 100, b = 'moved' WHERE a % 10 = 0 AND a < 100
 
 query IT rowsort

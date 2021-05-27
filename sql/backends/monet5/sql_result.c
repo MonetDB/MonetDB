@@ -743,7 +743,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
-			fmt[i].adt = ATOMindex(col->type.type->base.name);
+			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
@@ -974,7 +974,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 			size_t slen;
 
 			t = exp_subtype(e);
-			slen = strlen(t->type->sqlname);
+			slen = strlen(t->type->base.name);
 			if (slen > len1)
 				len1 = slen;
 			while (t->digits >= max2) {
@@ -1009,7 +1009,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 
 			a = n->data;
 			t = &a->type;
-			slen = strlen(t->type->sqlname);
+			slen = strlen(t->type->base.name);
 			if (slen > len1)
 				len1 = slen;
 			while (t->digits >= max2) {
@@ -1050,7 +1050,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 				if (!rname && e->type == e_column && e->l)
 					rname = e->l;
 
-				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->base.name, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
 					return -1;
 				}
 			}
@@ -1063,7 +1063,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 				a = n->data;
 				t = &a->type;
 
-				if (!t || mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0)
+				if (!t || mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->base.name, t->digits, t->scale) < 0)
 					return -1;
 			}
 		}
@@ -1311,7 +1311,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char
 			mnstr_write(s, c->name, strlen(c->name), 1);
 			mnstr_write(s, ": ", 2, 1);
 		}
-		ok = export_value(m, s, c->type.type->eclass, c->type.type->sqlname, c->type.digits, c->type.scale, c->p, c->mtype, &buf, &len, ns);
+		ok = export_value(m, s, c->type.type->eclass, c->type.type->base.name, c->type.digits, c->type.scale, c->p, c->mtype, &buf, &len, ns);
 	}
 	_DELETE(buf);
 	if (ok)
@@ -1457,7 +1457,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_TIME || c->type.type->eclass == EC_TIME_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
-			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timetz") == 0);
+			ts_res->has_tz = (strcmp(c->type.type->base.name, "timetz") == 0);
 			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
 			ts_res->timezone = m->timezone;
 
@@ -1688,18 +1688,17 @@ int
 mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
+
+	b->rowcnt = val;
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
+
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
 	 * commands, since they don't get a stream to suppress their output.
 	 * If we would fail on having no stream here, those internal commands
 	 * fail too.
 	 */
-	if (!s)
-		return 0;
-
-	b->rowcnt = val;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
-	if(GDKembedded())
+	if(!s || GDKembedded())
 		return 0;
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
@@ -1829,7 +1828,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (mnstr_write(s, c->type.type->sqlname, strlen(c->type.type->sqlname), 1) != 1)
+		if (mnstr_write(s, c->type.type->base.name, strlen(c->type.type->base.name), 1) != 1)
 			return -1;
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -1;

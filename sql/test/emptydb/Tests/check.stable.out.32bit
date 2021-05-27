@@ -534,6 +534,7 @@ SYSTEM FUNCTION         sys.bit_not
 SYSTEM FUNCTION         sys.bit_or
 SYSTEM FUNCTION         sys.bit_xor
 SYSTEM FUNCTION         sys.broadcast
+SYSTEM FUNCTION         sys.case
 SYSTEM FUNCTION         sys.casewhen
 SYSTEM FUNCTION         sys.cbrt
 SYSTEM FUNCTION         sys.ceil
@@ -2024,7 +2025,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"describe_partition_tables",	"minimum",	"varchar",	0,	0,	NULL,	true,	6,	NULL	]
 [ "sys._columns",	"describe_partition_tables",	"maximum",	"varchar",	0,	0,	NULL,	true,	7,	NULL	]
 [ "sys._columns",	"describe_partition_tables",	"with_nulls",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
-[ "sys._columns",	"describe_privileges",	"o_nme",	"char",	0,	0,	NULL,	true,	0,	NULL	]
+[ "sys._columns",	"describe_privileges",	"o_nme",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"describe_privileges",	"o_tpe",	"char",	30,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"describe_privileges",	"p_nme",	"varchar",	40,	0,	NULL,	true,	2,	NULL	]
 [ "sys._columns",	"describe_privileges",	"a_nme",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
@@ -2044,7 +2045,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"describe_tables",	"tab",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
 [ "sys._columns",	"describe_tables",	"typ",	"varchar",	25,	0,	NULL,	true,	3,	NULL	]
 [ "sys._columns",	"describe_tables",	"col",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
-[ "sys._columns",	"describe_tables",	"opt",	"char",	0,	0,	NULL,	true,	5,	NULL	]
+[ "sys._columns",	"describe_tables",	"opt",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "sys._columns",	"describe_triggers",	"sch",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"describe_triggers",	"tab",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"describe_triggers",	"tri",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
@@ -2071,7 +2072,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"dump_statements",	"s",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"dump_table_constraint_type",	"stmt",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dump_tables",	"o",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "sys._columns",	"dump_tables",	"stmt",	"char",	0,	0,	NULL,	true,	1,	NULL	]
+[ "sys._columns",	"dump_tables",	"stmt",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"dump_triggers",	"stmt",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dump_user_defined_types",	"stmt",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"environment",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
@@ -2567,6 +2568,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"bit_xor",	"SYSTEM",	"xor",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"smallint",	16,	0,	"out",	"arg_1",	"smallint",	16,	0,	"in",	"arg_2",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"bit_xor",	"SYSTEM",	"xor",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"tinyint",	8,	0,	"out",	"arg_1",	"tinyint",	8,	0,	"in",	"arg_2",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"broadcast",	"SYSTEM",	"create function \"broadcast\" (p inet) returns inet external name inet.\"broadcast\";",	"inet",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"inet",	0,	0,	"out",	"p",	"inet",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"case",	"SYSTEM",	"",	"",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"casewhen",	"SYSTEM",	"",	"",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"cbrt",	"SYSTEM",	"cbrt",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"cbrt",	"SYSTEM",	"cbrt",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
