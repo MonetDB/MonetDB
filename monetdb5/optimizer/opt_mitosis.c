@@ -19,10 +19,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str schema = 0, table = 0;
 	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
-	size_t argsize = 6 * sizeof(lng), m = 0;
+	size_t argsize = 6 * sizeof(lng), m = 0, memclaim;
 	/*     estimate size per operator estimate:   4 args + 2 res*/
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
-	int activeClients;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -143,36 +142,44 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * because all user together are responsible for resource contentions
 	 */
 	cntxt->idle = 0; // this one is definitely not idle
-	activeClients = MCactiveClients();
 
 /* This code was used to experiment with block sizes, mis-using the memorylimit  variable
 	if (cntxt->memorylimit){
 		// the new mitosis scheme uses a maximum chunck size in MB from the client context
-		m = (size_t) ((cntxt->memorylimit * 1024 *1024) / row_size);
+		m = (size_t) ((cntxt->memorylimit *  LL_CONSTANT(1048576)) / row_size);
 		pieces = (int) (rowcnt / m + (rowcnt - m * pieces > 0));
 	}
 	if (cntxt->memorylimit == 0 || pieces <= 1){
 */
 	if (pieces <= 1){
-		/* We haven't assigned the number of pieces.*/
+		/* We haven't assigned the number of pieces.
+		 * Determine the memory available for this client
+		 */
 
-		/* respect the memory limit size set for the user */
+		/* respect the memory limit size set for the user 
+		* and determine the column slice size 
+		*/
 		if( cntxt->memorylimit)
-			m = cntxt->memorylimit * 1024 *1024 / argsize;
-		else
-			m = GDK_mem_maxsize / argsize;
+			m = cntxt->memorylimit *  LL_CONSTANT(1048576) / argsize;
+		else {
+			memclaim= MCmemoryClaim();
+			if(memclaim == GDK_mem_maxsize){
+				m = GDK_mem_maxsize / MCactiveClients()/ argsize;
+			} else
+				m = (GDK_mem_maxsize - memclaim) / argsize;
+		}
 
 		/* if data exceeds memory size,
 		 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
 		 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
-		if (rowcnt > m && m / threads / activeClients > 0) {
+		if (rowcnt > m && m / threads > 0) {
 			/* create |pieces| > |threads| partitions such that
 			 * |threads| partitions at a time fit in memory,
 			 * i.e., (threads*(rowcnt/pieces) <= m),
 			 * i.e., (rowcnt/pieces <= m/threads),
 			 * i.e., (pieces => rowcnt/(m/threads))
 			 * (assuming that (m > threads*MINPARTCNT)) */
-			pieces = (int) (rowcnt / (m / threads / activeClients)) + 1;
+			pieces = (int) (rowcnt / (m / threads)) + 1;
 		} else if (rowcnt > MINPARTCNT) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */

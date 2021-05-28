@@ -515,6 +515,30 @@ MCactiveClients(void)
 	return active;
 }
 
+/* To determine the average memory claims for assignment, we should calculate the outstanding claims*/
+/* This only concerns active clients and if one query claims all, then all should be divided equally */
+
+size_t
+MCmemoryClaim(void)
+{
+	size_t claim = 0;
+	int active = 1;
+
+	Client cntxt = mal_clients;
+
+	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
+	if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
+		if(cntxt->memorylimit){
+			claim += cntxt->memorylimit;
+			active ++;
+		} else
+			return GDK_mem_maxsize;
+	}
+	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
+		return GDK_mem_maxsize;
+	return claim * LL_CONSTANT(1048576);
+}
+
 void
 MCcloseClient(Client c)
 {
