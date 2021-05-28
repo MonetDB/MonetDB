@@ -179,11 +179,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * i.e., (rowcnt/pieces <= m/threads),
 			 * i.e., (pieces => rowcnt/(m/threads))
 			 * (assuming that (m > threads*MINPARTCNT)) */
-			pieces = (int) (rowcnt / (m / threads)) + 1;
+			/* the number of pieces affects SF-100, going beyond 8x increases 
+			 * the optimizer costs beyond the execution time
+			 */
+			pieces = 4 *    ceil((double)rowcnt / m / threads);
 		} else if (rowcnt > MINPARTCNT) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */
-			pieces = (int) MIN(rowcnt / MINPARTCNT, (BUN) threads);
+			pieces = 4 *   ceil(MIN((double)rowcnt / MINPARTCNT, threads));
 		}
 	}
 
