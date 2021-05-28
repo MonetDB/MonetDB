@@ -3,7 +3,7 @@
 % clob # type
 % 193 # length
 insert(
-| table("sys"."cm_tmp") [ "cm_tmp"."i" ] COUNT 
+| table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
 | | project (
 | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "/file1", bigint "-1", bigint "0", int "0", varchar "NULL", int "0", int "1"), 
