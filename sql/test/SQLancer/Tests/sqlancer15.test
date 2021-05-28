@@ -731,6 +731,28 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((t0.c2) IN (t0.c2, (VALUES (
 2
 
 statement ok
+CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c2"))
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES (69), (-12), (9), (0)
+
+query T rowsort
+SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
+----
+True
+True
+True
+True
+
+query I rowsort
+SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11'))
+----
+-12
+0
+69
+9
+
+statement ok
 ROLLBACK
 
 statement ok
