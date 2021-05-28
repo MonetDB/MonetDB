@@ -88,6 +88,8 @@ rel_base_use_all( mvc *sql, sql_rel *rel, int with_tid)
 				continue;
 			rel_base_set_used(ba, i);
 		}
+		if (with_tid)
+			rel_base_set_used(ba, ol_length(t->columns));
 	} else {
 		int len = USED_LEN(ol_length(t->columns) + 1 + ol_length(t->idxs));
 		for (int i = 0; i < len; i++)
@@ -223,8 +225,9 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 		if (rel_base_is_used(ba, i))
 			append(exps, bind_col_exp(sql, name, cn->data));
 	}
-	if (intern && rel_base_is_used(ba, i))
+	if ((intern && rel_base_is_used(ba, i)) || list_empty(exps)) /* Add TID column if no column is used */
 		append(exps, exp_column(sql->sa, name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	i++;
 	if (intern) {
 		for (node *in = ol_first_node(t->idxs); in; in = in->next, i++) {
 			if (rel_base_is_used(ba, i)) {
