@@ -143,7 +143,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * because all user together are responsible for resource contentions
 	 */
 	cntxt->idle = 0; // this one is definitely not idle
-	activeClients = mb->activeClients = MCactiveClients();
+	activeClients = MCactiveClients();
 
 /* This code was used to experiment with block sizes, mis-using the memorylimit  variable
 	if (cntxt->memorylimit){
