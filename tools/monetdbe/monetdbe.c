@@ -1954,9 +1954,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	size_t i, cnt;
 	node *n;
 	Symbol remote_prg = NULL;
-	blob *bbuf = NULL;
-	size_t pos = 0;
-	var_t bbuf_len = 0;
+	BAT *pos = NULL;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -2045,6 +2043,10 @@ remote_cleanup:
 
 	cnt = input[0]->count;
 	pos = store->storage_api.claim_tab(m->session->tr, t, cnt);
+	if (!pos) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Claim failed");
+		goto cleanup;
+	}
 
 	for (i = 0, n = ol_first_node(t->columns); i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;
@@ -2101,7 +2103,7 @@ remote_cleanup:
 				bn->tnil = false;
 			}
 
-			if (store->storage_api.append_col(m->session->tr, c, pos, bn, TYPE_bat, 0) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, pos, bn, TYPE_bat) != 0) {
 				bn->theap->base = prev_base;
 				bn->theap->size = prev_size;
 				BBPreclaim(bn);
@@ -2116,95 +2118,117 @@ remote_cleanup:
 			char **d = (char**)v;
 
 			for (size_t j=0; j<cnt; j++){
-				char *s = d[j];
-				if (!s)
-					s = (char*) nil;
-
-				if (store->storage_api.append_col(m->session->tr, c, pos+j, &s, mtype, 1) != 0) {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-					goto cleanup;
-				}
+				if (!d[j])
+					d[j] = (char*) nil;
+			}
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
+			for (size_t j=0; j<cnt; j++){
+				if (d[j] == (char*)nil)
+					d[j] = NULL;
 			}
 		} else if (mtype == TYPE_timestamp) {
+			timestamp *d = GDKmalloc(sizeof(timestamp)*cnt);
+			if (!d) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
 			monetdbe_data_timestamp* ts = (monetdbe_data_timestamp*)v;
 
 			for (size_t j=0; j<cnt; j++){
 				timestamp t = *(timestamp*) nil;
 				if(!timestamp_is_null(ts+j))
 					t = timestamp_from_data(&ts[j]);
-
-				if (store->storage_api.append_col(m->session->tr, c, pos+j, &t, mtype, 1) != 0) {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-					goto cleanup;
-				}
+				d[j] = t;
 			}
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+				GDKfree(d);
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
+			GDKfree(d);
 		} else if (mtype == TYPE_date) {
+			date *d = GDKmalloc(sizeof(date)*cnt);
+			if (!d) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
 			monetdbe_data_date* de = (monetdbe_data_date*)v;
 
 			for (size_t j=0; j<cnt; j++){
-				date d = *(date*) nil;
+				date dt = *(date*) nil;
 				if(!date_is_null(de+j))
-					d = date_from_data(&de[j]);
-
-				if (store->storage_api.append_col(m->session->tr, c, pos+j, &d, mtype, 1) != 0) {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-					goto cleanup;
-				}
+					dt = date_from_data(&de[j]);
+				d[j] = dt;
 			}
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+				GDKfree(d);
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
+			GDKfree(d);
 		} else if (mtype == TYPE_daytime) {
+			daytime *d = GDKmalloc(sizeof(daytime)*cnt);
+			if (!d) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
 			monetdbe_data_time* t = (monetdbe_data_time*)v;
 
 			for (size_t j=0; j<cnt; j++){
 				daytime dt = *(daytime*) nil;
 				if(!time_is_null(t+j))
 					dt = time_from_data(&t[j]);
-
-				if (store->storage_api.append_col(m->session->tr, c, pos+j, &dt, mtype, 1) != 0) {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-					goto cleanup;
-				}
+				d[j] = dt;
 			}
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+				GDKfree(d);
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
+			GDKfree(d);
 		} else if (mtype == TYPE_blob) {
+			int err = 0;
+			blob **d = GDKmalloc(sizeof(blob*)*cnt);
+			if (!d) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				goto cleanup;
+			}
 			monetdbe_data_blob* be = (monetdbe_data_blob*)v;
 
-			if (!bbuf) {
-				bbuf_len = blobsize(1024);
-				if (!(bbuf = (blob*) GDKmalloc(bbuf_len))) {
-					mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-					goto cleanup;
-				}
-			}
-
 			for (size_t j=0; j<cnt; j++){
-				int res;
-
 				if (blob_is_null(be+j)) {
-					res = store->storage_api.append_col(m->session->tr, c, pos+j, ((blob*)&nil), mtype, 1);
+					d[j] = (blob*)nil;
 				} else {
 					size_t len = be[j].size;
 					var_t nlen = blobsize(len);
 
-					if (nlen > bbuf_len) { /* reuse buffer and reallocate only when the new input size becomes larger */
-						var_t newlen = ((nlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
-						blob *newbuf = GDKmalloc(newlen);
-						if (!newbuf) {
-							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-							goto cleanup;
-						}
-						GDKfree(bbuf);
-						bbuf = newbuf;
-						bbuf_len = newlen;
+					blob *b = (blob*)GDKmalloc(nlen);
+					if (!b) {
+						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+						err = j-1;
+						break;
 					}
-
-					bbuf->nitems = len;
-					memcpy(bbuf->data, be[j].data, len);
-					res = store->storage_api.append_col(m->session->tr, c, pos+j, &bbuf, mtype, 1);
-				}
-				if (res != 0) {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-					goto cleanup;
+					b->nitems = len;
+					memcpy(b->data, be[j].data, len);
+					d[j] = b;
 				}
 			}
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				err = cnt;
+			}
+			if (err)
+				cnt = err;
+			for (size_t j=0; j<cnt; j++){
+				if (d[j] != nil)
+					GDKfree(d[j]);
+			}
+			GDKfree(d);
+			if (err)
+				goto cleanup;
 		}
 	}
 
@@ -2275,9 +2299,7 @@ remote_cleanup:
 	}
 
 cleanup:
-	GDKfree(bbuf);
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
-
 	return mdbe->msg;
 }
 
