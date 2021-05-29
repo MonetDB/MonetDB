@@ -7,42 +7,47 @@
  */
 
 
-/* A string imprint is an index that can be used as a prefilter in LIKE
+/* Author: Panagiotis Koutsourakis
+ *
+ * A string imprint is an index that can be used as a prefilter in LIKE
  * queries. It has 2 components:
  *
- * - a header of 64 string element pairs (bytes in the current
- *   implementation but maybe unicode chars might make more sense).
+ * - a header of 32 or 64 string element pairs.
  *
- * - a 64 bit mask for each item in the BAT that encodes the presence or
- *   absence of each element of the header in the specific item.
+ * - a 32 or 64 bit mask for each string in the BAT that encodes the
+ *   presence or absence of each element of the header in the specific
+ *   item.
  *
  * A string imprint is stored in a new Heap in the BAT, aligned in 8
  * byte (64 bit) words.
  *
- * The first 64 bit word describes how the header of the strimp is
- * encoded. The least significant byte (v in the schematic below) is the
- * version number. The second (np) is the number of pairs in the
- * header. The third (b/p) is the number of bytes per pair if each pair
- * is encoded using a constant number of bytes or 0 if it is utf-8. The
- * next 2 bytes (hs) is the size of the header in bytes. The last 3
- * bytes needed to align to the 8 byte boundary should be zero, and are
- * reserved for future use.
+ * The first 64 bit word, the header descriptor, describes how the
+ * header of the strimp is encoded. The least significant byte (v in the
+ * schematic below) is the version number. The second (np) is the number
+ * of pairs in the header. The next 2 bytes (hs) is the size of the
+ * header in bytes. Finally the fifth byte is the persistence byte. The
+ * last 3 bytes needed to align to the 8 byte boundary should be zero,
+ * and are reserved for future use.
  *
- * In the current implementation we use 64 byte pairs for the header, so
+ * The following np bytes are the sizes of the pairs. These can have
+ * values from 2 to 8 and are the number of bytes that the corresponding
+ * pair takes up. Following that there are the bytes encoding the actual
+ * pairs.
  *
- * np  == 64
- * b/p == 2
- * hs  == 128
+ * |   v   |  np   |      hs      |   p   |      reserved      |  8bytes
+ * |                                                           |             ---
+ *                         Strimp Header                                      |
+ * | psz_0 | psz_1 | ...                                       |              |
+ * |                                                           |  ---         |
+ * |                                                           |np bytes      |
+ * |                                               ... | psz_n |  ---      hs bytes
+ * |             pair_0          |           pair_1            |              |
+ * |                            ...                            |              |
+ * |                 pair_k-1                   |   pair_k     |              |
+ * |                          pair_n                           |              |
+ * |                                                           |             ---
  *
- * The actual header follows. If it ends before an 8 byte boundary it
- * is padded with zeros.
  *
- * |  v   |  np   |  b/p |      hs      |     reserved         |  8bytes
- * |                                                           |        ---
- *                         Strimp Header                                 |
- * |                                                           |  hs bytes + padding
- * |                                                           |         |
- * |                                                           |        ---
  * The bitmasks for each string in the BAT follow after this.
  *
  * Strimp creation goes as follows:
@@ -50,10 +55,10 @@
  * - Construct a histogram of the element (byte or character) pairs for
  *   all the strings in the BAT.
  *
- * - Take the 64 most frequent pairs as the Strimp Header.
+ * - Take the 32/64 most frequent pairs as the Strimp Header.
  *
- * - For each string in the bat construct a 64 bit mask that encodes the
- *   presence or absence of each member of the header in the string.
+ * - For each string in the bat construct a 32/64 bit mask that encodes
+ *   the presence or absence of each member of the header in the string.
  */
 
 #include "monetdb_config.h"
@@ -61,36 +66,6 @@
 #include "gdk_private.h"
 
 #if 0
-/* This counts how many unicode codepoints the given string
- * contains.
- */
-static size_t
-STRMP_strlen(const uint8_t *s)
-{
-	size_t ret = 0;
-	size_t i;
-	int m,n;
-	uint8_t c;
-
-	i = 0;
-	while((c = *(s + i)) != 0) {
-		if (c < 0x80)
-			i++;
-		else {
-			for (n = 0, m=0x40; c & m; n++, m >>= 1)
-				;
-			/* n is now the number of 10xxxxxx bytes that should
-			   follow. */
-			if (n == 0 || n >= 4)
-				/* TODO: handle invalid utf-8 */
-				{}
-			i += n+1;
-		}
-		ret++;
-	}
-
-	return ret;
-}
 
 /* Given a BAT return the number of digrams in it. The observation is
  * that the number of digrams is the number of characters - 1:
@@ -145,6 +120,53 @@ STRMPndigrams(BAT *b, size_t *n)
 		((TPE *) _a)[_i] = ((TPE *) _a)[_j];	\
 		((TPE *) _a)[_j] = _t;			\
 	} while(0)
+
+/* This counts how many unicode codepoints the given string
+ * contains.
+ */
+static size_t
+STRMP_utf8_strlen(const uint8_t *s)
+{
+	size_t ret = 0;
+	size_t i;
+	int m,n;
+	uint8_t c;
+
+	i = 0;
+	while((c = *(s + i)) != 0) {
+		if (c < 0x80)
+			i++;
+		else {
+			for (n = 0, m=0x40; c & m; n++, m >>= 1)
+				;
+			/* n is now the number of 10xxxxxx bytes that should
+			   follow. */
+			if (n == 0 || n >= 4)
+				/* TODO: handle invalid utf-8 */
+				{}
+			i += n+1;
+		}
+		ret++;
+	}
+
+	return ret;
+}
+
+static size_t
+STRMP_utf8_next_char_index(const str s, size_t cidx) {
+	assert(cidx < strlen(s)); /* !!! */
+	if (*(s+cidx+1) == 0)
+		return 0;
+	return cidx + 1;
+}
+
+#if 0
+static uint8_t*
+STRMP_utf8_char_at(const str s, size_t i, size_t *len) {
+	*len = 1;
+	return (uint8_t *)(s + i);
+}
+#endif
 
 /* Construct a histogram of pairs of bytes in the input BAT.
  *
@@ -279,8 +301,12 @@ create_header(BAT *b)
 	return header;
 }
 
+#define NPAIRS(d) (((d) & (0xff << 8)) >> 8)
+#define HSIZE(d) (((d) & (0xffff << 16)) >> 16)
+/* #define PSIZES(p) ((uint8_t *) ((p)+8)) */
+/* #define HPAIRS(p) ((uint8_t *) (PSIZES(p) + NPAIRS(*((uint64_t *)p)))) */
 
-/* Given a strimp h and a DataPair p, return the index i for which
+/* Given a strimp h and a pair p, return the index i for which
  *
  * h[i] == p
  *
@@ -289,16 +315,33 @@ create_header(BAT *b)
  * TODO: Should this be inlined somehow? (probably yes)
  */
 static int8_t
-lookup_index(StrimpHeader *h, DataPair n)
+lookup_index(BAT *b, uint8_t *pair, uint8_t psize)
 {
-	size_t i;
-	for(i = 0; i < STRIMP_HEADER_SIZE; i++)
-		if(h->bytepairs[i] == n)
-			return i;
+	size_t i,j;
+	size_t idx = 0;
+	Heap strimp = b->tstrimps->strimps;
+	uint64_t desc = (uint64_t)strimp.base[0];
+	uint8_t npairs = NPAIRS(desc);
+	uint8_t *pair_sizes = b->tstrimps->sizes_base;
+	uint8_t *pairs = b->tstrimps->pairs_base;
+
+	for(i = 0; i < npairs; i++) {
+		if (psize == pair_sizes[i]) {
+			uint8_t *h = pairs + idx;
+			for (j = 0; j < psize; j++) {
+				if(pair[j] != h[j])
+					break;
+			}
+			if (j == psize)
+				return i;
+		}
+		idx += pair_sizes[i];
+	}
 
 	return -1;
 }
 
+#define MAX_PAIR_SIZE 8
 
 /* Given a strimp header and a string compute the bitstring of which
  * digrams(byte pairs) are present in the string. The strimp header is a
@@ -307,19 +350,32 @@ lookup_index(StrimpHeader *h, DataPair n)
  * This should probably be inlined.
  */
 static uint64_t
-STRMPmakebitstring(const str s, StrimpHeader *h)
+STRMPmakebitstring(const str s, BAT *b)
 {
 	uint64_t ret = 0;
-	int8_t pair_idx;
-	char *it;
+	int8_t pair_idx = 0;
+	size_t idx = 0;
+	size_t nidx, nidx2;
+	size_t i;
+	uint8_t pair[MAX_PAIR_SIZE] = {0};
+	size_t psize = 0;
+	size_t ssize = strlen(s);
 
-	for(it = s; *it != 0 && *(it+1) != 0; it++) {
-		pair_idx = lookup_index(h, pairToIndex(*it, *(it+1)));
-		if (pair_idx >= 0)
+	for (idx = 0; idx < ssize - 1; idx++) {	/* pairs start at positions < size-1 */
+		nidx = STRMP_utf8_next_char_index(s, idx);
+		assert(nidx > 0);
+		nidx2 = STRMP_utf8_next_char_index(s, nidx);
+		assert(nidx2 > 0);
+		psize = nidx2 - idx;
+		assert (psize < MAX_PAIR_SIZE);
+		for (i = idx; i < psize; i++)
+			pair[idx + i] = *(s + idx + i);
+		pair_idx = lookup_index(b, pair, psize);
+		if (pair_idx >= 0) {
 			assert(pair_idx < STRIMP_HEADER_SIZE);
 			ret |= 0x1 << pair_idx;
+		}
 	}
-
 	return ret;
 }
 
@@ -372,7 +428,6 @@ create_strimp(BAT *b, StrimpHeader *h)
 	return r;
 }
 
-
 static bool
 BATcheckstrimps(BAT *b)
 {
@@ -407,25 +462,23 @@ BATcheckstrimps(BAT *b)
 					 */
 					if (read(fd, &desc, 8) == 8
 					    && (desc & 0xff) == STRIMP_VERSION
-					    && (((npairs = (desc & (0xff << 8)) >> 8) == 32) || npairs == 64)
-					    && (hsize = (desc & (0xffff << 16)) >> 16) >= 96 && hsize <= 640
+					    && ((npairs = NPAIRS(desc)) == 32 || npairs == 64)
+					    && (hsize = HSIZE(desc)) >= 96 && hsize <= 640
+					    && ((desc & ((uint64_t)0xff << 32)) >> 32) == 1
 					    && fstat(fd, &st) == 0
-					    && st.st_size >= (off_t) (8 + hsize + BATcount(b)*(npairs > 32 ? 8 : 4))
-#ifdef PERSISTENT_STRIMP
-					    && ((desc & (0xff << 32)) >> 32) == 1
-#endif
+					    && st.st_size >= (off_t) (hp->strimps.free = hp->strimps.size =
+								      /* descriptor */
+								      8 +
+								      /* header size (offsets + pairs) */
+								      hsize +
+								      /* padding to 4 or 8 byte boundary */
+								      hsize%(npairs/8) == (npairs/8)? 0 : (npairs/8+((npairs/8) - hsize%(npairs/8))) +
+								      /* bitmasks */
+								      BATcount(b)*(npairs/8))
 					    && HEAPload(&hp->strimps, nme, "tstrimps", false) == GDK_SUCCEED) {
-						/* offsets are either 1
-						 * or 2 bytes long. This
-						 * allows for pairs that
-						 * are 8 bytes long (max
-						 * utf-8 encoding).
-						 */
-						uint8_t awidth = npairs > 32 ? 2 : 1;
-
-						hp->offsets_base = hp + 8; /* offsets start just after the descriptor */
-						hp->pairs_base = (uint8_t *)(hp + 8) + npairs*awidth; /* pairs start after the offsets */
-						hp->strimps_base = (hp + 8) + hsize; /* strimps start after the pairs */
+						hp->sizes_base = (uint8_t *)hp + 8;         /* sizes start just after the descriptor */
+						hp->pairs_base = hp->sizes_base + npairs;   /* pairs start after the offsets */
+						hp->strimps_base = hp->sizes_base + hsize;  /* bitmasks start after the pairs */
 
 						close(fd);
 						hp->strimps.parentid = b->batCacheid;
@@ -449,7 +502,7 @@ BATcheckstrimps(BAT *b)
 	if (ret)
 		TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 
-	return false; // is this correct?
+	return false;
 }
 
 /* Filter a BAT b using a string q. Return the result as a candidate
@@ -460,7 +513,6 @@ STRMPfilter(BAT *b, char *q)
 {
 	BAT *r = NULL;
 	BUN i;
-	StrimpHeader *hd = NULL;
 	uint64_t qbmask;
 	uint64_t *ptr;
 
@@ -476,7 +528,7 @@ STRMPfilter(BAT *b, char *q)
 	if (!BATcheckstrimps(b)) {
 		goto sfilter_fail;
 	}
-	qbmask = STRMPmakebitstring(q, hd);
+	qbmask = STRMPmakebitstring(q, b);
 	ptr = (uint64_t *)b->tstrimps->strimps.base + STRIMP_OFFSET * sizeof(uint64_t);
 
 
@@ -493,9 +545,18 @@ STRMPfilter(BAT *b, char *q)
 
  sfilter_fail:
 	BBPunfix(r->batCacheid);
-	free(hd);
+	// free(hd);
 	return NULL;
 }
+
+#if 0
+void
+persistStrimp(BAT *b)
+{
+	if((BBP_status(b->batCacheid) & BBPEXISTING) &&
+	   b->batInserted == b->batCount)
+}
+#endif
 
 /* Create */
 gdk_return
