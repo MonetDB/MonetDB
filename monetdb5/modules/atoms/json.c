@@ -2431,7 +2431,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (g) {
 		/* stable sort g */
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, true) != GDK_SUCCEED) {
-			err = "internal sort failed";
+			err = GDK_EXCEPTION;
 			goto out;
 		}
 		if (freeg)

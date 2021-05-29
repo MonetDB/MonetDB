@@ -1815,7 +1815,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
 				}
-				rel_base_use_all(sql, rel);
+				rel_base_use_all(sql, rel, 1);
 				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
