@@ -126,14 +126,14 @@ typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, 
 
 /*
 -- append/update to columns and indices
-*/
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, size_t offset, void *d, int t, size_t cnt);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, size_t offset, void *d, int t, size_t cnt);
+*/
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
-typedef size_t (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
+typedef void * (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
 
 /*
 -- count number of rows in column (excluding the deletes)
@@ -199,8 +199,8 @@ typedef struct store_functions {
 	bind_idx_fptr bind_idx;
 	bind_cands_fptr bind_cands;
 
-	append_col_fptr append_col;
-	append_idx_fptr append_idx;
+	update_col_fptr append_col;
+	update_idx_fptr append_idx;
 
 	update_col_fptr update_col;
 	update_idx_fptr update_idx;
