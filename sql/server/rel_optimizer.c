@@ -9283,7 +9283,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					if (flag == cmp_in) { /* handle in lists */
 						list *vals = e->r, *vlist = sa_list(v->sql->sa);
 
-						node *m = NULL;merge_table_prune_and_unionize
+						node *m = NULL;
 						for (m = vals->h; m; m = m->next) {
 							sql_exp *l = m->data;
 							atom *lval = exp_flatten(v->sql, l);
