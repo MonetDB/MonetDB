@@ -113,8 +113,8 @@ Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder 
 ----
 REF 1 (2)
 join (
-| table("sys"."open_auctions") [ "open_auctions"."open_auction_id" NOT NULL as "o"."open_auction_id", "open_auctions"."%TID%" NOT NULL as "o"."%TID%" ] COUNT ,
-| table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b"."id", "bidder"."open_auction_id" NOT NULL as "b"."open_auction_id", "bidder"."date" NOT NULL as "b"."date", "bidder"."time" NOT NULL as "b"."time", "bidder"."personref" NOT NULL as "b"."personref", "bidder"."increase" NOT NULL as "b"."increase", "bidder"."%TID%" NOT NULL as "b"."%TID%" ] COUNT 
+| table("sys"."open_auctions") [ "open_auctions"."open_auction_id" NOT NULL as "o"."open_auction_id" ] COUNT ,
+| table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b"."id", "bidder"."open_auction_id" NOT NULL as "b"."open_auction_id", "bidder"."date" NOT NULL as "b"."date", "bidder"."time" NOT NULL as "b"."time", "bidder"."personref" NOT NULL as "b"."personref", "bidder"."increase" NOT NULL as "b"."increase" ] COUNT 
 ) [ "o"."open_auction_id" NOT NULL = "b"."open_auction_id" NOT NULL ]
 REF 2 (2)
 single left outer join (
@@ -123,7 +123,7 @@ single left outer join (
 | | select (
 | | | project (
 | | | | crossproduct (
-| | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL as "b3"."%TID%" ] COUNT ,
+| | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase" ] COUNT ,
 | | | | | group by (
 | | | | | | join (
 | | | | | | | group by (
@@ -131,13 +131,13 @@ single left outer join (
 | | | | | | | | | & REF 1 
 | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
 | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ],
-| | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."%TID%" NOT NULL as "b3a"."%TID%" ] COUNT 
+| | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id" ] COUNT 
 | | | | | | ) [ "b3a"."open_auction_id" NOT NULL = "o"."open_auction_id" NOT NULL ]
 | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."min" no nil ("b3a"."id" NOT NULL HASHCOL ) as "%1"."%1", "o"."open_auction_id" NOT NULL ]
 | | | | ) [  ]
-| | | ) [ "o"."open_auction_id" NOT NULL, "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1", "b3"."increase" NOT NULL as "%2"."%2" ]
+| | | ) [ "o"."open_auction_id" NOT NULL, "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "%1"."%1", "b3"."increase" NOT NULL as "%2"."%2" ]
 | | ) [ "b3"."id" NOT NULL HASHCOL  = "%1"."%1" ]
-| ) [ "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1", "%2"."%2" NOT NULL, "o"."open_auction_id" NOT NULL as "%5"."%5" ]
+| ) [ "b3"."id" NOT NULL HASHCOL , "b3"."increase" NOT NULL, "%1"."%1", "%2"."%2" NOT NULL, "o"."open_auction_id" NOT NULL as "%5"."%5" ]
 ) [ "o"."open_auction_id" NOT NULL * = "%5"."%5" NOT NULL ]
 project (
 | single select (

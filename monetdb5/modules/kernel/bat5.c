@@ -833,7 +833,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrink", GDK_EXCEPTION);
 	}
 
 	o = (oid*)Tloc(bs, 0);
@@ -864,7 +864,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
 						BBPunfix(b->batCacheid);
 						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						throw(MAL, "bat.shrink", GDK_EXCEPTION);
 					}
 					cnt++;
 				}
@@ -928,7 +928,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrinkMap", GDK_EXCEPTION);
 	}
 
 	o = (oid*)Tloc(bs, 0);
@@ -1001,7 +1001,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.reuse", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.reuse", GDK_EXCEPTION);
 	}
 
 	const oid *o = (const oid *) Tloc(bs, 0);
@@ -1098,7 +1098,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrinkMap", GDK_EXCEPTION);
 	}
 
 	const oid *o = (const oid *) Tloc(bs, 0);
@@ -1147,7 +1147,7 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 	BBPunfix(a->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "bat.mergecand", OPERATION_FAILED);
+		throw(MAL, "bat.mergecand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -1169,7 +1169,7 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 	BBPunfix(a->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "bat.intersectcand", OPERATION_FAILED);
+		throw(MAL, "bat.intersectcand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -1191,7 +1191,7 @@ BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
 	BBPunfix(a->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "bat.diffcand", OPERATION_FAILED);
+		throw(MAL, "bat.diffcand", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

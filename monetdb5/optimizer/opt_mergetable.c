@@ -401,7 +401,7 @@ mat_assign(MalBlkPtr mb, InstrPtr p, matlist_t *ml)
 	return r;
 }
 
-static InstrPtr
+static int
 mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 {
 	int tpe, k, is_select = isSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
@@ -421,14 +421,14 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 	}
 
 	if((r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc)) == NULL)
-		return NULL;
+		return -1;
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
 	if (is_identity) {
 		if((q = newInstruction(mb,  NULL,NULL)) == NULL) {
 			freeInstruction(r);
-			return NULL;
+			return -1;
 		}
 		getArg(q, 0) = newTmpVariable(mb, TYPE_oid);
 		q->retc = 1;
@@ -441,7 +441,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 		int res = 0;
 		if((q = copyInstruction(p)) == NULL) {
 			freeInstruction(r);
-			return NULL;
+			return -1;
 		}
 
 		if (is_assign)
@@ -471,11 +471,14 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 			res = setPartnr(ml, -1, getArg(q,0), k);
 		if(res) {
 			freeInstruction(r);
-			return NULL;
+			return -1;
 		}
 		r = addArgument(mb, r, getArg(q, 0));
 	}
-	return r;
+	if(!r || mat_add(ml, r, mat_type(ml->v, m), getFunctionId(p))) {
+		return -1;
+	}
+	return 0;
 }
 
 static int
@@ -483,6 +486,9 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 {
 	int matvar[8], fargument[8], k, l, parts = 0;
 
+	if (nrmats == 1 &&
+		((getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef) || (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef)))
+		return mat_apply1(mb, p, ml, is_a_mat(getArg(p,1),ml), 1);
 	assert(nrmats <= 8);
 
 	for(k=p->retc, l=0; k < p->argc; k++) {
@@ -2345,12 +2351,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && bats == 2 &&
 			isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) &&
 			is_bat_nil(getVarConstant(mb,getArg(p,2)).val.bval)) {
-			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL) {
-				if(mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p))) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto cleanup;
-				}
-			} else {
+			if (mat_apply1(mb, p, &ml, m, fm)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
