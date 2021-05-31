@@ -1090,8 +1090,8 @@ BATdel(BAT *b, BAT *d)
  * The last in this series is a BATreplace, which replaces all the
  * buns mentioned.
  */
-gdk_return
-BATreplace(BAT *b, BAT *p, BAT *n, bool force)
+static gdk_return
+BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 {
 	lng t0 = GDKusec();
 
@@ -1116,12 +1116,14 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 
 	BATiter bi = bat_iterator(b);
 	BATiter ni = bat_iterator(n);
+#if 0 /* questionable: what if p point outside b, even if !mayappend? */
 	if (BATcount(b) == 0 ||
 	    (b->tsorted && b->trevsorted &&
 	     n->tsorted && n->trevsorted &&
 	     ATOMcmp(b->ttype, BUNtail(bi, 0), BUNtail(ni, 0)) == 0)) {
 		return GDK_SUCCEED;
 	}
+#endif
 
 	OIDXdestroy(b);
 	IMPSdestroy(b);
@@ -1146,7 +1148,8 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
 			oid updid = BUNtoid(p, i);
 
-			if (updid < b->hseqbase || updid >= hseqend) {
+			if (updid < b->hseqbase ||
+			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
 				return GDK_FAIL;
 			}
@@ -1156,8 +1159,20 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				return GDK_FAIL;
 			}
 
-			const void *old = BUNtvar(bi, updid);
 			const void *new = BUNtvar(ni, i);
+
+			if (updid >= BATcount(b)) {
+				assert(mayappend);
+				while (BATcount(b) < updid) {
+					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+						return GDK_FAIL;
+				}
+				if (BUNappend(b, new, force) != GDK_SUCCEED)
+					return GDK_FAIL;
+				continue;
+			}
+
+			const void *old = BUNtvar(bi, updid);
 			bool isnil = atomcmp(new, nil) == 0;
 			anynil |= isnil;
 			if (b->tnil &&
@@ -1259,7 +1274,8 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
 			oid updid = BUNtoid(p, i);
 
-			if (updid < b->hseqbase || updid >= hseqend) {
+			if (updid < b->hseqbase ||
+			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
 				return GDK_FAIL;
 			}
@@ -1268,13 +1284,23 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				GDKerror("updating committed value\n");
 				return GDK_FAIL;
 			}
-
+			if (updid >= BATcount(b)) {
+				assert(mayappend);
+				while (BATcount(b) < updid) {
+					if (BUNappend(b, &(msk){false}, force) != GDK_SUCCEED)
+						return GDK_FAIL;
+				}
+				if (BUNappend(b, &(msk){mskGetVal(n, i)}, force) != GDK_SUCCEED)
+					return GDK_FAIL;
+				continue;
+			}
 			mskSetVal(b, updid, mskGetVal(n, i));
 		}
 	} else if (BATtdense(p)) {
 		oid updid = BUNtoid(p, 0);
 
-		if (updid < b->hseqbase || updid + BATcount(p) > hseqend) {
+		if (updid < b->hseqbase ||
+		    (!mayappend && updid + BATcount(p) > hseqend)) {
 			GDKerror("id out of range\n");
 			return GDK_FAIL;
 		}
@@ -1282,6 +1308,19 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		if (!force && updid < b->batInserted) {
 			GDKerror("updating committed value\n");
 			return GDK_FAIL;
+		}
+
+		if (updid >= BATcount(b)) {
+			assert(mayappend);
+			while (BATcount(b) < updid) {
+				if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+					return GDK_FAIL;
+			}
+			return BATappend(b, n, NULL, force);
+		}
+		while (updid + BATcount(n) > BATcount(b)) {
+			if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+				return GDK_FAIL;
 		}
 
 		/* we copy all of n, so if there are nils in n we get
@@ -1402,7 +1441,8 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
 			oid updid = BUNtoid(p, i);
 
-			if (updid < b->hseqbase || updid >= hseqend) {
+			if (updid < b->hseqbase ||
+			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
 				return GDK_FAIL;
 			}
@@ -1412,8 +1452,20 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				return GDK_FAIL;
 			}
 
-			const void *old = BUNtloc(bi, updid);
 			const void *new = BUNtail(ni, i);
+
+			if (updid >= BATcount(b)) {
+				assert(mayappend);
+				while (BATcount(b) < updid) {
+					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+						return GDK_FAIL;
+				}
+				if (BUNappend(b, new, force) != GDK_SUCCEED)
+					return GDK_FAIL;
+				continue;
+			}
+
+			const void *old = BUNtloc(bi, updid);
 			bool isnil = atomcmp(new, nil) == 0;
 			anynil |= isnil;
 			if (b->tnil &&
@@ -1501,6 +1553,19 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	return GDK_SUCCEED;
 }
 
+/* replace values from b at locations specified in p with values in n */
+gdk_return
+BATreplace(BAT *b, BAT *p, BAT *n, bool force)
+{
+	return BATappend_or_update(b, p, n, false, force);
+}
+
+/* like BATreplace, but p may specify locations beyond the end of b */
+gdk_return
+BATupdate(BAT *b, BAT *p, BAT *n, bool force)
+{
+	return BATappend_or_update(b, p, n, true, force);
+}
 
 /*
  *  BAT Selections

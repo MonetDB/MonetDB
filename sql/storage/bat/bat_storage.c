@@ -1132,61 +1132,14 @@ delta_append_bat( sql_delta *bat, BAT *offsets, BAT *i )
 	if (i && (i->ttype == TYPE_msk || mask_cand(i))) {
 		oi = BATunmask(i);
 	}
-
-	size_t offset = 0;
-	if (BATtdense(offsets)) {
-		offset = offsets->tseqbase;
-	} else {
-		/* TODO handle multiple offsets */
-		assert(0);
-		offset = *(oid*)Tloc(offsets, 0);
-	}
-
-	if (BATcount(b) >= offset+BATcount(oi)){
-		BAT *ui = BATdense(0, offset, BATcount(oi));
-		if (BATreplace(b, ui, oi, true) != GDK_SUCCEED) {
-			if (oi != i)
-				bat_destroy(oi);
-			bat_destroy(b);
-			bat_destroy(ui);
-			return LOG_ERR;
-		}
-		assert(!isVIEW(b));
-		bat_destroy(ui);
-	} else {
-		if (BATcount(b) < offset) { /* add space */
-			const void *tv = ATOMnilptr(b->ttype);
-			lng d = offset - BATcount(b);
-			for(lng j=0;j<d;j++) {
-				if (BUNappend(b, tv, true) != GDK_SUCCEED) {
-					if (oi != i)
-						bat_destroy(oi);
-					bat_destroy(b);
-					return LOG_ERR;
-				}
-			}
-		}
-		if (isVIEW(oi) && b->batCacheid == VIEWtparent(oi)) {
-			BAT *ic = COLcopy(oi, oi->ttype, true, TRANSIENT);
-
-			if (ic == NULL || BATappend(b, ic, NULL, true) != GDK_SUCCEED) {
-				if (oi != i)
-					bat_destroy(oi);
-				bat_destroy(ic);
-                		bat_destroy(b);
-                		return LOG_ERR;
-            		}
-            		bat_destroy(ic);
-		} else if (BATappend(b, oi, NULL, true) != GDK_SUCCEED) {
-			if (oi != i)
-				bat_destroy(oi);
-			bat_destroy(b);
-			return LOG_ERR;
-		}
+	if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
+		if (oi != i)
+			bat_destroy(oi);
+		bat_destroy(b);
+		return LOG_ERR;
 	}
 	if (oi != i)
 		bat_destroy(oi);
-	assert(!isVIEW(b));
 	bat_destroy(b);
 	return LOG_OK;
 }
@@ -2995,8 +2948,103 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 }
 
 static BAT *
+add_offsets(BAT *pos, BUN slot, size_t nr, size_t total)
+{
+	if (nr == 0)
+		return pos;
+	assert (nr > 0);
+	if (!pos && nr == total)
+		return BATdense(0, slot, nr);
+	if (!pos) {
+		pos = COLnew(0, TYPE_oid, total, TRANSIENT);
+		if (!pos)
+			return NULL;
+	}
+	for(size_t i = 0; i < nr; i++) {
+		oid v = slot + i;
+		if (BUNappend(pos, &v, true) != GDK_SUCCEED)
+			return NULL;
+	}
+	return pos;
+}
+
+static BAT *
+claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
+{
+	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
+	assert(s->segs);
+	ulng oldest = store_oldest(tr->store);
+	BUN slot = 0;
+	BAT *pos = NULL;
+	size_t total = cnt;
+
+	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
+	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = seg->next) {
+		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* re-use old deleted or rolledback append */
+			if ((seg->end - seg->start) >= cnt) {
+				/* if previous is claimed before we could simply adjust the end/start */
+				if (p && p->ts == tr->tid && !p->deleted) {
+					slot = p->end;
+					p->end += cnt;
+					seg->start += cnt;
+					pos = add_offsets(pos, slot, cnt, total);
+					if (!pos) {
+						ok = LOG_ERR;
+						break;
+					}
+					cnt = 0;
+					break;
+				}
+				/* we claimed part of the old segment, the split off part needs too stay deleted */
+				size_t rcnt = seg->end - seg->start;
+				if (rcnt > cnt)
+					rcnt = cnt;
+				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, rcnt, false)) == NULL) {
+					ok = LOG_ERR;
+					break;
+				}
+			}
+			seg->ts = tr->tid;
+			seg->deleted = false;
+			slot = seg->start;
+			pos = add_offsets(pos, slot, (seg->end-seg->start), total);
+			if (!pos) {
+				ok = LOG_ERR;
+				break;
+			}
+			cnt -= (seg->end - seg->start);
+		}
+	}
+	if (ok == LOG_OK && cnt) {
+		if (s->segs->t && s->segs->t->ts == tr->tid && !s->segs->t->deleted) {
+			slot = s->segs->t->end;
+			s->segs->t->end += cnt;
+		} else {
+			s->segs->t = new_segment(s->segs->t, tr, cnt);
+			if (!s->segs->h)
+				s->segs->h = s->segs->t;
+			slot = s->segs->t->start;
+		}
+		pos = add_offsets(pos, slot, cnt, total);
+		if (!pos)
+			ok = LOG_ERR;
+	}
+
+	/* hard to only add this once per transaction (probably want to change to once per new segment) */
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		if (!isLocalTemp(t))
+			tr->logchanges += (int) total;
+	}
+	assert(BATcount(pos) == total);
+	return pos;
+}
+
+static BAT *
 claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 {
+	if (cnt > 1)
+		return claim_segmentsV2(tr, t, s, cnt);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
