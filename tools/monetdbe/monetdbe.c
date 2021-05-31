@@ -475,7 +475,59 @@ monetdbe_close_internal(monetdbe_database_internal *mdbe)
 }
 
 static int
-monetdbe_open_internal(monetdbe_database_internal *mdbe)
+monetdbe_workers_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts)
+{
+	int workers = 0;
+	if (opts && opts->nr_threads) {
+		if (opts->nr_threads < 0)
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Nr_threads should be positive");
+		else
+			workers = GDKnr_threads = opts->nr_threads;
+	}
+	return workers;
+}
+
+static int
+monetdbe_memory_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts)
+{
+	int memory = 0;
+	if (opts && opts->memorylimit) {
+		if (opts->memorylimit < 0)
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Memorylimit should be positive");
+		else /* Memory limit is session specific */
+			memory = opts->memorylimit;
+	}
+	return memory;
+}
+
+static int
+monetdbe_querytimeout_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts)
+{
+	int querytimeout = 0;
+	if (opts && opts->querytimeout) {
+		if (opts->querytimeout < 0)
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Query timeout should be positive (in sec)");
+		else
+			querytimeout = opts->querytimeout;
+	}
+	return querytimeout;
+}
+
+static int
+monetdbe_sessiontimeout_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts)
+{
+	int sessiontimeout = 0;
+	if (opts && opts->sessiontimeout) {
+		if (opts->sessiontimeout < 0)
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Session timeout should be positive (in sec)");
+		else
+			sessiontimeout = opts->sessiontimeout;
+	}
+	return sessiontimeout;
+}
+
+static int
+monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts )
 {
 	mvc *m;
 
@@ -491,6 +543,12 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 		goto cleanup;
 	}
 	mdbe->c->curmodule = mdbe->c->usermodule = userModule();
+	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
+	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
+	mdbe->c->querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
+	mdbe->c->sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
+	if (mdbe->msg)
+		goto cleanup;
 	if (mdbe->c->usermodule == NULL) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client MAL module");
 		goto cleanup;
@@ -542,7 +600,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 	opt *set = NULL;
 	int setlen;
 	bool with_mapi_server;
-	int workers, memory, querytimeout, sessiontimeout;
+	int workers, memory;
 	gdk_return gdk_res;
 
 	GDKfataljumpenable = 1;
@@ -608,43 +666,12 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 
 	GDKtracer_set_adapter(mbedded); /* set the output of GDKtracer logs */
 
-	workers = 0;
-	memory = 0;
-	querytimeout = 0;
-	sessiontimeout = 0;
-
-	if (opts && opts->nr_threads) {
-		if( opts->nr_threads < 0){
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Nr_threads should be positive");
+	workers = monetdbe_workers_internal(mdbe, opts);
+	memory = monetdbe_memory_internal(mdbe, opts);
+	if (memory)
+			GDK_vm_maxsize = (size_t) memory << 20; /* convert from MiB to bytes */
+	if (mdbe->msg)
 			goto cleanup;
-		}
-		workers = GDKnr_threads = opts->nr_threads;
-	}
-	if (opts && opts->memorylimit) {
-		if( opts->memorylimit < 0){
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Memorylimit should be positive");
-			goto cleanup;
-		}
-		// Memory limit is session specific
-		memory = (size_t) opts->memorylimit;
-		GDK_vm_maxsize = (size_t) memory << 20; /* convert from MiB to bytes */
-	}
-	if (opts && opts->querytimeout) {
-		if( opts->querytimeout < 0){
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Query timeout should be positive (in sec)");
-			goto cleanup;
-		}
-		// Query time is session specific
-		querytimeout = opts->querytimeout;
-	}
-	if (opts && opts->sessiontimeout) {
-		if( opts->sessiontimeout < 0){
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Session timeout should be positive (in sec)");
-			goto cleanup;
-		}
-		// Query time is session specific
-		sessiontimeout = opts->sessiontimeout;
-	}
 
 	if (!dbdir) { /* in-memory */
 		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
@@ -672,7 +699,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		goto cleanup;
 	}
 
-	if ((mdbe->msg = malEmbeddedBoot(workers, memory, querytimeout, sessiontimeout, with_mapi_server)) != MAL_SUCCEED)
+	if ((mdbe->msg = malEmbeddedBoot(workers, memory, 0, 0, with_mapi_server)) != MAL_SUCCEED)
 		goto cleanup;
 
 	monetdbe_embedded_initialized = true;
@@ -834,7 +861,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported");
 	}
 	if (!mdbe->msg)
-		res = monetdbe_open_internal(mdbe);
+		res = monetdbe_open_internal(mdbe, opts);
 
 	if (res == 0 && is_remote)
 		res = monetdbe_open_remote(mdbe, opts);
