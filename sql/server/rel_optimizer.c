@@ -5321,15 +5321,16 @@ find_projection_for_join2semi(sql_rel *rel)
 				sql_exp *found = NULL;
 				bool underjoin = false;
 
-				/* if just one groupby column is projected, it will be distinct */
-				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
+				/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
+				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) ||
+					(is_simple_project(rel->op) && need_distinct(rel) && list_length(rel->exps) == 1) || find_prop(e->p, PROP_HASHCOL))
 					return true;
 
 				if ((found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
-					if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
+					if ((is_simple_project(res->op) && need_distinct(res) && list_length(res->exps) == 1) || find_prop(found->p, PROP_HASHCOL))
 						return true;
 					if (found->type == e_column && found->card <= CARD_AGGR) {
-						if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
+						if (!is_groupby(res->op) && list_length(res->exps) != 1)
 							return false;
 						for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
 							sql_exp *e = n->data;
