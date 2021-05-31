@@ -203,6 +203,7 @@ void BATtseqbase(BAT *b, oid o);
 void BATundo(BAT *b);
 BAT *BATunique(BAT *b, BAT *s);
 BAT *BATunmask(BAT *b);
+gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force) __attribute__((__warn_unused_result__));
 BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 void BBPclear(bat bid);
