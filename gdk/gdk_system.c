@@ -383,6 +383,8 @@ join_threads(void)
 	bool waited;
 
 	struct winthread *self = TlsGetValue(threadslot);
+	if (!self)
+		return;
 	EnterCriticalSection(&winthread_cs);
 	do {
 		waited = false;
