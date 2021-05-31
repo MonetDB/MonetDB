@@ -8906,13 +8906,13 @@ typedef struct {
 static sql_rel *
 merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_info *info)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	sql_rel *nrel = NULL;
 	sql_table *mt = (sql_table*) mt_rel->l;
 	const char *mtalias = exp_relname(mt_rel->exps->h->data);
 	list *tables = sa_list(v->sql->sa);
-
-	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (node *nt = mt->members->h; nt; nt = nt->next) {
 		sql_part *pd = nt->data;
@@ -9223,10 +9223,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			}
 		}
 	}
-	if (info)
-		rel_destroy(info->sel); /* mt_rel must be under info->sel */
-	else
-		rel_destroy(mt_rel);
+	rel_destroy(mt_rel);
 	return nrel;
 }
 
@@ -9308,6 +9305,10 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 			}
 			if (!(rel = merge_table_prune_and_unionize(v, bt, info)))
 				return NULL;
+			if (sel) {
+				sel->l = NULL; /* The mt relation has already been destroyed */
+				rel_destroy(sel);
+			}
 			v->changes++;
 		}
 	}
