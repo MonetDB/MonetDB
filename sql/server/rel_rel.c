@@ -907,7 +907,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		return new_exp_list(sql->sa);
 
 	if (!tname && is_basetable(rel->op) && !is_processed(rel))
-		rel_base_use_all( sql, rel, 1);
+		rel_base_use_all( sql, rel);
 
 	switch(rel->op) {
 	case op_join:
