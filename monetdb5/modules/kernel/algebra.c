@@ -786,29 +786,19 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 	BAT *sl = NULL, *sr = NULL;
 	gdk_return ret;
 
-	if ((L = BATdescriptor(*left)) == NULL) {
+	if ((L = BBPquickdesc(*left, false)) == NULL)
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if ((R = BATdescriptor(*right)) == NULL) {
-		BBPunfix(L->batCacheid);
+	if ((R = BBPquickdesc(*right, false)) == NULL)
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if (slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL) {
-		BBPunfix(L->batCacheid);
-		BBPunfix(R->batCacheid);
+	if (slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL)
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
 	if (srid && !is_bat_nil(*srid) && (sr = BATdescriptor(*srid)) == NULL) {
-		BBPunfix(L->batCacheid);
-		BBPunfix(R->batCacheid);
 		if (sl)
 			BBPunfix(sl->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	ret = BATsubcross(&bn1, r ? &bn2 : NULL, L, R, sl, sr,
 					  max_one && !is_bit_nil(*max_one) && *max_one);
-	BBPunfix(L->batCacheid);
-	BBPunfix(R->batCacheid);
 	if (sl)
 		BBPunfix(sl->batCacheid);
 	if (sr)
@@ -1248,16 +1238,14 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if( isaBatType(getArgType(mb,pci,2)) )
 		throw(MAL,"algebra.project","Scalar value expected");
-	if ((b = BATdescriptor(bid)) == NULL)
+	if ((b = BBPquickdesc(bid, false)) == NULL)
 		throw(MAL, "algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
-	BBPunfix(b->batCacheid);
 	if (bn == NULL) {
 		*ret = bat_nil;
 		throw(MAL, "algebra.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	*ret= bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

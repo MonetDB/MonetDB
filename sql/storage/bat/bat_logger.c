@@ -1589,47 +1589,50 @@ upgrade(old_logger *lg)
 		goto bailout;
 	}
 	rc = GDK_FAIL;
-	struct canditer ci;
-	canditer_init(&ci, lg->catalog_bid, cands);
 	const int *bids;
-	bids = (const int *) Tloc(lg->catalog_bid, 0);
-	for (BUN i = 0; i < ci.ncand; i++) {
-		BBPretain(bids[canditer_next(&ci) - lg->catalog_bid->hseqbase]);
-	}
+	bids = (const int *) Tloc(lg->lg->catalog_bid, lg->lg->catalog_bid->batCount - BATcount(cands));
+	for (BUN j = BATcount(cands), i = 0; i < j; i++)
+		BBPretain(bids[i]);
 	bat_destroy(cands);
 	bat_destroy(b);
 
 	/* convert deleted rows bats (catalog id equals table id) from list
 	 * of deleted rows to mask of deleted rows */
 	BAT *tabs;
-	/* 2165 is one larger than largest fixed id */
-	tabs = BATselect(lg->lg->catalog_id, NULL, &(int){2165}, &int_nil, true, true, false);
+	/* 2164 is the largest fixed id, so select anything larger */
+	tabs = BATselect(lg->lg->catalog_id, NULL, &(int){2164}, &int_nil, false, true, false);
 	if (tabs == NULL)
 		goto bailout;
 	BAT *b1;
+	/* extract those rows that refer to a known table (in bats[1].idbat) */
 	b1 = BATintersect(lg->lg->catalog_id, bats[1].idbat, tabs, bats[1].cands, false, false, BUN_NONE);
 	bat_destroy(tabs);
 	if (b1 == NULL)
 		goto bailout;
 	BAT *b3, *b4;
+	/* find a column (any column) in each of the tables */
 	if ((rc = BATsemijoin(&b3, &b4, lg->lg->catalog_id, bats[2].parbat, b1, bats[2].cands, false, false, BUN_NONE)) != GDK_SUCCEED) {
 		bat_destroy(b1);
 		goto bailout;
 	}
 	rc = GDK_FAIL;
 	bat_destroy(b3);
+	/* extract column id */
 	b3 = BATproject(b4, bats[2].idbat);
 	bat_destroy(b4);
 	if (b3 == NULL) {
 		bat_destroy(b1);
 		goto bailout;
 	}
-	b4 = BATintersect(lg->lg->catalog_id, b3, NULL, NULL, false, false, BUN_NONE);
+	BAT *b2;
+	rc = BATleftjoin(&b2, &b4, b3, lg->lg->catalog_id, NULL, NULL, false, BUN_NONE);
 	bat_destroy(b3);
-	if (b4 == NULL) {
+	if (rc != GDK_SUCCEED) {
 		bat_destroy(b1);
 		goto bailout;
 	}
+	bat_destroy(b2);
+	struct canditer ci;
 	canditer_init(&ci, lg->lg->catalog_bid, b1);
 	const oid *cbids;
 	bids = Tloc(lg->lg->catalog_bid, 0);
@@ -2355,15 +2358,15 @@ bl_log_isnew(sqlstore *store)
 }
 
 static int
-bl_tstart(sqlstore *store, ulng commit_ts, bool flush)
+bl_tstart(sqlstore *store, bool flush)
 {
-	return log_tstart(store->logger, commit_ts, flush) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, flush) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
-bl_tend(sqlstore *store)
+bl_tend(sqlstore *store, ulng commit_ts)
 {
-	return log_tend(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tend(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
