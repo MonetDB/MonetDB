@@ -19,13 +19,13 @@ ALTER TABLE testtime ADD TABLE onedecade AS PARTITION FROM timestamp '2000-01-01
 statement ok
 ALTER TABLE testtime ADD TABLE twodecades AS PARTITION FROM timestamp '2010-01-01 00:00:00' TO timestamp '2019-12-12 23:59:59'
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 2005-02-13 01:08:10.000000 to 2006-12-12 23:59:59.000000 and 2000-01-01 00:00:00.000000 to 2009-12-12 23:59:59.000000 from table sys.onedecade
 ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2005-02-13 01:08:10' TO timestamp '2006-12-12 23:59:59'
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 1999-01-01 14:06:01.000000 to 2021-07-31 13:09:56.000000 and 2000-01-01 00:00:00.000000 to 2009-12-12 23:59:59.000000 from table sys.onedecade
 ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '1999-01-01 14:06:01' TO timestamp '2021-07-31 13:09:56'
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 2008-03-12 19:24:50.000000 to 2018-07-31 05:01:47.000000 and 2000-01-01 00:00:00.000000 to 2009-12-12 23:59:59.000000 from table sys.onedecade
 ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2008-03-12 19:24:50' TO timestamp '2018-07-31 05:01:47'
 
 statement ok
@@ -35,7 +35,7 @@ statement ok rowcount 5
 INSERT INTO testtime VALUES (timestamp '2000-01-01 00:00:00', 1), (timestamp '2002-12-03 20:00:00', 2),
 (timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:58', 4), (NULL, 5)
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testtime VALUES (timestamp '2019-12-12 23:59:59', 4)
 
 query TI rowsort
@@ -74,7 +74,7 @@ SELECT t, b FROM threedecades
 NULL
 5
 
-statement error
+statement error M0M29!INSERT: table sys.onedecade is part of merge table sys.testtime and the insert violates the partition range of values
 INSERT INTO onedecade VALUES (timestamp '1972-02-13 01:00:00', 1000), (timestamp '2005-02-13 01:00:00', 2000)
 
 statement ok rowcount 1
@@ -120,23 +120,23 @@ SELECT t, b FROM threedecades
 NULL
 5
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.threedecades stores null values and only one partition can store null values at the time
 ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION FROM timestamp '2030-01-01 00:00:00' TO RANGE MAXVALUE WITH NULL VALUES
 
 statement ok
 ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION FROM timestamp '2030-01-01 00:00:00' TO RANGE MAXVALUE
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testtime VALUES (timestamp '1950-11-24 10:12:01', 1234)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO testtime VALUES (timestamp '3300-10-10 22:12:00', 3300), (timestamp '2030-01-01 00:00:00', 2033),
 (timestamp '2002-02-02 02:02:02', 2222)
 
-statement error
+statement error M0M29!INSERT: table sys.fourdecades is part of merge table sys.testtime and the insert violates the partition range of values
 INSERT INTO fourdecades VALUES (timestamp '2014-04-04 05:21:13', 1000)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO fourdecades VALUES (timestamp '2054-05-18 02:51:16', 2000)
 
 query TI rowsort

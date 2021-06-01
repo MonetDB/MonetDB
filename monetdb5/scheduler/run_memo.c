@@ -99,6 +99,8 @@
 #include "mal_linker.h"
 #include "mal_client.h"
 #include "mal_runtime.h"
+#include "mal_exception.h"
+#include "mal_function.h"
 
 #ifndef WIN32
 #define __declspec(x)

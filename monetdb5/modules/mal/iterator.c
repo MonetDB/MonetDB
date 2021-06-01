@@ -37,6 +37,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_interpreter.h"
+#include "mal_exception.h"
 
 /*
  * We start with the large chunk iterator.

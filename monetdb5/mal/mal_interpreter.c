@@ -19,6 +19,7 @@
 #include "mal_type.h"
 #include "mal_private.h"
 #include "mal_internal.h"
+#include "mal_function.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
@@ -512,6 +513,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	stkpc = startpc;
 	exceptionVar = -1;
 
+	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
+	/* save, in case this function is called recursively */
+	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
+	MT_thread_set_qry_ctx(&qry_ctx);
+
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement
 		MT_thread_setalgorithm(NULL);
@@ -766,10 +772,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				if (ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
-					//garbageCollector(cntxt, pci->blk, nstk, 0);
-					for (ii = 0; ii < nstk->stktop; ii++)
-						if (ATOMextern(nstk->stk[ii].vtype))
-							GDKfree(nstk->stk[ii].val.pval);
+					garbageCollector(cntxt, pci->blk, nstk, 0);
 					arg = q->retc;
 					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
 						lhs = &nstk->stk[q->argv[arg]];
@@ -877,6 +880,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (garbage[i] >= 0) {
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
+							BBPcold(bid);
 							BBPrelease(bid);
 						}
 					}
@@ -1182,7 +1186,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
-			return yieldFactory(mb, pci, stkpc);
+			ret = yieldFactory(mb, pci, stkpc);
+			MT_thread_set_qry_ctx(qry_ctx_save);
+			return ret;
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
 
@@ -1221,6 +1227,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc= mb->stop;
 		}
 	}
+	MT_thread_set_qry_ctx(qry_ctx_save);
 
 	/* if we could not find the exception variable, cascade a new one */
 	if (exceptionVar >= 0) {
@@ -1397,6 +1404,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
+		BBPcold(bid);
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);

@@ -1,46 +1,46 @@
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query II rowsort
+query IT nosort
 SELECT i, EXISTS(SELECT i FROM integers WHERE i1.i>2) FROM integers i1 ORDER BY i
 ----
-1
-0
-2
-0
-3
-1
 NULL
-0
+False
+1
+False
+2
+False
+3
+True
 
-query II rowsort
+query IT nosort
 SELECT i, EXISTS(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i
 ----
-1
-1
-2
-1
-3
-1
 NULL
-0
+False
+1
+True
+2
+True
+3
+True
 
-query I rowsort
+query I nosort
 SELECT i FROM integers i1 WHERE EXISTS(SELECT i FROM integers WHERE i=i1.i) ORDER BY i
 ----
 1
 2
 3
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1
 ----
-1
+True
 
-query II rowsort
+query II nosort
 SELECT i, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY i HAVING EXISTS(SELECT i FROM integers WHERE i>MIN(i1.i)) ORDER BY i
 ----
 1
@@ -48,22 +48,22 @@ SELECT i, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY i HAVING EXISTS(SELEC
 2
 2
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT i+MIN(i1.i) FROM integers WHERE i=3) FROM integers i1
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 SELECT EXISTS(SELECT i+MIN(i1.i) FROM integers WHERE i=5) FROM integers i1
 ----
-0
+False
 
-query II rowsort
+query TI nosort
 SELECT EXISTS(SELECT i FROM integers WHERE i=i1.i) AS g, COUNT(*) FROM integers i1 GROUP BY g ORDER BY g
 ----
-0
+False
 1
-1
+True
 3
 
 query I rowsort
@@ -73,4 +73,5 @@ SELECT CAST(SUM(CASE WHEN EXISTS(SELECT i FROM integers WHERE i=i1.i) THEN 1 ELS
 
 statement ok
 DROP TABLE integers
+
 

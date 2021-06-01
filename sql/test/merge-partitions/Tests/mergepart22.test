@@ -47,10 +47,10 @@ second
 25
 second
 
-statement error
+statement error 42000!UPDATE: Update a column used by the partition's expression is not possible at the moment
 UPDATE tryupdateme SET a = 5 WHERE a % 5 = 0
 
-statement error
+statement error 42000!UPDATE: Update a column used by the partition's expression is not possible at the moment
 UPDATE subtable1 SET a = 5 WHERE a % 5 = 0
 
 query IT rowsort

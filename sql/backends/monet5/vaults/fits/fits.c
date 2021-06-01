@@ -294,7 +294,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{
 		char * columntype;
 		col = mvc_bind_column(m, tbl, colname[cc]);
-		columntype = col -> type.type->sqlname;
+		columntype = col -> type.type->base.name;
 
 		if (strcmp(columntype,"boolean")==0)
 		{
@@ -964,7 +964,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_get_coltype(fptr, j, &tpcode[j - 1], &rep[j - 1], &wid[j - 1], &status);
 		fits2subtype(&tpe, tpcode[j - 1], rep[j - 1], wid[j - 1]);
 
-		TRC_DEBUG(FITS, "%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname);
+		TRC_DEBUG(FITS, "%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->base.name);
 
 		mvc_create_column(m, tbl, cname[j - 1], &tpe);
 	}

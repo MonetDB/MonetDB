@@ -11,7 +11,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t0" ("c0" BOOLEAN NOT NULL,"c1" SMALLINT NOT NULL,CONSTRAINT "t0_c0_c1_pkey" PRIMARY KEY ("c0", "c1"))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO "t0" VALUES (false, -1)
 
 statement ok
@@ -74,7 +74,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0")
 )
 
-statement ok
+statement ok rowcount 29
 COPY 29 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 6	0.01926179604972278
@@ -213,53 +213,53 @@ ROLLBACK
 statement ok
 CREATE TABLE t0(c0 boolean, c1 boolean, c2 int, UNIQUE(c0, c1))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c1) VALUES((0.5) NOT  BETWEEN SYMMETRIC (CAST(length(upper(r'z')) AS INT)) AND (2)), (FALSE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c0) VALUES(TRUE)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c1) VALUES(FALSE), (TRUE)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO t0(c2, c0, c1) VALUES(2, (ltrim(lower(r'K'), ((upper(r'4'))||(- (7))))) IS NOT NULL, (((lower(r'ö
 eg#K,纗HSJw!{cOw⇒l/l!B*H'))||(((CAST(0.1 AS INT))+(-5))))) IN (lower(CAST(TRUE AS STRING)))), (-9, NULL, (0.3) NOT IN (2.96348087E8, 0.3)), (4, TRUE, (0.5) NOT IN (-3, 4))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1) VALUES(TRUE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1, c2) VALUES(FALSE, 623585248)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c0) VALUES(NOT (NOT ((((-1)*(-9))) NOT IN (0.7)))), (FALSE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c0) VALUES(TRUE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c2) VALUES(-1)
 
-statement ok
+statement ok rowcount 1
 DELETE FROM t0 WHERE (t0.c0) = FALSE
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1, c0, c2) VALUES(TRUE, ((+ (- (1)))>(charindex(CAST(0.3 AS STRING), ((CAST(TRUE AS STRING(771)))||(0.2)), length(r'd')))), -1)
 
-statement ok
+statement ok rowcount 14
 UPDATE t0 SET c2 = 1 WHERE ((((t0.c1)OR(CAST(t0.c2 AS BOOLEAN))))OR((CAST(0.6 AS DECIMAL)) NOT IN (0.1)))
 
-query I rowsort
+query T rowsort
 SELECT t0.c0 FROM t0 WHERE ((CAST(t0.c2 AS INT)) NOT  BETWEEN ASYMMETRIC (abs(t0.c2)) AND (((t0.c2)/(t0.c2)))) NOT  BETWEEN ASYMMETRIC (t0.c0) AND ((t0.c2) NOT IN (t0.c2))
 ----
-1
-1
-1
-1
-1
+True
+True
+True
+True
+True
 
-query I rowsort
+query T rowsort
 SELECT t0.c0 FROM t0 WHERE (t0.c2) BETWEEN (t0.c0) AND ((t0.c2) NOT IN (t0.c2))
 ----
 
@@ -275,7 +275,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
 )
 
-statement ok
+statement ok rowcount 14
 INSERT INTO "sys"."t0" VALUES (NULL, true, 10),
  (NULL, false, 11),
  (true, NULL, 12),
@@ -291,10 +291,10 @@ INSERT INTO "sys"."t0" VALUES (NULL, true, 10),
  (NULL, NULL, 22),
  (false, true, 23)
 
-statement ok
+statement ok rowcount 14
 TRUNCATE t0
 
-statement ok
+statement ok rowcount 14
 COPY 14 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	true	10
@@ -332,7 +332,7 @@ CREATE TABLE "sys"."t0" (
 statement ok
 COMMENT ON COLUMN "sys"."t0"."c2" IS 'vi'
 
-statement ok
+statement ok rowcount 1
 COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -1933820187.000	NULL	"-1554387152"
@@ -351,7 +351,7 @@ START TRANSACTION
 statement ok
 create table t0 (a int, b int)
 
-statement ok
+statement ok rowcount 2
 insert into t0 values (1,1), (2,2)
 
 query IR rowsort
@@ -383,10 +383,10 @@ START TRANSACTION
 statement ok
 create table t0 (a time default time '10:15:32', b date default date '2010-01-31', c timestamp default timestamp '1980-11-04 08:49:25')
 
-statement ok
+statement ok rowcount 1
 insert into t0
 
-statement ok
+statement ok rowcount 1
 insert into t0 values (default, default, default)
 
 query TTT rowsort
@@ -413,7 +413,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
 )
 
-statement ok
+statement ok rowcount 14
 COPY 14 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 19:29:38	""
@@ -466,49 +466,49 @@ START TRANSACTION
 statement ok
 CREATE TABLE t0(c0 TIME, c1 VARCHAR(1000) DEFAULT (upper(CAST((('')||(DATE '1970-01-19')) AS VARCHAR(152)))) PRIMARY KEY UNIQUE NULL)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c0, c1) VALUES(TIME '19:29:38', '')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1, c0) VALUES(CAST(TIME '06:50:34' AS VARCHAR(256)), TIME '01:39:55')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO t0(c1, c0) VALUES(CAST(0.6 AS VARCHAR(411)), TIME '22:07:22'), ('#B', TIME '05:51:00'), (((((CAST('434' AS VARCHAR(849)))||(0.4)))||(TIME '04:05:28')), TIME '06:50:34')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1) VALUES(CAST(INTERVAL '42' SECOND AS VARCHAR(102)))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c0, c1) VALUES(TIME '16:29:13', 'J'), (TIME '05:57:44', '49䄎y_}')
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c1, c0) VALUES('2', TIME '07:15:50'), (CAST(TIME '16:29:13' AS VARCHAR(1000)), TIME '03:00:56')
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c1) VALUES('O큑LSGAM||Z赐'), ('.n')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1, c0) VALUES('c蠷웵', TIME '04:59:13')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c1) VALUES('0.0')
 
-statement ok
+statement ok rowcount 3
 INSERT INTO t0(c0, c1) VALUES(TIME '20:29:28', '-343'), (TIME '01:19:51', 'j'), (TIME '11:37:23', ((((((((CAST(DATE '1970-01-23' AS VARCHAR(849)))||(INTERVAL '23' MONTH)))||(INTERVAL '-535' SECOND)))||(lower((('鮥*Qß4')||(DATE '1970-01-01'))))))||(0.4)))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c0, c1) VALUES(TIME '02:38:14', lower(CAST(INTERVAL '342' SECOND AS VARCHAR(1000)))), (TIME '23:43:33', '64')
 
-statement ok
+statement ok rowcount 14
 DELETE FROM t0 WHERE ((((1 IS NOT NULL)AND(FALSE)))OR(((CAST(0.3 AS VARCHAR(836)))<(upper(t0.c1)))))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c0, c1) VALUES(TIME '20:59:23', ')TD)Dnö'), (TIME '22:09:19', 'aaJ즳#B!sJNG㡩')
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t0(c0, c1) VALUES(TIME '20:02:19', CAST(0.1 AS VARCHAR(927)))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t0(c0, c1) VALUES(TIME '00:17:15', '{'), (TIME '06:51:52', CAST(4.1230238E7 AS VARCHAR(459)))
 
 query T rowsort
@@ -533,7 +533,7 @@ select t0.c0 from t0 where -t0.c0 <= 1 and t0.c0 between t0.c0 and -t0.c0
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!CONSTRAINT UNIQUE: key 't0_c0_unique' already exists
 CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
 
 statement ok
@@ -542,7 +542,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "1970-01-19"
@@ -554,7 +554,7 @@ COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" BOOLEAN NOT NULL,CONSTRAINT "t1_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 2
 COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "*"	true
@@ -580,7 +580,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) DEFAULT 0.968720)
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.938
@@ -589,19 +589,19 @@ COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.550
 0.916
 
-query I rowsort
+query T rowsort
 select coalesce(1 = true, false)
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 select coalesce(1 = true, t0.c0 > 0) from t0
 ----
-1
-1
-1
-1
-1
+True
+True
+True
+True
+True
 
 query I rowsort
 select count(all coalesce ((case coalesce (1, 2) when case cast(t0.c0 as double) when sql_max(r'', null)
@@ -662,7 +662,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" TIMESTAMP)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "1970-01-14 14:26:27.000000"
@@ -670,7 +670,7 @@ COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 "1970-01-06 21:36:37.000000"
 "1970-01-14 01:01:12.000000"
 
-statement error
+statement error 42000!Wrong format (11313451898)
 select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1
 
 statement ok
@@ -682,7 +682,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTEGER)
 
-statement ok
+statement ok rowcount 13
 COPY 13 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -952561247
@@ -819,7 +819,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c1_c2_c0_unique" UNIQUE ("c1", "c2", "c0")
 )
 
-statement ok
+statement ok rowcount 19
 COPY 19 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 99360484	0.8104160489147377	NULL
@@ -842,7 +842,7 @@ COPY 19 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 -1710710010	-90593292	-1255979722.000
 1844355385	0.6101178479960011	1733503642.000
 
-statement error
+statement error 42000!Decimal (0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131) doesn't have format (18.3)
 select cast(group_concat(all r'0.5787210717348131') as decimal) from t0 group by - (abs(- (- (1061572565)))), least(t0.c0, least(cast(0.09300166 as int), t0.c0))
 
 statement ok
@@ -857,7 +857,7 @@ CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3))
 statement ok
 COMMENT ON COLUMN "sys"."t0"."c0" IS 'jc~\006}ℵH{\015﻿^aBPxpf+sP'
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.626
@@ -869,7 +869,7 @@ COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.715
 0.369
 
-query I rowsort
+query T rowsort
 SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0
 ----
 NULL
@@ -890,7 +890,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INT)
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 62183
@@ -905,7 +905,7 @@ COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t1" ("c0" INT)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 4440
@@ -935,7 +935,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"))
 
-statement ok
+statement ok rowcount 39
 COPY 39 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -88162543	18
@@ -1033,10 +1033,10 @@ START TRANSACTION
 statement ok
 CREATE TABLE t0(c0 INT)
 
-statement ok
+statement ok rowcount 1
 insert into t0(c0) values (1 between 2 and 3)
 
-statement ok
+statement ok rowcount 3
 insert into t0(c0) values(13), (((cast((0.1) between symmetric (0.2) and (0.3) as int))%(length(upper(r'u鋔wsD30pYi&ᴮ*2*W쉉t+詫sD^#cjX{'))))), (cast(cast(cast(0.12 as int) as string(646)) as int))
 
 query I rowsort
@@ -1060,7 +1060,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE t0(c0 DATE, c1 DATE)
 
-statement error
+statement error 42000!types sec_interval(13,0) and date(2,1) are not equal
 SELECT ALL least(MIN(ALL CAST('0.3' AS TIME)), COALESCE (CAST("second"(TIMESTAMP '1970-01-19 08:50:25') AS TIME), CAST(TIME '13:00:42' AS TIME))), t0.c0 FROM t0
 GROUP BY splitpart(CAST(CAST(COALESCE (CASE t0.c1 WHEN INTERVAL '5' SECOND THEN TIMESTAMP '1969-12-21 20:30:09' WHEN 0.5 THEN TIMESTAMP '1970-01-11 15:00:27' WHEN 0.9
 THEN TIMESTAMP '1970-01-03 20:35:51' END, CASE -2 WHEN 0.2 THEN TIMESTAMP '1970-01-02 09:18:35' END, CAST(INTERVAL '3' SECOND AS TIMESTAMP),

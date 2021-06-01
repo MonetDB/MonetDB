@@ -12,7 +12,7 @@
 % varchar,	int,	int,	str,	str,	str # type
 % 12,	3,	1,	0,	3,	2 # length
 [ "boolean",	1,	0,	"",	"%10",	"c0"	]
-[ "sec_interval",	13,	0,	"",	"%10",	"%2"	]
+[ "sec_interval",	13,	0,	"",	"%10",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
@@ -28,7 +28,7 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	3,	1,	0,	3,	3 # length
-[ "decimal",	2,	1,	"",	"%22",	"%14"	]
+[ "decimal",	2,	1,	"",	"%22",	"%13"	]
 [ "int",	32,	0,	"",	"%22",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
@@ -68,7 +68,7 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	3,	1,	0,	3,	2 # length
-[ "bigint",	64,	0,	"",	"%10",	"%3"	]
+[ "bigint",	64,	0,	"",	"%10",	"%2"	]
 [ "char",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	5,	0,	NULL,	NULL,	NULL	]
@@ -118,3 +118,17 @@
 % 1 # length
 [ 2	]
 #ROLLBACK;
+#PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	3,	3 # length
+[ "boolean",	1,	0,	"",	"%11",	"%11"	]
+[ "decimal",	16,	6,	NULL,	NULL,	NULL	]
+#PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	3,	3 # length
+[ "boolean",	1,	0,	"",	"%11",	"%11"	]
+[ "decimal",	16,	6,	NULL,	NULL,	NULL	]

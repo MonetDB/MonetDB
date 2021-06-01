@@ -14,7 +14,7 @@
  * index. NOTE: we alloc the link list as a parallel array to the BUN
  * array; hence the hash link array has the same size as
  * BATcapacity(b) (not BATcount(b)). This allows us in the BUN insert
- * and delete to assume that there is hash space iff there is BUN
+ * and delete to assume that there is hash space if there is BUN
  * space.
  *
  * The hash mask size is a power of two, so we can do bitwise AND on
@@ -564,8 +564,8 @@ BATcheckhash(BAT *b)
 	return ret;
 }
 
-gdk_return
-BAThashsave(BAT *b, bool dosync)
+static gdk_return
+BAThashsave_intern(BAT *b, bool dosync)
 {
 	int fd;
 	gdk_return rc = GDK_SUCCEED;
@@ -585,14 +585,8 @@ BAThashsave(BAT *b, bool dosync)
 		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
-		((size_t *) hp->base)[0] = (size_t) HASH_VERSION;
-		((size_t *) hp->base)[1] = (size_t) (h->heaplink.free / h->width);
-		((size_t *) hp->base)[2] = (size_t) h->nbucket;
-		((size_t *) hp->base)[3] = (size_t) h->width;
-		((size_t *) hp->base)[4] = (size_t) BATcount(b);
-		((size_t *) hp->base)[5] = (size_t) h->nunique;
-		((size_t *) hp->base)[6] = (size_t) h->nheads;
 		if (!b->theap->dirty &&
+		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
@@ -634,6 +628,22 @@ BAThashsave(BAT *b, bool dosync)
 	return rc;
 }
 
+gdk_return
+BAThashsave(BAT *b, bool dosync)
+{
+	Hash *h = b->thash;
+	if (h == NULL)
+		return GDK_SUCCEED;
+	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
+	((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
+	((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
+	((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
+	((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
+	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
+	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
+	return BAThashsave_intern(b, dosync);
+}
+
 #ifdef PERSISTENTHASH
 static void
 BAThashsync(void *arg)
@@ -644,7 +654,7 @@ BAThashsync(void *arg)
 	 * lock, and only lock if it isn't; however, it's very
 	 * unlikely that that is the case, so we don't */
 	MT_rwlock_rdlock(&b->thashlock);
-	BAThashsave(b, true);
+	BAThashsave_intern(b, true);
 	MT_rwlock_rdunlock(&b->thashlock);
 	BBPunfix(b->batCacheid);
 }
@@ -672,12 +682,11 @@ BAThashsync(void *arg)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < cnt1; p++) {					\
-			c = hash_##TYPE(h, v + o - b->hseqbase);	\
+		TIMEOUT_LOOP(p, timeoffset) {				\
 			hget = HASHget(h, c);				\
 			if (hget == hnil) {				\
 				if (h->nheads == maxslots)		\
-					break; /* mask too full */	\
+					TIMEOUT_LOOP_BREAK; /* mask too full */	\
 				h->nheads++;				\
 				h->nunique++;				\
 			} else {					\
@@ -693,11 +702,13 @@ BAThashsync(void *arg)
 			HASHput(h, c, p);				\
 			o = canditer_next(ci);				\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < ci->ncand; p++) {				\
+		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {		\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == hnil;			\
@@ -715,7 +726,10 @@ BAThashsync(void *arg)
 			}						\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
+			p++;						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 /* Internal function to create a hash table for the given BAT b.
@@ -738,6 +752,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	BATiter bi = bat_iterator(b);
 	const ValRecord *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 
@@ -869,13 +889,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(uuid);
 			break;
 		default:
-			for (; p < cnt1; p++) {
+			TIMEOUT_LOOP(p, timeoffset) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
 				if (hget == hnil) {
 					if (h->nheads == maxslots)
-						break; /* mask too full */
+						TIMEOUT_LOOP_BREAK; /* mask too full */
 					h->nheads++;
 					h->nunique++;
 				} else {
@@ -893,6 +913,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				HASHput(h, c, p);
 				o = canditer_next(ci);
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			break;
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
@@ -943,7 +965,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(uuid);
 		break;
 	default:
-		for (; p < ci->ncand; p++) {
+		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -960,7 +982,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
 			o = canditer_next(ci);
+			p++;
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
 	if (!hascand) {
@@ -981,6 +1006,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		HASHcollisions(b, h, __func__);
 	}
 	return h;
+
+  bailout:
+	GDKfree(h);
+	return NULL;
 }
 
 gdk_return
@@ -1022,6 +1051,14 @@ BAThash(BAT *b)
 		}
 #ifdef PERSISTENTHASH
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
+			Hash *h = b->thash;
+			((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
+			((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
+			((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
+			((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
+			((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
+			((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
+			((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];

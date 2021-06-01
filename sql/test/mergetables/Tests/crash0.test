@@ -4,24 +4,24 @@ START TRANSACTION
 statement ok
 CREATE TABLE cpart1 ( x double, y double, z double)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO cpart1 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 0.0 0.0 0.0
-1.0 0.0 0.0
-0.0 1.0 0.0
-1.0 1.0 0.0
+1.0 0.0 0.0 
+0.0 1.0 0.0 
+1.0 1.0 0.0 
 
 statement ok
 CREATE TABLE cpart2 ( x double, y double, z double)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO cpart2 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 2.0 0.0 0.0
-3.0 0.0 0.0
-2.0 1.0 0.0
-3.0 1.0 0.0
+3.0 0.0 0.0 
+2.0 1.0 0.0 
+3.0 1.0 0.0 
 
 statement ok
 CREATE MERGE TABLE complete ( x double, y double, z double)
@@ -32,7 +32,7 @@ ALTER TABLE complete ADD TABLE cpart1
 statement ok
 ALTER TABLE complete ADD TABLE cpart2
 
-statement error
+statement error 42S02!ALTER TABLE: read only MERGE TABLES are not supported
 ALTER TABLE complete SET READ ONLY
 
 statement ok

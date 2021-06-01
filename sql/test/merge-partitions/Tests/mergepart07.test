@@ -16,16 +16,16 @@ INSERT INTO subtable2 VALUES (102, 'hello')
 statement ok
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 10 TO 100 WITH NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: range bound cannot be null
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM NULL TO 110
 
-statement error
+statement error 42000!ALTER TABLE: range bound cannot be null
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 101 TO NULL
 
-statement error
+statement error 42000!ALTER TABLE: range bound cannot be null
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM NULL TO NULL
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: table sys.subtable1 stores null values and only one partition can store null values at the time
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 101 TO 110 WITH NULL VALUES
 
 statement ok
@@ -34,10 +34,10 @@ ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 101 TO 110
 statement ok
 ALTER TABLE listparts DROP TABLE subtable1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.subtable1' isn't part of RANGE PARTITION TABLE 'sys.listparts'
 ALTER TABLE listparts DROP TABLE subtable1
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 10 TO 100
 
 statement ok
@@ -67,16 +67,16 @@ INSERT INTO othersub1 VALUES (1, NULL)
 statement ok
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'a' TO 'string' WITH NULL VALUES
 
-statement error
+statement error 42000!ALTER TABLE: range bound cannot be null
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM NULL TO 'nono'
 
-statement error
+statement error 42000!ALTER TABLE: range bound cannot be null
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'nono' TO NULL
 
-statement error
+statement error 42000!ALTER TABLE: range bound cannot be null
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM NULL TO NULL
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.othersub1' is already part of RANGE PARTITION TABLE 'sys.anothertest'
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'nono' TO 'wrong' WITH NULL VALUES
 
 statement ok
@@ -85,7 +85,7 @@ ALTER TABLE anothertest ADD TABLE othersub2 AS PARTITION FROM 't' TO 'u'
 statement ok
 ALTER TABLE anothertest DROP TABLE othersub1
 
-statement error
+statement error M0M29!ALTER TABLE: there are values in the column b outside the partition range
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'a' TO 'string'
 
 statement ok

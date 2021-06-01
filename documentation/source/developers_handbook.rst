@@ -89,7 +89,35 @@ sqllogic protocol a bit further::
     hash-threshold number
     halt
 
-Alternatively ``.sql`` scripts can be converted to sqllogic tests (.test) with ``Mconvert.py``.
+Consider the following single client connection example::
+
+    statement ok
+    create table foo(a int)
+
+    statement ok
+    insert into foo values (1), (2), (3)
+
+    query I rowsort
+    select sum(a) from foo
+    ----
+    6
+
+, the same assertions could be made from multiple clients as follows::
+
+    statement ok
+    create table foo(a int)
+
+    @connection(id=1, username=monetdb, password=monetdb)
+    statement ok
+    insert into foo values (1), (2), (3)
+
+    @connection(id=2, username=monetdb, password=monetdb)
+    query I rowsort
+    select sum(a) from foo
+    ----
+    6
+
+Alternatively existing ``.sql`` scripts can be converted to sqllogic tests (.test) with ``Mconvert.py``.
 For example::
 
     $Mconvert.py  --auto <module>/Tests <convert_me>.sql
@@ -101,8 +129,8 @@ Python tests API
 ----------------
 
 We are using ``pymonetdb`` client in our testing infrastructure heavily. All .py tests needs to log errors in ``stderror``
-and exit abnormally if failure is present. To ease up writing testing scripts the ``SQLTestCase`` class from ``MonetDBtesting`` 
-module can be utilized. Following is an example of the ``SQLTestCase`` API::
+and exit abnormally if a failure is present. To ease up writing testing scripts the ``SQLTestCase`` class from ``MonetDBtesting`` 
+module can be utilized. Following is an example of the ``SQLTestCase`` API using single client::
 
     from MonetDBtesting.sqltest import SQLTestCase
 
@@ -116,5 +144,16 @@ module can be utilized. Following is an example of the ``SQLTestCase`` API::
         tc.execute('create table foo (salary decimal(10,2));').assertSucceeded()
         tc.execute('insert into foo values (888.42), (444.42);').assertSucceeded().assertRowCount(2)
         tc.execute('select * from foo;').assertSucceeded().assertDataResultMatch([(Decimal('888.42'),), (Decimal('444.42'),)])
+
+Similarly testing concurrent connections with multiple clients can be written as::
+
+    from MonetDBtesting.sqltest import SQLTestCase
+
+    with SQLTestCase() as conn1:
+        with SQLTestCase() as conn2:
+            ...
+            do something with conn1
+            do something with conn2
+
 
 For more examples check out tests in ``sql/test/Users/Tests``.

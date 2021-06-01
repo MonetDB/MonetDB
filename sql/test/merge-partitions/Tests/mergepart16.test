@@ -19,10 +19,10 @@ CREATE TABLE subt3 (a int, b varchar(32))
 statement ok
 CREATE TABLE subt4 (a int, b varchar(32))
 
-statement error
+statement error 42000!INSERT INTO: list partitioned table 'testnestedpartitions' has no partitions set
 INSERT INTO testnestedpartitions VALUES (1, 'ups')
 
-statement error
+statement error 42000!The RANGE PARTITION TABLE sys.subnested1 should have at least one table associated
 ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2', '3')
 
 statement ok
@@ -31,7 +31,7 @@ ALTER TABLE subnested1 ADD TABLE subt1 AS PARTITION FROM '-1' TO '2'
 statement ok
 ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2', '3')
 
-statement error
+statement error M0M29!INSERT: table sys.subnested1 is part of merge table sys.testnestedpartitions and the insert violates the partition list of values
 INSERT INTO subnested1 VALUES (-1, 'ups')
 
 statement ok rowcount 1
@@ -40,7 +40,7 @@ INSERT INTO subnested1 VALUES (1, 'ok')
 statement ok rowcount 1
 INSERT INTO testnestedpartitions VALUES (1, 'ok')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testnestedpartitions VALUES (3, 'ups')
 
 statement ok
@@ -82,13 +82,13 @@ ok
 1
 ok
 
-statement error
+statement error 42000!The RANGE PARTITION TABLE sys.subnested2 should have at least one table associated
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5')
 
 statement ok
 ALTER TABLE subnested2 ADD TABLE subt2 AS PARTITION FROM '5' TO '99'
 
-statement error
+statement error 42000!ALTER TABLE: the new partition is conflicting with the existing partition sys.subnested1
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5')
 
 statement ok
@@ -97,7 +97,7 @@ ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('4', '5',
 statement ok rowcount 2
 INSERT INTO testnestedpartitions VALUES (2, 'going'), (5, 'through')
 
-statement error
+statement error M0M29!INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 INSERT INTO testnestedpartitions VALUES (4, 'not'), (2, 'going'), (5, 'through')
 
 query IT rowsort
@@ -150,7 +150,7 @@ SELECT a, b FROM subt2
 5
 through
 
-statement error
+statement error 42000!ALTER TABLE: conflicting partitions: 1 to 200 and 0 to 100 from table sys.subt1
 ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION FROM '1' TO '200'
 
 statement ok
