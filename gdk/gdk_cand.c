@@ -449,8 +449,8 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	if (mask_cand(s)) {
 		ci->tpe = cand_mask;
 		ci->mask = (const uint32_t *) ccand_first(s);
-		ci->seq = s->hseqbase - (oid) CCAND(s)->firstbit;
-		ci->hseq = ci->seq;
+		ci->seq = s->tseqbase - (oid) CCAND(s)->firstbit;
+		ci->hseq = s->hseqbase;
 		ci->nvals = ccand_free(s) / sizeof(uint32_t);
 		cnt = ci->nvals * 32;
 	} else if (s->ttype == TYPE_msk) {
@@ -607,6 +607,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		}
 		break;
 	case cand_mask:
+		assert(s->tseqbase != oid_nil);
 		if (b != NULL) {
 			if (ci->seq + cnt <= b->hseqbase ||
 			    ci->seq >= b->hseqbase + BATcount(b)) {
@@ -669,11 +670,10 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		ci->firstbit += i;
 		cnt -= i;
 		if (mask_cand(s))
-			ci->mskoff = s->hseqbase - (oid) CCAND(s)->firstbit + (ci->mask - (const uint32_t *) ccand_first(s)) * 32U;
+			ci->mskoff = s->tseqbase - (oid) CCAND(s)->firstbit + (ci->mask - (const uint32_t *) ccand_first(s)) * 32U;
 		else
-			ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) s->theap->base) * 32U;
+			ci->mskoff = s->tseqbase + (ci->mask - (const uint32_t *) s->theap->base) * 32U;
 		ci->seq = ci->mskoff + ci->firstbit;
-		ci->hseq = ci->seq;
 		ci->nextbit = ci->firstbit;
 		/* at this point we know that bit ci->firstbit is set
 		 * in ci->mask[0] */
@@ -1318,6 +1318,7 @@ BATnegcands(BUN nr, BAT *odels)
 	};
     	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
+	dels->dirty = true;
 	if (odels->ttype == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
@@ -1382,6 +1383,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	};
     	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
+	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	if (selected) {
 		if (nr <= BATcount(masked))
@@ -1415,7 +1417,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	if (cnt > 0) {
 		ATOMIC_INIT(&msks->refs, 1);
 		bn->tvheap = msks;
-		bn->hseqbase += (oid) c->firstbit;
+		bn->tseqbase += (oid) c->firstbit;
 	} else {
 		/* no point having a mask if it's empty */
 		HEAPfree(msks, true);
@@ -1428,6 +1430,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		  hseq, ALGOBATPAR(masked),
 		  selected ? "true" : "false",
 		  ALGOBATPAR(bn));
+	assert(bn->tseqbase != oid_nil);
     	return bn;
 }
 
@@ -1442,14 +1445,15 @@ BATunmask(BAT *b)
 	const uint32_t *src;
 	oid *dst;
 	BUN n = 0;
-	oid hseq = b->hseqbase;
+	oid tseq = b->hseqbase;
 	bool negcand = false;
 
 	if (mask_cand(b)) {
 		cnt = ccand_free(b) / sizeof(uint32_t);
 		rem = 0;
 		src = (const uint32_t *) ccand_first(b);
-		hseq -= (oid) CCAND(b)->firstbit;
+		tseq = b->tseqbase;
+		tseq -= (oid) CCAND(b)->firstbit;
 		/* create negative candidate list if more than half the
 		 * bits are set */
 		negcand = BATcount(b) > cnt * 16;
@@ -1491,7 +1495,7 @@ BATunmask(BAT *b)
 				if ((val & (1U << i)) == 0) {
 					if (v + i >= b->batCount + n)
 						break;
-					dst[n++] = hseq + v + i;
+					dst[n++] = tseq + v + i;
 				}
 			}
 		}
@@ -1500,12 +1504,13 @@ BATunmask(BAT *b)
 			HEAPfree(dels, true);
 			GDKfree(dels);
 		} else {
+			dels->free = sizeof(ccand_t) + n * sizeof(oid);
+			dels->dirty = true;
 			ATOMIC_INIT(&dels->refs, 1);
 			bn->tvheap = dels;
-			bn->tvheap->free = sizeof(ccand_t) + n * sizeof(oid);
 		}
 		BATsetcount(bn, n=BATcount(b));
-		bn->tseqbase = hseq;
+		bn->tseqbase = tseq;
 	} else {
 		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
 		if (bn == NULL)
@@ -1524,7 +1529,7 @@ BATunmask(BAT *b)
 						}
 						dst = (oid *) Tloc(bn, 0);
 					}
-					dst[n++] = hseq + p * 32 + i;
+					dst[n++] = tseq + p * 32 + i;
 				}
 			}
 		}
@@ -1540,7 +1545,7 @@ BATunmask(BAT *b)
 						}
 						dst = (oid *) Tloc(bn, 0);
 					}
-					dst[n++] = hseq + cnt * 32 + i;
+					dst[n++] = tseq + cnt * 32 + i;
 				}
 			}
 		}

@@ -1,6 +1,6 @@
 MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
 QUERY = prepare select col0 from tab0 where (?) in (?); --error
-ERROR = !Cannot have a parameter (?) on both sides of an expression
+ERROR = !For the IN operator, both sides must have a type defined
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
 QUERY = prepare select ? = ALL (select ? from tab0) from tab0 t1; --error

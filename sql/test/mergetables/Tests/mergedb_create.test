@@ -4,35 +4,35 @@ START TRANSACTION
 statement ok
 CREATE TABLE R1 ( x integer primary key, y integer, z string)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO R1 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 0 0 hello
 1 0 hello
-2 1 world
-3 1 world
+2 1 world 
+3 1 world 
 
 statement ok
 CREATE TABLE R2 ( x integer primary key, y integer, z string)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO R2 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 5 0 hello
 6 0 hello
-7 1 world
-8 1 world
+7 1 world 
+8 1 world 
 
 statement ok
 CREATE TABLE R3 ( x integer primary key, y integer, z string)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO R3 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 10 0 hello
 11 0 hello
-12 1 world
-13 1 world
+12 1 world 
+13 1 world 
 
 statement ok
 CREATE MERGE TABLE R ( x integer primary key, y integer, z string)
@@ -89,30 +89,30 @@ world
 statement ok
 CREATE TABLE S1 ( x integer primary key, y integer, z string)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO S1 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 0 0 hello
 1 0 hello
-2 1 world
-3 1 world
-4 1 bye
+2 1 world 
+3 1 world 
+4 1 bye 
 5 0 hello
 6 0 hello
 
 statement ok
 CREATE TABLE S2 ( x integer primary key, y integer, z string)
 
-statement ok
+statement ok rowcount 7
 COPY 7 RECORDS INTO S2 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
-7 1 world
-8 1 world
-9 1 bye
+7 1 world 
+8 1 world 
+9 1 bye 
 10 0 hello
 11 0 hello
-12 1 world
-13 1 world
+12 1 world 
+13 1 world 
 
 statement ok
 CREATE MERGE TABLE S ( x integer primary key, y integer, z string)

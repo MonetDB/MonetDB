@@ -99,10 +99,11 @@
 		bat->theap->size = ret->count * ret->memory_size;                      \
 		bat->theap->free =                                                     \
 			bat->theap->size; /*There are no free places in the array*/        \
-		/*If index_offset > 0, we are mapping part of a multidimensional       \
-		 * array.*/                                                            \
-		/*The entire array will be cleared when the part with index_offset=0   \
-		 * is freed*/                                                          \
+		bat->theap->dirty = true;                                              \
+		/*If index_offset > 0, we are mapping part of a multidimensional */    \
+		/* array.*/                                                            \
+		/*The entire array will be cleared when the part with index_offset=0 */\
+		/* is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
 		if (index_offset > 0)                                                  \
 			bat->theap->storage = STORE_NOWN;                                  \
@@ -162,10 +163,11 @@
 		bat->theap->size = ret->count * ret->memory_size;                      \
 		bat->theap->free =                                                     \
 			bat->theap->size; /*There are no free places in the array*/        \
-		/*If index_offset > 0, we are mapping part of a multidimensional       \
-		 * array.*/                                                            \
-		/*The entire array will be cleared when the part with index_offset=0   \
-		 * is freed*/                                                          \
+		bat->theap->dirty = true;                                              \
+		/*If index_offset > 0, we are mapping part of a multidimensional */    \
+		/* array.*/                                                            \
+		/*The entire array will be cleared when the part with index_offset=0 */\
+		/* is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
 		if (index_offset > 0)                                                  \
 			bat->theap->storage = STORE_NOWN;                                  \

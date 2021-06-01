@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "gdk_system.h"
 
 /* Calculate a cross product between bats l and r with optional
  * candidate lists sl for l and sr for r.
@@ -26,6 +27,11 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 
 	cnt1 = canditer_init(&ci1, l, sl);
 	cnt2 = canditer_init(&ci2, r, sr);
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	if (max_one && cnt1 > 0 && cnt2 > 1) {
 		GDKerror("more than one match");
@@ -50,6 +56,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		bn1->tnonil = true;
 		p = (oid *) Tloc(bn1, 0);
 		for (i = 0; i < cnt1; i++) {
+			GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			oid x = canditer_next(&ci1);
 			for (j = 0; j < cnt2; j++) {
 				*p++ = x;
@@ -66,6 +73,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 			bn2->tnonil = true;
 			p = (oid *) Tloc(bn2, 0);
 			for (i = 0; i < cnt1; i++) {
+				GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				for (j = 0; j < cnt2; j++) {
 					*p++ = canditer_next(&ci2);
 				}
@@ -82,4 +90,9 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 	else
 		TRC_DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT ")\n", ALGOBATPAR(bn1));
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(bn1);
+	BBPreclaim(bn2);
+	return GDK_FAIL;
 }

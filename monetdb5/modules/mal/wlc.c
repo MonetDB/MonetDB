@@ -164,6 +164,7 @@
 #include "wlc.h"
 #include "gdk_time.h"
 #include "mutils.h"
+#include "mal_function.h"
 
 static MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
 

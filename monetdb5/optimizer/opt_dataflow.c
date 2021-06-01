@@ -301,10 +301,10 @@ checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p, States
 			return sqlBreakpoint(mb, first, p);
 		default:
 			// serious corruption has occurred.
-			assert(0 && "corrupted region_type");
+			assert(0);			/* corrupted region_type */
 			abort();
 	}
-	assert(0 && "unreachable");
+	assert(0);					/* unreachable */
 	return true;
 }
 
@@ -363,7 +363,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str msg = MAL_SUCCEED;
 
 	/* don't use dataflow on single processor systems */
-	if (GDKnr_threads <= 1)
+	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1)
 		return MAL_SUCCEED;
 
 	if ( optimizerIsApplied(mb,"dataflow"))

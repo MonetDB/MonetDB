@@ -201,31 +201,31 @@ gettailname(const BAT *b)
 void
 settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 {
-	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
-		      ".tail", NULL);
 	if (tt == TYPE_str) {
 		switch (width) {
 		case 1:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail1", NULL);
-			break;
+			return;
 		case 2:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail2", NULL);
-			break;
+			return;
 #if SIZEOF_VAR_T == 8
 		case 4:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
 				      ".tail4", NULL);
-			break;
+			return;
 #endif
 		default:
 			break;
 		}
 	}
+	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
+		      ".tail", NULL);
 }
 
 /*
@@ -240,7 +240,7 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
  * filenames.
  */
 BAT *
-COLnew(oid hseq, int tt, BUN cap, role_t role)
+COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 {
 	BAT *bn;
 
@@ -272,15 +272,18 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
-	else if (tt == TYPE_str)
+	else if (tt == TYPE_str) {
+		if (width != 0)
+			bn->twidth = width;
 		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
+	}
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
 		goto bailout;
 	}
 
-	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		goto bailout;
 	}
 	DELTAinit(bn);
@@ -300,6 +303,12 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	MT_rwlock_destroy(&bn->thashlock);
 	GDKfree(bn);
 	return NULL;
+}
+
+BAT *
+COLnew(oid hseq, int tt, BUN cap, role_t role)
+{
+	return COLnew_intern(hseq, tt, cap, role, 0);
 }
 
 BAT *
@@ -1243,6 +1252,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	b->theap->dirty |= count > 0;
 	for (BUN i = 0; i < count; i++) {
 		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
 			(void *) ((char *) values + i * Tsize(b));
@@ -1754,6 +1764,7 @@ BATsetcount(BAT *b, BUN cnt)
 
 	b->batCount = cnt;
 	b->batDirtydesc = true;
+	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid;
 	if (b->theap->parentid == b->batCacheid)
 		b->theap->free = tailsize(b, cnt);
 	if (b->ttype == TYPE_void)
@@ -2279,24 +2290,24 @@ BATmode(BAT *b, bool transient)
 		MT_lock_set(&GDKswapLock(bid));
 		if (!transient) {
 			if (!(BBP_status(bid) & BBPDELETED))
-				BBP_status_on(bid, BBPNEW, "BATmode");
+				BBP_status_on(bid, BBPNEW);
 			else
-				BBP_status_on(bid, BBPEXISTING, "BATmode");
-			BBP_status_off(bid, BBPDELETED, "BATmode");
+				BBP_status_on(bid, BBPEXISTING);
+			BBP_status_off(bid, BBPDELETED);
 		} else if (!b->batTransient) {
 			if (!(BBP_status(bid) & BBPNEW))
-				BBP_status_on(bid, BBPDELETED, "BATmode");
-			BBP_status_off(bid, BBPPERSISTENT, "BATmode");
+				BBP_status_on(bid, BBPDELETED);
+			BBP_status_off(bid, BBPPERSISTENT);
 		}
 		/* session bats or persistent bats that did not
 		 * witness a commit yet may have been saved */
 		if (b->batCopiedtodisk) {
 			if (!transient) {
-				BBP_status_off(bid, BBPTMP, "BATmode");
+				BBP_status_off(bid, BBPTMP);
 			} else {
 				/* TMcommit must remove it to
 				 * guarantee free space */
-				BBP_status_on(bid, BBPTMP, "BATmode");
+				BBP_status_on(bid, BBPTMP);
 			}
 		}
 		b->batTransient = transient;

@@ -26,7 +26,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_storage.h"
 #include "mutils.h"
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -620,6 +619,16 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * merely copies the data into place.  Failure to read or write the
  * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
+static void
+DESCclean(BAT *b)
+{
+	b->batDirtyflushed = DELTAdirty(b);
+	b->batDirtydesc = false;
+	b->theap->dirty = false;
+	if (b->tvheap)
+		b->tvheap->dirty = false;
+}
+
 static BAT *
 DESCload(int i)
 {
@@ -647,16 +656,6 @@ DESCload(int i)
 	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
-}
-
-void
-DESCclean(BAT *b)
-{
-	b->batDirtyflushed = DELTAdirty(b);
-	b->batDirtydesc = false;
-	b->theap->dirty = false;
-	if (b->tvheap)
-		b->tvheap->dirty = false;
 }
 
 /* spawning the background msync should be done carefully
@@ -761,22 +760,19 @@ BATsave(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
-	BAT bs;
-	Heap hs, vhs;
-	BAT *b = bd;
-	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
+	bool dosync = (BBP_status(bd->batCacheid) & BBPPERSISTENT) != 0;
 
-	assert(!GDKinmemory(b->theap->farmid));
-	BATcheck(b, GDK_FAIL);
+	assert(!GDKinmemory(bd->theap->farmid));
+	BATcheck(bd, GDK_FAIL);
 
-	assert(b->batCacheid > 0);
+	assert(bd->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
-	if (isVIEW(b)) {
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
+	if (isVIEW(bd)) {
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBPname(VIEWtparent(bd)));
 		return GDK_FAIL;
 	}
-	if (!BATdirty(b)) {
+	if (!BATdirty(bd)) {
 		return GDK_SUCCEED;
 	}
 
@@ -784,11 +780,13 @@ BATsave(BAT *bd)
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
 	MT_lock_set(&bd->theaplock);
-	bs = *b;
-	b = &bs;
-	hs = *bd->theap;
+	MT_rwlock_rdlock(&bd->thashlock);
+	BAT bs = *bd;
+	BAT *b = &bs;
+	Heap hs = *bd->theap;
 	HEAPincref(&hs);
 	b->theap = &hs;
+	Heap vhs;
 	if (b->tvheap) {
 		vhs = *bd->tvheap;
 		HEAPincref(&vhs);
@@ -797,17 +795,48 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
-		if (err == GDK_SUCCEED && b->ttype)
-			err = HEAPsave(b->theap, nme, gettailname(b), dosync);
-	if (b->tvheap
-	    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
-	    && b->ttype
-	    && b->tvarsized
-	    && err == GDK_SUCCEED)
-		err = HEAPsave(b->tvheap, nme, "theap", dosync);
-	if (b->thash && b->thash != (Hash *) 1)
-		BAThashsave(b, dosync);
+	if (b->ttype != TYPE_void && b->theap->base == NULL) {
+		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
+		if (dosync && !(GDKdebug & NOSYNCMASK)) {
+			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
+			if (
+#if defined(NATIVE_WIN32)
+				_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+				fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+				fsync(fd) < 0
+#endif
+				)
+				GDKsyserror("sync failed for %s.%s\n", nme,
+					    gettailname(b));
+			close(fd);
+			if (b->tvheap) {
+				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+				if (
+#if defined(NATIVE_WIN32)
+					_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+					fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+					fsync(fd) < 0
+#endif
+					)
+					GDKsyserror("sync failed for %s.theap\n", nme);
+				close(fd);
+			}
+		}
+	} else {
+		if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
+			if (err == GDK_SUCCEED && b->ttype)
+				err = HEAPsave(b->theap, nme, gettailname(b), dosync);
+		if (b->tvheap
+		    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
+		    && b->ttype
+		    && b->tvarsized
+		    && err == GDK_SUCCEED)
+			err = HEAPsave(b->tvheap, nme, "theap", dosync);
+	}
 
 	HEAPdecref(b->theap, false);
 	if (b->tvheap)
@@ -815,9 +844,10 @@ BATsave(BAT *bd)
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
-		MT_lock_unset(&bd->theaplock);
-		return GDK_SUCCEED;
+		if (b->thash && b->thash != (Hash *) 1)
+			BAThashsave(b, dosync);
 	}
+	MT_rwlock_rdunlock(&bd->thashlock);
 	MT_lock_unset(&bd->theaplock);
 	return err;
 }
@@ -839,7 +869,6 @@ BATload_intern(bat bid, bool lock)
 	b = DESCload(bid);
 
 	if (b == NULL) {
-		assert(0);
 		return NULL;
 	}
 	assert(!GDKinmemory(b->theap->farmid));
@@ -848,7 +877,6 @@ BATload_intern(bat bid, bool lock)
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
-		assert(0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
@@ -866,7 +894,6 @@ BATload_intern(bat bid, bool lock)
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
-		assert(0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
@@ -886,7 +913,6 @@ BATload_intern(bat bid, bool lock)
 		HEAPfree(b->theap, false);
 		if (b->tvheap)
 			HEAPfree(b->tvheap, false);
-		assert(0);
 		return NULL;
 	}
 	return b;

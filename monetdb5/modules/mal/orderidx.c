@@ -13,6 +13,8 @@
 #include "monetdb_config.h"
 #include "orderidx.h"
 #include "gdk.h"
+#include "mal_exception.h"
+#include "mal_function.h"
 
 #define MIN_PIECE	((BUN) 1000)	/* TODO use realistic size in production */
 

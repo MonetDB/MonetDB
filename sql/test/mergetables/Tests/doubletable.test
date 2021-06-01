@@ -13,10 +13,10 @@ ALTER TABLE complete ADD TABLE part1
 statement ok
 ALTER TABLE complete ADD TABLE part2
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.part1' is already part of MERGE TABLE 'sys.complete'
 ALTER TABLE complete ADD TABLE part1
 
-statement error
+statement error 42S02!ALTER TABLE: table 'sys.part2' is already part of MERGE TABLE 'sys.complete'
 ALTER TABLE complete ADD TABLE part2
 
 statement ok

@@ -5,22 +5,22 @@ CREATE TABLE "sys"."t1" (
 	CONSTRAINT "t1_c0_unique" UNIQUE ("c0")
 )
 
-statement error
+statement error 40002!INSERT INTO: NOT NULL constraint violated for column t1.c0
 INSERT INTO t1(c0) VALUES(INTERVAL '1474617942' SECOND), (NULL)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t1(c0) VALUES(INTERVAL '1427502482' SECOND), (INTERVAL '-1598854979' SECOND)
 
-statement ok
+statement ok rowcount 2
 DELETE FROM t1 WHERE CASE r'FALSE' WHEN r'879628043' THEN TRUE ELSE ((((t1.c0)>=(t1.c0)))OR(((TRUE)OR(TRUE)))) END
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t1(c0) VALUES(INTERVAL '236620278' SECOND)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t1(c0) VALUES(INTERVAL '1448897349' SECOND)
 
-statement ok
+statement ok rowcount 2
 DELETE FROM t1 WHERE CAST(TRUE AS BOOLEAN)
 
 statement ok
@@ -35,7 +35,7 @@ CREATE TABLE "sys"."t0" ("c0" TIMESTAMP,"c1" INTERVAL MONTH,CONSTRAINT "t0_c1_un
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BOOLEAN, "c1" DECIMAL(18,3) NOT NULL)
 
-statement ok
+statement ok rowcount 9
 COPY 9 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	0.526
@@ -51,7 +51,7 @@ NULL	0.239
 statement ok
 CREATE TABLE "sys"."t2" ("c0" BOOLEAN, "c1" DECIMAL(18,3))
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	0.692
@@ -83,7 +83,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE t0("c1" INTEGER NOT NULL,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO t0 FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 262015489
@@ -130,17 +130,17 @@ CREATE TABLE "sys"."t2" (
 	CONSTRAINT "t2_c0_c1_unique" UNIQUE ("c0", "c1")
 )
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	0.385788843525793
 true	0.6696036757274413
 false	0.3589261452091549
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t2 VALUES (CASE WHEN TRUE THEN TIMESTAMP '1970-01-11 13:04:02' END BETWEEN TIMESTAMP '1970-01-05 05:04:47' AND TIMESTAMP '1970-01-01 20:00:35', 1)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO t2 VALUES(NOT ((CASE WHEN TRUE THEN TIMESTAMP '1970-01-11 13:04:02' ELSE TIMESTAMP '1970-01-02 23:25:05' END)
 NOT BETWEEN SYMMETRIC (COALESCE(TIMESTAMP '1969-12-30 12:07:22', TIMESTAMP '1970-01-05 05:04:47')) AND (CASE WHEN TRUE THEN TIMESTAMP '1970-01-01 20:00:35' END)), 2)
 
@@ -156,7 +156,7 @@ CREATE TABLE "sys"."t1" ("c0" TIMESTAMP NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY
 statement ok
 CREATE TABLE "sys"."t2" ("c0" TIMESTAMP)
 
-statement ok
+statement ok rowcount 3
 COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "1970-01-25 08:23:04.000000"
@@ -184,7 +184,7 @@ SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0
 ----
 0
 
-statement error
+statement error 42S22!SELECT: no such column 'v0.c0'
 SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST
 
 statement ok
@@ -193,19 +193,19 @@ ROLLBACK
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 2
 COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.403
 0.008
 
-statement ok
+statement ok rowcount 2
 DELETE FROM t1 WHERE (((0.86983466) IS NOT NULL) = TRUE) = TRUE
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t1(c0) VALUES(0.40), (0.75)
 
-statement error
+statement error 40002!UPDATE: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
 UPDATE t1 SET c0 = 0.28 WHERE (CAST(INTERVAL '31' MONTH AS STRING)) NOT IN (COALESCE('靟', 'P먌+}I*CpQ'))
 
 query R rowsort
@@ -240,7 +240,7 @@ CREATE TABLE "sys"."t0" ("c2" DATE NOT NULL DEFAULT DATE '1970-01-03',
 statement ok
 CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "t8rMম<b\015"
@@ -254,7 +254,7 @@ CREATE TABLE "sys"."t2" ("c0" TIME NOT NULL, "c1" DECIMAL(18,3) NOT NULL DEFAULT
 	CONSTRAINT "t2_c2_c0_c1_unique" UNIQUE ("c2", "c0", "c1")
 )
 
-statement ok
+statement ok rowcount 1
 COPY 1 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 05:17:55	0.450	02:23:09
@@ -265,10 +265,10 @@ create view v0(c0, c1) as (select t2.c2, cast(timestamp '1970-01-01 17:26:21' as
 statement ok
 create view v1(c0) as (select distinct 0.73 from t2, t1, t0, v0) with check option
 
-statement error
+statement error 42000!NATURAL JOIN: common column name 'v0' appears more than once in right table
 SELECT 1 FROM v0 NATURAL JOIN (SELECT t1.c0, t2.c0 FROM t2, t1) AS sub0
 
-statement error
+statement error 42000!NATURAL JOIN: common column name 'v0' appears more than once in right table
 SELECT count(ALL + (((((18)%(-16)))/(CAST(TRUE AS INT))))) FROM t1, v1, t0 FULL OUTER JOIN v0
 ON (CAST(+ (-116) AS BOOLEAN)) = FALSE RIGHT OUTER JOIN t2
 ON (COALESCE(v0.c1, v0.c1, v0.c1, v0.c1)) NOT IN (TIMESTAMP '1970-01-15 03:05:56', TIMESTAMP '1970-01-14 22:30:41')
@@ -283,7 +283,7 @@ DROP TABLE t1 cascade
 statement ok
 DROP TABLE t2 cascade
 
-statement error
+statement error 42000!SELECT: identifier 'sub0.c0' ambiguous
 select sub0.c0 from (select 1 as c0, 2 as c0) as sub0
 
 statement ok
@@ -300,7 +300,7 @@ CREATE TABLE "sys"."t0" ("c0" VARCHAR(31) NOT NULL,"c1" BOOLEAN,"c2" TIMESTAMP N
 statement ok
 CREATE TABLE "sys"."t1" ("c1" INTERVAL MONTH NOT NULL,CONSTRAINT "t1_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 2
 COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 311141409
@@ -309,7 +309,7 @@ COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t2" ("c1" BIGINT NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"))
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1909667273
@@ -344,7 +344,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t1" ("c0" INTERVAL MONTH NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 141227804
@@ -381,7 +381,7 @@ CREATE TABLE "sys"."t0" ("c0" DOUBLE, "c1" TIMESTAMP,
 	CONSTRAINT "t0_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c0")
 )
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	"1970-01-19 09:37:48.000000"
@@ -392,7 +392,7 @@ NULL	"1970-01-20 18:57:37.000000"
 statement ok
 CREATE TABLE "sys"."t1" ("c0" DOUBLE,"c1" TIMESTAMP)
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	"1970-01-17 22:34:50.000000"
@@ -426,7 +426,7 @@ CREATE TABLE "sys"."t1" (
 	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0")
 )
 
-statement ok
+statement ok rowcount 14
 COPY 14 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "-1284014837"
@@ -448,23 +448,23 @@ query T rowsort
 SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0
 ----
 
-query I rowsort
+query T rowsort
 SELECT t1.c0 NOT ILIKE t1.c0 FROM t1
 ----
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
+False
 
 statement ok
 ROLLBACK
@@ -484,16 +484,16 @@ ROLLBACK
 statement ok
 CREATE TABLE "sys"."t1" ("c1" BOOLEAN)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO t1(c1) VALUES(TRUE), (FALSE), (FALSE)
 
-statement ok
+statement ok rowcount 2
 INSERT INTO t1(c1) VALUES((- (2127809083)) NOT IN (CASE TIME '22:10:54' WHEN TIME '19:30:46' THEN -1396572561 WHEN TIME '15:58:42' THEN -1164282298 END, + (-767637633), COALESCE(1638931666, 596854699))), (TRUE)
 
-statement ok
+statement ok rowcount 10
 INSERT INTO t1(c1) VALUES(FALSE), (TRUE), (FALSE), (FALSE), (FALSE), (FALSE), (TRUE), (TRUE), (FALSE), (TRUE)
 
-statement ok
+statement ok rowcount 6
 DELETE FROM t1 WHERE t1.c1
 
 statement ok
@@ -505,7 +505,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DATE NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1970-01-10
@@ -516,7 +516,7 @@ COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BIGINT NOT NULL,"c1" BOOLEAN,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 36
 COPY 36 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 23	false
@@ -559,7 +559,7 @@ COPY 36 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 CREATE TABLE "sys"."t2" ("c0" DATE NOT NULL)
 
-statement ok
+statement ok rowcount 26
 COPY 26 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1970-01-25
@@ -589,7 +589,7 @@ COPY 26 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1970-01-02
 1970-01-23
 
-query I rowsort
+query T rowsort
 SELECT t1.c1 FROM t1, t2 NATURAL JOIN t0 WHERE (CAST((TIME '15:03:17') NOT IN (TIME '11:36:59', TIME '21:14:10',
 TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0)
 ----
@@ -614,7 +614,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
 )
 
-statement ok
+statement ok rowcount 2
 COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -1209789190.000	879292012
@@ -627,7 +627,7 @@ CREATE TABLE "sys"."t1" (
 	CONSTRAINT "t1_c0_c1_unique" UNIQUE ("c0", "c1")
 )
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 04:31:04	0.075
@@ -658,7 +658,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("c0" INTERVAL MONTH,"c1" BINARY LARGE OBJECT)
 
-statement ok
+statement ok rowcount 11
 COPY 11 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	E0

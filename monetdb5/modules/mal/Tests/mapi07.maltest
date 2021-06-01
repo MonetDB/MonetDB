@@ -7,26 +7,26 @@ port := calc.int(fs)
 statement ok
 mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal")
 
-statement error
-mapi.rpc(mid,"rb:= bat.new(:int); bat.setName(rb,\"rbat\");")
+statement ok
+mapi.rpc(mid,"rb:= bat.new(:int); bat.setName(rb,\"rbat\");");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,1);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,1);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,3);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,3);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,5);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,5);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,6);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,6);");
 
-statement error
-mapi.rpc(mid,"bat.append(rb,7);")
+statement ok
+mapi.rpc(mid,"bat.append(rb,7);");
 
-statement error
-mapi.rpc(mid,"c:=algebra.select(rb,nil:bat[:oid],0,12,true,true,false);")
+statement ok
+mapi.rpc(mid,"c:=algebra.select(rb,nil:bat[:oid],0,12,true,true,false);");
 
 statement ok
 low:= 5+1
@@ -34,20 +34,20 @@ low:= 5+1
 statement ok
 mapi.put(mid,"low",low)
 
-statement error
-i:lng:= mapi.rpc(mid,"e:=algebra.select(rb,nil:bat[:oid],low,7,true,true,false); i:=aggr.count(e); io.print(i);")
-
-statement error
-io.printf(" count %d\n",i)
-
-statement error
-d:bat[:int]:= mapi.rpc(mid,"io.print(i);")
-
-statement error
-io.print(d)
+statement ok
+i:lng:= mapi.rpc(mid,"e:=algebra.select(rb,nil:bat[:oid],low,7,true,true,false); i:=aggr.count(e); io.print(i);");
 
 statement ok
-mapi.disconnect(mid)
+io.printf(" count %d\n",i);
+
+statement ok
+d:bat[:int]:= mapi.rpc(mid,"io.print(i);");
+
+statement ok
+io.print(d);
+
+statement ok
+mapi.destroy(mid)
 
 statement ok
 optimizer.remoteQueries()

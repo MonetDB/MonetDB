@@ -30,10 +30,10 @@ SELECT COUNT(*) from value_partitions
 statement ok
 CREATE TABLE subtable2 (a int, b varchar(32))
 
-statement error
+statement error 42000!ALTER TABLE: cannot add a range partition into a LIST PARTITION TABLE
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 5 TO 10
 
-statement error
+statement error 42000!ALTER TABLE: the new partition is conflicting with the existing partition sys.subtable1
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION IN ('3', '4', '5')
 
 statement ok
@@ -49,7 +49,7 @@ SELECT COUNT(*) from value_partitions
 ----
 6
 
-statement error
+statement error 42000!DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)
 DROP TABLE subtable1
 
 statement ok
