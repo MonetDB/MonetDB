@@ -2908,42 +2908,28 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	if (nk->type == fkey)
 		action = (fk->on_update<<8) + fk->on_delete;
 
-	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action))) {
-		key_destroy(store, nk);
+	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
 		return res;
-	}
 
-	if (nk->type == fkey && (res = sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY))) {
-		key_destroy(store, nk);
+	if (nk->type == fkey && (res = sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY)))
 		return res;
-	}
 	for (n = nk->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *kc = n->data;
 
-		if ((res = store->table_api.table_insert(tr, syskc, &nk->base.id, &kc->c->base.name, &nr, ATOMnilptr(TYPE_int)))) {
-			key_destroy(store, nk);
+		if ((res = store->table_api.table_insert(tr, syskc, &nk->base.id, &kc->c->base.name, &nr, ATOMnilptr(TYPE_int))))
 			return res;
-		}
 
 		if (nk->type == fkey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY))) {
-				key_destroy(store, nk);
+			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY)))
 				return res;
-			}
 		} else if (nk->type == ukey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY))) {
-				key_destroy(store, nk);
+			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
 				return res;
-			}
 		} else if (nk->type == pkey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY))) {
-				key_destroy(store, nk);
+			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
 				return res;
-			}
-			if ((res = sql_trans_alter_null(tr, kc->c, 0))) {
-				key_destroy(store, nk);
+			if ((res = sql_trans_alter_null(tr, kc->c, 0)))
 				return res;
-			}
 		}
 	}
 	if (kres)
@@ -5601,15 +5587,11 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	if ((res = ol_add(t->keys, &nk->base)))
 		return NULL;
 	if ((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
-		(res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base)))) {
-		key_destroy(store, nk);
+		(res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))
 		return NULL;
-	}
 
-	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action))) {
-		key_destroy(store, nk);
+	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
 		return NULL;
-	}
 	return nk;
 }
 
@@ -5653,15 +5635,11 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	if ((res = ol_add(t->keys, &nk->base)))
 		return NULL;
 	if ((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
-		(res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base)))) {
-		key_destroy(store, nk);
+		(res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))
 		return NULL;
-	}
 
-	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action))) {
-		key_destroy(store, nk);
+	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
 		return NULL;
-	}
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY);
 	return (sql_fkey*) nk;
@@ -5887,18 +5865,14 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, const char *name, idx_type it)
 
 	if (ol_add(t->idxs, &ni->base))
 		return NULL;
-	if (os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))) {
-		idx_destroy(store, ni);
+	if (os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base)))
 		return NULL;
-	}
 
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 		store->storage_api.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
-		if (store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, &ni->base.name)) {
-			idx_destroy(store, ni);
+		if (store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, &ni->base.name))
 			return NULL;
-		}
 	return ni;
 }
 
@@ -6021,9 +5995,8 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 
 	if (store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &t->base.id, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
-							 (nt->condition)?&nt->condition:&strnil, &nt->statement)) {
+							 (nt->condition)?&nt->condition:&strnil, &nt->statement))
 		return NULL;
-	}
 	return nt;
 }
 
@@ -6101,10 +6074,8 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	sql_table *sysseqs = find_sql_table(tr, syss, "sequences");
 	sql_sequence *seq = create_sql_sequence_with_id(tr->sa, next_oid(tr->store), s, name, start, min, max, inc, cacheinc, cycle);
 
-	if (os_add(s->seqs, tr, seq->base.name, &seq->base)) {
-		seq_destroy(store, seq);
+	if (os_add(s->seqs, tr, seq->base.name, &seq->base))
 		return NULL;
-	}
 	if (store->table_api.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, &seq->base.name, &seq->start, &seq->minvalue,
 							 &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle))
 		return NULL;
