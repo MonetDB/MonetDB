@@ -11,7 +11,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("CREATE TABLE doubles (d double precision);").assertSucceeded()
         mdb1.execute("insert into longs values (1),(2),(3);").assertSucceeded()
         mdb1.execute("insert into integers values (1),(2),(3);").assertSucceeded()
-        mdb1.execute("alter table longs add primary key (i)").assertSucceeded()
+        mdb1.execute("alter table longs add primary key (i);").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
@@ -81,6 +81,20 @@ with SQLTestCase() as mdb1:
         mdb1.execute('DROP TABLE child2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
+        mdb1.execute('create merge table parent(a int);').assertSucceeded()
+        mdb1.execute('create table child(c int);').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("ALTER TABLE parent ADD TABLE child;").assertSucceeded()
+        mdb2.execute("ALTER TABLE parent ADD TABLE child;").assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('ALTER TABLE parent DROP TABLE child;').assertSucceeded()
+        mdb1.execute('DROP TABLE parent;').assertSucceeded()
+        mdb1.execute('DROP TABLE child;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+
         mdb1.execute('create merge table parent(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
         mdb1.execute('create table child1(c int);').assertSucceeded()
         mdb1.execute('create table child2(c int);').assertSucceeded()
@@ -120,6 +134,22 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
         mdb1.execute('DROP FUNCTION myfunc;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('insert into longs values (4),(5),(6);').assertSucceeded()
+        mdb2.execute('insert into longs values (5),(6),(7);').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed() # Duplicate values on the primary key 'i' from 'longs'
+        mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,),(4,),(5,),(6,)])
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('delete from longs where i > 3;').assertRowCount(3)
+        mdb2.execute('insert into integers values (4);').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed() # The foreign key value 4 doesn't exist on the primary key
+        mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('DROP schema mysch;').assertSucceeded()
