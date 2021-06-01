@@ -585,10 +585,8 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 }
 
 static int
-tc_gc_objectversion(sql_store store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_objectversion(sql_store store, sql_change *change, ulng oldest)
 {
-	(void) commit_ts;
-
 	assert(!change->handled);
 	objectversion *ov = (objectversion*)change->data;
 
