@@ -1624,12 +1624,14 @@ upgrade(old_logger *lg)
 		bat_destroy(b1);
 		goto bailout;
 	}
-	b4 = BATintersect(lg->lg->catalog_id, b3, NULL, NULL, false, false, BUN_NONE);
+	BAT *b2;
+	rc = BATleftjoin(&b2, &b4, b3, lg->lg->catalog_id, NULL, NULL, false, BUN_NONE);
 	bat_destroy(b3);
-	if (b4 == NULL) {
+	if (rc != GDK_SUCCEED) {
 		bat_destroy(b1);
 		goto bailout;
 	}
+	bat_destroy(b2);
 	struct canditer ci;
 	canditer_init(&ci, lg->lg->catalog_bid, b1);
 	const oid *cbids;
