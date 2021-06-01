@@ -3233,6 +3233,7 @@ sql_trans_rollback(sql_trans *tr)
 		}
 	}
 	if (tr->changes) {
+		store_lock(store);
 		/* revert the change list */
 		list *nl = SA_LIST(tr->sa, (fdestroy) NULL);
 		for(node *n=tr->changes->h; n; n = n->next)
@@ -3274,6 +3275,7 @@ sql_trans_rollback(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
+		store_unlock(store);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3314,8 +3316,11 @@ sql_trans_destroy(sql_trans *tr)
 	}
 	if (tr->changes)
 		sql_trans_rollback(tr);
+	sqlstore *store = tr->store;
+	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
 	_DELETE(tr);
+	store_unlock(store);
 	return res;
 }
 
@@ -3327,6 +3332,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	if (!tr)
 		return NULL;
 
+	store_lock(store);
 	tr->sa = NULL;
 	tr->store = store;
 	tr->tid = store_transaction_id(store);
@@ -3347,6 +3353,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	cs_new(&tr->localtmps, tr->sa, (fdestroy) &table_destroy);
 	tr->parent = parent;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
+	store_unlock(store);
 	return tr;
 }
 
@@ -3406,6 +3413,7 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
+	store_lock(store);
 	ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 	ulng oldest = store_oldest_given_max(store, commit_ts);
 
@@ -3479,6 +3487,7 @@ sql_trans_commit(sql_trans *tr)
 	}
 	tr->localtmps.nelm = NULL;
 	tr->ts = commit_ts;
+	store_unlock(store);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -6267,6 +6276,7 @@ sql_trans_begin(sql_session *s)
 	sql_trans *tr = s->tr;
 	sqlstore *store = tr->store;
 
+	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	tr->ts = store_timestamp(store);
 	tr->active = 1;
@@ -6278,6 +6288,7 @@ sql_trans_begin(sql_session *s)
 
 	s->status = 0;
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
+	store_unlock(store);
 	return 0;
 }
 
@@ -6285,6 +6296,7 @@ int
 sql_trans_end(sql_session *s, int commit)
 {
 	int ok = SQL_OK;
+
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (commit) {
 		ok = sql_trans_commit(s->tr);
@@ -6294,6 +6306,7 @@ sql_trans_end(sql_session *s, int commit)
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;
+	store_lock(store);
 	list_remove_data(store->active, NULL, s);
 	(void) ATOMIC_DEC(&store->nr_active);
 	if (store->active && store->active->h) {
@@ -6306,6 +6319,7 @@ sql_trans_end(sql_session *s, int commit)
 		store->oldest = oldest;
 	}
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
+	store_unlock(store);
 	return ok;
 }
 
