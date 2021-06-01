@@ -223,8 +223,7 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 	const size_t cmin_max = STRIMP_HEADER_SIZE - 1;
 	size_t hidx;
 
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	TRC_DEBUG(ACCELERATOR, "Pair selection\n");
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	for(i = 0; i < hist_size; i++) {
 		if (max_counts[cmin_max] < hist[i].cnt) {
@@ -242,7 +241,7 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		cp[i].psize = hist[indices[i]].p->psize;
 	}
 
-	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
+	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
 }
 
 static bool
@@ -257,8 +256,7 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 	PairIterator pi, *pip;
 	CharPair cp, *cpp;
 
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	TRC_DEBUG(ACCELERATOR, "Header construction...\n");
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	hlen = STRIMP_HISTSIZE;
 	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		// TODO handle error
@@ -308,8 +306,8 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 					if (hist[hidx].p == NULL) {
 						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
 						hist[hidx].p->psize = cpp->psize;
-						hist[hidx].p->pbytes = (uint8_t *)GDKmalloc(sizeof(uint8_t));
-						memcpy(hist[hidx].p, cpp->pbytes, cpp->psize);
+						hist[hidx].p->pbytes = (uint8_t *)GDKmalloc(cpp->psize*sizeof(uint8_t));
+						memcpy(hist[hidx].p->pbytes, cpp->pbytes, cpp->psize);
 					}
 				}
 				next_pair(pip);
@@ -319,8 +317,15 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 
 	// Choose the header pairs
 	STRMPchoosePairs(hist, hlen, hpairs);
+	for(hidx = 0; hidx < hlen; hidx++) {
+		if(hist[hidx].p) {
+			GDKfree(hist[hidx].p->pbytes);
+			GDKfree(hist[hidx].p);
+		}
+	}
+	GDKfree(hist);
 
-	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
+	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
 	return true;
 }
 
@@ -368,7 +373,7 @@ STRMPcreateStrimp(BAT *b)
 		h2 += hpairs[i].psize;
 	}
 	r->strimps_base = h2;
-	r->strimps.free = BATcount(b)*sizeof(uint64_t);
+	r->strimps.free = sz;
 
 	return r;
 }
@@ -428,7 +433,7 @@ BATcheckstrimps(BAT *b)
 						close(fd);
 						hp->strimps.parentid = b->batCacheid;
 						b->tstrimps = hp;
-						TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
+						TRC_DEBUG(ALGO, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
@@ -445,7 +450,7 @@ BATcheckstrimps(BAT *b)
 	}
 	ret = b->tstrimps != NULL;
 	if (ret)
-		TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
+		TRC_DEBUG(ALGO, "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 
 	return false;
 }
@@ -514,13 +519,13 @@ STRMPcreate(BAT *b)
 	uint64_t *dh;
 
 	assert(b->ttype == TYPE_str);
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (b->tstrimps == NULL) {
 		if ((h = STRMPcreateStrimp(b)) == NULL) {
 			return GDK_FAIL;
 		}
-		dh = (uint64_t *)h->strimps.base + h->strimps.free; // That's probably not correct
+		dh = (uint64_t *)h->strimps.base + h->strimps.free;
 
 		bi = bat_iterator(b);
 		for (i = 0; i < b->batCount; i++) {
@@ -529,8 +534,8 @@ STRMPcreate(BAT *b)
 				*dh++ = STRMPmakebitstring(s, h);
 			else
 				*dh++ = 0; /* no pairs in nil values */
-
 		}
+		h->strimps.free += b->batCount*sizeof(uint64_t);
 
 		/* After we have computed the strimp, attempt to write it back
 		 * to the BAT.
@@ -542,7 +547,7 @@ STRMPcreate(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 
-	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+	TRC_DEBUG(ALGO, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 }
 
