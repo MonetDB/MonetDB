@@ -32,7 +32,7 @@ unshare_varsized_heap(BAT *b)
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
-		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
+		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
 			return GDK_FAIL;
@@ -496,7 +496,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
-		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
+		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
 			return GDK_FAIL;

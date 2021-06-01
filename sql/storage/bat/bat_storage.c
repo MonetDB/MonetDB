@@ -28,9 +28,9 @@ static int log_create_del(sql_trans *tr, sql_change *change);
 static int commit_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
 static int commit_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
 static int commit_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
-static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_col( sql_store Store, sql_change *c, ulng oldest);
+static int tc_gc_idx( sql_store Store, sql_change *c, ulng oldest);
+static int tc_gc_del( sql_store Store, sql_change *c, ulng oldest);
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
@@ -75,9 +75,9 @@ unlock_table(sqlstore *store, sqlid id)
 #define unlock_column(store, id) unlock_table(store, id)
 
 static int
-tc_gc_seg( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_seg( sql_store Store, sql_change *change, ulng oldest)
 {
-	(void)Store; (void)commit_ts;
+	(void)Store; 
 	segment *s = change->data;
 
 	if (s->ts <= oldest) {
@@ -2675,9 +2675,8 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 }
 
 static int
-tc_gc_rollbacked( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_rollbacked( sql_store Store, sql_change *change, ulng oldest)
 {
-	(void)commit_ts;
 	sqlstore *store = Store;
 
 	sql_delta *d = (sql_delta*)change->data;
@@ -2896,7 +2895,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 /* only rollback (content version) case for now */
 static int
-tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 {
 	(void)Store;
 	sql_column *c = (sql_column*)change->obj;
@@ -2907,8 +2906,6 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&c->data) != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
-	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
-		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 		if (d->cs.ts > oldest)
@@ -2921,7 +2918,7 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 }
 
 static int
-tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 {
 	(void)Store;
 	sql_idx *i = (sql_idx*)change->obj;
@@ -2932,8 +2929,6 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&i->data) != change->data || isTempTable(i->t)) /* data is freed by commit */
 		return 1;
-	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
-		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 		if (d->cs.ts > oldest)
@@ -2946,7 +2941,7 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 }
 
 static int
-tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_del( sql_store Store, sql_change *change, ulng oldest)
 {
 	sqlstore *store = Store;
 	sql_table *t = (sql_table*)change->obj;
@@ -2955,8 +2950,6 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&t->data) != change->data || isTempTable(t)) /* data is freed by commit */
 		return 1;
-	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
-		return 0;
 	storage *d = (storage*)change->data;
 	if (d->next) {
 		if (d->cs.ts > oldest)
