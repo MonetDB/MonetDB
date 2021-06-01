@@ -1943,9 +1943,9 @@ store_exit(sqlstore *store)
 			for(node *n=store->changes->h; n; n = n->next) {
 				sql_change *c = n->data;
 
-				if (c->cleanup && !c->cleanup(store, c, oldest, oldest)) {
+				if (c->cleanup && !c->cleanup(store, c, oldest)) {
 					/* try again with newer oldest, should cleanup any pending issues */
-					if (!c->cleanup(store, c, oldest+1, oldest+1))
+					if (!c->cleanup(store, c, oldest+1))
 						printf("not deleted\n");
 					else
 						_DELETE(c);
@@ -2017,7 +2017,7 @@ store_resume_log(sqlstore *store)
 }
 
 static void
-store_pending_changes(sqlstore *store, ulng commit_ts, ulng oldest)
+store_pending_changes(sqlstore *store, ulng oldest)
 {
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
@@ -2026,7 +2026,7 @@ store_pending_changes(sqlstore *store, ulng commit_ts, ulng oldest)
 
 			if (!c->cleanup) {
 				_DELETE(c);
-			} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+			} else if (c->cleanup && c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
 			}
@@ -2051,7 +2051,7 @@ store_manager(sqlstore *store)
 				store_lock(store);
 				if (ATOMIC_GET(&store->nr_active) == 0) {
 					ulng oldest = store_timestamp(store)+1;
-					store_pending_changes(store, oldest, oldest);
+					store_pending_changes(store, oldest);
 				}
 				store->logger_api.activate(store); /* rotate too new log file */
 				store_unlock(store);
@@ -3253,7 +3253,7 @@ sql_trans_rollback(sql_trans *tr)
 
 				if (!c->cleanup) {
 					_DELETE(c);
-				} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+				} else if (c->cleanup && c->cleanup(store, c, oldest)) {
 					list_remove_node(store->changes, store, n);
 					_DELETE(c);
 				}
@@ -3265,7 +3265,7 @@ sql_trans_rollback(sql_trans *tr)
 
 			if (!c->cleanup) {
 				_DELETE(c);
-			} else if (c->cleanup && !c->cleanup(store, c, commit_ts, oldest)) {
+			} else if (c->cleanup && !c->cleanup(store, c, oldest)) {
 				store->changes = sa_list_append(tr->sa, store->changes, c);
 			} else
 				_DELETE(c);
@@ -3411,13 +3411,13 @@ sql_trans_commit(sql_trans *tr)
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
-	store_pending_changes(store, commit_ts, oldest);
+	store_pending_changes(store, oldest);
 	if (tr->changes) {
 		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
 		int flush = (tr->logchanges > min_changes && !store->changes);
 		/* log changes should only be done if there is something to log */
 		if (tr->logchanges > 0) {
-			ok = store->logger_api.log_tstart(store, commit_ts, flush);
+			ok = store->logger_api.log_tstart(store, flush);
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
@@ -3430,7 +3430,7 @@ sql_trans_commit(sql_trans *tr)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
 			if (ok == LOG_OK && !flush)
-				ok = store->logger_api.log_tend(store);
+				ok = store->logger_api.log_tend(store, commit_ts);
 		}
 		tr->logchanges = 0;
 		/* apply committed changes */
@@ -3444,13 +3444,13 @@ sql_trans_commit(sql_trans *tr)
 		}
 		/* flush logger after changes got applied */
 		if (ok == LOG_OK && flush)
-			ok = store->logger_api.log_tend(store);
+			ok = store->logger_api.log_tend(store, commit_ts);
 		/* garbage collect */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (!c->cleanup || c->cleanup(store, c, commit_ts, oldest)) {
+			if (!c->cleanup || c->cleanup(store, c, oldest)) {
 				_DELETE(c);
 			} else if (tr->parent) { /* need to keep everything */
 				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
