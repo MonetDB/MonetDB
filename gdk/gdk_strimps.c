@@ -65,55 +65,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#if 0
 
-/* Given a BAT return the number of digrams in it. The observation is
- * that the number of digrams is the number of characters - 1:
- *
- * 1 digram starting at character 1
- * 1 digram starting at character 2
- * [...]
- * 1 digram starting at character n - 1
- */
-gdk_return
-STRMPndigrams(BAT *b, size_t *n)
-{
-	// lng t0;
-	BUN i;
-	BATiter bi;
-	char *s;
-	// GDKtracer_set_component_level("ALGO", "DEBUG");
-	// struct canditer ci;
-
-	// t0 = GDKusec();
-	// BATcheck(b, NULL);
-	assert(b->ttype == TYPE_str);
-
-	bi = bat_iterator(b);
-	*n = 0;
-	for (i = 0; i < b->batCount; i++) {
-		s = (char *)BUNtail(bi, i);
-                // *n += STRMP_strlen(s) - 1;
-		*n += strlen(s) - 1;
-		// TRC_DEBUG(ALGO, "s["LLFMT"]=%s\n", i, s);
-	}
-
-	// TRC_DEBUG(ALGO, LLFMT "usec\n", GDKusec() - t0);
-	// GDKtracer_flush_buffer();
-
-	return GDK_SUCCEED;
-}
-#endif
-
-/* The isIgnored is a bit suspect in terms of unicode. There are
- * non-ASCII codepoints that are considered spaces, for example the
- * codepoints in the range U+2000-U+200f.
- */
-#define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
-#define isNotIgnored(x) (!isIgnored(x))
-#define pairToIndex(b1, b2) (DataPair)(((uint8_t)b2)<<8 | ((uint8_t)b1))
-#define indexToPair2(idx) (idx & 0xff00) >> 8
-#define indexToPair1(idx) (idx & 0xff)
 #define swp(_a, _i, _j, TPE)			\
 	do {					\
 		TPE _t = ((TPE *)_a)[_i];	\
@@ -121,111 +73,124 @@ STRMPndigrams(BAT *b, size_t *n)
 		((TPE *) _a)[_j] = _t;			\
 	} while(0)
 
-/* This counts how many unicode codepoints the given string
- * contains.
- */
-static size_t
-STRMP_utf8_strlen(const uint8_t *s)
-{
-	size_t ret = 0;
-	size_t i;
-	int m,n;
-	uint8_t c;
 
-	i = 0;
-	while((c = *(s + i)) != 0) {
-		if (c < 0x80)
-			i++;
-		else {
-			for (n = 0, m=0x40; c & m; n++, m >>= 1)
-				;
-			/* n is now the number of 10xxxxxx bytes that should
-			   follow. */
-			if (n == 0 || n >= 4)
-				/* TODO: handle invalid utf-8 */
-				{}
-			i += n+1;
-		}
-		ret++;
+/* Macros for accessing metadada of a strimp. These are recorded in the
+ * first 8 bytes of the heap.
+ */
+#define NPAIRS(d) (((d) & (0xff << 8)) >> 8)
+#define HSIZE(d) (((d) & (0xffff << 16)) >> 16)
+
+#undef UTF8STRINGS 		/* Not using utf8 for now */
+#ifdef UTF8STRINGS
+static bool
+pair_equal(CharPair *p1, CharPair *p2) {
+	if(p1->psize != p2->psize)
+		return false;
+
+	for(size_t i = 0; i < p1->psize; i++)
+		if (*(p1->pbytes + i) != *(p2->pbytes + i))
+			return false;
+
+	return true;
+}
+#else
+/* BytePairs implementation */
+#define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
+#define isNotIgnored(x) (!isIgnored(x))
+#define pairToIndex(b1, b2) (uint16_t)(((uint8_t)b2)<<8 | ((uint8_t)b1))
+#define indexToPair2(idx) (idx & 0xff00) >> 8
+#define indexToPair1(idx) (idx & 0xff)
+
+static bool
+pair_equal(CharPair *p1, CharPair *p2) {
+	return p1->pbytes[0] == p2->pbytes[0] &&
+		p1->pbytes[1] == p2->pbytes[1];
+
+}
+
+static int64_t
+histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p) {
+	(void) hist;
+	(void) hsize;
+	return pairToIndex(p->pbytes[0], p->pbytes[1]);
+}
+
+static bool
+pair_at(PairIterator *pi, CharPair *p) {
+	if (pi->pos >= pi->lim)
+		return false;
+	p->pbytes = (uint8_t*)pi->s + pi->pos;
+	p->psize = 2;
+	return true;
+}
+
+static bool
+next_pair(PairIterator *pi) {
+	if (pi->pos >= pi->lim)
+		return false;
+	pi->pos++;
+	return true;
+}
+
+#endif // UTF8STRINGS
+
+static int8_t
+strimp_lookup(Strimps *s, CharPair *p) {
+	int8_t ret = -1;
+	size_t idx = 0;
+	size_t npairs = NPAIRS((uint64_t)s->strimps.base[0]);
+	size_t offset = 0;
+	CharPair sp;
+	(void)p;
+
+	for (idx = 0; idx < npairs; idx++) {
+		sp.psize = s->sizes_base[idx];
+		sp.pbytes = s->pairs_base + offset;
+		if (pair_equal(&sp, p))
+			return idx;
+		offset += sp.psize;
 	}
 
 	return ret;
 }
 
-static size_t
-STRMP_utf8_next_char_index(const str s, size_t cidx) {
-	assert(cidx < strlen(s)); /* !!! */
-	if (*(s+cidx+1) == 0)
-		return 0;
-	return cidx + 1;
+static bool
+ignored(CharPair *p, uint8_t elm) {
+	assert(elm == 0 || elm == 1);
+	return isIgnored(p->pbytes[elm]);
 }
 
-#if 0
-static uint8_t*
-STRMP_utf8_char_at(const str s, size_t i, size_t *len) {
-	*len = 1;
-	return (uint8_t *)(s + i);
-}
-#endif
+#define MAX_PAIR_SIZE 8
 
-/* Construct a histogram of pairs of bytes in the input BAT.
+/* Given a strimp header and a string compute the bitstring of which
+ * digrams(byte pairs) are present in the string. The strimp header is a
+ * map from digram(byte pair) to index in the strimp.
  *
- * Return the histogram in hist and the number of non-zero bins in
- * count.
+ * This should probably be inlined.
  */
-static gdk_return
-STRMPmakehistogramBP(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins)
+static uint64_t
+STRMPmakebitstring(const str s, Strimps *r)
 {
-	lng t0=0;
-	size_t hi;
-	BUN i;
-	BATiter bi;
-	char *ptr, *s;
-	/* uint64_t cur_min = 0; */
+	uint64_t ret = 0;
+	int8_t pair_idx = 0;
+	PairIterator pi;
+	CharPair cp;
 
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	assert(b->ttype == TYPE_str);
+	pi.s = s;
+	pi.pos = 0;
+	pi.lim = strlen(s);
 
-	for(hi = 0; hi < hist_size; hi++)
-		hist[hi] = 0;
-
-	bi = bat_iterator(b);
-	*nbins = 0;
-	for(i = 0; i < b->batCount; i++) {
-		s = (char *)BUNtvar(bi, i);
-		if (!strNil(s)) {
-			for(ptr = s; *ptr != 0 && *(ptr + 1) != 0; ptr++) {
-				if (isIgnored(*(ptr+1))) {
-					/* Skip this and the next pair
-					 * if the next char is ignored.
-					 */
-					ptr++;
-				}
-				else if (isIgnored(*ptr)) {
-					/* Skip this pair if the current
-					 * char is ignored. This should
-					 * only happen at the beginnig
-					 * of a string.
-					 */
-					;
-				}
-				else {
-					hi = pairToIndex(*(ptr), *(ptr+1));
-					assert(hi < hist_size);
-					if (hist[hi] == 0)
-						(*nbins)++;
-					hist[hi]++;
-					/* if (hist[hi] > cur_min) */
-					/* 	cur_min = add_to_header(hi, hist[hi]); */
-				}
-			}
-		}
+	while(pair_at(&pi, &cp)) {
+		pair_idx = strimp_lookup(r, &cp);
+		if (pair_idx > 0)
+			ret |= 0x1 << pair_idx;
+		next_pair(&pi);
 	}
 
-	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
-	GDKtracer_flush_buffer();
-	return GDK_SUCCEED;
+	return ret;
 }
+
+
 
 /* Given a histogram find the indices of the STRIMP_HEADER_SIZE largest
  * counts.
@@ -248,182 +213,162 @@ STRMPmakehistogramBP(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins)
  * In the current implementation each index is a DataPair value that is
  * constructed by pairToIndex from 2 consecutive bytes in the input.
  */
-static StrimpHeader *
-make_header(StrimpHeader *h, uint64_t* hist, size_t hist_size)
+static void
+STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 {
 	lng t0 = 0;
 	size_t i;
 	uint64_t max_counts[STRIMP_HEADER_SIZE] = {0};
+	size_t indices[STRIMP_HEADER_SIZE] = {0};
 	const size_t cmin_max = STRIMP_HEADER_SIZE - 1;
 	size_t hidx;
 
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	for(i = 0; i < STRIMP_HEADER_SIZE; i++)
-		h->bytepairs[i] = 0;
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	TRC_DEBUG(ACCELERATOR, "Pair selection\n");
 
 	for(i = 0; i < hist_size; i++) {
-		if (max_counts[cmin_max] < hist[i]) {
-			max_counts[cmin_max] = hist[i];
-			h->bytepairs[cmin_max] = i;
+		if (max_counts[cmin_max] < hist[i].cnt) {
+			max_counts[cmin_max] = hist[i].cnt;
+			indices[cmin_max] = i;
                         for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
 				swp(max_counts, hidx, hidx-1, uint64_t);
-				swp(h->bytepairs, hidx, hidx-1, DataPair);
+				swp(indices, hidx, hidx-1, size_t);
 			}
 		}
 	}
 
 	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
-		TRC_DEBUG(ALGO, "0x%x 0x%x: %lu", indexToPair1(h->bytepairs[i]), indexToPair2(h->bytepairs[i]), max_counts[i]);
+		cp[i].pbytes = hist[indices[i]].p->pbytes;
+		cp[i].psize = hist[indices[i]].p->psize;
 	}
 
-	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
-
-	return h;
+	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
 
-static StrimpHeader *
-create_header(BAT *b)
-{
-	uint64_t hist[STRIMP_HISTSIZE] = {0};
-	size_t nbins = 0;
-	StrimpHeader *header;
-	if ((header = (StrimpHeader*)GDKmalloc(sizeof(StrimpHeader))) == NULL)
-		return NULL;
+static bool
+STRMPbuildHeader(BAT *b, CharPair *hpairs) {
+	lng t0 = 0;
+	BATiter bi;
+	str s;
+	BUN i;
+	size_t hidx;
+	size_t hlen;
+	PairHistogramElem *hist;
+	PairIterator pi, *pip;
+	CharPair cp, *cpp;
 
-	if(STRMPmakehistogramBP(b, hist, STRIMP_HISTSIZE, &nbins) != GDK_SUCCEED) {
-		GDKfree(header);
-		return NULL;
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	TRC_DEBUG(ACCELERATOR, "Header construction...\n");
+	hlen = STRIMP_HISTSIZE;
+	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
+		// TODO handle error
+		return 0;
 	}
 
-	make_header(header, hist, STRIMP_HISTSIZE);
+	for(hidx = 0; hidx < hlen; hidx++) {
+		hist[hidx].p = NULL;
+		hist[hidx].cnt = 0;
+	}
 
-	return header;
-}
+	// Create Histogram
+	bi = bat_iterator(b);
+	pip = &pi;
+	cpp = &cp;
+	for (i = 0; i < b->batCount; i++) {
+		s = (str)BUNtvar(bi, i);
+		if (!strNil(s)) {
+			pi.s = s;
+			pi.pos = 0;
+			pi.lim = strlen(pi.s);
+			while (pair_at(pip, cpp)) {
+				if(ignored(cpp, 1)) {
+					/* Skip this and the next pair
+					 * if the next char is ignored.
+					 */
+					next_pair(pip);
+				} else if (ignored(cpp, 0)) {
+					/* Skip this pair if the current
+					 * char is ignored. This should
+					 * only happen at the beginnig
+					 * of a string.
+					 */
+					;
 
-#define NPAIRS(d) (((d) & (0xff << 8)) >> 8)
-#define HSIZE(d) (((d) & (0xffff << 16)) >> 16)
-/* #define PSIZES(p) ((uint8_t *) ((p)+8)) */
-/* #define HPAIRS(p) ((uint8_t *) (PSIZES(p) + NPAIRS(*((uint64_t *)p)))) */
-
-/* Given a strimp h and a pair p, return the index i for which
- *
- * h[i] == p
- *
- * Returns -1 if p is not in h.
- *
- * TODO: Should this be inlined somehow? (probably yes)
- */
-static int8_t
-lookup_index(BAT *b, uint8_t *pair, uint8_t psize)
-{
-	size_t i,j;
-	size_t idx = 0;
-	Heap strimp = b->tstrimps->strimps;
-	uint64_t desc = (uint64_t)strimp.base[0];
-	uint8_t npairs = NPAIRS(desc);
-	uint8_t *pair_sizes = b->tstrimps->sizes_base;
-	uint8_t *pairs = b->tstrimps->pairs_base;
-
-	for(i = 0; i < npairs; i++) {
-		if (psize == pair_sizes[i]) {
-			uint8_t *h = pairs + idx;
-			for (j = 0; j < psize; j++) {
-				if(pair[j] != h[j])
-					break;
+				} else {
+					hidx = histogram_index(hist, hlen, cpp);
+#ifndef UTF8STRINGS
+					assert(hidx < hlen);
+#else
+					if (hidx >= hlen) {
+						// TODO: Note and realloc. Should not happen for bytepairs.
+						continue;
+					}
+#endif
+					hist[hidx].cnt++;
+					if (hist[hidx].p == NULL) {
+						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
+						hist[hidx].p->psize = cpp->psize;
+						hist[hidx].p->pbytes = (uint8_t *)GDKmalloc(sizeof(uint8_t));
+						memcpy(hist[hidx].p, cpp->pbytes, cpp->psize);
+					}
+				}
+				next_pair(pip);
 			}
-			if (j == psize)
-				return i;
-		}
-		idx += pair_sizes[i];
-	}
-
-	return -1;
-}
-
-#define MAX_PAIR_SIZE 8
-
-/* Given a strimp header and a string compute the bitstring of which
- * digrams(byte pairs) are present in the string. The strimp header is a
- * map from digram(byte pair) to index in the strimp.
- *
- * This should probably be inlined.
- */
-static uint64_t
-STRMPmakebitstring(const str s, BAT *b)
-{
-	uint64_t ret = 0;
-	int8_t pair_idx = 0;
-	size_t idx = 0;
-	size_t nidx, nidx2;
-	size_t i;
-	uint8_t pair[MAX_PAIR_SIZE] = {0};
-	size_t psize = 0;
-	size_t ssize = strlen(s);
-
-	for (idx = 0; idx < ssize - 1; idx++) {	/* pairs start at positions < size-1 */
-		nidx = STRMP_utf8_next_char_index(s, idx);
-		assert(nidx > 0);
-		nidx2 = STRMP_utf8_next_char_index(s, nidx);
-		assert(nidx2 > 0);
-		psize = nidx2 - idx;
-		assert (psize < MAX_PAIR_SIZE);
-		for (i = idx; i < psize; i++)
-			pair[idx + i] = *(s + idx + i);
-		pair_idx = lookup_index(b, pair, psize);
-		if (pair_idx >= 0) {
-			assert(pair_idx < STRIMP_HEADER_SIZE);
-			ret |= 0x1 << pair_idx;
 		}
 	}
-	return ret;
+
+	// Choose the header pairs
+	STRMPchoosePairs(hist, hlen, hpairs);
+
+	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
+	return true;
 }
 
 /* Create the heap for a string imprint. Returns NULL on failure. */
 static Strimps *
-create_strimp(BAT *b, StrimpHeader *h)
+STRMPcreateStrimp(BAT *b)
 {
 	uint64_t *d;
+	uint8_t *h1, *h2;
 	Strimps *r = NULL;
 	uint64_t descriptor;
-	uint64_t npairs, bytes_per_pair, hsize;
 	size_t i;
-	int j;
+	uint16_t sz;
+	CharPair hpairs[STRIMP_HEADER_SIZE];
 	const char *nme;
 
+
+	STRMPbuildHeader(b, hpairs); /* Find the header pairs */
+	sz = 8;			     /* add 8-bytes for the descriptor */
+	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
+		sz += hpairs[i].psize;
+	}
+
 	nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+	/* Allocate the strimps heap */
 	if ((r = GDKzalloc(sizeof(Strimps))) == NULL ||
 	    (r->strimps.farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
 	    strconcat_len(r->strimps.filename, sizeof(r->strimps.filename),
 			  nme, ".strimp", NULL) >= sizeof(r->strimps.filename) ||
-	    HEAPalloc(&r->strimps, BATcount(b) + STRIMP_OFFSET, sizeof(uint64_t), 0) != GDK_SUCCEED) {
+	    HEAPalloc(&r->strimps, BATcount(b)*sizeof(uint64_t) + sz, sizeof(uint8_t), 0) != GDK_SUCCEED) {
 		GDKfree(r);
 		return NULL;
 	}
-	r->strimps.free = STRIMP_OFFSET * sizeof(uint64_t);
 
-	npairs = STRIMP_HEADER_SIZE;
-	bytes_per_pair = 2;	/* Bytepair implementation */
-	hsize = sizeof(h->bytepairs);
-
-	assert(bytes_per_pair == 0 || npairs*bytes_per_pair == hsize);
-
-	descriptor = 0;
-	descriptor =  STRIMP_VERSION | npairs << 8;
+	descriptor =  STRIMP_VERSION | STRIMP_HEADER_SIZE << 8 | ((uint64_t)sz) << 16;
 
 	d = (uint64_t *)r->strimps.base;
-	*d++ = descriptor;
-	/* This loop assumes that we are working with byte pairs
-	 * (i.e. the type of the header is uint16_t). TODO: generalize.
-	 */
-	for(i = 0; i < STRIMP_HEADER_SIZE; i += 4) {
-		*d = 0;
-		for(j = 3; j >= 0; j--) {
-			*d <<= 16;
-			*d |= h->bytepairs[i + j];
-		}
-		d++;
+	*d = descriptor;
+	r->sizes_base = h1 = (uint8_t *)r->strimps.base + 8;
+	r->pairs_base = h2 = (uint8_t *)h1 + STRIMP_HEADER_SIZE;
+
+	for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
+		*(h1 + i) = hpairs[i].psize;
+		memcpy(h2, hpairs[i].pbytes, hpairs[i].psize);
+		h2 += hpairs[i].psize;
 	}
+	r->strimps_base = h2;
+	r->strimps.free = BATcount(b)*sizeof(uint64_t);
 
 	return r;
 }
@@ -528,15 +473,15 @@ STRMPfilter(BAT *b, char *q)
 	if (!BATcheckstrimps(b)) {
 		goto sfilter_fail;
 	}
-	qbmask = STRMPmakebitstring(q, b);
-	ptr = (uint64_t *)b->tstrimps->strimps.base + STRIMP_OFFSET * sizeof(uint64_t);
+	qbmask = STRMPmakebitstring(q, b->tstrimps);
+	ptr = (uint64_t *)b->tstrimps->strimps_base;
 
 
 	for (i = 0; i < b->batCount; i++) {
 		if ((*ptr & qbmask) == qbmask) {
 			oid pos = i;
 			if (BUNappend(r, &pos, false) != GDK_SUCCEED)
-				goto sfilter_fail;  // have not checked everything here
+				goto sfilter_fail;
 		}
 	}
 
@@ -545,7 +490,6 @@ STRMPfilter(BAT *b, char *q)
 
  sfilter_fail:
 	BBPunfix(r->batCacheid);
-	// free(hd);
 	return NULL;
 }
 
@@ -566,7 +510,6 @@ STRMPcreate(BAT *b)
 	BATiter bi;
 	BUN i;
 	str s;
-	StrimpHeader *head;
 	Strimps *h;
 	uint64_t *dh;
 
@@ -574,12 +517,7 @@ STRMPcreate(BAT *b)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (b->tstrimps == NULL) {
-		if ((head = create_header(b)) == NULL) {
-			return GDK_FAIL;
-		}
-
-		if ((h = create_strimp(b, head)) == NULL) {
-			GDKfree(head);
+		if ((h = STRMPcreateStrimp(b)) == NULL) {
 			return GDK_FAIL;
 		}
 		dh = (uint64_t *)h->strimps.base + h->strimps.free; // That's probably not correct
@@ -588,7 +526,7 @@ STRMPcreate(BAT *b)
 		for (i = 0; i < b->batCount; i++) {
 			s = (str)BUNtvar(bi, i);
 			if (!strNil(s))
-				*dh++ = STRMPmakebitstring(s, head);
+				*dh++ = STRMPmakebitstring(s, h);
 			else
 				*dh++ = 0; /* no pairs in nil values */
 
@@ -607,3 +545,189 @@ STRMPcreate(BAT *b)
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 }
+
+/* Left over code */
+
+#if 0
+/* This counts how many unicode codepoints the given string
+ * contains.
+ */
+static size_t
+STRMP_utf8_strlen(const uint8_t *s)
+{
+	size_t ret = 0;
+	size_t i;
+	int m,n;
+	uint8_t c;
+
+	i = 0;
+	while((c = *(s + i)) != 0) {
+		if (c < 0x80)
+			i++;
+		else {
+			for (n = 0, m=0x40; c & m; n++, m >>= 1)
+				;
+			/* n is now the number of 10xxxxxx bytes that should
+			   follow. */
+			if (n == 0 || n >= 4)
+				/* TODO: handle invalid utf-8 */
+				{}
+			i += n+1;
+		}
+		ret++;
+	}
+
+	return ret;
+}
+
+/* Construct a histogram of pairs of bytes in the input BAT.
+ *
+ * Return the histogram in hist and the number of non-zero bins in
+ * count.
+ */
+static gdk_return
+STRMPmakehistogramBP(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins)
+{
+	lng t0=0;
+	size_t hi;
+	BUN i;
+	BATiter bi;
+	char *ptr, *s;
+	/* uint64_t cur_min = 0; */
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	assert(b->ttype == TYPE_str);
+
+	for(hi = 0; hi < hist_size; hi++)
+		hist[hi] = 0;
+
+	bi = bat_iterator(b);
+	*nbins = 0;
+	for(i = 0; i < b->batCount; i++) {
+		s = (char *)BUNtvar(bi, i);
+		if (!strNil(s)) {
+			for(ptr = s; *ptr != 0 && *(ptr + 1) != 0; ptr++) {
+				if (isIgnored(*(ptr+1))) {
+					/* Skip this and the next pair
+					 * if the next char is ignored.
+					 */
+					ptr++;
+				}
+				else if (isIgnored(*ptr)) {
+					/* Skip this pair if the current
+					 * char is ignored. This should
+					 * only happen at the beginnig
+					 * of a string.
+					 */
+					;
+				}
+				else {
+					hi = pairToIndex(*(ptr), *(ptr+1));
+					assert(hi < hist_size);
+					if (hist[hi] == 0)
+						(*nbins)++;
+					hist[hi]++;
+					/* if (hist[hi] > cur_min) */
+					/* 	cur_min = add_to_header(hi, hist[hi]); */
+				}
+			}
+		}
+	}
+
+	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
+	GDKtracer_flush_buffer();
+	return GDK_SUCCEED;
+}
+
+static bool
+create_header(BAT *b)
+{
+	uint64_t hist[STRIMP_HISTSIZE] = {0};
+	size_t nbins = 0;
+	StrimpHeader *header;
+	if ((header = (StrimpHeader*)GDKmalloc(sizeof(StrimpHeader))) == NULL)
+		return false;
+
+	if(STRMPmakehistogramBP(b, hist, STRIMP_HISTSIZE, &nbins) != GDK_SUCCEED) {
+		GDKfree(header);
+		return NULL;
+	}
+
+	make_header(header, hist, STRIMP_HISTSIZE);
+
+	return header;
+}
+
+/* Given a strimp h and a pair p, return the index i for which
+ *
+ * h[i] == p
+ *
+ * Returns -1 if p is not in h.
+ *
+ * TODO: Should this be inlined somehow? (probably yes)
+ */
+static int8_t
+lookup_index(BAT *b, uint8_t *pair, uint8_t psize)
+{
+	size_t i,j;
+	size_t idx = 0;
+	Heap strimp = b->tstrimps->strimps;
+	uint64_t desc = (uint64_t)strimp.base[0];
+	uint8_t npairs = NPAIRS(desc);
+	uint8_t *pair_sizes = b->tstrimps->sizes_base;
+	uint8_t *pairs = b->tstrimps->pairs_base;
+
+	for(i = 0; i < npairs; i++) {
+		if (psize == pair_sizes[i]) {
+			uint8_t *h = pairs + idx;
+			for (j = 0; j < psize; j++) {
+				if(pair[j] != h[j])
+					break;
+			}
+			if (j == psize)
+				return i;
+		}
+		idx += pair_sizes[i];
+	}
+
+	return -1;
+}
+
+/* Given a BAT return the number of digrams in it. The observation is
+ * that the number of digrams is the number of characters - 1:
+ *
+ * 1 digram starting at character 1
+ * 1 digram starting at character 2
+ * [...]
+ * 1 digram starting at character n - 1
+ */
+gdk_return
+STRMPndigrams(BAT *b, size_t *n)
+{
+	// lng t0;
+	BUN i;
+	BATiter bi;
+	char *s;
+	// GDKtracer_set_component_level("ALGO", "DEBUG");
+	// struct canditer ci;
+
+	// t0 = GDKusec();
+	// BATcheck(b, NULL);
+	assert(b->ttype == TYPE_str);
+
+	bi = bat_iterator(b);
+	*n = 0;
+	for (i = 0; i < b->batCount; i++) {
+		s = (char *)BUNtail(bi, i);
+                // *n += STRMP_strlen(s) - 1;
+		*n += strlen(s) - 1;
+		// TRC_DEBUG(ALGO, "s["LLFMT"]=%s\n", i, s);
+	}
+
+	// TRC_DEBUG(ALGO, LLFMT "usec\n", GDKusec() - t0);
+	// GDKtracer_flush_buffer();
+
+	return GDK_SUCCEED;
+}
+
+#endif

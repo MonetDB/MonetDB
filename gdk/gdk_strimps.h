@@ -13,19 +13,30 @@
 
 
 #define STRIMP_VERSION (uint64_t)1
-/* Count the occurences of pairs of bytes. This is a compromise between
- * just handling ASCII and full UTF-8 support.
- */
 #define STRIMP_HISTSIZE 256*256
 #define STRIMP_HEADER_SIZE 64
-#define STRIMP_OFFSET 1 + STRIMP_HEADER_SIZE*sizeof(DataPair)/sizeof(uint64_t) /* version + header */
 
-
-typedef uint16_t DataPair;
 typedef struct {
-	// TODO: find a better name for this
-	DataPair bytepairs[STRIMP_HEADER_SIZE];
-} StrimpHeader;
+	uint8_t *pbytes;
+	uint8_t psize;
+} CharPair;
+
+typedef struct {
+	size_t pos;
+	size_t lim;
+	str s;
+} PairIterator;
+
+typedef struct {
+	CharPair *p;
+	uint64_t cnt;
+} PairHistogramElem;
+
+
+/* typedef struct { */
+/* 	uint8_t *sizes; */
+/* 	uint8_t *pairs; */
+/* } StrimpHeader; */
 
 // gdk_export gdk_return STRMPndigrams(BAT *b, size_t *n); // Remove?
 // gdk_export gdk_return STRMPmakehistogramBP(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins); // make static
