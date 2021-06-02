@@ -243,7 +243,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -2:
 		case -3:
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) 
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: failed due to conflict with another transaction");
 			break;
 		case -10:
@@ -406,7 +406,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 				break;
 			case -2:
 			case -3:
-				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) 
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 										  "ALTER TABLE: failed due to conflict with another transaction");
 				break;
 			case -4:
@@ -1559,9 +1559,14 @@ SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *schema = SaveArgReference(stk, pci, 4);
 	char *schema_path = SaveArgReference(stk, pci, 5);
 	char *fullname = SaveArgReference(stk, pci, 6);
+	lng max_memory = *getArgReference_lng(stk, pci, 7);
+	int max_workers = *getArgReference_int(stk, pci, 8);
+	bool wlc = *getArgReference_bit(stk, pci, 9);
+	char *optimizer = SaveArgReference(stk, pci, 10);
 
 	initcontext();
-	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path);
+	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path, max_memory, max_workers, wlc,
+			optimizer);
 	return msg;
 }
 

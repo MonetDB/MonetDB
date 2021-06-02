@@ -224,8 +224,8 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
-		if (!val)
-			break;
+		//if (!val)
+		//	break;
 		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype, 1);
 		if (ok != LOG_OK) {
 			va_end(va);

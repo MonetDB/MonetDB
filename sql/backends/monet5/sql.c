@@ -5778,7 +5778,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "revoke", SQLrevoke, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "grant_function", SQLgrant_function, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "revoke_function", SQLrevoke_function, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str))),
+ pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,10, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str), arg("max_memory", lng), arg("max_workers", int), arg("wlc", bit), arg("optimizer", str))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str))),

@@ -732,7 +732,8 @@ mvc_set_schema(mvc *m, char *schema)
 }
 
 char *
-sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path)
+sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng
+		max_memory, int max_workers, bool wlc, char *optimizer)
 {
 	char *err;
 	sqlid schema_id = 0;
@@ -744,7 +745,8 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
 	if ((schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
-	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
+	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id, max_memory,
+					max_workers, wlc, optimizer)) != NULL)
 	{
 		/* strip off MAL exception decorations */
 		char *r;

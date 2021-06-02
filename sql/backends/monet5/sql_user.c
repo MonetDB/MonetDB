@@ -143,7 +143,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 }
 
 static str
-monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid)
+monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, bool wlc, str optimizer)
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
@@ -153,6 +153,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	sql_table *db_user_info, *auths;
 	Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
+	const char *opt = optimizer ? optimizer : (char*)str_nil;
 
 	if (!schema_path)
 		schema_path = default_schema_path;
@@ -178,7 +179,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	user_id = store_next_oid(m->session->tr->store);
 	db_user_info = find_sql_table(m->session->tr, s, "db_user_info");
 	auths = find_sql_table(m->session->tr, s, "auths");
-	store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path);
+	store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory,
+			&max_workers, &wlc, &opt);
 	store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid);
 	return NULL;
 }
@@ -276,6 +278,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	mvc_create_column_(m, t, "schema_path", "clob", 0);
+	mvc_create_column_(m, t, "max_memory", "bigint", bits2digits(64));
+	mvc_create_column_(m, t, "max_workers", "int", 9);
+	mvc_create_column_(m, t, "wlc", "boolean", 1);
+	mvc_create_column_(m, t, "optimizer", "varchar", 1024);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -290,7 +296,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\", "
-				"ui.\"schema_path\" from sys.db_users() as u "
+				"ui.\"schema_path\", ui.\"max_memory\", ui.\"max_workers\", "
+				"ui.\"wlc\", ui.\"optimizer\" from sys.db_users() as u "
 				"left join \"sys\".\"db_user_info\" as ui "
 			    "on u.\"name\" = ui.\"name\";");
 	if (!t) {
@@ -302,6 +309,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	mvc_create_column_(m, t, "schema_path", "clob", 0);
+	mvc_create_column_(m, t, "max_memory", "bigint", bits2digits(64));
+	mvc_create_column_(m, t, "max_workers", "int", 9);
+	mvc_create_column_(m, t, "wlc", "boolean", 1);
+	mvc_create_column_(m, t, "optimizer", "varchar", 1024);
 
 	schema_id = sql_find_schema(m, "sys");
 	assert(schema_id >= 0);
@@ -310,7 +321,13 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	char *username = "monetdb";
 	char *fullname = "MonetDB Admin";
 	char *schema_path = default_schema_path;
-	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path);
+	lng max_memory = 0;
+	int max_workers = 0;
+	bool wlc = true;
+	char *optimizer = "default_pipe";
+
+	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory, &max_workers,
+			&wlc, &optimizer);
 }
 
 static int
