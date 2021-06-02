@@ -12,6 +12,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute("insert into longs values (1),(2),(3);").assertSucceeded()
         mdb1.execute("insert into integers values (1),(2),(3);").assertSucceeded()
         mdb1.execute("alter table longs add primary key (i);").assertSucceeded()
+        mdb1.execute("CREATE TABLE sys.myvar (c BIGINT);")
         mdb1.execute('commit;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
@@ -53,17 +54,69 @@ with SQLTestCase() as mdb1:
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
-        mdb1.execute('CREATE schema mysch;').assertSucceeded()
-        mdb2.execute('CREATE schema mysch;').assertFailed(err_code="42000", err_message="CREATE SCHEMA: transaction conflict detected")
+        mdb1.execute('CREATE TYPE myurl EXTERNAL NAME url;').assertSucceeded()
+        mdb2.execute('CREATE TYPE myurl EXTERNAL NAME url;').assertFailed(err_code="42000", err_message="CREATE TYPE: transaction conflict detected")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute("INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.roles));").assertRowCount(1)
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('CREATE ROLE myrole;').assertSucceeded()
+        mdb2.execute('CREATE ROLE myrole;').assertFailed(err_code="42000", err_message="CREATE ROLE: transaction conflict detected") # I am not sure what do here
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed() # Not sure here
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('CREATE schema mysch AUTHORIZATION myrole;').assertSucceeded()
+        mdb2.execute('CREATE schema mysch AUTHORIZATION myrole;').assertFailed(err_code="42000", err_message="CREATE SCHEMA: transaction conflict detected")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
-        mdb1.execute('CREATE TYPE myurl EXTERNAL NAME url;').assertSucceeded()
-        mdb2.execute('CREATE TYPE myurl EXTERNAL NAME url;').assertFailed(err_code="42000", err_message="CREATE TYPE: transaction conflict detected")
+        mdb1.execute("CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch;").assertSucceeded()
+        mdb2.execute("CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch;").assertFailed(err_code="42M31", err_message="CREATE USER: user 'dummyuser' already exists")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("GRANT myrole TO dummyuser;").assertSucceeded()
+        mdb2.execute("GRANT myrole TO dummyuser;").assertFailed(err_code="42000", err_message="GRANT: transaction conflict detected") # I am not sure what do here
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed() # Not sure here
+        # The current setup gives a duplicate entry in the 'roles' table, so that cannot happen
+        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.roles;').assertDataResultMatch([(1,)])
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('DROP USER dummyuser;').assertSucceeded()
+        mdb1.execute('DROP SCHEMA mysch;').assertSucceeded()
+        mdb1.execute('DROP ROLE myrole;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+
+        mdb1.execute("TRUNCATE sys.myvar;")
+        mdb1.execute("INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.comments));").assertRowCount(1)
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('COMMENT ON TABLE "sys"."integers" IS \'something\';').assertSucceeded()
+        mdb2.execute('COMMENT ON TABLE "sys"."integers" IS \'somethingelse\';').assertFailed(err_code="42000", err_message="COMMENT: transaction conflict detected") # I am not sure what do here
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed() # Not sure here
+        # The current setup gives a duplicate entry in the 'comments' table, so that cannot happen
+        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.comments;').assertDataResultMatch([(1,)])
+
+        mdb1.execute("TRUNCATE sys.myvar;")
+        mdb1.execute("INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.statistics));").assertRowCount(1)
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('ANALYZE "sys"."integers";').assertSucceeded()
+        mdb2.execute('ANALYZE "sys"."integers";').assertFailed(err_code="42000", err_message="ANALYZE: transaction conflict detected") # I am not sure what do here
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed() # Not sure here
+        # The current setup gives a duplicate entry in the 'statistics' table, so that cannot happen
+        mdb1.execute('SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.statistics;').assertDataResultMatch([(1,)])
 
         mdb1.execute('create merge table parent(a int);').assertSucceeded()
         mdb1.execute('create table child1(c int);').assertSucceeded()
@@ -152,9 +205,9 @@ with SQLTestCase() as mdb1:
         mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
-        mdb1.execute('DROP schema mysch;').assertSucceeded()
         mdb1.execute('DROP TYPE myurl;').assertSucceeded()
         mdb1.execute("drop table integers;").assertSucceeded()
         mdb1.execute("drop table longs;").assertSucceeded()
         mdb1.execute("drop table doubles;").assertSucceeded()
+        mdb1.execute('DROP TABLE sys.myvar;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()

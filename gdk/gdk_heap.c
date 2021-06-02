@@ -651,11 +651,13 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
  * dst->filename (or NULL), which might be used in HEAPalloc().
  */
 gdk_return
-HEAPcopy(Heap *dst, Heap *src)
+HEAPcopy(Heap *dst, Heap *src, size_t offset)
 {
-	if (HEAPalloc(dst, src->size, 1, 1) == GDK_SUCCEED) {
-		dst->free = src->free;
-		memcpy(dst->base, src->base, src->free);
+	if (offset > src->free)
+		offset = src->free;
+	if (HEAPalloc(dst, src->free - offset, 1, 1) == GDK_SUCCEED) {
+		dst->free = src->free - offset;
+		memcpy(dst->base, src->base + offset, src->free - offset);
 		dst->hashash = src->hashash;
 		dst->cleanhash = src->cleanhash;
 		dst->dirty = true;

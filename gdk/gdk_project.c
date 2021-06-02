@@ -747,7 +747,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
-			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
+			if (HEAPcopy(bn->tvheap, r1->tvheap, 0) != GDK_SUCCEED)
 				goto bailout;
 		}
 		bn->ttype = r1->ttype;
