@@ -300,7 +300,12 @@ SQLprepareClient(Client c, int login)
 			} else if (sscanf(tok, "columnar_protocol=%d", &value) == 1) {
 				c->protocol = (value != 0) ? PROTOCOL_COLUMNAR : PROTOCOL_9;
 			} else if (sscanf(tok, "time_zone=%d", &value) == 1) {
-				m->timezone = 1000 * value;
+				sql_schema *s = mvc_bind_schema(m, "sys");
+				sql_var *var = find_global_var(m, s, "current_timezone");
+				ValRecord val;
+				VALinit(&val, TYPE_lng, &(lng){1000 * value});
+				sql_update_var(m, s, "current_timezone", &val);
+				sqlvar_set(var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
 				goto bailout;
