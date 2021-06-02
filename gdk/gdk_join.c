@@ -2897,35 +2897,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	return GDK_FAIL;
 }
 
-/* population count: count number of 1 bits in a value */
-static inline uint32_t __attribute__((__const__))
-pop(uint32_t x)
-{
-#if defined(__GNUC__)
-	return (uint32_t) __builtin_popcount(x);
-#elif defined(_MSC_VER)
-	return (uint32_t) __popcnt((unsigned int) (x));
-#else
-	/* divide and conquer implementation (the two versions are
-	 * essentially equivalent, but the first version is written a
-	 * bit smarter) */
-#if 1
-	x -= (x >> 1) & ~0U/3 /* 0x55555555 */; /* 3-1=2; 2-1=1; 1-0=1; 0-0=0 */
-	x = (x & ~0U/5) + ((x >> 2) & ~0U/5) /* 0x33333333 */;
-	x = (x + (x >> 4)) & ~0UL/0x11 /* 0x0F0F0F0F */;
-	x = (x + (x >> 8)) & ~0UL/0x101 /* 0x00FF00FF */;
-	x = (x + (x >> 16)) & 0xFFFF /* ~0UL/0x10001 */;
-#else
-	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
-	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
-	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
-	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
-#endif
-	return x;
-#endif
-}
-
 /* Count the number of unique values for the first half and the complete
  * set (the sample s of b) and return the two values in *cnt1 and
  * *cnt2. In case of error, both values are 0. */
@@ -3004,7 +2975,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			if (i == ci.ncand/ 2) {
 				cnt = 0;
 				for (int j = 0; j < 256 / 32; j++)
-					cnt += pop(seen[j]);
+					cnt += candmask_pop(seen[j]);
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
@@ -3015,7 +2986,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		}
 		cnt = 0;
 		for (int j = 0; j < 256 / 32; j++)
-			cnt += pop(seen[j]);
+			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
@@ -3030,7 +3001,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			if (i == half) {
 				cnt = 0;
 				for (int j = 0; j < 65536 / 32; j++)
-					cnt += pop(seen[j]);
+					cnt += candmask_pop(seen[j]);
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
@@ -3041,7 +3012,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		}
 		cnt = 0;
 		for (int j = 0; j < 65536 / 32; j++)
-			cnt += pop(seen[j]);
+			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 		GDKfree(seen);
 		seen = NULL;
