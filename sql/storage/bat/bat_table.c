@@ -161,7 +161,6 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 
 column_find_tpe(sqlid)
 column_find_tpe(bte)
-column_find_tpe(sht)
 column_find_tpe(int)
 column_find_tpe(lng)
 
@@ -247,6 +246,158 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	assert(!is_oid_nil(rid));
 
 	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
+}
+
+static res_table *
+table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_column *jl2, sql_column *jr2, sql_column *o, ...)
+{
+	/* jl/jr are columns on which we first join */
+	/* if also jl2,jr2, we need too do another join, where both tables differ from 't' */
+
+	va_list va;
+	BAT *b = NULL, *r = NULL, *cl, *cr = NULL, *cr2 = NULL, *id = NULL, *grp = NULL;
+	/* if pointers are equal, make it an inclusive select */
+
+	cl = delta_cands(tr, t);
+	if (cl == NULL)
+		return NULL;
+
+	if (jl && jr) {
+		BAT *lcb, *rcb, *r = NULL, *l = NULL;
+		gdk_return ret;
+
+		cr = delta_cands(tr, jr->t);
+		if (cr == NULL) {
+			bat_destroy(cl);
+			return NULL;
+		}
+
+		lcb = full_column(tr, jl);
+		rcb = full_column(tr, jr);
+		ret = BATjoin(&l, &r, lcb, rcb, cl, cr, false, BATcount(lcb));
+		bat_destroy(cl);
+		bat_destroy(cr);
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		if (ret != GDK_SUCCEED)
+			return NULL;
+		cl = l;
+		cr = r;
+	}
+	/* we assume 1->n joins, therefor first join between jl2/jr2 */
+	if (jl2 && jr2) {
+		assert(jr->t == jl2->t);
+		BAT *lcb, *rcb, *r = NULL, *l = NULL;
+		gdk_return ret;
+
+		cr2 = delta_cands(tr, jr2->t);
+		if (cr2 == NULL) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			return NULL;
+		}
+
+		lcb = full_column(tr, jl2);
+		rcb = full_column(tr, jr2);
+		l = BATproject(cr, lcb); /* project because cr is join result */
+		bat_destroy(lcb);
+		lcb = l;
+		ret = BATjoin(&l, &r, lcb, rcb, NULL, cr2, false, BATcount(lcb));
+		bat_destroy(cr2);
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		if (ret != GDK_SUCCEED)
+			return NULL;
+		lcb = BATproject(l, cl);
+		rcb = BATproject(l, cr);
+		bat_destroy(l);
+		if (!lcb || !rcb) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(lcb);
+			bat_destroy(rcb);
+			bat_destroy(r);
+			return NULL;
+		}
+		cl = lcb;
+		cr = rcb;
+		cr2 = r;
+	}
+
+	va_start(va, o);
+	do {
+		BAT *nid = NULL, *ngrp = NULL;
+		sql_column *next = va_arg(va, sql_column *);
+
+		b = full_column(tr, o);
+		if (b)
+			r = BATproject( (o->t==t) ? cl : (cr2 && o->t==jr2->t) ? cr2 : cr, b);
+		bat_destroy(b);
+		if (!b || !r) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			va_end(va);
+			return NULL;
+		}
+		/* (sub)order b */
+		if (BATsort(NULL, &nid, next?&ngrp:NULL, r, id, grp, false, false, false) != GDK_SUCCEED) {
+			bat_destroy(r);
+			bat_destroy(id);
+			bat_destroy(grp);
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			va_end(va);
+			return NULL;
+		}
+		bat_destroy(r);
+		bat_destroy(id);
+		bat_destroy(grp);
+		id = nid;
+		grp = ngrp;
+		o = next;
+	} while (o);
+	bat_destroy(grp);
+	va_end(va);
+
+	r = BATproject(id, cl);
+	bat_destroy(id);
+	bat_destroy(cl);
+	bat_destroy(cr);
+	bat_destroy(cr2);
+	cl = r;
+	/* project all in the new order */
+	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL, NULL);
+	rt->nr_rows = BATcount(cl);
+	for (node *n = ol_first_node(t->columns); n; n = n->next) {
+		o = n->data;
+		b = full_column(tr, o);
+		if (b)
+			r = BATproject(cl, b);
+		bat_destroy(b);
+		if (!b || !r) {
+			bat_destroy(cl);
+			bat_destroy(b);
+			res_table_destroy(rt);
+			return NULL;
+		}
+		(void)res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, r, true);
+	}
+	bat_destroy(cl);
+	return rt;
+}
+
+static void *
+table_fetch_value(res_table *rt, sql_column *c)
+{
+	BAT *b = (BAT*)rt->cols[c->colnr].p;
+	BATiter bi = bat_iterator(b);
+	assert(b->ttype && b->ttype != TYPE_msk);
+	if (b->tvarsized)
+		return BUNtvar(bi, rt->cur_row);
+	return Tloc(b, rt->cur_row);
+	//return (void*)BUNtail(bi, rt->cur_row);
 }
 
 /* returns table rids, for the given select ranges */
@@ -583,7 +734,6 @@ bat_table_init( table_functions *tf )
 	tf->column_find_value = column_find_value;
 	tf->column_find_sqlid = column_find_sqlid;
 	tf->column_find_bte = column_find_bte;
-	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
 	tf->column_find_lng = column_find_lng;
 	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
@@ -591,6 +741,8 @@ bat_table_init( table_functions *tf )
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
+	tf->table_orderby = table_orderby;
+	tf->table_fetch_value = table_fetch_value;
 
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
