@@ -7,13 +7,13 @@ CREATE TABLE part2 ( x int, y double, z double)
 statement ok
 CREATE MERGE TABLE complete ( x double, y double, z double)
 
-statement error
+statement error 3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
 ALTER TABLE complete ADD TABLE part1
 
-statement error
+statement error 3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
 ALTER TABLE complete ADD TABLE part2
 
-statement error
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
 SELECT * FROM COMPLETE
 
 statement ok

@@ -57,7 +57,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.types values"
 				" (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
-				t->base.id, t->base.name, t->sqlname, t->digits,
+				t->base.id, t->impl, t->base.name, t->digits,
 				t->scale, t->radix, (int) t->eclass,
 				t->s ? t->s->base.id : s->base.id);
 	}
@@ -102,7 +102,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 						store_next_oid(store),
 						func->base.id,
 						number,
-						arg->type.type->sqlname,
+						arg->type.type->base.name,
 						arg->type.digits,
 						arg->type.scale,
 						arg->inout, number);
@@ -119,7 +119,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 						store_next_oid(store),
 						func->base.id,
 						arg->name,
-						arg->type.type->sqlname,
+						arg->type.type->base.name,
 						arg->type.digits,
 						arg->type.scale,
 						arg->inout, number);
@@ -133,7 +133,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 						store_next_oid(store),
 						func->base.id,
 						number,
-						arg->type.type->sqlname,
+						arg->type.type->base.name,
 						arg->type.digits,
 						arg->type.scale,
 						arg->inout, number);
@@ -1311,7 +1311,8 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create function sys.tracelog()\n"
 			" returns table (\n"
 			"  ticks bigint, -- time in microseconds\n"
-			"  stmt string  -- actual statement executed\n"
+			"  stmt string,  -- actual statement executed\n"
+			"  event string  -- profiler event executed\n"
 			" )\n"
 			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n"
@@ -2345,7 +2346,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *buf = NULL, *err = NULL;
@@ -2377,9 +2378,33 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"drop procedure sys.reuse(string, string);\n"
 							"drop procedure sys.vacuum(string, string);\n");
 
+			/* 22_clients.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"create function sys.current_sessionid() returns int\n"
+							"external name clients.current_sessionid;\n"
+							"grant execute on function sys.current_sessionid to public;\n"
+							"update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'current_sessionid' and type = %d;\n", (int) F_FUNC);
+
 			/* 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
 							"drop procedure sys.flush_log();\n");
+
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop function sys.deltas(string);\n"
+							"drop function sys.deltas(string, string);\n"
+							"drop function sys.deltas(string, string, string);\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+							"create function sys.deltas (\"schema\" string)\n"
+							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
+							"external name \"sql\".\"deltas\";\n"
+							"create function sys.deltas (\"schema\" string, \"table\" string)\n"
+							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
+							"external name \"sql\".\"deltas\";\n"
+							"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)\n"
+							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
+							"external name \"sql\".\"deltas\";\n"
+							"update sys.functions set system = true"
+							" where schema_id = 2000 and name = 'deltas';\n");
 
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -3193,88 +3218,94 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			// Set the system flag for the new dump and describe SQL objects.
 			pos += snprintf(buf + pos, bufsize - pos,
-					"UPDATE sys.functions f SET system = true WHERE\n"
+					"UPDATE sys.functions SET system = true WHERE\n"
+					"    system <> true AND\n"
 					"    schema_id = 2000 AND\n"
-					"    (\n"
-					"        (\n"
-					"            type = (select function_type_id from sys.function_types where function_type_name = 'Function returning a table') AND\n"
-					"            name in (\n"
-					"                'dump_database',\n"
-					"                'describe_table',\n"
-					"                'describe_columns',\n"
-					"                'describe_function'\n"
-					"            )\n"
-					"        ) OR\n"
-					"        (\n"
-					"            type = (select function_type_id from sys.function_types where function_type_name = 'Scalar function') AND\n"
-					"            name in (\n"
-					"                'sq',\n"
-					"                'dq',\n"
-					"                'fqn',\n"
-					"                'alter_table',\n"
-					"                'replace_first',\n"
-					"                'schema_guard',\n"
-					"                'get_merge_table_partition_expressions',\n"
-					"                'get_remote_table_expressions',\n"
-					"                'esc',\n"
-					"                'prepare_esc',\n"
-					"                'current_size_dump_statements',\n"
-					"                'describe_type'\n"
-					"            )\n"
-					"        ) OR\n"
-					"        (\n"
-					"            type = (select function_type_id from sys.function_types where function_type_keyword = 'PROCEDURE') AND\n"
-					"            name in (\n"
-					"                'eval',\n"
-					"                '_dump_table_data',\n"
-					"                'dump_table_data'\n"
-					"            )\n"
-					"        )\n"
-					");\n"
-					"UPDATE sys._tables SET system = true WHERE \n"
+					"    type = %d AND\n"
+					"    name in (\n"
+					"        'describe_columns',\n"
+					"        'describe_function',\n"
+					"        'describe_table',\n"
+					"        'dump_database'\n"
+					"    );\n",
+					F_UNION);
+			pos += snprintf(buf + pos, bufsize - pos,
+					"UPDATE sys.functions SET system = true WHERE\n"
+					"    system <> true AND\n"
 					"    schema_id = 2000 AND\n"
-					"    (\n"
-					"        (\n"
-					"            type = (select table_type_id from sys.table_types where table_type_name = 'TABLE') AND\n"
-					"            name = 'dump_statements'\n"
-					"        ) OR\n"
-					"        (\n"
-					"            type = (select table_type_id from sys.table_types where table_type_name = 'VIEW') AND\n"
-					"            name in (\n"
-					"                'describe_constraints',\n"
-					"                'describe_indices',\n"
-					"                'describe_column_defaults',\n"
-					"                'describe_foreign_keys',\n"
-					"                'describe_tables',\n"
-					"                'describe_triggers',\n"
-					"                'describe_comments',\n"
-					"                'fully_qualified_functions',\n"
-					"                'describe_privileges',\n"
-					"                'describe_user_defined_types',\n"
-					"                'describe_partition_tables',\n"
-					"                'describe_sequences',\n"
-					"                'describe_functions',\n"
-					"                'dump_create_roles',\n"
-					"                'dump_create_users',\n"
-					"                'dump_create_schemas',\n"
-					"                'dump_add_schemas_to_users',\n"
-					"                'dump_grant_user_privileges',\n"
-					"                'dump_table_constraint_type',\n"
-					"                'dump_indices',\n"
-					"                'dump_column_defaults',\n"
-					"                'dump_foreign_keys',\n"
-					"                'dump_partition_tables',\n"
-					"                'dump_sequences',\n"
-					"                'dump_start_sequences',\n"
-					"                'dump_functions',\n"
-					"                'dump_tables',\n"
-					"                'dump_triggers',\n"
-					"                'dump_comments',\n"
-					"                'dump_user_defined_types',\n"
-					"                'dump_privileges',\n"
-					"                'dump_statements')\n"
-					"        )\n"
-					"    );\n");
+					"    type = %d AND\n"
+					"    name in (\n"
+					"        'alter_table',\n"
+					"        'describe_type',\n"
+					"        'dq',\n"
+					"        'esc',\n"
+					"        'fqn',\n"
+					"        'get_merge_table_partition_expressions',\n"
+					"        'get_remote_table_expressions',\n"
+					"        'prepare_esc',\n"
+					"        'replace_first',\n"
+					"        'schema_guard',\n"
+					"        'sq'\n"
+					"    );\n",
+					F_FUNC);
+			pos += snprintf(buf + pos, bufsize - pos,
+					"UPDATE sys.functions SET system = true WHERE\n"
+					"    system <> true AND\n"
+					"    schema_id = 2000 AND\n"
+					"    type = %d AND\n"
+					"    name in (\n"
+					"        '_dump_table_data',\n"
+					"        'dump_table_data',\n"
+					"        'eval'\n"
+					"    );\n",
+					F_PROC);
+			pos += snprintf(buf + pos, bufsize - pos,
+					"UPDATE sys._tables SET system = true WHERE\n"
+					"    system <> true AND\n"
+					"    schema_id = 2000 AND\n"
+					"    type = %d AND\n"
+					"    name = 'dump_statements';\n",
+					(int) tt_table);
+			pos += snprintf(buf + pos, bufsize - pos,
+					"UPDATE sys._tables SET system = true WHERE\n"
+					"    system <> true AND\n"
+					"    schema_id = 2000 AND\n"
+					"    type = %d AND\n"
+					"    name in (\n"
+					"        'describe_column_defaults',\n"
+					"        'describe_comments',\n"
+					"        'describe_constraints',\n"
+					"        'describe_foreign_keys',\n"
+					"        'describe_functions',\n"
+					"        'describe_indices',\n"
+					"        'describe_partition_tables',\n"
+					"        'describe_privileges',\n"
+					"        'describe_sequences',\n"
+					"        'describe_tables',\n"
+					"        'describe_triggers',\n"
+					"        'describe_user_defined_types',\n"
+					"        'dump_add_schemas_to_users',\n"
+					"        'dump_column_defaults',\n"
+					"        'dump_comments',\n"
+					"        'dump_create_roles',\n"
+					"        'dump_create_schemas',\n"
+					"        'dump_create_users',\n"
+					"        'dump_foreign_keys',\n"
+					"        'dump_functions',\n"
+					"        'dump_grant_user_privileges',\n"
+					"        'dump_indices',\n"
+					"        'dump_partition_tables',\n"
+					"        'dump_privileges',\n"
+					"        'dump_sequences',\n"
+					"        'dump_start_sequences',\n"
+					"        'dump_statements',\n"
+					"        'dump_table_constraint_type',\n"
+					"        'dump_tables',\n"
+					"        'dump_triggers',\n"
+					"        'dump_user_defined_types',\n"
+					"        'fully_qualified_functions'\n"
+					"    );\n",
+					(int) tt_view);
 
 			/* scoping2 branch changes, the 'users' view has to be re-created because of the 'schema_path' addition on 'db_user_info' table
 			   However 'dependency_schemas_on_users' has a dependency on 'users', so it has to be re-created as well */
@@ -3567,7 +3598,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_jul2021(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

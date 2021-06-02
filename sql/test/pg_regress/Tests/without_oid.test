@@ -90,11 +90,11 @@ analyze sys.wi
 statement ok
 analyze sys.wo
 
-query TTTTIIIIIII rowsort
-SELECT "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted FROM sys.storage
+query TTTTIIIIII rowsort
+SELECT "schema", "table", "column", type, count, typewidth, columnsize, heapsize, "imprints", sorted FROM sys.storage
  WHERE "table" IN ('wi', 'wo') and "type" <> 'oid'
 ----
-198 values hashing to 5dc874d9bb3b36df97412f900ea20d29
+180 values hashing to 84392075c12b652c9d595650af4f1fa7
 
 statement ok
 DROP TABLE wi

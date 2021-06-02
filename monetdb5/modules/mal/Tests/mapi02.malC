@@ -20,5 +20,5 @@ io.print("k2");
 i:=aggr.count(e);
 io.printf(" count %d\n",i);
 io.print(d);
-mapi.disconnect(mid);
+mapi.destroy(mid);
 optimizer.remoteQueries();

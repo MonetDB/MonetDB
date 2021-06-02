@@ -185,6 +185,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 	r1->tsorted = true;
 	r1->trevsorted = true;
 	r1->tseqbase = 0;
+	r1->theap->dirty = true;
 	*r1p = r1;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, size, TRANSIENT);
@@ -198,6 +199,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		r2->tsorted = true;
 		r2->trevsorted = true;
 		r2->tseqbase = 0;
+		r2->theap->dirty = true;
 		*r2p = r2;
 	}
 	return maxsize;
@@ -306,6 +308,13 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(lci->ncand > 0);
 	assert(lci->ncand == 1 || (l->tsorted && l->trevsorted));
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	MT_thread_setalgorithm(__func__);
 	oid o = canditer_next(lci);
 	v = BUNtail(li, o - l->hseqbase);
@@ -331,6 +340,12 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BBPunfix(bn->batCacheid);
 		return GDK_FAIL;
 	}
+	r1->tsorted = true;
+	r1->trevsorted = lci->ncand == 1;
+	r1->tseqbase = BATcount(bn) == 1 && lci->tpe == cand_dense ? o : oid_nil;
+	r1->tkey = BATcount(bn) == 1;
+	r1->tnil = false;
+	r1->tnonil = true;
 	BAT *r2 = NULL;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
@@ -339,15 +354,6 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			BBPreclaim(r1);
 			return GDK_FAIL;
 		}
-	}
-
-	r1->tsorted = true;
-	r1->trevsorted = lci->ncand == 1;
-	r1->tseqbase = BATcount(bn) == 1 && lci->tpe == cand_dense ? o : oid_nil;
-	r1->tkey = BATcount(bn) == 1;
-	r1->tnil = false;
-	r1->tnonil = true;
-	if (r2) {
 		r2->tsorted = lci->ncand == 1 || BATcount(bn) == 1;
 		r2->trevsorted = BATcount(bn) == 1;
 		r2->tseqbase = lci->ncand == 1 && BATtdense(bn) ? bn->tseqbase : oid_nil;
@@ -362,6 +368,8 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BUN p, q = BATcount(bn);
 
 		do {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -379,6 +387,8 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BUN p, q = BATcount(bn);
 
 		do {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -409,6 +419,11 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 #if SIZEOF_OID == SIZEOF_INT
@@ -445,6 +460,12 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(BATcount(l) > 0);
 	assert(rci->tpe == cand_dense);
 	assert(BATcount(r) > 0);
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	MT_thread_setalgorithm(__func__);
 	/* figure out range [lo..hi) of values in r that we need to match */
@@ -694,7 +715,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r2->tnil = false;
 	r2->tnonil = true;
 	if (complex_cand(l)) {
-		for (i = 0; i < lci->ncand; i++) {
+		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
 
 			o = BUNtoid(l, c - l->hseqbase);
@@ -707,8 +728,10 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->tnonil = false;
 			}
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	} else {
-		for (i = 0; i < lci->ncand; i++) {
+		TIMEOUT_LOOP(lci->ncand, timeoffset) {
 			oid c = canditer_next(lci);
 
 			o = lvals[c - l->hseqbase];
@@ -721,6 +744,8 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->tnonil = false;
 			}
 		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	}
 	r1->tsorted = true;
 	r1->trevsorted = BATcount(r1) <= 1;
@@ -755,6 +780,11 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 /* Implementation of mergejoin (see below) for the special case that
@@ -786,6 +816,12 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	lvals = (const int *) Tloc(l, 0);
 	rvals = (const int *) Tloc(r, 0);
 	assert(!r->tvarsized || !r->ttype);
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -830,6 +866,9 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* from here on we don't have to worry about nil values */
 
 	while (lstart < lend && rstart < rend) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1085,6 +1124,12 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	lvals = (const lng *) Tloc(l, 0);
 	rvals = (const lng *) Tloc(r, 0);
 	assert(!r->tvarsized || !r->ttype);
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1129,6 +1174,8 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* from here on we don't have to worry about nil values */
 
 	while (lstart < lend && rstart < rend) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1392,6 +1439,12 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	assert(complex_cand(r));
 	canditer_init(&rci, NULL, r);
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1427,6 +1480,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* from here on we don't have to worry about nil values */
 
 	while (lstart < lend && rci.next < rci.ncand) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		v = canditer_peek(&rci);
 
 		if (lvals) {
@@ -1711,6 +1766,13 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	MT_thread_setalgorithm(__func__);
 	if (BATtvoid(l)) {
 		/* l->ttype == TYPE_void && is_oid_nil(l->tseqbase) is
@@ -1797,7 +1859,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		lordering = l->tsorted && (r->tsorted || !equal_order) ? 1 : -1;
 		rordering = equal_order ? lordering : -lordering;
 		if (!l->tnonil && !nil_matches && !nil_on_miss) {
-			nl = binsearch(NULL, 0, l->ttype, lvals, lvars, lwidth, 0, BATcount(l), nil, lordering, 1);
+			nl = binsearch(NULL, 0, l->ttype, lvals, lvars, lwidth, 0, BATcount(l), nil, l->tsorted ? 1 : -1, l->tsorted ? 1 : 0);
 			nl = canditer_search(lci, nl + l->hseqbase, true);
 			if (l->tsorted) {
 				canditer_setidx(lci, nl);
@@ -1844,6 +1906,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * is nil.
 	 */
 
+
 	/* Before we start adding values to r1 and r2, the properties
 	 * are as follows:
 	 * tseqbase - 0
@@ -1855,6 +1918,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * We will modify these as we go along.
 	 */
 	while (lci->next < lci->ncand) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		if (lscan == 0) {
 			/* always search r completely */
 			assert(equal_order);
@@ -2437,6 +2502,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			hsh = r->thash;	/* re-initialize inside lock */	\
 		}							\
 		while (lci->next < lci->ncand) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
 			nr = 0;						\
@@ -2571,11 +2637,17 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	Hash *restrict hsh = NULL;
 	bool locked = false;
 
-	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	int t = ATOMbasetype(r->ttype);
-	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
+	if (BATtvoid(r) || BATtvoid(l))
 		t = TYPE_void;
 
 	lwidth = l->twidth;
@@ -2645,6 +2717,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
+	} else if (BATtdense(r)) {
+		/* no hash, just dense lookup */
+		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense");
 	} else {
 		/* we need to create a hash on r */
 		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash");
@@ -2655,7 +2730,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			goto bailout;
 		hsh = r->thash;
 	}
-	assert(hsh != NULL);
+	assert(hsh != NULL || BATtdense(r));
 
 	ri = bat_iterator(r);
 
@@ -2675,7 +2750,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						       false, false, __func__, t0);
 				}
 			}
-		} else {
+		} else if (!BATtdense(r)) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
@@ -2705,6 +2780,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (lci->tpe != cand_dense)
 		r1->tseqbase = oid_nil;
 
+
 	switch (t) {
 	case TYPE_int:
 		HASHJOIN(int);
@@ -2716,19 +2792,19 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
-		if (!hash_cand) {
+		if (!hash_cand && hsh) {
 			MT_rwlock_rdlock(&r->thashlock);
 			locked = true;	/* in case we abandon */
 			hsh = r->thash;	/* re-initialize inside lock */
 		}
 		while (lci->next < lci->ncand) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			lo = canditer_next(lci);
-			if (BATtvoid(l)) {
-				if (BATtdense(l))
-					lval = lo - l->hseqbase + l->tseqbase;
-			} else {
+			if (BATtdense(l))
+				lval = lo - l->hseqbase + l->tseqbase;
+			else if (l->ttype != TYPE_void)
 				v = VALUE(l, lo - l->hseqbase);
-			}
 			nr = 0;
 			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
@@ -2750,6 +2826,23 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					HASHLOOPBODY();
 					if (semi && !max_one)
 						break;
+				}
+			} else if (hsh == NULL) {
+				assert(BATtdense(r));
+				ro = *(const oid *) v;
+				if (ro >= r->tseqbase &&
+				    ro < r->tseqbase + r->batCount) {
+					ro -= r->tseqbase;
+					ro += rseq;
+					if (canditer_contains(rci, ro)) {
+						if (only_misses) {
+							nr++;
+							break;
+						}
+						HASHLOOPBODY();
+						if (semi && !max_one)
+							break;
+					}
 				}
 			} else if (rci->tpe != cand_dense) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
@@ -2825,7 +2918,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
-		if (!hash_cand) {
+		if (!hash_cand && hsh) {
 			locked = false;
 			MT_rwlock_rdunlock(&r->thashlock);
 		}
@@ -2896,35 +2989,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	return GDK_FAIL;
-}
-
-/* population count: count number of 1 bits in a value */
-static inline uint32_t __attribute__((__const__))
-pop(uint32_t x)
-{
-#if defined(__GNUC__)
-	return (uint32_t) __builtin_popcount(x);
-#elif defined(_MSC_VER)
-	return (uint32_t) __popcnt((unsigned int) (x));
-#else
-	/* divide and conquer implementation (the two versions are
-	 * essentially equivalent, but the first version is written a
-	 * bit smarter) */
-#if 1
-	x -= (x >> 1) & ~0U/3 /* 0x55555555 */; /* 3-1=2; 2-1=1; 1-0=1; 0-0=0 */
-	x = (x & ~0U/5) + ((x >> 2) & ~0U/5) /* 0x33333333 */;
-	x = (x + (x >> 4)) & ~0UL/0x11 /* 0x0F0F0F0F */;
-	x = (x + (x >> 8)) & ~0UL/0x101 /* 0x00FF00FF */;
-	x = (x + (x >> 16)) & 0xFFFF /* ~0UL/0x10001 */;
-#else
-	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
-	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
-	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
-	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
-#endif
-	return x;
-#endif
 }
 
 /* Count the number of unique values for the first half and the complete
@@ -3005,7 +3069,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			if (i == ci.ncand/ 2) {
 				cnt = 0;
 				for (int j = 0; j < 256 / 32; j++)
-					cnt += pop(seen[j]);
+					cnt += candmask_pop(seen[j]);
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
@@ -3016,7 +3080,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		}
 		cnt = 0;
 		for (int j = 0; j < 256 / 32; j++)
-			cnt += pop(seen[j]);
+			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
@@ -3031,7 +3095,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			if (i == half) {
 				cnt = 0;
 				for (int j = 0; j < 65536 / 32; j++)
-					cnt += pop(seen[j]);
+					cnt += candmask_pop(seen[j]);
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
@@ -3042,7 +3106,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		}
 		cnt = 0;
 		for (int j = 0; j < 65536 / 32; j++)
-			cnt += pop(seen[j]);
+			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 		GDKfree(seen);
 		seen = NULL;
@@ -3165,13 +3229,18 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 	bat parent;
 	BAT *b;
 
-	if (rci->nvals > 0) {
-		/* if we need to do binary search on candidate
-		 * list, take that into account */
+	if ((rci->tpe == cand_materialized || rci->tpe == cand_except) &&
+	    rci->nvals > 0) {
+		/* if we need to do binary search on candidate list,
+		 * take that into account; note checking the other
+		 * candidate types is essentially free */
 		rcost += log2((double) rci->nvals);
 	}
 	rcost *= lci->ncand;
-	if (rhash) {
+	if (BATtdense(r)) {
+		/* no need for a hash, and lookup is free */
+		rhash = false;	/* don't use it, even if it's there */
+	} else if (rhash) {
 		/* average chain length */
 		rcost *= (double) BATcount(r) / r->thash->nheads;
 	} else if ((parent = VIEWtparent(r)) != 0 &&
@@ -3256,6 +3325,12 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert((opcode & (MASK_EQ | MASK_LT | MASK_GT)) != 0);
 
@@ -3320,7 +3395,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		nr = 0;
 		if (cmp(vl, nil) != 0) {
 			canditer_reset(&rci);
-			for (BUN ri = 0; ri < rci.ncand; ri++) {
+			TIMEOUT_LOOP(rci.ncand, timeoffset) {
 				ro = canditer_next(&rci);
 				if (rvals)
 					vr = VALUE(r, ro - r->hseqbase);
@@ -3359,6 +3434,8 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 				lastr = ro;
 				nr++;
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
 		if (nr > 1) {
 			r1->tkey = false;
@@ -3649,8 +3726,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
 				nil_matches, t0, false, func);
 		goto doreturn;
-	} else if (BATtdense(r) && rci.tpe == cand_dense &&
-		   lcnt > 0 && rcnt > 0) {
+	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
 		rc = mergejoin_void(r1p, r2p, l, r, &lci, &rci,
 				    nil_on_miss, only_misses, t0, false,
@@ -3931,13 +4007,15 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b))
+		    BATcount(l) == BATcount(b) &&
+		    ATOMtype(l->ttype) == ATOMtype(b->ttype))
 			l = b;
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b))
+		    BATcount(r) == BATcount(b) &&
+		    ATOMtype(r->ttype) == ATOMtype(b->ttype))
 			r = b;
 	}
 
@@ -4084,6 +4162,14 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
+
 	MT_thread_setalgorithm(__func__);
 	*r1p = NULL;
 	if (r2p) {
@@ -4195,6 +4281,8 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	/* nested loop implementation for band join */
 	for (BUN li = 0; li < lcnt; li++) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		lo = canditer_next(&lci);
 		vl = FVALUE(l, lo - l->hseqbase);
 		if (cmp(vl, nil) == 0)

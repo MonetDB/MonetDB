@@ -1,4 +1,5 @@
 debian/tmp/usr/lib/x86_64-linux-gnu/libbat.so usr/lib/x86_64-linux-gnu
+debian/tmp/usr/include/monetdb/copybinary.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/gdk*.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/matomic.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/mstring.h usr/include/monetdb

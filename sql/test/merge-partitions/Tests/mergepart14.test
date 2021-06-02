@@ -1,10 +1,10 @@
-statement error
+statement error 42000!CREATE MERGE TABLE: the partition column 'd' is not part of the table
 CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE ON (d)
 
-statement error
+statement error 42000!CREATE MERGE TABLE: column type geometry(28) not yet supported for the partition column
 CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE ON (b)
 
-statement error
+statement error 42000!CREATE MERGE TABLE: column type json not yet supported for the partition column
 CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY VALUES ON (c)
 
 statement ok

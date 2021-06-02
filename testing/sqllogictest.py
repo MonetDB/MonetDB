@@ -232,16 +232,16 @@ class SQLLogic:
                 if expected_err_code or expected_err_msg:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
-                    if expected_err_code and expected_err_msg:
+                    if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
                         result.append(err_code_received + '!' + err_msg_received)
                         if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
                             return result
                     else:
-                        if expected_err_code:
+                        if expected_err_code and err_code_received:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
-                        if expected_err_msg:
+                        if expected_err_msg and err_msg_received:
                             result.append(err_msg_received)
                             if expected_err_msg.lower() == err_msg_received.lower():
                                 return result
@@ -252,7 +252,7 @@ class SQLLogic:
                 return result
         except ConnectionError as e:
             self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
-            return ['statenent', 'crash'] # should never be approved
+            return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
         except:
@@ -280,39 +280,43 @@ class SQLLogic:
                 return None
             nrow = []
             for i in range(len(columns)):
-                if row[i] is None:
-                    nrow.append('NULL')
-                elif self.language == 'sql' and row[i] == 'NULL':
-                    nrow.append('NULL')
-                elif self.language == 'mal' and row[i] == 'nil':
-                    nrow.append('NULL')
-                elif columns[i] == 'I':
-                    if row[i] in ('true', 'True'):
-                        nrow.append('1')
-                    elif row[i] in ('false', 'False'):
-                        nrow.append('0')
-                    else:
-                        nrow.append('%d' % row[i])
-                elif columns[i] == 'T':
-                    if row[i] == '' or row[i] == b'':
-                        nrow.append('(empty)')
-                    else:
-                        nval = []
-                        if isinstance(row[i], bytes):
-                            for c in row[i]:
-                                c = '%02X' % c
-                                nval.append(c)
+                try:
+                    if row[i] is None:
+                        nrow.append('NULL')
+                    elif self.language == 'sql' and row[i] == 'NULL':
+                        nrow.append('NULL')
+                    elif self.language == 'mal' and row[i] == 'nil':
+                        nrow.append('NULL')
+                    elif columns[i] == 'I':
+                        if row[i] in ('true', 'True'):
+                            nrow.append('1')
+                        elif row[i] in ('false', 'False'):
+                            nrow.append('0')
                         else:
-                            for c in str(row[i]):
-                                if ' ' <= c <= '~':
+                            nrow.append('%d' % row[i])
+                    elif columns[i] == 'T':
+                        if row[i] == '' or row[i] == b'':
+                            nrow.append('(empty)')
+                        else:
+                            nval = []
+                            if isinstance(row[i], bytes):
+                                for c in row[i]:
+                                    c = '%02X' % c
                                     nval.append(c)
-                                else:
-                                    nval.append('@')
-                        nrow.append(''.join(nval))
-                elif columns[i] == 'R':
-                    nrow.append('%.3f' % row[i])
-                else:
-                    self.raise_error('incorrect column type indicator')
+                            else:
+                                for c in str(row[i]):
+                                    if ' ' <= c <= '~':
+                                        nval.append(c)
+                                    else:
+                                        nval.append('@')
+                            nrow.append(''.join(nval))
+                    elif columns[i] == 'R':
+                        nrow.append('%.3f' % row[i])
+                    else:
+                        self.raise_error('incorrect column type indicator')
+                except TypeError:
+                    self.query_error(query, 'bad column type')
+                    return None
             ndata.append(tuple(nrow))
         return ndata
 
@@ -571,8 +575,9 @@ class SQLLogic:
         '''parse strings like @connection(id=con1, ...)
         '''
         res = dict()
+        s = s.strip()
         if not (s.startswith('@connection(') and s.endswith(')')):
-            self.raise_error('invalid connection string!')
+            self.raise_error(f'ERROR: invalid connection string {s}!')
         params = s[12:-1].split(',')
         for p in params:
             p = p.strip()
@@ -610,7 +615,7 @@ class SQLLogic:
             conn = None
             # look for connection string
             if line.startswith('@connection'):
-                conn_params = parse_connection_string(line)
+                conn_params = self.parse_connection_string(line)
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
                 self.writeline(line)
                 line = self.readline()

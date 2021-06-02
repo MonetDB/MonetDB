@@ -1270,7 +1270,7 @@ stmt *
 stmt_atom(backend *be, atom *a)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->base.name) : newAssignment(mb);
+	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->impl) : newAssignment(mb);
 
 	if (!q)
 		return NULL;
@@ -2447,7 +2447,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 				metaInfo(tblPtr, Str, fqtn);
 				metaInfo(nmePtr, Str, cn);
-				metaInfo(tpePtr, Str, (t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
+				metaInfo(tpePtr, Str, (t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 				metaInfo(lenPtr, Int, t->digits);
 				metaInfo(scalePtr, Int, t->scale);
 				list = pushArgument(mb, list, c->nr);
@@ -2714,7 +2714,7 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 				metaInfo(tblPtr,Str,fqtn);
 				metaInfo(nmePtr,Str,cn);
-				metaInfo(tpePtr,Str,(t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
+				metaInfo(tpePtr,Str,(t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 				metaInfo(lenPtr,Int,t->digits);
 				metaInfo(scalePtr,Int,t->scale);
 				list = pushArgument(mb,list,c->nr);
@@ -2767,7 +2767,7 @@ stmt_output(backend *be, stmt *lst)
 				if (q) {
 					q = pushStr(mb, q, fqtn);
 					q = pushStr(mb, q, cn);
-					q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
+					q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->base.name);
 					q = pushInt(mb, q, t->digits);
 					q = pushInt(mb, q, t->scale);
 					q = pushInt(mb, q, t->type->eclass);
@@ -3067,7 +3067,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *convert = t->type->base.name;
+	const char *convert = t->type->impl;
 	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
 	/* convert types and make sure they are rounded up correctly */
 
@@ -3090,7 +3090,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	/* external types have sqlname convert functions,
 	   these can generate errors (fromstr cannot) */
 	if (t->type->eclass == EC_EXTERNAL)
-		convert = t->type->sqlname;
+		convert = t->type->base.name;
 	else if (t->type->eclass == EC_MONTH)
 		convert = "month_interval";
 	else if (t->type->eclass == EC_SEC)

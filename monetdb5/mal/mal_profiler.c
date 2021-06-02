@@ -182,8 +182,8 @@ EXAMPLE:
 }
 "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
-static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+static str
+prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	struct logbuf logbuf;
 	str c;
@@ -191,6 +191,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	lng usec;
 	uint64_t microseconds;
 	bool ok;
+	const char *algo = MT_thread_getalgorithm();
 
 	/* ignore generation of events for instructions that are called too often
 	 * they may appear when BARRIER blocks are executed
@@ -199,14 +200,14 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
 			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
-		return;
+		return NULL;
 	}
 
 /* The stream of events can be complete read by the DBA,
  * all other users can only see events assigned to their account
  */
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
-		return;
+		return NULL;
 
 	logbuf = (struct logbuf) {0};
 
@@ -235,16 +236,16 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
 				mb?getPC(mb,pci):0,
 				stk?stk->tag:0))
-		return;
+		goto cleanup_and_exit;
 	if( pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
-		return;
+		goto cleanup_and_exit;
 	if( pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
-		return;
+		goto cleanup_and_exit;
 	if( pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
-		return;
+		goto cleanup_and_exit;
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
-		return;
+		goto cleanup_and_exit;
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		char *uuid = NULL;
 		str c;
@@ -252,16 +253,15 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 			ok = logadd(&logbuf, ",\"session\":\"%s\"", uuid);
 			free(uuid);
 			if (!ok)
-				return;
+				goto cleanup_and_exit;
 		} else
 			free(c);
 	}
 	if (!logadd(&logbuf, ",\"state\":\"%s\",\"usec\":"LLFMT,
 				start?"start":"done", pci->ticks))
-		return;
-	const char *algo = MT_thread_getalgorithm();
+		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
-		return;
+		goto cleanup_and_exit;
 
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
@@ -279,7 +279,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		int j;
 
 		if (!logadd(&logbuf, ",\"args\":["))
-			return;
+			goto cleanup_and_exit;
 		for(j=0; j< pci->argc; j++){
 			int tpe = getVarType(mb, getArg(pci,j));
 			str tname = 0, cv;
@@ -290,16 +290,16 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 			if (j == 0) {
 				// No comma at the beginning
 				if (!logadd(&logbuf, "{"))
-					return;
+					goto cleanup_and_exit;
 			}
 			else {
 				if (!logadd(&logbuf, ",{"))
-					return;
+					goto cleanup_and_exit;
 			}
 			if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
 						j < pci->retc ? "ret" : "arg", j,
 						getVarName(mb, getArg(pci,j))))
-				return;
+				goto cleanup_and_exit;
 			c =getVarName(mb, getArg(pci,j));
 			if(getVarSTC(mb,getArg(pci,j))){
 				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
@@ -310,7 +310,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
-					return;
+					goto cleanup_and_exit;
 			}
 			if(isaBatType(tpe)){
 				BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
@@ -318,7 +318,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
 				GDKfree(tname);
 				if (!ok)
-					return;
+					goto cleanup_and_exit;
 				if(d) {
 					BAT *v;
 					cnt = BATcount(d);
@@ -332,10 +332,10 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 									VIEWtparent(d),
 									d->hseqbase,
 									v && !v->batTransient ? "persistent" : "transient"))
-							return;
+							goto cleanup_and_exit;
 					} else {
 						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent")))
-							return;
+							goto cleanup_and_exit;
 					}
 					if (!logadd(&logbuf,
 								",\"sorted\":%d"
@@ -348,7 +348,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 								d->tnonil,
 								d->tnil,
 								d->tkey))
-						return;
+						goto cleanup_and_exit;
 #define keepprop(NME, LNME)\
 {const void *valp = BATgetprop(d, NME); \
 if ( valp){\
@@ -359,7 +359,7 @@ if ( valp){\
 		GDKfree(cv);\
 		GDKfree(cvquote);\
 		if (!ok)\
-			return;\
+			goto cleanup_and_exit;\
 	}\
 }}
 					keepprop(GDK_MIN_VALUE,"min");
@@ -378,18 +378,18 @@ if ( valp){\
 					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
 					GDKfree(cv);
 					if (!ok)
-						return;
+						goto cleanup_and_exit;
 					total += cnt * d->twidth;
 					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
-						return;
+						goto cleanup_and_exit;
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
 					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid)))
-						return;
+						goto cleanup_and_exit;
 					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
-						return;
+						goto cleanup_and_exit;
 					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))
-						return;
-					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) return; */
+						goto cleanup_and_exit;
+					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
 					BBPunfix(d->batCacheid);
 				}
 				if (!logadd(&logbuf,
@@ -397,7 +397,7 @@ if ( valp){\
 							",\"count\":"BUNFMT
 							",\"size\":" LLFMT,
 							bid, cnt, total))
-					return;
+					goto cleanup_and_exit;
 			} else{
 				tname = getTypeName(tpe);
 				ok = logadd(&logbuf,
@@ -406,7 +406,7 @@ if ( valp){\
 							tname, isVarConstant(mb, getArg(pci,j)));
 				GDKfree(tname);
 				if (!ok)
-					return;
+					goto cleanup_and_exit;
 				cv = VALformat(&stk->stk[getArg(pci,j)]);
 				stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 				if (stmtq)
@@ -414,21 +414,34 @@ if ( valp){\
 				GDKfree(cv);
 				GDKfree(stmtq);
 				if (!ok)
-					return;
+					goto cleanup_and_exit;
 			}
 			if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
-				return;
-			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return;
+				goto cleanup_and_exit;
+			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
 			if (!logadd(&logbuf, "}"))
-				return;
+				goto cleanup_and_exit;
 		}
 		if (!logadd(&logbuf, "]")) // end marker for arguments
-			return;
+			goto cleanup_and_exit;
 	}
 	if (!logadd(&logbuf, "}\n")) // end marker
-		return;
-	logjsonInternal(logbuf.logbuffer);
+		goto cleanup_and_exit;
+	return logbuf.logbuffer;
+ cleanup_and_exit:
 	logdel(&logbuf);
+	return NULL;
+}
+
+static void
+renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+{
+	str ev;
+	ev = prepareProfilerEvent(cntxt, mb, stk, pci, start);
+	if( ev ){
+		logjsonInternal(ev);
+		free(ev);
+	}
 }
 
 /* the OS details on cpu load are read from /proc/stat
@@ -711,7 +724,9 @@ _cleanupProfiler(Client cntxt)
 		BBPunfix(cntxt->profticks->batCacheid);
 	if (cntxt->profstmt)
 		BBPunfix(cntxt->profstmt->batCacheid);
-	cntxt->profticks = cntxt->profstmt = NULL;
+	if (cntxt->profevents)
+		BBPunfix(cntxt->profevents->batCacheid);
+	cntxt->profticks = cntxt->profstmt = cntxt->profevents = NULL;
 }
 
 static BAT *
@@ -735,7 +750,8 @@ initTrace(Client cntxt)
 	}
 	cntxt->profticks = TRACEcreate(TYPE_lng);
 	cntxt->profstmt = TRACEcreate(TYPE_str);
-	if (cntxt->profticks == NULL || cntxt->profstmt == NULL)
+	cntxt->profevents = TRACEcreate(TYPE_str);
+	if (cntxt->profticks == NULL || cntxt->profstmt == NULL || cntxt->profevents == NULL)
 		_cleanupProfiler(cntxt);
 	MT_lock_unset(&mal_profileLock);
 }
@@ -751,8 +767,9 @@ TRACEtable(Client cntxt, BAT **r)
 	}
 	r[0] = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
 	r[1] = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
+	r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
-	return 2;
+	return 3;
 }
 
 BAT *
@@ -766,6 +783,8 @@ getTrace(Client cntxt, const char *nme)
 			bn = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
 		} else if (strcmp(nme, "stmt") == 0){
 			bn = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
+		} else if (strcmp(nme, "events") == 0){
+			bn = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false, TRANSIENT);
 		}
 	}
 	MT_lock_unset(&mal_profileLock);
@@ -798,7 +817,7 @@ cleanupTraces(Client cntxt)
 void
 sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str stmt, c;
+	str stmt, c, ev;
 	int errors = 0;
 
 	if (cntxt->profticks == NULL)
@@ -808,9 +827,12 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO);
 	c = stmt;
 
+/* unclear why we needed this. OLD?
 	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
 		c++;
+*/
 
+	ev = prepareProfilerEvent(cntxt, mb, stk, pci, 0);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
  	if (cntxt->profticks == NULL) {
@@ -819,6 +841,8 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
+	if( ev)
+		errors += BUNappend(cntxt->profevents, ev, false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
 		cntxt->sqlprofiler = FALSE;
@@ -826,6 +850,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
+	if(ev) free(ev);
 }
 
 lng

@@ -32,7 +32,7 @@ unshare_varsized_heap(BAT *b)
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
-		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
+		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
 			return GDK_FAIL;
@@ -340,7 +340,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(ni, p);
 			if (bunfastappVAR(b, tp) != GDK_SUCCEED)
-				goto bunins_failed;
+				return GDK_FAIL;
 			r++;
 		}
 	} else {
@@ -393,21 +393,18 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				b->batCount++;
 			} else {
 				if (bunfastappVAR(b, tp) != GDK_SUCCEED)
-					goto bunins_failed;
+					return GDK_FAIL;
 			}
 			r++;
 		}
 	}
+	assert(b->batCapacity >= b->batCount);
 	b->theap->dirty = true;
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
 		HASHappend(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	return GDK_SUCCEED;
-      bunins_failed:
-	b->tvarsized = true;
-	b->ttype = TYPE_str;
-	return GDK_FAIL;
 }
 
 static gdk_return
@@ -499,7 +496,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
-		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
+		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
 			return GDK_FAIL;
@@ -539,6 +536,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 	uint32_t boff = b->batCount % 32;
 	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
 	b->batCount += ci->ncand;
+	b->theap->dirty = true;
 	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	if (ci->tpe == cand_dense) {
 		uint32_t *np;
@@ -1293,10 +1291,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		 * there are no nils in b afterward if there weren't
 		 * any in either b or n to begin with */
 		b->tnonil &= n->tnonil;
-		if (b->thash != NULL && b->thash != (Hash *) 1) {
-			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
-				HASHdelete(b, i, Tloc(b, i));
-		}
+		/* if there is no hash, we don't start the loop, if
+		 * there is only a persisted hash, it will get destroyed
+		 * in the first iteration, after which there is no hash
+		 * and the loop ends */
+		for (BUN i = updid, j = updid + BATcount(p); i < j && b->thash; i++)
+			HASHdelete(b, i, Tloc(b, i));
 		if (n->ttype == TYPE_void) {
 			assert(b->ttype == TYPE_oid);
 			oid *o = Tloc(b, updid);
@@ -1365,7 +1365,11 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			memcpy(Tloc(b, updid), Tloc(n, 0),
 			       BATcount(p) * b->twidth);
 		}
-		if (b->thash != NULL && b->thash != (Hash *) 1) {
+		/* either we have a hash that was updated above, or we
+		 * have no hash; we cannot have the case where there is
+		 * only a persisted (unloaded) hash since it would have
+		 * been destroyed above */
+		if (b->thash != NULL) {
 			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
 				HASHinsert(b, i, Tloc(b, i));
 		}

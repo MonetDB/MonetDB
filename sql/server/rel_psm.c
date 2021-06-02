@@ -850,31 +850,34 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 
 	type_list = create_type_list(sql, params, 1);
-	if (type == F_FUNC || type == F_AGGR || type == F_FILT) {
-		sql_ftype ftpyes[3] = {F_FUNC, F_AGGR, F_FILT};
-
-		for (int i = 0; i < 3; i++) {
-			if (ftpyes[i] != type) {
-				if (sql_bind_func_(sql, s->base.name, fname, type_list, ftpyes[i]))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
-									 (ftpyes[i] == F_AGGR) ? "an aggregate" : (ftpyes[i] == F_FILT) ? "a filter function" : "a function", fname);
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-			}
-		}
-	}
 
 	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type)) != NULL && create) {
 		if (replace) {
+			int res = 0;
 			sql_func *func = sf->func;
-			if (!mvc_schema_privs(sql, s))
+			if (!mvc_schema_privs(sql, s)) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
-			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+			}
+			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL)) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
-			if (!func->s)
+			}
+			if (!func->s) {
+				list_destroy(type_list);
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: not allowed to replace system %s %s;", F, fn, func->base.name);
-			if (mvc_drop_func(sql, s, func, 0))
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			res = mvc_drop_func(sql, s, func, 0);
+			list_destroy(type_list);
+			switch (res) {
+				case -1:
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: transaction conflict detected", F);
+				default:
+					break;
+			}
 			sf = NULL;
 		} else {
 			if (params) {
@@ -902,6 +905,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
+
+	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
+		sql_subfunc *found = NULL;
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC))) {
+			list_destroy(type_list);
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
+							 IS_AGGR(found->func) ? "an aggregate" : IS_FILT(found->func) ? "a filter function" : "a function", fname);
+		}
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+	}
+
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s' in schema '%s'", F,
@@ -1281,8 +1296,15 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
 		if ((st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 			if (replace) {
-				if (mvc_drop_trigger(sql, ss, st))
-					return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
+				switch (mvc_drop_trigger(sql, ss, st)) {
+					case -1:
+						return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
+					case -2:
+					case -3:
+						return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
+					default:
+						break;
+				}
 			} else {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
 			}

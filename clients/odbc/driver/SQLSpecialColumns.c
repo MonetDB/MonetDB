@@ -221,7 +221,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			      "sys.tables t, "
 			      "sys.columns c, "
 			      "sys.keys k, "
-			      "sys.objects kc"
+			      "sys.objects kc "
 			 "where s.id = t.schema_id and "
 			       "t.id = c.table_id and "
 			       "t.id = k.table_id and "

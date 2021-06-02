@@ -25,6 +25,7 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include <time.h>
+#include "mal_exception.h"
 
 static str
 ALARMusec(lng *ret)

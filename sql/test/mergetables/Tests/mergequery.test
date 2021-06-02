@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE part1 ( x double, y double, z double)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 0.0 0.0 0.0
@@ -15,7 +15,7 @@ COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n'
 statement ok
 CREATE TABLE part2 ( x double, y double, z double)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n'
 <COPY_INTO_DATA>
 2.0 0.0 0.0
@@ -148,7 +148,7 @@ PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
 project (
 | select (
 | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ] COUNT 
-| ) [ double(53,1) "1" <= "complete"."x" < double(53,1) "2" BETWEEN  ]
+| ) [ double "1" <= "complete"."x" < double "2" BETWEEN  ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -167,7 +167,7 @@ PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
 project (
 | select (
 | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ] COUNT 
-| ) [ double(53,1) "1" < "complete"."x" <= double(53,1) "2" BETWEEN  ]
+| ) [ double "1" < "complete"."x" <= double "2" BETWEEN  ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 
 query RRR rowsort
@@ -200,12 +200,12 @@ union (
 | project (
 | | select (
 | | | table("sys"."part1") [ "part1"."x" as "complete"."x", "part1"."y" as "complete"."y", "part1"."z" as "complete"."z" ] COUNT 
-| | ) [ double(53,1) "1" <= "complete"."x" <= double(53,1) "2" BETWEEN  ]
+| | ) [ double "1" <= "complete"."x" <= double "2" BETWEEN  ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ],
 | project (
 | | select (
 | | | table("sys"."part2") [ "part2"."x" as "complete"."x", "part2"."y" as "complete"."y", "part2"."z" as "complete"."z" ] COUNT 
-| | ) [ double(53,1) "1" <= "complete"."x" <= double(53,1) "2" BETWEEN  ]
+| | ) [ double "1" <= "complete"."x" <= double "2" BETWEEN  ]
 | ) [ "complete"."x", "complete"."y", "complete"."z" ]
 ) [ "complete"."x", "complete"."y", "complete"."z" ]
 

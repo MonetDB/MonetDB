@@ -13,7 +13,7 @@
 #include "mal_stack.h"
 #include "mal_namespace.h"
 
-#define isaSignature(P)  ((P)->token >=COMMANDsymbol)
+#define isaSignature(P)  ((P)->token >=COMMANDsymbol || (P)->token == PATTERNsymbol)
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>

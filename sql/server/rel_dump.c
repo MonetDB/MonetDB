@@ -1177,9 +1177,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				set_zero_if_empty(exp);
 		} else {
 			int nops = list_length(exps);
-			if (!strcmp(tname, "sys") && (!strcmp(cname, "ifthenelse") || !strcmp(cname, "casewhen") || !strcmp(cname, "coalesce") || !strcmp(cname, "nullif"))) {
+			if (!strcmp(tname, "sys") && (!strcmp(cname, "case") || !strcmp(cname, "casewhen") || !strcmp(cname, "coalesce") || !strcmp(cname, "nullif"))) {
 				/* these functions are bound on a different way */
-				if ((f = sql_find_func(sql, NULL, cname, !strcmp(cname, "ifthenelse") ? 3 : 2, F_FUNC, NULL))) {
+				if ((f = sql_find_func(sql, NULL, cname, 2, F_FUNC, NULL))) {
 					if (!execute_priv(sql, f->func))
 						return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
 					sql_exp *res = exps->t->data;

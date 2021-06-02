@@ -133,7 +133,6 @@ newMalBlk(int elements)
 	mb->calls = 0;
 	mb->optimize = 0;
 	mb->stmt = NULL;
-	mb->activeClients = 1;
 	if (newMalBlkStmt(mb, elements) < 0) {
 		GDKfree(mb->var);
 		GDKfree(mb->stmt);
@@ -273,7 +272,6 @@ copyMalBlk(MalBlkPtr old)
 		return NULL;
 	}
 
-	mb->activeClients = 1;
 	mb->vsize = old->vsize;
 	mb->vtop = old->vtop;
 	mb->vid = old->vid;

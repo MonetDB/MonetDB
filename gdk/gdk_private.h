@@ -68,8 +68,6 @@ Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *re
 	__attribute__((__visibility__("hidden")));
 gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
-gdk_return BAThashsave(BAT *b, bool dosync)
-	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 bool BATiscand(BAT *b)
@@ -95,8 +93,6 @@ gdk_return BBPcacheit(BAT *bn, bool lock)
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
-	__attribute__((__visibility__("hidden")));
-BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
@@ -124,6 +120,9 @@ BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict val
 BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
+	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
@@ -185,7 +184,7 @@ gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonl
 gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPcopy(Heap *dst, Heap *src)
+gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)

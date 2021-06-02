@@ -16,7 +16,7 @@ ALTER TABLE complete ADD TABLE part1
 statement ok
 ALTER TABLE complete ADD TABLE part2
 
-statement error
+statement error 42000!ALTER TABLE: can't add/drop a view into a MERGE TABLE
 ALTER TABLE complete ADD TABLE wrong
 
 statement ok

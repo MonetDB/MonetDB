@@ -264,7 +264,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 	}
 	a_func = sql_bind_func(sql, "sys", anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
 	if (!a_func)
-		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(le)->type->sqlname);
+		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(le)->type->base.name);
 	e = exp_binop(sql->sa, le, vals, a_func);
 	if (e) {
 		unsigned int exps_card = CARD_ATOM;
@@ -2048,6 +2048,29 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 	return xp;
 }
 
+int
+exp_rel_depth(sql_exp *e)
+{
+	if (!e)
+		return 0;
+	switch(e->type){
+	case e_func:
+	case e_aggr:
+	case e_cmp:
+		return 1;
+	case e_convert:
+		return 0;
+	case e_psm:
+		if (exp_is_rel(e))
+			return 0;
+		return 1;
+	case e_atom:
+	case e_column:
+		return 0;
+	}
+	return 0;
+}
+
 sql_rel *
 exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 {
@@ -2855,7 +2878,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 			else
 				sql_find_numeric(&t, ares->type.type->localtype, res->digits);
 		} else {
-			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
+			sql_find_subtype(&t, ares->type.type->base.name, res->digits, res->scale);
 		}
 		*res = t;
 	}
@@ -3009,10 +3032,10 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	if (err) {
 		const char *name = (exp->type == e_column && !has_label(exp)) ? exp_name(exp) : "%";
 		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%u,%u) and %s(%u,%u) are not equal%s%s%s",
-			fromtype->type->sqlname,
+			fromtype->type->base.name,
 			fromtype->digits,
 			fromtype->scale,
-			t->type->sqlname,
+			t->type->base.name,
 			t->digits,
 			t->scale,
 			(name[0] != '%' ? " for column '" : ""),
