@@ -35,10 +35,11 @@ backend_freecode(int clientid, const char *name)
 }
 
 char *
-backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor)
+backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, bool wlc, char *optimizer)
 {
 	if (be_funcs.fcuser != NULL)
-		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor));
+		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor, max_memory,
+					max_workers, wlc, optimizer));
 	return(NULL);
 }
 
