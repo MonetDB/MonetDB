@@ -1240,7 +1240,7 @@ static sql_rel_view*
 _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
-	rel_base_use_all(sql, r, 1);
+	rel_base_use_all(sql, r);
 	r = rewrite_basetable(sql, r);
 	return stack_push_rel_view(sql, tname, r);
 }

@@ -16,7 +16,6 @@
 
 #define USED_LEN(nr) ((nr+31)/32)
 #define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1<<((nr)%32))
-#define rel_base_set_not_used(b,nr) b->used[(nr)/32] &= ~(1<<((nr)%32))
 #define rel_base_is_used(b,nr) ((b->used[(nr)/32]&(1<<((nr)%32))) != 0)
 
 typedef struct rel_base_t {
@@ -75,7 +74,7 @@ rel_base_use_tid( mvc *sql, sql_rel *rt)
 }
 
 void
-rel_base_use_all( mvc *sql, sql_rel *rel, int with_tid)
+rel_base_use_all( mvc *sql, sql_rel *rel)
 {
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
@@ -88,14 +87,10 @@ rel_base_use_all( mvc *sql, sql_rel *rel, int with_tid)
 				continue;
 			rel_base_set_used(ba, i);
 		}
-		if (with_tid)
-			rel_base_set_used(ba, ol_length(t->columns));
 	} else {
 		int len = USED_LEN(ol_length(t->columns) + 1 + ol_length(t->idxs));
 		for (int i = 0; i < len; i++)
 			ba->used[i] = ~0;
-		if (!with_tid)
-			rel_base_set_not_used(ba, ol_length(t->columns));
 	}
 }
 
@@ -113,7 +108,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	assert(atname);
 	if (strcmp(atname, t->base.name) != 0)
 		ba->name = sa_strdup(sa, atname);
-	for(int i = nrcols + 1; i<end; i++) /* TID is not used at start */
+	for(int i = nrcols; i<end; i++)
 		rel_base_set_used(ba, i);
 	rel->l = t;
 	rel->r = ba;

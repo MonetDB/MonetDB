@@ -286,7 +286,7 @@ static sql_rel *
 rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
 	sql_rel *rel = rel_basetable(query->sql, t, name);
-	rel_base_use_all(query->sql, rel, 1);
+	rel_base_use_all(query->sql, rel);
 	rel = rewrite_basetable(query->sql, rel);
 	return rel_insert(query->sql, rel, inserts);
 }
