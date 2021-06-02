@@ -435,6 +435,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	if (b->twidth == width) {
 		if (newsize <= old->size) {
 			/* nothing to do */
+			if (cap > b->batCapacity)
+				BATsetcapacity(b, cap);
 			return GDK_SUCCEED;
 		}
 		return BATextend(b, newsize >> shift);
@@ -649,11 +651,13 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
  * dst->filename (or NULL), which might be used in HEAPalloc().
  */
 gdk_return
-HEAPcopy(Heap *dst, Heap *src)
+HEAPcopy(Heap *dst, Heap *src, size_t offset)
 {
-	if (HEAPalloc(dst, src->size, 1, 1) == GDK_SUCCEED) {
-		dst->free = src->free;
-		memcpy(dst->base, src->base, src->free);
+	if (offset > src->free)
+		offset = src->free;
+	if (HEAPalloc(dst, src->free - offset, 1, 1) == GDK_SUCCEED) {
+		dst->free = src->free - offset;
+		memcpy(dst->base, src->base + offset, src->free - offset);
 		dst->hashash = src->hashash;
 		dst->cleanhash = src->cleanhash;
 		dst->dirty = true;
@@ -769,8 +773,9 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 	}
 
-	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu,size=%zu)\n",
-		  nme, ext, (int) h->storage, h->free, h->size);
+	TRC_DEBUG(HEAP, "HEAPload(%s%s%s,storage=%d,free=%zu,size=%zu)\n",
+		  nme, ext ? "." : "", ext ? ext : "",
+		  (int) h->storage, h->free, h->size);
 
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:

@@ -4,19 +4,19 @@ CREATE MERGE TABLE testsmallpartitions (a int, b varchar(32)) PARTITION BY VALUE
 statement ok
 CREATE TABLE testingme (a int, b varchar(32))
 
-statement error
+statement error 42000!INSERT INTO: list partitioned table 'testsmallpartitions' has no partitions set
 INSERT INTO testsmallpartitions VALUES (1, 'fail')
 
-statement error
+statement error 42000!DELETE FROM: list partitioned table 'testsmallpartitions' has no partitions set
 DELETE FROM testsmallpartitions
 
-statement error
+statement error 42000!DELETE FROM: list partitioned table 'testsmallpartitions' has no partitions set
 DELETE FROM testsmallpartitions WHERE a < 400
 
-statement error
+statement error 42000!TRUNCATE: list partitioned table 'testsmallpartitions' has no partitions set
 TRUNCATE testsmallpartitions
 
-statement error
+statement error 42000!UPDATE: list partitioned table 'testsmallpartitions' has no partitions set
 UPDATE testsmallpartitions SET b = 'try update me'
 
 statement ok

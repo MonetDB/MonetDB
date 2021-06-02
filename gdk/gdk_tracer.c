@@ -280,7 +280,14 @@ gdk_return
 GDKtracer_stop(void)
 {
 	set_level_for_layer(MDB_ALL, DEFAULT_LOG_LEVEL);
-	return GDKtracer_flush_buffer();
+	if (active_tracer) {
+		if (active_tracer != stderr)
+			fclose(active_tracer);
+		else
+			fflush(active_tracer);
+		active_tracer = NULL;
+	}
+	return GDK_SUCCEED;
 }
 
 gdk_return

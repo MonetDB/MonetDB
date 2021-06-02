@@ -1,16 +1,16 @@
 statement ok
 create table tmp1(i int)
 
-statement ok
+statement ok rowcount 1
 insert into tmp1 values(1)
 
 statement ok
 create table tmp2(i int)
 
-statement ok
+statement ok rowcount 1
 insert into tmp2 values(2)
 
-statement error
+statement error 42S02!ALTER TABLE: cannot add table 'sys.tmp2' to TABLE 'sys.tmp1'
 alter table tmp1 add table tmp2
 
 query I rowsort
@@ -24,3 +24,54 @@ drop table tmp1
 statement ok
 drop table tmp2
 
+# A test for merge tables with different column names on the children
+statement ok
+start transaction
+
+statement ok
+create merge table ups(a int)
+
+statement ok
+create table notsame(b int)
+
+statement ok rowcount 2
+insert into notsame values (1)
+
+query II rowsort
+select a, 2 from ups
+----
+1
+2
+
+query II rowsort
+select *, 2 from ups
+----
+1
+2
+
+query II rowsort
+select *, 2 from ups as x(x)
+----
+1
+2
+
+query II rowsort
+select a as x, 2 from ups
+----
+1
+2
+
+query II rowsort
+select *, 2 from ups as x
+----
+1
+2
+
+query II rowsort
+select a as y, 2 from ups as x
+----
+1
+2
+
+statement ok
+rollback

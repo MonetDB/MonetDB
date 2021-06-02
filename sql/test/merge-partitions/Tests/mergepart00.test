@@ -3,7 +3,7 @@ SELECT COUNT(*) from table_partitions
 ----
 0
 
-statement error
+statement error 42000!CREATE MERGE TABLE: the partition column 'd' is not part of the table
 CREATE MERGE TABLE myfirstattempt (a int, b varchar(32)) PARTITION BY RANGE ON (d)
 
 query I rowsort

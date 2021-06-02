@@ -64,3 +64,6 @@ CREATE FUNCTION myintudf(a INT) RETURNS INT RETURN a + 1;
 PREPARE SELECT myintudf(?);
 EXEC **(1);
 ROLLBACK;
+
+PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
+PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));

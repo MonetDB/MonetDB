@@ -157,7 +157,7 @@ list_create_seq(
 				used |= (1<<SEQ_TYPE);
 				t = &s->data.lval->h->data.typeval;
 				for (size_t i = 0; i < number_valid_types; i++) {
-					if (strcasecmp(valid_types[i], t->type->sqlname) == 0) {
+					if (strcasecmp(valid_types[i], t->type->base.name) == 0) {
 						found = true;
 						break;
 					}

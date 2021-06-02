@@ -200,6 +200,12 @@ dofsum(const void *restrict values, oid seqb,
 	BUN nils = 0;
 	volatile flt f;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	/* we only deal with the two floating point types */
 	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
 	assert(tp2 == TYPE_flt || tp2 == TYPE_dbl);
@@ -228,8 +234,7 @@ dofsum(const void *restrict values, oid seqb,
 			return BUN_NONE;
 		}
 	}
-	while (ncand > 0) {
-		ncand--;
+	TIMEOUT_LOOP(ncand, timeoffset) {
 		listi = canditer_next(ci) - seqb;
 		grp = gids ? gids[listi] : 0;
 		if (grp < min || grp > max)
@@ -250,7 +255,7 @@ dofsum(const void *restrict values, oid seqb,
 				GDKfree(pergroup[grp].partials);
 				pergroup[grp].partials = NULL;
 				if (++nils == ngrp)
-					break;
+					TIMEOUT_LOOP_BREAK;
 			}
 			continue;
 		}
@@ -293,7 +298,7 @@ dofsum(const void *restrict values, oid seqb,
 		}
 		pergroup[grp].npartials = i;
 	}
-
+	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 	for (grp = 0; grp < ngrp; grp++) {
 		if (pergroup[grp].partials == NULL)
 			continue;
@@ -449,21 +454,24 @@ dofsum(const void *restrict values, oid seqb,
 			sum = 0;					\
 			if (nonil) {					\
 				*seen = ncand > 0;			\
-				for (i = 0; i < ncand && nils == 0; i++) { \
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) { \
 					x = vals[ci->seq + i - seqb];	\
 					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
 				}					\
+				TIMEOUT_CHECK(timeoffset,		\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			} else {					\
 				bool seenval = false;			\
-				for (i = 0; i < ncand && nils == 0; i++) { \
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) { \
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sum = TYPE2##_nil; \
 							nils = 1;	\
+							TIMEOUT_LOOP_BREAK; \
 						}			\
 					} else {			\
 						ADD_WITH_CHECK(x, sum,	\
@@ -473,6 +481,8 @@ dofsum(const void *restrict values, oid seqb,
 						seenval = true;		\
 					}				\
 				}					\
+				TIMEOUT_CHECK(timeoffset,		\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 				*seen = seenval;			\
 			}						\
 			if (*seen)					\
@@ -483,12 +493,13 @@ dofsum(const void *restrict values, oid seqb,
 			bool seenval = false;				\
 			*algo = "sum: with candidates, no groups";	\
 			sum = 0;					\
-			for (i = 0; i < ncand && nils == 0; i++) {	\
+			TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {	\
 				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
 						sum = TYPE2##_nil;	\
 						nils = 1;		\
+						TIMEOUT_LOOP_BREAK;	\
 					}				\
 				} else {				\
 					ADD_WITH_CHECK(x, sum,		\
@@ -498,12 +509,14 @@ dofsum(const void *restrict values, oid seqb,
 					seenval = true;			\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			if (seenval)					\
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			*algo = "sum: no candidates, with groups";	\
-			for (i = 0; i < ncand; i++) {			\
+			TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {	\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
@@ -531,11 +544,12 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		} else {						\
 			/* multiple groups, with candidate list */	\
 			*algo = "sum: with candidates, with groups";	\
-			while (ncand > 0) {				\
-				ncand--;				\
+			TIMEOUT_LOOP(ncand, timeoffset) {		\
 				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -564,6 +578,8 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		}							\
 	} while (0)
 
@@ -578,24 +594,29 @@ dofsum(const void *restrict values, oid seqb,
 			if (nonil) {					\
 				*algo = "sum: no candidates, no groups, no nils, no overflow"; \
 				*seen = ncand > 0;			\
-				for (i = 0; i < ncand && nils == 0; i++) { \
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) { \
 					sum += vals[ci->seq + i - seqb]; \
 				}					\
+				TIMEOUT_CHECK(timeoffset,		\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			} else {					\
 				bool seenval = false;			\
 				*algo = "sum: no candidates, no groups, no overflow"; \
-				for (i = 0; i < ncand && nils == 0; i++) { \
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) { \
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sum = TYPE2##_nil; \
 							nils = 1;	\
+							TIMEOUT_LOOP_BREAK; \
 						}			\
 					} else {			\
 						sum += x;		\
 						seenval = true;		\
 					}				\
 				}					\
+				TIMEOUT_CHECK(timeoffset,		\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 				*seen = seenval;			\
 			}						\
 			if (*seen)					\
@@ -606,25 +627,28 @@ dofsum(const void *restrict values, oid seqb,
 			bool seenval = false;				\
 			*algo = "sum: with candidates, no groups, no overflow"; \
 			sum = 0;					\
-			for (i = 0; i < ncand && nils == 0; i++) {	\
+			TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {	\
 				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
 						sum = TYPE2##_nil;	\
 						nils = 1;		\
+						TIMEOUT_LOOP_BREAK;	\
 					}				\
 				} else {				\
 					sum += x;			\
 					seenval = true;			\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			if (seenval)					\
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			if (nonil) {					\
 				*algo = "sum: no candidates, with groups, no nils, no overflow"; \
-				for (i = 0; i < ncand; i++) {		\
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) { \
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
 						gid = gids ? gids[i] - min : (oid) i; \
@@ -637,9 +661,11 @@ dofsum(const void *restrict values, oid seqb,
 						sums[gid] += x;		\
 					}				\
 				}					\
+				TIMEOUT_CHECK(timeoffset,		\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			} else {					\
 				*algo = "sum: no candidates, with groups, no overflow"; \
-				for (i = 0; i < ncand; i++) {		\
+				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) { \
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
 						gid = gids ? gids[i] - min : (oid) i; \
@@ -661,12 +687,13 @@ dofsum(const void *restrict values, oid seqb,
 						}			\
 					}				\
 				}					\
+				TIMEOUT_CHECK(timeoffset,		\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			}						\
 		} else {						\
 			/* multiple groups, with candidate list */	\
 			*algo = "sum: with candidates, with groups, no overflow"; \
-			while (ncand > 0) {				\
-				ncand--;				\
+			TIMEOUT_LOOP(ncand, timeoffset) {		\
 				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -689,6 +716,8 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		}							\
 	} while (0)
 
@@ -704,6 +733,12 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	BUN i;
 	oid gid;
 	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	switch (tp2) {
 	case TYPE_flt:
@@ -874,6 +909,10 @@ dosum(const void *restrict values, bool nonil, oid seqb,
   overflow:
 	GDKfree(seen);
 	GDKerror("22003!overflow in sum aggregate.\n");
+	return BUN_NONE;
+
+  bailout:
+	GDKfree(seen);
 	return BUN_NONE;
 }
 
@@ -1171,8 +1210,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1205,6 +1243,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -1212,8 +1252,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE *vals = (const TYPE *) values;		\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1242,14 +1281,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 #else
 #define AGGR_PROD_LNG(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1281,6 +1321,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 #endif
 
@@ -1288,8 +1330,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1324,6 +1365,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 static BUN
@@ -1336,6 +1379,12 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
 	BUN i;
 	oid gid;
 	unsigned int *restrict seen; /* bitmask for groups that we've seen */
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -1543,6 +1592,10 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
 	GDKfree(seen);
 	GDKerror("22003!overflow in product aggregate.\n");
 	return BUN_NONE;
+
+  bailout:
+	GDKfree(seen);
+	return BUN_NONE;
 }
 
 /* calculate group products with optional candidates list */
@@ -1687,8 +1740,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
 		if (avgs == NULL)					\
 			goto alloc_fail;				\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1707,6 +1759,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -1724,8 +1778,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1743,6 +1796,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -1769,6 +1824,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2844,8 +2905,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 									\
 		/* first try to calculate the sum of all values into a */ \
 		/* lng/hge */						\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			x = ((const TYPE *) src)[i];			\
 			if (is_##TYPE##_nil(x))				\
@@ -2857,6 +2917,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			/* don't count value until after overflow check */ \
 			n++;						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      TIMEOUT_HANDLER(GDK_FAIL));		\
 		/* the sum fit, so now we can calculate the average */	\
 		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
 		if (0) {						\
@@ -2876,7 +2938,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			} else {					\
 				sum = -sum;				\
 				a = - (TYPE) (sum / n); /* this fits */ \
-				r = (lng) (sum % n);		\
+				r = (lng) (sum % n);			\
 				if (r) {				\
 					a--;				\
 					r = n - r;			\
@@ -2907,14 +2969,15 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	do {							\
 		double a = 0;					\
 		TYPE x;						\
-		while (ncand > 0) {				\
-			ncand--;				\
+		TIMEOUT_LOOP(ncand, timeoffset) {		\
 			i = canditer_next(&ci) - b->hseqbase;	\
 			x = ((const TYPE *) src)[i];		\
 			if (is_##TYPE##_nil(x))			\
 				continue;			\
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
 		}						\
+		TIMEOUT_CHECK(timeoffset,			\
+			      TIMEOUT_HANDLER(GDK_FAIL));	\
 		*avg = n > 0 ? a : dbl_nil;			\
 	} while (0)
 
@@ -2934,6 +2997,12 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	/* these two needed for ADD_WITH_CHECK macro */
 	bool abort_on_error = true;
 	BUN nils = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	ncand = canditer_init(&ci, b, s);
 
@@ -2981,8 +3050,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 #define AGGR_COUNT(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -2995,6 +3063,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 /* calculate group counts with optional candidates list */
@@ -3015,6 +3085,12 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -3129,6 +3205,10 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
 		  ci.seq, ncand, GDKusec() - t0);
 	return bn;
+
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 /* calculate group sizes (number of TRUE values) with optional
@@ -3216,8 +3296,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		if (ngrp == cnt) {					\
 			/* single element groups */			\
-			while (ncand > 0) {				\
-				ncand--;				\
+			TIMEOUT_LOOP(ncand, timeoffset) {		\
 				i = canditer_next(ci) - b->hseqbase;	\
 				if (!skip_nils ||			\
 				    !is_##TYPE##_nil(vals[i])) {	\
@@ -3225,10 +3304,11 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 					nils--;				\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      TIMEOUT_HANDLER(BUN_NONE));	\
 		} else {						\
 			gid = 0; /* in case gids == NULL */		\
-			while (ncand > 0) {				\
-				ncand--;				\
+			TIMEOUT_LOOP(ncand, timeoffset) {		\
 				i = canditer_next(ci) - b->hseqbase;	\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -3245,6 +3325,8 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 					}				\
 				}					\
 			}						\
+			TIMEOUT_CHECK(timeoffset,			\
+				      TIMEOUT_HANDLER(BUN_NONE));	\
 		}							\
 	} while (0)
 
@@ -3263,6 +3345,12 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	BATiter bi;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	nils = ngrp;
 	for (i = 0; i < ngrp; i++)
@@ -3311,8 +3399,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 		if (gdense) {
 			/* single element groups */
-			while (ncand > 0) {
-				ncand--;
+			TIMEOUT_LOOP(ncand, timeoffset) {
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
@@ -3320,10 +3407,11 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 					nils--;
 				}
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      TIMEOUT_HANDLER(BUN_NONE));
 		} else {
 			gid = 0; /* in case gids == NULL */
-			while (ncand > 0) {
-				ncand--;
+			TIMEOUT_LOOP(ncand, timeoffset) {
 				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
@@ -3345,6 +3433,8 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 					}
 				}
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      TIMEOUT_HANDLER(BUN_NONE));
 		}
 		break;
 	}
@@ -3367,6 +3457,12 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	BATiter bi;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	nils = ngrp;
 	for (i = 0; i < ngrp; i++)
@@ -3415,8 +3511,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 		if (gdense) {
 			/* single element groups */
-			while (ncand > 0) {
-				ncand--;
+			TIMEOUT_LOOP(ncand, timeoffset) {
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
@@ -3424,10 +3519,11 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 					nils--;
 				}
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      TIMEOUT_HANDLER(BUN_NONE));
 		} else {
 			gid = 0; /* in case gids == NULL */
-			while (ncand > 0) {
-				ncand--;
+			TIMEOUT_LOOP(ncand, timeoffset) {
 				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
@@ -3450,6 +3546,8 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 					}
 				}
 			}
+			TIMEOUT_CHECK(timeoffset,
+				      TIMEOUT_HANDLER(BUN_NONE));
 		}
 		break;
 	}
@@ -3511,6 +3609,10 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 
 	nils = (*minmax)(oids, b, gids, ngrp, min, max, &ci, ncand,
 			 BATcount(b), skip_nils, g && BATtdense(g));
+	if (nils == BUN_NONE) {
+		BBPreclaim(bn);
+		return NULL;
+	}
 
 	BATsetcount(bn, ngrp);
 
@@ -3795,6 +3897,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	(void) abort_on_error;
 	lng t0 = 0;
 
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (average) {
@@ -3901,6 +4010,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		/* for each group (r and p are the beginning and end
 		 * of the current group, respectively) */
 		for (r = 0, q = BATcount(g); r < q; r = p) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			BUN qindex;
 			prev = grps[r];
 			/* search for end of current group (grps is
@@ -4122,20 +4233,22 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 /* ---------------------------------------------------------------------- */
 /* standard deviation (both biased and non-biased) */
 
-#define AGGR_STDEV_SINGLE(TYPE)				\
-	do {						\
-		TYPE x;					\
-		for (i = 0; i < cnt; i++) {		\
-			x = ((const TYPE *) values)[i];	\
-			if (is_##TYPE##_nil(x))		\
-				continue;		\
-			n++;				\
-			delta = (dbl) x - mean;		\
-			mean += delta / n;		\
-			m2 += delta * ((dbl) x - mean);	\
-			if (isinf(m2))			\
-				goto overflow;		\
-		}					\
+#define AGGR_STDEV_SINGLE(TYPE)					\
+	do {							\
+		TYPE x;						\
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {		\
+			x = ((const TYPE *) values)[i];		\
+			if (is_##TYPE##_nil(x))			\
+				continue;			\
+			n++;					\
+			delta = (dbl) x - mean;			\
+			mean += delta / n;			\
+			m2 += delta * ((dbl) x - mean);		\
+			if (isinf(m2))				\
+				goto overflow;			\
+		}						\
+		TIMEOUT_CHECK(timeoffset,			\
+			      TIMEOUT_HANDLER(dbl_nil));	\
 	} while (0)
 
 static dbl
@@ -4145,6 +4258,12 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	dbl mean = 0;
 	dbl m2 = 0;
 	dbl delta;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	switch (tp) {
 	case TYPE_bte:
@@ -4242,7 +4361,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 #define AGGR_COVARIANCE_SINGLE(TYPE)					\
 	do {								\
 		TYPE x, y;						\
-		for (i = 0; i < cnt; i++) {				\
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
 			x = ((const TYPE *) v1)[i];			\
 			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
@@ -4253,9 +4372,11 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			delta2 = (dbl) y - mean2;			\
 			mean2 += delta2 / n;				\
 			m2 += delta1 * ((dbl) y - mean2);		\
-			if (isinf(m2))			\
-				goto overflow;		\
+			if (isinf(m2))					\
+				goto overflow;				\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      TIMEOUT_HANDLER(dbl_nil));		\
 	} while (0)
 
 static dbl
@@ -4263,6 +4384,13 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 {
 	BUN n = 0, i;
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 
 	switch (tp) {
 	case TYPE_bte:
@@ -4329,7 +4457,7 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 #define AGGR_CORRELATION_SINGLE(TYPE)					\
 	do {								\
 		TYPE x, y;						\
-		for (i = 0; i < cnt; i++) {				\
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
 			x = ((const TYPE *) v1)[i];			\
 			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
@@ -4343,9 +4471,11 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			up += delta1 * aux;				\
 			down1 += delta1 * ((dbl) x - mean1);		\
 			down2 += delta2 * aux;				\
-			if (isinf(up) || isinf(down1) || isinf(down2))		\
-				goto overflow;		\
+			if (isinf(up) || isinf(down1) || isinf(down2))	\
+				goto overflow;				\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      TIMEOUT_HANDLER(dbl_nil));		\
 	} while (0)
 
 dbl
@@ -4356,6 +4486,12 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	const void *v1 = (const void *) Tloc(b1, 0), *v2 = (const void *) Tloc(b2, 0);
 	int tp = b1->ttype;
 	lng t0 = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4403,8 +4539,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 #define AGGR_STDEV(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -4423,6 +4558,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
@@ -4432,7 +4569,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
 			} else if (isinf(m2[i])) {			\
-				goto overflow;		\
+				goto overflow;				\
 			} else if (variance) {				\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			} else {					\
@@ -4465,6 +4602,12 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN ncand;
 	const char *err;
 	lng t0 = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4657,8 +4800,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	do {								\
 		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b1->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -4679,6 +4821,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
@@ -4686,8 +4830,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
-			} else if (isinf(m2[i])) {		\
-				goto overflow;		\
+			} else if (isinf(m2[i])) {			\
+				goto overflow;				\
 			} else {					\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			}						\
@@ -4707,6 +4851,13 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4859,8 +5010,7 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 	do {								\
 		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
 		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
-		while (ncand > 0) {					\
-			ncand--;					\
+		TIMEOUT_LOOP(ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b1->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -4884,12 +5034,14 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 				}					\
 			}						\
 		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(alloc_fail));	\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
-			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) {	\
-				goto overflow;		\
+			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) { \
+				goto overflow;				\
 			} else {					\
 				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
 				assert(!is_dbl_nil(dbls[i]));		\
@@ -4909,6 +5061,12 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 

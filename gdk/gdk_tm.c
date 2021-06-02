@@ -86,7 +86,7 @@ epilogue(int cnt, bat *subcommit)
 		bat bid = subcommit ? subcommit[i] : i;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
-			BBP_status_on(bid, BBPEXISTING, subcommit ? "TMsubcommit" : "TMcommit");
+			BBP_status_on(bid, BBPEXISTING);
 		} else if (BBP_status(bid) & BBPDELETED) {
 			/* check mmap modes of bats that are now
 			 * transient. this has to be done after the
@@ -121,7 +121,7 @@ epilogue(int cnt, bat *subcommit)
 			}
 			BBPclear(bid);	/* clear with locking */
 		}
-		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW, subcommit ? "TMsubcommit" : "TMcommit");
+		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
 	}
 	GDKclrerr();
 }
@@ -301,7 +301,7 @@ TMabort(void)
 				BATundo(b);
 			}
 			if (BBP_status(i) & BBPDELETED) {
-				BBP_status_on(i, BBPEXISTING, "TMabort");
+				BBP_status_on(i, BBPEXISTING);
 				if (b->batTransient)
 					BBPretain(i);
 				b->batTransient = false;
@@ -309,7 +309,7 @@ TMabort(void)
 			}
 			BBPunfix(i);
 		}
-		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMabort");
+		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW);
 	}
 	BBPunlock();
 	GDKclrerr();

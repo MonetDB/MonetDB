@@ -265,6 +265,7 @@ Description: Integration of MonetDB and R, allowing use of R from within SQL
 Package: libmonetdbe1
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+ monetdb5-server (= ${source:Version})
 Description: MonetDB as an embedded library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -277,7 +278,8 @@ Description: MonetDB as an embedded library
 Package: libmonetdbe-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdbe1, libmonetdb-dev
+ libmonetdbe1 (= ${source:Version}),
+ libmonetdb-dev (= ${source:Version})
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -286,6 +288,20 @@ Description: MonetDB development files
  .
  This package contains the library and include files to create a
  program that uses MonetDB as an embeddable library.
+
+Package: monetdb-embedded-testing
+Architecture: any
+Depends: ${shlibs:Depends},
+ libmonetdbe (= ${source:Version})
+Description: MonetDB embedded testing tools
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains the sample MAPI programs used for testing other
+ MonetDB packages.  You probably don't need this, unless you are a
+ developer.
 
 Package: monetdb-testing-python
 Architecture: any

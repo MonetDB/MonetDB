@@ -29,7 +29,7 @@ COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n'
 2.0 1.0 0.0
 3.0 1.0 0.0
 
-statement error
+statement error 42000!The MERGE TABLE 'sys.part1' should have at least one table associated
 SELECT * FROM COMPLETE
 
 statement ok

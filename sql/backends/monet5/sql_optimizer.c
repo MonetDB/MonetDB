@@ -79,7 +79,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			if (!t || isDeclaredTable(t))
 				continue;
 			c = mvc_bind_column(m, t, cname);
-			if (!s)
+			if (!c)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */

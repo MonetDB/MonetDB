@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN,"c1" DOUBLE PRECISION NOT NULL)
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 false	0.2059926383949241
@@ -12,28 +12,28 @@ NULL	1.89755202e+09
 NULL	0.8514002985569765
 NULL	0.8565135463082767
 
-query I rowsort
+query T rowsort
 SELECT ALL t0.c0 FROM t0 WHERE (((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))
 ----
 NULL
 NULL
 NULL
 
-query I rowsort
+query T rowsort
 SELECT t0.c0 FROM t0 WHERE 1 BETWEEN SYMMETRIC t0.c1 AND 0
 ----
 NULL
 
-query I rowsort
+query T rowsort
 SELECT t0.c0 FROM t0 WHERE 1 BETWEEN t0.c1 AND 0
 ----
 
-query I rowsort
+query T rowsort
 SELECT ALL t0.c0 FROM t0 WHERE (((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0)) UNION ALL
 SELECT ALL t0.c0 FROM t0 WHERE NOT ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))) UNION ALL
 SELECT t0.c0 FROM t0 WHERE ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))) IS NULL
 ----
-0
+False
 NULL
 NULL
 NULL
@@ -47,27 +47,27 @@ START TRANSACTION
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query I rowsort
+query T rowsort
 select i between symmetric cast(1 as decimal) and cast(2 as double) from integers
 ----
-0
-1
-1
+False
 NULL
+True
+True
 
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!types tinyint(1,0) and sec_interval(13,0) are not equal
 SELECT CAST(1 AS INTERVAL SECOND) + CAST(3 AS BIGINT)
 
-statement error
+statement error 42000!types tinyint(1,0) and month_interval(3,0) are not equal
 SELECT CAST(1 AS INTERVAL MONTH) + CAST(3 AS BIGINT)
 
-statement error
+statement error 42000!types tinyint(1,0) and month_interval(3,0) are not equal
 SELECT CAST(1 AS INTERVAL MONTH) + CAST(3 AS BIGINT)
 
 statement ok
@@ -76,7 +76,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE t0("c0" DOUBLE NOT NULL)
 
-statement ok
+statement ok rowcount 11
 COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0
@@ -91,7 +91,7 @@ COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.34293653568934335
 0.1228907839970418
 
-statement error
+statement error 22012!division by zero.
 SELECT AVG(ALL ((((CAST(((+ (-12))/(sql_min(-12, -67))) AS INT))+(abs(((13)*(10))))))*(((((greatest(12, -11))/(((((34-15)))/(CAST(t0.c0 AS INT))))))*(- (+ (((-29)*(6))))))))), 0.777 FROM t0 WHERE (0.06) NOT  BETWEEN ASYMMETRIC (t0.c0) AND (t0.c0)
 GROUP BY 0.1, 0.7, 0.2, + (+ (- (length(r'q')))), greatest(upper(upper(r'623865997')), trim(replace(r'vAd(Lup}Z', r'-1774953973', r'0.4235712099498189'), substr(r'', -19)))
 
@@ -104,7 +104,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) NOT NULL)
 
-statement ok
+statement ok rowcount 41
 COPY 41 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.388
@@ -219,7 +219,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
 )
 
-statement ok
+statement ok rowcount 4
 COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	0.36945874012955704	NULL
@@ -227,13 +227,13 @@ NULL	0.36945874012955704	NULL
 "EjgaDfV\t6m)Qvw0'%cW#\015*]h "	0.944146436872532	""
 "M"	0.7309075439656509	NULL
 
-statement ok
+statement ok rowcount 2
 UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)))
 
 statement ok
 ROLLBACK
 
-statement error
+statement error 42000!types real(24,0) and boolean(1,0) are not equal
 SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1)
 
 query R rowsort
@@ -247,7 +247,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL)
 
-statement ok
+statement ok rowcount 15
 COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 true
@@ -301,7 +301,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
 
-statement ok
+statement ok rowcount 2
 COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 true
@@ -331,7 +331,7 @@ CREATE TABLE "sys"."t0" (
 statement ok
 COMMENT ON TABLE "sys"."t0" IS 'r'
 
-statement ok
+statement ok rowcount 1
 INSERT INTO "sys"."t0" VALUES (NULL, DATE '1970-01-02')
 
 query T rowsort
@@ -357,7 +357,7 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c0_unique" UNIQUE ("c0")
 )
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	1970-01-02
@@ -386,7 +386,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTEGER)
 
-statement ok
+statement ok rowcount 10
 COPY 10 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -733291712
@@ -436,7 +436,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t2" ("c1" DOUBLE NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
 
-statement ok
+statement ok rowcount 6
 COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -3.1207632e+08
@@ -446,7 +446,7 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.3672199296718357
 -1.7976931348623157e+308
 
-statement error
+statement error 22003!Overflow in round
 update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505757868289947509765625))
 where (scale_up(-1155480997, 0.5434124050282382)) is not null
 
@@ -459,7 +459,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BOOLEAN NOT NULL,"c1" DECIMAL(18,3) NOT NULL,CONSTRAINT "t1_c0_c1_pkey" PRIMARY KEY ("c0", "c1"))
 
-statement ok
+statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 false	0.970
@@ -474,7 +474,7 @@ false	0.310
 statement ok
 CREATE TABLE "sys"."t2" ("c0" DOUBLE NOT NULL,"c1" CHAR(21),"c2" DOUBLE)
 
-statement ok
+statement ok rowcount 16
 COPY 16 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 1	NULL	NULL
@@ -494,7 +494,7 @@ COPY 16 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.38681017904242443	NULL	NULL
 -4.411138449465319	NULL	NULL
 
-query I rowsort
+query T rowsort
 SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT "isauuid"(COALESCE(t2.c1, t2.c1)) FROM t2 WHERE ((((((((((TRUE)AND(TRUE)))OR
 (TRUE)))OR(TRUE)))OR(FALSE)))AND(TRUE))) EXCEPT ALL (SELECT ALL ((CASE 0.54967607103225102349597364082001149654388427734375
 WHEN 0.05049592582495154857724628527648746967315673828125 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2
@@ -505,7 +505,7 @@ THEN r'Bv*氅.x' END), (r'', 0.7763767959438655, "insert"(r'RR6Mw+', 5, -6560477
 CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1758578278)) AS REAL))) AS sub1
 WHERE (3.0) IS NOT NULL
 ----
-896 values hashing to 25c86efc7cd2ecb484be80b79f18927b
+896 values hashing to d306becf2331385a704244961b752859
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((3.0) IS NOT NULL AS INT) as count FROM t1, t2 CROSS JOIN
@@ -519,7 +519,7 @@ CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1
 ----
 896
 
-statement error
+statement error 42000!types boolean(1,0) and tinyint(1,0) are not equal
 SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT 1 FROM t2)
 EXCEPT (SELECT ALL ((CASE 0.1 WHEN 0.2 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2)) AS sub0
 WHERE (3.0) IS NOT NULL
@@ -530,16 +530,16 @@ ROLLBACK
 statement ok
 CREATE TEMP TABLE mycount(cc BIGINT) ON COMMIT PRESERVE ROWS
 
-statement ok
+statement ok rowcount 1
 INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies
 
 statement ok
 CREATE TABLE t0(c0 int AUTO_INCREMENT,c1 STRING)
 
-query I rowsort
+query T rowsort
 SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
 ----
-1
+True
 
 statement ok
 ALTER TABLE t0 DROP c0 CASCADE
@@ -552,10 +552,10 @@ SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies
 ----
 0
 
-statement ok
+statement ok rowcount 1
 TRUNCATE mycount
 
-statement ok
+statement ok rowcount 1
 INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies
 
 statement ok
@@ -564,10 +564,10 @@ CREATE FUNCTION myfunc() returns int return 1
 statement ok
 CREATE TABLE t0(c0 int default myfunc(),c1 STRING)
 
-query I rowsort
+query T rowsort
 SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
 ----
-1
+True
 
 statement ok
 ALTER TABLE t0 DROP c0 CASCADE
@@ -623,7 +623,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t1" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
 
-statement ok
+statement ok rowcount 2
 INSERT INTO "t1" VALUES (false), (true)
 
 statement ok
@@ -710,7 +710,7 @@ statement ok
 CREATE TABLE "sys"."t0" ("c0" INTEGER,"c1" INTEGER NOT NULL,"c3" DECIMAL(18,3),"c4" DOUBLE,"c5" BOOLEAN,
 	"c6" CHARACTER LARGE OBJECT,"c7" DOUBLE NOT NULL,"c8" DOUBLE,"c9" DECIMAL(18,3))
 
-statement ok
+statement ok rowcount 5
 COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -1581661246	8	0.000	0.5757982106353843	false	"?h\t*B/"	0.5947494687969431	6.835094360268594	0.317
@@ -736,12 +736,12 @@ statement ok
 create view v85(vc0, vc1) as ((select -9.397294E8, ifthenelse(l0v22.vc2, 7, -5) from v22 as l0v22
 where l0v22.vc0 < l0v22.vc0) intersect (select 1, 8))
 
-query III rowsort
+query TII rowsort
 select true, 3, 1 from v14 as l0v14 join ((select 1) except all (select 3 from v85 as l1v85)) as
 sub0 on case l0v14.vc2 when l0v14.vc1 then false end
 ----
 
-statement ok
+statement ok rowcount 0
 insert into t0(c5, c0, c4)(select true, 3, 1 from v14 as l0v14 join ((select 1) except all
 (select 3 from v85 as l1v85)) as sub0 on case l0v14.vc2 when l0v14.vc1 then false end)
 

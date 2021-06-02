@@ -10,6 +10,7 @@
 #define _MAL_SESSION_H
 
 #include "mal_scenario.h"
+#include "mal_resolve.h"
 
 mal_export str malBootstrap(char *modules[], int embedded);
 mal_export str MSserveClient(Client cntxt);

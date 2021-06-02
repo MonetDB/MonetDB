@@ -1,0 +1,26 @@
+# ChangeLog file for sql/src/backends/monet5/merovingian
+# This file is updated with mchangelog
+
+* Mon May 10 2021 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Deprecate `profilerstart` and `profilerstop` commands. Since
+  stethoscope is a separate project (https://github.com/MonetDBSolutions/monetdb-pystethoscope)
+  the installation directory is not standard anymore. `profilerstart` and
+  `profilerstop` commands assume that the stethoscope executable is in the
+  same directory as `mserver5`. This is no longer necessarily true since
+  stethoscope can now be installed in a python virtual environment. The
+  commands still work if stethoscope is installed using the official
+  MonetDB installers, or if a symbolic link is created in the directory
+  where `mserver5` is located.
+
+* Mon Apr 12 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The exittimeout value can now be set to a negative value (e.g. -1) to
+  indicate that when stopping the dbfarm (using monetdbd stop dbfarm),
+  any mserver5 processes are to be sent a termination signal and then
+  waited for until they terminate.  In addition, if exittimeout is greater
+  than zero, the mserver5 processes are sent a SIGKILL signal after the
+  specified timeout and the managing monetdbd is sent a SIGKILL signal
+  after another five seconds (if it didn't terminate already).  The old
+  situation was that the managing monetdbd process was sent a SIGKILL
+  after 30 seconds, and the mserver5 processes that hadn't terminated
+  yet would be allowed to continue their termination sequence.
+

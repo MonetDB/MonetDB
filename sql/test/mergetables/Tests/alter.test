@@ -1,7 +1,7 @@
 statement ok
 create merge table smalltable(i integer, j integer)
 
-statement error
+statement error 42S02!ALTER TABLE: no such table 'unknowntable'
 alter table smalltable add table unknowntable
 
 statement ok
@@ -19,16 +19,16 @@ create merge table mys.smalltable(i integer, j integer)
 statement ok
 create table mys.part (i integer, j integer)
 
-statement ok
+statement ok rowcount 1
 insert into mys.part values(1,2)
 
-statement error
+statement error 42S02!ALTER TABLE: no such table 'part1'
 alter table mys.smalltable add table part1
 
-statement error
+statement error 42S02!ALTER TABLE: no such table 'mys'.'part1'
 alter table mys.smalltable add table mys.part1
 
-statement error
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
 select * from mys.smalltable
 
 statement ok

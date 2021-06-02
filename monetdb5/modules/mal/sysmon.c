@@ -13,6 +13,7 @@
 #include "mal_client.h"
 #include "mal_runtime.h"
 #include "gdk_time.h"
+#include "mal_exception.h"
 
 /* (c) M.L. Kersten
  * The queries currently in execution are returned to the front-end for managing expensive ones.

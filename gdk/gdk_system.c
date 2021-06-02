@@ -183,6 +183,7 @@ static struct winthread {
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
 	char threadname[MT_NAME_LEN];
+	QryCtx *qry_ctx;
 } *winthreads = NULL;
 static struct winthread mainthread = {
 	.threadname = "main thread",
@@ -264,6 +265,37 @@ MT_thread_setdata(void *data)
 		w->data = data;
 }
 
+void *
+MT_thread_getdata(void)
+{
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return NULL;
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w ? w->data : NULL;
+}
+
+void
+MT_thread_set_qry_ctx(QryCtx *ctx)
+{
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w)
+		w->qry_ctx = ctx;
+}
+
+QryCtx *
+MT_thread_get_qry_ctx(void)
+{
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return NULL;
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w ? w->qry_ctx : NULL;
+}
+
 void
 MT_thread_setlockwait(MT_Lock *lock)
 {
@@ -338,16 +370,6 @@ MT_thread_override_limits(void)
 	return w && w->working && strcmp(w->working, "store locked") == 0;
 }
 
-void *
-MT_thread_getdata(void)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return NULL;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	return w ? w->data : NULL;
-}
-
 static void
 rm_winthread(struct winthread *w)
 {
@@ -383,6 +405,8 @@ join_threads(void)
 	bool waited;
 
 	struct winthread *self = TlsGetValue(threadslot);
+	if (!self)
+		return;
 	EnterCriticalSection(&winthread_cs);
 	do {
 		waited = false;
@@ -566,6 +590,7 @@ static struct posthread {
 	MT_Id mtid;
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
+	QryCtx *qry_ctx;
 } *posthreads = NULL;
 static struct posthread mainthread = {
 	.threadname = "main thread",
@@ -657,6 +682,27 @@ MT_thread_getdata(void)
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	return p ? p->data : NULL;
+}
+
+void
+MT_thread_set_qry_ctx(QryCtx *ctx)
+{
+	if (!thread_initialized)
+		return;
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p)
+		p->qry_ctx = ctx;
+}
+
+QryCtx *
+MT_thread_get_qry_ctx(void)
+{
+	if (!thread_initialized)
+		return NULL;
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	return p ? p->qry_ctx : NULL;
 }
 
 void

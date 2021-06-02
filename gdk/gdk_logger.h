@@ -50,6 +50,7 @@ gdk_export log_bid old_logger_find_bat(old_logger *lg, const char *name, char tp
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void logger_destroy(logger *lg);
 gdk_export gdk_return logger_flush(logger *lg, ulng saved_id); /* try too flush a part of the logs, including the passed saved_id transaction id */
+gdk_export gdk_return logger_activate(logger *lg); /* when the server has been idle, activate logger too make more cleanup possible */
 
 gdk_export lng logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
@@ -67,8 +68,8 @@ gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 /* mark end of batgroup insert or clear */
 //gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
-gdk_export gdk_return log_tstart(logger *lg, ulng commit_ts, bool flush);
-gdk_export gdk_return log_tend(logger *lg);
+gdk_export gdk_return log_tstart(logger *lg, bool flush);
+gdk_export gdk_return log_tend(logger *lg, ulng commit_ts);
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 gdk_export log_bid logger_find_bat(logger *lg, log_id id);

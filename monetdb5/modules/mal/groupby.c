@@ -44,6 +44,7 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "group.h"
+#include "mal_exception.h"
 
 /*
  * The implementation is based on a two-phase process. In phase 1, we estimate
