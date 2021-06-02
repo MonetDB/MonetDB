@@ -504,6 +504,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
 		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
+			runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
