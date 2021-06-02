@@ -2570,11 +2570,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	Hash *restrict hsh = NULL;
 	bool locked = false;
 
-	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
 	int t = ATOMbasetype(r->ttype);
-	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
+	if (BATtvoid(r) || BATtvoid(l))
 		t = TYPE_void;
 
 	lwidth = l->twidth;
@@ -2644,6 +2643,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
+	} else if (BATtdense(r)) {
+		/* no hash, just dense lookup */
+		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense");
 	} else {
 		/* we need to create a hash on r */
 		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash");
@@ -2654,7 +2656,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			goto bailout;
 		hsh = r->thash;
 	}
-	assert(hsh != NULL);
+	assert(hsh != NULL || BATtdense(r));
 
 	ri = bat_iterator(r);
 
@@ -2674,7 +2676,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						       false, false, __func__, t0);
 				}
 			}
-		} else {
+		} else if (!BATtdense(r)) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
@@ -2715,19 +2717,17 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
-		if (!hash_cand) {
+		if (!hash_cand && hsh) {
 			MT_rwlock_rdlock(&r->thashlock);
 			locked = true;	/* in case we abandon */
 			hsh = r->thash;	/* re-initialize inside lock */
 		}
 		while (lci->next < lci->ncand) {
 			lo = canditer_next(lci);
-			if (BATtvoid(l)) {
-				if (BATtdense(l))
-					lval = lo - l->hseqbase + l->tseqbase;
-			} else {
+			if (BATtdense(l))
+				lval = lo - l->hseqbase + l->tseqbase;
+			else if (l->ttype != TYPE_void)
 				v = VALUE(l, lo - l->hseqbase);
-			}
 			nr = 0;
 			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
@@ -2749,6 +2749,23 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					HASHLOOPBODY();
 					if (semi && !max_one)
 						break;
+				}
+			} else if (hsh == NULL) {
+				assert(BATtdense(r));
+				ro = *(const oid *) v;
+				if (ro >= r->tseqbase &&
+				    ro < r->tseqbase + r->batCount) {
+					ro -= r->tseqbase;
+					ro += rseq;
+					if (canditer_contains(rci, ro)) {
+						if (only_misses) {
+							nr++;
+							break;
+						}
+						HASHLOOPBODY();
+						if (semi && !max_one)
+							break;
+					}
 				}
 			} else if (rci->tpe != cand_dense) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
@@ -2824,7 +2841,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
-		if (!hash_cand) {
+		if (!hash_cand && hsh) {
 			locked = false;
 			MT_rwlock_rdunlock(&r->thashlock);
 		}
@@ -3135,13 +3152,18 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 	bat parent;
 	BAT *b;
 
-	if (rci->nvals > 0) {
-		/* if we need to do binary search on candidate
-		 * list, take that into account */
+	if ((rci->tpe == cand_materialized || rci->tpe == cand_except) &&
+	    rci->nvals > 0) {
+		/* if we need to do binary search on candidate list,
+		 * take that into account; note checking the other
+		 * candidate types is essentially free */
 		rcost += log2((double) rci->nvals);
 	}
 	rcost *= lci->ncand;
-	if (rhash) {
+	if (BATtdense(r)) {
+		/* no need for a hash, and lookup is free */
+		rhash = false;	/* don't use it, even if it's there */
+	} else if (rhash) {
 		/* average chain length */
 		rcost *= (double) BATcount(r) / r->thash->nheads;
 	} else if ((parent = VIEWtparent(r)) != 0 &&
@@ -3619,8 +3641,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
 				nil_matches, t0, false, func);
 		goto doreturn;
-	} else if (BATtdense(r) && rci.tpe == cand_dense &&
-		   lcnt > 0 && rcnt > 0) {
+	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
 		rc = mergejoin_void(r1p, r2p, l, r, &lci, &rci,
 				    nil_on_miss, only_misses, t0, false,
