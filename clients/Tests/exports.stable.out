@@ -761,6 +761,7 @@ void MCcloseClient(Client c);
 Client MCforkClient(Client father);
 Client MCgetClient(int id);
 Client MCinitClient(oid user, bstream *fin, stream *fout);
+size_t MCmemoryClaim(void);
 int MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 void MCstopClients(Client c);
 str MCsuspendClient(int id);
