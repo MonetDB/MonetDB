@@ -2637,7 +2637,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	Hash *restrict hsh = NULL;
 	bool locked = false;
 
-	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
 	size_t counter = 0;
@@ -2648,7 +2647,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 
 	int t = ATOMbasetype(r->ttype);
-	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
+	if (BATtvoid(r) || BATtvoid(l))
 		t = TYPE_void;
 
 	lwidth = l->twidth;
@@ -2718,6 +2717,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
+	} else if (BATtdense(r)) {
+		/* no hash, just dense lookup */
+		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense");
 	} else {
 		/* we need to create a hash on r */
 		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash");
@@ -2728,7 +2730,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			goto bailout;
 		hsh = r->thash;
 	}
-	assert(hsh != NULL);
+	assert(hsh != NULL || BATtdense(r));
 
 	ri = bat_iterator(r);
 
@@ -2748,7 +2750,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						       false, false, __func__, t0);
 				}
 			}
-		} else {
+		} else if (!BATtdense(r)) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
@@ -2790,7 +2792,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
-		if (!hash_cand) {
+		if (!hash_cand && hsh) {
 			MT_rwlock_rdlock(&r->thashlock);
 			locked = true;	/* in case we abandon */
 			hsh = r->thash;	/* re-initialize inside lock */
@@ -2799,12 +2801,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			lo = canditer_next(lci);
-			if (BATtvoid(l)) {
-				if (BATtdense(l))
-					lval = lo - l->hseqbase + l->tseqbase;
-			} else {
+			if (BATtdense(l))
+				lval = lo - l->hseqbase + l->tseqbase;
+			else if (l->ttype != TYPE_void)
 				v = VALUE(l, lo - l->hseqbase);
-			}
 			nr = 0;
 			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
@@ -2826,6 +2826,23 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					HASHLOOPBODY();
 					if (semi && !max_one)
 						break;
+				}
+			} else if (hsh == NULL) {
+				assert(BATtdense(r));
+				ro = *(const oid *) v;
+				if (ro >= r->tseqbase &&
+				    ro < r->tseqbase + r->batCount) {
+					ro -= r->tseqbase;
+					ro += rseq;
+					if (canditer_contains(rci, ro)) {
+						if (only_misses) {
+							nr++;
+							break;
+						}
+						HASHLOOPBODY();
+						if (semi && !max_one)
+							break;
+					}
 				}
 			} else if (rci->tpe != cand_dense) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
@@ -2901,7 +2918,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
-		if (!hash_cand) {
+		if (!hash_cand && hsh) {
 			locked = false;
 			MT_rwlock_rdunlock(&r->thashlock);
 		}
@@ -2972,35 +2989,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	return GDK_FAIL;
-}
-
-/* population count: count number of 1 bits in a value */
-static inline uint32_t __attribute__((__const__))
-pop(uint32_t x)
-{
-#if defined(__GNUC__)
-	return (uint32_t) __builtin_popcount(x);
-#elif defined(_MSC_VER)
-	return (uint32_t) __popcnt((unsigned int) (x));
-#else
-	/* divide and conquer implementation (the two versions are
-	 * essentially equivalent, but the first version is written a
-	 * bit smarter) */
-#if 1
-	x -= (x >> 1) & ~0U/3 /* 0x55555555 */; /* 3-1=2; 2-1=1; 1-0=1; 0-0=0 */
-	x = (x & ~0U/5) + ((x >> 2) & ~0U/5) /* 0x33333333 */;
-	x = (x + (x >> 4)) & ~0UL/0x11 /* 0x0F0F0F0F */;
-	x = (x + (x >> 8)) & ~0UL/0x101 /* 0x00FF00FF */;
-	x = (x + (x >> 16)) & 0xFFFF /* ~0UL/0x10001 */;
-#else
-	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
-	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
-	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
-	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
-#endif
-	return x;
-#endif
 }
 
 /* Count the number of unique values for the first half and the complete
@@ -3081,7 +3069,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			if (i == ci.ncand/ 2) {
 				cnt = 0;
 				for (int j = 0; j < 256 / 32; j++)
-					cnt += pop(seen[j]);
+					cnt += candmask_pop(seen[j]);
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
@@ -3092,7 +3080,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		}
 		cnt = 0;
 		for (int j = 0; j < 256 / 32; j++)
-			cnt += pop(seen[j]);
+			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
@@ -3107,7 +3095,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			if (i == half) {
 				cnt = 0;
 				for (int j = 0; j < 65536 / 32; j++)
-					cnt += pop(seen[j]);
+					cnt += candmask_pop(seen[j]);
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
@@ -3118,7 +3106,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		}
 		cnt = 0;
 		for (int j = 0; j < 65536 / 32; j++)
-			cnt += pop(seen[j]);
+			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 		GDKfree(seen);
 		seen = NULL;
@@ -3241,13 +3229,18 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 	bat parent;
 	BAT *b;
 
-	if (rci->nvals > 0) {
-		/* if we need to do binary search on candidate
-		 * list, take that into account */
+	if ((rci->tpe == cand_materialized || rci->tpe == cand_except) &&
+	    rci->nvals > 0) {
+		/* if we need to do binary search on candidate list,
+		 * take that into account; note checking the other
+		 * candidate types is essentially free */
 		rcost += log2((double) rci->nvals);
 	}
 	rcost *= lci->ncand;
-	if (rhash) {
+	if (BATtdense(r)) {
+		/* no need for a hash, and lookup is free */
+		rhash = false;	/* don't use it, even if it's there */
+	} else if (rhash) {
 		/* average chain length */
 		rcost *= (double) BATcount(r) / r->thash->nheads;
 	} else if ((parent = VIEWtparent(r)) != 0 &&
@@ -3733,8 +3726,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
 				nil_matches, t0, false, func);
 		goto doreturn;
-	} else if (BATtdense(r) && rci.tpe == cand_dense &&
-		   lcnt > 0 && rcnt > 0) {
+	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
 		rc = mergejoin_void(r1p, r2p, l, r, &lci, &rci,
 				    nil_on_miss, only_misses, t0, false,
