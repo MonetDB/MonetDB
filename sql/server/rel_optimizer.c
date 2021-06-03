@@ -410,7 +410,7 @@ exp_count(int *cnt, sql_exp *e)
 			if (e->f)
 				exp_count(cnt, e->f);
 		}
- 		flag = e->flag & (~CMP_BETWEEN);
+ 		flag = e->flag;
 		switch (flag) {
 		case cmp_equal:
 			*cnt += 90;
@@ -2251,7 +2251,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (e->f) {
 				r2 = exp_push_down_prj(sql, e->f, f, t);
 				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+					ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else if (l && r) {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
@@ -3852,7 +3852,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 	for (n = lexps->h; n; n = n->next) {
 		sql_exp *le = n->data, *re, *fnd = NULL;
 
-		if (le->type != e_cmp || le->flag == cmp_or || is_anti(le) || is_semantics(le))
+		if (le->type != e_cmp || le->flag == cmp_or || is_anti(le) || is_semantics(le) || is_symmetric(le))
 			continue;
 		for (m = rexps->h; !fnd && m; m = m->next) {
 			re = m->data;
@@ -3871,7 +3871,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 		if (fnd) {
 			re = fnd;
 			fnd = NULL;
-			if (le->anti || re->anti)
+			if (is_anti(le) || is_anti(re) || is_symmetric(re))
 				continue;
 			if (le->flag == cmp_equal && re->flag == cmp_equal) {
 				list *exps = new_exp_list(sql->sa);
@@ -3911,7 +3911,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
+				fnd = exp_compare2(sql->sa, le->l, mine, maxe, le->flag, 0);
 				lmerged = false;
 			}
 			if (fnd) {
@@ -3976,7 +3976,7 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 								v->sql->errstr[0] = 0;
 								return e;
 							}
-						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->base.name, rff->func->base.name)))) {
+						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->base.name, rff->func->base.name), 0))) {
 							if (exp_name(e))
 								exp_prop_alias(v->sql->sa, ne, e);
 							e = ne;
@@ -6220,7 +6220,7 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 			if (e->f) {
 				r2 = exp_use_consts(sql, e->f, consts);
 				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+					ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else if (l && r) {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
@@ -8162,9 +8162,9 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 							continue;
 						}
 					if (!swap)
-						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(e->flag, f->flag));
+						ne = exp_compare2(v->sql->sa, le, re, rf, compare2range(e->flag, f->flag), 0);
 					else
-						ne = exp_compare2(v->sql->sa, le, rf, re, CMP_BETWEEN|compare2range(f->flag, e->flag));
+						ne = exp_compare2(v->sql->sa, le, rf, re, compare2range(f->flag, e->flag), 0);
 
 					list_remove_data(exps, NULL, e);
 					list_remove_data(exps, NULL, f);
@@ -8243,9 +8243,9 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 							continue;
 						}
 					if (!swap)
-						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(ef, ff));
+						ne = exp_compare2(v->sql->sa, le, re, rf, compare2range(ef, ff), 0);
 					else
-						ne = exp_compare2(v->sql->sa, le, rf, re, CMP_BETWEEN|compare2range(ff, ef));
+						ne = exp_compare2(v->sql->sa, le, rf, re, compare2range(ff, ef), 0);
 
 					list_remove_data(exps, NULL, e);
 					list_remove_data(exps, NULL, f);
@@ -9256,9 +9256,9 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				};
 				for (node *n = sel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *c = e->l;
-					int flag = e->flag & ~CMP_BETWEEN;
+					int flag = e->flag;
 
-					if (e->type != e_cmp || (!is_theta_exp(flag) && flag != cmp_in) || !(c = rel_find_exp(rel, c)))
+					if (e->type != e_cmp || (!is_theta_exp(flag) && flag != cmp_in) || e->symmetric || !(c = rel_find_exp(rel, c)))
 						continue;
 
 					if (flag == cmp_gt || flag == cmp_gte || flag == cmp_lte || flag == cmp_lt || flag == cmp_equal) {

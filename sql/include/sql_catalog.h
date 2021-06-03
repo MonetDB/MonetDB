@@ -176,10 +176,6 @@ typedef enum comp_type {
 	cmp_left_project = 15	/* last step of outer join */
 } comp_type;
 
-/* for ranges we keep the requirment for symmetric */
-#define CMP_SYMMETRIC 8
-#define CMP_BETWEEN 16
-
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
