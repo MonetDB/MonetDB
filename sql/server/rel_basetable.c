@@ -220,8 +220,9 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 		if (rel_base_is_used(ba, i))
 			append(exps, bind_col_exp(sql, name, cn->data));
 	}
-	if (intern && rel_base_is_used(ba, i))
+	if ((intern && rel_base_is_used(ba, i)) || list_empty(exps)) /* Add TID column if no column is used */
 		append(exps, exp_column(sql->sa, name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	i++;
 	if (intern) {
 		for (node *in = ol_first_node(t->idxs); in; in = in->next, i++) {
 			if (rel_base_is_used(ba, i)) {
@@ -356,7 +357,8 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			set_basecol(e);
 			append(rel->exps, e);
 		}
-		append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) /* Add TID column if no column is used */
+			append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 		i++;
 
 		for (cn = ol_first_node(t->idxs); cn; cn = cn->next, i++) {
