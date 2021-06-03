@@ -1,0 +1,34 @@
+statement ok
+start transaction
+
+statement ok
+CREATE TABLE "v" ("id" INTEGER NOT NULL,"version" INTEGER NOT NULL,"value" DOUBLE)
+
+statement ok rowcount 5
+insert into "v" values (1,1622470128,1), (2,1622470128,2), (3,1622470128,3), (4,1622470128,4), (5,1622470128,5)
+
+statement ok rowcount 0
+MERGE INTO "v" dst
+USING (SELECT id, version FROM (SELECT id, version, DENSE_RANK() OVER (PARTITION BY id ORDER BY id, version DESC) AS rn FROM "v")t WHERE rn > 1 ) src
+ON src.id = dst.id AND src.version = dst.version
+WHEN MATCHED THEN DELETE
+
+statement ok
+drop table v
+
+statement ok
+CREATE TABLE "v" ("id" INTEGER,"version" INTEGER,"value" DOUBLE)
+
+statement ok rowcount 5
+insert into "v" values (1,1622470128,1), (2,1622470128,2), (3,1622470128,3), (4,1622470128,4), (5,1622470128,5)
+
+statement ok rowcount 0
+MERGE INTO "v" dst
+USING (SELECT id, version FROM (SELECT id, version, DENSE_RANK() OVER (PARTITION BY id ORDER BY id, version DESC) AS rn FROM "v")t WHERE rn > 1 ) src
+ON src.id = dst.id AND src.version = dst.version
+WHEN MATCHED THEN DELETE
+
+statement ok
+rollback
+
+
