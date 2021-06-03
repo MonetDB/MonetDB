@@ -162,7 +162,7 @@ INSERT INTO "t2" VALUES (false, DATE '1970-01-01', 0.42016214),(true, DATE '1970
 (true, DATE '1970-01-01', NULL),(false, DATE '1970-01-01', 0.2627602),(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL)
 
 query I rowsort
-SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)));
+SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)))
 ----
 1
 1
@@ -266,7 +266,7 @@ statement ok rowcount 2
 INSERT INTO "t0" VALUES (3), (2)
 
 query IIIIII rowsort
-select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3;
+select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3
 ----
 3
 1
@@ -700,6 +700,27 @@ query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(('*') BETWEEN ASYMMETRIC ('j^O') AND ('') AS INT) as count FROM t0) as res
 ----
 0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 DOUBLE UNIQUE, c1 CHAR(224), c4 boolean)
+
+statement ok
+CREATE TABLE t1(c0 DOUBLE PRECISION UNIQUE, c1 DOUBLE PRECISION, FOREIGN KEY (c0) REFERENCES t0(c0))
+
+statement ok
+INSERT INTO t0(c1) VALUES('-521239643'), ('-1125457389'), ('0.18375426768390923')
+
+statement ok
+DELETE FROM t0
+
+statement ok
+TRUNCATE t0
 
 statement ok
 ROLLBACK
