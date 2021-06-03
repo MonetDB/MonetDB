@@ -96,7 +96,7 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #else
 /* BytePairs implementation */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
-#define pairToIndex(b1, b2) (uint16_t)(((uint8_t)b2)<<8 | ((uint8_t)b1))
+#define pairToIndex(b1, b2) (uint16_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
 static bool
 pair_equal(CharPair *p1, CharPair *p2) {
@@ -301,8 +301,7 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 					if (hist[hidx].p == NULL) {
 						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
 						hist[hidx].p->psize = cpp->psize;
-						hist[hidx].p->pbytes = (uint8_t *)GDKmalloc(cpp->psize*sizeof(uint8_t));
-						memcpy(hist[hidx].p->pbytes, cpp->pbytes, cpp->psize);
+						hist[hidx].p->pbytes = cpp->pbytes;
 					}
 				}
 				next_pair(pip);
@@ -314,7 +313,6 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 	STRMPchoosePairs(hist, hlen, hpairs);
 	for(hidx = 0; hidx < hlen; hidx++) {
 		if(hist[hidx].p) {
-			GDKfree(hist[hidx].p->pbytes);
 			GDKfree(hist[hidx].p);
 			hist[hidx].p = NULL;
 		}
@@ -327,7 +325,7 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 
 /* Create the heap for a string imprint. Returns NULL on failure. */
 static Strimps *
-STRMPcreateStrimp(BAT *b)
+STRMPcreateStrimpHeap(BAT *b)
 {
 	uint8_t *h1, *h2;
 	Strimps *r = NULL;
@@ -338,8 +336,8 @@ STRMPcreateStrimp(BAT *b)
 	const char *nme;
 
 
-	STRMPbuildHeader(b, hpairs); /* Find the header pairs */
-	sz = 8;			     /* add 8-bytes for the descriptor */
+	STRMPbuildHeader(b, hpairs);  /* Find the header pairs */
+	sz = 8 + STRIMP_HEADER_SIZE;  /* add 8-bytes for the descriptor */
 	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
 		sz += hpairs[i].psize;
 	}
@@ -548,6 +546,7 @@ BATstrimpsync(void *arg)
 static void
 persistStrimp(BAT *b)
 {
+	TRC_DEBUG(ALGO, "zoo: %d\n", (BBP_status(b->batCacheid) & BBPEXISTING));
 	if((BBP_status(b->batCacheid) & BBPEXISTING)
 	   && b->batInserted == b->batCount
 	   && !b->theap->dirty
@@ -580,10 +579,10 @@ STRMPcreate(BAT *b)
 	if (BATcheckstrimps(b))
 		return GDK_SUCCEED;
 
-	if ((h = STRMPcreateStrimp(b)) == NULL) {
+	if ((h = STRMPcreateStrimpHeap(b)) == NULL) {
 		return GDK_FAIL;
 	}
-	dh = (uint64_t *)h->strimps.base + h->strimps.free;
+	dh = (uint64_t *)((uint8_t*)h->strimps.base + h->strimps.free);
 
 	bi = bat_iterator(b);
 	for (i = 0; i < b->batCount; i++) {
@@ -594,6 +593,15 @@ STRMPcreate(BAT *b)
 			*dh++ = 0; /* no pairs in nil values */
 	}
 	h->strimps.free += b->batCount*sizeof(uint64_t);
+
+	/* Debug */
+	{
+		FILE *f = fopen("/tmp/strmp", "wb");
+		if (f) {
+			fwrite(h->strimps.base, 1, h->strimps.free, f);
+			fclose(f);
+		}
+	}
 
 	/* After we have computed the strimp, attempt to write it back
 	 * to the BAT.
