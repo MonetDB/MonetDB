@@ -380,7 +380,7 @@ union (
 #CREATE TABLE fourth_decade (stamp TIMESTAMP, val INT);
 #ALTER TABLE splitted ADD TABLE fourth_decade AS PARTITION FROM RANGE MINVALUE TO TIMESTAMP '2000-01-01 00:00:00';
 #INSERT INTO splitted VALUES (TIMESTAMP '1999-01-01 00:00:00', 7);
-[ 0	]
+[ 1	]
 #plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'; --only first child passes
 % .plan # table_name
 % rel # name
