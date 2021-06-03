@@ -96,10 +96,7 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #else
 /* BytePairs implementation */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
-#define isNotIgnored(x) (!isIgnored(x))
 #define pairToIndex(b1, b2) (uint16_t)(((uint8_t)b2)<<8 | ((uint8_t)b1))
-#define indexToPair2(idx) (idx & 0xff00) >> 8
-#define indexToPair1(idx) (idx & 0xff)
 
 static bool
 pair_equal(CharPair *p1, CharPair *p2) {
@@ -135,7 +132,7 @@ next_pair(PairIterator *pi) {
 #endif // UTF8STRINGS
 
 static int8_t
-strimp_lookup(Strimps *s, CharPair *p) {
+STRMPpairLookup(Strimps *s, CharPair *p) {
 	int8_t ret = -1;
 	size_t idx = 0;
 	size_t npairs = NPAIRS(((uint64_t *)s->strimps.base)[0]);
@@ -449,7 +446,7 @@ BATcheckstrimps(BAT *b)
 	if (ret)
 		TRC_DEBUG(ALGO, "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 
-	return false;
+	return ret;
 }
 
 /* Filter a BAT b using a string q. Return the result as a candidate
@@ -495,12 +492,75 @@ STRMPfilter(BAT *b, char *q)
 	return NULL;
 }
 
-#if 0
-void
+static void
+BATstrimpsync(void *arg)
+{
+	BAT *b = arg;
+	lng t0 = 0;
+	Heap *hp;
+	int fd;
+	const char *failed = " failed";
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	MT_lock_set(&b->batIdxLock);
+	if ((hp = &b->tstrimps->strimps)) {
+		if (HEAPsave(hp, hp->filename, NULL, true) == GDK_SUCCEED) {
+			if (hp->storage == STORE_MEM) {
+				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+					((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
+					if (write(fd, hp->base, sizeof(uint64_t)) >= 0) {
+						failed = "";
+						if (!(GDKdebug & NOSYNCMASK)) {
+#if defined(NATIVE_WIN32)
+							_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+							fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+							fsync(fd);
+#endif
+						}
+						hp->dirty = false;
+					} else {
+						perror("write strimps");
+					}
+					close(fd);
+				}
+			} else {
+				((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
+				if (!(GDKdebug & NOSYNCMASK) &&
+				    MT_msync(hp->base, sizeof(uint64_t)) < 0) {
+					((uint64_t *)hp->base)[0] &= ~((uint64_t) 1 << 32);
+				} else {
+					hp->dirty = false;
+					failed = "";
+				}
+			}
+			TRC_DEBUG(ALGO, "BATstrimpsync(%s): strimps persisted"
+				  " (" LLFMT " usec)%s\n",
+				  BATgetId(b), GDKusec() - t0, failed);
+		}
+	}
+	MT_lock_unset(&b->batIdxLock);
+	BBPunfix(b->batCacheid);
+}
+
+static void
 persistStrimp(BAT *b)
 {
-	if((BBP_status(b->batCacheid) & BBPEXISTING) &&
-	   b->batInserted == b->batCount)
+	if((BBP_status(b->batCacheid) & BBPEXISTING)
+	   && b->batInserted == b->batCount
+	   && !b->theap->dirty
+	   && !GDKinmemory(b->theap->farmid)) {
+		MT_Id tid;
+		BBPfix(b->batCacheid);
+		char name[MT_NAME_LEN];
+		snprintf(name, sizeof(name), "strimpsync%d", b->batCacheid);
+		if (MT_create_thread(&tid, BATstrimpsync, b,
+				     MT_THR_DETACHED, name) < 0)
+			BBPunfix(b->batCacheid);
+	} else
+		TRC_DEBUG(ALGO, "persistStrimp(" ALGOBATFMT "): NOT persisting strimp\n", ALGOBATPAR(b));
 }
 
 /* Create */
