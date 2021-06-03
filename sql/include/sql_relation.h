@@ -59,7 +59,8 @@ typedef struct expression {
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
-	 used:1;	/* used for quick dead code removal */
+	 used:1,	/* used for quick dead code removal */
+	 symmetric:1; /* compare between symmetric */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
 } sql_exp;
@@ -232,6 +233,8 @@ typedef enum operator_type {
 #define set_anti(e)  		(e)->anti = 1
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
+#define is_symmetric(e) 	((e)->symmetric)
+#define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
 #define is_basecol(e) 		((e)->base)
