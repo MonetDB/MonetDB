@@ -2218,6 +2218,7 @@ remote_cleanup:
 			GDKfree(d);
 		} else if (mtype == TYPE_blob) {
 			int err = 0;
+			size_t j = 0;
 			blob **d = GDKmalloc(sizeof(blob*)*cnt);
 			if (!d) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
@@ -2225,7 +2226,7 @@ remote_cleanup:
 			}
 			monetdbe_data_blob* be = (monetdbe_data_blob*)v;
 
-			for (size_t j=0; j<cnt; j++){
+			for (j=0; j<cnt; j++){
 				if (blob_is_null(be+j)) {
 					d[j] = (blob*)nil;
 				} else {
@@ -2235,7 +2236,7 @@ remote_cleanup:
 					blob *b = (blob*)GDKmalloc(nlen);
 					if (!b) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-						err = j-1;
+						err = 1;
 						break;
 					}
 					b->nitems = len;
@@ -2243,15 +2244,13 @@ remote_cleanup:
 					d[j] = b;
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-				err = cnt;
+				err = 1;
 			}
-			if (err)
-				cnt = err;
-			for (size_t j=0; j<cnt; j++){
-				if (d[j] != nil)
-					GDKfree(d[j]);
+			for (size_t k=0; k<j; k++){
+				if (d[k] != nil)
+					GDKfree(d[k]);
 			}
 			GDKfree(d);
 			if (err)
