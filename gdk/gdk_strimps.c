@@ -138,7 +138,7 @@ static int8_t
 strimp_lookup(Strimps *s, CharPair *p) {
 	int8_t ret = -1;
 	size_t idx = 0;
-	size_t npairs = NPAIRS((uint64_t)s->strimps.base[0]);
+	size_t npairs = NPAIRS(((uint64_t *)s->strimps.base)[0]);
 	size_t offset = 0;
 	CharPair sp;
 	(void)p;
@@ -181,7 +181,7 @@ STRMPmakebitstring(const str s, Strimps *r)
 	pi.lim = strlen(s);
 
 	while(pair_at(&pi, &cp)) {
-		pair_idx = strimp_lookup(r, &cp);
+		pair_idx = STRMPpairLookup(r, &cp);
 		if (pair_idx > 0)
 			ret |= 0x1 << pair_idx;
 		next_pair(&pi);
@@ -189,8 +189,6 @@ STRMPmakebitstring(const str s, Strimps *r)
 
 	return ret;
 }
-
-
 
 /* Given a histogram find the indices of the STRIMP_HEADER_SIZE largest
  * counts.
@@ -321,6 +319,7 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 		if(hist[hidx].p) {
 			GDKfree(hist[hidx].p->pbytes);
 			GDKfree(hist[hidx].p);
+			hist[hidx].p = NULL;
 		}
 	}
 	GDKfree(hist);
@@ -333,7 +332,6 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 static Strimps *
 STRMPcreateStrimp(BAT *b)
 {
-	uint64_t *d;
 	uint8_t *h1, *h2;
 	Strimps *r = NULL;
 	uint64_t descriptor;
@@ -354,16 +352,15 @@ STRMPcreateStrimp(BAT *b)
 	if ((r = GDKzalloc(sizeof(Strimps))) == NULL ||
 	    (r->strimps.farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
 	    strconcat_len(r->strimps.filename, sizeof(r->strimps.filename),
-			  nme, ".strimp", NULL) >= sizeof(r->strimps.filename) ||
+			  nme, ".tstrimps", NULL) >= sizeof(r->strimps.filename) ||
 	    HEAPalloc(&r->strimps, BATcount(b)*sizeof(uint64_t) + sz, sizeof(uint8_t), 0) != GDK_SUCCEED) {
 		GDKfree(r);
 		return NULL;
 	}
 
-	descriptor =  STRIMP_VERSION | STRIMP_HEADER_SIZE << 8 | ((uint64_t)sz) << 16;
+	descriptor =  STRIMP_VERSION | ((uint64_t)STRIMP_HEADER_SIZE) << 8 | ((uint64_t)sz) << 16;
 
-	d = (uint64_t *)r->strimps.base;
-	*d = descriptor;
+	((uint64_t *)r->strimps.base)[0] = descriptor;
 	r->sizes_base = h1 = (uint8_t *)r->strimps.base + 8;
 	r->pairs_base = h2 = (uint8_t *)h1 + STRIMP_HEADER_SIZE;
 
@@ -505,7 +502,6 @@ persistStrimp(BAT *b)
 	if((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	   b->batInserted == b->batCount)
 }
-#endif
 
 /* Create */
 gdk_return
@@ -521,31 +517,32 @@ STRMPcreate(BAT *b)
 	assert(b->ttype == TYPE_str);
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if (b->tstrimps == NULL) {
-		if ((h = STRMPcreateStrimp(b)) == NULL) {
-			return GDK_FAIL;
-		}
-		dh = (uint64_t *)h->strimps.base + h->strimps.free;
+	if (BATcheckstrimps(b))
+		return GDK_SUCCEED;
 
-		bi = bat_iterator(b);
-		for (i = 0; i < b->batCount; i++) {
-			s = (str)BUNtvar(bi, i);
-			if (!strNil(s))
-				*dh++ = STRMPmakebitstring(s, h);
-			else
-				*dh++ = 0; /* no pairs in nil values */
-		}
-		h->strimps.free += b->batCount*sizeof(uint64_t);
-
-		/* After we have computed the strimp, attempt to write it back
-		 * to the BAT.
-		 */
-		MT_lock_set(&b->batIdxLock);
-		b->tstrimps = h;
-		b->batDirtydesc = true;
-		/* persistStrimp(b) */
-		MT_lock_unset(&b->batIdxLock);
+	if ((h = STRMPcreateStrimp(b)) == NULL) {
+		return GDK_FAIL;
 	}
+	dh = (uint64_t *)h->strimps.base + h->strimps.free;
+
+	bi = bat_iterator(b);
+	for (i = 0; i < b->batCount; i++) {
+		s = (str)BUNtvar(bi, i);
+		if (!strNil(s))
+			*dh++ = STRMPmakebitstring(s, h);
+		else
+			*dh++ = 0; /* no pairs in nil values */
+	}
+	h->strimps.free += b->batCount*sizeof(uint64_t);
+
+	/* After we have computed the strimp, attempt to write it back
+	 * to the BAT.
+	 */
+	MT_lock_set(&b->batIdxLock);
+	b->tstrimps = h;
+	b->batDirtydesc = true;
+	persistStrimp(b);
+	MT_lock_unset(&b->batIdxLock);
 
 	TRC_DEBUG(ALGO, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
