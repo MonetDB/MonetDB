@@ -446,6 +446,7 @@ typedef struct sqlstore {
     ATOMIC_TYPE timestamp;	/* timestamp counter */
     ATOMIC_TYPE transaction;/* transaction id counter */
 	ulng oldest;
+	ulng oldest_pending;
 	int readonly;			/* store is readonly */
 	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
 	int first;				/* just created the db */
@@ -465,6 +466,7 @@ typedef struct sqlstore {
 
 typedef struct sql_change {
 	sql_base *obj;
+	ulng ts;        /* commit/rollback timestamp */
 	void *data;	/* data changes */
 	bool committed;	/* commit or rollback */
 	bool handled;	/* handled in commit */
