@@ -1850,6 +1850,7 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 
 	(void)store_timestamp(store); /* increment once */
 	MT_lock_init(&store->lock, "sqlstore_lock");
+	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
 	for(int i = 0; i<NR_TABLE_LOCKS; i++)
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
@@ -1937,6 +1938,7 @@ store_exit(sqlstore *store)
 			MT_lock_set(&store->lock);
 			MT_lock_set(&store->flush);
 		}
+		MT_lock_set(&store->commit);
 		if (store->changes) {
 			ulng oldest = store_timestamp(store)+1;
 			for(node *n=store->changes->h; n; n = n->next) {
@@ -1953,6 +1955,7 @@ store_exit(sqlstore *store)
 			}
 			list_destroy(store->changes);
 		}
+		MT_lock_unset(&store->commit);
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
@@ -3207,13 +3210,13 @@ sql_trans_rollback(sql_trans *tr)
 		}
 	}
 	if (tr->changes) {
-		store_lock(store);
 		/* revert the change list */
 		list *nl = SA_LIST(tr->sa, (fdestroy) NULL);
 		for(node *n=tr->changes->h; n; n = n->next)
 			list_prepend(nl, n->data);
 
 		/* rollback */
+		store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
 		for(node *n=nl->h; n; n = n->next) {
@@ -3377,6 +3380,7 @@ sql_trans_commit(sql_trans *tr)
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
+	MT_lock_set(&store->commit);
 	store_lock(store);
 	ulng oldest = store_oldest(store);
 	store_pending_changes(store, oldest);
@@ -3423,7 +3427,7 @@ sql_trans_commit(sql_trans *tr)
 				c->obj->flags = 0;
 			c->ts = commit_ts;
 		}
-		/* flush logger after changes got applied */
+		/* when directly flushing: flush logger after changes got applied */
 		if (ok == LOG_OK && flush)
 			ok = store->logger_api.log_tend(store, commit_ts);
 		/* garbage collect */
@@ -3445,6 +3449,7 @@ sql_trans_commit(sql_trans *tr)
 		tr->ts = commit_ts;
 		store_unlock(store);
 	}
+	MT_lock_unset(&store->commit);
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
 		for(node *n=tr->localtmps.set->h; n; ) {
