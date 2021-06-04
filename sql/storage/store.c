@@ -44,18 +44,10 @@ store_transaction_id(sqlstore *store)
 	return tid;
 }
 
-static ulng
-store_oldest_given_max(sqlstore *store, ulng commit_ts)
-{
-	if (ATOMIC_GET(&store->nr_active) <= 1)
-		return commit_ts;
-	return store->oldest;
-}
-
 ulng
 store_oldest(sqlstore *store)
 {
-	return store_oldest_given_max(store, TRANSACTION_ID_BASE);
+	return store->oldest;
 }
 
 static ulng
@@ -3387,11 +3379,12 @@ sql_trans_commit(sql_trans *tr)
 	sqlstore *store = tr->store;
 	store_lock(store);
 	ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-	ulng oldest = store_oldest_given_max(store, commit_ts);
+	ulng oldest = store_oldest(store);
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 	store_pending_changes(store, oldest);
+	oldest = store_oldest_pending(store);
 	if (tr->changes) {
 		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
 		int flush = (tr->logchanges > min_changes && !store->changes);
@@ -3405,7 +3398,6 @@ sql_trans_commit(sql_trans *tr)
 				if (c->log && ok == LOG_OK)
 					ok = c->log(tr, c);
 			}
-			//saved_id = store->logger_api.log_save_id(store);
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
@@ -3414,6 +3406,10 @@ sql_trans_commit(sql_trans *tr)
 		}
 		tr->logchanges = 0;
 		/* apply committed changes */
+		if (ATOMIC_GET(&store->nr_active) == 1) {
+			oldest = commit_ts;
+			store_pending_changes(store, oldest);
+		}
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
