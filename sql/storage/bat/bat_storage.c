@@ -2297,13 +2297,13 @@ drop_idx(sql_trans *tr, sql_idx *i)
 
 
 static BUN
-clear_cs(sql_trans *tr, column_storage *cs)
+clear_cs(sql_trans *tr, column_storage *cs, bool renew)
 {
 	BAT *b;
 	BUN sz = 0;
 
 	(void)tr;
-	if (cs->bid) {
+	if (cs->bid && renew) {
 		b = temp_descriptor(cs->bid);
 		if (b) {
 			sz += BATcount(b);
@@ -2335,34 +2335,34 @@ clear_cs(sql_trans *tr, column_storage *cs)
 }
 
 static BUN
-clear_col(sql_trans *tr, sql_column *c)
+clear_col(sql_trans *tr, sql_column *c, bool renew)
 {
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
+	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	if (delta)
-		return clear_cs(tr, &delta->cs);
+		return clear_cs(tr, &delta->cs, renew);
 	return 0;
 }
 
 static BUN
-clear_idx(sql_trans *tr, sql_idx *i)
+clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 {
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
-	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
+	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	if (delta)
-		return clear_cs(tr, &delta->cs);
+		return clear_cs(tr, &delta->cs, renew);
 	return 0;
 }
 
@@ -2371,7 +2371,7 @@ clear_storage(sql_trans *tr, storage *s)
 {
 	BUN sz = count_deletes(s->segs->h, tr);
 
-	clear_cs(tr, &s->cs);
+	clear_cs(tr, &s->cs, true);
 	s->cs.cleared = 1;
 	if (s->segs)
 		destroy_segments(s->segs);
@@ -2428,21 +2428,19 @@ clear_table(sql_trans *tr, sql_table *t)
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
 		return clear_ok;
 
-	if (clear) {
-		for (; n; n = n->next) {
-			c = n->data;
+	for (; n; n = n->next) {
+		c = n->data;
 
-			if ((clear_ok = clear_col(tr, c)) >= BUN_NONE - 1)
+		if ((clear_ok = clear_col(tr, c, clear)) >= BUN_NONE - 1)
+			return clear_ok;
+	}
+	if (t->idxs) {
+		for (n = ol_first_node(t->idxs); n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			if (isTable(ci->t) && idx_has_column(ci->type) &&
+				(clear_ok = clear_idx(tr, ci, clear)) >= BUN_NONE - 1)
 				return clear_ok;
-		}
-		if (t->idxs) {
-			for (n = ol_first_node(t->idxs); n; n = n->next) {
-				sql_idx *ci = n->data;
-
-				if (isTable(ci->t) && idx_has_column(ci->type) &&
-					(clear_ok = clear_idx(tr, ci)) >= BUN_NONE - 1)
-					return clear_ok;
-			}
 		}
 	}
 	return sz;
@@ -2694,12 +2692,12 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE)
 				commit_delta(tr, delta);
 			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-				clear_cs(tr, &delta->cs);
+				clear_cs(tr, &delta->cs, true);
 		} else { /* rollback */
 			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/)
 				rollback_delta(tr, delta, c->type.type->localtype);
 			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-				clear_cs(tr, &delta->cs);
+				clear_cs(tr, &delta->cs, true);
 		}
 		c->t->base.flags = c->base.flags = 0;
 	}
@@ -2804,12 +2802,12 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE)
 				commit_delta(tr, delta);
 			else /* CA_DELETE as CA_DROP's are gone already */
-				clear_cs(tr, &delta->cs);
+				clear_cs(tr, &delta->cs, true);
 		} else { /* rollback */
 			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/)
 				rollback_delta(tr, delta, type);
 			else /* CA_DELETE as CA_DROP's are gone already */
-				clear_cs(tr, &delta->cs);
+				clear_cs(tr, &delta->cs, true);
 		}
 		i->t->base.flags = i->base.flags = 0;
 	}
