@@ -393,10 +393,10 @@ recover_dir(int farmid, bool direxists)
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
 			TRC_WARNING(GDK, "unlink of BBP.bak failed\n");
-		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak") != GDK_SUCCEED)
+		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak", false) != GDK_SUCCEED)
 			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed\n");
 	}
-	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
+	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir", true);
 }
 
 static gdk_return BBPrecover(int farmid);
@@ -1088,7 +1088,7 @@ BBPinit(void)
 					GDKfree(backupbbpdirstr);
 					goto bailout;
 				}
-			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == GDK_SUCCEED)
+			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir", true) == GDK_SUCCEED)
 				TRC_DEBUG(IO_, "reverting to dir saved in BBP.bak.\n");
 
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
@@ -2718,7 +2718,7 @@ dirty_bat(bat *i, bool subcommit)
 static gdk_return
 file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, const char *ext)
 {
-	if (GDKmove(farmid, srcdir, name, ext, dstdir, name, ext) == GDK_SUCCEED) {
+	if (GDKmove(farmid, srcdir, name, ext, dstdir, name, ext, true) == GDK_SUCCEED) {
 		return GDK_SUCCEED;
 	} else {
 		char *path;
@@ -2864,7 +2864,7 @@ BBPprepare(bool subcommit)
 	}
 	if (ret == GDK_SUCCEED && backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
-		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir")) == GDK_SUCCEED) {
+		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir", true)) == GDK_SUCCEED) {
 			backup_dir = set;
 		}
 	}
@@ -3294,7 +3294,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		return ret;
 	}
 	/* try to rename it */
-	ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
+	ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL, false);
 
 	if (ret != GDK_SUCCEED) {
 		char *srcpath;
@@ -3312,7 +3312,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		TRC_DEBUG(IO_, "remove %s = %d\n", dstpath, (int) ret);
 
 		(void) GDKcreatedir(dstdir); /* if fails, move will fail */
-		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
+		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL, true);
 		TRC_DEBUG(IO_, "link %s %s = %d\n", srcpath, dstpath, (int) ret);
 		GDKfree(dstpath);
 		GDKfree(srcpath);
@@ -3467,7 +3467,7 @@ BBPrecover_subdir(void)
 	while ((dent = readdir(dirp)) != NULL) {
 		if (dent->d_name[0] == '.')
 			continue;
-		ret = GDKmove(0, SUBDIR, dent->d_name, NULL, BAKDIR, dent->d_name, NULL);
+		ret = GDKmove(0, SUBDIR, dent->d_name, NULL, BAKDIR, dent->d_name, NULL, true);
 		if (ret == GDK_SUCCEED && strcmp(dent->d_name, "BBP.dir") == 0)
 			backup_dir = 1;
 		if (ret != GDK_SUCCEED)
