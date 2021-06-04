@@ -1662,7 +1662,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sel, in
 }
 
 static InstrPtr
-select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, int anti, int swapped, int type, int reduce)
+select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, int anti, int symmetric, int swapped, int type, int reduce)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr p, q;
@@ -1672,7 +1672,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 	if (op1->nr < 0 || (sel && sel->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
+	if ((symmetric || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
 		int k, nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1706,7 +1706,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 				p = pushArgument(mb, p, sel->nr);
 		}
 
-		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
+		p = pushBit(mb, p, (symmetric)?TRUE:FALSE); /* symmetric */
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
 		p = pushBit(mb, p, FALSE);		    /* nils_false */
@@ -1772,10 +1772,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 		}
 		q = pushBit(mb, q, anti);
 		if (type == st_uselect2) {
-			if (cmp & CMP_BETWEEN)
-				q = pushBit(mb, q, TRUE); /* all nil's are != */
+			q = pushBit(mb, q, TRUE); /* all nil's are != */
 		} else {
-			q = pushBit(mb, q, (cmp & CMP_SYMMETRIC)?TRUE:FALSE);
+			q = pushBit(mb, q, (symmetric)?TRUE:FALSE);
 		}
 		if (type == st_join2)
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -1797,9 +1796,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sel, 
 }
 
 stmt *
-stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce)
+stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce)
 {
-	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, 0, st_uselect2, reduce);
+	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, symmetric, 0, st_uselect2, reduce);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect2);
@@ -2290,9 +2289,9 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 }
 
 stmt *
-stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped)
+stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int symmetric, int swapped)
 {
-	InstrPtr q = select2_join2(be, l, ra, rb, cmp, NULL, anti, swapped, st_join2, 1/*reduce semantics*/);
+	InstrPtr q = select2_join2(be, l, ra, rb, cmp, NULL, anti, symmetric, swapped, st_join2, 1/*reduce semantics*/);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join2);
 		if (s == NULL) {

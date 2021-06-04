@@ -1,0 +1,126 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
+
+statement ok
+CREATE TABLE t1(c0 INTERVAL DAY, c1 BIGINT)
+
+statement ok rowcount 2
+INSERT INTO t1(c1) VALUES(3), (5)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
+
+statement ok rowcount 3
+TRUNCATE t0
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
+
+query T rowsort
+SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
+----
+8
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c2" DATE, CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"))
+
+statement ok rowcount 2
+INSERT INTO "t0" VALUES (DATE '1970-01-04'), (DATE '1970-01-01')
+
+query T rowsort
+SELECT t0.c2 FROM t0 WHERE (t0.c2) IN (t0.c2, (VALUES (DATE '1969-12-10'), (DATE '1970-01-01')))
+----
+1970-01-01
+1970-01-04
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((t0.c2) IN (t0.c2, (VALUES (DATE '1969-12-10'), (DATE '1970-01-01'))) AS INT) as count FROM t0) as res
+----
+2
+
+statement ok
+CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c2"))
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES (69), (-12), (9), (0)
+
+query T rowsort
+SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
+----
+True
+True
+True
+True
+
+query I rowsort
+SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11'))
+----
+-12
+0
+69
+9
+
+query T rowsort
+SELECT least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) > -3 FROM t1
+----
+True
+True
+True
+True
+
+query I rowsort
+SELECT t1.c2 FROM t1 WHERE least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11')) > -3
+----
+-12
+0
+69
+9
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c3" INTERVAL SECOND)
+
+statement ok rowcount 9
+INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
+(INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
+
+query T rowsort
+SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
+----
+False
+
+query T rowsort
+SELECT t0.c3 FROM t0 WHERE ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1)
+----
+0:00:00
+0:00:01
+0:00:01
+0:00:04
+0:00:06
+0:00:06
+0:00:09
+0:00:09
+NULL
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1) AS INT) as count FROM t0) as res
+----
+9
+
+statement ok
+ROLLBACK
+

@@ -191,7 +191,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
 				goto bailout;
-			vals[p1] = next;
+			vals[i] = next;
 			nils |= is_int_nil(next);
 		}
 	} else {
@@ -201,7 +201,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
 				goto bailout;
-			vals[p1] = next;
+			vals[i] = next;
 			nils |= is_int_nil(next);
 		}
 	}

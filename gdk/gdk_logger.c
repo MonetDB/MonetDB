@@ -1072,14 +1072,12 @@ logger_read_transaction(logger *lg)
 		case LOG_START:
 			if (l.id > lg->tid)
 				lg->tid = l.id;
-			lng trans_id;
-			if (!mnstr_readLng(lg->input_log, &trans_id) ||
-			   (tr = tr_create(tr, l.id)) == NULL) {
+			if ((tr = tr_create(tr, l.id)) == NULL) {
 				err = LOG_ERR;
 				break;
 			}
 			if (lg->debug & 1)
-				fprintf(stderr, "#logger tstart %d-" LLFMT "\n", tr->tid, trans_id);
+				fprintf(stderr, "#logger tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
 			if (tr == NULL)
@@ -2537,7 +2535,7 @@ pre_allocate(logger *lg)
 }
 
 gdk_return
-log_tend(logger *lg)
+log_tend(logger *lg, ulng commit_ts)
 {
 	logformat l;
 	gdk_return res = GDK_SUCCEED;
@@ -2550,6 +2548,11 @@ log_tend(logger *lg)
 	if (lg->flushnow) {
 		lg->flushnow = 0;
 		return logger_commit(lg);
+	}
+
+	if (lg->current) {
+		lg->current->last_tid = lg->tid;
+		lg->current->last_ts = commit_ts;
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -2727,7 +2730,7 @@ logger_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, ulng commit_ts, bool flushnow)
+log_tstart(logger *lg, bool flushnow)
 {
 	logformat l;
 
@@ -2738,12 +2741,8 @@ log_tstart(logger *lg, ulng commit_ts, bool flushnow)
 		if (logger_open_output(lg) != GDK_SUCCEED)
 			return GDK_FAIL;
 		while (lg->saved_id+1 < lg->id)
-			logger_flush(lg, commit_ts);
+			logger_flush(lg, (1ULL<<63));
 		lg->flushnow = flushnow;
-	}
-	if (lg->current) {
-		lg->current->last_tid = lg->tid+1;
-		lg->current->last_ts = commit_ts;
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -2756,8 +2755,7 @@ log_tstart(logger *lg, ulng commit_ts, bool flushnow)
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
-	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    !mnstr_writeLng(lg->output_log, commit_ts))
+	if (log_write_format(lg, &l) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }

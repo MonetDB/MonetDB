@@ -349,7 +349,7 @@ PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ] COUNT 
-) [ "sys"."or"(int "1" <= "another_t"."col1" <= int "2", "sys"."isnull"("another_t"."col2") NOT NULL) ]
+) [ "sys"."or"(int "1" <= "another_t"."col1" <= int "2" BETWEEN , "sys"."isnull"("another_t"."col2") NOT NULL) ]
 
 statement ok
 CREATE TABLE tabel1 (id_nr INT, dt_sur STRING, edg INT, ede DATE, pc_nml_hur STRING, srt_ukr STRING)

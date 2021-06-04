@@ -499,7 +499,8 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 {
 	int matvar[8], fargument[8], k, l, parts = 0;
 
-	if (nrmats == 1 && (getFunctionId(p) == identityRef && getModuleId(p) == batcalcRef))
+	if (nrmats == 1 &&
+		((getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef) || (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef)))
 		return mat_apply1(mb, p, ml, is_a_mat(getArg(p,1),ml), 1);
 	assert(nrmats <= 8);
 

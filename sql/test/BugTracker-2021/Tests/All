@@ -13,3 +13,4 @@ batcalc-between-undefined.Bug-7129
 batappend-undefined.Bug-7130
 WITH-alias-DELETE-1.deletes-wrong-tuples.Bug-7133
 WITH-alias-DELETE-2.deletes-too-many-tuples.Bug-7133
+merge-delete.Bug-7136

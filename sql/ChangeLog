@@ -1,3 +1,18 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Jun  3 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The sys.epoch function has always been confusing.  There are two
+  versions, one with an INTEGER argument, and one with a BIGINT
+  argument.  The former accepted values as seconds, whereas the
+  latter epected milliseconds.  Also, the construct EXTRACT(EPOCH
+  FROM value) returns a BIGINT with millisecond precision.  This has
+  now been overhauled.  There is no longer a function sys.epoch with
+  BIGINT argument, but instead there is a new function sys.epoch with
+  DECIMAL(18,3) argument.  The argument is seconds, but with 3 decimals,
+  it provides millisecond accuracy. Also the EXTRACT(EPOCH FROM value)
+  now returns a DECIMAL(18,3), again seconds with 3 decimals giving
+  millisecond accuracy.  Note that the internal, binary representation
+  of DECIMAL(18,3) interpreted as seconds with 3 decimals and BIGINT
+  with millisecond precision is exactly the same.
+
