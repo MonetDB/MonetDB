@@ -1277,7 +1277,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 	b = mvc_bind(m, sname, tname, cname, access);
-	if (b && b->ttype != coltype) {
+	if (b && b->ttype && b->ttype != coltype) {
 		BBPunfix(b->batCacheid);
 		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch");
 	}
