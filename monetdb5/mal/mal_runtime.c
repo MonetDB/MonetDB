@@ -161,25 +161,28 @@ clearQRYqueue(size_t idx)
 static void
 advanceQRYqueue(void)
 {
-	qhead++;
-	if( qhead == qsize)
-		qhead = 0;
-	if( qtail == qhead)
-		qtail++;
-	if( qtail == qsize)
-		qtail = 0;
-	/* clean out the element */
-	str s = QRYqueue[qhead].query;
-	if( s){
-		/* don;t wipe them when they are still running, prepared, or paused */
-		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status != 0 && (QRYqueue[qhead].status[0] == 'r' || QRYqueue[qhead].status[0] == 'p')){
-			advanceQRYqueue();
-			return;
+	bool found_empty_slot = false;
+
+	while (!found_empty_slot) {
+		qhead++;
+		if( qhead == qsize)
+			qhead = 0;
+		if( qtail == qhead)
+			qtail++;
+		if( qtail == qsize)
+			qtail = 0;
+		/* clean out the element */
+		str s = QRYqueue[qhead].query;
+		if (!s || QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')) {
+			/* don't wipe them when they are still running, prepared, or paused */
+			/* The upper layer has assured there is at least one slot available */
+			if (s) {
+				GDKfree(s);
+				GDKfree(QRYqueue[qhead].username);
+				clearQRYqueue(qhead);
+			}
+			found_empty_slot = true;
 		}
-		GDKfree(s);
-		GDKfree(QRYqueue[qhead].username);
-		clearQRYqueue(qhead);
 	}
 }
 
