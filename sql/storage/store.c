@@ -58,6 +58,13 @@ store_oldest(sqlstore *store)
 	return store_oldest_given_max(store, TRANSACTION_ID_BASE);
 }
 
+static ulng
+store_oldest_pending(sqlstore *store)
+{
+	assert(store->oldest_pending != TRANSACTION_ID_BASE);
+	return store->oldest_pending;
+}
+
 static inline bool
 instore(sqlid id)
 {
@@ -2017,7 +2024,7 @@ store_apply_deltas(sqlstore *store)
 	flusher.working = true;
 
 	store_lock(store);
-	ulng oldest = store_oldest(store);
+	ulng oldest = store_oldest_pending(store);
 	store_unlock(store);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest-1);
@@ -2026,23 +2033,11 @@ store_apply_deltas(sqlstore *store)
 }
 
 
-/* Call while holding store->flush */
-static void
-wait_until_flusher_idle(sqlstore *store)
-{
-	while (flusher.working) {
-		const int sleeptime = 100;
-		MT_lock_unset(&store->lock);
-		MT_sleep_ms(sleeptime);
-		MT_lock_set(&store->lock);
-	}
-}
 void
 store_suspend_log(sqlstore *store)
 {
 	MT_lock_set(&store->lock);
 	flusher.enabled = false;
-	wait_until_flusher_idle(store);
 	MT_lock_unset(&store->lock);
 }
 
@@ -2057,6 +2052,7 @@ store_resume_log(sqlstore *store)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
+	ulng oldest_changes = TRANSACTION_ID_BASE;
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
@@ -2067,9 +2063,13 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			} else if (c->cleanup && c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
+			} else if (c->ts < oldest_changes) {
+				oldest_changes = c->ts;
 			}
 			n = next;
 		}
+		if (oldest_changes < TRANSACTION_ID_BASE)
+			store->oldest_pending = oldest_changes;
 	}
 }
 
@@ -2084,25 +2084,24 @@ store_manager(sqlstore *store)
 	for (;;) {
 		int res;
 
-		if (store->logger_api.changes(store) <= 0) {
+		if (ATOMIC_GET(&store->nr_active) == 0) {
+			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
-				store_lock(store);
-				if (ATOMIC_GET(&store->nr_active) == 0) {
-					ulng oldest = store_timestamp(store)+1;
-					store_pending_changes(store, oldest);
-				}
-				store->logger_api.activate(store); /* rotate too new log file */
-				store_unlock(store);
+				ulng oldest = store_timestamp(store)+1;
+				store_pending_changes(store, oldest);
 			}
-			if (GDKexiting())
-				break;
-			const int sleeptime = 100;
-			MT_lock_unset(&store->flush);
-			MT_sleep_ms(sleeptime);
-			flusher.countdown_ms -= sleeptime;
-			MT_lock_set(&store->flush);
-			continue;
+			store->logger_api.activate(store); /* rotate too new log file */
+			store_unlock(store);
 		}
+		if (GDKexiting())
+			break;
+		const int sleeptime = 100;
+		MT_lock_unset(&store->flush);
+		MT_sleep_ms(sleeptime);
+		flusher.countdown_ms -= sleeptime;
+		MT_lock_set(&store->flush);
+		if (store->logger_api.changes(store) <= 0)
+			continue;
 		if (GDKexiting())
 			break;
 
@@ -2451,7 +2450,6 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
 	locked = 1;
-	wait_until_flusher_idle(store);
 	if (GDKexiting())
 		goto end;
 
@@ -3244,7 +3242,6 @@ static void
 sql_trans_rollback(sql_trans *tr)
 {
 	sqlstore *store = tr->store;
-	ulng commit_ts = 0; /* invalid ts, ie rollback */
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3265,26 +3262,15 @@ sql_trans_rollback(sql_trans *tr)
 
 		/* rollback */
 		ulng oldest = store_oldest(store);
+		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
 			if (c->commit)
-				c->commit(tr, c, commit_ts, oldest);
+				c->commit(tr, c, 0 /* ie rollback */, oldest);
+			c->ts = commit_ts;
 		}
-		if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
-			for(node *n=store->changes->h; n; ) {
-				node *next = n->next;
-				sql_change *c = n->data;
-
-				if (!c->cleanup) {
-					_DELETE(c);
-				} else if (c->cleanup && c->cleanup(store, c, oldest)) {
-					list_remove_node(store->changes, store, n);
-					_DELETE(c);
-				}
-				n = next;
-			}
-		}
+		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3473,6 +3459,7 @@ sql_trans_commit(sql_trans *tr)
 				ok = c->commit(tr, c, commit_ts, oldest);
 			else
 				c->obj->flags = 0;
+			c->ts = commit_ts;
 		}
 		/* flush logger after changes got applied */
 		if (ok == LOG_OK && flush)
