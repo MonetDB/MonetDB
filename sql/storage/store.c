@@ -3390,18 +3390,18 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
+
 	store_lock(store);
-	ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 	ulng oldest = store_oldest(store);
 
 	if (tr->predicates && !sql_trans_valid(tr))
 			return LOG_ERR;
 
-	/* write phase */
-	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 	store_pending_changes(store, oldest);
 	oldest = store_oldest_pending(store);
+	store_unlock(store);
 	if (tr->changes) {
+		ulng commit_ts = 0;
 		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
 		int flush = (tr->logchanges > min_changes && !store->changes);
 		/* log changes should only be done if there is something to log */
@@ -3417,10 +3417,16 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
+			store_lock(store);
+			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 			if (ok == LOG_OK && !flush)
 				ok = store->logger_api.log_tend(store, commit_ts);
+		} else {
+			store_lock(store);
+			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 		}
 		tr->logchanges = 0;
+		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
 		if (ATOMIC_GET(&store->nr_active) == 1) {
 			oldest = commit_ts;
@@ -3454,6 +3460,8 @@ sql_trans_commit(sql_trans *tr)
 		}
 		list_destroy(tr->changes);
 		tr->changes = NULL;
+		tr->ts = commit_ts;
+		store_unlock(store);
 	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
@@ -3471,8 +3479,6 @@ sql_trans_commit(sql_trans *tr)
 		tr->localtmps.dset = NULL;
 	}
 	tr->localtmps.nelm = NULL;
-	tr->ts = commit_ts;
-	store_unlock(store);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
