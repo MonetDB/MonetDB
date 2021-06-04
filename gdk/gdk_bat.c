@@ -748,7 +748,6 @@ heapmove(Heap *dst, Heap *src)
 	dst->size = src->size;
 	dst->base = src->base;
 	dst->farmid = src->farmid;
-	dst->hashash = src->hashash;
 	dst->cleanhash = src->cleanhash;
 	dst->storage = src->storage;
 	dst->newstorage = src->newstorage;

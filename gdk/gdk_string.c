@@ -75,7 +75,6 @@ strHeap(Heap *d, size_t cap)
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		d->dirty = true;
 		memset(d->base, 0, d->free);
-		d->hashash = false;
 #ifndef NDEBUG
 		/* fill should solve initialization problems within valgrind */
 		memset(d->base + d->free, 0, d->size - d->free);
@@ -89,7 +88,6 @@ strCleanHash(Heap *h, bool rebuild)
 {
 	stridx_t newhash[GDK_STRHASHTABLE];
 	size_t pad, pos;
-	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	BUN off, strhash;
 	const char *s;
 
@@ -115,14 +113,10 @@ strCleanHash(Heap *h, bool rebuild)
 		pos += pad;
 		if (pos >= GDK_ELIMLIMIT)
 			break;
-		pos += extralen;
 		s = h->base + pos;
-		if (h->hashash)
-			strhash = ((const BUN *) s)[-1];
-		else
-			strhash = strHash(s);
+		strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
-		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
+		newhash[off] = (stridx_t) (pos - sizeof(stridx_t));
 		pos += strLen(s);
 	}
 	/* only set dirty flag if the hash table actually changed */
@@ -141,7 +135,7 @@ strCleanHash(Heap *h, bool rebuild)
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 			if (pad < sizeof(stridx_t))
 				pad += GDK_VARALIGN;
-			pos += pad + extralen;
+			pos += pad;
 			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
 			pos += strLen(s);
@@ -160,7 +154,6 @@ var_t
 strLocate(Heap *h, const char *v)
 {
 	stridx_t *ref, *next;
-	const size_t extralen = h->hashash ? EXTRALEN : 0;
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
@@ -173,8 +166,8 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (strCmp(v, (str) (next + 1) + extralen) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
+		if (strCmp(v, (str) (next + 1)) == 0)
+			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
 	return 0;
 }
@@ -260,12 +253,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 	Heap *h = b->tvheap;
 	size_t pad;
 	size_t pos, len = strLen(v);
-	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket;
-	BUN off, strhash;
+	BUN off;
 
 	off = strHash(v);
-	strhash = off;
 	off &= GDK_STRHASHMASK;
 	bucket = ((stridx_t *) h->base) + off;
 
@@ -277,7 +268,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 			const stridx_t *ref = bucket;
 
 			do {
-				pos = *ref + sizeof(stridx_t) + extralen;
+				pos = *ref + sizeof(stridx_t);
 				if (strCmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
@@ -288,7 +279,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 			/* large string heap (>=64KiB) -- there is no
 			 * linked list, so only look at single
 			 * entry */
-			pos = *bucket + extralen;
+			pos = *bucket;
 			if (strCmp(v, h->base + pos) == 0) {
 				/* already in heap: reuse */
 				return *dst = (var_t) pos;
@@ -317,8 +308,6 @@ strPut(BAT *b, var_t *dst, const void *V)
 		 * elimination boundary) */
 		pad = 0;
 	}
-
-	pad += extralen;
 
 	/* check heap for space (limited to a certain maximum after
 	 * which nils are inserted) */
@@ -358,21 +347,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
-	if (h->hashash) {
-		((BUN *) (h->base + pos))[-1] = strhash;
-#if EXTRALEN > SIZEOF_BUN
-		((BUN *) (h->base + pos))[-2] = (BUN) len;
-#endif
-	}
 	h->free += pad + len;
 	h->dirty = true;
 
 	/* maintain hash table */
-	pos -= extralen;
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
 		/* the stridx_t next pointer directly precedes the
-		 * string and optional (depending on hashash) hash
-		 * value */
+		 * string */
 		pos -= sizeof(stridx_t);
 		*(stridx_t *) (h->base + pos) = *bucket;
 	}

@@ -82,8 +82,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	ni = bat_iterator(n);
 	tp = NULL;
 	if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
-			    !GDK_ELIMDOUBLES(n->tvheap) &&
-			    b->tvheap->hashash == n->tvheap->hashash)) {
+			    !GDK_ELIMDOUBLES(n->tvheap))) {
 		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
@@ -185,15 +184,13 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			 * individually, but reusing the string in b's
 			 * string heap. */
 			int match = 0, i;
-			size_t len = b->tvheap->hashash ? 1024 * EXTRALEN : 0;
+			size_t len = 0;
 			for (i = 0; i < 1024; i++) {
 				p = (BUN) (((double) rand() / RAND_MAX) * (cnt - 1));
 				p = canditer_idx(ci, p) - n->hseqbase;
 				off = BUNtvaroff(ni, p);
 				if (off < b->tvheap->free &&
-				    strcmp(b->tvheap->base + off, n->tvheap->base + off) == 0 &&
-				    (!b->tvheap->hashash ||
-				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : strHash(n->tvheap->base + off))))
+				    strcmp(b->tvheap->base + off, n->tvheap->base + off) == 0)
 					match++;
 				len += (strlen(n->tvheap->base + off) + 8) & ~7;
 			}
@@ -358,9 +355,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			off = BUNtvaroff(ni, p); /* the offset */
 			tp = n->tvheap->base + off; /* the string */
 			if (off < b->tvheap->free &&
-			    strcmp(b->tvheap->base + off, tp) == 0 &&
-			    (!b->tvheap->hashash ||
-			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : strHash(tp)))) {
+			    strcmp(b->tvheap->base + off, tp) == 0) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
 				 * in n's string heap, so we don't

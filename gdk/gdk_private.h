@@ -434,11 +434,6 @@ extern MT_Lock GDKtmLock;
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 
-/* extra space in front of strings in string heaps when hashash is set
- * if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
-
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */
 #ifdef __GNUC__
