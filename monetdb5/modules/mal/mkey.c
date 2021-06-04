@@ -400,15 +400,6 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 #endif
 	case TYPE_str:
-		if (b->tvheap->hashash) {
-			BATiter bi = bat_iterator(b);
-			for (BUN i = 0; i < n; i++) {
-				const void *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
-			}
-			break;
-		}
-		/* fall through */
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
@@ -573,15 +564,6 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 #endif
 	case TYPE_str:
-		if (b->tvheap->hashash) {
-			BATiter bi = bat_iterator(b);
-			for (BUN i = 0; i < n; i++) {
-				const char *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
-			}
-			break;
-		}
-		/* fall through */
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;

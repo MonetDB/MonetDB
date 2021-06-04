@@ -98,7 +98,6 @@ HEAPgrow(const Heap *old, size_t size)
 		return NULL;
 	*new = (Heap) {
 		.farmid = old->farmid,
-		.hashash = old->hashash,
 		.cleanhash = old->cleanhash,
 		.dirty = true,
 		.remove = old->remove,
@@ -544,7 +543,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		return GDK_FAIL;
 	*new = (Heap) {
 		.farmid = old->farmid,
-		.hashash = old->hashash,
 		.dirty = true,
 		.remove = old->remove,
 		.parentid = old->parentid,
@@ -658,7 +656,6 @@ HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	if (HEAPalloc(dst, src->free - offset, 1, 1) == GDK_SUCCEED) {
 		dst->free = src->free - offset;
 		memcpy(dst->base, src->base + offset, src->free - offset);
-		dst->hashash = src->hashash;
 		dst->cleanhash = src->cleanhash;
 		dst->dirty = true;
 		return GDK_SUCCEED;

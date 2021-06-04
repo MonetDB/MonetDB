@@ -223,11 +223,6 @@ mix_uuid(uuid u)
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h, hb))				\
 		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-#define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (strEQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != HASHnil(h);					\

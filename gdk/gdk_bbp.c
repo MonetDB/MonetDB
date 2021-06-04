@@ -404,7 +404,11 @@ static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
 static int
-heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename, int lineno)
+heapinit(BAT *b, const char *buf,
+#ifdef GDKLIBRARY_HASHASH
+	 int *hashash,
+#endif
+	 unsigned bbpversion, bat bid, const char *filename, int lineno)
 {
 	int t;
 	char type[33];
@@ -452,7 +456,9 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
+#ifdef GDKLIBRARY_HASHASH
 	*hashash = var & 2;
+#endif
 	var &= ~2;
 #ifdef HAVE_HGE
 	if (strcmp(type, "hge") == 0)
@@ -514,7 +520,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 }
 
 static int
-vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, int lineno)
+vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 {
 	int n = 0;
 	uint64_t free, size;
@@ -539,7 +545,6 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, i
 		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
 			      filename, ".theap", NULL);
 		b->tvheap->storage = (storage_t) storage;
-		b->tvheap->hashash = hashash != 0;
 		b->tvheap->cleanhash = true;
 		b->tvheap->newstorage = (storage_t) storage;
 		b->tvheap->dirty = false;
@@ -555,10 +560,18 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, i
 }
 
 static gdk_return
-BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
+BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
+#ifdef GDKLIBRARY_HASHASH
+	       , bat **hashbats, bat *nhashbats
+#endif
+	)
 {
 	bat bid = 0;
 	char buf[4096];
+#ifdef GDKLIBRARY_HASHASH
+	bat *hbats = NULL;
+	bat nhbats = 0;
+#endif
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -572,7 +585,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		char *s, *options = NULL;
 		char logical[1024];
 		uint64_t count, capacity, base = 0;
+#ifdef GDKLIBRARY_HASHASH
 		int Thashash;
+#endif
 
 		lineno++;
 		if ((s = strchr(buf, '\r')) != NULL) {
@@ -659,18 +674,35 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 			return GDK_FAIL;
 		}
 		bn->hseqbase = (oid) base;
-		n = heapinit(bn, buf + nread, &Thashash, bbpversion, bid, filename, lineno);
+		n = heapinit(bn, buf + nread,
+#ifdef GDKLIBRARY_HASHASH
+			     &Thashash,
+#endif
+			     bbpversion, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
 			return GDK_FAIL;
 		}
 		nread += n;
-		n = vheapinit(bn, buf + nread, Thashash, bid, filename, lineno);
+		n = vheapinit(bn, buf + nread, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
 			return GDK_FAIL;
 		}
 		nread += n;
+#ifdef GDKLIBRARY_HASHASH
+		if (Thashash) {
+			assert(bbpversion <= GDKLIBRARY_HASHASH);
+			bat *sb = GDKrealloc(hbats, ++nhbats * sizeof(bat));
+			if (sb == NULL) {
+				GDKfree(hbats);
+				BATdestroy(bn);
+				return GDK_FAIL;
+			}
+			hbats = sb;
+			hbats[nhbats - 1] = bn->batCacheid;
+		}
+#endif
 
 		if (buf[nread] != '\n' && buf[nread] != ' ') {
 			BATdestroy(bn);
@@ -724,6 +756,10 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		BBP_desc(bid) = bn;
 		BBP_status_set(bid, BBPEXISTING);	/* do we need other status bits? */
 	}
+#ifdef GDKLIBRARY_HASHASH
+	*hashbats = hbats;
+	*nhashbats = nhbats;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -830,6 +866,7 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_HASHASH &&
 	    bbpversion != GDKLIBRARY_TAILN &&
 	    bbpversion != GDKLIBRARY_MINMAX_POS) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
@@ -984,6 +1021,230 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 	return GDK_FAIL;
 }
 
+#ifdef GDKLIBRARY_HASHASH
+static gdk_return
+fixhashashbat(BAT *b)
+{
+	const char *nme = BBP_physical(b->batCacheid);
+	char *srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
+	if (srcdir == NULL) {
+		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
+		return GDK_FAIL;
+	}
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
+	const char *bnme;
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	long_str filename;
+	snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
+
+	/* we don't maintain index structures */
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
+
+	/* make backup of heaps */
+	const char *t;
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail1",
+		    BAKDIR, bnme, "tail1", false) == GDK_SUCCEED)
+		t = "tail1";
+	else if (GDKmove(b->theap->farmid, srcdir, bnme, "tail2",
+			 BAKDIR, bnme, "tail2", false) == GDK_SUCCEED)
+		t = "tail2";
+#if SIZEOF_VAR_T == 8
+	else if (GDKmove(b->theap->farmid, srcdir, bnme, "tail4",
+			 BAKDIR, bnme, "tail4", false) == GDK_SUCCEED)
+		t = "tail4";
+#endif
+	else if (GDKmove(b->theap->farmid, srcdir, bnme, "tail",
+			 BAKDIR, bnme, "tail", true) == GDK_SUCCEED)
+		t = "tail";
+	else {
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
+		return GDK_FAIL;
+	}
+	GDKclrerr();
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "theap",
+		    BAKDIR, bnme, "theap", true) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.theap\n", nme);
+		return GDK_FAIL;
+	}
+	/* load old heaps */
+	Heap h1 = *b->theap;	/* old heap */
+	h1.base = NULL;
+	h1.dirty = false;
+	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
+	if (HEAPload(&h1, filename, t, false) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "loading old tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	Heap vh1 = *b->tvheap;	/* old heap */
+	vh1.base = NULL;
+	vh1.dirty = false;
+	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
+	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		TRC_CRITICAL(GDK, "loading old string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	/* create new heaps */
+	Heap *h2 = GDKmalloc(sizeof(Heap));
+	Heap *vh2 = GDKmalloc(sizeof(Heap));
+	if (h2 == NULL || vh2 == NULL) {
+		GDKfree(h2);
+		GDKfree(vh2);
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		HEAPfree(&vh1, false);
+		TRC_CRITICAL(GDK, "allocating new heaps "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	*h2 = *b->theap;
+	if (HEAPalloc(h2, b->batCapacity, b->twidth, 0) != GDK_SUCCEED) {
+		GDKfree(h2);
+		GDKfree(vh2);
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		HEAPfree(&vh1, false);
+		TRC_CRITICAL(GDK, "allocating new tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	h2->dirty = true;
+	h2->free = h1.free;
+
+	*vh2 = *b->tvheap;
+	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
+	strHeap(vh2, b->batCapacity);
+	if (vh2->base == NULL) {
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		HEAPfree(&vh1, false);
+		HEAPfree(h2, false);
+		GDKfree(h2);
+		GDKfree(vh2);
+		TRC_CRITICAL(GDK, "allocating new string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	vh2->dirty = true;
+	ATOMIC_INIT(&h2->refs, 1);
+	ATOMIC_INIT(&vh2->refs, 1);
+	Heap *ovh = b->tvheap;
+	b->tvheap = vh2;
+	vh2 = NULL;		/* no longer needed */
+	for (BUN i = 0; i < b->batCount; i++) {
+		var_t o;
+		switch (b->twidth) {
+		case 1:
+			o = (var_t) ((uint8_t *) h1.base)[i] + GDK_VAROFFSET;
+			break;
+		case 2:
+			o = (var_t) ((uint16_t *) h1.base)[i] + GDK_VAROFFSET;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			o = (var_t) ((uint32_t *) h1.base)[i];
+			break;
+#endif
+		default:
+			o = ((var_t *) h1.base)[i];
+			break;
+		}
+		const char *s = vh1.base + o;
+		var_t no = strPut(b, &o, s);
+		if (no == 0) {
+			HEAPfree(&h1, false);
+			HEAPfree(&vh1, false);
+			HEAPdecref(h2, false);
+			HEAPdecref(b->tvheap, false);
+			b->tvheap = ovh;
+			GDKfree(srcdir);
+			TRC_CRITICAL(GDK, "storing string value "
+				     "for BAT %d failed\n", b->batCacheid);
+			return GDK_FAIL;
+		}
+		assert(no >= GDK_VAROFFSET);
+		switch (b->twidth) {
+		case 1:
+			no -= GDK_VAROFFSET;
+			assert(no <= 0xFF);
+			((uint8_t *) h2->base)[i] = (uint8_t) no;
+			break;
+		case 2:
+			no -= GDK_VAROFFSET;
+			assert(no <= 0xFFFF);
+			((uint16_t *) h2->base)[i] = (uint16_t) no;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			assert(no <= 0xFFFFFFFF);
+			((uint32_t *) h2->base)[i] = (uint32_t) no;
+			break;
+#endif
+		default:
+			((var_t *) h2->base)[i] = no;
+			break;
+		}
+	}
+
+	/* cleanup */
+	HEAPfree(&h1, false);
+	HEAPfree(&vh1, false);
+	if (HEAPsave(h2, nme, gettailname(b), true) != GDK_SUCCEED) {
+		HEAPdecref(h2, false);
+		HEAPdecref(b->tvheap, false);
+		b->tvheap = ovh;
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "saving heap failed\n");
+		return GDK_FAIL;
+	}
+	if (HEAPsave(b->tvheap, nme, "theap", true) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		b->tvheap = ovh;
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "saving string heap failed\n");
+		return GDK_FAIL;
+	}
+	HEAPdecref(b->theap, false);
+	b->theap = h2;
+	HEAPfree(h2, false);
+	HEAPdecref(ovh, false);
+	HEAPfree(b->tvheap, false);
+	GDKfree(srcdir);
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+fixhashash(bat *hashbats, bat nhashbats)
+{
+	for (bat i = 0; i < nhashbats; i++) {
+		bat bid = hashbats[i];
+		BAT *b;
+		if ((b = BBP_desc(bid)) == NULL) {
+			/* not a valid BAT (shouldn't happen) */
+			continue;
+		}
+		if (fixhashashbat(b) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+#endif
+
 #ifdef GDKLIBRARY_TAILN
 static gdk_return
 movestrbats(void)
@@ -998,7 +1259,12 @@ movestrbats(void)
 			continue;
 		char *oldpath = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
 		char *newpath = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		int ret = MT_rename(oldpath, newpath);
+		struct stat st;
+		int ret;
+		if (MT_stat(oldpath, &st) == -1 && MT_stat(newpath, &st) == 0)
+			ret = 0; /* new exists, old doesn't: that's ok */
+		else
+			ret = MT_rename(oldpath, newpath);
 		GDKfree(oldpath);
 		GDKfree(newpath);
 		if (ret < 0)
@@ -1016,6 +1282,10 @@ BBPinit(void)
 	unsigned bbpversion = 0;
 	int i;
 	int lineno = 0;
+#ifdef GDKLIBRARY_HASHASH
+	bat *hashbats = NULL;
+	bat nhashbats = 0;
+#endif
 
 	/* the maximum number of BATs allowed in the system and the
 	 * size of the "physical" array are linked in a complicated
@@ -1119,7 +1389,11 @@ BBPinit(void)
 
 	if (!GDKinmemory(0)) {
 		ATOMIC_SET(&BBPsize, 1);
-		if (BBPreadEntries(fp, bbpversion, lineno) != GDK_SUCCEED)
+		if (BBPreadEntries(fp, bbpversion, lineno
+#ifdef GDKLIBRARY_HASHASH
+				   , &hashbats, &nhashbats
+#endif
+			    ) != GDK_SUCCEED)
 			return GDK_FAIL;
 		fclose(fp);
 	}
@@ -1157,6 +1431,11 @@ BBPinit(void)
 			GDKfree(d);
 		}
 	}
+
+#ifdef GDKLIBRARY_HASHASH
+	if (nhashbats > 0 && fixhashash(hashbats, nhashbats) != GDK_SUCCEED)
+		return GDK_FAIL;
+#endif
 
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "TMcommit failed\n");
@@ -1279,7 +1558,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
 		       b->twidth,
-		       b->tvarsized | (b->tvheap ? b->tvheap->hashash << 1 : 0),
+		       b->tvarsized,
 		       (unsigned short) b->tsorted |
 			   ((unsigned short) b->trevsorted << 7) |
 			   (((unsigned short) b->tkey & 0x01) << 8) |

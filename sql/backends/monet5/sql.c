@@ -4149,10 +4149,6 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 	mb->vid = oldvid;
 }
 
-/* if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
-
 str
 STRindex_int(int *i, const str *src, const bit *u)
 {
@@ -4172,7 +4168,6 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 	if (*u) {
 		Heap *h = s->tvheap;
 		size_t pad, pos;
-		const size_t extralen = h->hashash ? EXTRALEN : 0;
 		int v;
 
 		r = COLnew(0, TYPE_int, 1024, TRANSIENT);
@@ -4187,7 +4182,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 			if (pad < sizeof(stridx_t))
 				pad += GDK_VARALIGN;
-			pos += pad + extralen;
+			pos += pad;
 			p = h->base + pos;
 			v = (int) (pos - GDK_STRHASHSIZE);
 			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
@@ -4232,7 +4227,6 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 	if (*u) {
 		Heap *h = s->tvheap;
 		size_t pad, pos;
-		const size_t extralen = h->hashash ? EXTRALEN : 0;
 		sht v;
 
 		r = COLnew(0, TYPE_sht, 1024, TRANSIENT);
@@ -4247,7 +4241,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 			if (pad < sizeof(stridx_t))
 				pad += GDK_VARALIGN;
-			pos += pad + extralen;
+			pos += pad;
 			s = h->base + pos;
 			v = (sht) (pos - GDK_STRHASHSIZE);
 			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
@@ -4291,7 +4285,6 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 	if (*u) {
 		Heap *h = s->tvheap;
 		size_t pad, pos;
-		const size_t extralen = h->hashash ? EXTRALEN : 0;
 		bte v;
 
 		r = COLnew(0, TYPE_bte, 64, TRANSIENT);
@@ -4306,7 +4299,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 			if (pad < sizeof(stridx_t))
 				pad += GDK_VARALIGN;
-			pos += pad + extralen;
+			pos += pad;
 			p = h->base + pos;
 			v = (bte) (pos - GDK_STRHASHSIZE);
 			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
@@ -4346,13 +4339,11 @@ BATSTRstrings(bat *res, const bat *src)
 	BAT *s, *r;
 	Heap *h;
 	size_t pad, pos;
-	size_t extralen;
 
 	if ((s = BATdescriptor(*src)) == NULL)
 		throw(SQL, "calc.strings", SQLSTATE(HY005) "Cannot access column descriptor");
 
 	h = s->tvheap;
-	extralen = h->hashash ? EXTRALEN : 0;
 	r = COLnew(0, TYPE_str, 1024, TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(s->batCacheid);
@@ -4365,7 +4356,7 @@ BATSTRstrings(bat *res, const bat *src)
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
-		pos += pad + extralen;
+		pos += pad;
 		p = h->base + pos;
 		if (BUNappend(r, p, false) != GDK_SUCCEED) {
 			BBPreclaim(r);
