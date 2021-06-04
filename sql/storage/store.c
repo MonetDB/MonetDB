@@ -1986,7 +1986,6 @@ store_apply_deltas(sqlstore *store)
 	return res;
 }
 
-
 void
 store_suspend_log(sqlstore *store)
 {
