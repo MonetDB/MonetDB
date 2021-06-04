@@ -112,6 +112,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						"Could not convert object type %s to a string: %s",
 						PyString_AsString(PyObject_Str(PyObject_Type(key))),
 						msg);
+					free(val);
 					goto loop_end;
 				}
 				for (ai = 0; ai < self->ncols; ai++) {
@@ -126,8 +127,10 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyErr_Format(PyExc_TypeError,
 								 "Unmatched element \"%s\" in dict", val);
 					error = true;
+					free(val);
 					goto loop_end;
 				}
+				free(val);
 			}
 		loop_end:
 			Py_DECREF(keys);
@@ -167,6 +170,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyString_AsString(PyObject_Str(PyObject_Type(key))), msg);
 				error = true;
 				Py_DECREF(keys);
+				free(val);
 				goto wrapup;
 			}
 			for (ai = 0; ai < self->ncols; ai++) {
@@ -190,6 +194,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyErr_Format(PyExc_TypeError,
 								 "Failed to create NumPy array.");
 					error = true;
+					free(val);
 					goto wrapup;
 				}
 				array_type =
@@ -199,10 +204,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 
 				if (!(self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT))) {
 					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					free(val);
 					goto wrapup;
 				}
 				if (!(self->cols[self->ncols].name = GDKstrdup(val))) {
 					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					free(val);
 					goto wrapup;
 				}
 				self->cols[self->ncols].def = NULL;
@@ -213,6 +220,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 									  ATOMnilptr(self->cols[self->ncols].b->ttype),
 									  false) != GDK_SUCCEED) {
 							msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
+							free(val);
 							goto wrapup;
 						}
 					}
@@ -222,6 +230,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				}
 				self->ncols++;
 			}
+			free(val);
 		}
 	}
 
@@ -277,6 +286,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							gdk_return retval;
 							msg = pyobject_to_str(&dictEntry, 42, &val);
 							if (msg != MAL_SUCCEED) {
+								free(val);
 								goto wrapup;
 							}
 							assert(val);

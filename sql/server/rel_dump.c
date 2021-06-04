@@ -267,9 +267,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
-			if (e->flag & CMP_BETWEEN)
-				mnstr_printf(fout, " BETWEEN ");
-			if (e->flag & CMP_SYMMETRIC)
+			mnstr_printf(fout, " BETWEEN ");
+			if (e->symmetric)
 				mnstr_printf(fout, " SYM ");
 		} else {
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
@@ -1420,7 +1419,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				return NULL;
 			return exp_in(sql->sa, exp, exps, f);
 		} else {
-			int sym = 0, between = 0;
+			int sym = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0);
 
 			if (!e)
@@ -1428,7 +1427,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (strncmp(r+*pos, "BETWEEN",  strlen("BETWEEN")) == 0) {
 				(*pos)+= (int) strlen("BETWEEN");
 				skipWS(r,pos);
-				between = 1;
 			}
 			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
 				(*pos)+= (int) strlen("SYM");
@@ -1436,20 +1434,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sym = 1;
 			}
 			if (e->type == e_cmp) {
-				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag & ~(CMP_SYMMETRIC|CMP_BETWEEN)));
-				if (sym)
-					ne->flag |= CMP_SYMMETRIC;
-				if (between)
-					ne->flag |= CMP_BETWEEN;
+				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), sym);
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
 			} else {
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
-				if (sym)
-					ne->flag |= CMP_SYMMETRIC;
-				if (between)
-					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
 				if (is_semantics(exp))
@@ -1815,7 +1805,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
 				}
-				rel_base_use_all(sql, rel, 1);
+				rel_base_use_all(sql, rel);
 				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
