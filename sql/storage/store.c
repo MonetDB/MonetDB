@@ -2304,12 +2304,18 @@ flusher_should_run(void)
 void
 store_exit(void)
 {
+	int debug = store_debug&128;
 	MT_lock_set(&bs_lock);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
 
 	/* busy wait till the logmanager is ready */
 	while (flusher.working) {
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(100);
+		MT_lock_set(&bs_lock);
+	}
+	while (debug && ATOMIC_GET(&store_nr_active)) { /* wait for all to finish */
 		MT_lock_unset(&bs_lock);
 		MT_sleep_ms(100);
 		MT_lock_set(&bs_lock);
