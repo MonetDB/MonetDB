@@ -1669,7 +1669,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			fclose(fp);
 			fp = NULL;
 			if (GDKunlink(0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
-			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
+			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL, true) != GDK_SUCCEED)
 				goto error;
 		} else if (errno != ENOENT) {
 			GDKsyserror("open %s failed", bak);
