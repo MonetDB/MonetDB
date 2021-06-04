@@ -122,11 +122,19 @@ PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 		}                                                                      \
 		/*iterate over the elements of the current BAT*/                       \
 		temp_indices = GDKzalloc(sizeof(lng) * group_count);                   \
-		for (element_it = 0; element_it < elements; element_it++) {            \
-			/*group of current element*/                                       \
-			oid group = aggr_group_arr[element_it];                            \
-			/*append current element to proper group*/                         \
-			ptr[group][i][temp_indices[group]++] = batcontent[element_it];     \
+		if (BATtvoid(aggr_group)) {                                            \
+			for (element_it = 0; element_it < elements; element_it++) {        \
+				/*append current element to proper group*/                     \
+				ptr[element_it][i][temp_indices[element_it]++] =               \
+					batcontent[element_it];                                    \
+			}                                                                  \
+		} else {                                                               \
+			for (element_it = 0; element_it < elements; element_it++) {        \
+				/*group of current element*/                                   \
+				oid group = aggr_group_arr[element_it];                        \
+				/*append current element to proper group*/                     \
+				ptr[group][i][temp_indices[group]++] = batcontent[element_it]; \
+			}                                                                  \
 		}                                                                      \
 		GDKfree(temp_indices);                                                 \
 	}
@@ -736,9 +744,15 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				goto aggrwrapup;
 			}
 
-			aggr_group_arr = (oid *)aggr_group->theap->base + aggr_group->tbaseoff;
-			for (element_it = 0; element_it < elements; element_it++) {
-				group_counts[aggr_group_arr[element_it]]++;
+			if (BATtvoid(aggr_group)) {
+				for (element_it = 0; element_it < elements; element_it++) {
+					group_counts[element_it]++;
+				}
+			} else {
+				aggr_group_arr = (oid *)aggr_group->theap->base + aggr_group->tbaseoff;
+				for (element_it = 0; element_it < elements; element_it++) {
+					group_counts[aggr_group_arr[element_it]]++;
+				}
 			}
 
 			// now perform the actual splitting of the data, first construct
@@ -807,13 +821,22 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 							// iterate over the elements of the current BAT
 							temp_indices =
 								GDKzalloc(sizeof(PyObject *) * group_count);
-							for (element_it = 0; element_it < elements;
-								 element_it++) {
-								// group of current element
-								oid group = aggr_group_arr[element_it];
-								// append current element to proper group
-								ptr[group][i][temp_indices[group]++] =
-									batcontent[element_it];
+							if (BATtvoid(aggr_group)) {
+								for (element_it = 0; element_it < elements;
+									 element_it++) {
+									// append current element to proper group
+									ptr[element_it][i][temp_indices[element_it]++] = 
+										batcontent[element_it];
+								}
+							} else {
+								for (element_it = 0; element_it < elements;
+									 element_it++) {
+									// group of current element
+									oid group = aggr_group_arr[element_it];
+									// append current element to proper group
+									ptr[group][i][temp_indices[group]++] =
+										batcontent[element_it];
+								}
 							}
 							GDKfree(temp_indices);
 							break;
