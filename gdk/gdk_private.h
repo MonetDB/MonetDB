@@ -145,7 +145,7 @@ char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t 
 void GDKlog(_In_z_ _Printf_format_string_ FILE * fl, const char *format, ...)
 	__attribute__((__format__(__printf__, 2, 3)))
 	__attribute__((__visibility__("hidden")));
-gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
+gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
