@@ -3204,7 +3204,6 @@ static void
 sql_trans_rollback(sql_trans *tr)
 {
 	sqlstore *store = tr->store;
-	ulng commit_ts = 0; /* invalid ts, ie rollback */
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3225,11 +3224,12 @@ sql_trans_rollback(sql_trans *tr)
 
 		/* rollback */
 		ulng oldest = store_oldest(store);
+		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
 			if (c->commit)
-				c->commit(tr, c, commit_ts, oldest);
+				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
 		}
 		store_pending_changes(store, oldest);
