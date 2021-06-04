@@ -32,7 +32,7 @@ static int tc_gc_col( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_idx( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_del( sql_store Store, sql_change *c, ulng oldest);
 
-static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
+static int merge_delta( sql_delta *obat);
 
 /* valid
  * !deleted && VALID_4_READ(TS, tr)				existing or newly created segment
@@ -1798,7 +1798,7 @@ static int
 commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
-	(void)oldest;
+	(void)tr; (void)oldest;
 
 	if(!isTempTable(c->t)) {
 		sql_delta *delta = ATOMIC_PTR_GET(&c->data);
@@ -1807,7 +1807,7 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 
 		assert(delta->next == NULL);
 		if (!delta->cs.alter)
-			ok = tr_merge_delta(tr, delta);
+			ok = merge_delta(delta);
 		delta->cs.alter = 0;
 		c->base.flags = 0;
 	}
@@ -1898,7 +1898,7 @@ static int
 commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
-	(void)oldest;
+	(void)tr; (void)oldest;
 
 	if(!isTempTable(i->t)) {
 		sql_delta *delta = ATOMIC_PTR_GET(&i->data);
@@ -1906,7 +1906,7 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 		delta->cs.ts = commit_ts;
 
 		assert(delta->next == NULL);
-		ok = tr_merge_delta(tr, delta);
+		ok = merge_delta(delta);
 		i->base.flags = 0;
 	}
 	return ok;
@@ -2563,12 +2563,11 @@ log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 }
 
 static int
-tr_merge_cs( sql_trans *tr, column_storage *cs)
+merge_cs( column_storage *cs)
 {
 	int ok = LOG_OK;
 	BAT *cur = NULL;
 
-	(void)tr;
 	if (cs->bid) {
 		cur = temp_descriptor(cs->bid);
 		if(!cur)
@@ -2612,15 +2611,15 @@ tr_merge_cs( sql_trans *tr, column_storage *cs)
 }
 
 static int
-tr_merge_delta( sql_trans *tr, sql_delta *obat)
+merge_delta( sql_delta *obat)
 {
-	return tr_merge_cs(tr, &obat->cs);
+	return merge_cs(&obat->cs);
 }
 
 static int
-tr_merge_storage(sql_trans *tr, storage *tdb)
+merge_storage(storage *tdb)
 {
-	int ok = tr_merge_cs(tr, &tdb->cs);
+	int ok = merge_cs(&tdb->cs);
 
 	if (tdb->next) {
 		ok = destroy_storage(tdb->next);
@@ -2663,12 +2662,6 @@ rollback_delta(sql_trans *tr, sql_delta *delta, int type)
 }
 
 static int
-commit_delta(sql_trans *tr, sql_delta *delta)
-{
-	return tr_merge_delta(tr, delta);
-}
-
-static int
 log_update_col( sql_trans *tr, sql_change *change)
 {
 	sql_column *c = (sql_column*)change->obj;
@@ -2690,7 +2683,7 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 	if (isTempTable(c->t)) {
 		if (commit_ts) { /* commit */
 			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE)
-				commit_delta(tr, delta);
+				merge_delta(delta);
 			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
 				clear_cs(tr, &delta->cs, true);
 		} else { /* rollback */
@@ -2771,7 +2764,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			}
 		}
 		if (ok == LOG_OK && delta == d && oldest == commit_ts)
-			ok = tr_merge_delta(tr, delta);
+			ok = merge_delta(delta);
 	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
 		ATOMIC_PTR_SET(&c->data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
@@ -2800,7 +2793,7 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 	if (isTempTable(i->t)) {
 		if (commit_ts) { /* commit */
 			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE)
-				commit_delta(tr, delta);
+				merge_delta(delta);
 			else /* CA_DELETE as CA_DROP's are gone already */
 				clear_cs(tr, &delta->cs, true);
 		} else { /* rollback */
@@ -2850,7 +2843,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			}
 		}
 		if (ok == LOG_OK && delta == d && oldest == commit_ts)
-			ok = tr_merge_delta(tr, delta);
+			ok = merge_delta(delta);
 	} else if (ok == LOG_OK && tr->parent) /* cleanup older save points */
 		ATOMIC_PTR_SET(&i->data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
@@ -2947,7 +2940,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			dbat->cs.ts = commit_ts;
 		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
-			ok = tr_merge_storage(tr, dbat);
+			ok = merge_storage(dbat);
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
 		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
 		ATOMIC_PTR_SET(&t->data, savepoint_commit_storage(dbat, commit_ts));
