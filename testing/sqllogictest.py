@@ -262,7 +262,7 @@ class SQLLogic:
         else:
             result = ['statement', 'ok']
             if expectok:
-                if expected_rowcount:
+                if expected_rowcount is not None:
                     result.append('rowcount')
                     result.append('{}'.format(affected_rowcount))
                     if expected_rowcount != affected_rowcount:

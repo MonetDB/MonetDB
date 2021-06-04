@@ -162,7 +162,7 @@ INSERT INTO "t2" VALUES (false, DATE '1970-01-01', 0.42016214),(true, DATE '1970
 (true, DATE '1970-01-01', NULL),(false, DATE '1970-01-01', 0.2627602),(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL)
 
 query I rowsort
-SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)));
+SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)))
 ----
 1
 1
@@ -266,7 +266,7 @@ statement ok rowcount 2
 INSERT INTO "t0" VALUES (3), (2)
 
 query IIIIII rowsort
-select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3;
+select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3
 ----
 3
 1
@@ -658,35 +658,6 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
-
-statement ok
-CREATE TABLE t1(c0 INTERVAL DAY, c1 BIGINT)
-
-statement ok rowcount 2
-INSERT INTO t1(c1) VALUES(3), (5)
-
-statement ok rowcount 3
-INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
-
-statement ok rowcount 3
-TRUNCATE t0
-
-statement ok rowcount 1
-INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
-
-query T rowsort
-SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
-----
-8
-
-statement ok
-ROLLBACK
-
-statement ok
-START TRANSACTION
-
-statement ok
 CREATE TABLE "t0" ("c3" TIMESTAMP)
 
 statement ok rowcount 10
@@ -714,59 +685,21 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE "t0" ("c2" DATE, CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"))
+CREATE TABLE "t0" ("c0" VARCHAR(32),"c1" REAL NOT NULL)
 
-statement ok rowcount 2
-INSERT INTO "t0" VALUES (DATE '1970-01-04'), (DATE '1970-01-01')
-
-query T rowsort
-SELECT t0.c2 FROM t0 WHERE (t0.c2) IN (t0.c2, (VALUES (DATE '1969-12-10'), (DATE '1970-01-01')))
-----
-1970-01-01
-1970-01-04
-
-query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((t0.c2) IN (t0.c2, (VALUES (DATE '1969-12-10'), (DATE '1970-01-01'))) AS INT) as count FROM t0) as res
-----
-2
-
-statement ok
-CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c2"))
-
-statement ok rowcount 4
-INSERT INTO "t1" VALUES (69), (-12), (9), (0)
+statement ok rowcount 20
+INSERT INTO "t0" VALUES ('|', 0.040731274),('儁\001萂y', 0.006212054),('N㸊', 3),(NULL, 0.35244483),(NULL, 1.2527365e+09),('g\t!cWW', 1.0299588e+09),
+('1350272002', 0.718041),('V', 0.409386),('88', 1.2198221e+09),('*', 0.7400003),('0.5962615646747591', 0.06295456),('dJ>w++', 0),(NULL, 0.111538105),
+(NULL, 4),('0.000000', 8),(NULL, 0.2905001),(NULL, 40),(NULL, 5),(NULL, 0.14210498),('', 0.8845672)
 
 query T rowsort
-SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
+SELECT t0.c0 FROM t0 WHERE ('*') BETWEEN ASYMMETRIC ('j^O') AND ('')
 ----
-True
-True
-True
-True
 
 query I rowsort
-SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11'))
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(('*') BETWEEN ASYMMETRIC ('j^O') AND ('') AS INT) as count FROM t0) as res
 ----
--12
 0
-69
-9
-
-query T rowsort
-SELECT least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) > -3 FROM t1
-----
-True
-True
-True
-True
-
-query I rowsort
-SELECT t1.c2 FROM t1 WHERE least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 GROUP BY DATE '1970-01-11')) > -3
-----
--12
-0
-69
-9
 
 statement ok
 ROLLBACK
@@ -775,34 +708,78 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE "t0" ("c3" INTERVAL SECOND)
+CREATE TABLE "t0" ("c0" CHARACTER LARGE OBJECT,"c2" DOUBLE)
 
-statement ok rowcount 9
-INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
-(INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
-
-query T rowsort
-SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
-----
-False
-
-query T rowsort
-SELECT t0.c3 FROM t0 WHERE ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1)
-----
-0:00:00
-0:00:01
-0:00:01
-0:00:04
-0:00:06
-0:00:06
-0:00:09
-0:00:09
-NULL
+statement ok rowcount 20
+COPY 20 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"1970"	NULL
+"3"	NULL
+NULL	NULL
+"3"	NULL
+"W"	NULL
+"-"	NULL
+"t "	NULL
+"0.1454211084558179"	NULL
+"2"	NULL
+""	0.18341645025687223
+NULL	0.5805338105211456
+NULL	1810425471
+NULL	NULL
+NULL	0.8204238200689035
+"Lxy}"	NULL
+"-887573436"	NULL
+NULL	0.6211363
+NULL	0.6211363
+"0.21185164"	NULL
+"0.36241230481890585"	NULL
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1) AS INT) as count FROM t0) as res
+SELECT CASE WHEN t0.c2 = t0.c2 THEN 1 ELSE ascii(t0.c0) END FROM t0 LEFT OUTER JOIN (VALUES (1), (1), (- 81524669)) AS sub0 ON 1 <= t0.c2
 ----
-9
+1
+1
+1
+1
+1
+1
+1
+1
+116
+45
+45
+48
+48
+48
+49
+50
+51
+51
+76
+87
+NULL
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 DOUBLE UNIQUE, c1 CHAR(224), c4 boolean)
+
+statement ok
+CREATE TABLE t1(c0 DOUBLE PRECISION UNIQUE, c1 DOUBLE PRECISION, FOREIGN KEY (c0) REFERENCES t0(c0))
+
+statement ok
+INSERT INTO t0(c1) VALUES('-521239643'), ('-1125457389'), ('0.18375426768390923')
+
+statement ok
+DELETE FROM t0
+
+statement ok
+TRUNCATE t0
 
 statement ok
 ROLLBACK

@@ -57,9 +57,7 @@ static stmt *
 stmt_selectnil( backend *be, stmt *col)
 {
 	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0, 1);
-	return nn;
+	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)), cmp_equal, NULL, 0, 1);
 }
 
 static stmt *
@@ -379,9 +377,7 @@ static stmt *
 stmt_selectnonil( backend *be, stmt *col, stmt *s )
 {
 	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1, 1);
-	return nn;
+	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)), cmp_equal, s, 1, 1);
 }
 
 static int
@@ -1511,7 +1507,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r2 && r2->nrcols == 0)
 				r2 = stmt_const(be, bin_find_smallest_column(be, swapped?left:right), r2);
 			if (r2) {
-				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), swapped);
+				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), is_symmetric(e), swapped);
 			} else if (swapped) {
 				s = stmt_join(be, r, l, is_anti(e), swap_compare((comp_type)e->flag), 0, is_semantics(e), false);
 			} else {
@@ -1521,7 +1517,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r2) { /* handle all cases in stmt_uselect, reducing, non reducing, scalar etc */
 				if (l->nrcols == 0 && ((sel && sel->nrcols > 0) || r->nrcols > 0 || r2->nrcols > 0 || reduce))
 					l = left ? stmt_const(be, bin_find_smallest_column(be, left), l) : column(be, l);
-				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
+				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), is_symmetric(e), reduce);
 			} else {
 				/* value compare or select */
 				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
@@ -2415,7 +2411,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
 			/* ToDo how about atom expressions? */
 			if (e->type == e_cmp) {
-				int flag = e->flag & ~CMP_BETWEEN;
+				int flag = e->flag;
 				/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
 				if (flag < cmp_filter || flag == mark_in || flag == mark_notin) { /* theta and range joins */
 					/* join or select ? */
