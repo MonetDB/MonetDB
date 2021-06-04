@@ -34,7 +34,7 @@ srpm: MonetDB.spec $(top_builddir)/$(distdir).tar.bz2 $(rpmtopdir)/rpmmacros
 all: monetdb_hgversion.h
 
 monetdb_hgversion.h: always
-	if [ -d "$(srcdir)"/.hg ] && hgid=`(cd "$(srcdir)"; hg id -i) 2>/dev/null`; then \
+	if [ -d "$(srcdir)"/.hg ] && hgid=`(cd "$(srcdir)"; hg id -in) 2>/dev/null`; then \
 		echo "#define MERCURIAL_ID \"$$hgid\"" > monetdb_hgversion.h.new; \
 		if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then \
 			rm -f monetdb_hgversion.h.new; \
