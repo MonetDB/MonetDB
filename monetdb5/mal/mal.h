@@ -195,7 +195,6 @@ typedef struct MALBLK {
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
 	lng optimize;			/* total optimizer time */
-	int activeClients;		/* load during mitosis optimization */
 } *MalBlkPtr, MalBlkRecord;
 
 #define STACKINCR   128
