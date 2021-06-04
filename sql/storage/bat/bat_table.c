@@ -400,6 +400,13 @@ table_fetch_value(res_table *rt, sql_column *c)
 	//return (void*)BUNtail(bi, rt->cur_row);
 }
 
+static void
+table_result_destroy(res_table *rt)
+{
+	if (rt)
+		res_table_destroy(rt);
+}
+
 /* returns table rids, for the given select ranges */
 static rids *
 rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...)
@@ -743,6 +750,7 @@ bat_table_init( table_functions *tf )
 	tf->table_delete = table_delete;
 	tf->table_orderby = table_orderby;
 	tf->table_fetch_value = table_fetch_value;
+	tf->table_result_destroy = table_result_destroy;
 
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;

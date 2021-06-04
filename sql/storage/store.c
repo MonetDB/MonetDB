@@ -1137,6 +1137,7 @@ load_trans(sql_trans* tr)
 	sql_table *systriggers = find_sql_table(tr, syss, "triggers");
 	sql_table *sysobjects = find_sql_table(tr, syss, "objects");
 	sql_column *sysschema_ids = find_sql_column(sysschema, "id");
+	bool ok = true;
 
 	TRC_DEBUG(SQL_STORE, "Load transaction\n");
 
@@ -1209,21 +1210,32 @@ load_trans(sql_trans* tr)
 	for ( ; rt_schemas->cur_row < rt_schemas->nr_rows; rt_schemas->cur_row++) {
 		sql_schema *ns = load_schema(tr, rt_schemas, rt_tables, rt_parts,
 				rt_cols, rt_idx, rt_idxcols, rt_keys, rt_keycols, rt_triggers, rt_triggercols);
-		if (ns == NULL)
-			return false;
+		if (ns == NULL) {
+			ok = false;
+			goto finish;
+		}
 		if (!instore(ns->base.id)) {
 			if (os_add(tr->cat->schemas, tr, ns->base.name, &ns->base)) {
-				sql_trans_destroy(tr);
-				return false;
+				ok = false;
+				goto finish;
 			}
 			if (isTempSchema(ns))
 				tr->tmp = ns;
 		}
 	}
-	res_table_destroy(rt_schemas);
-	res_table_destroy(rt_tables);
-	res_table_destroy(rt_cols);
-	return true;
+
+finish:
+	store->table_api.table_result_destroy(rt_schemas);
+	store->table_api.table_result_destroy(rt_tables);
+	store->table_api.table_result_destroy(rt_parts);
+	store->table_api.table_result_destroy(rt_cols);
+	store->table_api.table_result_destroy(rt_idx);
+	store->table_api.table_result_destroy(rt_idxcols);
+	store->table_api.table_result_destroy(rt_keys);
+	store->table_api.table_result_destroy(rt_keycols);
+	store->table_api.table_result_destroy(rt_triggers);
+	store->table_api.table_result_destroy(rt_triggercols);
+	return ok;
 }
 
 static sqlid
@@ -1849,6 +1861,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	/* load remaining schemas, tables, columns etc */
 	tr->active = 1;
 	if (!store->first && !load_trans(tr)) {
+		sql_trans_destroy(tr);
 		return NULL;
 	}
 	if (sql_trans_commit(tr) != SQL_OK)

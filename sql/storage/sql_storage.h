@@ -55,6 +55,7 @@ typedef res_table *(*table_orderby_fptr)(sql_trans *tr, sql_table *t,
 		sql_column *jl, sql_column *jr,
 		sql_column *jl2, sql_column *jr2 /* optional join(jl,jr,(jl2,jr2)) */, sql_column *o, ...);
 typedef void *(*table_fetch_value_fptr)(res_table *rt, sql_column *c);
+typedef void (*table_result_destroy_fptr)(res_table *rt);
 
 typedef struct rids {
 	BUN cur;
@@ -108,6 +109,7 @@ typedef struct table_functions {
 	table_delete_fptr table_delete;
 	table_orderby_fptr table_orderby;
 	table_fetch_value_fptr table_fetch_value;
+	table_result_destroy_fptr table_result_destroy;
 
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
