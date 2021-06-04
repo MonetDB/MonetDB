@@ -1669,7 +1669,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			fclose(fp);
 			fp = NULL;
 			if (GDKunlink(0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
-			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
+			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL, true) != GDK_SUCCEED)
 				goto error;
 		} else if (errno != ENOENT) {
 			GDKsyserror("open %s failed", bak);
@@ -2017,7 +2017,9 @@ logger_destroy(logger *lg)
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = lg->id;
 		lg->saved_tid = lg->tid;
+		logger_lock(lg);
 		logger_commit(lg);
+		logger_unlock(lg);
 	}
 	if (lg->catalog_bid) {
 		logger_lock(lg);
@@ -2120,9 +2122,10 @@ logger_flush(logger *lg, ulng ts)
 		lg->saved_tid = lg->tid;
 		if (lid)
 			logger_cleanup_range(lg);
-		if (logger_commit(lg) != GDK_SUCCEED) {
+		logger_lock(lg);
+		if (logger_commit(lg) != GDK_SUCCEED)
 			TRC_ERROR(GDK, "failed to commit");
-		}
+		logger_unlock(lg);
 		return GDK_SUCCEED;
 	}
 	if (lg->saved_id >= lid)
@@ -2547,7 +2550,10 @@ log_tend(logger *lg, ulng commit_ts)
 	l.id = lg->tid;
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		return logger_commit(lg);
+		logger_lock(lg);
+		gdk_return res = logger_commit(lg);
+		logger_unlock(lg);
+		return res;
 	}
 
 	if (lg->current) {
