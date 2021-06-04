@@ -1750,7 +1750,7 @@ old_logger_destroy(old_logger *lg)
 	    BBPrename(lg->lg->dcatalog->batCacheid, bak) < 0) {
 		return GDK_FAIL;
 	}
-	if (GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
+	if (GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		return GDK_FAIL;
 	}
@@ -1765,7 +1765,7 @@ old_logger_destroy(old_logger *lg)
 		return GDK_FAIL;
 	}
 	snprintf(bak, sizeof(bak), "bak-" LLFMT, lg->id);
-	if (GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak) != GDK_SUCCEED) {
+	if (GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak, true) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		return GDK_FAIL;
 	}
