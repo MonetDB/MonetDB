@@ -12,3 +12,4 @@ batcalc-between-undefined.Bug-7129
 batappend-undefined.Bug-7130
 KNOWNFAIL?WITH-alias-DELETE-1.deletes-wrong-tuples.Bug-7133
 KNOWNFAIL?WITH-alias-DELETE-2.deletes-too-many-tuples.Bug-7133
+HAVE_LIBPY3?python-aggregates-void-bat.Bug-7138

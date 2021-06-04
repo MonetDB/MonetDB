@@ -1,0 +1,12 @@
+stderr of test 'python-aggregates-void-bat.Bug-7138` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 13:50:14 >  
+# 13:50:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-58212" "--port=34525"
+# 13:50:14 >  
+
+
+# 13:50:14 >  
+# 13:50:14 >  "Done."
+# 13:50:14 >  
+

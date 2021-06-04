@@ -1,0 +1,61 @@
+stdout of test 'python-aggregates-void-bat.Bug-7138` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 13:50:14 >  
+# 13:50:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-58212" "--port=34525"
+# 13:50:14 >  
+
+#START TRANSACTION;
+#create table integers (i int);
+#insert into integers (select value from generate_series(1,11,1));
+[ 10	]
+#CREATE FUNCTION python_sum(v int) returns int
+#language P
+#{
+#    return numpy.sum(v)
+#};
+#CREATE FUNCTION python_sum2(v int) returns int
+#language PYTHON_MAP
+#{
+#    return numpy.sum(v)
+#};
+#CREATE AGGREGATE python_sum3(v int) returns int
+#language P
+#{
+#    return numpy.sum(v)
+#};
+#CREATE AGGREGATE python_sum4(v int) returns int
+#language PYTHON_MAP
+#{
+#    return numpy.sum(v)
+#};
+#select python_sum(i) from integers where i = 1 group by i;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 1	]
+#select python_sum2(i) from integers where i = 1 group by i;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 1	]
+#select python_sum3(i) from integers where i = 1 group by i;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 1	]
+#select python_sum4(i) from integers where i = 1 group by i;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 1	]
+#ROLLBACK;
+
+# 13:50:14 >  
+# 13:50:14 >  "Done."
+# 13:50:14 >  
+
