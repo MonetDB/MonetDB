@@ -2337,7 +2337,6 @@ clear_cs(sql_trans *tr, column_storage *cs)
 static BUN
 clear_col(sql_trans *tr, sql_column *c)
 {
-	/* TODO check update conflicts */
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
@@ -2353,7 +2352,6 @@ clear_col(sql_trans *tr, sql_column *c)
 static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
-	/* TODO check update conflicts */
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
