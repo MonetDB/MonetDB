@@ -131,7 +131,6 @@ typedef struct VARRECORD {
             used:1,
             disabled:1;
 	short depth;				/* scope block depth, set to -1 if not used */
-	short worker;				/* thread id of last worker producing it */
 	ValRecord value;
 	int declared;				/* pc index when it was first assigned */
 	int updated;				/* pc index when it was first updated */
