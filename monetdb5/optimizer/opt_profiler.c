@@ -13,6 +13,7 @@
 
 #include "monetdb_config.h"
 #include "mal_instruction.h"
+#include "mal_profiler.h"
 #include "opt_prelude.h"
 #include "opt_profiler.h"
 
@@ -28,6 +29,9 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) pci;
 	(void) stk;
 	(void) cntxt;
+	/* we only need the beautified version if we plan to emit events */
+	if(malProfileMode == 0 )
+		return MAL_SUCCEED;
 
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
