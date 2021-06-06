@@ -433,7 +433,11 @@ DFLOWworker(void *T)
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 	}
-#define HOTPOTATOE
+/* the Hot potatoe also triggers that all binds are executed at the start
+ * while they are not immediately needed. Each subquery should be handled completely
+ * first. This means that in practive nthread subqueries will start processin.
+ */
+// #define HOTPOTATOE
 #ifdef HOTPOTATOE
 	/* HOT potatoe choice */
 	MT_lock_set(&flow->flowlock);
