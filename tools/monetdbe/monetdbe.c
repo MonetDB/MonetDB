@@ -2235,6 +2235,7 @@ remote_cleanup:
 			bn->theap->size = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
+			int err = 0;
 			char **d = (char**)v;
 
 			if (c->null) {
@@ -2245,19 +2246,23 @@ remote_cleanup:
 				for (size_t j=0; j<cnt; j++)
 					if (!d[j]) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						goto cleanup;
+						err = 1;
+						break;
 					}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-				goto cleanup;
+				err = 1;
 			}
-			if (c->null) {
+			if (c->null) { /* revert pointers before cleanup */
 				for (size_t j=0; j<cnt; j++)
 					if (d[j] == (char*)nil)
 						d[j] = NULL;
 			}
+			if (err)
+				goto cleanup;
 		} else if (mtype == TYPE_timestamp) {
+			int err = 0;
 			timestamp *d = GDKmalloc(sizeof(timestamp)*cnt);
 			if (!d) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
@@ -2281,19 +2286,22 @@ remote_cleanup:
 
 					if (timestamp_is_null(&mdt)) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						goto cleanup;
+						err = 1;
+						break;
 					} else {
 						d[j] = timestamp_from_data(&mdt);
 					}
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
-				GDKfree(d);
+			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-				goto cleanup;
+				err = 1;
 			}
 			GDKfree(d);
+			if (err)
+				goto cleanup;
 		} else if (mtype == TYPE_date) {
+			int err = 0;
 			date *d = GDKmalloc(sizeof(date)*cnt);
 			if (!d) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
@@ -2317,19 +2325,22 @@ remote_cleanup:
 
 					if (date_is_null(&mdt)) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						goto cleanup;
+						err = 1;
+						break;
 					} else {
 						d[j] = date_from_data(&mdt);
 					}
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
-				GDKfree(d);
+			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-				goto cleanup;
+				err = 1;
 			}
 			GDKfree(d);
+			if (err)
+				goto cleanup;
 		} else if (mtype == TYPE_daytime) {
+			int err = 0;
 			daytime *d = GDKmalloc(sizeof(daytime)*cnt);
 			if (!d) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
@@ -2353,18 +2364,20 @@ remote_cleanup:
 
 					if (time_is_null(&mdt)) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						goto cleanup;
+						err = 1;
+						break;
 					} else {
 						d[j] = time_from_data(&mdt);
 					}
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
-				GDKfree(d);
+			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-				goto cleanup;
+				err = 1;
 			}
 			GDKfree(d);
+			if (err)
+				goto cleanup;
 		} else if (mtype == TYPE_blob) {
 			int err = 0;
 			size_t j = 0;
@@ -2387,7 +2400,8 @@ remote_cleanup:
 				for (j=0; j<cnt; j++){
 					if (blob_is_null(be+j)) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						goto cleanup;
+						err = 1;
+						break;
 					} else {
 						MONETDBE_BLOB_CONVERT;
 					}
