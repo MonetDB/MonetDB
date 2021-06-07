@@ -2034,12 +2034,12 @@ int
 mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) == NULL;
 }
 
 int
 mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p, false) == NULL;
 }

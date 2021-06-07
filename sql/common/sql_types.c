@@ -1051,6 +1051,7 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", TRUE, LNG, 0);
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, LNG, 1, ANY);
+	sql_create_func(sa, "cnt", "sql", "count", TRUE, FALSE, SCALE_FIX, 0, LNG, 2, STR, STR);
 
 	for (t = strings; t < numerical; t++) {
 		sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, *t, 1, *t);
