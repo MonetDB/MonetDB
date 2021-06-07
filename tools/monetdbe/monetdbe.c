@@ -2060,6 +2060,22 @@ remote_cleanup:
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "%s", m->errstr + 6); /* Skip error code */
 			goto cleanup;
 		}
+
+		if (t->idxs) {
+			for (node *n = ol_first_node(t->idxs); n; n = n->next) {
+				sql_idx *i = n->data;
+
+				if (hash_index(i->type) && list_length(i->columns) > 1) {
+					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append",
+								"Appending to a table with hash indexes referring to more than one column via 'monetdbe_append' is not possible at the moment");
+					goto cleanup;
+				} else if (i->type == join_idx) {
+					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append",
+								"Appending to a table with join indexes via 'monetdbe_append' is not possible at the moment");
+					goto cleanup;
+				}
+			}
+		}
 	}
 
 	/* for now no default values, ie user should supply all columns */
