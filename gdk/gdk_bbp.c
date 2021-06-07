@@ -917,7 +917,8 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
 	}
-	if (strcmp(dirname, ":memory:") == 0) {
+	if (strcmp(dirname, "in-memory") == 0 ||
+	    /* backward compatibility: */ strcmp(dirname, ":memory:") == 0) {
 		dirname = NULL;
 	} else if (MT_mkdir(dirname) < 0) {
 		if (errno == EEXIST) {

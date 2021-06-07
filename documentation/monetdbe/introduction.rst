@@ -49,7 +49,7 @@ A single library to be linked into the application code directly. With the obvio
 . Full use of the multi-core architectures.
 . Seamless integration with the application.
 . Single user control over the resources.
-. Working with :memory: databases with controlled RAM footprint.
+. Working with in-memory databases with controlled RAM footprint.
 . Boosting your data analytics
 
 .. image:: architecture.png
@@ -67,11 +67,11 @@ What to expect?
 ---------------
 
 The MonetDBe library supports three different storage schemes.
-A light-weight scheme for small databases confined to main memory, i.e. connect(':memory:').
+A light-weight scheme for small databases confined to main memory, i.e. connect('in-memory').
 The maximum footprint can be set explicitly or is derived from the host (VM) resource limits.
 Using a directory on your local machine is the way to go if you need persistence,
 but with exclusive access as it concerns ACID properties. If the application works
-with :memory: or a local database then switching to a MonetDB server merely
+with in-memory or a local database then switching to a MonetDB server merely
 requires the connect call to be provided with the access point information.
 
 The MonetDBe code is available from the development branch of MonetDB as an **alpha-release**..

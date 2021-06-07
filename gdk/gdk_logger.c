@@ -1693,6 +1693,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	if (lg->type_id == NULL || lg->type_nme == NULL || lg->type_nr == NULL) {
 		if (fp)
 			fclose(fp);
+		fp = NULL;
 		GDKerror("cannot create type bats");
 		goto error;
 	}

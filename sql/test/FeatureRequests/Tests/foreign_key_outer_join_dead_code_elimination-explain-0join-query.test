@@ -8,11 +8,7 @@ user.main
 1
 querylog.define
 1
-sql.mvc
-1
-sql.tid
-1
-aggr.count
+sql.count
 1
 sql.resultSet
 1
