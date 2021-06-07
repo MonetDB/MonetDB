@@ -2359,8 +2359,9 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
 	if (b) {
-		*res = b->batCacheid;
-		BBPkeepref(*res);
+		BBPkeepref(*res = b->batCacheid);
+	} else {
+		msg = createException(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return msg;
 }
@@ -3817,6 +3818,22 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
+	if( pci->argc - pci->retc >= 1) {
+		sname = *getArgReference_str(stk, pci, pci->retc);
+		if (strNil(sname))
+			throw(SQL, "sql.storage", SQLSTATE(42000) "Schema name cannot be NULL");
+	}
+	if( pci->argc - pci->retc >= 2) {
+		tname = *getArgReference_str(stk, pci, pci->retc + 1);
+		if (strNil(tname))
+			throw(SQL, "sql.storage", SQLSTATE(42000) "Table name cannot be NULL");
+	}
+	if( pci->argc - pci->retc >= 3) {
+		cname = *getArgReference_str(stk, pci, pci->retc + 2);
+		if (strNil(cname))
+			throw(SQL, "sql.storage", SQLSTATE(42000) "Column name cannot be NULL");
+	}
+
 	tr = m->session->tr;
 	sqlstore *store = tr->store;
 	sch = COLnew(0, TYPE_str, 0, TRANSIENT);
@@ -3843,12 +3860,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.storage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if( pci->argc - pci->retc >= 1)
-		sname = *getArgReference_str(stk, pci, pci->retc);
-	if( pci->argc - pci->retc >= 2)
-		tname = *getArgReference_str(stk, pci, pci->retc + 1);
-	if( pci->argc - pci->retc >= 3)
-		cname = *getArgReference_str(stk, pci, pci->retc + 2);
 
 	/* check for limited storage tables */
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
