@@ -3329,7 +3329,7 @@ insert into sys.functions values (887, 'week', 'weekofyear', 'mtime', 0, 1, fals
 insert into sys.args values (39737, 887, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (39738, 887, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.functions values (888, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39739, 888, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39739, 888, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39740, 888, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.functions values (889, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39741, 889, 'res_0', 'int', 32, 0, 0, 0);
@@ -3341,7 +3341,7 @@ insert into sys.functions values (891, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39745, 891, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39746, 891, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (892, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39747, 892, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39747, 892, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39748, 892, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (893, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39749, 893, 'res_0', 'int', 32, 0, 0, 0);
@@ -3353,7 +3353,7 @@ insert into sys.functions values (895, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39753, 895, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39754, 895, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (896, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39755, 896, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39755, 896, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39756, 896, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (897, 'century', 'century', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39757, 897, 'res_0', 'int', 32, 0, 0, 0);
@@ -3383,7 +3383,7 @@ insert into sys.functions values (905, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39773, 905, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39774, 905, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (906, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39775, 906, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39775, 906, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39776, 906, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (907, 'century', 'century', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39777, 907, 'res_0', 'int', 32, 0, 0, 0);
@@ -3413,7 +3413,7 @@ insert into sys.functions values (915, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39793, 915, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39794, 915, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (916, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39795, 916, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39795, 916, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39796, 916, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (917, 'year', 'year', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39797, 917, 'res_0', 'int', 32, 0, 0, 0);
@@ -3434,7 +3434,7 @@ insert into sys.functions values (922, 'second', 'seconds', 'mtime', 0, 1, false
 insert into sys.args values (39807, 922, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (39808, 922, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (923, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39809, 923, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39809, 923, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39810, 923, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (924, 'day', 'day', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39811, 924, 'res_0', 'bigint', 64, 0, 0, 0);
@@ -3449,7 +3449,7 @@ insert into sys.functions values (927, 'second', 'seconds', 'mtime', 0, 1, false
 insert into sys.args values (39817, 927, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (39818, 927, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (928, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39819, 928, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39819, 928, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39820, 928, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (929, 'next_value_for', 'next_value', 'sql', 0, 1, true, false, false, 2000, true, true);
 insert into sys.args values (39821, 929, 'res_0', 'bigint', 64, 0, 0, 0);
@@ -5126,4 +5126,25 @@ ALTER TABLE sys.keywords SET READ ONLY;
 ALTER TABLE sys.table_types SET READ ONLY;
 ALTER TABLE sys.function_types SET READ ONLY;
 set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+drop function sys.epoch(bigint);
+create function sys.epoch(sec DECIMAL(18,3)) returns TIMESTAMP WITH TIME ZONE
+external name mtime.epoch;
+grant execute on function sys.epoch (DECIMAL(18,3)) to public;
+update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
+set schema "sys";
+drop view sys.tracelog;
+drop function sys.tracelog();
+create function sys.tracelog()
+ returns table (
+  ticks bigint, -- time in microseconds
+  stmt string,  -- actual statement executed
+  event string  -- profiler event executed
+ )
+ external name sql.dump_trace;
+create view sys.tracelog as select * from sys.tracelog();
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'tracelog';
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'tracelog' and type = 5;
 
