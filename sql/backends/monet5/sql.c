@@ -3856,7 +3856,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_schema *s = (sql_schema *) b;
 		if( sname && strcmp(b->name, sname) )
 			continue;
-		if (isalpha((unsigned char) b->name[0]))
+		if (b->name[0] != '%')
 			if (s->tables) {
 				struct os_iter oi;
 
