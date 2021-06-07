@@ -3783,9 +3783,9 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx, *bn = NULL, *bs = NULL;
 	mvc *m = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	sql_trans *tr;
 	node *ncol;
 	int w;
@@ -3840,6 +3840,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL ||
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
 	    revsort == NULL || key == NULL || oidx == NULL) {
+		msg = createException(SQL, "sql.storage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if( pci->argc - pci->retc >= 1)
@@ -3869,15 +3870,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_column *c = (sql_column *) ncol->data;
-								BAT *bn, *bs = NULL;
 								lng sz;
 
 								if( cname && strcmp(bc->name, cname) )
 									continue;
 								bn = store->storage_api.bind_col(tr, c, RDONLY); /* is slice */
 								bs = store->storage_api.bind_col(tr, c, QUICK);
-								if (bn == NULL || bs == NULL)
-									throw(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
+								if (bn == NULL || bs == NULL) {
+									msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
+									goto bailout;
+								}
 
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
@@ -3982,6 +3984,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 								BBPunfix(bn->batCacheid);
+								bn = NULL;
 							}
 
 					if (isTable(t))
@@ -3990,12 +3993,14 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
 								if (idx_has_column(c->type)) {
-									BAT *bn = store->storage_api.bind_idx(tr, c, RDONLY);
-									BAT *bs = store->storage_api.bind_idx(tr, c, QUICK);
+									bn = store->storage_api.bind_idx(tr, c, RDONLY);
+									bs = store->storage_api.bind_idx(tr, c, QUICK);
 									lng sz;
 
-									if (bn == NULL || bs == NULL)
-										throw(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
+									if (bn == NULL || bs == NULL) {
+										msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
+										goto bailout;
+									}
 									if( cname && strcmp(bc->name, cname) )
 										continue;
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
@@ -4090,6 +4095,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									BBPunfix(bn->batCacheid);
+									bn = NULL;
 								}
 							}
 
@@ -4117,6 +4123,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
+	if (bn)
+		BBPunfix(bn->batCacheid);
 	if (sch)
 		BBPunfix(sch->batCacheid);
 	if (tab)
@@ -4151,7 +4159,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(key->batCacheid);
 	if (oidx)
 		BBPunfix(oidx->batCacheid);
-	throw(SQL, "sql.storage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!msg)
+		msg = createException(SQL, "sql.storage", GDK_EXCEPTION);
+	return msg;
 }
 
 void
