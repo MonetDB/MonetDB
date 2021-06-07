@@ -112,12 +112,18 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch (argc) {
 	case 6:
 		col = *getArgReference_str(stk, pci, 5);
+		if (strNil(col))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Column name cannot be NULL");
 		/* fall through */
 	case 5:
 		tbl = *getArgReference_str(stk, pci, 4);
+		if (strNil(tbl))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Table name cannot be NULL");
 		/* fall through */
 	case 4:
 		sch = *getArgReference_str(stk, pci, 3);
+		if (strNil(sch))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Schema name cannot be NULL");
 	}
 
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
