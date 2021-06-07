@@ -1977,7 +1977,7 @@ cleanup:
 #define MONETDBE_APPEND_CHECK_NOT_NULL(TPE) \
 	do { \
 		const TPE *restrict input_cast = input[i]->data; \
-		for (BUN j = 0 ; j < cnt; j++) { \
+		for (size_t j = 0 ; j < cnt; j++) { \
 			if (is_##TPE##_nil(input_cast[j])) { \
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name); \
 				goto cleanup; \
