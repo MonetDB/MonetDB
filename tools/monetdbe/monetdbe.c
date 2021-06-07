@@ -837,7 +837,9 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 
 	if (!dbhdl)
 		return -1;
-	if (url && strcmp(url, ":memory:") == 0)
+	if (url &&
+		(strcmp(url, "in-memory") == 0 ||
+		 /* backward compatibility: */ strcmp(url, ":memory:") == 0))
 		url = NULL;
 	MT_lock_set(&embedded_lock);
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)GDKzalloc(sizeof(monetdbe_database_internal));
