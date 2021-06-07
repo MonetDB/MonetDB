@@ -74,6 +74,8 @@ main(void)
 
 	delete_file(csv_path)
 
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
 	if (monetdbe_close(mdbe))
 		error("Failed to close database");
 
