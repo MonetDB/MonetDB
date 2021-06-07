@@ -1355,7 +1355,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                                           ignore_errors = True)
                             os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                         elif env.get('TRANS_INMEM'):
-                            cmd.append('--dbextra=:memory:')
+                            cmd.append('--dbextra=in-memory')
                         pSrvr = ServerClass(cmd,
                                             openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
                                             openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
@@ -1618,7 +1618,7 @@ def GetBitsAndModsAndThreads(env) :
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:memory:')
+        cmd.append('--dbextra=in-memory')
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
@@ -2830,7 +2830,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             elif env.get('TRANS_INMEM'):
-                Srvr.append('--dbextra=:memory:')
+                Srvr.append('--dbextra=in-memory')
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -2878,7 +2878,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
                                   ignore_errors = True)
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
-                    Srvr.append('--dbextra=:memory:')
+                    Srvr.append('--dbextra=in-memory')
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
             else:
