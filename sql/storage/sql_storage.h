@@ -51,6 +51,12 @@ typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, v
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
 
+typedef res_table *(*table_orderby_fptr)(sql_trans *tr, sql_table *t,
+		sql_column *jl, sql_column *jr,
+		sql_column *jl2, sql_column *jr2 /* optional join(jl,jr,(jl2,jr2)) */, sql_column *o, ...);
+typedef void *(*table_fetch_value_fptr)(res_table *rt, sql_column *c);
+typedef void (*table_result_destroy_fptr)(res_table *rt);
+
 typedef struct rids {
 	BUN cur;
 	void *data;
@@ -93,7 +99,6 @@ typedef struct table_functions {
 	column_find_value_fptr column_find_value;
 	column_find_sqlid_fptr column_find_sqlid;
 	column_find_bte_fptr column_find_bte;
-	column_find_sht_fptr column_find_sht;
 	column_find_int_fptr column_find_int;
 	column_find_lng_fptr column_find_lng;
 	column_find_string_start_fptr column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
@@ -102,6 +107,9 @@ typedef struct table_functions {
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
+	table_orderby_fptr table_orderby;
+	table_fetch_value_fptr table_fetch_value;
+	table_result_destroy_fptr table_result_destroy;
 
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
@@ -126,14 +134,14 @@ typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, 
 
 /*
 -- append/update to columns and indices
-*/
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, size_t offset, void *d, int t, size_t cnt);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, size_t offset, void *d, int t, size_t cnt);
+*/
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
-typedef size_t (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
+typedef void * (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
 
 /*
 -- count number of rows in column (excluding the deletes)
@@ -199,8 +207,8 @@ typedef struct store_functions {
 	bind_idx_fptr bind_idx;
 	bind_cands_fptr bind_cands;
 
-	append_col_fptr append_col;
-	append_idx_fptr append_idx;
+	update_col_fptr append_col;
+	update_idx_fptr append_idx;
 
 	update_col_fptr update_col;
 	update_idx_fptr update_idx;
@@ -291,7 +299,7 @@ typedef struct logger_functions {
 /* we need to add an interface for result_tables later */
 
 extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next, void *order);
-extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *v);
+extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *v, bool cache);
 
 extern void res_table_destroy(res_table *t);
 

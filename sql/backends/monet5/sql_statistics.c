@@ -112,12 +112,18 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch (argc) {
 	case 6:
 		col = *getArgReference_str(stk, pci, 5);
+		if (strNil(col))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Column name cannot be NULL");
 		/* fall through */
 	case 5:
 		tbl = *getArgReference_str(stk, pci, 4);
+		if (strNil(tbl))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Table name cannot be NULL");
 		/* fall through */
 	case 4:
 		sch = *getArgReference_str(stk, pci, 3);
+		if (strNil(sch))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Schema name cannot be NULL");
 	}
 
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
@@ -127,7 +133,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
 	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *)b;
-		if (!isalpha((unsigned char) s->base.name[0]))
+		if (s->base.name[0] == '%')
 			continue;
 
 		if (sch && strcmp(s->base.name, sch))
@@ -171,7 +177,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
 	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *)b;
-		if (!isalpha((unsigned char) b->name[0]))
+		if (b->name[0] == '%')
 			continue;
 
 		if (sch && strcmp(sch, b->name))

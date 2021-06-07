@@ -719,7 +719,8 @@ typedef struct res_col {
 	char *name;
 	sql_subtype type;
 	bat b;
-	int mtype;
+	char mtype;
+	bool cached;
 	ptr *p;
 } res_col;
 
@@ -729,6 +730,7 @@ typedef struct res_table {
 	mapi_query_t query_type;
 	int nr_cols;
 	BUN nr_rows;
+	BUN cur_row;
 	int cur_col;
 	const char *tsep;
 	const char *rsep;
