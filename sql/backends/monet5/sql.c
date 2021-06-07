@@ -491,7 +491,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	return MAL_SUCCEED;
 }
 
-static size_t
+static BAT *
 mvc_claim_slots(sql_trans *tr, sql_table *t, size_t cnt)
 {
 	sqlstore *store = tr->store;
@@ -501,7 +501,7 @@ mvc_claim_slots(sql_trans *tr, sql_table *t, size_t cnt)
 str
 mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *res = getArgReference_lng(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
 	const char *sname = *getArgReference_str(stk, pci, 2);
@@ -523,14 +523,18 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
-	*res = mvc_claim_slots(m->session->tr, t, (size_t)cnt);
-	return MAL_SUCCEED;
+	BAT *pos = mvc_claim_slots(m->session->tr, t, (size_t)cnt);
+	if (pos) {
+		BBPkeepref(*res = pos->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "sql.claim", SQLSTATE(3F000) "Could not claim slots");
 }
 
 str
 create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
-	size_t i, pos = 0;
+	size_t i;
 	sql_table *t;
 	sql_schema *s;
 	mvc *sql = NULL;
@@ -574,24 +578,30 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
-	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
+	BAT *pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
+	if (!pos)
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: Could not insert data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
-		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
+		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
+			bat_destroy(pos);
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
-		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
+		}
+		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED) {
+			bat_destroy(pos);
 			return msg;
+		}
 	}
-
+	bat_destroy(pos);
 	return msg;
 }
 
 str
 append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
-	size_t i, pos = 0;
+	size_t i;
 	sql_table *t;
 	sql_schema *s;
 	mvc *sql = NULL;
@@ -608,17 +618,23 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
-	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
+	BAT *pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
+	if (!pos)
+		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: Could not append data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
-		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
+		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
+			bat_destroy(pos);
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
-		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
+		}
+		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED) {
+			bat_destroy(pos);
 			return msg;
+		}
 	}
-
+	bat_destroy(pos);
 	return msg;
 }
 
@@ -1723,10 +1739,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_append_column(sql_trans *t, sql_column *c, size_t pos, BAT *ins)
+mvc_append_column(sql_trans *t, sql_column *c, BAT *pos, BAT *ins)
 {
 	sqlstore *store = t->store;
-	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat, 0);
+	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat);
 	if (res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
@@ -1782,14 +1798,14 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
-	lng pos = *(lng*)getArgReference_lng(stk, pci, 5);
+	bat Pos = *getArgReference_bat(stk, pci, 5);
 	ptr ins = getArgReference(stk, pci, 6);
 	int tpe = getArgType(mb, pci, 6), log_res = LOG_OK;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
 	sql_idx *i;
-	BAT *b = 0;
+	BAT *b = NULL, *pos = NULL;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1798,21 +1814,28 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL)
+	if ((pos = BATdescriptor(Pos)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
+		bat_destroy(pos);
+		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
+			sname,tname,cname);
+	}
 	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
 	if ( tpe == TYPE_bat)
 		b =  (BAT*) ins;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
+		bat_destroy(pos);
 		if (b)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
 	}
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL) {
+		bat_destroy(pos);
 		if (b)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
@@ -1821,10 +1844,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, tpe, 1);
+		log_res = store->storage_api.append_col(m->session->tr, c, pos, ins, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe, 1);
+		log_res = store->storage_api.append_idx(m->session->tr, i, pos, ins, tpe);
 	}
+	BBPunfix(pos->batCacheid);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
@@ -4956,8 +4980,8 @@ static mel_func sql_init_funcs[] = {
  command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
- pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(1,5, arg("",lng),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
- pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",lng),argany("ins",0))),
+ pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(1,5, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),batarg("offset",oid),argany("ins",0))),
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))), pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
@@ -5459,6 +5483,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "min", SQLmin, false, "return the minimum of groups", args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "max", SQLmax, false, "return the maximum of groups", args(1,7, argany("",1),argany("b",1),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "max", SQLmax, false, "return the maximum of groups",args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("sql", "count", SQLbasecount, false, "return count of basetable", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "count", SQLcount, false, "return count of groups", args(1,8, arg("",lng),argany("b",1),arg("ignils",bit),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "count", SQLcount, false,"return count of groups",args(1,8, batarg("",lng),batargany("b",1),arg("ignils",bit),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",lng),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),

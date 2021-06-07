@@ -807,7 +807,7 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 	if (isaBatType(getArgType(mb, pci, 1)) && !(*b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	if (*b && !(*r = COLnew((*b)->hseqbase, rtype ? rtype : (*b)->ttype, BATcount(*b), TRANSIENT)))
-		throw(MAL, mod, SQLSTATE(HY013) MAL_MALLOC_FAIL); 
+		throw(MAL, mod, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (isaBatType(getArgType(mb, pci, 2)) && !(*p = BATdescriptor(*getArgReference_bat(stk, pci, 2))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	if ((*frame_type == 3 || *frame_type == 4) && isaBatType(getArgType(mb, pci, 3)) && !(*o = BATdescriptor(*getArgReference_bat(stk, pci, 3))))
@@ -1199,6 +1199,30 @@ str
 SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", GDKanalyticalmax);
+}
+
+str
+SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *res = getArgReference_lng(stk, pci, 0);
+	str sname = *getArgReference_str(stk, pci, 1);
+	str tname = *getArgReference_str(stk, pci, 2);
+	mvc *m = NULL;
+	str msg;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = s?mvc_bind_table(m, s, tname):NULL;
+	if (!t || !isTable(t) || isMergeTable(t) || isReplicaTable(t))
+		return createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot find table %s.%s", sname, tname);
+	sql_column *c = ol_first_node(t->columns)->data;
+	sqlstore *store = m->session->tr->store;
+
+	*res = store->storage_api.count_col(m->session->tr, c, 10);
+	return msg;
 }
 
 str

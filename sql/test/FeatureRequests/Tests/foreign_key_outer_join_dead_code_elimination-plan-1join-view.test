@@ -5,9 +5,7 @@ query T nosort
    plan select count(*) from v1
 ----
 project (
-| group by (
-| | table("sys"."fk") [ "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ] COUNT 
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
