@@ -277,14 +277,14 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDBATvacuum(bat *r, const bat *bid)
 {
-	BAT *b, *rb;
+	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.vacuum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((rb = BATvacuum(b)) == NULL)
+	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
 		throw(MAL, "bat.vacuum", GDK_EXCEPTION);
 
-	BBPkeepref(*r = rb->batCacheid);
+	BBPkeepref(*r = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

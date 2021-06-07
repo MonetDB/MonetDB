@@ -4909,7 +4909,8 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((b = mvc_bind(m, sname, tname, cname, access)) == NULL)
 		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
-	bn = BATvacuum(b);
+	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s",sname,tname);
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	// TODO where to? back in storage
