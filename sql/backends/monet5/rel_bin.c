@@ -5610,10 +5610,8 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 						if (k->t != t && !cascade) {
 							node *n = ol_first_node(t->columns);
 							sql_column *c = n->data;
-							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 0);
-							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t, 0);
-							assert (n_rows >= n_deletes);
-							if (n_rows - n_deletes > 0) {
+							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 10);
+							if (n_rows > 0) {
 								list_destroy(keys);
 								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
 								*error = 1;

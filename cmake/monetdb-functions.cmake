@@ -8,7 +8,15 @@
 
 function(monetdb_hg_revision)
   # Get the current version control revision
-  if(EXISTS "${CMAKE_SOURCE_DIR}/.hg")
+  if(EXISTS "${CMAKE_SOURCE_DIR}/.hg_archival.txt")
+    execute_process(COMMAND "sed" "-n" "s/^node: \\([0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]\\).*/\\1/p" ".hg_archival.txt" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RESULT_VARIABLE HG_RETURN_CODE
+      OUTPUT_VARIABLE HG_OUPUT_RES OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(HG_RETURN_CODE EQUAL 0 AND HG_OUPUT_RES)
+      set(MERCURIAL_ID "${HG_OUPUT_RES}" PARENT_SCOPE)
+    else()
+      message(FATAL_ERROR "Failed to find mercurial ID")
+    endif()
+  elseif(EXISTS "${CMAKE_SOURCE_DIR}/.hg")
     find_package(Hg)
     if(HG_FOUND)
       message("hg found: ${HG_EXECUTABLE}")
