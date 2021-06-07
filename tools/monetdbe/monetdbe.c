@@ -1554,7 +1554,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 	cq* q = stmt_internal->q;
 
-	MalStkPtr glb = (MalStkPtr) (NULL);
+	MalStkPtr glb = NULL;
 	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
 
 	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
@@ -1571,7 +1571,9 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 		res_internal = *(monetdbe_result_internal**)result;
 	}
+
 cleanup:
+	GDKfree(glb);
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
 }
 
