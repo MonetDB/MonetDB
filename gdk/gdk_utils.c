@@ -1086,7 +1086,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 #endif
 		}
 	} else if (GDKgetenv("gdk_dbname") == NULL) {
-		if (GDKsetenv("gdk_dbname", ":memory:") != GDK_SUCCEED) {
+		if (GDKsetenv("gdk_dbname", "in-memory") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKsetenv gdk_dbname failed");
 			return GDK_FAIL;
 		}
