@@ -176,10 +176,6 @@ typedef enum comp_type {
 	cmp_left_project = 15	/* last step of outer join */
 } comp_type;
 
-/* for ranges we keep the requirment for symmetric */
-#define CMP_SYMMETRIC 8
-#define CMP_BETWEEN 16
-
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
@@ -244,7 +240,7 @@ struct os_iter {
 typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								/* write changes to the log */
 typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
-typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
+typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 
 extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store);
@@ -723,7 +719,8 @@ typedef struct res_col {
 	char *name;
 	sql_subtype type;
 	bat b;
-	int mtype;
+	char mtype;
+	bool cached;
 	ptr *p;
 } res_col;
 
@@ -733,6 +730,7 @@ typedef struct res_table {
 	mapi_query_t query_type;
 	int nr_cols;
 	BUN nr_rows;
+	BUN cur_row;
 	int cur_col;
 	const char *tsep;
 	const char *rsep;

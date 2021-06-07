@@ -131,7 +131,6 @@ typedef struct VARRECORD {
             used:1,
             disabled:1;
 	short depth;				/* scope block depth, set to -1 if not used */
-	short worker;				/* thread id of last worker producing it */
 	ValRecord value;
 	int declared;				/* pc index when it was first assigned */
 	int updated;				/* pc index when it was first updated */
@@ -191,11 +190,14 @@ typedef struct MALBLK {
 	short keephistory;		/* do we need the history at all */
 	int maxarg;				/* keep track on the maximal arguments used */
 	ptr replica;			/* for the replicator tests */
+
+	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
+	int		workers;
+	lng		memory;
 	lng starttime;			/* track when the query started, for resource management */
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
 	lng optimize;			/* total optimizer time */
-	int activeClients;		/* load during mitosis optimization */
 } *MalBlkPtr, MalBlkRecord;
 
 #define STACKINCR   128
@@ -228,7 +230,7 @@ typedef struct MALSTK {
 	int pcup;				/* saved pc upon a recursive all */
 	oid tag;				/* unique invocation call tag */
 	int	workers;			/* Actual number of concurrent workers */
-	lng	memory;				/* Actual memory claim highwater mark */
+	lng	memory;				/* Actual memory claims for highwater mark */
 
 	struct MALSTK *up;		/* stack trace list */
 	struct MALBLK *blk;		/* associated definition */

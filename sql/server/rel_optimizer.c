@@ -410,7 +410,7 @@ exp_count(int *cnt, sql_exp *e)
 			if (e->f)
 				exp_count(cnt, e->f);
 		}
- 		flag = e->flag & (~CMP_BETWEEN);
+ 		flag = e->flag;
 		switch (flag) {
 		case cmp_equal:
 			*cnt += 90;
@@ -2052,6 +2052,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
 			int add_r = 0;
+			list *rcopy = NULL;
 
 			/* only push topn/sample once */
 			x = ul;
@@ -2065,8 +2066,15 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			if (x && x->op == rel->op)
 				return rel;
 
-			if (list_length(ul->exps) > list_length(r->exps))
+			if (list_length(ul->exps) > list_length(r->exps)) {
 				add_r = 1;
+				rcopy = exps_copy(v->sql, r->r);
+				for (node *n = rcopy->h ; n ; n = n->next) {
+					sql_exp *e = n->data;
+					set_descending(e);
+					set_nulls_first(e);
+				}
+			}
 			ul = rel_dup(ul);
 			ur = rel_dup(ur);
 			if (!is_project(ul->op))
@@ -2083,7 +2091,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ul->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
 			if (add_r)
-				ul->exps = list_merge(ul->exps, exps_copy(v->sql, r->r), NULL);
+				ul->exps = list_distinct(list_merge(ul->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
 			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
@@ -2092,19 +2100,18 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ur->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
 			if (add_r)
-				ur->exps = list_merge(ur->exps, exps_copy(v->sql, r->r), NULL);
+				ur->exps = list_distinct(list_merge(ur->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
 			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
-			/* TODO the list of expressions of u don't match ul and ur */
 			u->exps = exps_alias(v->sql, r->exps);
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
 			if (add_r)
-				u->exps = list_merge(u->exps, exps_copy(v->sql, r->r), NULL);
+				u->exps = list_distinct(list_merge(u->exps, rcopy, NULL), (fcmp) exp_equal, (fdup) NULL);
 			if (need_distinct(r)) {
 				set_distinct(ul);
 				set_distinct(ur);
@@ -2244,7 +2251,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (e->f) {
 				r2 = exp_push_down_prj(sql, e->f, f, t);
 				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+					ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else if (l && r) {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
@@ -3845,7 +3852,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 	for (n = lexps->h; n; n = n->next) {
 		sql_exp *le = n->data, *re, *fnd = NULL;
 
-		if (le->type != e_cmp || le->flag == cmp_or || is_anti(le) || is_semantics(le))
+		if (le->type != e_cmp || le->flag == cmp_or || is_anti(le) || is_semantics(le) || is_symmetric(le))
 			continue;
 		for (m = rexps->h; !fnd && m; m = m->next) {
 			re = m->data;
@@ -3864,7 +3871,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 		if (fnd) {
 			re = fnd;
 			fnd = NULL;
-			if (le->anti || re->anti)
+			if (is_anti(le) || is_anti(re) || is_symmetric(re))
 				continue;
 			if (le->flag == cmp_equal && re->flag == cmp_equal) {
 				list *exps = new_exp_list(sql->sa);
@@ -3904,7 +3911,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
+				fnd = exp_compare2(sql->sa, le->l, mine, maxe, le->flag, 0);
 				lmerged = false;
 			}
 			if (fnd) {
@@ -3969,7 +3976,7 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 								v->sql->errstr[0] = 0;
 								return e;
 							}
-						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->base.name, rff->func->base.name)))) {
+						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare_funcs2range(lff->func->base.name, rff->func->base.name), 0))) {
 							if (exp_name(e))
 								exp_prop_alias(v->sql->sa, ne, e);
 							e = ne;
@@ -4921,10 +4928,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			return rel;
 		if (right && is_left(lop))
 			return rel;
-		nsexps = rel->exps;
-		rel->exps = NULL; /* prepare to delete relation */
-		njexps = l->exps;
-		l->exps = NULL;
+		nsexps = exps_copy(v->sql, rel->exps);
+		njexps = exps_copy(v->sql, l->exps);
 		if (left)
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), rel_dup(r), op);
 		else
@@ -5316,15 +5321,16 @@ find_projection_for_join2semi(sql_rel *rel)
 				sql_exp *found = NULL;
 				bool underjoin = false;
 
-				/* if just one groupby column is projected, it will be distinct */
-				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
+				/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
+				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) ||
+					(is_simple_project(rel->op) && need_distinct(rel) && list_length(rel->exps) == 1) || find_prop(e->p, PROP_HASHCOL))
 					return true;
 
 				if ((found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
-					if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
+					if ((is_simple_project(res->op) && need_distinct(res) && list_length(res->exps) == 1) || find_prop(found->p, PROP_HASHCOL))
 						return true;
 					if (found->type == e_column && found->card <= CARD_AGGR) {
-						if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
+						if (!is_groupby(res->op) && list_length(res->exps) != 1)
 							return false;
 						for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
 							sql_exp *e = n->data;
@@ -6214,7 +6220,7 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 			if (e->f) {
 				r2 = exp_use_consts(sql, e->f, consts);
 				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+					ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else if (l && r) {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
@@ -7780,7 +7786,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						}
 					}
 				}
-			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e)) {
+			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !e->f) {
 				/* compute comparisons on atoms */
 				if (exp_is_null(l) || exp_is_null(r)) {
 					e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
@@ -8156,9 +8162,9 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 							continue;
 						}
 					if (!swap)
-						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(e->flag, f->flag));
+						ne = exp_compare2(v->sql->sa, le, re, rf, compare2range(e->flag, f->flag), 0);
 					else
-						ne = exp_compare2(v->sql->sa, le, rf, re, CMP_BETWEEN|compare2range(f->flag, e->flag));
+						ne = exp_compare2(v->sql->sa, le, rf, re, compare2range(f->flag, e->flag), 0);
 
 					list_remove_data(exps, NULL, e);
 					list_remove_data(exps, NULL, f);
@@ -8237,9 +8243,9 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 							continue;
 						}
 					if (!swap)
-						ne = exp_compare2(v->sql->sa, le, re, rf, CMP_BETWEEN|compare2range(ef, ff));
+						ne = exp_compare2(v->sql->sa, le, re, rf, compare2range(ef, ff), 0);
 					else
-						ne = exp_compare2(v->sql->sa, le, rf, re, CMP_BETWEEN|compare2range(ff, ef));
+						ne = exp_compare2(v->sql->sa, le, rf, re, compare2range(ff, ef), 0);
 
 					list_remove_data(exps, NULL, e);
 					list_remove_data(exps, NULL, f);
@@ -8854,9 +8860,9 @@ exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusi
 }
 
 static sql_rel *
-rel_rename_part(mvc *sql, sql_rel *p, sql_rel *rel, char *tname, sql_table *mt)
+rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 {
-	sql_table *t = rel_base_table(p);
+	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
 	node *n;
 
 	assert(!p->exps);
@@ -8864,47 +8870,20 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *rel, char *tname, sql_table *mt)
 	const char *pname = t->base.name;
 	if (isRemote(t))
 		pname = mapiuri_table(t->query, sql->sa, pname);
-	for (n = rel->exps->h; n; n = n->next) {
+	for (n = mt_rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		if (is_intern(e) || exp_name(e)[0] == '%') /* break on tid/idxs */
 			break;
 		sql_column *c = ol_find_name(mt->columns, exp_name(e))->data;
 		sql_column *rc = ol_fetch(t->columns, c->colnr);
 		/* with name find column in merge table, with colnr find column in member */
-		e = exp_alias(sql->sa, tname, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
-		append(p->exps, e);
+		list_append(p->exps, exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0));
 	}
 	if (n) {
 		sql_exp *e = n->data;
-		if (strcmp(exp_name(e), TID) == 0) {
-			e = exp_alias(sql->sa, tname, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			append(p->exps, e);
-		}
+		if (strcmp(exp_name(e), TID) == 0)
+			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 	}
-#if 0
-	node *n, *m;
-	for( m = ol_first_node(mt->columns); m; m = m->next) {
-		sql_column *c = m->data;
-		append(p->exps, exp_alias(sql->sa, tname, c->base.name, pname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
-	}
-	if (n) /* skip TID */
-		n = n->next;
-	if (mt->idxs) {
-		/* also possible index name mismatches */
-		for( m = ol_first_node(mt->idxs); n && m; m = m->next) {
-			sql_exp *ne = n->data;
-			sql_idx *i = m->data;
-			char *iname = NULL;
-
-			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
-				continue;
-
-			iname = sa_strconcat( sql->sa, "%", i->base.name);
-			exp_setname(sql->sa, ne, tname, iname);
-			n = n->next;
-		}
-	}
-#endif
 	rel_base_set_mergetable(p, mt);
 	return p;
 }
@@ -8918,417 +8897,421 @@ typedef struct {
 	list *values;
 } range_limit;
 
-/* rewrite merge tables into union of base tables and call optimizer again */
+typedef struct {
+	list *cols;
+	list *ranges;
+	sql_rel *sel;
+} merge_table_prune_info;
+
+static sql_rel *
+merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_info *info)
+{
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	sql_rel *nrel = NULL;
+	sql_table *mt = (sql_table*) mt_rel->l;
+	const char *mtalias = exp_relname(mt_rel->exps->h->data);
+	list *tables = sa_list(v->sql->sa);
+
+	for (node *nt = mt->members->h; nt; nt = nt->next) {
+		sql_part *pd = nt->data;
+		sql_table *pt = find_sql_table_id(v->sql->session->tr, mt->s, pd->member);
+		sqlstore *store = v->sql->session->tr->store;
+		int skip = 0, allowed = 1;
+
+		/* At the moment we throw an error in the optimizer, but later this rewriter should move out from the optimizers */
+		if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
+			return sql_error(v->sql, 02, SQLSTATE(42000) "The %s '%s.%s' should have at least one table associated",
+							 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
+		/* Do not include empty partitions */
+		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 0))
+			continue;
+
+		if (!table_privs(v->sql, pt, PRIV_SELECT)) /* Test for privileges */
+			allowed = 0;
+
+		for (node *n = mt_rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
+			sql_exp *e = n->data;
+			int i = 0;
+			bool first_attempt = true;
+			atom *cmin = NULL, *cmax = NULL, *rmin = NULL, *rmax = NULL;
+			list *inlist = NULL;
+			const char *cname = e->r;
+			sql_column *mt_col = NULL, *col = NULL;
+
+			if (cname[0] == '%') /* Ignore TID and indexes here */
+				continue;
+
+			mt_col = ol_find_name(mt->columns, exp_name(e))->data;
+			col = ol_fetch(pt->columns, mt_col->colnr);
+			assert(e && e->type == e_column && col);
+			if (!allowed && !column_privs(v->sql, col, PRIV_SELECT))
+				return sql_error(v->sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(v->sql, "current_user"),
+								 pt->s->base.name, pt->base.name, TABLE_TYPE_DESCRIPTION(mt->type, mt->properties), mt->s->base.name, mt->base.name);
+			if (isTable(pt) && info && !list_empty(info->cols) && ATOMlinear(exp_subtype(e)->type->localtype)) {
+				for (node *nn = info->cols->h ; nn && !skip; nn = nn->next) { /* test if it passes all predicates around it */
+					if (nn->data == e) {
+						range_limit *next = list_fetch(info->ranges, i);
+						atom *lval = next->lval, *hval = next->hval;
+						list *values = next->values;
+
+						/* I don't handle cmp_in or cmp_notin cases with anti or null semantics yet */
+						if (next->flag == cmp_in && (next->anti || next->semantics))
+							continue;
+
+						assert(col && (lval || values));
+						if (!skip && pt->access == TABLE_READONLY) {
+							/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
+							if (!cmin && !cmax && first_attempt) {
+								char *min = NULL, *max = NULL;
+								(void) sql_trans_ranges(v->sql->session->tr, col, &min, &max);
+								if (min && max) {
+									cmin = atom_general(v->sql->sa, &col->type, min);
+									cmax = atom_general(v->sql->sa, &col->type, max);
+								}
+								first_attempt = false; /* no more attempts to read from storage */
+							}
+
+							if (cmin && cmax) {
+								if (lval) {
+									if (!next->semantics && ((lval && lval->isnull) || (hval && hval->isnull))) {
+										skip = 1; /* NULL values don't match, skip them */
+									} else if (!next->semantics) {
+										if (next->flag == cmp_equal) {
+											skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, false, false) != 0 :
+																	exp_range_overlap(cmin, cmax, lval, hval, false, false) == 0;
+										} else if (hval != lval) { /* range case */
+											comp_type lower = range2lcompare(next->flag), higher = range2rcompare(next->flag);
+											skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) != 0 :
+																	exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) == 0;
+										} else {
+											switch (next->flag) {
+												case cmp_gt:
+													skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) < 0 : VALcmp(&(lval->data), &(cmax->data)) >= 0;
+													break;
+												case cmp_gte:
+													skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) <= 0 : VALcmp(&(lval->data), &(cmax->data)) > 0;
+													break;
+												case cmp_lt:
+													skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) < 0 : VALcmp(&(cmin->data), &(lval->data)) >= 0;
+													break;
+												case cmp_lte:
+													skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) <= 0 : VALcmp(&(cmin->data), &(lval->data)) > 0;
+													break;
+												default:
+													break;
+											}
+										}
+									}
+								} else if (next->flag == cmp_in) {
+									int nskip = 1;
+									for (node *m = values->h; m && nskip; m = m->next) {
+										atom *a = m->data;
+
+										if (a->isnull)
+											continue;
+										nskip &= exp_range_overlap(cmin, cmax, a, a, false, false) == 0;
+									}
+									skip |= nskip;
+								}
+							}
+						}
+						if (!skip && isPartitionedByColumnTable(mt) && strcmp(mt->part.pcol->base.name, col->base.name) == 0) {
+							if (!next->semantics && ((lval && lval->isnull) || (hval && hval->isnull))) {
+								skip = 1; /* NULL values don't match, skip them */
+							} else if (next->semantics) {
+								/* TODO NOT NULL prunning for partitions that just hold NULL values is still missing */
+								skip |= next->flag == cmp_equal && !next->anti && lval && lval->isnull ? pd->with_nills == 0 : 0; /* *= NULL case */
+							} else {
+								if (isRangePartitionTable(mt)) {
+									if (!rmin || !rmax) { /* initialize lazily */
+										rmin = atom_general_ptr(v->sql->sa, &col->type, pd->part.range.minvalue);
+										rmax = atom_general_ptr(v->sql->sa, &col->type, pd->part.range.maxvalue);
+									}
+
+									/* Prune range partitioned tables */
+									if (rmin->isnull && rmax->isnull) {
+										if (pd->with_nills == 1) /* the partition just holds null values, skip it */
+											skip = 1;
+										/* otherwise it holds all values in the range, cannot be pruned */
+									} else if (rmin->isnull) { /* MINVALUE to limit */
+										if (lval) {
+											if (hval != lval) { /* range case */
+												/* There's need to call range2lcompare, because the partition's upper limit is always exclusive */
+												skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+											} else {
+												switch (next->flag) { /* upper limit always exclusive */
+													case cmp_equal:
+													case cmp_gt:
+													case cmp_gte:
+														skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+														break;
+													default:
+														break;
+												}
+											}
+										} else if (next->flag == cmp_in) {
+											int nskip = 1;
+											for (node *m = values->h; m && nskip; m = m->next) {
+												atom *a = m->data;
+
+												if (a->isnull)
+													continue;
+												nskip &= VALcmp(&(a->data), &(rmax->data)) >= 0;
+											}
+											skip |= nskip;
+										}
+									} else if (rmax->isnull) { /* limit to MAXVALUE */
+										if (lval) {
+											if (hval != lval) { /* range case */
+												comp_type higher = range2rcompare(next->flag);
+												if (higher == cmp_lt) {
+													skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) < 0 : VALcmp(&(rmin->data), &(hval->data)) >= 0;
+												} else if (higher == cmp_lte) {
+													skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
+												} else {
+													assert(0);
+												}
+											} else {
+												switch (next->flag) {
+													case cmp_lt:
+														skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) < 0 : VALcmp(&(rmin->data), &(hval->data)) >= 0;
+														break;
+													case cmp_equal:
+													case cmp_lte:
+														skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
+														break;
+													default:
+														break;
+												}
+											}
+										} else if (next->flag == cmp_in) {
+											int nskip = 1;
+											for (node *m = values->h; m && nskip; m = m->next) {
+												atom *a = m->data;
+
+												if (a->isnull)
+													continue;
+												nskip &= VALcmp(&(rmin->data), &(a->data)) > 0;
+											}
+											skip |= nskip;
+										}
+									} else { /* limit1 to limit2 (general case), limit2 is exclusive */
+										bool max_differ_min = ATOMcmp(col->type.type->localtype, &rmin->data.val, &rmax->data.val) != 0;
+
+										if (lval) {
+											if (next->flag == cmp_equal) {
+												skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) != 0 :
+																		exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) == 0;
+											} else if (hval != lval) { /* For the between case */
+												comp_type higher = range2rcompare(next->flag);
+												skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) != 0 :
+																		exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) == 0;
+											} else {
+												switch (next->flag) {
+													case cmp_gt:
+														skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+														break;
+													case cmp_gte:
+														if (max_differ_min)
+															skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+														else
+															skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) <= 0 : VALcmp(&(lval->data), &(rmax->data)) > 0;
+														break;
+													case cmp_lt:
+														skip |= next->anti ? VALcmp(&(rmin->data), &(lval->data)) < 0 : VALcmp(&(rmin->data), &(lval->data)) >= 0;
+														break;
+													case cmp_lte:
+														skip |= next->anti ? VALcmp(&(rmin->data), &(lval->data)) <= 0 : VALcmp(&(rmin->data), &(lval->data)) > 0;
+														break;
+													default:
+														break;
+												}
+											}
+										} else if (next->flag == cmp_in) {
+											int nskip = 1;
+											for (node *m = values->h; m && nskip; m = m->next) {
+												atom *a = m->data;
+
+												if (a->isnull)
+													continue;
+												nskip &= exp_range_overlap(rmin, rmax, a, a, false, max_differ_min) == 0;
+											}
+											skip |= nskip;
+										}
+									}
+								}
+
+								if (isListPartitionTable(mt) && (next->flag == cmp_equal || next->flag == cmp_in) && !next->anti) {
+									/* if we find a value equal to one of the predicates, we don't prune */
+									/* if the partition just holds null values, it will be skipped */
+									if (!inlist) { /* initialize lazily */
+										inlist = sa_list(v->sql->sa);
+										for (node *m = pd->part.values->h; m; m = m->next) {
+											sql_part_value *spv = (sql_part_value*) m->data;
+											atom *pa = atom_general_ptr(v->sql->sa, &col->type, spv->value);
+
+											list_append(inlist, pa);
+										}
+									}
+
+									if (next->flag == cmp_equal) {
+										int nskip = 1;
+										for (node *m = inlist->h; m && nskip; m = m->next) {
+											atom *pa = m->data;
+											assert(!pa->isnull);
+											nskip &= VALcmp(&(pa->data), &(lval->data)) != 0;
+										}
+										skip |= nskip;
+									} else if (next->flag == cmp_in) {
+										for (node *o = values->h; o && !skip; o = o->next) {
+											atom *a = o->data;
+											int nskip = 1;
+
+											if (a->isnull)
+												continue;
+											for (node *m = inlist->h; m && nskip; m = m->next) {
+												atom *pa = m->data;
+												assert(!pa->isnull);
+												nskip &= VALcmp(&(pa->data), &(a->data)) != 0;
+											}
+											skip |= nskip;
+										}
+									}
+								}
+							}
+						}
+					}
+					i++;
+				}
+			}
+		}
+		if (!skip)
+			append(tables, rel_rename_part(v->sql, rel_basetable(v->sql, pt, pt->base.name), mt_rel, mtalias));
+	}
+	if (list_empty(tables)) { /* No table passed the predicates, generate dummy relation */
+		list *converted = sa_list(v->sql->sa);
+		nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
+		nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
+
+		for (node *n = mt_rel->exps->h ; n ; n = n->next) {
+			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+			exp_prop_alias(v->sql->sa, a, e);
+			list_append(converted, a);
+		}
+		nrel = rel_project(v->sql->sa, nrel, converted);
+	} else { /* Unionize children tables */
+		for (node *n = tables->h; n ; n = n->next) {
+			sql_rel *next = n->data;
+			sql_table *subt = (sql_table *) next->l;
+
+			if (isMergeTable(subt)) { /* apply select predicate recursively for nested merge tables */
+				if (!(next = merge_table_prune_and_unionize(v, next, info)))
+					return NULL;
+			} else if (info) { /* propagate select under union */
+				next = rel_select(v->sql->sa, next, NULL);
+				next->exps = exps_copy(v->sql, info->sel->exps);
+			}
+
+			if (nrel) {
+				nrel = rel_setop(v->sql->sa, nrel, next, op_union);
+				rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1));
+				set_processed(nrel);
+			} else {
+				nrel = next;
+			}
+		}
+	}
+	rel_destroy(mt_rel);
+	return nrel;
+}
+
+/* rewrite merge tables into union of base tables */
 static sql_rel *
 rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 {
-	sql_rel *sel = NULL;
-
 	if (is_modify(rel->op)) {
 		sql_query *query = query_create(v->sql);
 		return rel_propagate(query, rel, &v->changes);
 	} else {
-		if (is_select(rel->op) && rel->l) {
+		sql_rel *bt = rel, *sel = NULL;
+
+		if (is_select(rel->op)) {
 			sel = rel;
-			rel = rel->l;
+			bt = rel->l;
 		}
-		if (is_basetable(rel->op) && rel_base_table(rel)) {
-			sql_table *t = rel_base_table(rel);
+		if (is_basetable(bt->op) && rel_base_table(bt) && isMergeTable((sql_table*)bt->l)) {
+			sql_table *mt = rel_base_table(bt);
+			merge_table_prune_info *info = NULL;
 
-			if (isMergeTable(t)) {
-				/* instantiate merge table */
-				sql_rel *nrel = NULL;
-				char *tname = t->base.name;
-				list *cols = NULL, *ranges = NULL;
+			if (list_empty(mt->members)) /* in DDL statement cases skip if mergetable is empty */
+				return rel;
+			if (sel) { /* prepare prunning information once */
+				info = sa_alloc(v->sql->sa, sizeof(merge_table_prune_info));
+				*info = (merge_table_prune_info) {
+					.cols = sa_list(v->sql->sa),
+					.ranges = sa_list(v->sql->sa),
+					.sel = sel
+				};
+				for (node *n = sel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data, *c = e->l;
+					int flag = e->flag;
 
-				if (list_length(t->members)==0)
-					return rel;
-				if (sel) {
-					cols = sa_list(v->sql->sa);
-					ranges = sa_list(v->sql->sa);
-					for (node *n = sel->exps->h; n; n = n->next) {
-						sql_exp *e = n->data, *c = e->l;
-						int flag = e->flag & ~CMP_BETWEEN;
+					if (e->type != e_cmp || (!is_theta_exp(flag) && flag != cmp_in) || e->symmetric || !(c = rel_find_exp(rel, c)))
+						continue;
 
-						if (e->type != e_cmp || (!is_theta_exp(flag) && flag != cmp_in) || !(c = rel_find_exp(rel, c)))
-							continue;
+					if (flag == cmp_gt || flag == cmp_gte || flag == cmp_lte || flag == cmp_lt || flag == cmp_equal) {
+						sql_exp *l = e->r, *h = e->f;
+						atom *lval = exp_flatten(v->sql, l);
+						atom *hval = h ? exp_flatten(v->sql, h) : lval;
 
-						if (flag == cmp_gt || flag == cmp_gte || flag == cmp_lte || flag == cmp_lt || flag == cmp_equal) {
-							sql_exp *l = e->r, *h = e->f;
+						if (lval && hval) {
+							range_limit *next = SA_ZNEW(v->sql->sa, range_limit);
+							next->lval = lval;
+							next->hval = hval;
+							next->flag = flag;
+							next->anti = is_anti(e);
+							next->semantics = is_semantics(e);
+
+							list_append(info->cols, c);
+							list_append(info->ranges, next);
+						}
+					}
+					if (flag == cmp_in) { /* handle in lists */
+						list *vals = e->r, *vlist = sa_list(v->sql->sa);
+
+						node *m = NULL;
+						for (m = vals->h; m; m = m->next) {
+							sql_exp *l = m->data;
 							atom *lval = exp_flatten(v->sql, l);
-							atom *hval = h ? exp_flatten(v->sql, h) : lval;
 
-							if (lval && hval) {
-								range_limit *next = SA_ZNEW(v->sql->sa, range_limit);
-								next->lval = lval;
-								next->hval = hval;
-								next->flag = flag;
-								next->anti = is_anti(e);
-								next->semantics = is_semantics(e);
-
-								list_append(cols, c);
-								list_append(ranges, next);
-							}
+							if (!lval)
+								break;
+							list_append(vlist, lval);
 						}
-						if (flag == cmp_in) { /* handle in lists */
-							list *vals = e->r, *vlist = sa_list(v->sql->sa);
+						if (!m) {
+							range_limit *next = SA_ZNEW(v->sql->sa, range_limit);
+							next->values = vlist; /* mark high as value list */
+							next->flag = flag;
+							next->anti = is_anti(e);
+							next->semantics = is_semantics(e);
 
-							node *m = NULL;
-							for (m = vals->h; m; m = m->next) {
-								sql_exp *l = m->data;
-								atom *lval = exp_flatten(v->sql, l);
-
-								if (!lval)
-									break;
-								list_append(vlist, lval);
-							}
-							if (!m) {
-								range_limit *next = SA_ZNEW(v->sql->sa, range_limit);
-								next->values = vlist; /* mark high as value list */
-								next->flag = flag;
-								next->anti = is_anti(e);
-								next->semantics = is_semantics(e);
-
-								list_append(cols, c);
-								list_append(ranges, next);
-							}
+							list_append(info->cols, c);
+							list_append(info->ranges, next);
 						}
 					}
 				}
-				v->changes++;
-				if (t->members) {
-					list *tables = sa_list(v->sql->sa);
-
-					for (node *nt = t->members->h; nt; nt = nt->next) {
-						sql_part *pd = nt->data;
-						sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, pd->member);
-						sql_rel *prel = NULL, *bt = NULL;
-						int skip = 0, allowed = 1;
-						list *exps = NULL;
-						sqlstore *store = v->sql->session->tr->store;
-
-						/* At the moment we throw an error in the optimizer, but later this rewriter should move out from the optimizers */
-						if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
-							return sql_error(v->sql, 02, SQLSTATE(42000) "The %s '%s.%s' should have at least one table associated",
-											 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
-						/* Do not include empty partitions */
-						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 0))
-							continue;
-						prel = rel_rename_part(v->sql, rel_basetable(v->sql, pt, tname), rel, tname, t);
-						if (!table_privs(v->sql, pt, PRIV_SELECT)) /* Test for privileges */
-							allowed = 0;
-
-						exps = sa_list(v->sql->sa);
-						for (node *n = rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
-							sql_exp *e = n->data;
-							int i = 0;
-							sql_column *col = NULL;
-							bool first_attempt = true;
-							atom *cmin = NULL, *cmax = NULL, *rmin = NULL, *rmax = NULL;
-							list *inlist = NULL;
-							char *cname = e->r;
-
-							assert(e && e->type == e_column);
-							if (!allowed && cname[0] != '%' && !column_privs(v->sql, mvc_bind_column(v->sql, pt, cname), PRIV_SELECT))
-								return sql_error(v->sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(v->sql, "current_user"),
-												 pt->s->base.name, pt->base.name, TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, t->base.name);
-							if (cols && sel && ATOMlinear(exp_subtype(e)->type->localtype))
-								for (node *nn = cols->h ; nn && !skip; nn = nn->next) { /* test if it passes all predicates around it */
-									if (nn->data == e) {
-										if (pt && isTable(pt)) {
-											range_limit *next = list_fetch(ranges, i);
-											atom *lval = next->lval, *hval = next->hval;
-											list *values = next->values;
-
-											if (!col) /* first predicate around the column */
-												col = name_find_column(prel, e->l, cname, -2, &bt);
-
-											/* I don't handle cmp_in or cmp_notin cases with anti or null semantics yet */
-											if (next->flag == cmp_in && (next->anti || next->semantics))
-												continue;
-
-											assert(col && (lval || values));
-											if (!skip && pt->access == TABLE_READONLY) {
-												/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
-												if (!cmin && !cmax && first_attempt) {
-													char *min = NULL, *max = NULL;
-													(void) sql_trans_ranges(v->sql->session->tr, col, &min, &max);
-													if (min && max) {
-														cmin = atom_general(v->sql->sa, &col->type, min);
-														cmax = atom_general(v->sql->sa, &col->type, max);
-													}
-													first_attempt = false; /* no more attempts to read from storage */
-												}
-
-												if (cmin && cmax) {
-													if (lval) {
-														if (!next->semantics && ((lval && lval->isnull) || (hval && hval->isnull))) {
-															skip = 1; /* NULL values don't match, skip them */
-														} else if (!next->semantics) {
-															if (next->flag == cmp_equal) {
-																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, false, false) != 0 :
-																					 exp_range_overlap(cmin, cmax, lval, hval, false, false) == 0;
-															} else if (hval != lval) { /* range case */
-																comp_type lower = range2lcompare(next->flag), higher = range2rcompare(next->flag);
-																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) != 0 :
-																					 exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) == 0;
-															} else {
-																switch (next->flag) {
-																	case cmp_gt:
-																		skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) < 0 : VALcmp(&(lval->data), &(cmax->data)) >= 0;
-																		break;
-																	case cmp_gte:
-																		skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) <= 0 : VALcmp(&(lval->data), &(cmax->data)) > 0;
-																		break;
-																	case cmp_lt:
-																		skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) < 0 : VALcmp(&(cmin->data), &(lval->data)) >= 0;
-																		break;
-																	case cmp_lte:
-																		skip |= next->anti ? VALcmp(&(lval->data), &(cmax->data)) <= 0 : VALcmp(&(cmin->data), &(lval->data)) > 0;
-																		break;
-																	default:
-																		break;
-																}
-															}
-														}
-													} else if (next->flag == cmp_in) {
-														int nskip = 1;
-														for (node *m = values->h; m && nskip; m = m->next) {
-															atom *a = m->data;
-
-															if (a->isnull)
-																continue;
-															nskip &= exp_range_overlap(cmin, cmax, a, a, false, false) == 0;
-														}
-														skip |= nskip;
-													}
-												}
-											}
-											if (!skip && isPartitionedByColumnTable(t) && strcmp(t->part.pcol->base.name, col->base.name) == 0) {
-												if (!next->semantics && ((lval && lval->isnull) || (hval && hval->isnull))) {
-													skip = 1; /* NULL values don't match, skip them */
-												} else if (next->semantics) {
-													/* TODO NOT NULL prunning for partitions that just hold NULL values is still missing */
-													skip |= next->flag == cmp_equal && !next->anti && lval && lval->isnull ? pd->with_nills == 0 : 0; /* *= NULL case */
-												} else {
-													if (isRangePartitionTable(t)) {
-														if (!rmin || !rmax) { /* initialize lazily */
-															rmin = atom_general_ptr(v->sql->sa, &col->type, pd->part.range.minvalue);
-															rmax = atom_general_ptr(v->sql->sa, &col->type, pd->part.range.maxvalue);
-														}
-
-														/* Prune range partitioned tables */
-														if (rmin->isnull && rmax->isnull) {
-															if (pd->with_nills == 1) /* the partition just holds null values, skip it */
-																skip = 1;
-															/* otherwise it holds all values in the range, cannot be pruned */
-														} else if (rmin->isnull) { /* MINVALUE to limit */
-															if (lval) {
-																if (hval != lval) { /* range case */
-																	/* There's need to call range2lcompare, because the partition's upper limit is always exclusive */
-																	skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
-																} else {
-																	switch (next->flag) { /* upper limit always exclusive */
-																		case cmp_equal:
-																		case cmp_gt:
-																		case cmp_gte:
-																			skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
-																			break;
-																		default:
-																			break;
-																	}
-																}
-															} else if (next->flag == cmp_in) {
-																int nskip = 1;
-																for (node *m = values->h; m && nskip; m = m->next) {
-																	atom *a = m->data;
-
-																	if (a->isnull)
-																		continue;
-																	nskip &= VALcmp(&(a->data), &(rmax->data)) >= 0;
-																}
-																skip |= nskip;
-															}
-														} else if (rmax->isnull) { /* limit to MAXVALUE */
-															if (lval) {
-																if (hval != lval) { /* range case */
-																	comp_type higher = range2rcompare(next->flag);
-																	if (higher == cmp_lt) {
-																		skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) < 0 : VALcmp(&(rmin->data), &(hval->data)) >= 0;
-																	} else if (higher == cmp_lte) {
-																		skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
-																	} else {
-																		assert(0);
-																	}
-																} else {
-																	switch (next->flag) {
-																		case cmp_lt:
-																			skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) < 0 : VALcmp(&(rmin->data), &(hval->data)) >= 0;
-																			break;
-																		case cmp_equal:
-																		case cmp_lte:
-																			skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
-																			break;
-																		default:
-																			break;
-																	}
-																}
-															} else if (next->flag == cmp_in) {
-																int nskip = 1;
-																for (node *m = values->h; m && nskip; m = m->next) {
-																	atom *a = m->data;
-
-																	if (a->isnull)
-																		continue;
-																	nskip &= VALcmp(&(rmin->data), &(a->data)) > 0;
-																}
-																skip |= nskip;
-															}
-														} else { /* limit1 to limit2 (general case), limit2 is exclusive */
-															bool max_differ_min = ATOMcmp(col->type.type->localtype, &rmin->data.val, &rmax->data.val) != 0;
-
-															if (lval) {
-																if (next->flag == cmp_equal) {
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) != 0 :
-																						 exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) == 0;
-																} else if (hval != lval) { /* For the between case */
-																	comp_type higher = range2rcompare(next->flag);
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) != 0 :
-																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) == 0;
-																} else {
-																	switch (next->flag) {
-																		case cmp_gt:
-																			skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
-																			break;
-																		case cmp_gte:
-																			if (max_differ_min)
-																				skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
-																			else
-																				skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) <= 0 : VALcmp(&(lval->data), &(rmax->data)) > 0;
-																			break;
-																		case cmp_lt:
-																			skip |= next->anti ? VALcmp(&(rmin->data), &(lval->data)) < 0 : VALcmp(&(rmin->data), &(lval->data)) >= 0;
-																			break;
-																		case cmp_lte:
-																			skip |= next->anti ? VALcmp(&(rmin->data), &(lval->data)) <= 0 : VALcmp(&(rmin->data), &(lval->data)) > 0;
-																			break;
-																		default:
-																			break;
-																	}
-																}
-															} else if (next->flag == cmp_in) {
-																int nskip = 1;
-																for (node *m = values->h; m && nskip; m = m->next) {
-																	atom *a = m->data;
-
-																	if (a->isnull)
-																		continue;
-																	nskip &= exp_range_overlap(rmin, rmax, a, a, false, max_differ_min) == 0;
-																}
-																skip |= nskip;
-															}
-														}
-													}
-
-													if (isListPartitionTable(t) && (next->flag == cmp_equal || next->flag == cmp_in) && !next->anti) {
-														/* if we find a value equal to one of the predicates, we don't prune */
-														/* if the partition just holds null values, it will be skipped */
-														if (!inlist) { /* initialize lazily */
-															inlist = sa_list(v->sql->sa);
-															for (node *m = pd->part.values->h; m; m = m->next) {
-																sql_part_value *spv = (sql_part_value*) m->data;
-																atom *pa = atom_general_ptr(v->sql->sa, &col->type, spv->value);
-
-																list_append(inlist, pa);
-															}
-														}
-
-														if (next->flag == cmp_equal) {
-															int nskip = 1;
-															for (node *m = inlist->h; m && nskip; m = m->next) {
-																atom *pa = m->data;
-																assert(!pa->isnull);
-																nskip &= VALcmp(&(pa->data), &(lval->data)) != 0;
-															}
-															skip |= nskip;
-														} else if (next->flag == cmp_in) {
-															for (node *o = values->h; o && !skip; o = o->next) {
-																atom *a = o->data;
-																int nskip = 1;
-
-																if (a->isnull)
-																	continue;
-																for (node *m = inlist->h; m && nskip; m = m->next) {
-																	atom *pa = m->data;
-																	assert(!pa->isnull);
-																	nskip &= VALcmp(&(pa->data), &(a->data)) != 0;
-																}
-																skip |= nskip;
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-									i++;
-								}
-							if (!skip) {
-								sql_exp *ne = exps_bind_column2(prel->exps, e->l, cname, NULL);
-								assert(ne);
-								exp_setname(v->sql->sa, ne, e->l, cname);
-								append(exps, ne);
-							}
-						}
-						if (!skip) {
-							append(tables, prel);
-							nrel = prel;
-						}
-					}
-					while (nrel && list_length(tables) > 1) {
-						list *ntables = sa_list(v->sql->sa);
-						node *n;
-
-						for(n=tables->h; n && n->next; n = n->next->next) {
-							sql_rel *l = n->data;
-							sql_rel *r = n->next->data;
-							nrel = rel_setop(v->sql->sa, l, r, op_union);
-							rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
-							set_processed(nrel);
-							append(ntables, nrel);
-						}
-						if (n)
-							append(ntables, n->data);
-						tables = ntables;
-					}
-				}
-				if (!nrel) { /* all children tables were pruned, create a dummy relation */
-					list *converted = sa_list(v->sql->sa);
-					nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
-					nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
-
-					for (node *n = rel->exps->h ; n ; n = n->next) {
-						sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
-						exp_prop_alias(v->sql->sa, a, e);
-						list_append(converted, a);
-					}
-					nrel = rel_project(v->sql->sa, nrel, converted);
-				} else {
-					if (list_length(t->members) == 1)
-						nrel = rel_project(v->sql->sa, nrel, rel->exps);
-					if (sel) {
-						visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
-						sel->l = nrel;
-						nrel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
-					}
-				}
-				rel_destroy(rel);
-				return nrel;
 			}
+			if (!(rel = merge_table_prune_and_unionize(v, bt, info)))
+				return NULL;
+			if (sel) {
+				sel->l = NULL; /* The mt relation has already been destroyed */
+				rel_destroy(sel);
+			}
+			v->changes++;
 		}
 	}
-	if (sel)
-		return sel;
 	return rel;
 }
 
@@ -9652,6 +9635,32 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_basecount(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && rel->l && !rel->r && list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
+		sql_rel *bt = rel->l;
+		sql_exp *e = rel->exps->h->data;
+		if (is_basetable(bt->op) && !e->l) { /* count(*) */
+			/* change into select cnt('schema','table') */;
+			sql_table *t = bt->l;
+			if (!isTable(t))
+				return rel;
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC);
+			list *exps = sa_list(v->sql->sa);
+			append(exps, exp_atom_str(v->sql->sa, t->s->base.name, sql_bind_localtype("str")));
+			append(exps, exp_atom_str(v->sql->sa, t->base.name, sql_bind_localtype("str")));
+			sql_exp *ne = exp_op(v->sql->sa, exps, cf);
+
+			ne = exp_propagate(v->sql->sa, ne, e);
+			exp_setname(v->sql->sa, ne, exp_find_rel_name(e), exp_name(e));
+			return rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), ne));
+		}
+		return rel;
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_optimize_projections(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
@@ -9665,6 +9674,8 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
+	if (v->value_based_opt) /* only when value_based_opt is on, ie not for dependency resolution */
+		rel = rel_basecount(v, rel);
 	return rel;
 }
 

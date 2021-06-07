@@ -748,7 +748,6 @@ heapmove(Heap *dst, Heap *src)
 	dst->size = src->size;
 	dst->base = src->base;
 	dst->farmid = src->farmid;
-	dst->hashash = src->hashash;
 	dst->cleanhash = src->cleanhash;
 	dst->storage = src->storage;
 	dst->newstorage = src->newstorage;
@@ -809,12 +808,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
-	if (role == b->batRole &&
+	if (!writable &&
+	    role == b->batRole &&
 	    b->batRestricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
-	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ) &&
-	    !writable) {
+	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL)
 			return NULL;
@@ -875,8 +874,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			strconcat_len(thp.filename, sizeof(thp.filename),
 				      BBP_physical(bn->batCacheid),
 				      ".theap", NULL);
-			if ((b->ttype && HEAPcopy(&bthp, b->theap) != GDK_SUCCEED) ||
-			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
+			if ((b->ttype && HEAPcopy(&bthp, b->theap, b->tbaseoff << b->tshift) != GDK_SUCCEED) ||
+			    (bn->tvheap && HEAPcopy(&thp, b->tvheap, 0) != GDK_SUCCEED)) {
 				HEAPfree(&thp, true);
 				HEAPfree(&bthp, true);
 				BBPreclaim(bn);

@@ -1688,18 +1688,17 @@ int
 mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
+
+	b->rowcnt = val;
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
+
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
 	 * commands, since they don't get a stream to suppress their output.
 	 * If we would fail on having no stream here, those internal commands
 	 * fail too.
 	 */
-	if (!s)
-		return 0;
-
-	b->rowcnt = val;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
-	if(GDKembedded())
+	if(!s || GDKembedded())
 		return 0;
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
@@ -2035,12 +2034,12 @@ int
 mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) == NULL;
 }
 
 int
 mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p, false) == NULL;
 }

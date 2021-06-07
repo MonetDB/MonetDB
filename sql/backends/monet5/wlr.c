@@ -857,7 +857,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	sql_idx *idx;
-	BAT *ins = 0;
+	BAT *ins = NULL, *pos = NULL;
 	str msg = MAL_SUCCEED;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
@@ -865,7 +865,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 	cname = *getArgReference_str(stk,pci,3);
-	lng pos = *(lng*)getArgReference_lng(stk,pci,4);
+	bat Pos = *getArgReference_bat(stk,pci,4);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -878,11 +878,16 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+
+	if ((pos = BATdescriptor(Pos)) == NULL)
+		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
+			sname,tname,cname);
 	// get the data into local BAT
 
 	tpe= getArgType(mb,pci,5);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
+		bat_destroy(pos);
 		throw(SQL,"WLRappend",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -911,13 +916,14 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat, 1);
+		log_res = store->storage_api.append_col(m->session->tr, c, pos, ins, TYPE_bat);
 	} else if (cname[0] == '%' && (idx = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, idx, (size_t)pos, ins, tpe, 1);
+		log_res = store->storage_api.append_idx(m->session->tr, idx, pos, ins, tpe);
 	}
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		msg = createException(MAL, "WLRappend", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 cleanup:
+	bat_destroy(pos);
 	BBPunfix(((BAT *) ins)->batCacheid);
 	return msg;
 }

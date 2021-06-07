@@ -173,7 +173,7 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 }
 
 sql_exp *
-exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
+exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int symmetric)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 	if (e == NULL)
@@ -184,6 +184,8 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (symmetric)
+		set_symmetric(e);
 	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
 		set_has_no_nil(e);
 	return e;
@@ -671,6 +673,8 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_anti(ne);
 	if (is_semantics(oe))
 		set_semantics(ne);
+	if (is_symmetric(oe))
+		set_symmetric(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))
@@ -1779,7 +1783,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     sql_exp* h = e->f;
     assert (v && l && h);
 
-    return exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
+    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
 }
 
 static inline bool
@@ -2044,6 +2048,29 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 		}
 	}
 	return xp;
+}
+
+int
+exp_rel_depth(sql_exp *e)
+{
+	if (!e)
+		return 0;
+	switch(e->type){
+	case e_func:
+	case e_aggr:
+	case e_cmp:
+		return 1;
+	case e_convert:
+		return 0;
+	case e_psm:
+		if (exp_is_rel(e))
+			return 0;
+		return 1;
+	case e_atom:
+	case e_column:
+		return 0;
+	}
+	return 0;
 }
 
 sql_rel *
@@ -2705,7 +2732,7 @@ exp_copy(mvc *sql, sql_exp * e)
 
 			if (e->f) {
 				r2 = exp_copy(sql, e->f);
-				ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+				ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}

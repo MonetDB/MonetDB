@@ -161,25 +161,28 @@ clearQRYqueue(size_t idx)
 static void
 advanceQRYqueue(void)
 {
-	qhead++;
-	if( qhead == qsize)
-		qhead = 0;
-	if( qtail == qhead)
-		qtail++;
-	if( qtail == qsize)
-		qtail = 0;
-	/* clean out the element */
-	str s = QRYqueue[qhead].query;
-	if( s){
-		/* don;t wipe them when they are still running, prepared, or paused */
-		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status != 0 && (QRYqueue[qhead].status[0] == 'r' || QRYqueue[qhead].status[0] == 'p')){
-			advanceQRYqueue();
-			return;
+	bool found_empty_slot = false;
+
+	while (!found_empty_slot) {
+		qhead++;
+		if( qhead == qsize)
+			qhead = 0;
+		if( qtail == qhead)
+			qtail++;
+		if( qtail == qsize)
+			qtail = 0;
+		/* clean out the element */
+		str s = QRYqueue[qhead].query;
+		if (!s || QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')) {
+			/* don't wipe them when they are still running, prepared, or paused */
+			/* The upper layer has assured there is at least one slot available */
+			if (s) {
+				GDKfree(s);
+				GDKfree(QRYqueue[qhead].username);
+				clearQRYqueue(qhead);
+			}
+			found_empty_slot = true;
 		}
-		GDKfree(s);
-		GDKfree(QRYqueue[qhead].username);
-		clearQRYqueue(qhead);
 	}
 }
 
@@ -270,8 +273,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (!GDKembedded())
 		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
 	QRYqueue[qhead].idx = cntxt->idx;
-	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
-	QRYqueue[qhead].workers = (int) stk->workers;
+	/* give the MB upperbound by addition of 1 MB */
+	QRYqueue[qhead].memory = 1 + (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
+	QRYqueue[qhead].workers = (int) 1;	/* this is the first one */
 	QRYqueue[qhead].status = "running";
 	QRYqueue[qhead].cntxt = cntxt;
 	QRYqueue[qhead].ticks = GDKusec();
@@ -303,6 +307,9 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			}
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
+			QRYqueue[i].workers = mb->workers;
+			/* give the MB upperbound by addition of 1 MB */
+			QRYqueue[i].memory = 1 + (int)(mb->memory / LL_CONSTANT(1048576));
 			QRYqueue[i].cntxt = 0;
 			QRYqueue[i].stk = 0;
 			QRYqueue[i].mb = 0;

@@ -252,7 +252,7 @@ class SQLLogic:
                 return result
         except ConnectionError as e:
             self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
-            return ['statenent', 'crash'] # should never be approved
+            return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
         except:
@@ -262,7 +262,7 @@ class SQLLogic:
         else:
             result = ['statement', 'ok']
             if expectok:
-                if expected_rowcount:
+                if expected_rowcount is not None:
                     result.append('rowcount')
                     result.append('{}'.format(affected_rowcount))
                     if expected_rowcount != affected_rowcount:
@@ -280,39 +280,43 @@ class SQLLogic:
                 return None
             nrow = []
             for i in range(len(columns)):
-                if row[i] is None:
-                    nrow.append('NULL')
-                elif self.language == 'sql' and row[i] == 'NULL':
-                    nrow.append('NULL')
-                elif self.language == 'mal' and row[i] == 'nil':
-                    nrow.append('NULL')
-                elif columns[i] == 'I':
-                    if row[i] in ('true', 'True'):
-                        nrow.append('1')
-                    elif row[i] in ('false', 'False'):
-                        nrow.append('0')
-                    else:
-                        nrow.append('%d' % row[i])
-                elif columns[i] == 'T':
-                    if row[i] == '' or row[i] == b'':
-                        nrow.append('(empty)')
-                    else:
-                        nval = []
-                        if isinstance(row[i], bytes):
-                            for c in row[i]:
-                                c = '%02X' % c
-                                nval.append(c)
+                try:
+                    if row[i] is None:
+                        nrow.append('NULL')
+                    elif self.language == 'sql' and row[i] == 'NULL':
+                        nrow.append('NULL')
+                    elif self.language == 'mal' and row[i] == 'nil':
+                        nrow.append('NULL')
+                    elif columns[i] == 'I':
+                        if row[i] in ('true', 'True'):
+                            nrow.append('1')
+                        elif row[i] in ('false', 'False'):
+                            nrow.append('0')
                         else:
-                            for c in str(row[i]):
-                                if ' ' <= c <= '~':
+                            nrow.append('%d' % row[i])
+                    elif columns[i] == 'T':
+                        if row[i] == '' or row[i] == b'':
+                            nrow.append('(empty)')
+                        else:
+                            nval = []
+                            if isinstance(row[i], bytes):
+                                for c in row[i]:
+                                    c = '%02X' % c
                                     nval.append(c)
-                                else:
-                                    nval.append('@')
-                        nrow.append(''.join(nval))
-                elif columns[i] == 'R':
-                    nrow.append('%.3f' % row[i])
-                else:
-                    self.raise_error('incorrect column type indicator')
+                            else:
+                                for c in str(row[i]):
+                                    if ' ' <= c <= '~':
+                                        nval.append(c)
+                                    else:
+                                        nval.append('@')
+                            nrow.append(''.join(nval))
+                    elif columns[i] == 'R':
+                        nrow.append('%.3f' % row[i])
+                    else:
+                        self.raise_error('incorrect column type indicator')
+                except TypeError:
+                    self.query_error(query, 'bad column type')
+                    return None
             ndata.append(tuple(nrow))
         return ndata
 
