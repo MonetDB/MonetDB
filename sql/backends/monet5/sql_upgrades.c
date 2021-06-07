@@ -2405,6 +2405,36 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"update sys.functions set system = true"
 							" where schema_id = 2000 and name = 'deltas';\n");
 
+			/* 26_sysmon */
+			t = mvc_bind_table(sql, s, "queue");
+			t->system = 0; /* make it non-system else the drop view will fail */
+
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop view sys.queue;\n"
+							"drop function sys.queue;\n"
+							"create function sys.queue()\n"
+							"returns table(\n"
+							"\"tag\" bigint,\n"
+							"\"sessionid\" int,\n"
+							"\"username\" string,\n"
+							"\"started\" timestamp,\n"
+							"\"status\" string,\n"
+							"\"query\" string,\n"
+							"\"finished\" timestamp,\n"
+							"\"maxworkers\" int,\n"
+							"\"footprint\" int\n"
+							")\n"
+							"external name sysmon.queue;\n"
+							"grant execute on function sys.queue to public;\n"
+							"create view sys.queue as select * from sys.queue();\n"
+							"grant select on sys.queue to public;\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+							"update sys.functions set system = true where system <> true and schema_id = 2000"
+							" and name = 'queue' and type = %d;\n", (int) F_UNION);
+			pos += snprintf(buf + pos, bufsize - pos,
+							"update sys._tables set system = true where schema_id = 2000"
+							" and name = 'queue';\n");
+
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
 							"delete from sys.dependencies d where d.depend_id = (select id from sys.functions where name = 'getproj4' and schema_id = 2000) and id in (select id from sys._columns where name not in ('proj4text', 'srid'));\n");
