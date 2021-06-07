@@ -34,7 +34,15 @@ srpm: MonetDB.spec $(top_builddir)/$(distdir).tar.bz2 $(rpmtopdir)/rpmmacros
 all: monetdb_hgversion.h
 
 monetdb_hgversion.h: always
-	if [ -d "$(srcdir)"/.hg ] && hgid=`(cd "$(srcdir)"; hg id -i) 2>/dev/null`; then \
+	if [ -f "$(srcdir)"/.hg_archival.txt ] && hgid=`sed -n 's/^node: \([0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]\).*/\1/p' "$(srcdir)"/.hg_archival.txt`; then \
+		hgid=`echo $$hgid`; \
+		echo "#define MERCURIAL_ID \"$$hgid\"" > monetdb_hgversion.h.new; \
+		if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then \
+			rm -f monetdb_hgversion.h.new; \
+		else \
+			mv -f monetdb_hgversion.h.new monetdb_hgversion.h; \
+		fi; \
+	elif [ -d "$(srcdir)"/.hg ] && hgid=`(cd "$(srcdir)"; hg id -i) 2>/dev/null`; then \
 		echo "#define MERCURIAL_ID \"$$hgid\"" > monetdb_hgversion.h.new; \
 		if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then \
 			rm -f monetdb_hgversion.h.new; \
