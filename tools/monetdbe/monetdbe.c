@@ -2185,6 +2185,11 @@ remote_cleanup:
 				case TYPE_uuid: /* leave it here for the future? */
 					MONETDBE_APPEND_CHECK_NOT_NULL(uuid);
 					break;
+				default: {
+					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append",
+								"The internal type '%s' is not supported at monetdbe append. This is a bug", ATOMname(mtype));
+					goto cleanup;
+				}
 				}
 			}
 
