@@ -218,7 +218,7 @@ rollback_segments(segments *segs, sql_trans *tr, sql_change *change, ulng oldest
 				seg->next = cur->next;
 				if (cur == segs->t)
 					segs->t = seg;
-				mark4destroy(cur, change, oldest/* TODO somehow get current timestamp*/);
+				mark4destroy(cur, change, store_get_timestamp(tr->store));
 				cur = seg;
 			} else {
 				seg = cur; /* begin of new merge */
@@ -613,6 +613,7 @@ cs_bind_ubat( column_storage *cs, int access, int type)
 	BAT *b;
 
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
+	/* returns the current set of updates, TODO merge with older updates */
 	if (cs->uibid && cs->uvbid) {
 		if (access == RD_UPD_ID)
 			b = temp_descriptor(cs->uibid);
@@ -625,20 +626,141 @@ cs_bind_ubat( column_storage *cs, int access, int type)
 }
 
 static BAT *
-bind_ucol(sql_trans *tr, sql_column *c, int access)
+merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
+{
+	int err = 0;
+	BAT *uv = *UV;
+	BUN cnt = BATcount(ui)+BATcount(oi);
+	BAT *ni = bat_new(TYPE_oid, cnt, PERSISTENT);
+	BAT *nv = uv?bat_new(uv->ttype, cnt, PERSISTENT):NULL;
+
+	if (!ni || (uv && !nv)) {
+		bat_destroy(ni);
+		bat_destroy(nv);
+		bat_destroy(ui);
+		bat_destroy(uv);
+		bat_destroy(oi);
+		bat_destroy(ov);
+		return NULL;
+	}
+	BATiter uvi; 
+	BATiter ovi; 
+
+	if (uv) {
+		uvi = bat_iterator(uv);
+		ovi = bat_iterator(ov);
+	}
+
+	/* handle dense (void) cases together as we need too merge updates (which is slower anyway) */
+	BUN uip = 0, uie = BATcount(ui);
+	BUN oip = 0, oie = BATcount(oi);
+
+	oid uiseqb = ui->tseqbase;
+	oid oiseqb = oi->tseqbase;
+	oid *uipt = NULL, *oipt = NULL;
+	if (!BATtdense(ui))
+		uipt = Tloc(ui, 0);
+	if (!BATtdense(oi))
+		oipt = Tloc(oi, 0);
+	while (uip < uie && oip < oie && !err) {
+		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
+		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
+	
+		if (uiid <= oiid) {
+			if (BUNappend(ni, (ptr) &uiid, true) != GDK_SUCCEED ||
+		    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED)) 
+				err = 1;
+			uip++;
+			if (uiid == oiid)
+				oip++;
+		} else { /* uiid > oiid */
+			if (BUNappend(ni, (ptr) &oiid, true) != GDK_SUCCEED ||
+		    	    (ov && BUNappend(nv, (ptr) BUNtail(ovi, oip), true) != GDK_SUCCEED) )
+				err = 1;
+			oip++;
+		}
+	}
+	while (uip < uie && !err) {
+		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
+		if (BUNappend(ni, (ptr) &uiid, true) != GDK_SUCCEED ||
+	    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED)) 
+			err = 1;
+		uip++;
+	}
+	while (oip < oie && !err) {
+		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
+		if (BUNappend(ni, (ptr) &oiid, true) != GDK_SUCCEED ||
+	    	    (ov && BUNappend(nv, (ptr) BUNtail(ovi, oip), true) != GDK_SUCCEED) )
+			err = 1;
+		oip++;
+	}
+	bat_destroy(ui);
+	bat_destroy(uv);
+	bat_destroy(oi);
+	bat_destroy(ov);
+	if (!err) {
+		if (nv)
+			*UV = nv;
+		return ni;
+	}
+	*UV = NULL;
+	bat_destroy(ni);
+	bat_destroy(nv);
+	return NULL;
+}
+
+static sql_delta *
+older_delta( sql_delta *d, sql_trans *tr) 
+{
+	sql_delta *o = d->next;
+
+	while (o && !o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))  
+		o = o->next;
+	if (o && o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
+		return o;
+	return NULL;
+}
+
+static BAT *
+bind_ubat(sql_trans *tr, sql_delta *d, int access, int type)
 {
 	assert(tr->active);
-	sql_delta *d = col_timestamp_delta(tr, c);
-	return cs_bind_ubat(&d->cs, access, c->type.type->localtype);
+	sql_delta *o = NULL;
+	BAT *ui = NULL, *uv = NULL;
+
+	ui = cs_bind_ubat(&d->cs, RD_UPD_ID, type);
+	if (access == RD_UPD_VAL)
+		uv = cs_bind_ubat(&d->cs, RD_UPD_VAL, type);
+	while ((o = older_delta(d, tr)) != NULL) {
+		BAT *oui = NULL, *ouv = NULL;
+		if (!oui)
+			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type);
+		if (access == RD_UPD_VAL)
+			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type);
+		if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv))) 
+			return NULL;
+		if ((ui = merge_updates(ui, &uv, oui, ouv)) == NULL) 
+			return NULL;
+		d = o;
+	}
+	if (uv) {
+		bat_destroy(ui);
+		return uv;
+	}
+	return ui;
+}
+
+static BAT *
+bind_ucol(sql_trans *tr, sql_column *c, int access)
+{
+	return bind_ubat(tr, col_timestamp_delta(tr, c), access, c->type.type->localtype);
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	assert(tr->active);
-	sql_delta *d = idx_timestamp_delta(tr, i);
-	return cs_bind_ubat(&d->cs, access, type);
+	return bind_ubat(tr, idx_timestamp_delta(tr, i), access, type);
 }
 
 static BAT *
@@ -752,11 +874,29 @@ segments_is_append(segment *s, sql_trans *tr, oid rid)
 }
 
 static int
+segments_is_deleted(segment *s, sql_trans *tr, oid rid)
+{
+	for(; s; s=s->next) {
+		if (s->start <= rid && s->end > rid) {
+			if (s->ts >= tr->ts && s->deleted) {
+				return 1;
+			}
+			break;
+		}
+	}
+	return 0;
+}
+
+/*
+ * Returns LOG_OK, LOG_ERR or LOG_CONFLICT
+ */
+static int
 cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *updates, int is_new)
 {
 	storage *s = ATOMIC_PTR_GET(&t->data);
 	int res = LOG_OK;
-	BAT *otids = tids;
+	BAT *otids = tids, *oupdates = updates;
+
 	if (!BATcount(tids))
 		return LOG_OK;
 
@@ -765,107 +905,224 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		if (!otids)
 			return LOG_ERR;
 	}
+	/* TODO check for concurrent updates on this column ! */
+	if (!otids->tsorted) {
+		BAT *sorted, *order;
+		if (BATsort(&sorted, &order, NULL, otids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
+			if (otids != tids)
+				bat_destroy(otids);
+			return LOG_ERR;
+		}
+		if (otids != tids)
+			bat_destroy(otids);
+		otids = sorted;
+		oupdates = BATproject(order, oupdates);
+		bat_destroy(order);
+	}
+	assert(otids->tsorted);
 	if (!is_new && !cs->cleared) {
-		BAT *ui, *uv;
-
-		if (cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
-			return LOG_ERR;
-
+		BAT *ui = NULL, *uv = NULL;
+		
 		/* handle updates on just inserted bits */
-		if (count_inserts(s->segs->h, tr)) {
-			segment *seg = s->segs->h;
-			BUN ucnt = BATcount(otids);
-			BATiter upi = bat_iterator(updates);
-			BAT *b;
+		/* handle updates on updates (within one transaction) */
+		BATiter upi = bat_iterator(oupdates);
+		BUN cnt = 0, ucnt = BATcount(otids);
+		BAT *b, *ins = NULL;
+		int *msk = NULL;
 
-			if((b = temp_descriptor(cs->bid)) == NULL) {
-				bat_destroy(ui);
-				bat_destroy(uv);
-				if (otids != tids)
-					bat_destroy(otids);
-				return LOG_ERR;
-			}
+		if((b = temp_descriptor(cs->bid)) == NULL)
+			res = LOG_ERR;
 
-			if (BATtdense(otids)) {
-				oid start = otids->tseqbase, offset = start;
-				oid end = start + ucnt;
-				for(; seg; seg=seg->next) {
-					if (seg->start <= start && seg->end > start) {
-						BUN lend = end < seg->end?end:seg->end;
-						if (seg->ts == tr->tid && !seg->deleted) {
-							for (oid rid = start; rid < lend; rid++) {
-								ptr upd = BUNtail(upi, rid-offset);
-								if (void_inplace(b, rid, upd, true) != GDK_SUCCEED) {
-									bat_destroy(b);
-									bat_destroy(ui);
-									bat_destroy(uv);
-									if (otids != tids)
-										bat_destroy(otids);
-									return LOG_ERR;
-								}
+		if (BATtdense(otids)) {
+			oid start = otids->tseqbase, offset = start;
+			oid end = start + ucnt;
+
+			for(segment *seg = s->segs->h; seg && res == LOG_OK ; seg=seg->next) {
+				if (seg->start <= start && seg->end > start) {
+					/* check for delete conflicts */
+					if (seg->ts >= tr->ts && seg->deleted) {
+						res = LOG_CONFLICT;
+						continue;
+					}
+
+					/* check for inplace updates */
+					BUN lend = end < seg->end?end:seg->end;
+					if (seg->ts == tr->tid && !seg->deleted) {
+						if (!ins) {
+							ins = COLnew(0, TYPE_msk, ucnt, TRANSIENT);
+							if (!ins)
+								res = LOG_ERR;
+							else {
+								BATsetcount(ins, ucnt); /* all full updates  */
+								msk = (int*)Tloc(ins, 0);
 							}
-						} else {
-							for (oid rid = start; rid < lend; rid++) {
-								ptr upd = BUNtail(upi, rid-offset);
-								/* handle as updates */
-								if (BUNappend(ui, (ptr) &rid, true) != GDK_SUCCEED ||
-									BUNappend(uv, (ptr) upd, true) != GDK_SUCCEED) {
-										bat_destroy(b);
-										bat_destroy(ui);
-										bat_destroy(uv);
-										if (otids != tids)
-											bat_destroy(otids);
-									return LOG_ERR;
-								}
-							}
-							cs->ucnt+=(lend-start);
 						}
-						if (end < seg->end)
-							break;
-						start = seg->end;
+						for (oid rid = start; rid < lend && res == LOG_OK; rid++) {
+							ptr upd = BUNtail(upi, rid-offset);
+							if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
+								res = LOG_ERR;
+
+							int word = rid/32; 
+							int pos = rid%32;
+							msk[word] |= 1U<<pos;
+							cnt++;
+						}
 					}
 				}
-			} else {
-				oid *rid = Tloc(otids,0);
-				for (BUN i = 0; i < ucnt; i++) {
-					ptr upd = BUNtail(upi, i);
-					int is_append = segments_is_append(s->segs->h, tr, rid[i]);
-
-					if ((is_append && void_inplace(b, rid[i], upd, true) != GDK_SUCCEED) ||
-						(!is_append &&
-							(BUNappend(ui, (ptr)(rid+i), true) != GDK_SUCCEED ||
-						 	 BUNappend(uv, (ptr) upd, true) != GDK_SUCCEED))) {
-						bat_destroy(b);
-						bat_destroy(ui);
-						bat_destroy(uv);
-						if (otids != tids)
-							bat_destroy(otids);
-						return LOG_ERR;
+				if (end < seg->end)
+					break;
+			}
+		} else {
+			BUN i = 0;
+			oid *rid = Tloc(otids,0);
+			segment *seg = s->segs->h; 
+			while ( seg && res == LOG_OK && i < ucnt) {
+				if (seg->end <= rid[i])
+					seg = seg->next;
+				else if (seg->start <= rid[i] && seg->end > rid[i]) {
+					/* check for delete conflicts */
+					if (seg->ts >= tr->ts && seg->deleted) {
+						res = LOG_CONFLICT;
+						continue;
 					}
+
+					/* check for inplace updates */
+					if (seg->ts == tr->tid && !seg->deleted) {
+						if (!ins) {
+							ins = COLnew(0, TYPE_msk, ucnt, TRANSIENT);
+							if (!ins) {
+								res = LOG_ERR;
+								break;
+							} else {
+								BATsetcount(ins, ucnt); /* all full updates  */
+								msk = (int*)Tloc(ins, 0);
+							}
+						}
+						ptr upd = BUNtail(upi, i);
+						if (void_inplace(b, rid[i], upd, true) != GDK_SUCCEED)
+							res = LOG_ERR;
+
+						int word = rid[i]/32; 
+						int pos = rid[i]%32;
+						msk[word] |= 1U<<pos;
+						cnt++;
+					}
+					i++;
 				}
 			}
-			bat_destroy(b);
-			bat_destroy(ui);
-			bat_destroy(uv);
-			if (otids != tids)
-				bat_destroy(otids);
-			return LOG_OK;
 		}
 
-		assert(BATcount(otids) == BATcount(updates));
-		if (BATappend(ui, otids, NULL, true) != GDK_SUCCEED ||
-		    BATappend(uv, updates, NULL, true) != GDK_SUCCEED) {
-			if (otids != tids)
-				bat_destroy(otids);
-			bat_destroy(ui);
-			bat_destroy(uv);
-			return LOG_ERR;
+		if (cnt < ucnt) { 	/* now handle real updates */
+			if (cs->ucnt == 0) { 
+				if (cnt) {
+					ui = BATproject(ins, otids); 
+					uv = BATproject(ins, oupdates); 
+				} else {
+					ui = temp_descriptor(otids->batCacheid); 
+					uv = temp_descriptor(oupdates->batCacheid); 
+				}
+				temp_destroy(cs->uibid);
+				temp_destroy(cs->uvbid);
+				cs->uibid = temp_create(ui);
+				cs->uvbid = temp_create(uv);
+				cs->ucnt = BATcount(ui);
+			} else {
+				BAT *nui = NULL, *nuv = NULL;
+
+				/* merge taking msk of inserted into account */
+				if (res == LOG_OK && cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
+					res = LOG_ERR;
+
+				if (res == LOG_OK) {
+					ptr upd = NULL;
+					nui = bat_new(TYPE_oid, cs->ucnt + ucnt - cnt, PERSISTENT);
+					nuv = bat_new(uv->ttype, cs->ucnt + ucnt - cnt, PERSISTENT);
+					BATiter ovi = bat_iterator(uv);
+
+					/* handle dense (void) cases together as we need too merge updates (which is slower anyway) */
+					BUN uip = 0, uie = BATcount(ui);
+					BUN nip = 0, nie = BATcount(otids);
+					oid uiseqb = ui->tseqbase;
+					oid niseqb = otids->tseqbase;
+					oid *uipt = NULL, *nipt = NULL;
+					if (!BATtdense(ui))
+						uipt = Tloc(ui, 0);
+					if (!BATtdense(otids))
+						nipt = Tloc(otids, 0);
+					while (uip < uie && nip < nie && res == LOG_OK) {
+						oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+						oid niv = (nipt)?nipt[nip]: niseqb+nip;
+	
+						if (uiv < niv) {
+							upd = BUNtail(ovi, uip);
+							if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+		    				    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+								res = LOG_ERR;
+							uip++;
+						} else if (uiv == niv) {
+							/* handle == */
+							if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
+								upd = BUNtail(upi, nip);
+								if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+									res = LOG_ERR;
+							} else {
+								upd = BUNtail(ovi, uip);
+								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+									res = LOG_ERR;
+							}
+							uip++;
+							nip++;
+						} else { /* uiv > niv */
+							if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
+								upd = BUNtail(upi, nip);
+								if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+									res = LOG_ERR;
+							}
+							nip++;
+						}
+					}
+					while (uip < uie && res == LOG_OK) {
+						oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+						upd = BUNtail(ovi, uip);
+						if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+		    				    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+							res = LOG_ERR;
+						uip++;
+					}
+					while (nip < nie && res == LOG_OK) {
+						oid niv = (nipt)?nipt[nip]: niseqb+nip;
+						if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
+							upd = BUNtail(upi, nip);
+							if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+		    				            BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+								res = LOG_ERR;
+						}
+						nip++;
+					}
+					if (res == LOG_OK) {
+						temp_destroy(cs->uibid);
+						temp_destroy(cs->uvbid);
+						cs->uibid = temp_create(nui);
+						cs->uvbid = temp_create(nuv);
+						cs->ucnt = BATcount(nui);
+					}
+					bat_destroy(nui);
+					bat_destroy(nuv);
+				}
+			}
 		}
-		assert(BATcount(otids) == BATcount(updates));
-		assert(BATcount(ui) == BATcount(uv));
+		bat_destroy(b);
+		bat_destroy(ins);
 		bat_destroy(ui);
 		bat_destroy(uv);
-		cs->ucnt += BATcount(otids);
+		if (otids != tids)
+			bat_destroy(otids);
+		if (oupdates != updates)
+			bat_destroy(oupdates);
+		return res;
 	} else if (is_new || cs->cleared) {
 		BAT *b = temp_descriptor(cs->bid);
 
@@ -880,6 +1137,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	}
 	if (otids != tids)
 		bat_destroy(otids);
+	if (oupdates != updates)
+		bat_destroy(oupdates);
 	return res;
 }
 
@@ -898,15 +1157,18 @@ cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *u
 
 	/* check if rid is insert ? */
 	if (!inplace) {
+		/* check conflict */
+		if (segments_is_deleted(s->segs->h, tr, rid))
+			return LOG_CONFLICT;
 		BAT *ui, *uv;
 
+		/* TODO check for concurrent updates on rid ! */
 		if (cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
 			return LOG_ERR;
 
 		assert(BATcount(ui) == BATcount(uv));
 		if (BUNappend(ui, (ptr) &rid, true) != GDK_SUCCEED ||
 		    BUNappend(uv, (ptr) upd, true) != GDK_SUCCEED) {
-			assert(0);
 			bat_destroy(ui);
 			bat_destroy(uv);
 			return LOG_ERR;
@@ -955,18 +1217,11 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 		temp_dup(cs->bid);
 	}
 	if (!temp) {
-		if (cs->uibid && cs->uvbid) {
-			ocs->uibid = ebat_copy(cs->uibid);
-			ocs->uvbid = ebat_copy(cs->uvbid);
-			if (ocs->uibid == BID_NIL ||
-			    ocs->uvbid == BID_NIL)
-				return LOG_ERR;
-		} else {
-			cs->uibid = e_bat(TYPE_oid);
-			cs->uvbid = e_bat(type);
-			if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
-				return LOG_ERR;
-		}
+		cs->ucnt = 0;
+		cs->uibid = e_bat(TYPE_oid);
+		cs->uvbid = e_bat(type);
+		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
+			return LOG_ERR;
 	}
 	return LOG_OK;
 }
@@ -1035,15 +1290,21 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 static int
 update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_new, void *incoming_tids, void *incoming_values, bool is_bat)
 {
+	int ok = LOG_OK;
+
 	if (is_bat) {
 		BAT *tids = incoming_tids;
 		BAT *values = incoming_values;
-		if (BATcount(tids) == 0)
+		if (BATcount(tids) == 0) 
 			return LOG_OK;
-		return delta_update_bat(tr, delta, table, tids, values, is_new);
+		lock_table(tr->store, table->base.id);
+		ok = delta_update_bat(tr, delta, table, tids, values, is_new);
+	} else {
+		lock_table(tr->store, table->base.id);
+		ok = delta_update_val(tr, delta, table, *(oid*)incoming_tids, incoming_values, is_new);
 	}
-	else
-		return delta_update_val(tr, delta, table, *(oid*)incoming_tids, incoming_values, is_new);
+	unlock_table(tr->store, table->base.id);
+	return ok;
 }
 
 static int
@@ -1287,6 +1548,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 		if (seg->start <= rid && seg->end > rid) {
 			if (!SEG_VALID_4_DELETE(seg,tr))
 				return LOG_CONFLICT;
+			/* TODO check for conflicting updates */
 			(void)split_segment(s->segs, seg, p, tr, rid, 1, true);
 			break;
 		}
@@ -1311,6 +1573,7 @@ delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
 				continue;
 			} else if (!SEG_VALID_4_DELETE(seg, tr))
 				return LOG_CONFLICT;
+			/* TODO check for conflicting updates */
 			seg = split_segment(s->segs, seg, p, tr, start, lcnt, true);
 			start += lcnt;
 			cnt -= lcnt;
@@ -2454,8 +2717,10 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	if (GDKinmemory(0))
 		return LOG_OK;
 
+	/*
 	if (cs->cleared && log_bat_clear(store->logger, id) != GDK_SUCCEED)
 		return LOG_ERR;
+		*/
 
 	if (cs->cleared) {
 		assert(cs->ucnt == 0);
@@ -2472,7 +2737,8 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 		return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	}
 
-	if (isTempTable(t))
+	if (isTempTable(t)) {
+		assert(0);
 	for (; segs; segs=segs->next) {
 		if (segs->ts == tr->tid) {
 			BAT *ins = temp_descriptor(cs->bid);
@@ -2481,6 +2747,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 			ok = log_bat(store->logger, ins, id, segs->start, segs->end-segs->start);
 			bat_destroy(ins);
 		}
+	}
 	}
 
 	if (ok == GDK_SUCCEED && cs->ucnt && cs->uibid) {
