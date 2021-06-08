@@ -802,7 +802,7 @@ INSERT INTO t1(c0, c1) VALUES(-1, INTERVAL '6' MONTH), (2, NULL), (9, NULL), (10
 statement ok rowcount 3
 INSERT INTO t1(c4, c1, c0) VALUES(0.34700167, INTERVAL '5' MONTH, 0), (9, INTERVAL '-4' MONTH, NULL), (-2, INTERVAL '-2' MONTH, NULL)
 
-statement ok rowcount 16
+statement ok rowcount 17
 UPDATE t1 SET c0 = 0, c1 = INTERVAL '-8' MONTH, c4 = least(t1.c4, 0)
 
 statement ok
