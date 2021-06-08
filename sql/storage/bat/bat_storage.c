@@ -71,8 +71,20 @@ unlock_table(sqlstore *store, sqlid id)
 	MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
-#define lock_column(store, id) lock_table(store, id)
-#define unlock_column(store, id) unlock_table(store, id)
+//#define lock_column(store, id) lock_table(store, id)
+//#define unlock_column(store, id) unlock_table(store, id)
+static void
+lock_column(sqlstore *store, sqlid id)
+{
+	MT_lock_set(&store->column_locks[id&(NR_TABLE_LOCKS-1)]);
+}
+
+static void
+unlock_column(sqlstore *store, sqlid id)
+{
+	MT_lock_unset(&store->column_locks[id&(NR_TABLE_LOCKS-1)]);
+}
+
 
 static int
 tc_gc_seg( sql_store Store, sql_change *change, ulng oldest)
@@ -719,8 +731,12 @@ older_delta( sql_delta *d, sql_trans *tr)
 {
 	sql_delta *o = d->next;
 
-	while (o && !o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))  
-		o = o->next;
+	while (o) {
+	       	if (o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))  
+			break;
+		else
+			o = o->next;
+	}
 	if (o && o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
 		return o;
 	return NULL;
