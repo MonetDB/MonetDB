@@ -1362,6 +1362,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	       bool nil_matches, BUN estimate, lng t0, bool swapped,
 	       const char *reason)
 {
+/* the comments in this function have not been checked after making a
+ * copy of mergejoin below and adapting it to a mask right-hand side */
 	BAT *r1, *r2;
 	BUN lstart, lend, lcnt;
 	struct canditer lci, rci;
@@ -1535,28 +1537,6 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			 * in r1 (always in order), so not reverse
 			 * ordered anymore */
 			r1->trevsorted = false;
-		}
-		if (nr > 1) {
-			/* value occurs multiple times in r, so entry
-			 * in l will be repeated multiple times: hence
-			 * r1 is not key and not dense */
-			r1->tkey = false;
-			r1->tseqbase = oid_nil;
-			/* multiple different values will be inserted
-			 * in r2 (in order), so not reverse ordered
-			 * anymore */
-			if (r2) {
-				r2->trevsorted = false;
-				if (nl > 1) {
-					/* multiple values in l match
-					 * multiple values in r, so an
-					 * ordered sequence will be
-					 * inserted multiple times in
-					 * r2, so r2 is not ordered
-					 * anymore */
-					r2->tsorted = false;
-				}
-			}
 		}
 		if (BATcount(r1) > 0) {
 			/* a new, higher value will be inserted into
