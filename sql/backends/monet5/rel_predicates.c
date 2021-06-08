@@ -55,9 +55,8 @@ bt_find_column( sql_rel *rel, char *tname, char *name)
 static sql_column *
 exp_find_column( sql_rel *rel, sql_exp *exp)
 {
-	/* TODO handle simple converts */
 	if (exp->type == e_column)
-		return bt_find_column(rel->l, exp->l, exp->r);
+		return bt_find_column(is_basetable(rel->op)?rel:rel->l, exp->l, exp->r);
 	if (exp->type == e_convert)
 		return exp_find_column( rel, exp->l);
 	return NULL;
