@@ -926,7 +926,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	}
 	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
 	/* currently only one update delta is possible */
-	if (!otids->tsorted) {
+	if (!otids->tsorted || complex_cand(otids) /* make sure we have simple dense or oids */) {
 		BAT *sorted, *order;
 		if (BATsort(&sorted, &order, NULL, otids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 			if (otids != tids)
