@@ -78,6 +78,10 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 	bool needall = false;
 
 	if (is_basetable(rel->op)) {
+		sql_table *t = rel->l;
+
+		if (!t || !rel->exps || isNew(t) || t->persistence == SQL_DECLARED_TABLE)
+			return rel;
 		sql_rel *parent = v->parent;
 
 		/* select with basetable */

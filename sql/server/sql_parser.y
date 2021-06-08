@@ -2684,7 +2684,7 @@ transaction_stmt:
  ;
 
 transaction_mode_list:
-	/* empty */		{ $$ = tr_none; }
+	/* empty */		{ $$ = tr_serializable; }
  |	_transaction_mode_list  { $$ = $1; }
  ;
 

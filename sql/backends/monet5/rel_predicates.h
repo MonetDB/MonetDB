@@ -13,16 +13,6 @@
 #include "rel_exp.h"
 #include "mal_backend.h"
 
-typedef struct pl {
-	sql_column *c;
-	comp_type cmp;
-	atom *r; /* if r is NULL then a full match is required */
-	atom *f; /* make it match range expressions */
-	uint8_t
-	 anti:1,
-	 semantics:1;
-} pl;
-
 extern void rel_predicates(backend *be, sql_rel *rel);
 
 #endif /*_REL_PREDICATES_H_*/

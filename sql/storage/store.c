@@ -3422,10 +3422,20 @@ sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 static int
 sql_trans_valid(sql_trans *tr)
 {
-		printf("# handle prediates\n");
-		list_destroy(tr->predicates);
-		tr->predicates = NULL;
-		return 0;
+	int ok = 1;
+	printf("## handle predicates\n");
+	/* for each predicate check if that table/column has changes */
+	for(node *n = tr->predicates->h; n; n = n->next) {
+		pl *p = n->data;
+
+		assert(p->c);
+		if (p->c) {
+			printf("## %s.%s\n", p->c->t->base.name, p->c->base.name);
+		}
+	}
+	list_destroy(tr->predicates);
+	tr->predicates = NULL;
+	return ok;
 }
 
 int
