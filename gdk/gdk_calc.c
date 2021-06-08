@@ -10771,8 +10771,6 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
-		return bn;
 
 	nils = div_typeswitchloop(VALptr(v), v->vtype, false,
 				  Tloc(b, 0), b->ttype, true,
