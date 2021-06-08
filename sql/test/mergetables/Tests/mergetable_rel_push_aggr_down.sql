@@ -54,4 +54,14 @@ select count(*) FROM (
     FROM "myschema"."mymerge" myalias
     GROUP BY field1, field2) AS mycount;
 
+-- These statements are related to the same issue
+create merge table merge_table (mcol1 int, mcol2 int, mcol3 int);
+create table child1 (mcol1 int, mcol2 int, mcol3 int);
+insert into child1 values (1,1,1);
+create table child2 (mcol1 int, mcol2 int, mcol3 int);
+insert into child2 values (2,2,2);
+alter table merge_table add table child1;
+alter table merge_table add table child2;
+select cast(sum(mcol1) as bigint), cast(sum(mcol2) as bigint) from merge_table group by mcol1, mcol2, mcol3 order by mcol1 limit 2;
+
 rollback;
