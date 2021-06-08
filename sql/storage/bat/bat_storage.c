@@ -71,8 +71,6 @@ unlock_table(sqlstore *store, sqlid id)
 	MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
-//#define lock_column(store, id) lock_table(store, id)
-//#define unlock_column(store, id) unlock_table(store, id)
 static void
 lock_column(sqlstore *store, sqlid id)
 {
@@ -926,7 +924,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		if (!otids)
 			return LOG_ERR;
 	}
-	/* TODO check for concurrent updates on this column ! */
+	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
+	/* currently only one update delta is possible */
 	if (!otids->tsorted) {
 		BAT *sorted, *order;
 		if (BATsort(&sorted, &order, NULL, otids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
@@ -1183,7 +1182,8 @@ cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *u
 			return LOG_CONFLICT;
 		BAT *ui, *uv;
 
-		/* TODO check for concurrent updates on rid ! */
+		/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
+		/* currently only one update delta is possible */
 		if (cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
 			return LOG_ERR;
 
