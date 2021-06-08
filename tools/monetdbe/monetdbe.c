@@ -2260,7 +2260,7 @@ remote_cleanup:
 							d[j] = (char*) nil;
 							found_nil = 1;
 						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
-							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
+							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
 							err = 1;
 							break;
 						}
@@ -2277,11 +2277,11 @@ remote_cleanup:
 				if (max_digits) {
 					for (size_t j=0; j<cnt; j++) {
 						if (!d[j]) {
-							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 							err = 1;
 							break;
 						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
-							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
+							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
 							err = 1;
 							break;
 						}
@@ -2289,7 +2289,7 @@ remote_cleanup:
 				} else {
 					for (size_t j=0; j<cnt; j++) {
 						if (!d[j]) {
-							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 							err = 1;
 							break;
 						}
@@ -2331,7 +2331,7 @@ remote_cleanup:
 					monetdbe_data_timestamp mdt = ts[j];
 
 					if (timestamp_is_null(&mdt)) {
-						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 						err = 1;
 						break;
 					} else {
@@ -2370,7 +2370,7 @@ remote_cleanup:
 					monetdbe_data_date mdt = de[j];
 
 					if (date_is_null(&mdt)) {
-						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 						err = 1;
 						break;
 					} else {
@@ -2409,7 +2409,7 @@ remote_cleanup:
 					monetdbe_data_time mdt = t[j];
 
 					if (time_is_null(&mdt)) {
-						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 						err = 1;
 						break;
 					} else {
@@ -2445,7 +2445,7 @@ remote_cleanup:
 			} else {
 				for (j=0; j<cnt; j++){
 					if (blob_is_null(be+j)) {
-						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 						err = 1;
 						break;
 					} else {
@@ -2464,6 +2464,9 @@ remote_cleanup:
 			GDKfree(d);
 			if (err)
 				goto cleanup;
+		} else {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "The internal type '%s' is not supported on monetdbe append at the moment", ATOMname(mtype));
+			goto cleanup;
 		}
 	}
 
