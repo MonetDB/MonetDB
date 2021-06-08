@@ -2488,9 +2488,10 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->freed);
 		logbat_destroy(lg->freed_lid);
 	}
+	logger_close(lg);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
-	logger_close(lg);
+	GDKfree(lg->buf);
 	GDKfree(lg);
 }
 
