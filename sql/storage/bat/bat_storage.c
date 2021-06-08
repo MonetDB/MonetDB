@@ -1533,6 +1533,25 @@ append_idx(sql_trans *tr, sql_idx * i, void *offset, void *data, int tpe)
 }
 
 static int
+deletes_conflict_updates(sql_trans *tr, sql_table *t, oid rid, size_t cnt)
+{
+	int err = 0;
+
+	/* TODO check for conflicting updates */
+	(void)rid;
+	(void)cnt;
+	for(node *n = ol_first_node(t->columns); n && !err; n = n->next) {
+		sql_column *c = n->data;
+		sql_delta *d = ATOMIC_PTR_GET(&c->data);
+
+		/* check for active updates */
+		if (!VALID_4_READ(d->cs.ts, tr) && d->cs.ucnt)
+			return 1;
+	}
+	return 0;
+}
+
+static int
 storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
 	int in_transaction = segments_in_transaction(tr, t);
@@ -1543,7 +1562,8 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 		if (seg->start <= rid && seg->end > rid) {
 			if (!SEG_VALID_4_DELETE(seg,tr))
 				return LOG_CONFLICT;
-			/* TODO check for conflicting updates */
+			if (deletes_conflict_updates( tr, t, rid, 1))
+				return LOG_CONFLICT;
 			(void)split_segment(s->segs, seg, p, tr, rid, 1, true);
 			break;
 		}
@@ -1554,7 +1574,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 }
 
 static int
-delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
+delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
 {
 	segment *seg = s->segs->h, *p = NULL;
 	for (; seg; p = seg, seg = seg->next) {
@@ -1568,7 +1588,8 @@ delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
 				continue;
 			} else if (!SEG_VALID_4_DELETE(seg, tr))
 				return LOG_CONFLICT;
-			/* TODO check for conflicting updates */
+			if (deletes_conflict_updates( tr, t, start, lcnt))
+				return LOG_CONFLICT;
 			seg = split_segment(s->segs, seg, p, tr, start, lcnt, true);
 			start += lcnt;
 			cnt -= lcnt;
@@ -1592,7 +1613,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 		if (BATtdense(i)) {
 			size_t start = i->tseqbase;
 			size_t cnt = BATcount(i);
-			ok = delete_range(tr, s, start, cnt);
+			ok = delete_range(tr, t, s, start, cnt);
 		} else if (complex_cand(i)) {
 			struct canditer ci;
 			oid f = 0, l = 0, cur = 0;
@@ -1605,11 +1626,11 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 						cur++;
 						continue;
 					}
-					ok = delete_range(tr, s, f, cur-f);
+					ok = delete_range(tr, t, s, f, cur-f);
 					f = cur = l;
 				}
 				if (ok == LOG_OK)
-					ok = delete_range(tr, s, f, cur-f);
+					ok = delete_range(tr, t, s, f, cur-f);
 			}
 		} else {
 			if (!BATtordered(i)) {
@@ -1629,7 +1650,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					lcnt++;
 					n++;
 				} else {
-					ok = delete_range(tr, s, n-lcnt, lcnt);
+					ok = delete_range(tr, t, s, n-lcnt, lcnt);
 					lcnt = 0;
 				}
 				if (!lcnt) {
@@ -1638,7 +1659,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				}
 			}
 			if (lcnt && ok == LOG_OK)
-				ok = delete_range(tr, s, n-lcnt, lcnt);
+				ok = delete_range(tr, t, s, n-lcnt, lcnt);
 		}
 	}
 	if (i != oi)
@@ -2178,7 +2199,7 @@ commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 }
 
 static int
-load_storage(sql_trans *tr, storage *s, sqlid id)
+load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 {
 	int ok = load_cs(tr, &s->cs, TYPE_msk, id);
 	BAT *b = NULL, *ib = NULL;
@@ -2198,7 +2219,7 @@ load_storage(sql_trans *tr, storage *s, sqlid id)
 		if (BATtdense(b)) {
 			size_t start = b->tseqbase;
 			size_t cnt = BATcount(b);
-			ok = delete_range(tr, s, start, cnt);
+			ok = delete_range(tr, t, s, start, cnt);
 		} else {
 			assert(BATtordered(b));
 			BUN icnt = BATcount(b);
@@ -2209,7 +2230,7 @@ load_storage(sql_trans *tr, storage *s, sqlid id)
 					lcnt++;
 					n++;
 				} else {
-					if ((ok = delete_range(tr, s, n-lcnt, lcnt)) != LOG_OK)
+					if ((ok = delete_range(tr, t, s, n-lcnt, lcnt)) != LOG_OK)
 						break;
 					lcnt = 0;
 				}
@@ -2219,7 +2240,7 @@ load_storage(sql_trans *tr, storage *s, sqlid id)
 				}
 			}
 			if (lcnt && ok == LOG_OK)
-				ok = delete_range(tr, s, n-lcnt, lcnt);
+				ok = delete_range(tr, t, s, n-lcnt, lcnt);
 		}
 		if (ok == LOG_OK)
 			for (segment *seg = s->segs->h; seg; seg = seg->next)
@@ -2260,7 +2281,7 @@ create_del(sql_trans *tr, sql_table *t)
 
 	if (!isNew(t) && !isTempTable(t)) {
 		bat->cs.ts = tr->ts;
-		return load_storage(tr, bat, t->base.id);
+		return load_storage(tr, t, bat, t->base.id);
 	} else if (bat->cs.bid && !isTempTable(t)) {
 		return ok;
 	} else if (!bat->cs.bid) {
@@ -2655,7 +2676,7 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 
 	if (!clear) {
 		lock_table(tr->store, t->base.id);
-		ok = delete_range(tr, bat, 0, bat->segs->t->end);
+		ok = delete_range(tr, t, bat, 0, bat->segs->t->end);
 		unlock_table(tr->store, t->base.id);
 	}
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
