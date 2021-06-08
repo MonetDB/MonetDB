@@ -223,6 +223,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, true, false, false);
 					if (br == NULL) {
 						BBPunfix(bn->batCacheid);
+						if (bsample)
+							BBPunfix(bsample->batCacheid);
 						/* XXX throw error instead? */
 						continue;
 					}

@@ -800,7 +800,7 @@ typedef struct {
 } sql_emit_col;
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
-extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
+sql_export sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 extern node *members_find_child_id(list *l, sqlid id);
 
 #define outside_str 1
