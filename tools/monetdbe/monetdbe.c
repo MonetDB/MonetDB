@@ -2249,7 +2249,7 @@ remote_cleanup:
 			bn->theap->size = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
-			int err = 0, found_nil = 0;
+			int err = 0;
 			char **d = (char**)v;
 			unsigned int max_digits = c->type.digits;
 
@@ -2258,7 +2258,6 @@ remote_cleanup:
 					for (size_t j=0; j<cnt; j++) {
 						if (!d[j]) {
 							d[j] = (char*) nil;
-							found_nil = 1;
 						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
 							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
 							err = 1;
@@ -2267,10 +2266,8 @@ remote_cleanup:
 					}
 				} else {
 					for (size_t j=0; j<cnt; j++) {
-						if (!d[j]) {
+						if (!d[j])
 							d[j] = (char*) nil;
-							found_nil = 1;
-						}
 					}
 				}
 			} else {
@@ -2299,11 +2296,6 @@ remote_cleanup:
 			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
-			}
-			if (c->null && found_nil) { /* revert pointers before cleanup */
-				for (size_t j=0; j<cnt; j++)
-					if (d[j] == (char*)nil)
-						d[j] = NULL;
 			}
 			if (err)
 				goto cleanup;
