@@ -80,6 +80,22 @@ stdout of test 'mergetable_rel_push_aggr_down` in directory 'sql/test/mergetable
 % bigint # type
 % 1 # length
 [ 0	]
+#create merge table merge_table (mcol1 int, mcol2 int, mcol3 int);
+#create table child1 (mcol1 int, mcol2 int, mcol3 int);
+#insert into child1 values (1,1,1);
+[ 1	]
+#create table child2 (mcol1 int, mcol2 int, mcol3 int);
+#insert into child2 values (2,2,2);
+[ 1	]
+#alter table merge_table add table child1;
+#alter table merge_table add table child2;
+#select cast(sum(mcol1) as bigint), cast(sum(mcol2) as bigint) from merge_table group by mcol1, mcol2, mcol3 order by mcol1 limit 2;
+% .%2,	.%4 # table_name
+% %2,	%4 # name
+% bigint,	bigint # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	2	]
 #rollback;
 
 # 12:55:05 >  
