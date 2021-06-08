@@ -191,10 +191,14 @@ set_error( monetdbe_database_internal *mdbe, char *err)
 static char*
 commit_action(mvc* m, monetdbe_database_internal *mdbe, monetdbe_result **result, monetdbe_result_internal *res_internal)
 {
-	/* handle autocommit */
-	char *commit_msg = SQLautocommit(m);
+	char *commit_msg = MAL_SUCCEED;
 
-	if ((mdbe->msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED)) {
+	/* if an error already exists from MonetDBe set the session status to dirty */
+	if (mdbe->msg != MAL_SUCCEED && m->session->tr->active && !m->session->status)
+		m->session->status = -1;
+	commit_msg = SQLautocommit(m); /* handle autocommit */
+
+	if (mdbe->msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED) {
 		if (res_internal) {
 			char* other = monetdbe_cleanup_result_internal(mdbe, res_internal);
 			if (other)
@@ -2245,26 +2249,58 @@ remote_cleanup:
 			bn->theap->size = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
-			int err = 0;
+			int err = 0, found_nil = 0;
 			char **d = (char**)v;
+			unsigned int max_digits = c->type.digits;
 
 			if (c->null) {
-				for (size_t j=0; j<cnt; j++)
-					if (!d[j])
-						d[j] = (char*) nil;
-			} else {
-				for (size_t j=0; j<cnt; j++)
-					if (!d[j]) {
-						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						err = 1;
-						break;
+				if (max_digits) {
+					for (size_t j=0; j<cnt; j++) {
+						if (!d[j]) {
+							d[j] = (char*) nil;
+							found_nil = 1;
+						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
+							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
+							err = 1;
+							break;
+						}
 					}
+				} else {
+					for (size_t j=0; j<cnt; j++) {
+						if (!d[j]) {
+							d[j] = (char*) nil;
+							found_nil = 1;
+						}
+					}
+				}
+			} else {
+				if (max_digits) {
+					for (size_t j=0; j<cnt; j++) {
+						if (!d[j]) {
+							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+							err = 1;
+							break;
+						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
+							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
+							err = 1;
+							break;
+						}
+					}
+				} else {
+					for (size_t j=0; j<cnt; j++) {
+						if (!d[j]) {
+							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+							err = 1;
+							break;
+						}
+					}
+				}
 			}
 			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
-			if (c->null) { /* revert pointers before cleanup */
+			if (c->null && found_nil) { /* revert pointers before cleanup */
 				for (size_t j=0; j<cnt; j++)
 					if (d[j] == (char*)nil)
 						d[j] = NULL;
