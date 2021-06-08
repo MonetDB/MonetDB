@@ -2082,6 +2082,7 @@ remote_cleanup:
 	} else {
 		// !mdbe->mid
 		// inserting into existing local table.
+		sql_part *pt = NULL;
 
 		if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 			goto cleanup;
@@ -2089,7 +2090,14 @@ remote_cleanup:
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "%s", m->errstr + 6); /* Skip error code */
 			goto cleanup;
 		}
-
+		if (!insert_allowed(m, t, t->base.name, "APPEND", "append")) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "%s", m->errstr + 6); /* Skip error code */
+			goto cleanup;
+		}
+		if ((t->s && t->s->parts && (pt = partition_find_part(m->session->tr, t, NULL))) || isRangePartitionTable(t) || isListPartitionTable(t)) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Appending to a table from a merge table hierarchy via 'monetdbe_append' is not possible at the moment");
+			goto cleanup;
+		}
 		if (t->idxs) {
 			for (node *n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *i = n->data;
