@@ -857,5 +857,11 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 extern void arg_destroy(sql_store store, sql_arg *a);
 extern void part_value_destroy(sql_store store, sql_part_value *pv);
 
+typedef struct atom {
+	int isnull;
+	sql_subtype tpe;
+	ValRecord data;
+} atom;
+
 
 #endif /* SQL_CATALOG_H */

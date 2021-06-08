@@ -287,4 +287,14 @@ typedef struct relation {
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 
+typedef struct pl {
+	sql_column *c;
+	comp_type cmp;
+	atom *r; /* if r is NULL then a full match is required */
+	atom *f; /* make it match range expressions */
+	uint8_t
+	 anti:1,
+	 semantics:1;
+} pl;
+
 #endif /* SQL_RELATION_H */

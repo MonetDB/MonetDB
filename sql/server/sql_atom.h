@@ -12,12 +12,6 @@
 #include "sql_mem.h"
 #include "sql_types.h"
 
-typedef struct atom {
-	int isnull;
-	sql_subtype tpe;
-	ValRecord data;
-} atom;
-
 #define atom_null(a) (((atom*)a)->isnull)
 
 extern void atom_init( atom *a );
