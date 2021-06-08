@@ -630,7 +630,7 @@ cs_bind_ubat( column_storage *cs, int access, int type)
 	BAT *b;
 
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
-	/* returns the current set of updates, TODO merge with older updates */
+	/* returns the updates for cs */
 	if (cs->uibid && cs->uvbid) {
 		if (access == RD_UPD_ID)
 			b = temp_descriptor(cs->uibid);
@@ -660,8 +660,8 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		bat_destroy(ov);
 		return NULL;
 	}
-	BATiter uvi; 
-	BATiter ovi; 
+	BATiter uvi;
+	BATiter ovi;
 
 	if (uv) {
 		uvi = bat_iterator(uv);
@@ -682,10 +682,10 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
-	
+
 		if (uiid <= oiid) {
 			if (BUNappend(ni, (ptr) &uiid, true) != GDK_SUCCEED ||
-		    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED)) 
+		    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED))
 				err = 1;
 			uip++;
 			if (uiid == oiid)
@@ -700,7 +700,7 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	while (uip < uie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		if (BUNappend(ni, (ptr) &uiid, true) != GDK_SUCCEED ||
-	    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED)) 
+	    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED))
 			err = 1;
 		uip++;
 	}
@@ -727,12 +727,12 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 }
 
 static sql_delta *
-older_delta( sql_delta *d, sql_trans *tr) 
+older_delta( sql_delta *d, sql_trans *tr)
 {
 	sql_delta *o = d->next;
 
 	while (o) {
-	       	if (o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))  
+	       	if (o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
 			break;
 		else
 			o = o->next;
@@ -758,9 +758,9 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type)
 			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type);
 		if (access == RD_UPD_VAL)
 			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type);
-		if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv))) 
+		if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv)))
 			return NULL;
-		if ((ui = merge_updates(ui, &uv, oui, ouv)) == NULL) 
+		if ((ui = merge_updates(ui, &uv, oui, ouv)) == NULL)
 			return NULL;
 		d = o;
 	}
@@ -943,7 +943,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	assert(otids->tsorted);
 	if (!is_new && !cs->cleared) {
 		BAT *ui = NULL, *uv = NULL;
-		
+
 		/* handle updates on just inserted bits */
 		/* handle updates on updates (within one transaction) */
 		BATiter upi = bat_iterator(oupdates);
@@ -983,7 +983,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 
-							int word = rid/32; 
+							int word = rid/32;
 							int pos = rid%32;
 							msk[word] |= 1U<<pos;
 							cnt++;
@@ -996,7 +996,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		} else {
 			BUN i = 0;
 			oid *rid = Tloc(otids,0);
-			segment *seg = s->segs->h; 
+			segment *seg = s->segs->h;
 			while ( seg && res == LOG_OK && i < ucnt) {
 				if (seg->end <= rid[i])
 					seg = seg->next;
@@ -1023,7 +1023,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 						if (void_inplace(b, rid[i], upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 
-						int word = rid[i]/32; 
+						int word = rid[i]/32;
 						int pos = rid[i]%32;
 						msk[word] |= 1U<<pos;
 						cnt++;
@@ -1034,13 +1034,13 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		}
 
 		if (cnt < ucnt) { 	/* now handle real updates */
-			if (cs->ucnt == 0) { 
+			if (cs->ucnt == 0) {
 				if (cnt) {
-					ui = BATproject(ins, otids); 
-					uv = BATproject(ins, oupdates); 
+					ui = BATproject(ins, otids);
+					uv = BATproject(ins, oupdates);
 				} else {
-					ui = temp_descriptor(otids->batCacheid); 
-					uv = temp_descriptor(oupdates->batCacheid); 
+					ui = temp_descriptor(otids->batCacheid);
+					uv = temp_descriptor(oupdates->batCacheid);
 				}
 				temp_destroy(cs->uibid);
 				temp_destroy(cs->uvbid);
@@ -1073,11 +1073,11 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 					while (uip < uie && nip < nie && res == LOG_OK) {
 						oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
 						oid niv = (nipt)?nipt[nip]: niseqb+nip;
-	
+
 						if (uiv < niv) {
 							upd = BUNtail(ovi, uip);
 							if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
-		    				    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+		    				    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 							uip++;
 						} else if (uiv == niv) {
@@ -1085,12 +1085,12 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
 								upd = BUNtail(upi, nip);
 								if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
-		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 									res = LOG_ERR;
 							} else {
 								upd = BUNtail(ovi, uip);
 								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
-		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 									res = LOG_ERR;
 							}
 							uip++;
@@ -1099,7 +1099,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
 								upd = BUNtail(upi, nip);
 								if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
-		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+		    				    	    	    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 									res = LOG_ERR;
 							}
 							nip++;
@@ -1109,7 +1109,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 						oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
 						upd = BUNtail(ovi, uip);
 						if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
-		    				    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+		    				    BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 						uip++;
 					}
@@ -1118,7 +1118,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 						if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
 							upd = BUNtail(upi, nip);
 							if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
-		    				            BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED) 
+		    				            BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 						}
 						nip++;
@@ -1316,7 +1316,7 @@ update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_ne
 	if (is_bat) {
 		BAT *tids = incoming_tids;
 		BAT *values = incoming_values;
-		if (BATcount(tids) == 0) 
+		if (BATcount(tids) == 0)
 			return LOG_OK;
 		lock_table(tr->store, table->base.id);
 		ok = delta_update_bat(tr, delta, table, tids, values, is_new);
