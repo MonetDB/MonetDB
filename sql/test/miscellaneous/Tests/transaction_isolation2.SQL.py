@@ -63,7 +63,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('CREATE ROLE myrole;').assertSucceeded()
-        mdb2.execute('CREATE ROLE myrole;').assertFailed(err_code="42000", err_message="CREATE ROLE: transaction conflict detected") # I am not sure what do here
+        mdb2.execute('CREATE ROLE myrole;').assertFailed(err_code="42000", err_message="CREATE ROLE: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
 
@@ -84,7 +84,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("GRANT myrole TO dummyuser;").assertSucceeded()
-        mdb2.execute("GRANT myrole TO dummyuser;").assertFailed(err_code="42000", err_message="GRANT: transaction conflict detected") # I am not sure what do here
+        mdb2.execute("GRANT myrole TO dummyuser;").assertFailed(err_code="42000", err_message="GRANT: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'roles' table, so that cannot happen
@@ -101,7 +101,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('COMMENT ON TABLE "sys"."integers" IS \'something\';').assertSucceeded()
-        mdb2.execute('COMMENT ON TABLE "sys"."integers" IS \'somethingelse\';').assertFailed(err_code="42000", err_message="COMMENT: transaction conflict detected") # I am not sure what do here
+        mdb2.execute('COMMENT ON TABLE "sys"."integers" IS \'somethingelse\';').assertFailed(err_code="42000", err_message="Comment on failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'comments' table, so that cannot happen
@@ -112,7 +112,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('ANALYZE "sys"."integers";').assertSucceeded()
-        mdb2.execute('ANALYZE "sys"."integers";').assertFailed(err_code="42000", err_message="ANALYZE: transaction conflict detected") # I am not sure what do here
+        mdb2.execute('ANALYZE "sys"."integers";').assertFailed(err_code="42000", err_message="ANALYZE: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'statistics' table, so that cannot happen
@@ -164,6 +164,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('DROP TABLE child2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
+        # currently runs up till here..
         mdb1.execute('create merge table parent1(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
         mdb1.execute('create merge table parent2(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
         mdb1.execute('create table child(c int);').assertSucceeded()

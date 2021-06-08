@@ -350,11 +350,13 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 	sqlstore *store = m->session->tr->store;
+	int log_res = LOG_OK;
 
 	if (!is_oid_nil(store->table_api.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		return false;
 
-	store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor);
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor)) != LOG_OK)
+		throw(SQL, "sql.create_auth_id", SQLSTATE(42000) "CREATE AUTH: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return true;
 }
 
@@ -364,8 +366,14 @@ sql_create_role(mvc *m, str auth, sqlid grantor)
 	if (!admin_privs(grantor))
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Insufficient privileges to create role '%s'", auth);
 
-	if (sql_trans_create_role(m->session->tr, auth, grantor) < 0)
+	switch (sql_trans_create_role(m->session->tr, auth, grantor)) {
+	case -1:
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Role '%s' already exists", auth);
+	case -2:
+		throw(SQL, "sql.create_role", SQLSTATE(42000) "CREATE ROLE: failed due to conflict with another transaction");
+	default:
+		return NULL;
+	}
 	return NULL;
 }
 
@@ -519,6 +527,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	sql_column *auths_id = find_sql_column(auths, "id");
 	sqlid role_id, grantee_id;
 	sqlstore *store = m->session->tr->store;
+	int log_res = LOG_OK;
 
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (is_oid_nil(rid))
@@ -536,12 +545,14 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	if (!is_oid_nil(rid))
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: User '%s' already has ROLE '%s'", grantee, role);
 
-	store->table_api.table_insert(m->session->tr, roles, &grantee_id, &role_id);
+	if ((log_res = store->table_api.table_insert(m->session->tr, roles, &grantee_id, &role_id)) != LOG_OK)
+		throw(SQL, "sql.revoke_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	if (admin) {
 		int priv = PRIV_ROLE_ADMIN, one = 1;
 		sql_table *privs = find_sql_table(m->session->tr, sys, "privileges");
 
-		store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one);
+		if ((log_res = store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one)) != LOG_OK)
+			throw(SQL, "sql.revoke_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	return NULL;
 }

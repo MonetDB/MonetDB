@@ -3474,6 +3474,24 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	return slots;
 }
 
+/* some tables cannot be updates at the concurrently (user/roles etc) */
+static void *
+key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
+{
+	storage *s;
+
+	/* we have a single segment structure for each persistent table
+	 * for temporary tables each has its own */
+	if ((s = bind_del_data(tr, t, NULL)) == NULL || segments_conflict(tr, s->segs))
+		/* TODO check for other inserts ! */
+		return NULL;
+
+	lock_table(tr->store, t->base.id);
+	BAT *slots = claim_segments(tr, t, s, cnt); /* find slot(s) */
+	unlock_table(tr->store, t->base.id);
+	return slots;
+}
+
 static BAT *
 segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 {
@@ -3585,6 +3603,7 @@ bat_storage_init( store_functions *sf)
 	sf->bind_cands = &bind_cands;
 
 	sf->claim_tab = &claim_tab;
+	sf->key_claim_tab = &key_claim_tab;
 
 	sf->append_col = &append_col;
 	sf->append_idx = &append_idx;
