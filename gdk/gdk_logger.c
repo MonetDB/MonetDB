@@ -1188,7 +1188,8 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
 	 * abort and move to the next log file */
-	return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
+	//return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -1389,7 +1390,7 @@ bm_subcommit(logger *lg)
 	sizes[i] = 0;
 	n[i++] = 0;		/* n[0] is not used */
 	bids = (const log_bid *) Tloc(catalog_bid, 0);
-	if (/*!LOG_DISABLED(lg) && */lg->catalog_cnt)
+	if (lg->catalog_cnt)
 		cnts = (const lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (const lng *) Tloc(lg->catalog_lid, 0);
@@ -1903,7 +1904,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		needcommit = true;
 	}
 	dbg = GDKdebug;
-	GDKdebug &= ~CHECKMASK;
+	GDKdebug &= ~(CHECKMASK|PROPMASK);
 	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
 		GDKerror("Logger_new: commit failed");
 		goto error;
@@ -1917,9 +1918,12 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 		if (lg->postfuncp && (*lg->postfuncp)(lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
+		dbg = GDKdebug;
+		GDKdebug &= ~(CHECKMASK|PROPMASK);
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			goto error;
 		}
+		GDKdebug = dbg;
 		for( ; log_id <= lg->saved_id; log_id++)
 			(void)logger_cleanup(lg, log_id);  /* ignore error of removing file */
 	} else {
@@ -1943,6 +1947,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	GDKfree(lg->local_dir);
 	GDKfree(lg->buf);
 	GDKfree(lg);
+	GDKdebug = dbg;
 	return GDK_FAIL;
 }
 
