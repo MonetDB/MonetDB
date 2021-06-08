@@ -1890,8 +1890,10 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
-	for(int i = 0; i<NR_TABLE_LOCKS; i++)
+	for(int i = 0; i<NR_TABLE_LOCKS; i++) {
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
+		MT_lock_init(&store->column_locks[i], "sqlstore_column");
+	}
 
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
