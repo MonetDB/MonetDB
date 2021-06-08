@@ -215,6 +215,7 @@ typedef struct store_functions {
 
 	delete_tab_fptr delete_tab;
 	claim_tab_fptr claim_tab;
+	claim_tab_fptr key_claim_tab;
 
 	count_del_fptr count_del;
 	count_col_fptr count_col;

@@ -212,9 +212,11 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	int ok = LOG_OK;
 
 	va_start(va, t);
-	BAT *offset = store->storage_api.claim_tab(tr, t, 1);
+	BAT *offset = t->bootstrap?
+		store->storage_api.claim_tab(tr, t, 1):
+		store->storage_api.key_claim_tab(tr, t, 1);
 	if (!offset)
-		return LOG_ERR;
+		return t->bootstrap?LOG_ERR:LOG_CONFLICT;
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
