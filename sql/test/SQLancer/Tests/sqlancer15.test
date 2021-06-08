@@ -784,3 +784,27 @@ TRUNCATE t0
 statement ok
 ROLLBACK
 
+statement ok
+CREATE TABLE t1(c0 smallint, c1 INTERVAL MONTH, c3 bigint, c4 bigint)
+
+statement ok rowcount 6
+INSERT INTO t1(c1, c3, c0, c4) VALUES(INTERVAL '7' MONTH, NULL, 8, 7), (NULL, NULL, -9, NULL) , (NULL, 6, NULL, NULL), (NULL, 1228321393, NULL, NULL), (NULL, 8, NULL, NULL), (NULL, NULL, NULL, -10)
+
+statement ok rowcount 1
+DELETE FROM t1 WHERE t1.c1 = INTERVAL '7' MONTH
+
+statement ok rowcount 5
+INSERT INTO t1(c1, c3) VALUES(INTERVAL '4' MONTH, 1000), (INTERVAL '9' MONTH, NULL), (INTERVAL '-8' MONTH, NULL), (INTERVAL '1' MONTH, NULL), (INTERVAL '3' MONTH, NULL)
+
+statement ok rowcount 4
+INSERT INTO t1(c0, c1) VALUES(-1, INTERVAL '6' MONTH), (2, NULL), (9, NULL), (10, NULL)
+
+statement ok rowcount 3
+INSERT INTO t1(c4, c1, c0) VALUES(0.34700167, INTERVAL '5' MONTH, 0), (9, INTERVAL '-4' MONTH, NULL), (-2, INTERVAL '-2' MONTH, NULL)
+
+statement ok rowcount 16
+UPDATE t1 SET c0 = 0, c1 = INTERVAL '-8' MONTH, c4 = least(t1.c4, 0)
+
+statement ok
+DROP TABLE t1
+
