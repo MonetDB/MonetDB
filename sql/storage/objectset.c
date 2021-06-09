@@ -1099,10 +1099,24 @@ os_obj_intransaction(objectset *os, struct sql_trans *tr, sql_base *b)
 	versionhead  *n = find_id(os, b->id);
 
 	if (n) {
-		//objectversion *ov = get_valid_object_id(tr, n->ov);
 		objectversion *ov = n->ov;
 
 		if (ov && os_atmc_get_state(ov) == active && ov->ts == tr->tid)
+			return true;
+	}
+	return false;
+}
+
+/* return true if this object set has changes pending for an other transaction */
+bool
+os_has_changes(objectset *os, struct sql_trans *tr)
+{
+	versionhead  *n = os->id_based_t;
+
+	if (n) {
+		objectversion *ov = n->ov;
+
+		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE)
 			return true;
 	}
 	return false;

@@ -258,6 +258,7 @@ extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id
 extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
+extern bool os_has_changes(struct objectset *os, struct sql_trans *tr);
 
 extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store);
 extern void ol_destroy(objlist *ol, sql_store store);

@@ -4315,13 +4315,15 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 		const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sqlstore *store = tr->store;
-	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	sql_table *sysfunc = find_sql_table(tr, find_sql_schema(tr, "sys"), "functions");
 	sql_table *sysarg = find_sql_table(tr, find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang;
 	bit se;
 
+	if (os_has_changes(s->funcs, tr))
+		return NULL;
+	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	base_init(tr->sa, &t->base, next_oid(tr->store), TR_NEW, func);
 	assert(impl && mod);
 	t->imp = (impl)?SA_STRDUP(tr->sa, impl):NULL;
