@@ -1254,13 +1254,11 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	} else {
 		temp_dup(cs->bid);
 	}
-	if (!temp) {
-		cs->ucnt = 0;
-		cs->uibid = e_bat(TYPE_oid);
-		cs->uvbid = e_bat(type);
-		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
-			return LOG_ERR;
-	}
+	cs->ucnt = 0;
+	cs->uibid = e_bat(TYPE_oid);
+	cs->uvbid = e_bat(type);
+	if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
+		return LOG_ERR;
 	return LOG_OK;
 }
 
@@ -2759,6 +2757,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 		assert(cs->ucnt == 0);
 		BAT *ins = temp_descriptor(cs->bid);
 		if (isEbat(ins)) {
+			assert(0);
 			temp_destroy(cs->bid);
 			cs->bid = temp_copy(ins->batCacheid, false);
 			bat_destroy(ins);
