@@ -107,7 +107,7 @@ typedef struct {
 	int nr_threads;  // maximum number of worker treads, limits level of parallelism
 	monetdbe_remote* remote;
 	monetdbe_mapi_server* mapi_server;
-
+	const char *trace_file;		// file to which log output should be written
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \

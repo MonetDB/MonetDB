@@ -331,6 +331,7 @@ gdk_return GDKtracer_set_adapter(const char *adapter);
 gdk_return GDKtracer_set_component_level(const char *comp, const char *lvl);
 gdk_return GDKtracer_set_flush_level(const char *lvl);
 gdk_return GDKtracer_set_layer_level(const char *layer, const char *lvl);
+gdk_return GDKtracer_set_tracefile(const char *tracefile);
 gdk_return GDKtracer_stop(void);
 size_t GDKuniqueid(size_t offset);
 gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall) __attribute__((__warn_unused_result__));
