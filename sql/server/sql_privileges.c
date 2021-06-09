@@ -48,24 +48,28 @@ priv2string(int priv)
 	return "UNKNOWN PRIV";
 }
 
-static void
+static int
 sql_insert_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
 	sql_table *pt = find_sql_table(sql->session->tr, ss, "privileges");
 	sqlstore *store = sql->session->tr->store;
 
-	store->table_api.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
+	return store->table_api.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
 }
 
-static void
+static int
 sql_insert_all_privs(mvc *sql, sqlid auth_id, sqlid obj_id, int grantor, int grantable)
 {
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_TRUNCATE, grantor, grantable);
+	int log_res = 0;
+
+	if ((log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_TRUNCATE, grantor, grantable)))
+		return log_res;
+	return 0;
 }
 
 static bool
@@ -106,6 +110,7 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 {
 	bool allowed;
 	sqlid grantee_id;
+	int log_res;
 
 	allowed = admin_privs(grantor);
 
@@ -121,7 +126,8 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 	/* first check if privilege isn't already given */
 	if ((sql_privilege(sql, grantee_id, GLOBAL_OBJID, privs) >= 0))
 		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
-	sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
+	if ((log_res = sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant)))
+		throw(SQL,"sql.grant_global",SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
@@ -132,7 +138,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
-	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE, log_res;
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
 		throw(SQL,"sql.grant_table", "%s", sql->errstr);
@@ -172,14 +178,17 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	     sql_privilege(sql, grantee_id, t->base.id, PRIV_TRUNCATE) >= 0)) ||
 	    (privs != all && !c && sql_privilege(sql, grantee_id, t->base.id, privs) >= 0) ||
 	    (privs != all && c && sql_privilege(sql, grantee_id, c->base.id, privs) >= 0)) {
-		throw(SQL, "sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
+		throw(SQL, "sql.grant_table", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	}
 	if (privs == all) {
-		sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant);
+		if ((log_res = sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant)))
+			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	} else if (!c) {
-		sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
+		if ((log_res = sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant)))
+			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	} else {
-		sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+		if ((log_res = sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant)))
+			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	return NULL;
 }
@@ -190,6 +199,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	sql_schema *s = NULL;
 	bool allowed;
 	sqlid grantee_id;
+	int log_res;
 
 	assert(sname);
 	if (!(s = mvc_bind_schema(sql, sname)))
@@ -210,8 +220,9 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: User/role '%s' unknown", grantee);
 	/* first check if privilege isn't already given */
 	if (sql_privilege(sql, grantee_id, f->base.id, privs) >= 0)
-		throw(SQL,"sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
-	sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
+		throw(SQL,"sql.grant_func", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
+	if ((log_res = sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant)))
+		throw(SQL,"sql.grant_func", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return NULL;
 }
 

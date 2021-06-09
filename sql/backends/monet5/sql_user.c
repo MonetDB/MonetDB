@@ -150,9 +150,10 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	str ret, pwd;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
-	sql_table *db_user_info, *auths;
+	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"), *auths = find_sql_table(m->session->tr, s, "auths");
 	Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
+	int log_res = 0;
 
 	if (!schema_path)
 		schema_path = default_schema_path;
@@ -165,6 +166,19 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	} else {
 		pwd = passwd;
 	}
+
+	user_id = store_next_oid(m->session->tr->store);
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path))) {
+		if (!enc)
+			free(pwd);
+		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
+		if (!enc)
+			free(pwd);
+		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
 	/* add the user to the M5 authorisation administration */
 	oid grant_user = c->user;
 	c->user = MAL_ADMIN;
@@ -172,15 +186,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	c->user = grant_user;
 	if (!enc)
 		free(pwd);
-	if (ret != MAL_SUCCEED)
-		return ret;
-
-	user_id = store_next_oid(m->session->tr->store);
-	db_user_info = find_sql_table(m->session->tr, s, "db_user_info");
-	auths = find_sql_table(m->session->tr, s, "auths");
-	store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path);
-	store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid);
-	return NULL;
+	return ret;
 }
 
 static int
