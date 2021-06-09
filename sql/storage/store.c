@@ -4640,6 +4640,8 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
+	if (os_has_changes(mt->s->parts, tr)) /* for either inserts or updates disallow concurrent transactions */
+		return -2;
 	if ((res = new_table(tr, mt, &dup)))
 		return res;
 	mt = dup;
@@ -4769,6 +4771,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, i = 0, res = 0;
 	sql_table *dup = NULL;
 
+	if (os_has_changes(mt->s->parts, tr)) /* for either inserts or updates disallow concurrent transactions */
+		return -2;
 	if ((res = new_table(tr, mt, &dup)))
 		return res;
 	mt = dup;
