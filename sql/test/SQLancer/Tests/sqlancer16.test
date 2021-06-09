@@ -35,6 +35,26 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t1" ("c0" UUID)
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf')
+
+query T rowsort
+SELECT t1.c0 FROM t1 WHERE ((((FALSE)OR(CAST(greatest(5, 1) AS BOOLEAN))))OR((((t1.c0) BETWEEN SYMMETRIC (t1.c0) AND (t1.c0))OR(((t1.c0)<(t1.c0))))))
+----
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
 
 statement ok
