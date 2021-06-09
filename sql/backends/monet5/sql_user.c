@@ -168,10 +168,16 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
-	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path)))
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path))) {
+		if (!enc)
+			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid)))
+	}
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
+		if (!enc)
+			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
 
 	/* add the user to the M5 authorisation administration */
 	oid grant_user = c->user;
