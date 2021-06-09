@@ -49,6 +49,6 @@ returns table(
 )
 external name sysmon.user_statistics;
 
-create procedure sys.str_column_vacuum(sname string, tname string, cname string)
-	external name sql.str_column_vacuum;
+create procedure sys.vacuum(sname string, tname string, cname string)
+	external name sql.vacuum;
 
