@@ -3907,10 +3907,22 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	return sq;
 }
 
+static list *
+add_predicate(sql_allocator *sa, list *l, sql_column *c)
+{
+	pl *p = SA_ZNEW(sa, pl);
+	p->c = c;
+	if (!l)
+		l = sa_list(sa);
+	list_append(l, p);
+	return l;
+}
+
 static stmt *
 insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 {
 	mvc *sql = be->mvc;
+	sql_trans *tr = sql->session->tr;
 /* pkey's cannot have NULLs, ukeys however can
    current implementation switches on 'NOT NULL' on primary key columns */
 
@@ -3940,6 +3952,9 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
+				/* foreach column add predicate */
+				tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
+
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
 					stmt *nn = stmt_selectnonil(be, col, s);
@@ -3958,6 +3973,9 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
+
+				/* foreach column add predicate */
+				tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4018,6 +4036,9 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 	} else {		/* single column key */
 		sql_kc *c = k->columns->h->data;
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
+
+		/* add predicate for this column */
+		tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
