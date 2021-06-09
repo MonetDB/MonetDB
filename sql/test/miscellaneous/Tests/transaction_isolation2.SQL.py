@@ -164,7 +164,6 @@ with SQLTestCase() as mdb1:
         mdb1.execute('DROP TABLE child2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
-        # currently runs up till here..
         mdb1.execute('create merge table parent1(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
         mdb1.execute('create merge table parent2(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
         mdb1.execute('create table child(c int);').assertSucceeded()
@@ -189,6 +188,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute('rollback;').assertSucceeded()
         mdb1.execute('DROP FUNCTION myfunc;').assertSucceeded()
 
+        # currently runs up till here..
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('insert into longs values (4),(5),(6);').assertSucceeded()
