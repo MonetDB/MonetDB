@@ -982,7 +982,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 
-							int word = rid/32;
+							oid word = rid/32;
 							int pos = rid%32;
 							msk[word] |= 1U<<pos;
 							cnt++;
@@ -1022,7 +1022,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 						if (void_inplace(b, rid[i], upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 
-						int word = rid[i]/32;
+						oid word = rid[i]/32;
 						int pos = rid[i]%32;
 						msk[word] |= 1U<<pos;
 						cnt++;
