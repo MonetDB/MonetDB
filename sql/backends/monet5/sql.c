@@ -4924,11 +4924,14 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
 		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
-	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
-	if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
-		BBPreclaim(bn);
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "swap_bats call failed %s.%s.%s", sname, tname, cname);
+	// vacuum only string bats
+	if (ATOMstorage(b->ttype) == TYPE_str) {
+		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
+			throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
+		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
+			BBPreclaim(bn);
+			throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "swap_bats call failed %s.%s.%s", sname, tname, cname);
+		}
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -6015,7 +6018,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
 #endif
- pattern("sql", "str_column_vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
