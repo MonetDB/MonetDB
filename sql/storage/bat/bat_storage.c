@@ -3273,6 +3273,28 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	return r;
 }
 
+static int
+swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
+{
+	sqlid id = col->base.id;
+	sql_delta *d = ATOMIC_PTR_GET(&col->data);
+	bat bid = d->cs.bid;
+	lock_column(tr->store, id);
+	d->cs.bid = temp_create(bn);
+	d->cs.uibid = 0;
+	d->cs.uvbid = 0;
+	d->cs.ucnt = 0;
+	d->cs.cleared = 0;
+	d->cs.ts = tr->tid;
+	d->cs.refcnt = 1;
+	// maybe unfix in caller
+	// bat_destroy(bn);
+	temp_destroy(bid);
+	unlock_column(tr->store, id);
+	return LOG_OK;
+}
+
+
 void
 bat_storage_init( store_functions *sf)
 {
@@ -3315,6 +3337,7 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
+	sf->swap_bats = &swap_bats;
 }
 
 #if 0

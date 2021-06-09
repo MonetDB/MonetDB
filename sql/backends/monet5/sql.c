@@ -4899,6 +4899,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT* bn = NULL;
 	str msg = NULL;
 	int access = 0;
+	int res = 0;
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
 	const char *cname = *getArgReference_str(stk, pci, 3);
@@ -4907,13 +4908,29 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if ((b = mvc_bind(m, sname, tname, cname, access)) == NULL)
+
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = tr->store;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Invalid or missing schema %s",sname);
+	if((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Invalid or missing table %s.%s",sname,tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
+
+	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
 	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s",sname,tname);
-	BBPkeepref(bn->batCacheid);
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
+	if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
+		BBPreclaim(bn);
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "swap_bats call failed %s.%s.%s", sname, tname, cname);
+	}
 	BBPunfix(b->batCacheid);
-	// TODO where to? back in storage
 	return MAL_SUCCEED;
 }
 
