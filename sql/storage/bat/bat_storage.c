@@ -981,13 +981,13 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 								msk = (int*)Tloc(ins, 0);
 							}
 						}
-						for (oid rid = start; rid < lend && res == LOG_OK; rid++) {
+						for (oid i = 0, rid = start; rid < lend && res == LOG_OK; rid++, i++) {
 							ptr upd = BUNtail(upi, rid-offset);
 							if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 
-							oid word = rid/32;
-							int pos = rid%32;
+							oid word = i/32;
+							int pos = i%32;
 							msk[word] |= 1U<<pos;
 							cnt++;
 						}
@@ -1026,8 +1026,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 						if (void_inplace(b, rid[i], upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 
-						oid word = rid[i]/32;
-						int pos = rid[i]%32;
+						oid word = i/32;
+						int pos = i%32;
 						msk[word] |= 1U<<pos;
 						cnt++;
 					}
@@ -1039,8 +1039,12 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		if (cnt < ucnt) { 	/* now handle real updates */
 			if (cs->ucnt == 0) {
 				if (cnt) {
-					ui = BATproject(ins, otids);
-					uv = BATproject(ins, oupdates);
+					BAT *nins = BATmaskedcands(0, ucnt, ins, false);
+					if (nins) {
+						ui = BATproject(nins, otids);
+						uv = BATproject(nins, oupdates);
+						bat_destroy(nins);
+					}
 				} else {
 					ui = temp_descriptor(otids->batCacheid);
 					uv = temp_descriptor(oupdates->batCacheid);
