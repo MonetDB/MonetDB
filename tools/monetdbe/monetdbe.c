@@ -595,12 +595,11 @@ monetdbe_shutdown_internal(void) // Call this function always inside the embedde
 }
 
 static void
-monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options *opts)
+monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_options *opts)
 {
 	// Only call monetdbe_startup when there is no monetdb internal yet initialized.
 	assert(!monetdbe_embedded_initialized);
 
-	const char* mbedded = "MBEDDED";
 	opt *set = NULL;
 	int setlen;
 	bool with_mapi_server;
@@ -668,7 +667,19 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		}
 	}
 
-	GDKtracer_set_adapter(mbedded); /* set the output of GDKtracer logs */
+	/* set the output of GDKtracer logs */
+	if (opts->trace_file) {
+		/* if file specified, use it */
+		if (GDKtracer_set_tracefile(opts->trace_file) != GDK_SUCCEED) {
+			mo_free_options(set, setlen);
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", GDK_EXCEPTION);
+			goto cleanup;
+		}
+		GDKtracer_set_adapter("BASIC");
+	} else {
+		/* otherwise no trace output */
+		GDKtracer_set_adapter("MBEDDED");
+	}
 
 	workers = monetdbe_workers_internal(mdbe, opts);
 	memory = monetdbe_memory_internal(mdbe, opts);
