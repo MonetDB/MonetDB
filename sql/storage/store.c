@@ -4613,13 +4613,10 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 	base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
 	list_append(mt->members, p);
-	if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id))) {
-		part_destroy(store, p);
+	if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 		return res;
-	}
-	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base)))) {
+	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	}
 	return res;
 }
 
@@ -4726,21 +4723,15 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		assert(!is_oid_nil(rid));
 
 		/* add merge table dependency */
-		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY))) {
-			part_destroy(store, p);
+		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
 			goto finish;
-		}
 		sqlid id = store->table_api.column_find_sqlid(tr, find_sql_column(partitions, "id"), rid);
-		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id))) {
-			part_destroy(store, p);
+		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 			goto finish;
-		}
 		char *vmin_val = VALget(&vmin);
 		char *vmax_val = VALget(&vmax);
-		if ((res = store->table_api.table_insert(tr, ranges, &pt->base.id, &id, &vmin_val, &vmax_val, &to_insert))) {
-			part_destroy(store, p);
+		if ((res = store->table_api.table_insert(tr, ranges, &pt->base.id, &id, &vmin_val, &vmax_val, &to_insert)))
 			goto finish;
-		}
 	} else {
 		sql_column *cmin = find_sql_column(ranges, "minimum"), *cmax = find_sql_column(ranges, "maximum"),
 				   *wnulls = find_sql_column(ranges, "with_nulls");
@@ -4875,17 +4866,12 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update) {
 		/* add merge table dependency */
-		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY))) {
-			part_destroy(store, p);
+		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
 			return res;
-		}
-		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id))) {
-			part_destroy(store, p);
+		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 			return res;
-		}
-		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base)))) {
+		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 			return res;
-		}
 	}
 	return 0;
 }
