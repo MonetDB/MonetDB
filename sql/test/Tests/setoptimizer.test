@@ -29,7 +29,7 @@ query TTT nosort
 select * from optimizers()
 ----
 minimal_pipe
-optimizer.inline();optimizer.remap();optimizer.bincopyfrom();optimizer.deadcode();optimizer.multiplex();optimizer.generator();optimizer.garbageCollector();
+optimizer.inline();optimizer.remap();optimizer.bincopyfrom();optimizer.deadcode();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.garbageCollector();
 stable
 minimal_fast
 optimizer.minimalfast()
