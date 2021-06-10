@@ -14,6 +14,7 @@
 
 #define SQL_OK 	1
 #define SQL_ERR 0
+#define SQL_CONFLICT 2
 
 #ifdef WIN32
 #ifdef LIBSQL
