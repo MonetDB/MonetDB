@@ -3435,7 +3435,7 @@ sql_trans_valid(sql_trans *tr)
 
 			for (segment *s = st->segs->h; s ; s=s->next) {
 				if (s->ts < TRANSACTION_ID_BASE && s->ts >= tr->ts) {
-					ok = LOG_ERR;
+					ok = SQL_CONFLICT;
 					break;
 				}
 			}
@@ -3459,7 +3459,6 @@ sql_trans_commit(sql_trans *tr)
 	if (tr->predicates && (ok = sql_trans_valid(tr)) != LOG_OK) {
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
-		sql_trans_rollback(tr); /* has to rollback, is it safe to unlock store and lock again? */
 		return ok;
 	}
 
@@ -6335,6 +6334,8 @@ sql_trans_end(sql_session *s, int commit)
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (commit) {
 		ok = sql_trans_commit(s->tr);
+		if (ok == SQL_CONFLICT) /* if a conflict happened while committing, rollback */
+			sql_trans_rollback(s->tr);
 	}  else {
 		sql_trans_rollback(s->tr);
 	}

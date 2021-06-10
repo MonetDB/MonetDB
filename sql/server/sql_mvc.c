@@ -513,8 +513,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (!tr->parent && !name) {
 		if (sql_trans_end(m->session, 1) != SQL_OK) {
 			/* transaction conflict */
-			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
-			return msg;
+			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 		}
 		msg = WLCcommit(m->clientid);
 		if (msg != MAL_SUCCEED) {
@@ -528,18 +527,21 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	/* commit and cleanup nested transactions */
 	if (tr->parent) {
 		while (tr->parent != NULL && ok == SQL_OK) {
-			if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+			if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			}
 			tr = sql_trans_destroy(tr);
 		}
+		while (tr->parent != NULL)
+			tr = sql_trans_destroy(tr);
 		m->session->tr = tr;
+		if (ok != SQL_OK)
+			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 	}
 
 	/* if there is nothing to commit reuse the current transaction */
 	if (tr->changes == NULL) {
 		if (!chain)
-			(void)sql_trans_end(m->session, 1);
+			(void)sql_trans_end(m->session, ok == SQL_OK ? 1 : 0); /* if a conflict happened while committing, rollback */
 		m->type = Q_TRANS;
 		/* save points not handled by WLC...
 		msg = WLCcommit(m->clientid);
@@ -554,9 +556,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 
-	if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+	if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-	}
 	/*
 	msg = WLCcommit(m->clientid);
 	if (msg != MAL_SUCCEED) {
@@ -565,7 +566,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 	*/
-	(void)sql_trans_end(m->session, 1);
+	(void)sql_trans_end(m->session, ok == SQL_OK ? 1 : 0); /* if a conflict happened while committing, rollback */
 	if (chain)
 		sql_trans_begin(m->session);
 	m->type = Q_TRANS;
