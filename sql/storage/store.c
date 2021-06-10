@@ -3423,18 +3423,26 @@ static int
 sql_trans_valid(sql_trans *tr)
 {
 	sqlstore *store = tr->store;
-	int ok = 1;
+	int ok = LOG_OK;
 
 	if (!list_empty(store->changes)) {
-		printf("## handle predicates\n");
+		//ulng commit_ts = store_get_timestamp(store);
 		/* for each predicate check if that table/column has changes */
 		for(node *n = tr->predicates->h; n; n = n->next) {
 			pl *p = n->data;
 
-			assert(p->c);
-			if (p->c) {
-				printf("## %s.%s\n", p->c->t->base.name, p->c->base.name);
+			(void) p;
+#if 0
+			sql_column *c = p->c;
+			storage *st = ATOMIC_PTR_GET(&c->t->data);
+
+			for (segment *s = st->segs->h; s ; s=s->next) {
+				if (s->ts > tr->ts) {
+					ok = LOG_ERR;
+					break;
+				}
 			}
+#endif
 		}
 	}
 	list_destroy(tr->predicates);
@@ -3452,8 +3460,11 @@ sql_trans_commit(sql_trans *tr)
 	store_lock(store);
 	ulng oldest = store_oldest(store);
 
-	if (tr->predicates && !sql_trans_valid(tr))
-			return LOG_ERR;
+	if (tr->predicates && (ok = sql_trans_valid(tr)) != LOG_OK) {
+		store_unlock(store);
+		MT_lock_unset(&store->commit);
+		return ok;
+	}
 
 	store_pending_changes(store, oldest);
 	oldest = store_oldest_pending(store);
