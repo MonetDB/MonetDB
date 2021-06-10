@@ -2066,6 +2066,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 		}
 		if (oldest_changes < TRANSACTION_ID_BASE)
 			store->oldest_pending = oldest_changes;
+	} else {
+		store->oldest_pending = store_get_timestamp(store);
 	}
 }
 
@@ -6355,6 +6357,8 @@ sql_trans_end(sql_session *s, int commit)
 				oldest = s->tr->ts;
 		}
 		store->oldest = oldest;
+	} else {
+		store->oldest = store_get_timestamp(store);
 	}
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);

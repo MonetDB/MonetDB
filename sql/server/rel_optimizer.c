@@ -2513,6 +2513,14 @@ rel_remove_redundant_join(visitor *v, sql_rel *rel)
 			int left = 0;
 			if (is_basetable(jl->op) && jl->l == b->l)
 				left = 1;
+			if (!list_empty(p->exps)) {
+				for (node *n=p->exps->h; n; n = n->next) { /* all exps of 'p' must be bound to the opposite side */
+					sql_exp *e = n->data;
+
+					if (!rel_rebind_exp(v->sql, left ? jr : jl, e))
+						return rel;
+				}
+			}
 			if (exp_match_list(j->exps, rel->exps)) {
 				p->l = (left)?rel_dup(jr):rel_dup(jl);
 				rel_destroy(j);

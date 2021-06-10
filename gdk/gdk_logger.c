@@ -908,7 +908,7 @@ logger_create_types_file(logger *lg, const char *filename)
 		return GDK_FAIL;
 	}
 
-	if (logger_write_new_types(lg, fp) == GDK_FAIL) {
+	if (logger_write_new_types(lg, fp) != GDK_SUCCEED) {
 		fclose(fp);
 		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
@@ -1866,7 +1866,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	if (BBPrename(lg->catalog_lid->batCacheid, bak) < 0) {
 		goto error;
 	}
-	if (bm_get_counts(lg) == GDK_FAIL)
+	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
 	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
@@ -2158,7 +2158,7 @@ logger_flush(logger *lg, ulng ts)
 			}
 
 			bool filemissing = false;
-			if (logger_open_input(lg, filename, &filemissing) == GDK_FAIL) {
+			if (logger_open_input(lg, filename, &filemissing) != GDK_SUCCEED) {
 				GDKfree(filename);
 				return GDK_FAIL;
 			}
