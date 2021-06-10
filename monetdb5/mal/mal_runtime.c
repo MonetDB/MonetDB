@@ -243,7 +243,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			if (++i >= qsize)
 				i = 0;
 		}
-		assert(0);
+//		assert(0);
 	}
 	i=qtail;
 	while (i != qhead){
