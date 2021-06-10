@@ -3424,27 +3424,21 @@ sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 static int
 sql_trans_valid(sql_trans *tr)
 {
-	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 
-	if (!list_empty(store->changes)) {
-		//ulng commit_ts = store_get_timestamp(store);
+	if (!list_empty(tr->changes)) {
 		/* for each predicate check if that table/column has changes */
 		for(node *n = tr->predicates->h; n; n = n->next) {
 			pl *p = n->data;
-
-			(void) p;
-#if 0
 			sql_column *c = p->c;
 			storage *st = ATOMIC_PTR_GET(&c->t->data);
 
 			for (segment *s = st->segs->h; s ; s=s->next) {
-				if (s->ts > tr->ts) {
+				if (s->ts < TRANSACTION_ID_BASE && s->ts >= tr->ts) {
 					ok = LOG_ERR;
 					break;
 				}
 			}
-#endif
 		}
 	}
 	list_destroy(tr->predicates);
@@ -3465,6 +3459,7 @@ sql_trans_commit(sql_trans *tr)
 	if (tr->predicates && (ok = sql_trans_valid(tr)) != LOG_OK) {
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
+		sql_trans_rollback(tr); /* has to rollback, is it safe to unlock store and lock again? */
 		return ok;
 	}
 
