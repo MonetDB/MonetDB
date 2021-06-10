@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "mal_backend.h"
 
+#if 0
 static void
 pl_print(mvc *m, list *pls)
 {
@@ -39,6 +40,7 @@ pl_print(mvc *m, list *pls)
 				p->r?atom2string(m->pa, p->r):"");
 	}
 }
+#endif
 
 static sql_column *
 bt_find_column( sql_rel *rel, char *tname, char *name)
@@ -136,7 +138,9 @@ rel_predicates(backend *be, sql_rel *rel)
 	int changes = 0;
 	visitor v = { .sql = be->mvc, .data = &changes };
 	rel = rel_visitor_topdown(&v, rel, &rel_find_predicates);
+#if 0
 	if (changes)
 		pl_print(be->mvc, be->mvc->session->tr->predicates);
+#endif
 }
 
