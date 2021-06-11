@@ -999,7 +999,9 @@ movestrbats(void)
 			continue;
 		char *oldpath = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
 		char *newpath = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		int ret = MT_rename(oldpath, newpath);
+		int ret = -1;
+		if (oldpath != NULL && newpath != NULL)
+			ret = MT_rename(oldpath, newpath);
 		GDKfree(oldpath);
 		GDKfree(newpath);
 		if (ret < 0)
@@ -3134,8 +3136,11 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					MT_lock_set(&GDKswapLock(i));
 			}
 			BAT *b = dirty_bat(&i, subcommit != NULL);
-			if (i <= 0)
+			if (i <= 0) {
+				if (lock)
+					MT_lock_unset(&GDKswapLock(subcommit ? subcommit[idx] : idx));
 				break;
+			}
 			if (BBP_status(i) & BBPEXISTING) {
 				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
 					BBP_status_off(i, BBPSYNCING);
