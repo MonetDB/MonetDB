@@ -188,13 +188,12 @@ with SQLTestCase() as mdb1:
         mdb2.execute('rollback;').assertSucceeded()
         mdb1.execute('DROP FUNCTION myfunc;').assertSucceeded()
 
-        # currently runs up till here..
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('insert into longs values (4),(5),(6);').assertSucceeded()
         mdb2.execute('insert into longs values (5),(6),(7);').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed() # Duplicate values on the primary key 'i' from 'longs'
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # Duplicate values on the primary key 'i' from 'longs'
         mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,),(4,),(5,),(6,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
@@ -202,7 +201,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('delete from longs where i > 3;').assertRowCount(3)
         mdb2.execute('insert into integers values (4);').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed() # The foreign key value 4 doesn't exist on the primary key
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # The foreign key value 4 doesn't exist on the primary key
         mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,)])
 
         mdb1.execute('start transaction;').assertSucceeded()

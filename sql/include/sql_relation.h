@@ -289,7 +289,7 @@ typedef struct relation {
 
 typedef struct pl {
 	sql_column *c;
-	comp_type cmp;
+	unsigned int cmp;
 	atom *r; /* if r is NULL then a full match is required */
 	atom *f; /* make it match range expressions */
 	uint8_t
