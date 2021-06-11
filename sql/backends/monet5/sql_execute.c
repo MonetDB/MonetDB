@@ -189,6 +189,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	pushEndInstruction(mb);
 	if( msg == MAL_SUCCEED)
 		msg = chkTypes(cntxt->usermodule, mb, TRUE);
+	renameVariables(mb);
 	return msg;
 }
 
