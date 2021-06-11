@@ -474,12 +474,8 @@ plan select count(*) from another_t t1, another_t t2
 project (
 | project (
 | | crossproduct (
-| | | group by (
-| | | | table("sys"."another_t") [ "another_t"."%TID%" NOT NULL as "t1"."%TID%" ] COUNT 
-| | | ) [  ] [ "sys"."count"() NOT NULL as "%2"."%2" ],
-| | | group by (
-| | | | table("sys"."another_t") [ "another_t"."%TID%" NOT NULL as "t2"."%TID%" ] COUNT 
-| | | ) [  ] [ "sys"."count"() NOT NULL as "%3"."%3" ]
+| | |  [ "sys"."cnt"(clob "sys", clob "another_t") NOT NULL as "%2"."%2" ],
+| | |  [ "sys"."cnt"(clob "sys", clob "another_t") NOT NULL as "%3"."%3" ]
 | | ) [  ]
 | ) [ "sys"."sql_mul"("%2"."%2" NOT NULL, "%3"."%3" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
