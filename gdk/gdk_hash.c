@@ -1286,6 +1286,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 			seen = atomcmp(v, BUNtail(bi, hb)) == 0;
 		BUN hb2 = HASHgetlink(h, hb);
 		assert(hb2 != h->nil);
+		assert(hb2 < hb);
 		if (hb2 == p) {
 			for (hb2 = HASHgetlink(h, hb2);
 			     !seen && hb2 != h->nil;

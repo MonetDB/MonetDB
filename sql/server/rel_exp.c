@@ -1305,7 +1305,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		return 1;
 	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
 		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || is_semantics(e1) != is_semantics(e2) ||
-		need_distinct(e1) != need_distinct(e2))
+		is_symmetric(e1) != is_symmetric(e2) || need_distinct(e1) != need_distinct(e2))
 		return 0;
 	if (e1->type == e2->type) {
 		switch(e1->type) {
@@ -1313,7 +1313,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 		            exp_match_exp(e1->l, e2->l) &&
 			    exp_match_exp(e1->r, e2->r) &&
-			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
+			    ((!e1->f && !e2->f) || (e1->f && e2->f && exp_match_exp(e1->f, e2->f))))
 				return 1;
 			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
 		            exp_match_list(e1->l, e2->l) &&

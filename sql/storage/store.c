@@ -1890,8 +1890,10 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
-	for(int i = 0; i<NR_TABLE_LOCKS; i++)
+	for(int i = 0; i<NR_TABLE_LOCKS; i++) {
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
+		MT_lock_init(&store->column_locks[i], "sqlstore_column");
+	}
 
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
@@ -2064,6 +2066,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 		}
 		if (oldest_changes < TRANSACTION_ID_BASE)
 			store->oldest_pending = oldest_changes;
+	} else {
+		store->oldest_pending = store_get_timestamp(store);
 	}
 }
 
@@ -4577,13 +4581,10 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 	base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
 	list_append(mt->members, p);
-	if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id))) {
-		part_destroy(store, p);
+	if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 		return res;
-	}
-	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base)))) {
+	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	}
 	return res;
 }
 
@@ -4690,21 +4691,15 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		assert(!is_oid_nil(rid));
 
 		/* add merge table dependency */
-		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY))) {
-			part_destroy(store, p);
+		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
 			goto finish;
-		}
 		sqlid id = store->table_api.column_find_sqlid(tr, find_sql_column(partitions, "id"), rid);
-		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id))) {
-			part_destroy(store, p);
+		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 			goto finish;
-		}
 		char *vmin_val = VALget(&vmin);
 		char *vmax_val = VALget(&vmax);
-		if ((res = store->table_api.table_insert(tr, ranges, &pt->base.id, &id, &vmin_val, &vmax_val, &to_insert))) {
-			part_destroy(store, p);
+		if ((res = store->table_api.table_insert(tr, ranges, &pt->base.id, &id, &vmin_val, &vmax_val, &to_insert)))
 			goto finish;
-		}
 	} else {
 		sql_column *cmin = find_sql_column(ranges, "minimum"), *cmax = find_sql_column(ranges, "maximum"),
 				   *wnulls = find_sql_column(ranges, "with_nulls");
@@ -4839,17 +4834,12 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update) {
 		/* add merge table dependency */
-		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY))) {
-			part_destroy(store, p);
+		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
 			return res;
-		}
-		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id))) {
-			part_destroy(store, p);
+		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 			return res;
-		}
-		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base)))) {
+		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 			return res;
-		}
 	}
 	return 0;
 }
@@ -6318,6 +6308,8 @@ sql_trans_end(sql_session *s, int commit)
 				oldest = s->tr->ts;
 		}
 		store->oldest = oldest;
+	} else {
+		store->oldest = store_get_timestamp(store);
 	}
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);

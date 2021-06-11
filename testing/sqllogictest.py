@@ -611,7 +611,9 @@ class SQLLogic:
             if not line:
                 break
             if line[0] == '#': # skip mal comments
-                break
+                if self.approve:
+                    self.approve.write(line)
+                continue
             conn = None
             # look for connection string
             if line.startswith('@connection'):
