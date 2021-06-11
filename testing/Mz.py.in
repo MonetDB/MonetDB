@@ -13,6 +13,7 @@
 #   which OUT/ERR differ or not and which tests were skipped.
 #   dump HTML-stuff only at end
 #   print an ascii summary at end, too
+# - use sorting in .explain.functions_histogram
 # - if no diffs, but warnings, say so at end
 # - produce, keep & reference LOG
 # - add a "grep-like" function and replace "inlined" grep

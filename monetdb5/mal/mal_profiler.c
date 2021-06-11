@@ -209,6 +209,10 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return NULL;
 
+/* align the variable namings with EXPLAIN and TRACE */
+	if( pci->pc == 1 && start)
+		renameVariables(mb);
+
 	logbuf = (struct logbuf) {0};
 
 	usec= pci->clock;
