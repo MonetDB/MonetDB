@@ -1732,11 +1732,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		 * shouldn't exist */
 		if (fp != NULL) {
 			GDKerror("there is no logger catalog, "
-				 "but there is a log file. "
-				 "Are you sure you are using the correct "
-				 "combination of database "
-				 "(--dbpath) and log directory "
-				 "(--set %s_logdir)?\n", fn);
+				 "but there is a log file.\n");
 			goto error;
 		}
 
@@ -1800,17 +1796,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL && !LOG_DISABLED(lg)) {
-			GDKerror("There is a logger catalog, but no log file. "
-				 "Are you sure you are using the correct "
-				 "combination of database (--dbpath) and "
-				 "log directory (--set %s_logdir)? "
-				 "If you have done a recent update of the "
-				 "server, it may be that your logs are in "
-				 "an old location.  You should then either use "
-				 "--set %s_logdir=<path to old log directory> "
-				 "or move the old log directory to the new "
-				 "location (%s).\n",
-				 fn, fn, lg->dir);
+			GDKerror("There is a logger catalog, but no log file.\n");
 			goto error;
 		}
 		if (fp != NULL) {
