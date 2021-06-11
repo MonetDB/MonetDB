@@ -3237,7 +3237,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 }
 
 static void
-sql_trans_rollback(sql_trans *tr)
+sql_trans_rollback(sql_trans *tr, int locked)
 {
 	sqlstore *store = tr->store;
 
@@ -3263,7 +3263,8 @@ sql_trans_rollback(sql_trans *tr)
 			list_prepend(nl, n->data);
 
 		/* rollback */
-		store_lock(store);
+		if (!locked)
+			store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
 		for(node *n=nl->h; n; n = n->next) {
@@ -3288,7 +3289,8 @@ sql_trans_rollback(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
-		store_unlock(store);
+		if (!locked)
+			store_unlock(store);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3328,7 +3330,7 @@ sql_trans_destroy(sql_trans *tr)
 		tr->name = NULL;
 	}
 	if (tr->changes)
-		sql_trans_rollback(tr);
+		sql_trans_rollback(tr, 0);
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
@@ -3457,6 +3459,7 @@ sql_trans_commit(sql_trans *tr)
 	ulng oldest = store_oldest(store);
 
 	if (tr->predicates && (ok = sql_trans_valid(tr)) != LOG_OK) {
+		sql_trans_rollback(tr, 1);
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 		return ok;
@@ -6327,17 +6330,13 @@ sql_trans_begin(sql_session *s)
 }
 
 int
-sql_trans_end(sql_session *s, int commit)
+sql_trans_end(sql_session *s, int ok)
 {
-	int ok = SQL_OK;
-
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
-	if (commit) {
+	if (ok == SQL_OK) {
 		ok = sql_trans_commit(s->tr);
-		if (ok == SQL_CONFLICT) /* if a conflict happened while committing, rollback */
-			sql_trans_rollback(s->tr);
-	}  else {
-		sql_trans_rollback(s->tr);
+	} else if (ok == SQL_ERR) { /* if a conflict happened, it was already rollbacked */
+		sql_trans_rollback(s->tr, 0);
 	}
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;

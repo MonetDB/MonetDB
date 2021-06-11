@@ -441,7 +441,7 @@ mvc_debug_on(mvc *m, int flg)
 void
 mvc_cancel_session(mvc *m)
 {
-	(void)sql_trans_end(m->session, 0);
+	(void)sql_trans_end(m->session, SQL_ERR);
 }
 
 int
@@ -460,7 +460,7 @@ mvc_trans(mvc *m)
 			/* TODO Change into recreate all */
 			m->qc = qc_create(m->pa, m->clientid, seqnr);
 			if (!m->qc) {
-				(void)sql_trans_end(m->session, 0);
+				(void)sql_trans_end(m->session, SQL_ERR);
 				return -1;
 			}
 		}
@@ -511,7 +511,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		if (sql_trans_end(m->session, 1) != SQL_OK) {
+		if (sql_trans_end(m->session, ok) != SQL_OK) {
 			/* transaction conflict */
 			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 		}
@@ -541,7 +541,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	/* if there is nothing to commit reuse the current transaction */
 	if (tr->changes == NULL) {
 		if (!chain)
-			(void)sql_trans_end(m->session, ok == SQL_OK ? 1 : 0); /* if a conflict happened while committing, rollback */
+			(void)sql_trans_end(m->session, ok);
 		m->type = Q_TRANS;
 		/* save points not handled by WLC...
 		msg = WLCcommit(m->clientid);
@@ -566,7 +566,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 	*/
-	(void)sql_trans_end(m->session, ok == SQL_OK ? 1 : 0); /* if a conflict happened while committing, rollback */
+	(void)sql_trans_end(m->session, ok);
 	if (chain)
 		sql_trans_begin(m->session);
 	m->type = Q_TRANS;
@@ -615,7 +615,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		/* make sure we do not reuse changed data */
 		if (tr->changes)
 			tr->status = 1;
-		(void)sql_trans_end(m->session, 0);
+		(void)sql_trans_end(m->session, SQL_ERR);
 		if (chain)
 			sql_trans_begin(m->session);
 	}
@@ -831,7 +831,7 @@ mvc_destroy(mvc *m)
 	tr = m->session->tr;
 	if (tr) {
 		if (m->session->tr->active)
-			(void)sql_trans_end(m->session, 0);
+			(void)sql_trans_end(m->session, SQL_ERR);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
 	}
