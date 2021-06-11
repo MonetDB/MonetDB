@@ -4098,12 +4098,20 @@ static stmt *
 insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stmt *pin)
 {
 	mvc *sql = be->mvc;
+	sql_trans *tr = sql->session->tr;
 	char *msg = NULL;
 	stmt *cs = list_fetch(inserts, 0), *s = cs;
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+
+	for (node *m = k->columns->h; m; m = m->next) {
+		sql_kc *c = m->data;
+
+		/* foreach column add predicate */
+		tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
+	}
 
 	if (pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
@@ -4206,6 +4214,7 @@ static void
 sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
 	mvc *sql = be->mvc;
+	sql_trans *tr = sql->session->tr;
 	node *m, *n;
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 
@@ -4217,6 +4226,9 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 		if (!c->null) {
 			stmt *s = i;
 			char *msg = NULL;
+
+			/* foreach column add predicate */
+			tr->predicates = add_predicate(sql->pa, tr->predicates, c);
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
