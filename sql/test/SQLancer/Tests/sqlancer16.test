@@ -55,6 +55,43 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t1" ("c0" INTEGER)
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES (1), (2), (3), (4)
+
+query I rowsort
+SELECT 1 FROM t1 FULL OUTER JOIN (SELECT 2 FROM t1 JOIN (SELECT sql_min(TIME '01:00:00', TIME '12:05:37') FROM t1) AS sub0(c0) ON TRUE WHERE true) AS sub0(c0) 
+ON CAST(6 AS DOUBLE)/(CASE 3 WHEN sub0.c0 THEN 0.2 END) > 2
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
 
 statement ok
