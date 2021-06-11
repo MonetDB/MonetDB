@@ -21,11 +21,8 @@ def function_histogram(tab):
                     histo[f]=1
     nhisto = []
     for key,val in histo.items():
-        row=[]
-        row.append(key)
-        row.append(str(val))
-        nhisto.append(row)
-    return nhisto
+        nhisto.append((key, str(val)))
+    return sorted(nhisto)
 
 # Returns functions returning more than one parameter in the MAL plan, at the moment, all returning parameters must be bats
 def function_with_more_than_one_result_bat(tab):
@@ -43,8 +40,5 @@ def function_with_more_than_one_result_bat(tab):
                         histo[f]=1
     nhisto = []
     for key,val in histo.items():
-        row=[]
-        row.append(key)
-        row.append(str(val))
-        nhisto.append(row)
-    return nhisto
+        nhisto.append((key, str(val)))
+    return sorted(nhisto)
