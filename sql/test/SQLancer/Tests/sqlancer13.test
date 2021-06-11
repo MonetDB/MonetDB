@@ -679,23 +679,23 @@ set optimizer='sequential_pipe'
 query T python .explain.function_histogram
 EXPLAIN SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 2
 ----
-user.main
-1
-querylog.define
-1
-sql.mvc
-1
-sql.tid
-1
-sql.bind
+algebra.projection
 1
 algebra.select
 1
-algebra.projection
-1
 bat.pack
 5
+querylog.define
+1
+sql.bind
+1
+sql.mvc
+1
 sql.resultSet
+1
+sql.tid
+1
+user.main
 1
 
 statement ok
@@ -849,3 +849,4 @@ select t0.c1 from t1, t0 where ((case when false then t1.c3 else 6 end)<=(case w
 
 statement ok
 ROLLBACK
+
