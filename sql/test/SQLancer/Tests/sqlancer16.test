@@ -106,7 +106,7 @@ CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c
 statement ok rowcount 4
 INSERT INTO "t1" VALUES (69), (-12), (9), (0)
 
-query T rowsort
+query I rowsort
 SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
 ----
 True
@@ -122,7 +122,7 @@ SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 
 69
 9
 
-query T rowsort
+query I rowsort
 SELECT least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) > -3 FROM t1
 ----
 True
@@ -151,7 +151,7 @@ statement ok rowcount 9
 INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
 (INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
 ----
 False

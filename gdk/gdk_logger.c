@@ -922,7 +922,12 @@ logger_create_types_file(logger *lg, const char *filename)
 #elif defined(HAVE_FSYNC)
 		     && fsync(fileno(fp)) < 0
 #endif
-	    ) || fclose(fp) < 0) {
+	    )) {
+		MT_remove(filename);
+		GDKerror("flushing log file %s failed", filename);
+		return GDK_FAIL;
+	}
+	if (fclose(fp) < 0) {
 		MT_remove(filename);
 		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
@@ -1242,6 +1247,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	assert(!lg->inmemory);
 	if (fscanf(fp, "%6d", &version) != 1) {
 		GDKerror("Could not read the version number from the file '%s/log'.\n", lg->dir);
+		fclose(fp);
 		return GDK_FAIL;
 	}
 	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
@@ -1250,8 +1256,10 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
 		if (lg->catalog_bid == NULL || lg->catalog_id == NULL || lg->dcatalog == NULL) {
 			GDKerror("cannot create catalog bats");
+			fclose(fp);
 			return GDK_FAIL;
 		}
+		/* old_logger_load always closes fp */
 		if (old_logger_load(lg, fn, logdir, fp, version, filename) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
@@ -1269,6 +1277,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 "this server supports version %06d.\n%s",
 				 version, lg->version,
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
+			fclose(fp);
 			return GDK_FAIL;
 		}
 	} else {
@@ -1276,8 +1285,8 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	}
 	if (fgetc(fp) != '\n' ||	 /* skip \n */
 	    fgetc(fp) != '\n') {	 /* skip \n */
-		fclose(fp);
 		GDKerror("Badly formatted log file");
+		fclose(fp);
 		return GDK_FAIL;
 	}
 	if (logger_read_types_file(lg, fp) != GDK_SUCCEED) {
@@ -1384,8 +1393,11 @@ bm_subcommit(logger *lg)
 	const lng *cnts = NULL, *lids = NULL;
 	int cleanup = 0;
 
-	if (n == NULL)
+	if (n == NULL || sizes == NULL) {
+		GDKfree(n);
+		GDKfree(sizes);
 		return GDK_FAIL;
+	}
 
 	sizes[i] = 0;
 	n[i++] = 0;		/* n[0] is not used */
@@ -1433,6 +1445,8 @@ bm_subcommit(logger *lg)
 			if ((lb = BATdescriptor(bids[pos])) == NULL ||
 		    	    BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
 				logbat_destroy(lb);
+				GDKfree(n);
+				GDKfree(sizes);
 				return GDK_FAIL;
 			}
 			//assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
@@ -1718,11 +1732,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		 * shouldn't exist */
 		if (fp != NULL) {
 			GDKerror("there is no logger catalog, "
-				 "but there is a log file. "
-				 "Are you sure you are using the correct "
-				 "combination of database "
-				 "(--dbpath) and log directory "
-				 "(--set %s_logdir)?\n", fn);
+				 "but there is a log file.\n");
 			goto error;
 		}
 
@@ -1786,23 +1796,18 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL && !LOG_DISABLED(lg)) {
-			GDKerror("there is a logger catalog, but no log file. "
-				 "Are you sure you are using the correct combination of database "
-				 "(--dbpath) and log directory (--set %s_logdir)? "
-				 "If you have done a recent update of the server, it may be that your "
-				 "logs are in an old location.  You should then either use "
-				 "--set %s_logdir=<path to old log directory> or move the old log "
-				 "directory to the new location (%s).\n",
-				 fn, fn, lg->dir);
+			GDKerror("There is a logger catalog, but no log file.\n");
 			goto error;
 		}
-		if (fp != NULL && check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
-			fp = NULL;
-			goto error;
-		}
-		if (fp)
+		if (fp != NULL) {
+			/* check_version always closes fp */
+			if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) {
+				fp = NULL;
+				goto error;
+			}
 			readlogs = true;
-		fp = NULL;
+			fp = NULL;
+		}
 
 		if (lg->catalog_bid == NULL && lg->catalog_id == NULL && lg->dcatalog == NULL) {
 			b = BATdescriptor(catalog_bid);
