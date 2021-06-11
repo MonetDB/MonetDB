@@ -799,20 +799,11 @@ BATsave(BAT *bd)
 		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
 			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
-			if (
-#if defined(NATIVE_WIN32)
-				_commit(fd) < 0
-#elif defined(HAVE_FDATASYNC)
-				fdatasync(fd) < 0
-#elif defined(HAVE_FSYNC)
-				fsync(fd) < 0
-#endif
-				)
-				GDKsyserror("sync failed for %s.%s\n", nme,
+			if (fd < 0) {
+				GDKsyserror("cannot open file %s.%s for sync\n", nme,
 					    gettailname(b));
-			close(fd);
-			if (b->tvheap) {
-				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+				err = GDK_FAIL;
+			} else {
 				if (
 #if defined(NATIVE_WIN32)
 					_commit(fd) < 0
@@ -822,8 +813,29 @@ BATsave(BAT *bd)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.theap\n", nme);
+					GDKsyserror("sync failed for %s.%s\n", nme,
+						    gettailname(b));
 				close(fd);
+			}
+			if (b->tvheap) {
+				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+				if (fd < 0) {
+					GDKsyserror("cannot open file %s.theap for sync\n",
+						    nme);
+					err = GDK_FAIL;
+				} else {
+					if (
+#if defined(NATIVE_WIN32)
+						_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+						fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+						fsync(fd) < 0
+#endif
+						)
+						GDKsyserror("sync failed for %s.theap\n", nme);
+					close(fd);
+				}
 			}
 		}
 	} else {

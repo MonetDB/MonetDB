@@ -20,6 +20,8 @@
 			if (BATextend((B),				\
 				      MIN(BATcapacity(B) + (G),		\
 					  (M))) != GDK_SUCCEED) {	\
+				if (locked)				\
+					MT_rwlock_rdunlock(&b->thashlock); \
 				BBPreclaim(B);				\
 				return (R);				\
 			}						\
@@ -106,6 +108,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	BUN l, h, d = 0;
 	oid seq;
 	int (*cmp)(const void *, const void *);
+	bool locked = false;
 
 	assert(bn->ttype == TYPE_oid);
 	seq = b->hseqbase;
@@ -144,6 +147,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
 	MT_rwlock_rdlock(&b->thashlock);
+	locked = true;
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
@@ -164,6 +168,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		}
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
+	locked = false;
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -491,6 +496,7 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	BUN pr_off = 0;							\
 	Imprints *imprints;						\
 	bat parent = 0;							\
+	const bool locked = false;					\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -546,6 +552,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	oid o;
 	BUN p;
 	int c;
+	const bool locked = false;
 
 	(void) maximum;
 	(void) use_imprints;
@@ -670,6 +677,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	var_t pos;
 	BUN p;
 	oid o;
+	const bool locked = false;
 
 	if (!equi || !GDK_ELIMDOUBLES(b->tvheap))
 		return fullscan_any(b, ci, bn, tl, th, li, hi, equi, anti,
