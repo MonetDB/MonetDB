@@ -4607,6 +4607,8 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	int res = 0;
 	sql_table *dup = NULL;
 
+	if (os_has_changes(mt->s->parts, tr)) /* for inserts disallow concurrent transactions */
+		return -2;
 	/* merge table depends on part table */
 	if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
 		return res;
@@ -4933,6 +4935,8 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	oid rid;
 	int res = 0;
 
+	if (os_has_changes(os->parts, tr)) /* because of merge tables disallow if there are changes there */
+		return -2;
 	rid = store->table_api.column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
 	assert(!is_oid_nil(rid));
 	if ((res = store->table_api.column_update_value(tr, find_sql_column(systable, "schema_id"), rid, &(ns->base.id))))
