@@ -2444,10 +2444,11 @@ BATassertProps(BAT *b)
 				/* candidate list with exceptions */
 				assert(b->batRole == TRANSIENT);
 				assert(b->tvheap->free <= b->tvheap->size);
+				assert(b->tvheap->free >= sizeof(ccand_t));
 				assert((negoid_cand(b) && ccand_free(b) % SIZEOF_OID == 0) || mask_cand(b));
 				if (negoid_cand(b) && ccand_free(b) > 0) {
-					const oid *oids = (const oid *) b->tvheap->base;
-					q = b->tvheap->free / SIZEOF_OID;
+					const oid *oids = (const oid *) ccand_first(b);
+					q = ccand_free(b) / SIZEOF_OID;
 					assert(oids != NULL);
 					assert(b->tseqbase + BATcount(b) + q <= GDK_oid_max);
 					/* exceptions within range */

@@ -35,14 +35,14 @@ main(void)
 		error(err)
 
 	// Get working directory and construct the CSV path
-   	if (getcwd(csv_path, sizeof(csv_path)) == NULL) {
+	if (getcwd(csv_path, sizeof(csv_path)) == NULL) {
 		error("Could not get the current working directory");
-   	}
+	}
 	strcat(csv_path, "/test.csv");
 
-    strcpy(sql, "COPY SELECT * FROM test INTO '");
-    strcat(sql, csv_path);
-    strcat(sql, "' USING DELIMITERS ','");
+	strcpy(sql, "COPY SELECT * FROM test INTO '");
+	strcat(sql, csv_path);
+	strcat(sql, "' USING DELIMITERS ','");
 
 	if ((err = monetdbe_query(mdbe, sql, NULL, NULL)) != NULL)
 		error(err)
@@ -54,8 +54,8 @@ main(void)
 
 	memset(sql, 0, 1000);
 	strcpy(sql, "COPY INTO test_copy FROM '");
-    strcat(sql, csv_path);
-    strcat(sql, "' DELIMITERS ','");
+	strcat(sql, csv_path);
+	strcat(sql, "' DELIMITERS ','");
 
 	if ((err = monetdbe_query(mdbe, sql, NULL, NULL)) != NULL) {
 		delete_file(csv_path)
@@ -74,6 +74,8 @@ main(void)
 
 	delete_file(csv_path)
 
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
 	if (monetdbe_close(mdbe))
 		error("Failed to close database");
 
