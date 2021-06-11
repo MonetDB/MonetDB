@@ -1,0 +1,14 @@
+stdout of test 'aggregates-tables.Bug-7142` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 11:30:33 >  
+# 11:30:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-218832" "--port=38265"
+# 11:30:33 >  
+
+#START TRANSACTION;
+#ROLLBACK;
+
+# 11:30:33 >  
+# 11:30:33 >  "Done."
+# 11:30:33 >  
+
