@@ -191,7 +191,7 @@ query I rowsort
 SELECT 1 FROM t2, t1 WHERE (t2.c0 > 4 OR false) AND (CASE WHEN 9 IN (t2.c0, t1.c2) THEN TRUE END)
 ----
 
-query T rowsort
+query I rowsort
 SELECT t1.c2 FROM t2, t1 WHERE (((((((((t2.c0)^(2))) NOT BETWEEN SYMMETRIC (least(t1.c2, t1.c2)) AND (4))AND(NOT (TRUE))))OR(least(FALSE, FALSE))))AND(CASE WHEN (9) NOT IN (t2.c0, t1.c2) THEN TRUE ELSE greatest(TRUE, FALSE) END))
 ----
 
@@ -388,7 +388,64 @@ WHERE t2.c2) AS sub0 WHERE (('Bw') NOT IN (least(t0.c2, t0.c2), CAST(t1.c0 AS VA
 query I rowsort
 SELECT 1 FROM t0, t1 CROSS JOIN (SELECT DISTINCT t1.c0 > 4 FROM t1, t2 WHERE t2.c2) AS sub0 WHERE (('Bw') NOT IN (least(t0.c2, t0.c2), CAST(t1.c0 AS VARCHAR(64)))) IS NULL
 ----
-58 values hashing to 8fdc0683e1f7f9ff9590af46dca75282
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -399,13 +456,13 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c3" BOOLEAN)
 
-query T rowsort
+query R rowsort
 select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 union all
 select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 ----
 
-query T rowsort
+query R rowsort
 select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 union all
 select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
@@ -414,10 +471,10 @@ select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 statement ok
 ROLLBACK
 
-query T rowsort
+query R rowsort
 select round((0.52)*(0.10), -8)
 ----
-0.0000
+0.000
 
 statement ok
 START TRANSACTION
@@ -551,26 +608,26 @@ SELECT CAST(((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2))) AS INT) as cou
 ----
 102 values hashing to a98471bd784fc82e6e3165302bc0080a
 
-query T rowsort
+query I rowsort
 SELECT t1.c2 > 10 + 0.3607000614109831 FROM t1
 ----
-False
-False
-False
+0
+0
+0
 
-query T rowsort
+query I rowsort
 SELECT t1.c2 > 10 + 0.3611111111 FROM t1
 ----
-False
-False
-False
+0
+0
+0
 
-query T rowsort
+query I rowsort
 SELECT t1.c2 > 10 + 0.361111111 FROM t1
 ----
-False
-False
-False
+0
+0
+0
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(((((10)+(0.3607000614109831)))<(least(t1.c2, t1.c2))) AS INT) as count FROM t0, t1) as res
@@ -761,43 +818,43 @@ INSERT INTO t0(c0) VALUES(BLOB ''), (BLOB 'bEB52EFd'), (BLOB '3e7A0a90'), (BLOB 
 statement ok
 INSERT INTO t2(c0) VALUES(BLOB '050aC56fd0')
 
-query T rowsort
+query I rowsort
 SELECT '' >= t1.c3 FROM t0, t1, t2
 ----
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 
 statement ok
 DROP TABLE t0
