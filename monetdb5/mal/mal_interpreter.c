@@ -515,8 +515,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	exceptionVar = -1;
 
 	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
+#ifndef NDEBUG
 	/* very short timeout */
 	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=mb->starttime};
+#endif
 	/* save, in case this function is called recursively */
 	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
 	MT_thread_set_qry_ctx(&qry_ctx);
