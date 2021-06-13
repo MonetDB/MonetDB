@@ -81,6 +81,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if( p->token == ENDsymbol)
 			break;
+		k = 0;
 		if( getModuleId(p) == sqlRef && getFunctionId(p) == tidRef && p->argc == 6){
 			if (depth[getArg(p,0)] == 0){
 				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
@@ -95,7 +96,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				depth[getArg(p,0)] = k;
 			} 
 		} else{
-			k = 0;
 			for(j= p->retc; j <p->argc; j++){
 				if (depth[getArg(p,j)] > k)
 					k = depth[getArg(p,j)];
