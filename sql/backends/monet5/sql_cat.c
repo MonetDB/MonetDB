@@ -210,10 +210,41 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 }
 
 static char *
+alter_table_add_predicates(mvc *sql, sql_table *top, sql_table *pt)
+{
+	sql_trans *tr = sql->session->tr;
+	str msg = MAL_SUCCEED;
+
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (isMergeTable(pt)) {
+		for (node *n = pt->members->h; n; n = n->next) {
+			sql_part *part = (sql_part *) n->data;
+			sql_table *sub = find_sql_table_id(tr, pt->s, part->member);
+		
+			if ((msg = alter_table_add_predicates(sql, top, sub)))
+				return msg;
+		}
+	} else {
+		if (isPartitionedByColumnTable(top)) {
+			sql_column *c = list_fetch(pt->columns->l, top->part.pcol->colnr);
+			tr->predicates = add_predicate(sql->pa, tr->predicates, c);
+		} else {
+			for (node *n = top->part.pexp->cols->h; n; n = n->next) {
+				int next = *(int*) n->data;
+				sql_column *c = list_fetch(pt->columns->l, next);
+				tr->predicates = add_predicate(sql->pa, tr->predicates, c);
+			}
+		}
+	}
+	return msg;
+}
+
+static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
 								bit with_nills, int update)
 {
-	sql_trans *tr = sql->session->tr;
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
@@ -331,18 +362,8 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
-	if (!msg) {
-		if (isPartitionedByColumnTable(mt)) {
-			sql_column *c = list_fetch(pt->columns->l, mt->part.pcol->colnr);
-			tr->predicates = add_predicate(sql->pa, tr->predicates, c);
-		} else {
-			for (node *n = mt->part.pexp->cols->h; n; n = n->next) {
-				int next = *(int*) n->data;
-				sql_column *c = list_fetch(pt->columns->l, next);
-				tr->predicates = add_predicate(sql->pa, tr->predicates, c);
-			}
-		}
-	}
+	if (!msg)
+		msg = alter_table_add_predicates(sql, mt, pt);
 	if (err_min)
 		GDKfree(err_min);
 	if (err_max)
@@ -358,7 +379,6 @@ static char *
 alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname,
 								char *ptname, bit with_nills, int update)
 {
-	sql_trans *tr = sql->session->tr;
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
 	sql_part *err = NULL;
@@ -445,18 +465,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
-	if (!msg) {
-		if (isPartitionedByColumnTable(mt)) {
-			sql_column *c = list_fetch(pt->columns->l, mt->part.pcol->colnr);
-			tr->predicates = add_predicate(sql->pa, tr->predicates, c);
-		} else {
-			for (node *n = mt->part.pexp->cols->h; n; n = n->next) {
-				int next = *(int*) n->data;
-				sql_column *c = list_fetch(pt->columns->l, next);
-				tr->predicates = add_predicate(sql->pa, tr->predicates, c);
-			}
-		}
-	}
+	if (!msg)
+		msg = alter_table_add_predicates(sql, mt, pt);
 	return msg;
 }
 
