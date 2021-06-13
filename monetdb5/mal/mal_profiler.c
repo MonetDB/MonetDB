@@ -632,13 +632,23 @@ openProfilerStream(Client cntxt)
 	// Ignore the JSON rendering mode, use compiled time version
 
 	/* show all in progress instructions for stethoscope startup */
-	/* this code is not thread safe, because the inprogress administration may change concurrently */
-	MT_lock_set(&mal_delayLock);
-	for(j = 0; j <THREADS; j++)
-	if(workingset[j].mb)
-		/* show the event */
-		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
-	MT_lock_unset(&mal_delayLock);
+	/* wait a short time for instructions to finish updating there thread admin
+	 * and then follow the locking scheme */
+
+	MT_sleep_ms(200);
+
+	MT_lock_set(&mal_profileLock);
+	for(j = 0; j <THREADS; j++){
+		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
+		c = workingset[j].cntxt;
+		m = workingset[j].mb;
+		s = workingset[j].stk;
+		p =  workingset[j].pci;
+		if( c && m && s && p )
+			/* show the event  assuming the quadruple is aligned*/
+			profilerEvent(c, m, s, p, 1);
+	}
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
