@@ -216,7 +216,7 @@ alter_table_add_predicates(mvc *sql, sql_table *top, sql_table *pt)
 	str msg = MAL_SUCCEED;
 
 	if (mvc_highwater(sql))
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (isMergeTable(pt)) {
 		for (node *n = pt->members->h; n; n = n->next) {
