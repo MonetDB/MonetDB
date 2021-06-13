@@ -3433,12 +3433,14 @@ sql_trans_valid(sql_trans *tr)
 		for(node *n = tr->predicates->h; n; n = n->next) {
 			pl *p = n->data;
 			sql_column *c = p->c;
-			storage *st = ATOMIC_PTR_GET(&c->t->data);
 
-			for (segment *s = st->segs->h; s ; s=s->next) {
-				if (s->ts < TRANSACTION_ID_BASE && s->ts >= tr->ts) {
-					ok = SQL_CONFLICT;
-					break;
+			if (isTable(c->t) && !isNew(c->t) && !isTempTable(c->t)) {
+				storage *st = ATOMIC_PTR_GET(&c->t->data);
+				for (segment *s = st->segs->h; s ; s=s->next) {
+					if (s->ts < TRANSACTION_ID_BASE && s->ts >= tr->ts) {
+						ok = SQL_CONFLICT;
+						break;
+					}
 				}
 			}
 		}
