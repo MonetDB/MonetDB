@@ -2495,7 +2495,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			} else if (hash_cand) {				\
 				/* private hash: no locks */		\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
-				     rb != HASHnil(hsh);		\
+				     rb != BUN_NONE;			\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					ro = canditer_idx(rci, rb);	\
 					if (!EQ_##TYPE(v, rvals[ro - r->hseqbase])) \
@@ -2510,7 +2510,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
-				     rb != HASHnil(hsh);		\
+				     rb != BUN_NONE;			\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					if (rb >= rl && rb < rh &&	\
 					    EQ_##TYPE(v, rvals[rb]) &&	\
@@ -2526,7 +2526,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				}					\
 			} else {					\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
-				     rb != HASHnil(hsh);		\
+				     rb != BUN_NONE;			\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					if (rb >= rl && rb < rh &&	\
 					    EQ_##TYPE(v, rvals[rb])) {	\
@@ -2719,7 +2719,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		 * so, we should return an empty result */
 		if (hash_cand) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
-			     rb != HASHnil(hsh);
+			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = canditer_idx(rci, rb);
 				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
@@ -2732,7 +2732,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 		} else if (!BATtdense(r)) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
-			     rb != HASHnil(hsh);
+			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
@@ -2794,7 +2794,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				}
 			} else if (hash_cand) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
-				     rb != HASHnil(hsh);
+				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					ro = canditer_idx(rci, rb);
 					if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
@@ -2826,7 +2826,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				}
 			} else if (rci->tpe != cand_dense) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
-				     rb != HASHnil(hsh);
+				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					if (rb >= rl && rb < rh &&
 					    (*(cmp))(v, BUNtail(ri, rb)) == 0 &&
@@ -2842,7 +2842,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				}
 			} else {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
-				     rb != HASHnil(hsh);
+				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					if (rb >= rl && rb < rh &&
 					    (*(cmp))(v, BUNtail(ri, rb)) == 0) {
@@ -3119,12 +3119,12 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			v = VALUE(b, o - b->hseqbase);
 			prb = HASHprobe(&hs, v);
 			for (hb = HASHget(&hs, prb);
-			     hb != HASHnil(&hs);
+			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hs, hb)) {
 				if (cmp(v, BUNtail(bi, hb)) == 0)
 					break;
 			}
-			if (hb == HASHnil(&hs)) {
+			if (hb == BUN_NONE) {
 				p = o - b->hseqbase;
 				cnt++;
 				/* enter into hash table */

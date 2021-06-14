@@ -1607,17 +1607,10 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) &&
 		(exp_is_atom(rs) || (rs2 && exp_is_atom(ls)) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 		(!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
-		int ls_is_col = ls->card > CARD_ATOM ? 1 : 0;
-		int rs_is_col = rs->card > CARD_ATOM ? 1 : 0;
-		int rs2_is_col = rs2 && rs2->card > CARD_ATOM ? 1 : 0;
-		int ncols = ls_is_col + rs_is_col + rs2_is_col;
-
-		/* later on we could improve this to pushdown more between cases */
-		if (rel->processed || ncols > 1 || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls) || (rs2 && exp_has_freevar(sql, rs2))) /* bin compare op */
+		if (ls->card == rs->card || (rs2 && (ls->card == rs2->card || rs->card == rs2->card)) || rel->processed) /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
-		sql_exp *col_exp = ls_is_col || !ncols ? ls : rs_is_col ? rs : rs2;
-		return push_select_exp(sql, rel, e, col_exp, f);
+		return push_select_exp(sql, rel, e, ls, f);
 	} else { /* join */
 		return push_join_exp(sql, rel, e, ls, rs, rs2, f);
 	}
