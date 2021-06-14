@@ -995,7 +995,6 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			default:
 				break;
 		}
-		col->base.deleted = 1;
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;

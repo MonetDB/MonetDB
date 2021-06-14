@@ -5364,6 +5364,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	if ((res = sys_drop_column(tr, col, drop_action)))
 		return res;
 
+	col->base.deleted = 1;
 	if (!isNew(col) && !isTempTable(col->t))
 		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
 			return res;
@@ -5973,6 +5974,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if (!isTempTable(i->t) && (res = sys_drop_idx(tr, i, drop_action)))
 		return res;
 
+	i->base.deleted = 1;
 	if (!isNew(i) && !isTempTable(i->t))
 		if ((res = store->storage_api.drop_idx(tr, (sql_idx*)dup_base(&i->base))))
 			return res;
