@@ -2,6 +2,96 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t0" ("c0" BIGINT,"c1" DOUBLE PRECISION,"c3" TIME,"c4" INTERVAL DAY)
+
+statement ok rowcount 5
+INSERT INTO "t0" VALUES (6, NULL, NULL, NULL), (8, NULL, NULL, NULL), (44, 0.011253359357251025, NULL, INTERVAL '345600' SECOND), (45, 2099043029, NULL, NULL), (-6, NULL, NULL, INTERVAL '86400' SECOND)
+
+statement ok
+CREATE TABLE "t1" ("c0" BIGINT)
+
+statement ok rowcount 7
+INSERT INTO "t1" VALUES (-482276492),(2),(0),(-1048351158),(1849849110),(6),(3)
+
+query I rowsort
+SELECT 1 FROM t0 FULL OUTER JOIN (SELECT DISTINCT NULLIF(t0.c0, 1) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t1) AS sub0 ON FALSE) AS sub0 ON FALSE
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" UUID)
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf')
+
+query T rowsort
+SELECT t1.c0 FROM t1 WHERE ((((FALSE)OR(CAST(greatest(5, 1) AS BOOLEAN))))OR((((t1.c0) BETWEEN SYMMETRIC (t1.c0) AND (t1.c0))OR(((t1.c0)<(t1.c0))))))
+----
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" INTEGER)
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES (1), (2), (3), (4)
+
+query I rowsort
+SELECT 1 FROM t1 FULL OUTER JOIN (SELECT 2 FROM t1 JOIN (SELECT sql_min(TIME '01:00:00', TIME '12:05:37') FROM t1) AS sub0(c0) ON TRUE WHERE true) AS sub0(c0) 
+ON CAST(6 AS DOUBLE)/(CASE 3 WHEN sub0.c0 THEN 0.2 END) > 2
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
 
 statement ok
@@ -53,7 +143,7 @@ CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c
 statement ok rowcount 4
 INSERT INTO "t1" VALUES (69), (-12), (9), (0)
 
-query T rowsort
+query I rowsort
 SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
 ----
 True
@@ -69,7 +159,7 @@ SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 
 69
 9
 
-query T rowsort
+query I rowsort
 SELECT least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) > -3 FROM t1
 ----
 True
@@ -98,7 +188,7 @@ statement ok rowcount 9
 INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
 (INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
 ----
 False

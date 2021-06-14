@@ -417,15 +417,21 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				// collect BAT variables garbage collected within the block
 				if( !simple)
 					for( k=q->retc; k<q->argc; k++){
-						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) )
-								top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
+						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) ){
+							InstrPtr r;
+							top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
+							r = newInstruction(NULL,languageRef, passRef);
+							getArg(r,0) = newTmpVariable(mb,TYPE_void);
+							r= addArgument(mb,r, getArg(q,k));
+							pushInstruction(mb,r);
+						}
 					}
 			}
 			/* exit parallel block */
 			if ( ! simple){
 				// force the pending final garbage statements
-				for( j=0; j<top; j++)
-					pushInstruction(mb,sink[j]);
+				//for( j=0; j<top; j++)
+					//pushInstruction(mb,sink[j]);
 				q= newAssignment(mb);
 				q->barrier= EXITsymbol;
 				getArg(q,0) = flowblock;
