@@ -2711,6 +2711,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hsh = r->thash;
 	}
 	assert(hsh != NULL || BATtdense(r));
+	if (hsh) {
+		TRC_DEBUG(ALGO, "hash for " ALGOBATFMT ": nbucket " BUNFMT ", nunique " BUNFMT ", nheads " BUNFMT "\n", ALGOBATPAR(r), hsh->nbucket, hsh->nunique, hsh->nheads);
+	}
 
 	ri = bat_iterator(r);
 
