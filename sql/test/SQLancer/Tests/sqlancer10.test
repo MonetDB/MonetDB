@@ -63,27 +63,27 @@ set optimizer = 'sequential_pipe'
 query T python .explain.function_histogram
 EXPLAIN SELECT 1 FROM t1 WHERE (((COALESCE('b', 'a'))ILIKE('c'))) = FALSE
 ----
-user.main
+algebra.likeselect
 1
+algebra.project
+5
+algebra.projection
+1
+algebra.thetaselect
+2
+bat.pack
+5
+bat.replace
+2
 querylog.define
 1
 sql.mvc
 1
+sql.resultSet
+1
 sql.tid
 1
-algebra.project
-5
-algebra.thetaselect
-2
-bat.replace
-2
-algebra.likeselect
-1
-algebra.projection
-1
-bat.pack
-5
-sql.resultSet
+user.main
 1
 
 statement ok

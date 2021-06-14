@@ -207,7 +207,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i, paused = 0;
 	str q;
-	QueryQueue tmp = NULL;
 
 	MT_lock_set(&mal_delayLock);
 
@@ -221,7 +220,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 	}
 
-	tmp = QRYqueue;
 	if ( QRYqueue == NULL) {
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= MAL_MAXCLIENTS));
 
@@ -231,32 +229,40 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			return;
 		}
 	}
+	assert(qhead < qsize);
 	// check for recursive call, which does not change the number of workers
+	if (stk->up) {
+		i = qtail;
+		while (i != qhead) {
+			if (QRYqueue[i].mb && QRYqueue[i].stk == stk->up) {
+				QRYqueue[i].stk = stk;
+				mb->tag = stk->tag = qtag++;
+				MT_lock_unset(&mal_delayLock);
+				return;
+			}
+			if (++i >= qsize)
+				i = 0;
+		}
+//		assert(0);
+	}
 	i=qtail;
 	while (i != qhead){
-		if (QRYqueue[i].mb && QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
-			QRYqueue[i].stk = stk;
-			mb->tag = stk->tag = qtag++;
-			MT_lock_unset(&mal_delayLock);
-			return;
-		}
-		if ( QRYqueue[i].status)
-			paused += (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
-		i++;
-		if ( i >= qsize)
+		paused += QRYqueue[i].status && (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
+		if (++i >= qsize)
 			i = 0;
 	}
-	assert(qhead < qsize);
 	if( qsize - paused < (size_t) MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
+		QueryQueue tmp;
 		tmp = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
 		if ( tmp == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			qsize -= MAL_MAXCLIENTS; /* undo increment */
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
 		QRYqueue = tmp;
-		for(i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
+		for (i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
 			clearQRYqueue(i);
 	}
 
@@ -367,7 +373,7 @@ mal_runtime_reset(void)
 /*
  * Each MAL instruction is executed by a single thread, which means we can
  * keep a simple working set around to make Stethscope attachement easy.
- * It can also be used to later shutdown each thread safely.
+ * The entries are privately accessed and only can be influenced by a starting stehoscope to emit work in progress.
  */
 Workingset workingset[THREADS];
 
@@ -380,12 +386,19 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	assert(pci);
 	/* keep track on the instructions taken in progress for stethoscope*/
 	if( tid < THREADS){
-		MT_lock_set(&mal_delayLock);
-		workingset[tid].cntxt = cntxt;
-		workingset[tid].mb = mb;
-		workingset[tid].stk = stk;
-		workingset[tid].pci = pci;
-		MT_lock_unset(&mal_delayLock);
+		if( malProfileMode) {
+			MT_lock_set(&mal_profileLock);
+			workingset[tid].cntxt = cntxt;
+			workingset[tid].mb = mb;
+			workingset[tid].stk = stk;
+			workingset[tid].pci = pci;
+			MT_lock_unset(&mal_profileLock);
+		} else{
+			workingset[tid].cntxt = cntxt;
+			workingset[tid].mb = mb;
+			workingset[tid].stk = stk;
+			workingset[tid].pci = pci;
+		}
 	}
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
@@ -404,11 +417,19 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	/* keep track on the instructions in progress*/
 	if ( tid < THREADS) {
-		MT_lock_set(&mal_delayLock);
-		workingset[tid].mb = 0;
-		workingset[tid].stk = 0;
-		workingset[tid].pci = 0;
-		MT_lock_unset(&mal_delayLock);
+		if( malProfileMode) {
+			MT_lock_set(&mal_profileLock);
+			workingset[tid].cntxt = 0;
+			workingset[tid].mb = 0;
+			workingset[tid].stk = 0;
+			workingset[tid].pci = 0;
+			MT_lock_unset(&mal_profileLock);
+		} else{
+			workingset[tid].cntxt = 0;
+			workingset[tid].mb = 0;
+			workingset[tid].stk = 0;
+			workingset[tid].pci = 0;
+		}
 	}
 
 	/* always collect the MAL instruction execution time */

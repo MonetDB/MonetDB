@@ -49,6 +49,9 @@ mal_export str createMalException(MalBlkPtr , int , enum malexception ,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 4, 5)))
 	__attribute__((__returns_nonnull__));
+mal_export char *concatErrors(char *err1, const char *err2)
+	__attribute__((__nonnull__(1, 2)))
+	__attribute__((__returns_nonnull__));
 mal_export bool isExceptionVariable(const char *nme);
 
 mal_export enum malexception	getExceptionType(const char *);

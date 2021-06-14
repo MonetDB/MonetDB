@@ -450,7 +450,8 @@ typedef struct sqlstore {
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too table/columns (storage) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too tables (storage) */
+	MT_Lock column_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
