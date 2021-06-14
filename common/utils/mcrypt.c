@@ -60,9 +60,7 @@ mcrypt_getHashAlgorithms(void)
 #ifdef HAVE_RIPEMD160_UPDATE
 		",RIPEMD160"
 #endif
-#ifdef HAVE_SHA512_UPDATE
 		",SHA512"
-#endif
 #ifdef HAVE_SHA384_UPDATE
 		",SHA384"
 #endif
@@ -306,6 +304,44 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 
 	return ret;
 }
+#else
+/* return private copy of SHA512 hash functions */
+#include "sha.h"
+char *
+mcrypt_SHA512Sum(const char *string, size_t len)
+{
+	static_assert(SHA512HashSize == 64, "SHA512HashSize should be 64");
+	char *ret = malloc(SHA512HashSize * 2 + 1);
+	if (ret) {
+		SHA512Context sc;
+		uint8_t md[SHA512HashSize];
+		SHA512Reset(&sc);
+		SHA512Input(&sc, (const uint8_t *) string, (unsigned int) len);
+		SHA512Result(&sc, md);
+		snprintf(ret, SHA512HashSize * 2 + 1,
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				 "%02x%02x%02x%02x",
+				 md[0], md[1], md[2], md[3], md[4],
+				 md[5], md[6], md[7], md[8], md[9],
+				 md[10], md[11], md[12], md[13], md[14],
+				 md[15], md[16], md[17], md[18], md[19],
+				 md[20], md[21], md[22], md[23], md[24],
+				 md[25], md[26], md[27], md[28], md[29],
+				 md[30], md[31], md[32], md[33], md[34],
+				 md[35], md[36], md[37], md[38], md[39],
+				 md[40], md[41], md[42], md[43], md[44],
+				 md[45], md[46], md[47], md[48], md[49],
+				 md[50], md[51], md[52], md[53], md[54],
+				 md[55], md[56], md[57], md[58], md[59],
+				 md[60], md[61], md[62], md[63]);
+	}
+	return ret;
+}
 #endif
 
 #ifdef HAVE_RIPEMD160_UPDATE
@@ -371,7 +407,6 @@ mcrypt_hashPassword(
 		const char *password,
 		const char *challenge)
 {
-#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 	char ret[sizeof(md) * 2 + 1];
 	int len;
@@ -391,18 +426,24 @@ mcrypt_hashPassword(
 		len = 40;
 	} else
 #endif
-#ifdef HAVE_SHA512_UPDATE
 	if (strcmp(algo, "SHA512") == 0) {
+#ifdef HAVE_SHA512_UPDATE
 		SHA512_CTX c;
 
 		SHA512_Init(&c);
 		SHA512_Update(&c, password, strlen(password));
 		SHA512_Update(&c, challenge, strlen(challenge));
 		SHA512_Final(md, &c);
+#else
+		SHA512Context sc;
+		SHA512Reset(&sc);
+		SHA512Input(&sc, (const uint8_t *) password, (unsigned int) strlen(password));
+		SHA512Input(&sc, (const uint8_t *) challenge, strlen(challenge));
+		SHA512Result(&sc, md);
+#endif
 
 		len = 128;
 	} else
-#endif
 #ifdef HAVE_SHA384_UPDATE
 	if (strcmp(algo, "SHA384") == 0) {
 		SHA512_CTX c;
@@ -463,7 +504,6 @@ mcrypt_hashPassword(
 		len = 32;
 	} else
 #endif
-#endif
 	{
 		(void) algo;
 		(void) password;
@@ -502,3 +542,7 @@ mcrypt_hashPassword(
 	return strdup(ret);
 #endif
 }
+
+#ifndef HAVE_SHA512_UPDATE
+#include "sha384-512.c"
+#endif
