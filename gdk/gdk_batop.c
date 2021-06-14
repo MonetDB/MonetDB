@@ -1797,7 +1797,7 @@ BATkeyed(BAT *b)
 			for (q = BUNlast(b), p = 0; p < q; p++) {
 				const void *v = BUNtail(bi, p);
 				for (hb = HASHgetlink(hs, p + lo);
-				     hb != HASHnil(hs) && hb >= lo;
+				     hb != BUN_NONE && hb >= lo;
 				     hb = HASHgetlink(hs, hb)) {
 					assert(hb < p + lo);
 					if ((*cmpf)(v, BUNtail(bi, hb - lo)) == 0) {
@@ -1841,7 +1841,7 @@ BATkeyed(BAT *b)
 				const void *v = BUNtail(bi, p);
 				prb = HASHprobe(hs, v);
 				for (hb = HASHget(hs, prb);
-				     hb != HASHnil(hs);
+				     hb != BUN_NONE;
 				     hb = HASHgetlink(hs, hb)) {
 					if (cmpf == NULL ||
 					    (*cmpf)(v, BUNtail(bi, hb)) == 0) {

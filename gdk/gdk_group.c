@@ -343,7 +343,7 @@
 				/* smaller than the one we're looking */ \
 				/* up (p) */				\
 				for (hb = HASHgetlink(hs, p);		\
-				     hb != HASHnil(hs) && hb >= lo;	\
+				     hb != BUN_NONE && hb >= lo;	\
 				     hb = HASHgetlink(hs, hb)) {	\
 					oid grp;			\
 					assert(hb < p);			\
@@ -361,7 +361,7 @@
 						break;			\
 					}				\
 				}					\
-				if (hb == HASHnil(hs) || hb < lo) {	\
+				if (hb == BUN_NONE || hb < lo) {	\
 					GRPnotfound();			\
 				}					\
 			}						\
@@ -377,7 +377,7 @@
 				/* smaller than the one we're looking */ \
 				/* up (p) */				\
 				for (hb = HASHgetlink(hs, p);		\
-				     hb != HASHnil(hs) && hb >= lo;	\
+				     hb != BUN_NONE && hb >= lo;	\
 				     hb = HASHgetlink(hs, hb)) {	\
 					oid grp;			\
 					assert(hb < p);			\
@@ -395,7 +395,7 @@
 						break;			\
 					}				\
 				}					\
-				if (hb == HASHnil(hs) || hb < lo) {	\
+				if (hb == BUN_NONE || hb < lo) {	\
 					GRPnotfound();			\
 				}					\
 			}						\
@@ -486,7 +486,7 @@ ctz(oid x)
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
-				     hb != HASHnil(hs);			\
+				     hb != BUN_NONE;			\
 				     hb = HASHgetlink(hs, hb)) {	\
 					ASSERT;				\
 					q = canditer_search_dense(&ci, hb + hseqb, false); \
@@ -504,7 +504,7 @@ ctz(oid x)
 						break;			\
 					}				\
 				}					\
-				if (hb == HASHnil(hs)) {		\
+				if (hb == BUN_NONE) {			\
 					GRPnotfound();			\
 					/* enter new group into hash table */ \
 					HASHputlink(hs, p, HASHget(hs, prb)); \
@@ -518,7 +518,7 @@ ctz(oid x)
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
-				     hb != HASHnil(hs);			\
+				     hb != BUN_NONE;			\
 				     hb = HASHgetlink(hs, hb)) {	\
 					ASSERT;				\
 					q = canditer_search(&ci, hb + hseqb, false); \
@@ -536,7 +536,7 @@ ctz(oid x)
 						break;			\
 					}				\
 				}					\
-				if (hb == HASHnil(hs)) {		\
+				if (hb == BUN_NONE) {			\
 					GRPnotfound();			\
 					/* enter new group into hash table */ \
 					HASHputlink(hs, p, HASHget(hs, prb)); \
@@ -545,7 +545,7 @@ ctz(oid x)
 			}						\
 		}							\
 	} while (0)
-#define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = HASHnil(hs); break; }
+#define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = BUN_NONE; break; }
 #define GRPTST(i, j)	if (grps[i] != grps[j]) continue
 #define NOGRPTST(i, j)	(void) 0
 #define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,EQUAL)		\
@@ -553,7 +553,7 @@ ctz(oid x)
 		INIT_0;							\
 		if (grps) {						\
 			if (gc) {					\
-				GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
+				GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,assert(HASHgetlink(hs, hb) == BUN_NONE || HASHgetlink(hs, hb) < hb),GCGRPTST); \
 			} else {					\
 				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[r]) >> bits),EQUAL,(void)0,GRPTST); \
 			}						\

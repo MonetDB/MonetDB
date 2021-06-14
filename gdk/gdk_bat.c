@@ -2663,7 +2663,7 @@ BATassertProps(BAT *b)
 				}
 				prb = HASHprobe(hs, valp);
 				for (hb = HASHget(hs, prb);
-				     hb != HASHnil(hs);
+				     hb != BUN_NONE;
 				     hb = HASHgetlink(hs, hb))
 					if (cmpf(valp, BUNtail(bi, hb)) == 0)
 						assert(!b->tkey);
