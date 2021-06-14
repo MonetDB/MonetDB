@@ -52,7 +52,7 @@ static int merge_delta( sql_delta *obat);
 /* Delete (in current trans or by some other finised transaction, or re-used segment which used to be deleted */
 #define SEG_IS_DELETED(seg,tr) \
 	((seg->deleted && (VALID_4_READ(seg->ts, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
-	 (!seg->deleted && OLD_VALID_4_READ(seg->ts, seg->oldts, tr)))
+	 (!seg->deleted && !VALID_4_READ(seg->ts, tr)))
 
 /* A segment is part of the current transaction is someway or is deleted by some other transaction but use to be valid */
 #define SEG_IS_VALID(seg, tr) \

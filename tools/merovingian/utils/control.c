@@ -197,9 +197,7 @@ control_setup(
 #ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
 #endif
-#ifdef HAVE_SHA512_UPDATE
 					"SHA512",
-#endif
 #ifdef HAVE_SHA384_UPDATE
 					"SHA384",
 #endif
@@ -283,11 +281,9 @@ control_setup(
 					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
 				} else
 #endif
-#ifdef HAVE_SHA512_UPDATE
 				if (strcmp(shash, "SHA512") == 0) {
 					phash = mcrypt_SHA512Sum(pass, strlen(pass));
 				} else
-#endif
 #ifdef HAVE_SHA384_UPDATE
 				if (strcmp(shash, "SHA384") == 0) {
 					phash = mcrypt_SHA384Sum(pass, strlen(pass));
@@ -316,7 +312,6 @@ control_setup(
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));
 				}
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
 				if (!phash) {
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
 							"allocation failure while establishing connection");
@@ -352,7 +347,6 @@ control_setup(
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));
 				}
-#endif
 			}
 		}
 
