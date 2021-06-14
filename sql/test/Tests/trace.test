@@ -25,7 +25,7 @@ select '~EndVariableOutput~'
 query I rowsort
 SELECT COUNT(*) FROM tracelog()
 ----
-5
+3
 
 statement ok
 DROP TABLE mytypes

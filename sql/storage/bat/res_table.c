@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "res_table.h"
+#include "bat_utils.h"
 #include "sql_types.h"
 
 static void
@@ -37,6 +38,7 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 	t->nr_cols = nr_cols;
 	t->nr_rows = 0;
 	t->cur_col = 0;
+	t->cur_row = 0;
 	t->cols = NEW_ARRAY(res_col, nr_cols);
 	if(!t->cols) {
 		_DELETE(t);
@@ -57,7 +59,7 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *val)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *val, bool cached)
 {
 	res_col *c = t->cols + t->cur_col;
 	BAT *b;
@@ -105,7 +107,11 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		}
 	}
 	c->b = b->batCacheid;
-	bat_incref(c->b);
+	c->cached = cached;
+	if (cached)
+		c->p = (void*)b;
+	else
+		bat_incref(c->b);
 	if (mtype != TYPE_bat)
 		BBPunfix(c->b);
 	t->cur_col++;
@@ -116,8 +122,10 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 static void
 res_col_destroy(res_col *c)
 {
-	if (c->b) {
+	if (c->b && !c->cached) {
 		bat_decref(c->b);
+	} else if (c->b) {
+		bat_destroy((BAT*)c->p);
 	} else {
 		_DELETE(c->p);
 	}

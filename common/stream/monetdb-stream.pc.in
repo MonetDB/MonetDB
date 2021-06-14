@@ -4,12 +4,16 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
 Name: monetdb-stream
 Description: MonetDB streams libary
 URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
 Requires.private: @PKG_ZLIB@ @PKG_BZIP2@ @PKG_CURL@ @PKG_LZMA@ @PKG_SNAPPY@
 
-Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lstream
+Libs: -L${libdir} -lstream
 Libs.private: @SOCKET_LIBS@ @PKG_LIBICONV@
-Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb
+Cflags: -I${includedir}/monetdb

@@ -60,7 +60,7 @@ union (
 | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2010-01-01 00:00:00.000000") ]
 | ) [ tinyint "1" ]
-) [ "%6"."%6" NOT NULL ]
+) [ "%4"."%4" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp IN (TIMESTAMP '2000-02-01 00:00:00', TIMESTAMP '2010-02-01 00:00:00', TIMESTAMP '2020-02-01 00:00:00')
@@ -77,13 +77,13 @@ union (
 | | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ "splitted"."stamp" in (timestamp(7) "2000-02-01 00:00:00.000000", timestamp(7) "2010-02-01 00:00:00.000000", timestamp(7) "2020-02-01 00:00:00.000000") ]
 | | ) [ tinyint "1" ]
-| ) [ "%12"."%12" NOT NULL ],
+| ) [ "%6"."%6" NOT NULL ],
 | project (
 | | select (
 | | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" in (timestamp(7) "2000-02-01 00:00:00.000000", timestamp(7) "2010-02-01 00:00:00.000000", timestamp(7) "2020-02-01 00:00:00.000000") ]
 | ) [ tinyint "1" ]
-) [ "%11"."%11" NOT NULL ]
+) [ "%5"."%5" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
@@ -108,7 +108,7 @@ union (
 | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2020-01-01 00:00:00.000000" ! <= "splitted"."stamp" ! <= timestamp(7) "2020-10-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2010-01-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
@@ -124,7 +124,7 @@ union (
 | | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
@@ -141,13 +141,13 @@ union (
 | | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ timestamp(7) "2000-02-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | | ) [ tinyint "1" ]
-| ) [ "%11"."%11" NOT NULL ],
+| ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
 | | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2000-02-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%10"."%10" NOT NULL ]
+) [ "%4"."%4" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
@@ -176,7 +176,7 @@ union (
 | | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" > timestamp(7) "2010-03-01 00:00:00.000000" ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp <= TIMESTAMP '2009-01-01 00:00:00'
@@ -211,13 +211,13 @@ union (
 | | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" ]
 | | ) [ tinyint "1" ]
-| ) [ "%11"."%11" NOT NULL ],
+| ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
 | | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" ]
 | ) [ tinyint "1" ]
-) [ "%10"."%10" NOT NULL ]
+) [ "%4"."%4" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp < TIMESTAMP '2000-01-01 00:00:00'
@@ -278,7 +278,7 @@ union (
 | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2000-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
@@ -312,7 +312,7 @@ union (
 | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2001-01-02 00:00:00.000000" < "splitted"."stamp" < timestamp(7) "2015-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2010-01-01 00:00:00'
@@ -337,7 +337,7 @@ union (
 | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2010-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
@@ -354,13 +354,13 @@ union (
 | | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | | ) [ tinyint "1" ]
-| ) [ "%11"."%11" NOT NULL ],
+| ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
 | | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%10"."%10" NOT NULL ]
+) [ "%4"."%4" NOT NULL ]
 
 statement ok
 CREATE TABLE fourth_decade (stamp TIMESTAMP, val INT)
@@ -368,7 +368,7 @@ CREATE TABLE fourth_decade (stamp TIMESTAMP, val INT)
 statement ok
 ALTER TABLE splitted ADD TABLE fourth_decade AS PARTITION FROM RANGE MINVALUE TO TIMESTAMP '2000-01-01 00:00:00'
 
-statement ok rowcount 0
+statement ok rowcount 1
 INSERT INTO splitted VALUES (TIMESTAMP '1999-01-01 00:00:00', 7)
 
 query T nosort
@@ -394,7 +394,7 @@ union (
 | | | table("sys"."fourth_decade") [ "fourth_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "1999-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2001-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
@@ -484,13 +484,13 @@ union (
 | | | | table("sys"."second_decade2") [ "second_decade2"."val" as "splitted2"."val" ] COUNT 
 | | | ) [ "splitted2"."val" = int "1" ]
 | | ) [ tinyint "1" ]
-| ) [ "%11"."%11" NOT NULL ],
+| ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
 | | | table("sys"."third_decade2") [ "third_decade2"."val" as "splitted2"."val" ] COUNT 
 | | ) [ "splitted2"."val" = int "1" ]
 | ) [ tinyint "1" ]
-) [ "%10"."%10" NOT NULL ]
+) [ "%4"."%4" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted2 where stamp is null
@@ -637,7 +637,7 @@ union (
 | | | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | | ) [ "table1"."a" in (int "10", int "11") ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from table1 where a >= 10
@@ -653,7 +653,7 @@ union (
 | | | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | | ) [ "table1"."a" >= int "10" ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from table1 where a > 10
@@ -696,7 +696,7 @@ union (
 | | | table("sys"."another2") [ "another2"."a" as "table1"."a", "another2"."b" as "table1"."b" ] COUNT 
 | | ) [ ("table1"."a" = int "10") or ("table1"."b" = int "11") ]
 | ) [ tinyint "1" ]
-) [ "%5"."%5" NOT NULL ]
+) [ "%3"."%3" NOT NULL ]
 
 query T nosort
 plan select 1 from table1 where a not between 10 and 11

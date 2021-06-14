@@ -1311,8 +1311,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create function sys.tracelog()\n"
 			" returns table (\n"
 			"  ticks bigint, -- time in microseconds\n"
-			"  stmt string,  -- actual statement executed\n"
-			"  event string  -- profiler event executed\n"
+			"  stmt string  -- actual statement executed\n"
 			" )\n"
 			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n"
@@ -1476,8 +1475,8 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"\"status\" string,\n"
 			"\"query\" string,\n"
 			"\"progress\" int,\n"
-			"\"workers\" int,\n"
-			"\"memory\" int)\n"
+			"\"maxworkers\" int,\n"
+			"\"footprint\" int)\n"
 			" external name sysmon.queue;\n"
 			"grant execute on function sys.queue to public;\n"
 			"create view sys.queue as select * from sys.queue();\n"
@@ -2405,6 +2404,36 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"external name \"sql\".\"deltas\";\n"
 							"update sys.functions set system = true"
 							" where schema_id = 2000 and name = 'deltas';\n");
+
+			/* 26_sysmon */
+			t = mvc_bind_table(sql, s, "queue");
+			t->system = 0; /* make it non-system else the drop view will fail */
+
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop view sys.queue;\n"
+							"drop function sys.queue;\n"
+							"create function sys.queue()\n"
+							"returns table(\n"
+							"\"tag\" bigint,\n"
+							"\"sessionid\" int,\n"
+							"\"username\" string,\n"
+							"\"started\" timestamp,\n"
+							"\"status\" string,\n"
+							"\"query\" string,\n"
+							"\"finished\" timestamp,\n"
+							"\"maxworkers\" int,\n"
+							"\"footprint\" int\n"
+							")\n"
+							"external name sysmon.queue;\n"
+							"grant execute on function sys.queue to public;\n"
+							"create view sys.queue as select * from sys.queue();\n"
+							"grant select on sys.queue to public;\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+							"update sys.functions set system = true where system <> true and schema_id = 2000"
+							" and name = 'queue' and type = %d;\n", (int) F_UNION);
+			pos += snprintf(buf + pos, bufsize - pos,
+							"update sys._tables set system = true where schema_id = 2000"
+							" and name = 'queue';\n");
 
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -3361,6 +3390,68 @@ bailout:
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	sql_subtype tp;
+	size_t bufsize = 65536, pos = 0;
+	char *buf = NULL, *err = NULL;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
+
+	(void) systabfixed;
+	sql_find_subtype(&tp, "bigint", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		/* nothing to do */
+		return NULL;
+	}
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"drop function sys.epoch(bigint);\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create function sys.epoch(sec DECIMAL(18,3)) "
+					"returns TIMESTAMP WITH TIME ZONE\n"
+					"external name mtime.epoch;\n"
+					"grant execute on function sys.epoch (DECIMAL(18,3)) to public;\n"
+					"update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = %d;\n", F_FUNC);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+	/* 16_tracelog */
+	t = mvc_bind_table(sql, s, "tracelog");
+	t->system = 0; /* make it non-system else the drop view will fail */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.tracelog;\n"
+			"drop function sys.tracelog();\n"
+			"create function sys.tracelog()\n"
+			" returns table (\n"
+			"  ticks bigint, -- time in microseconds\n"
+			"  stmt string,  -- actual statement executed\n"
+			"  event string  -- profiler event executed\n"
+			" )\n"
+			" external name sql.dump_trace;\n"
+			"create view sys.tracelog as select * from sys.tracelog();\n"
+			"update sys._tables set system = true where system <> true and schema_id = 2000"
+			" and name = 'tracelog';\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000"
+			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -3599,6 +3690,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jul2021(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

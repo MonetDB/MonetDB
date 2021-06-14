@@ -89,14 +89,14 @@ ntile##IMP##TPE: \
 #define ANALYTICAL_NTILE_SINGLE_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE ntl = *(TPE*) ntile; \
-		if (!is_##TPE##_nil(ntl) && ntl < 0) goto invalidntile; \
+		if (!is_##TPE##_nil(ntl) && ntl <= 0) goto invalidntile; \
 		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ;); \
 	} while (0)
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
-		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val < 0) goto invalidntile;); \
+		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile;); \
 	} while (0)
 
 gdk_return
@@ -1838,7 +1838,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 bailout:
 	GDKerror("42000!error while calculating floating-point sum\n");
 	res = GDK_FAIL;
-	goto cleanup; 
+	goto cleanup;
 calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;

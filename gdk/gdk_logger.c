@@ -908,7 +908,7 @@ logger_create_types_file(logger *lg, const char *filename)
 		return GDK_FAIL;
 	}
 
-	if (logger_write_new_types(lg, fp) == GDK_FAIL) {
+	if (logger_write_new_types(lg, fp) != GDK_SUCCEED) {
 		fclose(fp);
 		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
@@ -922,7 +922,12 @@ logger_create_types_file(logger *lg, const char *filename)
 #elif defined(HAVE_FSYNC)
 		     && fsync(fileno(fp)) < 0
 #endif
-	    ) || fclose(fp) < 0) {
+	    )) {
+		MT_remove(filename);
+		GDKerror("flushing log file %s failed", filename);
+		return GDK_FAIL;
+	}
+	if (fclose(fp) < 0) {
 		MT_remove(filename);
 		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
@@ -1072,14 +1077,12 @@ logger_read_transaction(logger *lg)
 		case LOG_START:
 			if (l.id > lg->tid)
 				lg->tid = l.id;
-			lng trans_id;
-			if (!mnstr_readLng(lg->input_log, &trans_id) ||
-			   (tr = tr_create(tr, l.id)) == NULL) {
+			if ((tr = tr_create(tr, l.id)) == NULL) {
 				err = LOG_ERR;
 				break;
 			}
 			if (lg->debug & 1)
-				fprintf(stderr, "#logger tstart %d-" LLFMT "\n", tr->tid, trans_id);
+				fprintf(stderr, "#logger tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
 			if (tr == NULL)
@@ -1190,7 +1193,8 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
 	 * abort and move to the next log file */
-	return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
+	//return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -1243,6 +1247,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	assert(!lg->inmemory);
 	if (fscanf(fp, "%6d", &version) != 1) {
 		GDKerror("Could not read the version number from the file '%s/log'.\n", lg->dir);
+		fclose(fp);
 		return GDK_FAIL;
 	}
 	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
@@ -1251,8 +1256,10 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
 		if (lg->catalog_bid == NULL || lg->catalog_id == NULL || lg->dcatalog == NULL) {
 			GDKerror("cannot create catalog bats");
+			fclose(fp);
 			return GDK_FAIL;
 		}
+		/* old_logger_load always closes fp */
 		if (old_logger_load(lg, fn, logdir, fp, version, filename) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
@@ -1270,6 +1277,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 "this server supports version %06d.\n%s",
 				 version, lg->version,
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
+			fclose(fp);
 			return GDK_FAIL;
 		}
 	} else {
@@ -1277,8 +1285,8 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	}
 	if (fgetc(fp) != '\n' ||	 /* skip \n */
 	    fgetc(fp) != '\n') {	 /* skip \n */
-		fclose(fp);
 		GDKerror("Badly formatted log file");
+		fclose(fp);
 		return GDK_FAIL;
 	}
 	if (logger_read_types_file(lg, fp) != GDK_SUCCEED) {
@@ -1385,13 +1393,16 @@ bm_subcommit(logger *lg)
 	const lng *cnts = NULL, *lids = NULL;
 	int cleanup = 0;
 
-	if (n == NULL)
+	if (n == NULL || sizes == NULL) {
+		GDKfree(n);
+		GDKfree(sizes);
 		return GDK_FAIL;
+	}
 
 	sizes[i] = 0;
 	n[i++] = 0;		/* n[0] is not used */
 	bids = (const log_bid *) Tloc(catalog_bid, 0);
-	if (/*!LOG_DISABLED(lg) && */lg->catalog_cnt)
+	if (lg->catalog_cnt)
 		cnts = (const lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (const lng *) Tloc(lg->catalog_lid, 0);
@@ -1434,6 +1445,8 @@ bm_subcommit(logger *lg)
 			if ((lb = BATdescriptor(bids[pos])) == NULL ||
 		    	    BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
 				logbat_destroy(lb);
+				GDKfree(n);
+				GDKfree(sizes);
 				return GDK_FAIL;
 			}
 			//assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
@@ -1671,7 +1684,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			fclose(fp);
 			fp = NULL;
 			if (GDKunlink(0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
-			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
+			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL, true) != GDK_SUCCEED)
 				goto error;
 		} else if (errno != ENOENT) {
 			GDKsyserror("open %s failed", bak);
@@ -1695,6 +1708,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	if (lg->type_id == NULL || lg->type_nme == NULL || lg->type_nr == NULL) {
 		if (fp)
 			fclose(fp);
+		fp = NULL;
 		GDKerror("cannot create type bats");
 		goto error;
 	}
@@ -1718,11 +1732,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		 * shouldn't exist */
 		if (fp != NULL) {
 			GDKerror("there is no logger catalog, "
-				 "but there is a log file. "
-				 "Are you sure you are using the correct "
-				 "combination of database "
-				 "(--dbpath) and log directory "
-				 "(--set %s_logdir)?\n", fn);
+				 "but there is a log file.\n");
 			goto error;
 		}
 
@@ -1786,23 +1796,18 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL && !LOG_DISABLED(lg)) {
-			GDKerror("there is a logger catalog, but no log file. "
-				 "Are you sure you are using the correct combination of database "
-				 "(--dbpath) and log directory (--set %s_logdir)? "
-				 "If you have done a recent update of the server, it may be that your "
-				 "logs are in an old location.  You should then either use "
-				 "--set %s_logdir=<path to old log directory> or move the old log "
-				 "directory to the new location (%s).\n",
-				 fn, fn, lg->dir);
+			GDKerror("There is a logger catalog, but no log file.\n");
 			goto error;
 		}
-		if (fp != NULL && check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
-			fp = NULL;
-			goto error;
-		}
-		if (fp)
+		if (fp != NULL) {
+			/* check_version always closes fp */
+			if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) {
+				fp = NULL;
+				goto error;
+			}
 			readlogs = true;
-		fp = NULL;
+			fp = NULL;
+		}
 
 		if (lg->catalog_bid == NULL && lg->catalog_id == NULL && lg->dcatalog == NULL) {
 			b = BATdescriptor(catalog_bid);
@@ -1866,7 +1871,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	if (BBPrename(lg->catalog_lid->batCacheid, bak) < 0) {
 		goto error;
 	}
-	if (bm_get_counts(lg) == GDK_FAIL)
+	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
 	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
@@ -1904,7 +1909,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		needcommit = true;
 	}
 	dbg = GDKdebug;
-	GDKdebug &= ~CHECKMASK;
+	GDKdebug &= ~(CHECKMASK|PROPMASK);
 	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
 		GDKerror("Logger_new: commit failed");
 		goto error;
@@ -1918,9 +1923,12 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 		if (lg->postfuncp && (*lg->postfuncp)(lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
+		dbg = GDKdebug;
+		GDKdebug &= ~(CHECKMASK|PROPMASK);
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			goto error;
 		}
+		GDKdebug = dbg;
 		for( ; log_id <= lg->saved_id; log_id++)
 			(void)logger_cleanup(lg, log_id);  /* ignore error of removing file */
 	} else {
@@ -1944,6 +1952,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	GDKfree(lg->local_dir);
 	GDKfree(lg->buf);
 	GDKfree(lg);
+	GDKdebug = dbg;
 	return GDK_FAIL;
 }
 
@@ -2019,7 +2028,9 @@ logger_destroy(logger *lg)
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = lg->id;
 		lg->saved_tid = lg->tid;
+		logger_lock(lg);
 		logger_commit(lg);
+		logger_unlock(lg);
 	}
 	if (lg->catalog_bid) {
 		logger_lock(lg);
@@ -2122,9 +2133,10 @@ logger_flush(logger *lg, ulng ts)
 		lg->saved_tid = lg->tid;
 		if (lid)
 			logger_cleanup_range(lg);
-		if (logger_commit(lg) != GDK_SUCCEED) {
+		logger_lock(lg);
+		if (logger_commit(lg) != GDK_SUCCEED)
 			TRC_ERROR(GDK, "failed to commit");
-		}
+		logger_unlock(lg);
 		return GDK_SUCCEED;
 	}
 	if (lg->saved_id >= lid)
@@ -2151,7 +2163,7 @@ logger_flush(logger *lg, ulng ts)
 			}
 
 			bool filemissing = false;
-			if (logger_open_input(lg, filename, &filemissing) == GDK_FAIL) {
+			if (logger_open_input(lg, filename, &filemissing) != GDK_SUCCEED) {
 				GDKfree(filename);
 				return GDK_FAIL;
 			}
@@ -2537,7 +2549,7 @@ pre_allocate(logger *lg)
 }
 
 gdk_return
-log_tend(logger *lg)
+log_tend(logger *lg, ulng commit_ts)
 {
 	logformat l;
 	gdk_return res = GDK_SUCCEED;
@@ -2549,7 +2561,15 @@ log_tend(logger *lg)
 	l.id = lg->tid;
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		return logger_commit(lg);
+		logger_lock(lg);
+		gdk_return res = logger_commit(lg);
+		logger_unlock(lg);
+		return res;
+	}
+
+	if (lg->current) {
+		lg->current->last_tid = lg->tid;
+		lg->current->last_ts = commit_ts;
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -2727,7 +2747,7 @@ logger_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, ulng commit_ts, bool flushnow)
+log_tstart(logger *lg, bool flushnow)
 {
 	logformat l;
 
@@ -2738,12 +2758,8 @@ log_tstart(logger *lg, ulng commit_ts, bool flushnow)
 		if (logger_open_output(lg) != GDK_SUCCEED)
 			return GDK_FAIL;
 		while (lg->saved_id+1 < lg->id)
-			logger_flush(lg, commit_ts);
+			logger_flush(lg, (1ULL<<63));
 		lg->flushnow = flushnow;
-	}
-	if (lg->current) {
-		lg->current->last_tid = lg->tid+1;
-		lg->current->last_ts = commit_ts;
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -2756,8 +2772,7 @@ log_tstart(logger *lg, ulng commit_ts, bool flushnow)
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
-	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    !mnstr_writeLng(lg->output_log, commit_ts))
+	if (log_write_format(lg, &l) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }

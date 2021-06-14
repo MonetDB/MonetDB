@@ -307,15 +307,14 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		limit = *getArgReference_int(stk,pci,1);
 	}
 
-	if( limit > (int)(GDK_mem_maxsize / LL_CONSTANT(1048576)) )
-		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory ");
-
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setmemorylimit","Illegal session id");
 	if( is_int_nil(limit))
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
+	if( (size_t) limit > GDK_mem_maxsize / 1048576)
+		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)

@@ -83,10 +83,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		t = IMPSimprintsize(b);
 		if( t > itotal)
 			itotal = t;
+		/* We should also consider the ordered index size */
 		t = b->torderidx && b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;
 		if( t > itotal)
 			itotal = t;
-		/* We should also consider the mosaic */
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
 		if ( total < itotal)
@@ -140,6 +140,11 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 		}
 		memorypool -= argclaim;
 		stk->workers++;
+		stk->memory += argclaim;
+		if( mb->workers < stk->workers)
+			mb->workers = stk->workers;
+		if( mb->memory < stk->memory)
+			mb->memory = stk->memory;
 		MT_lock_unset(&admissionLock);
 		return 0;
 	}
@@ -166,6 +171,7 @@ MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, ln
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 	stk->workers--;
+	stk->memory -= argclaim;
 	MT_lock_unset(&admissionLock);
 	return;
 }
