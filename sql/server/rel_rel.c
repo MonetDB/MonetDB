@@ -1128,9 +1128,7 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
 	return rel;
 }
 
-/* ls is the left expression of the select, rs is a simple atom, e is the
-   select expression.
- */
+/* ls is the left expression of the select, e is the select expression.  */
 sql_rel *
 rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 {

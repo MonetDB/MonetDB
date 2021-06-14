@@ -327,9 +327,8 @@ DFLOWworker(void *T)
 	struct worker *t = (struct worker *) T;
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
-	int tid = THRgettid();
 	str error = 0;
-	int i,last;
+	int i;
 	lng claim;
 	Client cntxt;
 	InstrPtr p;
@@ -400,10 +399,6 @@ DFLOWworker(void *T)
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
 		/* release the memory claim */
 		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
-		/* update the numa information. keep the thread-id producing the value */
-		p= getInstrPtr(flow->mb,fe->pc);
-		for( i = 0; i < p->argc; i++)
-			setVarWorker(flow->mb,getArg(p,i),tid);
 
 		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;
@@ -438,21 +433,29 @@ DFLOWworker(void *T)
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 	}
-		MT_lock_set(&flow->flowlock);
-
-		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
-			if (flow->status[i].state == DFLOWpending &&
-				flow->status[i].blocks == 1) {
-				flow->status[i].state = DFLOWrunning;
-				flow->status[i].blocks = 0;
-				flow->status[i].hotclaim = fe->hotclaim;
-				flow->status[i].argclaim += fe->hotclaim;
-				if( flow->status[i].maxclaim < fe->maxclaim)
-					flow->status[i].maxclaim = fe->maxclaim;
-				fnxt = flow->status + i;
-				break;
-			}
-		MT_lock_unset(&flow->flowlock);
+/* the Hot potatoe also triggers that all binds are executed at the start
+ * while they are not immediately needed. Each subquery should be handled completely
+ * first. This means that in practive nthread subqueries will start processin.
+ */
+// #define HOTPOTATOE
+#ifdef HOTPOTATOE
+	/* HOT potatoe choice */
+	MT_lock_set(&flow->flowlock);
+	int last = 0;
+	for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
+		if (flow->status[i].state == DFLOWpending &&
+			flow->status[i].blocks == 1) {
+			flow->status[i].state = DFLOWrunning;
+			flow->status[i].blocks = 0;
+			flow->status[i].hotclaim = fe->hotclaim;
+			flow->status[i].argclaim += fe->hotclaim;
+			if( flow->status[i].maxclaim < fe->maxclaim)
+				flow->status[i].maxclaim = fe->maxclaim;
+			fnxt = flow->status + i;
+			break;
+		}
+	MT_lock_unset(&flow->flowlock);
+#endif
 
 		q_enqueue(flow->done, fe);
         if ( fnxt == 0 && malProfileMode) {

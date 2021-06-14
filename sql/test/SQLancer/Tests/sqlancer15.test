@@ -162,7 +162,7 @@ INSERT INTO "t2" VALUES (false, DATE '1970-01-01', 0.42016214),(true, DATE '1970
 (true, DATE '1970-01-01', NULL),(false, DATE '1970-01-01', 0.2627602),(true, DATE '1970-01-01', NULL),(true, DATE '1970-01-01', NULL),(true, DATE '1969-12-13', NULL)
 
 query I rowsort
-SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)));
+SELECT 1 FROM t2 WHERE (TIME '01:00:00') NOT IN (TIME '01:00:00', TIME '01:00:00') NOT IN ((VALUES (TRUE)))
 ----
 1
 1
@@ -266,7 +266,7 @@ statement ok rowcount 2
 INSERT INTO "t0" VALUES (3), (2)
 
 query IIIIII rowsort
-select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3;
+select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3
 ----
 3
 1
@@ -658,35 +658,6 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
-
-statement ok
-CREATE TABLE t1(c0 INTERVAL DAY, c1 BIGINT)
-
-statement ok rowcount 2
-INSERT INTO t1(c1) VALUES(3), (5)
-
-statement ok rowcount 3
-INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
-
-statement ok rowcount 3
-TRUNCATE t0
-
-statement ok rowcount 1
-INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
-
-query T rowsort
-SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
-----
-8 days
-
-statement ok
-ROLLBACK
-
-statement ok
-START TRANSACTION
-
-statement ok
 CREATE TABLE "t0" ("c3" TIMESTAMP)
 
 statement ok rowcount 10
@@ -714,34 +685,176 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE "t0" ("c3" INTERVAL SECOND)
+CREATE TABLE "t0" ("c0" VARCHAR(32),"c1" REAL NOT NULL)
 
-statement ok rowcount 9
-INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
-(INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
-
-query T rowsort
-SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
-----
-False
+statement ok rowcount 20
+INSERT INTO "t0" VALUES ('|', 0.040731274),('儁\001萂y', 0.006212054),('N㸊', 3),(NULL, 0.35244483),(NULL, 1.2527365e+09),('g\t!cWW', 1.0299588e+09),
+('1350272002', 0.718041),('V', 0.409386),('88', 1.2198221e+09),('*', 0.7400003),('0.5962615646747591', 0.06295456),('dJ>w++', 0),(NULL, 0.111538105),
+(NULL, 4),('0.000000', 8),(NULL, 0.2905001),(NULL, 40),(NULL, 5),(NULL, 0.14210498),('', 0.8845672)
 
 query T rowsort
-SELECT t0.c3 FROM t0 WHERE ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1)
+SELECT t0.c0 FROM t0 WHERE ('*') BETWEEN ASYMMETRIC ('j^O') AND ('')
 ----
-0:00:00
-0:00:01
-0:00:01
-0:00:04
-0:00:06
-0:00:06
-0:00:09
-0:00:09
-NULL
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(ifthenelse((SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE), 2, 1) AS INT) as count FROM t0) as res
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(('*') BETWEEN ASYMMETRIC ('j^O') AND ('') AS INT) as count FROM t0) as res
 ----
-9
+0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" CHARACTER LARGE OBJECT,"c2" DOUBLE)
+
+statement ok rowcount 20
+COPY 20 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"1970"	NULL
+"3"	NULL
+NULL	NULL
+"3"	NULL
+"W"	NULL
+"-"	NULL
+"t "	NULL
+"0.1454211084558179"	NULL
+"2"	NULL
+""	0.18341645025687223
+NULL	0.5805338105211456
+NULL	1810425471
+NULL	NULL
+NULL	0.8204238200689035
+"Lxy}"	NULL
+"-887573436"	NULL
+NULL	0.6211363
+NULL	0.6211363
+"0.21185164"	NULL
+"0.36241230481890585"	NULL
+
+query I rowsort
+SELECT CASE WHEN t0.c2 = t0.c2 THEN 1 ELSE ascii(t0.c0) END FROM t0 LEFT OUTER JOIN (VALUES (1), (1), (- 81524669)) AS sub0 ON 1 <= t0.c2
+----
+1
+1
+1
+1
+1
+1
+1
+1
+116
+45
+45
+48
+48
+48
+49
+50
+51
+51
+76
+87
+NULL
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 DOUBLE UNIQUE, c1 CHAR(224), c4 boolean)
+
+statement ok
+CREATE TABLE t1(c0 DOUBLE PRECISION UNIQUE, c1 DOUBLE PRECISION, FOREIGN KEY (c0) REFERENCES t0(c0))
+
+statement ok
+INSERT INTO t0(c1) VALUES('-521239643'), ('-1125457389'), ('0.18375426768390923')
+
+statement ok
+DELETE FROM t0
+
+statement ok
+TRUNCATE t0
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t1(c0 smallint, c1 INTERVAL MONTH, c3 bigint, c4 bigint)
+
+statement ok rowcount 6
+INSERT INTO t1(c1, c3, c0, c4) VALUES(INTERVAL '7' MONTH, NULL, 8, 7), (NULL, NULL, -9, NULL) , (NULL, 6, NULL, NULL), (NULL, 1228321393, NULL, NULL), (NULL, 8, NULL, NULL), (NULL, NULL, NULL, -10)
+
+statement ok rowcount 1
+DELETE FROM t1 WHERE t1.c1 = INTERVAL '7' MONTH
+
+statement ok rowcount 5
+INSERT INTO t1(c1, c3) VALUES(INTERVAL '4' MONTH, 1000), (INTERVAL '9' MONTH, NULL), (INTERVAL '-8' MONTH, NULL), (INTERVAL '1' MONTH, NULL), (INTERVAL '3' MONTH, NULL)
+
+statement ok rowcount 4
+INSERT INTO t1(c0, c1) VALUES(-1, INTERVAL '6' MONTH), (2, NULL), (9, NULL), (10, NULL)
+
+statement ok rowcount 3
+INSERT INTO t1(c4, c1, c0) VALUES(0.34700167, INTERVAL '5' MONTH, 0), (9, INTERVAL '-4' MONTH, NULL), (-2, INTERVAL '-2' MONTH, NULL)
+
+statement ok rowcount 17
+UPDATE t1 SET c0 = 0, c1 = INTERVAL '-8' MONTH, c4 = least(t1.c4, 0)
+
+statement ok
+DROP TABLE t1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t1(c0 tinyint, c1 BLOB)
+
+statement ok
+CREATE TABLE t2(c0 tinyint, c1 BLOB, c3 DOUBLE)
+
+statement ok rowcount 1
+INSERT INTO t2(c1, c3, c0) VALUES(BLOB 'bC4AF0', 0.7, 4)
+
+statement ok rowcount 1
+DELETE FROM t2 WHERE TRUE
+
+statement ok rowcount 2
+INSERT INTO t2(c0, c1, c3) VALUES(-0.2, BLOB '', 0.5), (3, BLOB '', 0.7)
+
+statement ok rowcount 6
+INSERT INTO t2(c0) VALUES(0), (6), (7), (6), (2), (5)
+
+statement ok rowcount 1
+INSERT INTO t2(c3) VALUES(0.3)
+
+statement ok rowcount 2
+INSERT INTO t2(c1, c3) VALUES(BLOB 'c51b70', 1), (BLOB 'a7BE7D64', 0.6)
+
+statement ok rowcount 1
+INSERT INTO t2(c1, c0) VALUES(BLOB '20', 5)
+
+statement ok rowcount 1
+INSERT INTO t2(c3, c0, c1) VALUES(-6.1, 9, BLOB 'A4')
+
+statement ok rowcount 2
+INSERT INTO t2(c3) VALUES(0.3), (0.7)
+
+statement ok rowcount 1
+INSERT INTO t2(c0, c3, c1) VALUES(0, 0.4, BLOB '')
+
+statement ok rowcount 1
+INSERT INTO t1(c0) VALUES(2)
+
+statement ok rowcount 1
+INSERT INTO t2(c1, c0) VALUES(BLOB 'FCb405', NULL)
+
+statement ok rowcount 17
+UPDATE t2 SET c1 = BLOB 'AA' FROM t1 WHERE 0.11 NOT BETWEEN t1.c0 AND 0.47
 
 statement ok
 ROLLBACK

@@ -315,7 +315,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
  * A move routine is overloaded to deal with extensions.
  */
 gdk_return
-GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
+GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
 {
 	char *path1;
 	char *path2;
@@ -329,7 +329,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	path2 = GDKfilepath(farmid, dir2, nme2, ext2);
 	if (path1 && path2) {
 		ret = MT_rename(path1, path2);
-		if (ret < 0)
+		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
 		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
@@ -799,20 +799,11 @@ BATsave(BAT *bd)
 		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
 			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
-			if (
-#if defined(NATIVE_WIN32)
-				_commit(fd) < 0
-#elif defined(HAVE_FDATASYNC)
-				fdatasync(fd) < 0
-#elif defined(HAVE_FSYNC)
-				fsync(fd) < 0
-#endif
-				)
-				GDKsyserror("sync failed for %s.%s\n", nme,
+			if (fd < 0) {
+				GDKsyserror("cannot open file %s.%s for sync\n", nme,
 					    gettailname(b));
-			close(fd);
-			if (b->tvheap) {
-				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+				err = GDK_FAIL;
+			} else {
 				if (
 #if defined(NATIVE_WIN32)
 					_commit(fd) < 0
@@ -822,8 +813,29 @@ BATsave(BAT *bd)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.theap\n", nme);
+					GDKsyserror("sync failed for %s.%s\n", nme,
+						    gettailname(b));
 				close(fd);
+			}
+			if (b->tvheap) {
+				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+				if (fd < 0) {
+					GDKsyserror("cannot open file %s.theap for sync\n",
+						    nme);
+					err = GDK_FAIL;
+				} else {
+					if (
+#if defined(NATIVE_WIN32)
+						_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+						fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+						fsync(fd) < 0
+#endif
+						)
+						GDKsyserror("sync failed for %s.theap\n", nme);
+					close(fd);
+				}
 			}
 		}
 	} else {

@@ -90,6 +90,7 @@ CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
+	renameVariables(mb); // to keep in sink with explain
 	return startTrace(cntxt);
 }
 

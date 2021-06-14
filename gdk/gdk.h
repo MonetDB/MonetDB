@@ -557,8 +557,7 @@ typedef struct {
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
-	bool hashash:1,		/* the string heap contains hash values */
-		cleanhash:1,	/* string heaps must clean hash */
+	bool cleanhash:1,	/* string heaps must clean hash */
 		dirty:1,	/* specific heap dirty marker */
 		remove:1;	/* remove storage file when freeing */
 	storage_t storage;	/* storage mode (mmap/malloc). */
@@ -742,9 +741,10 @@ typedef struct {
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
-#define GDKLIBRARY_TAILN	061043U /* first after Oct2020: str offset heaps names don't take width into account */
+#define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
+#define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061044U /* first after Oct2020 */
+#define GDKLIBRARY		061045U /* first after Jul2021 */
 
 typedef struct BAT {
 	/* static bat properties */
@@ -971,6 +971,8 @@ gdk_export gdk_return BATdel(BAT *b, BAT *d)
 	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 
 /* Functions to perform a binary search on a sorted BAT.

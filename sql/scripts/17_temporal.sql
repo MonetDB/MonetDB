@@ -5,7 +5,7 @@
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 
 -- assume milliseconds when converted to TIMESTAMP
-create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE
+create function sys.epoch(sec DECIMAL(18,3)) returns TIMESTAMP WITH TIME ZONE
 	external name mtime.epoch;
 
 create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE
@@ -14,7 +14,7 @@ create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE
 create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT
 	external name mtime.epoch;
 
-grant execute on function sys.epoch (BIGINT) to public;
+grant execute on function sys.epoch (DECIMAL(18,3)) to public;
 grant execute on function sys.epoch (INT) to public;
 grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;
 

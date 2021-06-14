@@ -505,6 +505,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
 		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
+			runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
@@ -514,6 +515,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	exceptionVar = -1;
 
 	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
+#ifndef NDEBUG
+	/* very short timeout */
+	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=mb->starttime};
+#endif
 	/* save, in case this function is called recursively */
 	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
 	MT_thread_set_qry_ctx(&qry_ctx);
@@ -545,6 +550,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
+				MT_thread_set_qry_ctx(&qry_ctx_abort);
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 				break;
 			}

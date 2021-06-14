@@ -146,7 +146,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 /* This code was used to experiment with block sizes, mis-using the memorylimit  variable
 	if (cntxt->memorylimit){
 		// the new mitosis scheme uses a maximum chunck size in MB from the client context
-		m = (size_t) ((cntxt->memorylimit *  LL_CONSTANT(1048576)) / row_size);
+		m = (((size_t) cntxt->memorylimit) * 1048576) / (size_t) row_size;
 		pieces = (int) (rowcnt / m + (rowcnt - m * pieces > 0));
 	}
 	if (cntxt->memorylimit == 0 || pieces <= 1){
@@ -160,11 +160,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		* and determine the column slice size 
 		*/
 		if( cntxt->memorylimit)
-			m = cntxt->memorylimit *  LL_CONSTANT(1048576) / argsize;
+			m = (((size_t) cntxt->memorylimit) * 1048576) / argsize;
 		else {
 			memclaim= MCmemoryClaim();
 			if(memclaim == GDK_mem_maxsize){
-				m = GDK_mem_maxsize / MCactiveClients()/ argsize;
+				m = GDK_mem_maxsize / (size_t) MCactiveClients() / argsize;
 			} else
 				m = (GDK_mem_maxsize - memclaim) / argsize;
 		}
@@ -182,11 +182,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* the number of pieces affects SF-100, going beyond 8x increases 
 			 * the optimizer costs beyond the execution time
 			 */
-			pieces = 4 *    ceil((double)rowcnt / m / threads);
+			pieces = 4 * (int) ceil((double)rowcnt / m / threads);
 		} else if (rowcnt > MINPARTCNT) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */
-			pieces = 4 *   ceil(MIN((double)rowcnt / MINPARTCNT, threads));
+			pieces = 4 * (int) ceil(MIN((double)rowcnt / MINPARTCNT, threads));
 		}
 	}
 

@@ -86,14 +86,17 @@ HASHputlink(Hash *h, BUN i, BUN v)
 	switch (h->width) {
 #ifdef BUN2
 	case BUN2:
+		assert(v == BUN_NONE || v == BUN2_NONE || v < i);
 		((BUN2type *) h->Link)[i] = (BUN2type) v;
 		break;
 #endif
 	default:		/* BUN4 */
+		assert(v == BUN_NONE || v == BUN4_NONE || v < i);
 		((BUN4type *) h->Link)[i] = (BUN4type) v;
 		break;
 #ifdef BUN8
 	case BUN8:
+		assert(v == BUN_NONE || v == BUN8_NONE || v < i);
 		((BUN8type *) h->Link)[i] = (BUN8type) v;
 		break;
 #endif
@@ -223,11 +226,6 @@ mix_uuid(uuid u)
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h, hb))				\
 		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-#define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (strEQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != HASHnil(h);					\

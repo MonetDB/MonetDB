@@ -183,19 +183,19 @@ SELECT f1, extract(second from f1) FROM TIME_TBL
 NULL
 NULL
 
-query TI rowsort
+query TR rowsort
 SELECT f1, extract(epoch from f1) FROM TIME_TBL
 ----
 00:00:00
-0
+0.000
 01:00:00
-3600000
+3600.000
 12:00:00
-43200000
+43200.000
 12:01:00
-43260000
+43260.000
 23:59:00
-86340000
+86340.000
 NULL
 NULL
 

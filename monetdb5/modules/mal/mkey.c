@@ -324,7 +324,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *bid)
 {
-	BAT *hb, *b, *bn;
+	BAT *hb, *b, *ob = NULL, *bn;
 	int lbit = *nbits;
 	int rbit = (int) sizeof(lng) * 8 - lbit;
 	ulng *restrict r;
@@ -345,12 +345,23 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		throw(MAL, "mkey.rotate_xor_hash",
 			  OPERATION_FAILED ": input bats are not aligned");
 	}
+	ob = b;
+	if (b && (b->ttype == TYPE_msk || mask_cand(b))) {
+		b = BATunmask(b);
+		if (!b) {
+			BBPunfix(hb->batCacheid);
+			BBPunfix(ob->batCacheid);
+			throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
 
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
+		if (b != ob)
+			BBPunfix(ob->batCacheid);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -400,15 +411,6 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 #endif
 	case TYPE_str:
-		if (b->tvheap->hashash) {
-			BATiter bi = bat_iterator(b);
-			for (BUN i = 0; i < n; i++) {
-				const void *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
-			}
-			break;
-		}
-		/* fall through */
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
@@ -429,6 +431,8 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	bn->tnil = false;
 
 	BBPkeepref(*res = bn->batCacheid);
+	if (b != ob)
+		BBPunfix(ob->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(hb->batCacheid);
 	return MAL_SUCCEED;
@@ -573,15 +577,6 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 #endif
 	case TYPE_str:
-		if (b->tvheap->hashash) {
-			BATiter bi = bat_iterator(b);
-			for (BUN i = 0; i < n; i++) {
-				const char *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
-			}
-			break;
-		}
-		/* fall through */
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;

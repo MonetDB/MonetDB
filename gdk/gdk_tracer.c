@@ -280,7 +280,14 @@ gdk_return
 GDKtracer_stop(void)
 {
 	set_level_for_layer(MDB_ALL, DEFAULT_LOG_LEVEL);
-	return GDKtracer_flush_buffer();
+	if (active_tracer) {
+		if (active_tracer != stderr)
+			fclose(active_tracer);
+		else
+			fflush(active_tracer);
+		active_tracer = NULL;
+	}
+	return GDK_SUCCEED;
 }
 
 gdk_return
@@ -421,15 +428,24 @@ GDKtracer_reset_adapter(void)
 
 static bool add_ts;		/* add timestamp to error message to stderr */
 
-void
+gdk_return
 GDKtracer_init(const char *dbpath, const char *dbtrace)
 {
+	MT_lock_set(&GDKtracer_lock);
 #ifdef _MSC_VER
 	add_ts = GetFileType(GetStdHandle(STD_ERROR_HANDLE)) != FILE_TYPE_PIPE;
 #else
 	add_ts = isatty(2) || lseek(2, 0, SEEK_CUR) != (off_t) -1 || errno != ESPIPE;
 #endif
-	(void) GDKtracer_init_trace_file(dbpath, dbtrace);
+	gdk_return rc = GDKtracer_init_trace_file(dbpath, dbtrace);
+	MT_lock_unset(&GDKtracer_lock);
+	return rc;
+}
+
+gdk_return
+GDKtracer_set_tracefile(const char *tracefile)
+{
+	return GDKtracer_init(NULL, tracefile);
 }
 
 void

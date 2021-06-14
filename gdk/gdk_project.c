@@ -566,7 +566,7 @@ BAT *
 BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 {
 	BAT *bn = NULL;
-	BAT *or1 = r1, *or2 = r2;
+	BAT *or1 = r1, *or2 = r2, *ol = l;
 	oid lo, hi;
 	gdk_return res;
 	int tpe = ATOMtype(r1->ttype);
@@ -602,11 +602,15 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			goto doreturn;
 		}
 	}
-	if (complex_cand(l) || l->ttype == TYPE_msk) {
+	if (complex_cand(l)) {
 		/* l is candidate list with exceptions or is a bitmask */
 		assert(l->ttype == TYPE_msk || !is_oid_nil(l->tseqbase));
 		lcount = canditer_init(&ci, NULL, l);
 		lci = &ci;
+	} else if (l->ttype == TYPE_msk) {
+		l = BATunmask(l);
+		if (l == NULL)
+			goto doreturn;
 	}
 	if (lcount == 0 ||
 	    (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||
@@ -747,7 +751,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
-			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
+			if (HEAPcopy(bn->tvheap, r1->tvheap, 0) != GDK_SUCCEED)
 				goto bailout;
 		}
 		bn->ttype = r1->ttype;
@@ -766,6 +770,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		  ALGOOPTBATPAR(bn),
 		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
 		  msg, GDKusec() - t0);
+	if (l != ol)
+		BBPreclaim(l);
 	if (r1 != or1)
 		BBPreclaim(r1);
 	if (r2 != or2)
