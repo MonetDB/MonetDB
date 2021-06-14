@@ -34,7 +34,7 @@ with SQLTestCase() as tc:
     if len(data) > 0:
         tag = data.pop()[0]
     tc.execute(f"call sys.stop({tag});").assertSucceeded()
-    t.join(timeout=3)
+    t.join(timeout=5)
     if ERR:
         raise SystemExit(1)
     if t.is_alive():
