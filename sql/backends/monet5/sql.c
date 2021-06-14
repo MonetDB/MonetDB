@@ -1295,7 +1295,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = mvc_bind(m, sname, tname, cname, access);
 	if (b && b->ttype && b->ttype != coltype) {
 		BBPunfix(b->batCacheid);
-		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch");
+		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 	}
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
@@ -1635,9 +1635,9 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 	b = mvc_bind_idxbat(m, sname, tname, iname, access);
-	if (b && b->ttype != coltype) {
+	if (b && b->ttype && b->ttype != coltype) {
 		BBPunfix(b->batCacheid);
-		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,iname);
+		throw(SQL,"sql.bind",SQLSTATE(42000) "Index column type mismatch %s.%s.%s",sname,tname,iname);
 	}
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
