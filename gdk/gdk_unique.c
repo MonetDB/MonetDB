@@ -189,7 +189,7 @@ BATunique(BAT *b, BAT *s)
 			p = o - seq;
 			v = VALUE(p);
 			for (hb = HASHgetlink(hs, p + lo);
-			     hb != HASHnil(hs) && hb >= lo;
+			     hb != BUN_NONE && hb >= lo;
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p + lo);
 				if (cmp(v, BUNtail(bi, hb)) == 0 &&
@@ -199,7 +199,7 @@ BATunique(BAT *b, BAT *s)
 					break;
 				}
 			}
-			if (hb == HASHnil(hs) || hb < lo) {
+			if (hb == BUN_NONE || hb < lo) {
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
@@ -242,12 +242,12 @@ BATunique(BAT *b, BAT *s)
 			v = VALUE(o - b->hseqbase);
 			prb = HASHprobe(hs, v);
 			for (hb = HASHget(hs, prb);
-			     hb != HASHnil(hs);
+			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
 				if (cmp == NULL || cmp(v, BUNtail(bi, hb)) == 0)
 					break;
 			}
-			if (hb == HASHnil(hs)) {
+			if (hb == BUN_NONE) {
 				p = o - b->hseqbase;
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 					goto bunins_failed;
