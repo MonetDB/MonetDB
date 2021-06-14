@@ -1128,6 +1128,8 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
@@ -1797,7 +1799,7 @@ BATkeyed(BAT *b)
 			for (q = BUNlast(b), p = 0; p < q; p++) {
 				const void *v = BUNtail(bi, p);
 				for (hb = HASHgetlink(hs, p + lo);
-				     hb != HASHnil(hs) && hb >= lo;
+				     hb != BUN_NONE && hb >= lo;
 				     hb = HASHgetlink(hs, hb)) {
 					assert(hb < p + lo);
 					if ((*cmpf)(v, BUNtail(bi, hb - lo)) == 0) {
@@ -1841,7 +1843,7 @@ BATkeyed(BAT *b)
 				const void *v = BUNtail(bi, p);
 				prb = HASHprobe(hs, v);
 				for (hb = HASHget(hs, prb);
-				     hb != HASHnil(hs);
+				     hb != BUN_NONE;
 				     hb = HASHgetlink(hs, hb)) {
 					if (cmpf == NULL ||
 					    (*cmpf)(v, BUNtail(bi, hb)) == 0) {

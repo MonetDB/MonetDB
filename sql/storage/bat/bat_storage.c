@@ -52,7 +52,7 @@ static int merge_delta( sql_delta *obat);
 /* Delete (in current trans or by some other finised transaction, or re-used segment which used to be deleted */
 #define SEG_IS_DELETED(seg,tr) \
 	((seg->deleted && (VALID_4_READ(seg->ts, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
-	 (!seg->deleted && OLD_VALID_4_READ(seg->ts, seg->oldts, tr)))
+	 (!seg->deleted && !VALID_4_READ(seg->ts, tr)))
 
 /* A segment is part of the current transaction is someway or is deleted by some other transaction but use to be valid */
 #define SEG_IS_VALID(seg, tr) \
@@ -1589,9 +1589,9 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 }
 
 static int
-delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
+seg_delete_range(sql_trans *tr, sql_table *t, storage *s, segment **Seg, size_t start, size_t cnt)
 {
-	segment *seg = s->segs->h, *p = NULL;
+	segment *seg = *Seg, *p = NULL;
 	for (; seg; p = seg, seg = seg->next) {
 		if (seg->start <= start && seg->end > start) {
 			size_t lcnt = cnt;
@@ -1605,7 +1605,7 @@ delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
 				return LOG_CONFLICT;
 			if (deletes_conflict_updates( tr, t, start, lcnt))
 				return LOG_CONFLICT;
-			seg = split_segment(s->segs, seg, p, tr, start, lcnt, true);
+			*Seg = seg = split_segment(s->segs, seg, p, tr, start, lcnt, true);
 			start += lcnt;
 			cnt -= lcnt;
 		}
@@ -1613,6 +1613,13 @@ delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
 			break;
 	}
 	return LOG_OK;
+}
+
+static int
+delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
+{
+	segment *seg = s->segs->h;
+	return seg_delete_range(tr, t, s, &seg, start, cnt);
 }
 
 static int
@@ -1625,6 +1632,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	if (i->ttype == TYPE_msk || mask_cand(i))
 		i = BATunmask(i);
 	if (BATcount(i)) {
+		segment *seg = s->segs->h;
 		if (BATtdense(i)) {
 			size_t start = i->tseqbase;
 			size_t cnt = BATcount(i);
@@ -1641,11 +1649,11 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 						cur++;
 						continue;
 					}
-					ok = delete_range(tr, t, s, f, cur-f);
+					ok = seg_delete_range(tr, t, s, &seg, f, cur-f);
 					f = cur = l;
 				}
 				if (ok == LOG_OK)
-					ok = delete_range(tr, t, s, f, cur-f);
+					ok = seg_delete_range(tr, t, s, &seg, f, cur-f);
 			}
 		} else {
 			if (!BATtordered(i)) {
@@ -1665,7 +1673,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					lcnt++;
 					n++;
 				} else {
-					ok = delete_range(tr, t, s, n-lcnt, lcnt);
+					ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt);
 					lcnt = 0;
 				}
 				if (!lcnt) {
@@ -1674,7 +1682,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				}
 			}
 			if (lcnt && ok == LOG_OK)
-				ok = delete_range(tr, t, s, n-lcnt, lcnt);
+				ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt);
 		}
 	}
 	if (i != oi)

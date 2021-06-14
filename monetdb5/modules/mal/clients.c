@@ -651,11 +651,9 @@ static str CLTsha2sum(str *ret, str *pw, int *bits) {
 	} else {
 		char *mret = 0;
 		switch (*bits) {
-#ifdef HAVE_SHA512_UPDATE
 			case 512:
 				mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
 				break;
-#endif
 #ifdef HAVE_SHA384_UPDATE
 			case 384:
 				mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
@@ -676,12 +674,10 @@ static str CLTsha2sum(str *ret, str *pw, int *bits) {
 				throw(ILLARG, "clients.sha2sum", "wrong number of bits "
 						"for SHA2 sum: %d", *bits);
 		}
-#if defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE)
 		if (!mret)
 			throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*ret = GDKstrdup(mret);
 		free(mret);
-#endif
 	}
 	if (*ret == NULL)
 		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
