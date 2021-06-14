@@ -90,6 +90,14 @@ with SQLTestCase() as mdb1:
         mdb1.execute('insert into integers values (4,4);').assertSucceeded().assertDataResultMatch([(1,)])
         mdb1.execute('select * from longs;').assertSucceeded().assertDataResultMatch([(16,)])
 
+        mdb1.execute("create table z (i int);").assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("create view myv3(a) as select i from z;").assertSucceeded()
+        mdb2.execute("alter table z rename to w;").assertSucceeded() # myv3 uses the table
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('drop table y;').assertSucceeded()
         mdb1.execute('drop trigger myt;').assertSucceeded()
@@ -108,4 +116,6 @@ with SQLTestCase() as mdb1:
         mdb1.execute('DROP TABLE x;').assertSucceeded()
         mdb1.execute('DROP VIEW myv2;').assertSucceeded()
         mdb1.execute('DROP FUNCTION pain();').assertSucceeded()
+        mdb1.execute('DROP VIEW myv3;').assertSucceeded()
+        mdb1.execute('DROP TABLE z;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
