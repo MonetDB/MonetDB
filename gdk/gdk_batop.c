@@ -1128,6 +1128,8 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
