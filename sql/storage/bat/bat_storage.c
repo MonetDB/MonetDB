@@ -2727,7 +2727,9 @@ clear_table(sql_trans *tr, sql_table *t)
 	BUN sz = count_col(tr, c, 0), clear_ok;
 
 	storage *d = tab_timestamp_storage(tr, t);
+	lock_table(tr->store, t->base.id);
 	sz -= count_deletes_in_range(d->segs->h, tr, 0, sz);
+	unlock_table(tr->store, t->base.id);
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
 		return clear_ok;
 
