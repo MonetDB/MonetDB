@@ -328,7 +328,6 @@ VIEWreset(BAT *b)
 		.parentid = b->batCacheid,
 		.farmid = BBPselectfarm(b->batRole, b->ttype, offheap),
 	};
-	ATOMIC_INIT(&tail->refs, 1);
 	settailname(tail, nme, b->ttype, b->twidth);
 	if (b->ttype && HEAPalloc(tail, cnt, Tsize(b), Tsize(b)) != GDK_SUCCEED) {
 		GDKfree(tail);
@@ -348,7 +347,6 @@ VIEWreset(BAT *b)
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.parentid = b->batCacheid,
 		};
-		ATOMIC_INIT(&th->refs, 1);
 		strconcat_len(th->filename, sizeof(th->filename),
 			      nme, ".theap", NULL);
 		if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED) {
@@ -358,7 +356,9 @@ VIEWreset(BAT *b)
 			BBPunfix(v->batCacheid);
 			return GDK_FAIL;
 		}
+		ATOMIC_INIT(&th->refs, 1);
 	}
+	ATOMIC_INIT(&tail->refs, 1);
 
 	BAT bak = *b;		/* backup copy */
 
@@ -382,11 +382,9 @@ VIEWreset(BAT *b)
 	if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED) {
 		/* clean up the mess */
 		if (th) {
-			HEAPfree(th, true);
-			GDKfree(th);
+			HEAPdecref(th, true);
 		}
-		HEAPfree(tail, true);
-		GDKfree(tail);
+		HEAPdecref(tail, true);
 		*b = bak;
 		BBPunfix(v->batCacheid);
 		return GDK_FAIL;
