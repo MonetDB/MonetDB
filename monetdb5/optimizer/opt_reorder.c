@@ -40,7 +40,7 @@
 str
 OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-    int i,j,k, blkcnt = 1;
+    int i,j,k, blkcnt = 1, pc = 0;
     InstrPtr *old = NULL;
     int limit, slimit, *depth = NULL;
     char buf[256];
@@ -125,8 +125,11 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     }
 
 	for(k =0; k <= blkcnt; k++)
-		for(j=0; j < top[k]; j++)
-			pushInstruction(mb, blocks[k][j]);
+		for(j=0; j < top[k]; j++){
+			p =  blocks[k][j];
+			p->pc = pc++;
+			pushInstruction(mb, p);
+		}
 
     for(; i<limit; i++)
         if (old[i])
