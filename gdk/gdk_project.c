@@ -311,7 +311,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	v = (var_t) r1->tvheap->free;
 	if (r1->tvheap == r2->tvheap) {
 		h1off = 0;
-		BBPshare(bn->tvheap->parentid);
+		BBPshare(r1->tvheap->parentid);
 		HEAPfree(bn->tvheap, true);
 		GDKfree(bn->tvheap);
 		bn->tvheap = r1->tvheap;
