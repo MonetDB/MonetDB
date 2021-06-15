@@ -59,7 +59,7 @@ typedef struct objectset {
 	int id_based_cnt;
 	struct sql_hash *name_map;
 	struct sql_hash *id_map;
-	u_int8_t
+	bool
 		temporary:1,
 		unique:1, /* names are unique */
 		concurrent:1;	/* concurrent inserts are allowed */
