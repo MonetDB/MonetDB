@@ -1328,6 +1328,7 @@ BATnegcands(BUN nr, BAT *odels)
 		memcpy(r, Tloc(odels, lo), sizeof(oid) * (hi - lo));
 	}
 	bn->batDirtydesc = true;
+	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
 	BATsetcount(bn, bn->batCount - (hi - lo));
 	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
@@ -1416,6 +1417,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	}
 	if (cnt > 0) {
 		ATOMIC_INIT(&msks->refs, 1);
+		assert(bn->tvheap == NULL);
 		bn->tvheap = msks;
 		bn->tseqbase += (oid) c->firstbit;
 	} else {
@@ -1507,6 +1509,7 @@ BATunmask(BAT *b)
 			dels->free = sizeof(ccand_t) + n * sizeof(oid);
 			dels->dirty = true;
 			ATOMIC_INIT(&dels->refs, 1);
+			assert(bn->tvheap == NULL);
 			bn->tvheap = dels;
 		}
 		BATsetcount(bn, n=BATcount(b));
