@@ -1,0 +1,23 @@
+statement ok
+START TRANSACTION
+
+statement ok
+SAVEPOINT mys
+
+statement ok
+CREATE TABLE myt(id int)
+
+statement ok
+RELEASE SAVEPOINT mys
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE myt(id int)
+
+statement ok
+ROLLBACK

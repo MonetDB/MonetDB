@@ -668,7 +668,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	}
 
 	/* set the output of GDKtracer logs */
-	if (opts->trace_file) {
+	if (opts && opts->trace_file) {
 		/* if file specified, use it */
 		if (GDKtracer_set_tracefile(opts->trace_file) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);

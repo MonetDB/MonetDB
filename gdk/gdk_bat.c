@@ -115,7 +115,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 	if (heapnames) {
 		assert(bn->theap != NULL);
-		ATOMIC_INIT(&bn->theap->refs, 1);
 		bn->theap->parentid = bn->batCacheid;
 		bn->theap->farmid = BBPselectfarm(role, bn->ttype, offheap);
 
@@ -135,6 +134,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
 		}
+		ATOMIC_INIT(&bn->theap->refs, 1);
 	} else {
 		assert(bn->theap == NULL);
 	}
