@@ -37,9 +37,11 @@ stdout of test 'sqlitelogictest-aggregation-having-avg.Bug-6428` in directory 's
 project (
 | select (
 | | group by (
-| | | select (
-| | | | table("sys"."tab0") [ "tab0"."col0" as "cor0"."col0", "tab0"."col1" as "cor0"."col1" ] COUNT 
-| | | ) [ "cor0"."col0" * = int "NULL" ]
+| | | group by (
+| | | | select (
+| | | | | table("sys"."tab0") [ "tab0"."col0" as "cor0"."col0", "tab0"."col1" as "cor0"."col1" ] COUNT 
+| | | | ) [ "cor0"."col0" * = int "NULL" ]
+| | | ) [ "cor0"."col1", "cor0"."col0" ] [ "cor0"."col1", "cor0"."col0" ]
 | | ) [ "cor0"."col1", "cor0"."col0" ] [ "cor0"."col1", "cor0"."col0", "sys"."avg" no nil ("cor0"."col0") as "%1"."%1" ]
 | ) [ "sys"."sql_add"(double["sys"."sql_neg"("cor0"."col1")], "%1"."%1") ! * = double "NULL" ]
 ) [ "sys"."sql_neg"("cor0"."col0") as "col1" ]

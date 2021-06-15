@@ -6239,12 +6239,10 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		list_append(exps, darg);
 		darg = exp_ref(v->sql, darg);
 		arg->h->data = darg;
-		if (!exp_match_list(ngbe, gbe)) { /* if the grouping columns match don't create an extra grouping */
-			l = rel->l = rel_groupby(v->sql, rel->l, gbe);
-			l->exps = exps;
-			set_processed(l);
-			rel->r = ngbe;
-		}
+		l = rel->l = rel_groupby(v->sql, rel->l, gbe);
+		l->exps = exps;
+		set_processed(l);
+		rel->r = ngbe;
 		rel->exps = nexps;
 		set_nodistinct(distinct);
 		append(nexps, distinct);
