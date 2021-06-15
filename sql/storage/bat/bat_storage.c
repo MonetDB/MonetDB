@@ -3052,6 +3052,8 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (!commit_ts) { /* rollback */
 		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(&c->data);
 
+		if (change->ts && c->t->base.new) /* handled by create col */
+			return ok;
 		if (o != d) {
 			while(o && o->next != d)
 				o = o->next;
@@ -3073,8 +3075,11 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 				delta->next = NULL;
 			}
 		}
-		if (ok == LOG_OK && delta == d && oldest == commit_ts)
+		if (ok == LOG_OK && delta == d && oldest == commit_ts) {
+			lock_column(tr->store, c->base.id);
 			ok = merge_delta(delta);
+			unlock_column(tr->store, c->base.id);
+		}
 	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
 		ATOMIC_PTR_SET(&c->data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
@@ -3131,6 +3136,8 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (!commit_ts) { /* rollback */
 		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(&i->data);
 
+		if (change->ts && i->t->base.new) /* handled by create col */
+			return ok;
 		if (o != d) {
 			while(o && o->next != d)
 				o = o->next;
@@ -3152,8 +3159,11 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 				delta->next = NULL;
 			}
 		}
-		if (ok == LOG_OK && delta == d && oldest == commit_ts)
+		if (ok == LOG_OK && delta == d && oldest == commit_ts) {
+			lock_column(tr->store, i->base.id);
 			ok = merge_delta(delta);
+			unlock_column(tr->store, i->base.id);
+		}
 	} else if (ok == LOG_OK && tr->parent) /* cleanup older save points */
 		ATOMIC_PTR_SET(&i->data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
@@ -3229,6 +3239,10 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	lock_table(tr->store, t->base.id);
 	if (!commit_ts) { /* rollback */
 		if (dbat->cs.ts == tr->tid) {
+			if (change->ts && t->base.new) { /* handled by the create table */
+				unlock_table(tr->store, t->base.id);
+				return ok;
+			}
 			storage *d = change->data, *o = ATOMIC_PTR_GET(&t->data);
 
 			if (o != d) {
@@ -3272,6 +3286,8 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&c->data) != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
+	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 		if (d->cs.ts > oldest)
@@ -3295,6 +3311,8 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&i->data) != change->data || isTempTable(i->t)) /* data is freed by commit */
 		return 1;
+	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 		if (d->cs.ts > oldest)
@@ -3316,6 +3334,8 @@ tc_gc_del( sql_store Store, sql_change *change, ulng oldest)
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&t->data) != change->data || isTempTable(t)) /* data is freed by commit */
 		return 1;
+	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
 	storage *d = (storage*)change->data;
 	if (d->next) {
 		if (d->cs.ts > oldest)
