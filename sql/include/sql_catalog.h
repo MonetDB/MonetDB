@@ -244,7 +244,7 @@ typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng 
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
