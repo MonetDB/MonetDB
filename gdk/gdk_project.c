@@ -375,8 +375,8 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	if (r1->tvheap == r2->tvheap) {
 		h1off = 0;
 		BBPshare(r1->tvheap->parentid);
-		HEAPfree(bn->tvheap, true);
-		GDKfree(bn->tvheap);
+		HEAPdecref(bn->tvheap, true);
+		HEAPincref(r1->tvheap);
 		bn->tvheap = r1->tvheap;
 	} else {
 		v = (v + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
@@ -991,6 +991,7 @@ BATprojectchain(BAT **bats)
 			bn->tkey = false;
 			MT_lock_set(&b->theaplock);
 			BBPshare(b->tvheap->parentid);
+			assert(bn->tvheap == NULL);
 			bn->tvheap = b->tvheap;
 			HEAPincref(b->tvheap);
 			MT_lock_unset(&b->theaplock);
