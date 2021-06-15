@@ -595,7 +595,9 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return d->segs->t?d->segs->t->end:0;
 	if (access == 10) {
 		size_t cnt = segs_end(d->segs, tr, c->t);
+		lock_table(tr->store, c->t->base.id);
 		cnt -= count_deletes_in_range(d->segs->h, tr, 0, cnt);
+		unlock_table(tr->store, c->t->base.id);
 		return cnt;
 	}
 	return segs_end(d->segs, tr, c->t);

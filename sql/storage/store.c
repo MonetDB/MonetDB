@@ -3458,22 +3458,31 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
+	bool locked = false;
 
-	MT_lock_set(&store->commit);
-	store_lock(store);
-	ulng oldest = store_oldest(store);
+	if (!list_empty(tr->predicates)) {
+		MT_lock_set(&store->commit);
+		store_lock(store);
+		locked = true;
 
-	if (tr->predicates && (ok = sql_trans_valid(tr)) != LOG_OK) {
-		sql_trans_rollback(tr, 1);
-		store_unlock(store);
-		MT_lock_unset(&store->commit);
-		return ok;
+		if ((ok = sql_trans_valid(tr)) != LOG_OK) {
+			sql_trans_rollback(tr, 1);
+			store_unlock(store);
+			MT_lock_unset(&store->commit);
+			return ok;
+		}
 	}
 
-	store_pending_changes(store, oldest);
-	oldest = store_oldest_pending(store);
-	store_unlock(store);
-	if (tr->changes) {
+	if (!list_empty(tr->changes)) {
+		if (!locked) {
+			MT_lock_set(&store->commit);
+			store_lock(store);
+			locked = true;
+		}
+		ulng oldest = store_oldest(store);
+		store_pending_changes(store, oldest);
+		oldest = store_oldest_pending(store);
+		store_unlock(store);
 		ulng commit_ts = 0;
 		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
 		int flush = (tr->logchanges > min_changes && !store->changes);
@@ -3534,9 +3543,11 @@ sql_trans_commit(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->ts = commit_ts;
-		store_unlock(store);
 	}
-	MT_lock_unset(&store->commit);
+	if (locked) {
+		store_unlock(store);
+		MT_lock_unset(&store->commit);
+	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
 		for(node *n=tr->localtmps.set->h; n; ) {
