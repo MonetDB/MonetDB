@@ -725,7 +725,8 @@ sqlstmt:
 	}
 
  | prepare 		{
-		  	  m->emode = m_prepare; 
+			  if (!m->emode) /* don't replace m_deps/instantiate */
+		  	  	m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			}
 	sql SCOLON 	{
