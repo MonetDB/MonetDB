@@ -65,8 +65,7 @@
 #define mod_debug 	1
 #define mod_trace 	2
 #define mod_explain 	4
-/* locked needs unlocking */
-#define mod_locked 	16
+#define mod_exec 	8
 
 #define sql_shared_module_name "sql"
 #define sql_private_module_name "user"
