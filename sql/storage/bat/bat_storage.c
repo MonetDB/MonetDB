@@ -283,8 +283,26 @@ segments_in_transaction(sql_trans *tr, sql_table *t)
 	return 0;
 }
 
+static size_t
+segs_end( segments *segs, sql_trans *tr, sql_table *table)
+{
+	size_t cnt = 0;
+
+	lock_table(tr->store, table->base.id);
+	segment *s = segs->h, *l = NULL;
+
+	for(;s; s = s->next) {
+		if (SEG_IS_VALID(s, tr))
+				l = s;
+	}
+	if (l)
+		cnt = l->end;
+	unlock_table(tr->store, table->base.id);
+	return cnt;
+}
+
 static int
-segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
+segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 {
 	/* set bits correctly */
 	BAT *b = temp_descriptor(cs->bid);
@@ -293,30 +311,58 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 		return LOG_ERR;
 	segment *s = segs->h;
 
+	size_t nr = segs_end(segs, tr, t);
+	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED)
+		return LOG_ERR;
+
+	BATsetcount(b, nr);
+	uint32_t *restrict dst;
 	for (; s ; s=s->next) {
-		if (s->ts == tr->tid) {
-			msk m = s->deleted;
-			if (BATcount(b) < s->start) {
-				msk nil = bit_nil;
-				for(BUN i=BATcount(b); i<s->start; i++){
-					if (BUNappend(b, &nil, true) != GDK_SUCCEED) {
-						bat_destroy(b);
-						return LOG_ERR;
-					}
+		if (s->ts == tr->tid && s->end != s->start) {
+			size_t lnr = s->end-s->start;
+			size_t pos = s->start;
+			dst = ((uint32_t*)Tloc(b, 0)) + (s->start/32);
+			uint32_t cur = 0;
+			if (s->deleted) {
+				size_t used = pos&31, end = 32;
+				if (used) {
+					if (lnr < (32-used))
+						end = used + lnr;
+					for(size_t j=used; j < end; j++, lnr--)
+						cur |= 1U<<j;
+					*dst++ |= cur;
+					cur = 0;
 				}
-			}
-			for(BUN p = s->start; p < s->end; p++) {
-				if (p >= BATcount(b)) {
-					if (BUNappend(b, (ptr) &m, true) != GDK_SUCCEED) {
-						bat_destroy(b);
-						return LOG_ERR;
-					}
-				} else {
-					if (BUNreplace(b, p, (ptr) &m, true) != GDK_SUCCEED) {
-						bat_destroy(b);
-						return LOG_ERR;
-					}
+				size_t full = lnr/32;
+				size_t rest = lnr%32;
+				for(size_t i = 0; i<full; i++, lnr-=32)
+					*dst++ = ~0;
+				if (rest) {
+					for(size_t j=0; j < rest; j++, lnr--)
+						cur |= 1U<<j;
+					*dst |= cur;
 				}
+				assert(lnr==0);
+			} else {
+				size_t used = pos&31, end = 32;
+				if (used) {
+					if (lnr < (32-used))
+						end = used + lnr;
+					for(size_t j=used; j < end; j++, lnr--)
+						cur |= 1U<<j;
+					*dst++ &= ~cur;
+					cur = 0;
+				}
+				size_t full = lnr/32;
+				size_t rest = lnr%32;
+				for(size_t i = 0; i<full; i++, lnr-=32)
+					*dst++ = 0;
+				if (rest) {
+					for(size_t j=0; j < rest; j++, lnr--)
+						cur |= 1U<<j;
+					*dst &= ~cur;
+				}
+				assert(lnr==0);
 			}
 		}
 	}
@@ -554,24 +600,6 @@ count_deletes( segment *s, sql_trans *tr)
 		if (SEG_IS_DELETED(s, tr))
 			cnt += s->end - s->start;
 	}
-	return cnt;
-}
-
-static size_t
-segs_end( segments *segs, sql_trans *tr, sql_table *table)
-{
-	size_t cnt = 0;
-
-	lock_table(tr->store, table->base.id);
-	segment *s = segs->h, *l = NULL;
-
-	for(;s; s = s->next) {
-		if (SEG_IS_VALID(s, tr))
-				l = s;
-	}
-	if (l)
-		cnt = l->end;
-	unlock_table(tr->store, table->base.id);
 	return cnt;
 }
 
@@ -2349,7 +2377,7 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 }
 
 static int
-log_create_storage(sql_trans *tr, storage *bat, sqlid id)
+log_create_storage(sql_trans *tr, storage *bat, sql_table *t)
 {
 	BAT *b;
 	int ok;
@@ -2364,11 +2392,11 @@ log_create_storage(sql_trans *tr, storage *bat, sqlid id)
 	sqlstore *store = tr->store;
 	bat_set_access(b, BAT_READ);
 	/* set bits correctly */
-	ok = segments2cs(tr, bat->segs, &bat->cs);
+	ok = segments2cs(tr, bat->segs, &bat->cs, t);
 	if (ok == LOG_OK)
-		ok = (log_bat_persists(store->logger, b, id) == GDK_SUCCEED)?LOG_OK:LOG_ERR;
+		ok = (log_bat_persists(store->logger, b, t->base.id) == GDK_SUCCEED)?LOG_OK:LOG_ERR;
 	if (ok == LOG_OK)
-		ok = log_segments(tr, bat->segs, id);
+		ok = log_segments(tr, bat->segs, t->base.id);
 	bat_destroy(b);
 	return ok;
 }
@@ -2382,7 +2410,7 @@ log_create_del(sql_trans *tr, sql_change *change)
 	if (t->base.deleted)
 		return ok;
 	assert(!isTempTable(t));
-	ok = log_create_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
+	ok = log_create_storage(tr, ATOMIC_PTR_GET(&t->data), t);
 	if (ok == LOG_OK) {
 		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 			sql_column *c = n->data;
@@ -2862,7 +2890,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 {
-	int ok = segments2cs(tr, s->segs, &s->cs);
+	int ok = segments2cs(tr, s->segs, &s->cs, t);
 	if (ok == LOG_OK && s->cs.cleared)
 		return tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
