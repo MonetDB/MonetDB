@@ -229,6 +229,11 @@ q_dequeue(Queue *q, Client cntxt)
 	if (ATOMIC_GET(&exiting))
 		return NULL;
 	MT_lock_set(&q->l);
+	if( cntxt == NULL && q->exitcount > 0){
+		q->exitcount--;
+		MT_lock_unset(&q->l);
+		return NULL;
+	}
 	{
 		int i, minpc;
 
@@ -253,46 +258,8 @@ q_dequeue(Queue *q, Client cntxt)
 			q->last--;
 			memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
 		}
-
-		MT_lock_unset(&q->l);
-		return r;
 	}
-	if (q->exitcount > 0) {
-		q->exitcount--;
-		MT_lock_unset(&q->l);
-		return NULL;
-	}
-	assert(q->last > 0);
-	if (q->last > 0) {
-		/* LIFO favors garbage collection */
-		r = q->data[--q->last];
-/*  Line coverage test shows it is an expensive loop that is hardly ever leads to adjustment
-		for(i= q->last-1; r &&  i>=0; i--){
-			s= q->data[i];
-			if( s && s->flow && s->flow->stk &&
-			    r && r->flow && r->flow->stk &&
-			    s->flow->stk->tag < r->flow->stk->tag){
-				q->data[i]= r;
-				r = s;
-			}
-		}
-*/
-		q->data[q->last] = 0;
-	}
-	/* else: terminating */
-	/* try out random draw *
-	{
-		int i;
-		i = rand() % q->last;
-		r = q->data[i];
-		for (i++; i < q->last; i++)
-			q->data[i - 1] = q->data[i];
-		q->last--; i
-	}
-	 */
-
 	MT_lock_unset(&q->l);
-	assert(r);
 	return r;
 }
 
