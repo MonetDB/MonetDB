@@ -5565,7 +5565,9 @@ string:
 
 exec:
      execute exec_ref
-		{ $$ = _symbol_create_symbol(SQL_CALL, $2); }
+		{
+		  m->emod |= mod_exec;
+		  $$ = _symbol_create_symbol(SQL_CALL, $2); }
  ;
 
 dealloc_ref:
