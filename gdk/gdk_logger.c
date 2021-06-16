@@ -418,6 +418,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					for (; res == LOG_OK && snr > 0; snr-=cnt) {
 						cnt = snr>tlen?tlen:snr;
 						void *t = rt(lg->buf, &ntlen, lg->input_log, cnt);
+
+						if (t == NULL) {
+							res = LOG_EOF;
+							break;
+						}
 						assert(t == lg->buf);
 						if (r && BUNappendmulti(r, t, cnt, true) != GDK_SUCCEED)
 							res = LOG_ERR;
