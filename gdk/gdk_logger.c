@@ -2503,7 +2503,10 @@ log_bat_clear(logger *lg, int id)
 
 	if (LOG_DISABLED(lg)) {
 		lg->end++;
-		return la_bat_update_count(lg, id, 0);
+		logger_lock(lg);
+		gdk_return res = la_bat_update_count(lg, id, 0);
+		logger_unlock(lg);
+		return res;
 	}
 
 	l.flag = LOG_CLEAR;
