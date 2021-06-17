@@ -942,7 +942,6 @@ segments_is_deleted(segment *s, sql_trans *tr, oid rid)
 static int
 cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *updates, int is_new)
 {
-	storage *s = ATOMIC_PTR_GET(&t->data);
 	int res = LOG_OK;
 	BAT *otids = tids, *oupdates = updates;
 
@@ -956,12 +955,15 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	}
 	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
 	/* currently only one update delta is possible */
+	lock_table(tr->store, t->base.id);
+	storage *s = ATOMIC_PTR_GET(&t->data);
 	if (!is_new && !cs->cleared) {
 		if (!otids->tsorted || complex_cand(otids) /* make sure we have simple dense or oids */) {
 			BAT *sorted, *order;
 			if (BATsort(&sorted, &order, NULL, otids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 				if (otids != tids)
 					bat_destroy(otids);
+				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
 			}
 			if (otids != tids)
@@ -971,6 +973,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			bat_destroy(order);
 			if (!oupdates) {
 				bat_destroy(otids);
+				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
 			}
 		}
@@ -987,7 +990,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		if((b = temp_descriptor(cs->bid)) == NULL)
 			res = LOG_ERR;
 
-		if (BATtdense(otids)) {
+		if (res == LOG_OK && BATtdense(otids)) {
 			oid start = otids->tseqbase, offset = start;
 			oid end = start + ucnt;
 
@@ -1026,7 +1029,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 				if (end < seg->end)
 					break;
 			}
-		} else {
+		} else if (res == LOG_OK) {
 			BUN i = 0;
 			oid *rid = Tloc(otids,0);
 			segment *seg = s->segs->h;
@@ -1066,7 +1069,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			}
 		}
 
-		if (cnt < ucnt) { 	/* now handle real updates */
+		if (res == LOG_OK && cnt < ucnt) { 	/* now handle real updates */
 			if (cs->ucnt == 0) {
 				if (cnt) {
 					BAT *nins = BATmaskedcands(0, ucnt, ins, false);
@@ -1182,6 +1185,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			}
 		}
 		bat_destroy(b);
+		unlock_table(tr->store, t->base.id);
 		bat_destroy(ins);
 		bat_destroy(ui);
 		bat_destroy(uv);
@@ -1202,6 +1206,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		BBPcold(b->batCacheid);
 		bat_destroy(b);
 	}
+	unlock_table(tr->store, t->base.id);
 	if (otids != tids)
 		bat_destroy(otids);
 	if (oupdates != updates)
@@ -1262,7 +1267,11 @@ cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *u
 static int
 delta_update_val( sql_trans *tr, sql_delta *bat, sql_table *t, oid rid, void *upd, int is_new)
 {
-	return cs_update_val(tr, &bat->cs, t, rid, upd, is_new);
+	int res = LOG_OK;
+	lock_table(tr->store, t->base.id);
+	res = cs_update_val(tr, &bat->cs, t, rid, upd, is_new);
+	unlock_table(tr->store, t->base.id);
+	return res;
 }
 
 static int
@@ -1363,13 +1372,10 @@ update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_ne
 		BAT *values = incoming_values;
 		if (BATcount(tids) == 0)
 			return LOG_OK;
-		lock_table(tr->store, table->base.id);
 		ok = delta_update_bat(tr, delta, table, tids, values, is_new);
 	} else {
-		lock_table(tr->store, table->base.id);
 		ok = delta_update_val(tr, delta, table, *(oid*)incoming_tids, incoming_values, is_new);
 	}
-	unlock_table(tr->store, table->base.id);
 	return ok;
 }
 
