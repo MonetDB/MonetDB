@@ -3487,7 +3487,7 @@ sql_trans_commit(sql_trans *tr)
 		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
 		int flush = (tr->logchanges > min_changes && !store->changes);
 		/* log changes should only be done if there is something to log */
-		if (tr->logchanges > 0) {
+		if (!tr->parent && tr->logchanges > 0) {
 			ok = store->logger_api.log_tstart(store, flush);
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
@@ -3506,11 +3506,14 @@ sql_trans_commit(sql_trans *tr)
 		} else {
 			store_lock(store);
 			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+			oldest = tr->parent ? commit_ts : oldest;
+			if (tr->parent)
+				tr->parent->logchanges += tr->logchanges;
 		}
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
-		if (ATOMIC_GET(&store->nr_active) == 1) {
+		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			oldest = commit_ts;
 			store_pending_changes(store, oldest);
 		}

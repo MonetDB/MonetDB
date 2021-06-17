@@ -132,3 +132,22 @@ SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT 
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL DAY)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
+
+query T rowsort
+select sub0.c2 from t0 cross join (values (timestamp '1970-01-01 01:00:00', timestamp '1970-01-01 01:00:00')) as sub0(c1,c2)
+----
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+
+statement ok
+ROLLBACK
+
