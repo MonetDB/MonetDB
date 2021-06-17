@@ -301,6 +301,19 @@ HASHgrowbucket(BAT *b)
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
+	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
+	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
+		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
+		if (h->heapbckt.storage != STORE_MEM) {
+			if (!(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
+				doHASHdestroy(b, h);
+				b->thash = NULL;
+				return GDK_FAIL;
+			}
+		}
+	}
+
 	/* only needed to fix hash tables built before this fix was
 	 * introduced */
 	if (h->width < SIZEOF_BUN &&
@@ -310,15 +323,6 @@ HASHgrowbucket(BAT *b)
 
 	h->heapbckt.dirty = true;
 	h->heaplink.dirty = true;
-	if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
-		/* persistent hash: remove persistency */
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0)
-				return GDK_FAIL;
-		}
-	}
 	while (h->nunique >= (nbucket = h->nbucket) * 7 / 8) {
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
@@ -583,6 +587,7 @@ BAThashsave_intern(BAT *b, bool dosync)
 						hp->dirty = false;
 					} else {
 						perror("write hash");
+						((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
 					}
 					close(fd);
 				}
@@ -1095,6 +1100,18 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
+	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
+	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
+		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
+		if (h->heapbckt.storage != STORE_MEM) {
+			if (!(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
+				doHASHdestroy(b, h);
+				b->thash = NULL;
+				return;
+			}
+		}
+	}
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
 		return;
@@ -1154,6 +1171,18 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
+	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
+	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
+		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
+		if (h->heapbckt.storage != STORE_MEM) {
+			if (!(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
+				doHASHdestroy(b, h);
+				b->thash = NULL;
+				return;
+			}
+		}
+	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
 	BATiter bi = bat_iterator(b);
@@ -1225,6 +1254,18 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
+	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
+	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
+		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
+		if (h->heapbckt.storage != STORE_MEM) {
+			if (!(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
+				doHASHdestroy(b, h);
+				b->thash = NULL;
+				return;
+			}
+		}
+	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
 	BATiter bi = bat_iterator(b);

@@ -17,51 +17,85 @@
 /*******************************/
 
 str
-geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
+geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *columnSRID)
 {
-	BAT *outBAT = NULL, *inBAT = NULL;
+	BAT *b = NULL, *s = NULL, *dst = NULL;
+	BATiter bi;
+	str msg = MAL_SUCCEED;
+	struct canditer ci;
+	BUN q = 0;
+	oid off = 0;
+	bool nils = false;
 	wkb *inWKB = NULL, *outWKB = NULL;
-	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
 
 	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batcalc.wkb", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-
+	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
 	//create a new BAT, aligned with input BAT
-	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), q, TRANSIENT))) {
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
-	//iterator over the BAT
-	inBAT_iter = bat_iterator(inBAT);
-	//for (i = 0; i < BATcount(inBAT); i++) {
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
-		str err = NULL;
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			inWKB = (wkb *) BUNtvar(bi, p);
 
-		//if for used --> inWKB = (wkb *) BUNtvar(inBATi, i);
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) {	//check type
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
-		}
-		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
+			if ((msg = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, outWKB, Tsize(dst)) != GDK_SUCCEED) {
+				GDKfree(outWKB);
+				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_wkb_nil(outWKB);
 			GDKfree(outWKB);
-			throw(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			outWKB = NULL;
 		}
-		GDKfree(outWKB);
-		outWKB = NULL;
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next(&ci) - off);
+			inWKB = (wkb *) BUNtvar(bi, p);
+
+			if ((msg = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, outWKB, Tsize(dst)) != GDK_SUCCEED) {
+				GDKfree(outWKB);
+				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_wkb_nil(outWKB);
+			GDKfree(outWKB);
+			outWKB = NULL;
+		}
 	}
 
-	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
-
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
+		BBPkeepref(*outBAT_id = dst->batCacheid);
+	} else if (dst)
+		BBPreclaim(dst);
+	return msg;
 }
 
 /*create WKB from WKT */
