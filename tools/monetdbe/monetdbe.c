@@ -668,7 +668,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	}
 
 	/* set the output of GDKtracer logs */
-	if (opts->trace_file) {
+	if (opts && opts->trace_file) {
 		/* if file specified, use it */
 		if (GDKtracer_set_tracefile(opts->trace_file) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
@@ -1991,32 +1991,6 @@ cleanup:
 	return msg;
 }
 
-#define MONETDBE_APPEND_CHECK_NOT_NULL(TPE) \
-	do { \
-		const TPE *restrict input_cast = input[i]->data; \
-		for (size_t j = 0 ; j < cnt; j++) { \
-			if (is_##TPE##_nil(input_cast[j])) { \
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name); \
-				goto cleanup; \
-			} \
-		} \
-	} while(0)
-
-#define MONETDBE_BLOB_CONVERT \
-	do { \
-		size_t len = be[j].size; \
-		var_t nlen = blobsize(len); \
-		blob *b = (blob*)GDKmalloc(nlen); \
-		if (!b) { \
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL); \
-			err = 1; \
-			break; \
-		} \
-		b->nitems = len; \
-		memcpy(b->data, be[j].data, len); \
-		d[j] = b; \
-	} while (0)
-
 char*
 monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, monetdbe_column **input, size_t column_count)
 {
@@ -2182,41 +2156,6 @@ remote_cleanup:
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name);
 				goto cleanup;
 			}
-			if (!c->null) {
-				switch (ATOMbasetype(mtype)) {
-				case TYPE_bte:
-					MONETDBE_APPEND_CHECK_NOT_NULL(bte);
-					break;
-				case TYPE_sht:
-					MONETDBE_APPEND_CHECK_NOT_NULL(sht);
-					break;
-				case TYPE_int:
-					MONETDBE_APPEND_CHECK_NOT_NULL(int);
-					break;
-				case TYPE_lng:
-					MONETDBE_APPEND_CHECK_NOT_NULL(lng);
-					break;
-#ifdef HAVE_HGE
-				case TYPE_hge:
-					MONETDBE_APPEND_CHECK_NOT_NULL(hge);
-					break;
-#endif
-				case TYPE_flt:
-					MONETDBE_APPEND_CHECK_NOT_NULL(flt);
-					break;
-				case TYPE_dbl:
-					MONETDBE_APPEND_CHECK_NOT_NULL(dbl);
-					break;
-				case TYPE_uuid: /* leave it here for the future? */
-					MONETDBE_APPEND_CHECK_NOT_NULL(uuid);
-					break;
-				default: {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append",
-								"The internal type '%s' is not supported at monetdbe append. This is a bug", ATOMname(mtype));
-					goto cleanup;
-				}
-				}
-			}
 
 			if ((bn = COLnew(0, mtype, 0, TRANSIENT)) == NULL) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
@@ -2260,56 +2199,16 @@ remote_cleanup:
 			bn->theap->size = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
-			int err = 0;
 			char **d = (char**)v;
-			unsigned int max_digits = c->type.digits;
 
-			if (c->null) {
-				if (max_digits) {
-					for (size_t j=0; j<cnt; j++) {
-						if (!d[j]) {
-							d[j] = (char*) nil;
-						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
-							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
-							err = 1;
-							break;
-						}
-					}
-				} else {
-					for (size_t j=0; j<cnt; j++) {
-						if (!d[j])
-							d[j] = (char*) nil;
-					}
-				}
-			} else {
-				if (max_digits) {
-					for (size_t j=0; j<cnt; j++) {
-						if (!d[j]) {
-							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-							err = 1;
-							break;
-						} else if ((unsigned int)UTF8_strlen(d[j]) > max_digits) {
-							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Value too long for type (var)char(%u)", max_digits);
-							err = 1;
-							break;
-						}
-					}
-				} else {
-					for (size_t j=0; j<cnt; j++) {
-						if (!d[j]) {
-							mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-							err = 1;
-							break;
-						}
-					}
-				}
+			for (size_t j=0; j<cnt; j++) {
+				if (!d[j])
+					d[j] = (char*) nil;
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-				err = 1;
-			}
-			if (err)
 				goto cleanup;
+			}
 		} else if (mtype == TYPE_timestamp) {
 			int err = 0;
 			timestamp *d = GDKmalloc(sizeof(timestamp)*cnt);
@@ -2319,30 +2218,16 @@ remote_cleanup:
 			}
 			monetdbe_data_timestamp* ts = (monetdbe_data_timestamp*)v;
 
-			if (c->null) {
-				for (size_t j=0; j<cnt; j++){
-					monetdbe_data_timestamp mdt = ts[j];
+			for (size_t j=0; j<cnt; j++){
+				monetdbe_data_timestamp mdt = ts[j];
 
-					if (timestamp_is_null(&mdt)) {
-						d[j] = *(timestamp*) nil;
-					} else {
-						d[j] = timestamp_from_data(&mdt);
-					}
-				}
-			} else {
-				for (size_t j=0; j<cnt; j++) {
-					monetdbe_data_timestamp mdt = ts[j];
-
-					if (timestamp_is_null(&mdt)) {
-						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						err = 1;
-						break;
-					} else {
-						d[j] = timestamp_from_data(&mdt);
-					}
+				if (timestamp_is_null(&mdt)) {
+					d[j] = *(timestamp*) nil;
+				} else {
+					d[j] = timestamp_from_data(&mdt);
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2358,30 +2243,16 @@ remote_cleanup:
 			}
 			monetdbe_data_date* de = (monetdbe_data_date*)v;
 
-			if (c->null) {
-				for (size_t j=0; j<cnt; j++){
-					monetdbe_data_date mdt = de[j];
+			for (size_t j=0; j<cnt; j++){
+				monetdbe_data_date mdt = de[j];
 
-					if (date_is_null(&mdt)) {
-						d[j] = *(date*) nil;
-					} else {
-						d[j] = date_from_data(&mdt);
-					}
-				}
-			} else {
-				for (size_t j=0; j<cnt; j++) {
-					monetdbe_data_date mdt = de[j];
-
-					if (date_is_null(&mdt)) {
-						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						err = 1;
-						break;
-					} else {
-						d[j] = date_from_data(&mdt);
-					}
+				if (date_is_null(&mdt)) {
+					d[j] = *(date*) nil;
+				} else {
+					d[j] = date_from_data(&mdt);
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2397,30 +2268,16 @@ remote_cleanup:
 			}
 			monetdbe_data_time* t = (monetdbe_data_time*)v;
 
-			if (c->null) {
-				for (size_t j=0; j<cnt; j++){
-					monetdbe_data_time mdt = t[j];
+			for (size_t j=0; j<cnt; j++){
+				monetdbe_data_time mdt = t[j];
 
-					if (time_is_null(&mdt)) {
-						d[j] = *(daytime*) nil;
-					} else {
-						d[j] = time_from_data(&mdt);
-					}
-				}
-			} else {
-				for (size_t j=0; j<cnt; j++) {
-					monetdbe_data_time mdt = t[j];
-
-					if (time_is_null(&mdt)) {
-						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
-						err = 1;
-						break;
-					} else {
-						d[j] = time_from_data(&mdt);
-					}
+				if (time_is_null(&mdt)) {
+					d[j] = *(daytime*) nil;
+				} else {
+					d[j] = time_from_data(&mdt);
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2437,23 +2294,21 @@ remote_cleanup:
 			}
 			monetdbe_data_blob* be = (monetdbe_data_blob*)v;
 
-			if (c->null) {
-				for (j=0; j<cnt; j++){
-					if (blob_is_null(be+j)) {
-						d[j] = (blob*)nil;
-					} else {
-						MONETDBE_BLOB_CONVERT;
-					}
-				}
-			} else {
-				for (j=0; j<cnt; j++){
-					if (blob_is_null(be+j)) {
-						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+			for (j=0; j<cnt; j++){
+				if (blob_is_null(be+j)) {
+					d[j] = (blob*)nil;
+				} else {
+					size_t len = be[j].size;
+					var_t nlen = blobsize(len);
+					blob *b = (blob*)GDKmalloc(nlen);
+					if (!b) {
+						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 						err = 1;
 						break;
-					} else {
-						MONETDBE_BLOB_CONVERT;
 					}
+					b->nitems = len;
+					memcpy(b->data, be[j].data, len);
+					d[j] = b;
 				}
 			}
 			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {

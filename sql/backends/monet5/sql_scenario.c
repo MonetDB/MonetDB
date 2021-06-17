@@ -1134,7 +1134,7 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
-			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, c->query) < 0)
+			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
 				opt = 1;

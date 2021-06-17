@@ -115,7 +115,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 	if (heapnames) {
 		assert(bn->theap != NULL);
-		ATOMIC_INIT(&bn->theap->refs, 1);
 		bn->theap->parentid = bn->batCacheid;
 		bn->theap->farmid = BBPselectfarm(role, bn->ttype, offheap);
 
@@ -135,6 +134,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
 		}
+		ATOMIC_INIT(&bn->theap->refs, 1);
 	} else {
 		assert(bn->theap == NULL);
 	}
@@ -2366,7 +2366,6 @@ void
 BATassertProps(BAT *b)
 {
 	unsigned bbpstatus;
-	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
 	int cmp;
@@ -2387,7 +2386,6 @@ BATassertProps(BAT *b)
 	       ((bbpstatus & BBPEXISTING) != 0) +
 	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
-	assert(b != NULL);
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
@@ -2468,6 +2466,13 @@ BATassertProps(BAT *b)
 		}
 		return;
 	}
+	/* do the rest on a view in case some other thread changes b */
+	BAT *v = VIEWcreate(b->hseqbase, b);
+	if (v == NULL)
+		return;
+	b = v;
+	BATiter bi = bat_iterator(b);
+
 	if (BATtdense(b)) {
 		assert(b->tseqbase + b->batCount <= GDK_oid_max);
 		assert(b->ttype == TYPE_oid);
@@ -2480,6 +2485,7 @@ BATassertProps(BAT *b)
 			for (p = 1; p < q; p++)
 				assert(o[p - 1] + 1 == o[p]);
 		}
+		BBPunfix(b->batCacheid);
 		return;
 	}
 	assert(1 << b->tshift == b->twidth);
@@ -2524,6 +2530,7 @@ BATassertProps(BAT *b)
 	if (!b->tkey && !b->tsorted && !b->trevsorted &&
 	    !b->tnonil && !b->tnil) {
 		/* nothing more to prove */
+		BBPunfix(b->batCacheid);
 		return;
 	}
 
@@ -2682,4 +2689,5 @@ BATassertProps(BAT *b)
 		assert(minval == NULL || seenmin);
 		assert(!b->tnil || seennil);
 	}
+	BBPunfix(b->batCacheid);
 }
