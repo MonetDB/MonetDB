@@ -3386,11 +3386,10 @@ add_offsets(BAT *pos, BUN slot, size_t nr, size_t total)
 		if (!pos)
 			return NULL;
 	}
-	for(size_t i = 0; i < nr; i++) {
-		oid v = slot + i;
-		if (BUNappend(pos, &v, true) != GDK_SUCCEED)
-			return NULL;
-	}
+	oid *restrict dst = Tloc(pos, BATcount(pos));
+	for(size_t i = 0; i < nr; i++)
+		dst[i] = slot + i;
+	pos->batCount += nr;
 	return pos;
 }
 
@@ -3462,7 +3461,15 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (!isLocalTemp(t))
 			tr->logchanges += (int) total;
 	}
-	assert(BATcount(pos) == total);
+	if (pos) {
+		assert(BATcount(pos) == total);
+		BATsetcount(pos, total); /* set other properties */
+		pos->tnil = false;
+		pos->tnonil = true;
+		pos->tkey = true;
+		pos->tsorted = true;
+		pos->trevsorted = false;
+	}
 	return pos;
 }
 
