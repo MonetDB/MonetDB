@@ -2207,6 +2207,8 @@ BBPuncacheit(bat i, bool unloaddesc)
 	if (BBPcheck(i, "BBPuncacheit")) {
 		BAT *b = BBP_desc(i);
 
+		assert(unloaddesc || BBP_refs(i) == 0);
+
 		if (b) {
 			if (BBP_cache(i)) {
 				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBPname(i));

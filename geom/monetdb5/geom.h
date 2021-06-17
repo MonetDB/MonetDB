@@ -236,7 +236,7 @@ geom_export str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id);
 
 geom_export str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid);
 
-geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, int* columnType, int* columnSRID);
+geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, bat* cand, int* columnType, int* columnSRID);
 
 geom_export str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id);
 
