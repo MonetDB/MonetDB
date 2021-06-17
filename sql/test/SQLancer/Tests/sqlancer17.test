@@ -2,6 +2,37 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t1" ("c0" INTEGER)
+
+statement ok rowcount 31
+INSERT INTO "t1" VALUES (8), (8), (-173909322), (4), (7), (-8), (11), (2112833619), (583284612), (581585171), (1), (6), (7), (0), (2), (1), (1041993071),
+(NULL), (0), (-1498894491), (-47709878), (4), (6), (-526272879), (-1468874541), (4), (3), (-756533326), (7), (0), (-73089569)
+
+statement ok
+CREATE TABLE "t2" ("c0" INTEGER)
+
+statement ok rowcount 53
+INSERT INTO "t2" VALUES (2), (1), (6), (1), (-888425077), (2), (5), (-1), (554424471), (2), (-2097744654), (30), (0), (1), (2), (9), (NULL), (NULL),
+(0), (1), (0), (1457967621), (-2007218942), (2), (-32), (6), (1379912927), (0), (9), (0), (-1149644916), (-1471582802), (0), (NULL), (7), (2003447142),
+(NULL), (1041993071), (NULL), (-888425077), (2086619558), (-1), (6), (337689526), (NULL), (7), (7), (-109524918), (4), (10), (742198232), (0), (0)
+
+query I rowsort
+SELECT t2.c0 FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)%asin(0.7) FROM t1) AS sub0(c0,c1) ON sub0.c1 <= t2.c0 WHERE '' NOT ILIKE 'x'
+----
+377 values hashing to 3fcc20c12d29f4847a2af7e1c9e3c51b
+
+query T rowsort
+SELECT '' NOT ILIKE 'x' FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)%asin(0.7) FROM t1) AS sub0(c0,c1) ON sub0.c1 <= t2.c0
+----
+377 values hashing to 19d4c8a836908c70817468cb9b9d7405
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c2" DATE, CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"))
 
 statement ok rowcount 2
