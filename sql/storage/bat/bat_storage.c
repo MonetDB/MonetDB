@@ -1447,39 +1447,42 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 }
 
 static int
-delta_append_bat( sql_delta *bat, BAT *offsets, BAT *i )
+delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 {
 	BAT *b, *oi = i;
 
 	assert(BATcount(offsets) == BATcount(i));
 	if (!BATcount(i))
 		return LOG_OK;
-	b = temp_descriptor(bat->cs.bid);
-	if (b == NULL)
-		return LOG_ERR;
-	if (i && (i->ttype == TYPE_msk || mask_cand(i))) {
+	if (i && (i->ttype == TYPE_msk || mask_cand(i)))
 		oi = BATunmask(i);
-	}
-	if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
+
+	lock_column(tr->store, id);
+	b = temp_descriptor(bat->cs.bid);
+	if (b == NULL) {
+		unlock_column(tr->store, id);
 		if (oi != i)
 			bat_destroy(oi);
-		bat_destroy(b);
 		return LOG_ERR;
 	}
+	if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
+		bat_destroy(b);
+		unlock_column(tr->store, id);
+		if (oi != i)
+			bat_destroy(oi);
+		return LOG_ERR;
+	}
+	bat_destroy(b);
+	unlock_column(tr->store, id);
+
 	if (oi != i)
 		bat_destroy(oi);
-	bat_destroy(b);
 	return LOG_OK;
 }
 
 static int
-delta_append_val( sql_delta *bat, BAT *offsets, void *i)
+delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, void *i)
 {
-	BAT *b = temp_descriptor(bat->cs.bid);
-
-	if(b == NULL)
-		return LOG_ERR;
-
 	size_t offset = 0;
 	if (BATtdense(offsets)) {
 		offset = offsets->tseqbase;
@@ -1490,11 +1493,18 @@ delta_append_val( sql_delta *bat, BAT *offsets, void *i)
 	}
 	BUN cnt = BATcount(offsets);
 
+	lock_column(tr->store, id);
+	BAT *b = temp_descriptor(bat->cs.bid);
+	if (b == NULL) {
+		unlock_column(tr->store, id);
+		return LOG_ERR;
+	}
 	BUN bcnt = BATcount(b);
 	if (bcnt > offset){
 		size_t ccnt = ((offset+cnt) > bcnt)? (bcnt - offset):cnt;
 		if (BUNreplacemultiincr(b, offset, i, ccnt, true) != GDK_SUCCEED) {
 			bat_destroy(b);
+			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 		cnt -= ccnt;
@@ -1507,16 +1517,19 @@ delta_append_val( sql_delta *bat, BAT *offsets, void *i)
 			for(i=0;i<d;i++) {
 				if (BUNappend(b, tv, true) != GDK_SUCCEED) {
 					bat_destroy(b);
+					unlock_column(tr->store, id);
 					return LOG_ERR;
 				}
 			}
 		}
 		if (BUNappendmulti(b, i, cnt, true) != GDK_SUCCEED) {
 			bat_destroy(b);
+			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
 	bat_destroy(b);
+	unlock_column(tr->store, id);
 	return LOG_OK;
 }
 
@@ -1536,16 +1549,14 @@ append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, void *offset, void
 {
 	int ok = LOG_OK;
 
-	lock_column(tr->store, id);
 	if (is_bat) {
 		BAT *bat = incoming_data;
 
 		if (BATcount(bat))
-			ok = delta_append_bat(delta, offset, bat);
+			ok = delta_append_bat(tr, delta, id, offset, bat);
 	} else {
-		ok = delta_append_val(delta, offset, incoming_data);
+		ok = delta_append_val(tr, delta, id, offset, incoming_data);
 	}
-	unlock_column(tr->store, id);
 	return ok;
 }
 
