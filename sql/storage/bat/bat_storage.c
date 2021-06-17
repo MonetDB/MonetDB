@@ -3594,13 +3594,22 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 }
 
 static BAT *
-segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
+segments2cands(segment *s, sql_trans *tr, sql_table *t, size_t start, size_t end)
 {
-	size_t nr = end - start, pos = 0;
+	lock_table(tr->store, t->base.id);
+	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
+	size_t dnr = count_deletes(s, tr), nr = end - start, pos = 0;
+	if (!dnr) {
+		unlock_table(tr->store, t->base.id);
+		return BATdense(start, start, end-start);
+	}
+
 	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT), *bn = NULL;
-	if (!b)
+	if (!b) {
+		unlock_table(tr->store, t->base.id);
 		return NULL;
+	}
 
 	uint32_t *restrict dst = Tloc(b, 0);
 	for( ; s; s=s->next) {
@@ -3656,6 +3665,8 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 			assert(lnr==0);
 		}
 	}
+
+	unlock_table(tr->store, t->base.id);
 	if (pos%32)
 		*dst=cur;
 	BATsetcount(b, nr);
@@ -3686,14 +3697,7 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	if (part_nr == (nr_of_parts-1))
 		end = nr;
 	assert(end <= nr);
-	/* step one no deletes -> dense range */
-	size_t dnr = count_deletes(s->segs->h, tr);
-	if (!dnr)
-		return BATdense(start, start, end-start);
-	lock_table(tr->store, t->base.id);
-	BAT *r = segments2cands(s->segs->h, tr, start, end);
-	unlock_table(tr->store, t->base.id);
-	return r;
+	return segments2cands(s->segs->h, tr, t, start, end);
 }
 
 void
