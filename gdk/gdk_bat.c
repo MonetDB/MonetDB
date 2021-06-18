@@ -2071,44 +2071,41 @@ BATroles(BAT *b, const char *tnme)
 /* rather than deleting X.new, we comply with the commit protocol and
  * move it to backup storage */
 static gdk_return
-backup_new(Heap *hp, int lockbat)
+backup_new(Heap *hp)
 {
-	int batret, bakret, xx, ret = 0;
+	int batret, bakret, ret = -1;
 	char *batpath, *bakpath;
 	struct stat st;
-
-	/* file actions here interact with the global commits */
-	for (xx = 0; xx <= lockbat; xx++)
-		MT_lock_set(&GDKtrimLock(xx));
 
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
 	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
 	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
-	if (batpath == NULL || bakpath == NULL) {
-		ret = -1;
-		goto bailout;
-	}
-	batret = MT_stat(batpath, &st);
-	bakret = MT_stat(bakpath, &st);
+	if (batpath != NULL && bakpath != NULL) {
+		/* file actions here interact with the global commits */
+		MT_lock_set(&GDKtmLock);
 
-	if (batret == 0 && bakret) {
-		/* no backup yet, so move the existing X.new there out
-		 * of the way */
-		if ((ret = MT_rename(batpath, bakpath)) < 0)
-			GDKsyserror("backup_new: rename %s to %s failed\n",
-				    batpath, bakpath);
-		TRC_DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
-	} else if (batret == 0) {
-		/* there is a backup already; just remove the X.new */
-		if ((ret = MT_remove(batpath)) != 0)
-			GDKsyserror("backup_new: remove %s failed\n", batpath);
-		TRC_DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
+		batret = MT_stat(batpath, &st);
+		bakret = MT_stat(bakpath, &st);
+
+		if (batret == 0 && bakret) {
+			/* no backup yet, so move the existing X.new there out
+			 * of the way */
+			if ((ret = MT_rename(batpath, bakpath)) < 0)
+				GDKsyserror("backup_new: rename %s to %s failed\n",
+					    batpath, bakpath);
+			TRC_DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
+		} else if (batret == 0) {
+			/* there is a backup already; just remove the X.new */
+			if ((ret = MT_remove(batpath)) != 0)
+				GDKsyserror("backup_new: remove %s failed\n", batpath);
+			TRC_DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
+		} else {
+			ret = 0;
+		}
+		MT_lock_unset(&GDKtmLock);
 	}
-  bailout:
 	GDKfree(batpath);
 	GDKfree(bakpath);
-	for (xx = lockbat; xx >= 0; xx--)
-		MT_lock_unset(&GDKtrimLock(xx));
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -2128,7 +2125,7 @@ HEAPchangeaccess(Heap *hp, int dstmode, bool existing)
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = true;
-		return backup_new(hp, BBP_THREADMASK) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
+		return backup_new(hp) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 	}
 	return hp->storage;	/* 7=>5 */
 }
@@ -2140,7 +2137,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 	if (existing) {		/* existing, ie will become transient */
 		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) {	/* 6=>2 */
 			hp->dirty = true;
-			return backup_new(hp, -1) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
+			return backup_new(hp) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 		}
 		return hp->newstorage;	/* 4=>0,5=>1,7=>3,c=>a no change */
 	}
