@@ -605,6 +605,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const ValRecord *prop;
 	lng t0 = 0;
 	const char *algomsg = "";
+	bool locked = false;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {
@@ -1015,6 +1016,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * group */
 		bool phash = false;
 		algomsg = "existing hash -- ";
+		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash == NULL &&
 		    /* DISABLES CODE */ (0) &&
 		    (parent = VIEWtparent(b)) != 0) {
@@ -1029,6 +1031,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			phash = true;
 		}
 		hs = b->thash;
+		if (hs == NULL) {
+			MT_rwlock_rdunlock(&b->thashlock);
+			goto lost_hash;
+		}
+		locked = true;
 		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
@@ -1062,14 +1069,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_use_existing_hash_table_any();
 			break;
 		}
+		MT_rwlock_rdunlock(&b->thashlock);
+		locked = false;
 	} else {
-		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
+		bool gc;
 		const char *nme;
 		BUN prb;
-		int bits = 0;
+		int bits;
 		BUN nbucket;
 		oid grp;
 
+	  lost_hash:
+		gc = g != NULL && (BATordered(g) || BATordered_rev(g));
+		bits = 0;
 		GDKclrerr();	/* not interested in BAThash errors */
 
 		/* not sorted, and no pre-existing hash table: we'll
@@ -1266,6 +1278,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
+	if (locked)
+		MT_rwlock_rdunlock(&b->thashlock);
 	if (gn)
 		BBPunfix(gn->batCacheid);
 	if (en)

@@ -4262,7 +4262,7 @@ VALUES (%s, '%s', '%s', '%s',
             CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
 
         Failed = 0
-        for f in [F_SKIP, F_WARN, F_SOCK, F_TIME, F_ABRT, F_SEGV, F_RECU, F_ERROR]:
+        for f in [F_SOCK, F_TIME, F_ABRT, F_SEGV, F_RECU, F_ERROR]:
             Failed += len(Failure[f])
         num_tests = 0
         for f in Failure:

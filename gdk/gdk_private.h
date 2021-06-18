@@ -168,13 +168,19 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	__attribute__((__visibility__("hidden")));
 void HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHappend_locked(BAT *b, BUN i, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHdelete(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHdelete_locked(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHinsert(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
+void HASHinsert_locked(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
@@ -386,7 +392,6 @@ typedef struct {
 
 typedef struct {
 	MT_Lock cache;
-	MT_Lock trim;
 	bat free;
 } bbplock_t;
 
@@ -405,7 +410,6 @@ extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
@@ -430,7 +434,6 @@ extern MT_Lock GDKtmLock;
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
-#define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 

@@ -207,14 +207,12 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 	if (prelude(cnt, subcommit, sizes) == GDK_SUCCEED) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global
 		 * (sub-)commits */
-		for (xx = 0; xx <= BBP_THREADMASK; xx++)
-			MT_lock_set(&GDKtrimLock(xx));
+		MT_lock_set(&GDKtmLock);
 		if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 			epilogue(cnt, subcommit);
 			ret = GDK_SUCCEED;
 		}
-		for (xx = BBP_THREADMASK; xx >= 0; xx--)
-			MT_lock_unset(&GDKtrimLock(xx));
+		MT_lock_unset(&GDKtmLock);
 	}
 	return ret;
 }

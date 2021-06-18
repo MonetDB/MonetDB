@@ -2090,8 +2090,8 @@ store_manager(sqlstore *store)
 				ulng oldest = store_timestamp(store)+1;
 				store_pending_changes(store, oldest);
 			}
-			store->logger_api.activate(store); /* rotate too new log file */
 			store_unlock(store);
+			store->logger_api.activate(store); /* rotate too new log file */
 		}
 		if (GDKexiting())
 			break;
@@ -3484,10 +3484,13 @@ sql_trans_commit(sql_trans *tr)
 		oldest = store_oldest_pending(store);
 		store_unlock(store);
 		ulng commit_ts = 0;
-		int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
-		int flush = (tr->logchanges > min_changes && !store->changes);
+		int flush = 0;
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
+			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
+			flush = (tr->logchanges > min_changes && !store->changes);
+			if (flush)
+				MT_lock_set(&store->flush);
 			ok = store->logger_api.log_tstart(store, flush);
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
@@ -3527,8 +3530,10 @@ sql_trans_commit(sql_trans *tr)
 			c->ts = commit_ts;
 		}
 		/* when directly flushing: flush logger after changes got applied */
-		if (ok == LOG_OK && flush)
+		if (ok == LOG_OK && flush) {
 			ok = store->logger_api.log_tend(store, commit_ts);
+			MT_lock_unset(&store->flush);
+		}
 		/* garbage collect */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
 			node *next = n->next;
