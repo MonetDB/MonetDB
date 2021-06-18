@@ -1475,13 +1475,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				break;
 #endif
 			}
-			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED)
+			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
+				MT_rwlock_wrunlock(&b->thashlock);
 				return GDK_FAIL;
+			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {
 				/* doesn't fit in current heap, upgrade it */
-				if (GDKupgradevarheap(b, _d, 0, false) != GDK_SUCCEED)
+				if (GDKupgradevarheap(b, _d, 0, false) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
+				}
 			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
@@ -1504,10 +1508,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			mskSetVal(b, p, * (msk *) t);
 		} else {
 			assert(BATatoms[b->ttype].atomPut == NULL);
-			if (ATOMfix(b->ttype, t) != GDK_SUCCEED)
+			if (ATOMfix(b->ttype, t) != GDK_SUCCEED ||
+			    ATOMunfix(b->ttype, BUNtloc(bi, p)) != GDK_SUCCEED) {
+				MT_rwlock_wrunlock(&b->thashlock);
 				return GDK_FAIL;
-			if (ATOMunfix(b->ttype, BUNtloc(bi, p)) != GDK_SUCCEED)
-				return GDK_FAIL;
+			}
 			switch (ATOMsize(b->ttype)) {
 			case 0:	     /* void */
 				break;
