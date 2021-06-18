@@ -1445,10 +1445,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
 		tmp = BBPquickdesc(parent, false);
-		hash = phash = tmp && BATcheckhash(tmp) &&
-			(BATcount(tmp) == BATcount(b) ||
-			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
-			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
+		if (tmp && BATcheckhash(tmp)) {
+			MT_rwlock_rdlock(&tmp->thashlock);
+			hash = phash = tmp->thash != NULL &&
+				(BATcount(tmp) == BATcount(b) ||
+				 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+				 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
+			MT_rwlock_rdunlock(&tmp->thashlock);
+		}
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
 		if (!phash &&
@@ -1458,7 +1462,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hash = phash = true;
 	}
 
-	if (hash && (phash || b->thash)) {
+	if (!(hash && (phash || b->thash))) {
 		/* make sure tsorted and trevsorted flags are set, but
 		 * we only need to know if we're not yet sure that we're
 		 * going for the hash (i.e. it already exists) */

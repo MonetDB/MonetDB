@@ -1253,18 +1253,22 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 	b->theap->dirty |= count > 0;
+	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
 			(void *) ((char *) values + i * Tsize(b));
 		setcolprops(b, t);
 		gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
-		if (rc != GDK_SUCCEED)
+		if (rc != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&b->thashlock);
 			return rc;
+		}
 		if (b->thash) {
-			HASHappend(b, p, t);
+			HASHappend_locked(b, p, t);
 		}
 		p++;
 	}
+	MT_rwlock_wrunlock(&b->thashlock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1405,7 +1409,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 * clear it */
 			b->tnil = false;
 		}
-		HASHdelete(b, p, val);	/* first delete old value from hash */
 		if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
 			const ValRecord *prop;
 
@@ -1449,6 +1452,9 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		}
 		OIDXdestroy(b);
 		IMPSdestroy(b);
+
+		MT_rwlock_wrlock(&b->thashlock);
+		HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		if (b->tvarsized && b->ttype) {
 			var_t _d;
 			ptr _ptr;
@@ -1530,7 +1536,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 		}
 
-		HASHinsert(b, p, t);	/* insert new value into hash */
+		HASHinsert_locked(b, p, t);	/* insert new value into hash */
+		MT_rwlock_wrunlock(&b->thashlock);
 
 		tt = b->ttype;
 		prv = p > 0 ? p - 1 : BUN_NONE;
@@ -1704,40 +1711,63 @@ BUNfnd(BAT *b, const void *v)
 		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
 	}
-	bi = bat_iterator(b);
-	switch (ATOMbasetype(b->ttype)) {
-	case TYPE_bte:
-		HASHfnd_bte(r, bi, v);
-		break;
-	case TYPE_sht:
-		HASHfnd_sht(r, bi, v);
-		break;
-	case TYPE_int:
-		HASHfnd_int(r, bi, v);
-		break;
-	case TYPE_flt:
-		HASHfnd_flt(r, bi, v);
-		break;
-	case TYPE_dbl:
-		HASHfnd_dbl(r, bi, v);
-		break;
-	case TYPE_lng:
-		HASHfnd_lng(r, bi, v);
-		break;
+	if (BAThash(b) == GDK_SUCCEED) {
+		MT_rwlock_rdlock(&b->thashlock);
+		if (b->thash == NULL) {
+			MT_rwlock_rdunlock(&b->thashlock);
+			goto hashfnd_failed;
+		}
+		bi = bat_iterator(b);
+		switch (ATOMbasetype(b->ttype)) {
+		case TYPE_bte:
+			HASHloop_bte(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_sht:
+			HASHloop_sht(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_int:
+			HASHloop_int(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_flt:
+			HASHloop_flt(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_dbl:
+			HASHloop_dbl(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_lng:
+			HASHloop_lng(bi, b->thash, r, v)
+				break;
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		HASHfnd_hge(r, bi, v);
-		break;
+		case TYPE_hge:
+			HASHloop_hge(bi, b->thash, r, v)
+				break;
+			break;
 #endif
-	case TYPE_str:
-		HASHfnd_str(r, bi, v);
-		break;
-	default:
-		HASHfnd(r, bi, v);
+		case TYPE_uuid:
+			HASHloop_uuid(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_str:
+			HASHloop_str(bi, b->thash, r, v)
+				break;
+			break;
+		default:
+			HASHloop(bi, b->thash, r, v)
+				break;
+			break;
+		}
+		MT_rwlock_rdunlock(&b->thashlock);
+		return r;
 	}
-	return r;
   hashfnd_failed:
 	/* can't build hash table, search the slow way */
+	GDKclrerr();
 	return slowfnd(b, v);
 }
 

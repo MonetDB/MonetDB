@@ -538,8 +538,9 @@ BATcheckhash(BAT *b)
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	ret = b->thash != NULL;
-	if (ret)
+	if (ret) {
 		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
+	}
 	return ret;
 }
 
@@ -1068,7 +1069,7 @@ HASHprobe(const Hash *h, const void *v)
 	}
 }
 
-static inline void
+inline void
 HASHappend_locked(BAT *b, BUN i, const void *v)
 {
 	Hash *h = b->thash;
@@ -1139,7 +1140,7 @@ HASHappend(BAT *b, BUN i, const void *v)
 }
 
 /* insert value v at position p into the hash table of b */
-static inline void
+inline void
 HASHinsert_locked(BAT *b, BUN p, const void *v)
 {
 	Hash *h = b->thash;
@@ -1222,7 +1223,7 @@ HASHinsert(BAT *b, BUN p, const void *v)
 }
 
 /* delete value v at position p from the hash table of b */
-static inline void
+inline void
 HASHdelete_locked(BAT *b, BUN p, const void *v)
 {
 	Hash *h = b->thash;
