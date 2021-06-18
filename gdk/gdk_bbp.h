@@ -83,8 +83,6 @@ gdk_export void BBPkeepref(bat i);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPcold(bat i);
 
-#define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
-
 #define BBP_status_set(bid, mode)			\
 	ATOMIC_SET(&BBP_record(bid).status, mode)
 
