@@ -899,6 +899,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (BATextend(b, grows) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
+		MT_rwlock_wrlock(&b->thashlock);
 		if (BATatoms[b->ttype].atomFix == NULL &&
 		    b->ttype != TYPE_void &&
 		    n->ttype != TYPE_void &&
@@ -908,7 +909,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			       Tloc(n, ci.seq - hseq),
 			       cnt * Tsize(n));
 			for (BUN i = 0; b->thash && i < cnt; i++) {
-				HASHappend(b, r, Tloc(b, r));
+				HASHappend_locked(b, r, Tloc(b, r));
 				r++;
 			}
 			BATsetcount(b, BATcount(b) + cnt);
@@ -919,13 +920,16 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				cnt--;
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED)
+				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
+				}
 				if (b->thash)
-					HASHappend(b, r, t);
+					HASHappend_locked(b, r, t);
 				r++;
 			}
 		}
+		MT_rwlock_wrunlock(&b->thashlock);
 		b->theap->dirty = true;
 	}
 
@@ -1226,7 +1230,8 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 					minprop = NULL;
 				}
 			}
-			HASHdelete(b, updid, old);
+			MT_rwlock_wrlock(&b->thashlock);
+			HASHdelete_locked(b, updid, old);
 
 			var_t d;
 			switch (b->twidth) {
@@ -1245,13 +1250,17 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				break;
 #endif
 			}
-			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED)
+			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
+				MT_rwlock_wrunlock(&b->thashlock);
 				return GDK_FAIL;
+			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 				/* doesn't fit in current heap, upgrade it */
-				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED)
+				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
+				}
 			}
 			switch (b->twidth) {
 			case 1:
@@ -1269,7 +1278,9 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				break;
 #endif
 			}
-			HASHinsert(b, updid, new);
+			HASHinsert_locked(b, updid, new);
+			MT_rwlock_wrunlock(&b->thashlock);
+
 		}
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
@@ -1336,8 +1347,9 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 		 * there is only a persisted hash, it will get destroyed
 		 * in the first iteration, after which there is no hash
 		 * and the loop ends */
+		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = updid, j = updid + BATcount(p); i < j && b->thash; i++)
-			HASHdelete(b, i, Tloc(b, i));
+			HASHdelete_locked(b, i, Tloc(b, i));
 		if (n->ttype == TYPE_void) {
 			assert(b->ttype == TYPE_oid);
 			oid *o = Tloc(b, updid);
@@ -1412,8 +1424,9 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 		 * been destroyed above */
 		if (b->thash != NULL) {
 			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
-				HASHinsert(b, i, Tloc(b, i));
+				HASHinsert_locked(b, i, Tloc(b, i));
 		}
+		MT_rwlock_wrunlock(&b->thashlock);
 		if (BATcount(p) == BATcount(b)) {
 			/* if we replaced all values of b by values
 			 * from n, we can also copy the min/max
@@ -1520,7 +1533,8 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				}
 			}
 
-			HASHdelete(b, updid, old);
+			MT_rwlock_wrlock(&b->thashlock);
+			HASHdelete_locked(b, updid, old);
 			switch (b->twidth) {
 			case 1:
 				((bte *) b->theap->base)[updid] = * (bte *) new;
@@ -1545,7 +1559,8 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				memcpy(BUNtloc(bi, updid), new, ATOMsize(b->ttype));
 				break;
 			}
-			HASHinsert(b, updid, new);
+			HASHinsert_locked(b, updid, new);
+			MT_rwlock_wrunlock(&b->thashlock);
 		}
 	}
 	TRC_DEBUG(ALGO,
@@ -1790,11 +1805,18 @@ BATkeyed(BAT *b)
 			 * has a hash table */
 			BUN lo = 0;
 
+			MT_rwlock_rdlock(&b->thashlock);
 			hs = b->thash;
 			if (hs == NULL && VIEWtparent(b) != 0) {
 				BAT *b2 = BBPdescriptor(VIEWtparent(b));
 				lo = b->tbaseoff - b2->tbaseoff;
 				hs = b2->thash;
+			}
+			if (hs == NULL) {
+				/* between checking and locking, the
+				 * hash was destroyed */
+				MT_rwlock_rdunlock(&b->thashlock);
+				goto lost_hash;
 			}
 			for (q = BUNlast(b), p = 0; p < q; p++) {
 				const void *v = BUNtail(bi, p);
@@ -1806,10 +1828,12 @@ BATkeyed(BAT *b)
 						b->tnokey[0] = hb - lo;
 						b->tnokey[1] = p;
 						TRC_DEBUG(ALGO, "Fixed nokey(" BUNFMT "," BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", hb - lo, p, ALGOBATPAR(b), GDKusec() - t0);
+						MT_rwlock_rdunlock(&b->thashlock);
 						goto doreturn;
 					}
 				}
 			}
+			MT_rwlock_rdunlock(&b->thashlock);
 			/* we completed the scan: no duplicates */
 			b->tkey = true;
 		} else {
@@ -1817,6 +1841,7 @@ BATkeyed(BAT *b)
 			BUN prb;
 			BUN mask;
 
+		  lost_hash:
 			GDKclrerr(); /* not interested in BAThash errors */
 			nme = BBP_physical(b->batCacheid);
 			if (ATOMbasetype(b->ttype) == TYPE_bte) {

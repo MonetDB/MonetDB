@@ -1162,7 +1162,9 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		return res;
 	int fd;
 	if ((fd = getFileNo(lg->input_log)) < 0 || fstat(fd, &sb) < 0) {
-		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
+		if (lg->debug & 1) {
+			fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
+		}
 		logger_close_input(lg);
 		/* If the file could be opened, but fstat fails,
 		 * something weird is going on */
@@ -1180,7 +1182,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 			t0 = t1;
 			/* not more than once every 10 seconds */
 			fpos = (lng) getfilepos(getFile(lg->input_log));
-			if (fpos >= 0) {
+			if (lg->debug & 1 && fpos >= 0) {
 				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 				fflush(stdout);
 			}
@@ -1386,6 +1388,7 @@ static gdk_return
 bm_subcommit(logger *lg)
 {
 	BUN p, q;
+	logger_lock(lg);
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
@@ -1397,10 +1400,12 @@ bm_subcommit(logger *lg)
 	const log_bid *bids;
 	const lng *cnts = NULL, *lids = NULL;
 	int cleanup = 0;
+	lng t0 = 0;
 
 	if (n == NULL || sizes == NULL) {
 		GDKfree(n);
 		GDKfree(sizes);
+		logger_unlock(lg);
 		return GDK_FAIL;
 	}
 
@@ -1421,6 +1426,7 @@ bm_subcommit(logger *lg)
 		assert(col);
 		sizes[i] = cnts?(BUN)cnts[p]:0;
 		n[i++] = col;
+
 	}
 	/* now commit catalog, so it's also up to date on disk */
 	sizes[i] = lg->cnt;
@@ -1452,6 +1458,7 @@ bm_subcommit(logger *lg)
 				logbat_destroy(lb);
 				GDKfree(n);
 				GDKfree(sizes);
+				logger_unlock(lg);
 				return GDK_FAIL;
 			}
 			//assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
@@ -1476,6 +1483,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(ndels);
 			GDKfree(n);
 			GDKfree(sizes);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 
@@ -1513,6 +1521,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(nlids);
 			GDKfree(n);
 			GDKfree(sizes);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 		i = subcommit_list_add(i, n, sizes, nbids->batCacheid, BATcount(nbids));
@@ -1546,6 +1555,7 @@ bm_subcommit(logger *lg)
 		if (tids == NULL) {
 			GDKfree(n);
 			GDKfree(sizes);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 		ids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
@@ -1557,6 +1567,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(vals);
 			GDKfree(n);
 			GDKfree(sizes);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 
@@ -1567,6 +1578,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(vals);
 			GDKfree(n);
 			GDKfree(sizes);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 		logbat_destroy(tids);
@@ -1578,6 +1590,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(vals);
 			GDKfree(n);
 			GDKfree(sizes);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
@@ -1600,7 +1613,12 @@ bm_subcommit(logger *lg)
 	BATcommit(catalog_id, BUN_NONE);
 	BATcommit(dcatalog, BUN_NONE);
 	*/
+	logger_unlock(lg);
+	if (lg->debug & 1)
+		t0 = GDKusec();
 	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id, lg->saved_tid);
+	if (lg->debug & 1)
+		fprintf(stderr, "#subcommit " LLFMT "usec\n", GDKusec() - t0);
 	GDKfree(n);
 	GDKfree(sizes);
 	if (res != GDK_SUCCEED)
@@ -1637,11 +1655,11 @@ logger_cleanup(logger *lg, lng id)
 	char log_id[FILENAME_MAX];
 
 	if (snprintf(log_id, sizeof(log_id), LLFMT, id) >= FILENAME_MAX) {
-		fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+		GDKerror("log_id filename is too large\n");
 		return GDK_FAIL;
 	}
 	if (GDKunlink(0, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
-		fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
+		TRC_WARNING(GDK, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
 		GDKclrerr();
 	}
 	return GDK_SUCCEED;
@@ -2033,9 +2051,7 @@ logger_destroy(logger *lg)
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = lg->id;
 		lg->saved_tid = lg->tid;
-		logger_lock(lg);
 		logger_commit(lg);
-		logger_unlock(lg);
 	}
 	if (lg->catalog_bid) {
 		logger_lock(lg);
@@ -2138,10 +2154,8 @@ logger_flush(logger *lg, ulng ts)
 		lg->saved_tid = lg->tid;
 		if (lid)
 			logger_cleanup_range(lg);
-		logger_lock(lg);
 		if (logger_commit(lg) != GDK_SUCCEED)
 			TRC_ERROR(GDK, "failed to commit");
-		logger_unlock(lg);
 		return GDK_SUCCEED;
 	}
 	if (lg->saved_id >= lid)
@@ -2179,6 +2193,7 @@ logger_flush(logger *lg, ulng ts)
 		lg->flushing = 1;
 		res = logger_read_transaction(lg);
 		lg->flushing = 0;
+		logger_unlock(lg);
 		if (res == LOG_EOF) {
 			logger_close_input(lg);
 			res = LOG_OK;
@@ -2192,13 +2207,10 @@ logger_flush(logger *lg, ulng ts)
 
 			/* remove old log file */
 			if (res != LOG_ERR) {
-				logger_unlock(lg);
 				if (logger_cleanup(lg, lg->saved_id) != GDK_SUCCEED)
 					res = LOG_ERR;
-				logger_lock(lg);
 			}
 		}
-		logger_unlock(lg);
 	}
 	if (lid && res == LOG_OK)
 		logger_cleanup_range(lg);
@@ -2569,9 +2581,7 @@ log_tend(logger *lg, ulng commit_ts)
 	l.id = lg->tid;
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		logger_lock(lg);
 		gdk_return res = logger_commit(lg);
-		logger_unlock(lg);
 		return res;
 	}
 
