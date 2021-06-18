@@ -411,7 +411,6 @@ extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
