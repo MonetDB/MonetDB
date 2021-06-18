@@ -1162,7 +1162,9 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		return res;
 	int fd;
 	if ((fd = getFileNo(lg->input_log)) < 0 || fstat(fd, &sb) < 0) {
-		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
+		if (lg->debug & 1) {
+			fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
+		}
 		logger_close_input(lg);
 		/* If the file could be opened, but fstat fails,
 		 * something weird is going on */
@@ -1180,7 +1182,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 			t0 = t1;
 			/* not more than once every 10 seconds */
 			fpos = (lng) getfilepos(getFile(lg->input_log));
-			if (fpos >= 0) {
+			if (lg->debug & 1 && fpos >= 0) {
 				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 				fflush(stdout);
 			}
@@ -1398,6 +1400,7 @@ bm_subcommit(logger *lg)
 	const log_bid *bids;
 	const lng *cnts = NULL, *lids = NULL;
 	int cleanup = 0;
+	lng t0 = 0;
 
 	if (n == NULL || sizes == NULL) {
 		GDKfree(n);
@@ -1611,9 +1614,11 @@ bm_subcommit(logger *lg)
 	BATcommit(dcatalog, BUN_NONE);
 	*/
 	logger_unlock(lg);
-	lng t0 = GDKusec();
+	if (lg->debug & 1)
+		t0 = GDKusec();
 	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id, lg->saved_tid);
-	fprintf(stderr, "#subcommit " LLFMT "usec\n", GDKusec() - t0);
+	if (lg->debug & 1)
+		fprintf(stderr, "#subcommit " LLFMT "usec\n", GDKusec() - t0);
 	GDKfree(n);
 	GDKfree(sizes);
 	if (res != GDK_SUCCEED)
@@ -1650,11 +1655,11 @@ logger_cleanup(logger *lg, lng id)
 	char log_id[FILENAME_MAX];
 
 	if (snprintf(log_id, sizeof(log_id), LLFMT, id) >= FILENAME_MAX) {
-		fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+		GDKerror("log_id filename is too large\n");
 		return GDK_FAIL;
 	}
 	if (GDKunlink(0, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
-		fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
+		TRC_WARNING(GDK, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
 		GDKclrerr();
 	}
 	return GDK_SUCCEED;
