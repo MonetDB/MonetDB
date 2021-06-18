@@ -125,6 +125,8 @@ static lng BBPtransid;
 static bool havehge = false;
 #endif
 
+#define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
+
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
 #ifndef NDEBUG
@@ -321,7 +323,7 @@ BBPinithash(int j)
 		const char *s = BBP_logical(i);
 
 		if (s) {
-			if (*s != '.' && BBPtmpcheck(s) == 0) {
+			if (*s != '.' && !BBPtmpcheck(s)) {
 				BBP_insert(i);
 			}
 		} else {
@@ -2088,7 +2090,7 @@ BBPrename(bat bid, const char *nme)
 	}
 
 	/* carry through the name change */
-	if (BBP_logical(bid) && BBPtmpcheck(BBP_logical(bid)) == 0) {
+	if (BBP_logical(bid) && !BBPtmpcheck(BBP_logical(bid))) {
 		BBP_delete(bid);
 	}
 	if (BBP_logical(bid) != BBP_bak(bid))
