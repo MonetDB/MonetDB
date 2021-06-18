@@ -1625,9 +1625,9 @@ deletes_conflict_updates(sql_trans *tr, sql_table *t, oid rid, size_t cnt)
 static int
 storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
-	lock_table(tr->store, t->base.id);
 	int in_transaction = segments_in_transaction(tr, t);
 
+	lock_table(tr->store, t->base.id);
 	/* find segment of rid, split, mark new segment deleted (for tr->tid) */
 	segment *seg = s->segs->h, *p = NULL;
 	for (; seg; p = seg, seg = seg->next) {
@@ -1687,7 +1687,7 @@ delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
 static int
 storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 {
-	int in_transaction = 0;
+	int in_transaction = segments_in_transaction(tr, t);
 	BAT *oi = i;	/* update ids */
 	int ok = LOG_OK;
 
@@ -1699,7 +1699,6 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			size_t cnt = BATcount(i);
 
 			lock_table(tr->store, t->base.id);
-			in_transaction = segments_in_transaction(tr, t);
 			ok = delete_range(tr, t, s, start, cnt);
 			unlock_table(tr->store, t->base.id);
 		} else if (complex_cand(i)) {
@@ -1710,7 +1709,6 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			cur = f = canditer_next(&ci);
 
 			lock_table(tr->store, t->base.id);
-			in_transaction = segments_in_transaction(tr, t);
 			if (!is_oid_nil(f)) {
 				segment *seg = s->segs->h;
 				for(l = canditer_next(&ci); !is_oid_nil(l) && ok == LOG_OK; l = canditer_next(&ci)) {
@@ -1740,7 +1738,6 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			size_t lcnt = 1;
 
 			lock_table(tr->store, t->base.id);
-			in_transaction = segments_in_transaction(tr, t);
 			segment *seg = s->segs->h;
 			for (size_t i=1; i<icnt && ok == LOG_OK; i++) {
 				if (o[i] == n) {
@@ -1759,10 +1756,6 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt);
 			unlock_table(tr->store, t->base.id);
 		}
-	} else {
-		lock_table(tr->store, t->base.id);
-		in_transaction = segments_in_transaction(tr, t);
-		unlock_table(tr->store, t->base.id);
 	}
 	if (i != oi)
 		bat_destroy(i);
@@ -3452,6 +3445,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	BAT *pos = NULL;
 	size_t total = cnt;
 
+	lock_table(tr->store, t->base.id);
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = seg->next) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* re-use old deleted or rolledback append */
@@ -3503,6 +3497,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (!pos)
 			ok = LOG_ERR;
 	}
+	unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
@@ -3533,6 +3528,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	BUN slot = 0;
 	int reused = 0;
 
+	lock_table(tr->store, t->base.id);
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = seg->next) {
@@ -3570,6 +3566,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 			slot = s->segs->t->start;
 		}
 	}
+	unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
@@ -3598,10 +3595,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	if ((s = bind_del_data(tr, t, NULL)) == NULL)
 		return NULL;
 
-	lock_table(tr->store, t->base.id);
-	BAT *slots = claim_segments(tr, t, s, cnt); /* find slot(s) */
-	unlock_table(tr->store, t->base.id);
-	return slots;
+	return claim_segments(tr, t, s, cnt); /* find slot(s) */
 }
 
 static BAT *
