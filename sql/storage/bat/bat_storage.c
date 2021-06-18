@@ -316,6 +316,17 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 		return LOG_ERR;
 
 	BATsetcount(b, nr);
+
+	/* disable all properties here */
+	b->tsorted = false;
+	b->trevsorted = false;
+	b->tnosorted = 0;
+	b->tnorevsorted = 0;
+	b->tseqbase = oid_nil;
+	b->tkey = false;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 0;
+
 	uint32_t *restrict dst;
 	for (; s ; s=s->next) {
 		if (s->ts == tr->tid && s->end != s->start) {
