@@ -392,7 +392,6 @@ typedef struct {
 
 typedef struct {
 	MT_Lock cache;
-	MT_Lock trim;
 	bat free;
 } bbplock_t;
 
@@ -435,7 +434,6 @@ extern MT_Lock GDKtmLock;
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
-#define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 

@@ -278,8 +278,7 @@ BBPlock(void)
 		MT_lock_set(&GDKunloadLock);
 	}
 
-	for (i = 0; i <= BBP_THREADMASK; i++)
-		MT_lock_set(&GDKtrimLock(i));
+	MT_lock_set(&GDKtmLock);
 	for (i = 0; i <= BBP_THREADMASK; i++)
 		MT_lock_set(&GDKcacheLock(i));
 	for (i = 0; i <= BBP_BATMASK; i++)
@@ -299,8 +298,7 @@ BBPunlock(void)
 	for (i = BBP_THREADMASK; i >= 0; i--)
 		MT_lock_unset(&GDKcacheLock(i));
 	locked_by = 0;
-	for (i = BBP_THREADMASK; i >= 0; i--)
-		MT_lock_unset(&GDKtrimLock(i));
+	MT_lock_unset(&GDKtmLock);
 }
 
 
@@ -363,10 +361,6 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	return -1;
 }
 
-/*
- * BBPextend must take the trimlock, as it is called when other BBP
- * locks are held and it will allocate memory.
- */
 static gdk_return
 BBPextend(int idx, bool buildhash)
 {
@@ -406,6 +400,7 @@ BBPextend(int idx, bool buildhash)
 static gdk_return
 recover_dir(int farmid, bool direxists)
 {
+	assert(islocked(&GDKtmLock));
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
@@ -1051,14 +1046,18 @@ BBPinit(void)
 	if (!GDKinmemory(0)) {
 		str bbpdirstr, backupbbpdirstr;
 
+		MT_lock_set(&GDKtmLock);
+
 		if (!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir"))) {
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
+			MT_lock_unset(&GDKtmLock);
 			return GDK_FAIL;
 		}
 
 		if (!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir"))) {
 			GDKfree(bbpdirstr);
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
+			MT_lock_unset(&GDKtmLock);
 			return GDK_FAIL;
 		}
 
@@ -1066,6 +1065,7 @@ BBPinit(void)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", TEMPDIR);
+			MT_lock_unset(&GDKtmLock);
 			return GDK_FAIL;
 		}
 
@@ -1073,6 +1073,7 @@ BBPinit(void)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", DELDIR);
+			MT_lock_unset(&GDKtmLock);
 			return GDK_FAIL;
 		}
 
@@ -1081,6 +1082,7 @@ BBPinit(void)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
+			MT_lock_unset(&GDKtmLock);
 			return GDK_FAIL;
 		}
 
@@ -1090,12 +1092,14 @@ BBPinit(void)
 			if (recover_dir(0, MT_stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
+				MT_lock_unset(&GDKtmLock);
 				goto bailout;
 			}
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
 				TRC_CRITICAL(GDK, "cannot open recovered BBP.dir.");
+				MT_lock_unset(&GDKtmLock);
 				return GDK_FAIL;
 			}
 		} else if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
@@ -1108,6 +1112,7 @@ BBPinit(void)
 				if (BBPdir(0, NULL, NULL, LL_CONSTANT(0), LL_CONSTANT(0)) != GDK_SUCCEED) {
 					GDKfree(bbpdirstr);
 					GDKfree(backupbbpdirstr);
+					MT_lock_unset(&GDKtmLock);
 					goto bailout;
 				}
 			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir", true) == GDK_SUCCEED)
@@ -1116,12 +1121,14 @@ BBPinit(void)
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
+				MT_lock_unset(&GDKtmLock);
 				goto bailout;
 			}
 		}
 		assert(fp != NULL);
 		GDKfree(bbpdirstr);
 		GDKfree(backupbbpdirstr);
+		MT_lock_unset(&GDKtmLock);
 	}
 
 	/* scan the BBP.dir to obtain current size */
@@ -1155,9 +1162,14 @@ BBPinit(void)
 	MT_lock_unset(&BBPnameLock);
 
 	/* will call BBPrecover if needed */
-	if (!GDKinmemory(0) && BBPprepare(false) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
-		return GDK_FAIL;
+	if (!GDKinmemory(0)) {
+		MT_lock_set(&GDKtmLock);
+		gdk_return rc = BBPprepare(false);
+		MT_lock_unset(&GDKtmLock);
+		if (rc != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
+			return rc;
+		}
 	}
 
 	if (BBPcheckbats(bbpversion) != GDK_SUCCEED)
@@ -1398,6 +1410,7 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logn
 	lng ologno, otransid;
 
 #ifndef NDEBUG
+	assert(islocked(&GDKtmLock));
 	assert(subcommit != NULL);
 	for (n = 2; n < cnt; n++)
 		assert(subcommit[n - 1] < subcommit[n]);
@@ -1812,7 +1825,6 @@ BBPinsert(BAT *bn)
 
 	/* critical section: get a new BBP entry */
 	if (lock) {
-		MT_lock_set(&GDKtrimLock(idx));
 		MT_lock_set(&GDKcacheLock(idx));
 	}
 
@@ -1842,7 +1854,6 @@ BBPinsert(BAT *bn)
 		if (r != GDK_SUCCEED) {
 			if (lock) {
 				MT_lock_unset(&GDKcacheLock(idx));
-				MT_lock_unset(&GDKtrimLock(idx));
 			}
 			return 0;
 		}
@@ -1853,7 +1864,6 @@ BBPinsert(BAT *bn)
 
 	if (lock) {
 		MT_lock_unset(&GDKcacheLock(idx));
-		MT_lock_unset(&GDKtrimLock(idx));
 	}
 	/* rest of the work outside the lock */
 
@@ -2036,7 +2046,6 @@ BBPrename(bat bid, const char *nme)
 	BAT *b = BBPdescriptor(bid);
 	char dirname[24];
 	bat tmpid = 0, i;
-	int idx;
 
 	if (b == NULL)
 		return 0;
@@ -2066,13 +2075,10 @@ BBPrename(bat bid, const char *nme)
 		return BBPRENAME_LONG;
 	}
 
-	idx = threadmask(MT_getpid());
-	MT_lock_set(&GDKtrimLock(idx));
 	MT_lock_set(&BBPnameLock);
 	i = BBP_find(nme, false);
 	if (i != 0) {
 		MT_lock_unset(&BBPnameLock);
-		MT_lock_unset(&GDKtrimLock(idx));
 		GDKerror("name is in use: '%s'.\n", nme);
 		return BBPRENAME_ALREADY;
 	}
@@ -2084,7 +2090,6 @@ BBPrename(bat bid, const char *nme)
 		nnme = GDKstrdup(nme);
 		if (nnme == NULL) {
 			MT_lock_unset(&BBPnameLock);
-			MT_lock_unset(&GDKtrimLock(idx));
 			return BBPRENAME_MEMORY;
 		}
 	}
@@ -2110,7 +2115,6 @@ BBPrename(bat bid, const char *nme)
 			MT_lock_unset(&GDKswapLock(i));
 	}
 	MT_lock_unset(&BBPnameLock);
-	MT_lock_unset(&GDKtrimLock(idx));
 	return 0;
 }
 
@@ -2852,16 +2856,13 @@ BBPprepare(bool subcommit)
 	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
 
+	assert(islocked(&GDKtmLock));
 	if(!(bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL)))
 		return GDK_FAIL;
 	if(!(subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL))) {
 		GDKfree(bakdirpath);
 		return GDK_FAIL;
 	}
-
-	/* tmLock is only used here, helds usually very shortly just
-	 * to protect the file counters */
-	MT_lock_set(&GDKtmLock);
 
 	start_subcommit = (subcommit && backup_subdir == 0);
 	if (start_subcommit) {
@@ -2900,7 +2901,6 @@ BBPprepare(bool subcommit)
 		backup_subdir += subcommit;
 		backup_files++;
 	}
-	MT_lock_unset(&GDKtmLock);
 	GDKfree(bakdirpath);
 	GDKfree(subdirpath);
 	return ret;
