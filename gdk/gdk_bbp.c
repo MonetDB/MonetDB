@@ -104,8 +104,9 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
  * tuned for perfect hashing (1 lookup). The bucket chain uses the
  * 'next' field in the BBPrec records.
  */
-bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
-bat BBP_mask = 0;		/* number of buckets = & mask */
+static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
+static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
+static bat BBP_mask = 0;		/* number of buckets = & mask */
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
@@ -126,11 +127,24 @@ static bool havehge = false;
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
+#ifndef NDEBUG
+static inline bool
+islocked(MT_Lock *l)
+{
+	if (MT_lock_try(l)) {
+		MT_lock_unset(l);
+		return false;
+	}
+	return true;
+}
+#endif
+
 static void
 BBP_insert(bat i)
 {
 	bat idx = (bat) (strHash(BBP_logical(i)) & BBP_mask);
 
+	assert(islocked(&BBPnameLock));
 	BBP_next(i) = BBP_hash[idx];
 	BBP_hash[idx] = i;
 }
@@ -142,6 +156,7 @@ BBP_delete(bat i)
 	const char *s = BBP_logical(i);
 	bat idx = (bat) (strHash(s) & BBP_mask);
 
+	assert(islocked(&BBPnameLock));
 	for (h += idx; (i = *h) != 0; h = &BBP_next(i)) {
 		if (strcmp(BBP_logical(i), s) == 0) {
 			*h = BBP_next(i);
@@ -1129,10 +1144,13 @@ BBPinit(void)
 		fclose(fp);
 	}
 
+	MT_lock_set(&BBPnameLock);
 	if (BBPinithash(0) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
+		MT_lock_unset(&BBPnameLock);
 		return GDK_FAIL;
 	}
+	MT_lock_unset(&BBPnameLock);
 
 	/* will call BBPrecover if needed */
 	if (!GDKinmemory(0) && BBPprepare(false) != GDK_SUCCEED) {
@@ -1249,7 +1267,7 @@ BBPexit(void)
 		}
 	} while (skipped);
 	GDKfree(BBP_hash);
-	BBP_hash = 0;
+	BBP_hash = NULL;
 	// these need to be NULL, otherwise no new ones get created
 	backup_files = 0;
 	backup_dir = 0;
@@ -1668,13 +1686,13 @@ BBP_find(const char *nme, bool lock)
 	} else if (*nme != '.') {
 		/* must lock since hash-lookup traverses other BATs */
 		if (lock)
-			MT_lock_set(&GDKnameLock);
+			MT_lock_set(&BBPnameLock);
 		for (i = BBP_hash[strHash(nme) & BBP_mask]; i; i = BBP_next(i)) {
 			if (strcmp(BBP_logical(i), nme) == 0)
 				break;
 		}
 		if (lock)
-			MT_lock_unset(&GDKnameLock);
+			MT_lock_unset(&BBPnameLock);
 	}
 	return i;
 }
@@ -1808,13 +1826,13 @@ BBPinsert(BAT *bn)
 			for (i = 0; i <= BBP_THREADMASK; i++)
 				MT_lock_set(&GDKcacheLock(i));
 		}
-		MT_lock_set(&GDKnameLock);
+		MT_lock_set(&BBPnameLock);
 		/* check again in case some other thread extended
 		 * while we were waiting */
 		if (BBP_free(idx) <= 0) {
 			r = maybeextend(idx);
 		}
-		MT_lock_unset(&GDKnameLock);
+		MT_lock_unset(&BBPnameLock);
 		if (lock)
 			for (i = BBP_THREADMASK; i >= 0; i--)
 				if (i != idx)
@@ -1963,10 +1981,10 @@ bbpclear(bat i, int idx, bool lock)
 	if (lock)
 		MT_lock_set(&GDKcacheLock(idx));
 
-	if (BBPtmpcheck(BBP_logical(i)) == 0) {
-		MT_lock_set(&GDKnameLock);
+	if (!BBPtmpcheck(BBP_logical(i))) {
+		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
-		MT_lock_unset(&GDKnameLock);
+		MT_lock_unset(&BBPnameLock);
 	}
 	if (BBP_logical(i) != BBP_bak(i))
 		GDKfree(BBP_logical(i));
@@ -2048,10 +2066,10 @@ BBPrename(bat bid, const char *nme)
 
 	idx = threadmask(MT_getpid());
 	MT_lock_set(&GDKtrimLock(idx));
-	MT_lock_set(&GDKnameLock);
+	MT_lock_set(&BBPnameLock);
 	i = BBP_find(nme, false);
 	if (i != 0) {
-		MT_lock_unset(&GDKnameLock);
+		MT_lock_unset(&BBPnameLock);
 		MT_lock_unset(&GDKtrimLock(idx));
 		GDKerror("name is in use: '%s'.\n", nme);
 		return BBPRENAME_ALREADY;
@@ -2063,7 +2081,7 @@ BBPrename(bat bid, const char *nme)
 	} else {
 		nnme = GDKstrdup(nme);
 		if (nnme == NULL) {
-			MT_lock_unset(&GDKnameLock);
+			MT_lock_unset(&BBPnameLock);
 			MT_lock_unset(&GDKtrimLock(idx));
 			return BBPRENAME_MEMORY;
 		}
@@ -2089,7 +2107,7 @@ BBPrename(bat bid, const char *nme)
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
 	}
-	MT_lock_unset(&GDKnameLock);
+	MT_lock_unset(&BBPnameLock);
 	MT_lock_unset(&GDKtrimLock(idx));
 	return 0;
 }
@@ -3682,7 +3700,8 @@ gdk_bbp_reset(void)
 	for (i = 0; i < MAXFARMS; i++)
 		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */
 	memset(BBPfarms, 0, sizeof(BBPfarms));
-	BBP_hash = 0;
+	GDKfree(BBP_hash);
+	BBP_hash = NULL;
 	BBP_mask = 0;
 
 	locked_by = 0;
