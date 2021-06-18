@@ -687,8 +687,8 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	int err = 0;
 	BAT *uv = *UV;
 	BUN cnt = BATcount(ui)+BATcount(oi);
-	BAT *ni = bat_new(TYPE_oid, cnt, PERSISTENT);
-	BAT *nv = uv?bat_new(uv->ttype, cnt, PERSISTENT):NULL;
+	BAT *ni = bat_new(TYPE_oid, cnt, TRANSIENT);
+	BAT *nv = uv?bat_new(uv->ttype, cnt, TRANSIENT):NULL;
 
 	if (!ni || (uv && !nv)) {
 		bat_destroy(ni);
@@ -1111,8 +1111,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 
 				if (res == LOG_OK) {
 					ptr upd = NULL;
-					nui = bat_new(TYPE_oid, cs->ucnt + ucnt - cnt, PERSISTENT);
-					nuv = bat_new(uv->ttype, cs->ucnt + ucnt - cnt, PERSISTENT);
+					nui = bat_new(TYPE_oid, cs->ucnt + ucnt - cnt, TRANSIENT);
+					nuv = bat_new(uv->ttype, cs->ucnt + ucnt - cnt, TRANSIENT);
 
 					if (!nui || !nuv) {
 						res = LOG_ERR;
@@ -3604,7 +3604,7 @@ segments2cands(segment *s, sql_trans *tr, sql_table *t, size_t start, size_t end
 	lock_table(tr->store, t->base.id);
 	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
-	size_t dnr = count_deletes(s, tr), nr = end - start, pos = 0;
+	size_t dnr = count_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
 	if (!dnr) {
 		unlock_table(tr->store, t->base.id);
 		return BATdense(start, start, end-start);
