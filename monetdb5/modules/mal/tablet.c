@@ -52,7 +52,7 @@ static MT_Lock errorlock = MT_LOCK_INITIALIZER(errorlock);
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
-	BAT *b = COLnew(0, adt, nr, PERSISTENT);
+	BAT *b = COLnew(0, adt, nr, TRANSIENT);
 
 	/* check for correct structures */
 	if (b == NULL)
