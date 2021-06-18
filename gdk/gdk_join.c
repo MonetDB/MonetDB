@@ -3128,12 +3128,21 @@ static double
 joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 	 bool *hash, bool *phash, bool *cand)
 {
-	bool rhash = BATcheckhash(r);
+	bool rhash;
 	bool prhash = false;
 	bool rcand = false;
 	double rcost = 1;
 	bat parent;
 	BAT *b;
+	BUN nheads;
+	BUN cnt;
+
+	(void) BATcheckhash(r);
+	MT_rwlock_rdlock(&r->thashlock);
+	rhash = r->thash != NULL;
+	nheads = r->thash ? r->thash->nheads : 0;
+	cnt = BATcount(r);
+	MT_rwlock_rdunlock(&r->thashlock);
 
 	if ((rci->tpe == cand_materialized || rci->tpe == cand_except) &&
 	    rci->nvals > 0) {
@@ -3146,31 +3155,38 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 	if (BATtdense(r)) {
 		/* no need for a hash, and lookup is free */
 		rhash = false;	/* don't use it, even if it's there */
-	} else if (rhash) {
-		/* average chain length */
-		rcost *= (double) BATcount(r) / r->thash->nheads;
-	} else if ((parent = VIEWtparent(r)) != 0 &&
-		   (b = BBPdescriptor(parent)) != NULL &&
-		   BATcheckhash(b)) {
-		rhash = prhash = true;
-		/* average chain length */
-		rcost *= (double) BATcount(b) / b->thash->nheads;
 	} else {
-		const ValRecord *prop = BATgetprop(r, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * collisions */
-			rcost *= 1.1 * ((double) BATcount(r) / prop->val.oval);
-		} else {
-			/* guess number of unique value and work with that */
-			rcost *= 1.1 * ((double) BATcount(r) / guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)}));
+		if (rhash) {
+			/* average chain length */
+			rcost *= (double) cnt / nheads;
+		} else if ((parent = VIEWtparent(r)) != 0 &&
+			   (b = BBPdescriptor(parent)) != NULL &&
+			   BATcheckhash(b)) {
+			MT_rwlock_rdlock(&b->thashlock);
+			rhash = prhash = b->thash != NULL;
+			if (rhash) {
+				/* average chain length */
+				rcost *= (double) BATcount(b) / b->thash->nheads;
+			}
+			MT_rwlock_rdunlock(&b->thashlock);
 		}
+		if (!rhash) {
+			const ValRecord *prop = BATgetprop(r, GDK_NUNIQUE);
+			if (prop) {
+				/* we know number of unique values, assume some
+				 * collisions */
+				rcost *= 1.1 * ((double) BATcount(r) / prop->val.oval);
+			} else {
+				/* guess number of unique value and work with that */
+				rcost *= 1.1 * ((double) cnt / guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)}));
+			}
 #ifdef PERSISTENTHASH
-		/* only count the cost of creating the hash for
-		 * non-persistent bats */
-		if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
+			/* only count the cost of creating the hash for
+			 * non-persistent bats */
+			if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 #endif
-			rcost += BATcount(r) * 2.0;
+				rcost += cnt * 2.0;
+		}
 	}
 	if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
 		/* instead of using the hash on r (cost in rcost), we
@@ -3180,16 +3196,16 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		 * (canditer_idx) will kill us */
 		double rccost;
 		if (rhash && !prhash) {
-			rccost = (double) BATcount(r) / r->thash->nheads;
+			rccost = (double) cnt / nheads;
 		} else {
 			ValPtr prop = BATgetprop(r, GDK_NUNIQUE);
 			if (prop) {
 				/* we know number of unique values, assume some
 				 * chains */
-				rccost = 1.1 * ((double) BATcount(r) / prop->val.oval);
+				rccost = 1.1 * ((double) cnt / prop->val.oval);
 			} else {
 				/* guess number of unique value and work with that */
-				rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+				rccost = 1.1 * ((double) cnt / guess_uniques(r, rci));
 			}
 		}
 		rccost *= lci->ncand;
@@ -3987,13 +4003,6 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			       estimate, t0, false, __func__);
 		goto doreturn;
 	}
-	/* the cost of a single lookup using the hash table on l is
-	 * (approximately) the average length of the hash link chain
-	 * times the cost of doing a binary search on the candidate
-	 * list (if one is needed), so the total cost is this
-	 * multiplied by the number of times we need to do a lookup
-	 * (rci.ncand) */
-	lhash = BATcheckhash(l);
 
 	lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
 	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
