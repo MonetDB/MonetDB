@@ -3610,10 +3610,7 @@ key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		/* TODO check for other inserts ! */
 		return NULL;
 
-	lock_table(tr->store, t->base.id);
-	BAT *slots = claim_segments(tr, t, s, cnt); /* find slot(s) */
-	unlock_table(tr->store, t->base.id);
-	return slots;
+	return claim_segments(tr, t, s, cnt); /* find slot(s) */
 }
 
 static BAT *
