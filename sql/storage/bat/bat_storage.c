@@ -2825,6 +2825,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
 
+	(void) segs;
 	if (GDKinmemory(0))
 		return LOG_OK;
 
@@ -2836,31 +2837,16 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	if (cs->cleared) {
 		assert(cs->ucnt == 0);
 		BAT *ins = temp_descriptor(cs->bid);
-		if (isEbat(ins)) {
-			assert(0);
-			temp_destroy(cs->bid);
-			cs->bid = temp_copy(ins->batCacheid, false);
-			bat_destroy(ins);
-			ins = temp_descriptor(cs->bid);
-		}
+		if (!ins)
+			return LOG_ERR;
+		assert(!isEbat(ins));
 		bat_set_access(ins, BAT_READ);
 		ok = log_bat_persists(store->logger, ins, id);
 		bat_destroy(ins);
 		return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	}
 
-	if (isTempTable(t)) {
-		assert(0);
-	for (; segs; segs=segs->next) {
-		if (segs->ts == tr->tid) {
-			BAT *ins = temp_descriptor(cs->bid);
-			assert(ins);
-			assert(BATcount(ins) >= segs->end);
-			ok = log_bat(store->logger, ins, id, segs->start, segs->end-segs->start);
-			bat_destroy(ins);
-		}
-	}
-	}
+	assert(!isTempTable(t));
 
 	if (ok == GDK_SUCCEED && cs->ucnt && cs->uibid) {
 		BAT *ui = temp_descriptor(cs->uibid);
