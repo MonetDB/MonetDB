@@ -399,32 +399,24 @@ DFLOWworker(void *T)
 #ifdef HOTPOTATOE
 	/* HOT potatoe choice */
 	int last = 0, nxt = -1;
-	lng nxtclaim = -2;
 
 	MT_lock_set(&flow->flowlock);
 	for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last]){
 		if (flow->status[i].state == DFLOWpending && flow->status[i].blocks == 1) {
-			/* find the one with the largest footprint */
-			if( nxt == -1){
-				nxt = i;
-				nxtclaim = flow->status[i].argclaim;
-			}
-			if( flow->status[i].argclaim > nxtclaim){
-				nxt = i;
-				nxtclaim =  flow->status[i].argclaim;
-			}
+			/* just pick the oldest available */
+			nxt = i;
+			break;
 		}
 	}
 	/* hot potatoe can not be removed, use alternative to proceed */
 	if( nxt >= 0){
-		i = nxt;
-		flow->status[i].state = DFLOWrunning;
-		flow->status[i].blocks = 0;
-		flow->status[i].hotclaim = fe->hotclaim;
-		flow->status[i].argclaim += fe->hotclaim;
-		if( flow->status[i].maxclaim < fe->maxclaim)
-			flow->status[i].maxclaim = fe->maxclaim;
-		fnxt = flow->status + i;
+		flow->status[nxt].state = DFLOWrunning;
+		flow->status[nxt].blocks = 0;
+		flow->status[nxt].hotclaim = fe->hotclaim;
+		flow->status[nxt].argclaim += fe->hotclaim;
+		if( flow->status[nxt].maxclaim < fe->maxclaim)
+			flow->status[nxt].maxclaim = fe->maxclaim;
+		fnxt = flow->status + nxt;
 	}
 	MT_lock_unset(&flow->flowlock);
 #endif
