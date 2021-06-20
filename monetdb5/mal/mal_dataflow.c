@@ -398,35 +398,26 @@ DFLOWworker(void *T)
 #define HOTPOTATOE
 #ifdef HOTPOTATOE
 	/* HOT potatoe choice */
-	int last = 0, alt = -1,  j;
-	int hotpotatoe = getArg(p,0);
+	int last = 0, nxt = -1;
+	lng nxtclaim = -2;
 
 	MT_lock_set(&flow->flowlock);
 	for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last]){
 		if (flow->status[i].state == DFLOWpending && flow->status[i].blocks == 1) {
-			/* check if the hot potatoe is actually used */
-			p= getInstrPtr(flow->mb,fe->pc);
-			for(j= p->retc; j< p->argc; j++)
-				if (getArg(p,0) == hotpotatoe)
-					break;
-			if (j == p->argc){
-				if( alt == -1)
-					alt = i;
-				continue;
+			/* find the one with the largest footprint */
+			if( nxt == -1){
+				nxt = i;
+				nxtclaim = flow->status[i].argclaim;
 			}
-			flow->status[i].state = DFLOWrunning;
-			flow->status[i].blocks = 0;
-			flow->status[i].hotclaim = fe->hotclaim;
-			flow->status[i].argclaim += fe->hotclaim;
-			if( flow->status[i].maxclaim < fe->maxclaim)
-				flow->status[i].maxclaim = fe->maxclaim;
-			fnxt = flow->status + i;
-			break;
+			if( flow->status[i].argclaim > nxtclaim){
+				nxt = i;
+				nxtclaim =  flow->status[i].argclaim;
+			}
 		}
 	}
 	/* hot potatoe can not be removed, use alternative to proceed */
-	if( alt >= 0){
-		i = alt;
+	if( nxt >= 0){
+		i = nxt;
 		flow->status[i].state = DFLOWrunning;
 		flow->status[i].blocks = 0;
 		flow->status[i].hotclaim = fe->hotclaim;
