@@ -1886,8 +1886,10 @@ BBPinsert(BAT *bn)
 
 	if (*BBP_bak(i) == 0)
 		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
-	if (len == -1 || len >= FILENAME_MAX)
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("impossible error\n");
 		return 0;
+	}
 	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
@@ -2498,6 +2500,7 @@ getBBPdescriptor(bat i, bool lock)
 
 	assert(i > 0);
 	if (!BBPcheck(i, "BBPdescriptor")) {
+		GDKerror("BBPcheck failed for bat id %d\n", i);
 		return NULL;
 	}
 	assert(BBP_refs(i));
