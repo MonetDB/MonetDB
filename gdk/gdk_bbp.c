@@ -2358,6 +2358,17 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			}
 		}
 	}
+	if (b && b->batCount > b->batInserted) {
+		/* if batCount is larger than batInserted and the dirty
+		 * bits are off, it may be that a (sub)commit happened
+		 * in parallel to an update; we must undo the turning
+		 * off of the dirty bits */
+		b->batDirtydesc = true;
+		if (b->theap)
+			b->theap->dirty = true;
+		if (b->tvheap)
+			b->tvheap->dirty = true;
+	}
 
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
