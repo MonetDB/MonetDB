@@ -48,11 +48,11 @@
 #define BBPSAVING       512	/* set while we are saving */
 #define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
 #define BBPDELETING	2048	/* set while we are deleting (special case in module unload) */
-#define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
-#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING)
-
 #define BBPHOT		4096	/* bat is "hot", i.e. is still in active use */
-#define BBPSYNCING	8192
+#define BBPSYNCING	8192	/* bat between creating backup and saving */
+
+#define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
+#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING|BBPSYNCING)
 
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
