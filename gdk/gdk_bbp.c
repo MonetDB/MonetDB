@@ -1800,6 +1800,7 @@ maybeextend(int idx)
 					BBP_free(m) = BBP_next(i);
 					BBP_next(i) = 0;
 					BBP_free(idx) = i;
+					GDKclrerr();
 				} else {
 					/* nothing available */
 					return GDK_FAIL;
