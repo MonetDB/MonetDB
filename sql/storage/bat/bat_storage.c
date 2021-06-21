@@ -1463,6 +1463,7 @@ static int
 delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 {
 	BAT *b, *oi = i;
+	int err = 0;
 
 	assert(BATcount(offsets) == BATcount(i));
 	if (!BATcount(i))
@@ -1478,19 +1479,18 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 			bat_destroy(oi);
 		return LOG_ERR;
 	}
-	if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
-		bat_destroy(b);
-		unlock_column(tr->store, id);
-		if (oi != i)
-			bat_destroy(oi);
-		return LOG_ERR;
+	if ((BATtdense(offsets) && offsets->tseqbase == (b->hseqbase+BATcount(b)))) {
+		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
+			err = 1;
+	} else if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
+			err = 1;
 	}
 	bat_destroy(b);
 	unlock_column(tr->store, id);
 
 	if (oi != i)
 		bat_destroy(oi);
-	return LOG_OK;
+	return (err)?LOG_ERR:LOG_OK;
 }
 
 static int
