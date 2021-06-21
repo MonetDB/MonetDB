@@ -2504,10 +2504,10 @@ getBBPdescriptor(bat i, bool lock)
 		return NULL;
 	}
 	assert(BBP_refs(i));
-	if ((b = BBP_cache(i)) == NULL) {
+	if (lock)
+		MT_lock_set(&GDKswapLock(i));
+	if ((b = BBP_cache(i)) == NULL || BBP_status(i) & BBPWAITING) {
 
-		if (lock)
-			MT_lock_set(&GDKswapLock(i));
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
@@ -2523,9 +2523,9 @@ getBBPdescriptor(bat i, bool lock)
 				BBP_status_on(i, BBPLOADING);
 			}
 		}
-		if (lock)
-			MT_lock_unset(&GDKswapLock(i));
 	}
+	if (lock)
+		MT_lock_unset(&GDKswapLock(i));
 	if (load) {
 		TRC_DEBUG(IO_, "load %s\n", BBPname(i));
 
