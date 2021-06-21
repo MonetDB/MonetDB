@@ -2295,6 +2295,8 @@ BATmode(BAT *b, bool transient)
 	/* can only make a bat PERSISTENT if its role is already
 	 * PERSISTENT */
 	assert(transient || b->batRole == PERSISTENT);
+	/* cannot make a view PERSISTENT */
+	assert(transient || !isVIEW(b));
 
 	if (b->batRole == TRANSIENT && !transient) {
 		GDKerror("cannot change mode of BAT in TRANSIENT farm.\n");
@@ -2308,11 +2310,6 @@ BATmode(BAT *b, bool transient)
 			check_type(b->ttype);
 		}
 
-		if (!transient && isVIEW(b)) {
-			if (VIEWreset(b) != GDK_SUCCEED) {
-				return GDK_FAIL;
-			}
-		}
 		/* persistent BATs get a logical reference */
 		if (!transient) {
 			BBPretain(bid);
