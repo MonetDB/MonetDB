@@ -91,20 +91,6 @@ temp_copy(log_bid b, int temp)
 	return r;
 }
 
-BUN
-append_inserted(BAT *b, BAT *i )
-{
-	BUN nr = 0, r;
-	BATiter ii = bat_iterator(i);
-
-	for (r = i->batInserted; r < BUNlast(i); r++) {
-		if (BUNappend(b, BUNtail(ii,r), true) != GDK_SUCCEED)
-			return BUN_NONE;
-		nr++;
-	}
-	return nr;
-}
-
 BAT *ebats[MAXATOMS] = { NULL };
 
 log_bid
