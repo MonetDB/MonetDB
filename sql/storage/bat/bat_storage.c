@@ -2825,6 +2825,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
 
+	(void) t;
 	(void) segs;
 	if (GDKinmemory(0))
 		return LOG_OK;
