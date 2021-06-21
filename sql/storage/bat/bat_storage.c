@@ -315,7 +315,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED)
 		return LOG_ERR;
 
-	BATsetcount(b, nr);
+	if (nr > BATcount(b))
+		BATsetcount(b, nr);
 
 	/* disable all properties here */
 	b->tsorted = false;
@@ -330,6 +331,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	uint32_t *restrict dst;
 	for (; s ; s=s->next) {
 		if (s->ts == tr->tid && s->end != s->start) {
+			b->batDirtydesc = true;
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = ((uint32_t*)Tloc(b, 0)) + (s->start/32);
