@@ -559,6 +559,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
+					GDKerror("short read from heap %s%s\n", nme, ext ? ext : "");
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -640,8 +641,10 @@ DESCload(int i)
 
 	b = BBP_desc(i);
 
-	if (b == NULL)
+	if (b == NULL) {
+		GDKerror("no descriptor for BAT %d\n", i);
 		return NULL;
+	}
 
 	tt = b->ttype;
 	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
@@ -779,8 +782,8 @@ BATsave(BAT *bd)
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
-	MT_lock_set(&bd->theaplock);
 	MT_rwlock_rdlock(&bd->thashlock);
+	MT_lock_set(&bd->theaplock);
 	BAT bs = *bd;
 	BAT *b = &bs;
 	Heap hs = *bd->theap;

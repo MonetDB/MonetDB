@@ -315,7 +315,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED)
 		return LOG_ERR;
 
-	BATsetcount(b, nr);
+	if (nr > BATcount(b))
+		BATsetcount(b, nr);
 
 	/* disable all properties here */
 	b->tsorted = false;
@@ -330,6 +331,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	uint32_t *restrict dst;
 	for (; s ; s=s->next) {
 		if (s->ts == tr->tid && s->end != s->start) {
+			b->batDirtydesc = true;
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = ((uint32_t*)Tloc(b, 0)) + (s->start/32);
@@ -1461,6 +1463,7 @@ static int
 delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 {
 	BAT *b, *oi = i;
+	int err = 0;
 
 	assert(BATcount(offsets) == BATcount(i));
 	if (!BATcount(i))
@@ -1476,19 +1479,18 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 			bat_destroy(oi);
 		return LOG_ERR;
 	}
-	if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
-		bat_destroy(b);
-		unlock_column(tr->store, id);
-		if (oi != i)
-			bat_destroy(oi);
-		return LOG_ERR;
+	if ((BATtdense(offsets) && offsets->tseqbase == (b->hseqbase+BATcount(b)))) {
+		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
+			err = 1;
+	} else if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
+			err = 1;
 	}
 	bat_destroy(b);
 	unlock_column(tr->store, id);
 
 	if (oi != i)
 		bat_destroy(oi);
-	return LOG_OK;
+	return (err)?LOG_ERR:LOG_OK;
 }
 
 static int
@@ -2825,6 +2827,8 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
 
+	(void) t;
+	(void) segs;
 	if (GDKinmemory(0))
 		return LOG_OK;
 
@@ -2836,31 +2840,16 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 	if (cs->cleared) {
 		assert(cs->ucnt == 0);
 		BAT *ins = temp_descriptor(cs->bid);
-		if (isEbat(ins)) {
-			assert(0);
-			temp_destroy(cs->bid);
-			cs->bid = temp_copy(ins->batCacheid, false);
-			bat_destroy(ins);
-			ins = temp_descriptor(cs->bid);
-		}
+		if (!ins)
+			return LOG_ERR;
+		assert(!isEbat(ins));
 		bat_set_access(ins, BAT_READ);
 		ok = log_bat_persists(store->logger, ins, id);
 		bat_destroy(ins);
 		return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	}
 
-	if (isTempTable(t)) {
-		assert(0);
-	for (; segs; segs=segs->next) {
-		if (segs->ts == tr->tid) {
-			BAT *ins = temp_descriptor(cs->bid);
-			assert(ins);
-			assert(BATcount(ins) >= segs->end);
-			ok = log_bat(store->logger, ins, id, segs->start, segs->end-segs->start);
-			bat_destroy(ins);
-		}
-	}
-	}
+	assert(!isTempTable(t));
 
 	if (ok == GDK_SUCCEED && cs->ucnt && cs->uibid) {
 		BAT *ui = temp_descriptor(cs->uibid);

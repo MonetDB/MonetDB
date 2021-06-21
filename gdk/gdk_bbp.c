@@ -1800,6 +1800,7 @@ maybeextend(int idx)
 					BBP_free(m) = BBP_next(i);
 					BBP_next(i) = 0;
 					BBP_free(idx) = i;
+					GDKclrerr();
 				} else {
 					/* nothing available */
 					return GDK_FAIL;
@@ -1885,8 +1886,10 @@ BBPinsert(BAT *bn)
 
 	if (*BBP_bak(i) == 0)
 		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
-	if (len == -1 || len >= FILENAME_MAX)
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("impossible error\n");
 		return 0;
+	}
 	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
@@ -2355,6 +2358,17 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			}
 		}
 	}
+	if (b && b->batCount > b->batInserted) {
+		/* if batCount is larger than batInserted and the dirty
+		 * bits are off, it may be that a (sub)commit happened
+		 * in parallel to an update; we must undo the turning
+		 * off of the dirty bits */
+		b->batDirtydesc = true;
+		if (b->theap)
+			b->theap->dirty = true;
+		if (b->tvheap)
+			b->tvheap->dirty = true;
+	}
 
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
@@ -2497,13 +2511,14 @@ getBBPdescriptor(bat i, bool lock)
 
 	assert(i > 0);
 	if (!BBPcheck(i, "BBPdescriptor")) {
+		GDKerror("BBPcheck failed for bat id %d\n", i);
 		return NULL;
 	}
 	assert(BBP_refs(i));
-	if ((b = BBP_cache(i)) == NULL) {
+	if (lock)
+		MT_lock_set(&GDKswapLock(i));
+	if ((b = BBP_cache(i)) == NULL || BBP_status(i) & BBPWAITING) {
 
-		if (lock)
-			MT_lock_set(&GDKswapLock(i));
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
@@ -2519,9 +2534,9 @@ getBBPdescriptor(bat i, bool lock)
 				BBP_status_on(i, BBPLOADING);
 			}
 		}
-		if (lock)
-			MT_lock_unset(&GDKswapLock(i));
 	}
+	if (lock)
+		MT_lock_unset(&GDKswapLock(i));
 	if (load) {
 		TRC_DEBUG(IO_, "load %s\n", BBPname(i));
 
