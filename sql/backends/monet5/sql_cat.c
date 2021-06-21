@@ -45,17 +45,6 @@
 	if (store_readonly(sql->session->tr->store))\
 		throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
-static list *
-add_predicate(sql_allocator *sa, list *l, sql_column *c)
-{
-	pl *p = SA_ZNEW(sa, pl);
-	p->c = c;
-	if (!l)
-		l = sa_list(sa);
-	list_append(l, p);
-	return l;
-}
-
 static char *
 SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
 {
@@ -210,38 +199,6 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 }
 
 static char *
-alter_table_add_predicates(mvc *sql, sql_table *top, sql_table *pt)
-{
-	sql_trans *tr = sql->session->tr;
-	str msg = MAL_SUCCEED;
-
-	if (mvc_highwater(sql))
-		return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "Query too complex: running out of stack space");
-
-	if (isMergeTable(pt)) {
-		for (node *n = pt->members->h; n; n = n->next) {
-			sql_part *part = (sql_part *) n->data;
-			sql_table *sub = find_sql_table_id(tr, pt->s, part->member);
-		
-			if ((msg = alter_table_add_predicates(sql, top, sub)))
-				return msg;
-		}
-	} else {
-		if (isPartitionedByColumnTable(top)) {
-			sql_column *c = list_fetch(pt->columns->l, top->part.pcol->colnr);
-			tr->predicates = add_predicate(sql->pa, tr->predicates, c);
-		} else {
-			for (node *n = top->part.pexp->cols->h; n; n = n->next) {
-				int next = *(int*) n->data;
-				sql_column *c = list_fetch(pt->columns->l, next);
-				tr->predicates = add_predicate(sql->pa, tr->predicates, c);
-			}
-		}
-	}
-	return msg;
-}
-
-static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
 								bit with_nills, int update)
 {
@@ -362,8 +319,6 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
-	if (!msg)
-		msg = alter_table_add_predicates(sql, mt, pt);
 	if (err_min)
 		GDKfree(err_min);
 	if (err_max)
@@ -465,8 +420,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
-	if (!msg)
-		msg = alter_table_add_predicates(sql, mt, pt);
 	return msg;
 }
 
