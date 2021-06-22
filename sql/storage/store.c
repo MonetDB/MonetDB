@@ -3447,6 +3447,18 @@ sql_trans_valid(sql_trans *tr)
 				}
 			}
 		}
+		/* for each schema change check for updates, and visa versa */
+		/* ie go throug list of changes, check for table change, for those tables check if they got updated */
+		/* for updates check if these tables got recently changed. */
+		for(node *n = tr->changes->h; n; n = n->next) {
+			/* call validate function */
+			sql_change *c = n->data;
+
+			if (c->valid && c->valid(tr, c) == SQL_CONFLICT) {
+					ok = SQL_CONFLICT;
+					break;
+			}
+		}
 	}
 	list_destroy(tr->predicates);
 	tr->predicates = NULL;

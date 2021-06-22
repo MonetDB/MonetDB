@@ -616,6 +616,14 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 	return LOG_OK;
 }
 
+static int
+tc_valid_change(sql_trans *tr, sql_change *change)
+{
+	(void)tr;
+	(void)change;
+	return LOG_OK;
+}
+
 objectset *
 os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
@@ -869,12 +877,12 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_add_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
 		return res;
 	}
 
 	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
 	return res;
 }
 
@@ -967,12 +975,12 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_del_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
 		return res;
 	}
 
 	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
 	return res;
 }
 
