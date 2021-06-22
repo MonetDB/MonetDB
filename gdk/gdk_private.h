@@ -168,7 +168,7 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	__attribute__((__visibility__("hidden")));
 void HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHappend_locked(BAT *b, BUN i, const void *v)
+inline void HASHappend_locked(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -176,11 +176,11 @@ bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHdelete(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHdelete_locked(BAT *b, BUN p, const void *v)
+inline void HASHdelete_locked(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHinsert_locked(BAT *b, BUN p, const void *v)
+inline void HASHinsert_locked(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
