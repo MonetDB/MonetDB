@@ -267,21 +267,23 @@ key_validate(sql_trans *tr, sql_key *k) /* updates while keys are added not poss
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (k->t && isTable(k->t) && !isNew(k->t) && !isTempTable(k->t))
-		if ((ok = store->storage_api.tab_validate(tr, k->t, 1)))
-			return ok;
-
-	if (k->type == fkey) {
-		sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
-		if (rk && rk->t && isTable(rk->t) && !isNew(rk->t) && !isTempTable(rk->t))
-			if ((ok = store->storage_api.tab_validate(tr, rk->t, 1)))
+	if (isNew(k)) { /* validate only on new keys so far */
+		if (k->t && isTable(k->t) && !isNew(k->t) && !isTempTable(k->t))
+			if ((ok = store->storage_api.tab_validate(tr, k->t, 1)))
 				return ok;
+
+		if (k->type == fkey) {
+			sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
+			if (rk && rk->t && isTable(rk->t) && !isNew(rk->t) && !isTempTable(rk->t))
+				if ((ok = store->storage_api.tab_validate(tr, rk->t, 1)))
+					return ok;
+		}
 	}
 	return ok;
 }
 
 static int
-part_validate(sql_trans *tr, sql_part *pt) /* updates while keys are added not possible at the moment */
+part_validate(sql_trans *tr, sql_part *pt) /* disallow part changes with any other changes */
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
@@ -290,6 +292,29 @@ part_validate(sql_trans *tr, sql_part *pt) /* updates while keys are added not p
 	if (t && isTable(t) && !isNew(t) && !isTempTable(t))
 		if ((ok = store->storage_api.tab_validate(tr, t, 1)))
 			return ok;
+	return ok;
+}
+
+static int
+table_validate(sql_trans *tr, sql_table *t)
+{
+	int ok = LOG_OK, need_validate = 0;
+	sqlstore *store = tr->store;
+
+	if (t && isTable(t) && !isNew(t) && !isTempTable(t)) {
+		if (t->columns)
+			for (node *n = ol_first_node(t->columns); n; n = n->next) {
+				sql_column *c = n->data;
+
+				if (!c->null) {
+					need_validate = 1;
+					break;
+				}
+			}
+	}
+
+	if (need_validate)
+		ok = store->storage_api.tab_validate(tr, t, 1);
 	return ok;
 }
 
@@ -993,7 +1018,7 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		s->system = *(bte*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "system"));
 		s->owner = *(sqlid*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "owner"));
 
-		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, NULL, false, true, true, store);
+		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, (validate_fptr) &table_validate, false, true, true, store);
 		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, NULL, false, true, true, store);
 		s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, NULL, false, false, false, store);
 		s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, NULL, false, true, true, store);
@@ -1614,7 +1639,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
-	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, NULL, false, true, true, store);
+	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, (validate_fptr) &table_validate, false, true, true, store);
 	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, NULL, false, true, true, store);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, NULL, false, false, false, store);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, NULL, false, true, true, store);
@@ -3419,7 +3444,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	ns->system = s->system;
 
 	sqlstore *store = tr->store;
-	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, NULL, isTempSchema(s), true, true, store);
+	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, (validate_fptr) &table_validate, isTempSchema(s), true, true, store);
 	ns->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, NULL, isTempSchema(s), true, true, store);
 	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, (validate_fptr) &key_validate, isTempSchema(s), true, true, store);
 	ns->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, NULL, isTempSchema(s), true, true, store);
@@ -4573,7 +4598,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = FALSE;
-	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, NULL, isTempSchema(s), true, true, store);
+	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, (validate_fptr) &table_validate, isTempSchema(s), true, true, store);
 	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, NULL, isTempSchema(s), true, true, store);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, NULL, isTempSchema(s), false, false, store);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, NULL, isTempSchema(s), true, true, store);

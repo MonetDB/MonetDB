@@ -25,8 +25,8 @@ with SQLTestCase() as mdb1:
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table integers alter j set not null;').assertSucceeded()
         mdb2.execute('insert into integers values (6,NULL),(7,NULL),(8,NULL);').assertSucceeded()
-        mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb1.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertSucceeded()
 
         mdb1.execute('create schema ups;').assertSucceeded()
         mdb1.execute('create merge table parent1(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
