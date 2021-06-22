@@ -481,12 +481,13 @@ typedef struct sql_change {
 	void *data;	/* data changes */
 	bool committed;	/* commit or rollback */
 	bool handled;	/* handled in commit */
+	tc_valid_fptr valid;	/* callback to check if changes are valid for serializability */
 	tc_log_fptr log;		/* callback to log changes */
 	tc_commit_fptr commit;	/* callback to commit or rollback the changes */
 	tc_cleanup_fptr cleanup;/* callback to cleanup changes */
 } sql_change;
 
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, tc_valid_fptr valid);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 #endif /*SQL_STORAGE_H */

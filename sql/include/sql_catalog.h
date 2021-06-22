@@ -238,7 +238,7 @@ struct os_iter {
 };
 
 /* transaction changes */
-typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_valid_fptr) (struct sql_trans *tr, struct sql_change *c/*, ulng commit_ts, ulng oldest*/);
 typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								/* write changes to the log */
 typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
