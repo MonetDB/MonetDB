@@ -1981,7 +1981,7 @@ store_exit(sqlstore *store)
 			MT_lock_set(&store->flush);
 		}
 		MT_lock_set(&store->commit);
-		if (store->changes) {
+		if (!list_empty(store->changes)) {
 			ulng oldest = store_timestamp(store)+1;
 			for(node *n=store->changes->h; n; n = n->next) {
 				sql_change *c = n->data;
@@ -2050,7 +2050,7 @@ store_resume_log(sqlstore *store)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
-	ulng oldest_changes = TRANSACTION_ID_BASE;
+	ulng oldest_changes = store_get_timestamp(store);
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
@@ -2066,11 +2066,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			}
 			n = next;
 		}
-		if (oldest_changes < TRANSACTION_ID_BASE)
-			store->oldest_pending = oldest_changes;
-	} else {
-		store->oldest_pending = store_get_timestamp(store);
 	}
+	store->oldest_pending = oldest_changes;
 }
 
 void
@@ -3254,7 +3251,7 @@ sql_trans_rollback(sql_trans *tr)
 			n = next;
 		}
 	}
-	if (tr->changes) {
+	if (!list_empty(tr->changes)) {
 		/* revert the change list */
 		list *nl = SA_LIST(tr->sa, (fdestroy) NULL);
 		for(node *n=tr->changes->h; n; n = n->next)
@@ -3425,7 +3422,7 @@ sql_trans_commit(sql_trans *tr)
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (tr->changes) {
+	if (!list_empty(tr->changes)) {
 		MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_oldest(store);
@@ -3437,7 +3434,7 @@ sql_trans_commit(sql_trans *tr)
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
 			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
-			flush = (tr->logchanges > min_changes && !store->changes);
+			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 			if (flush)
 				MT_lock_set(&store->flush);
 			ok = store->logger_api.log_tstart(store, flush);
@@ -6325,17 +6322,15 @@ sql_trans_end(sql_session *s, int commit)
 	store_lock(store);
 	list_remove_data(store->active, NULL, s);
 	(void) ATOMIC_DEC(&store->nr_active);
+	ulng oldest = store_get_timestamp(store);
 	if (store->active && store->active->h) {
-		ulng oldest = TRANSACTION_ID_BASE;
 		for(node *n = store->active->h; n; n = n->next) {
 			sql_session *s = n->data;
 			if (s->tr->ts < oldest)
 				oldest = s->tr->ts;
 		}
-		store->oldest = oldest;
-	} else {
-		store->oldest = store_get_timestamp(store);
 	}
+	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
 	return ok;
