@@ -142,7 +142,7 @@ typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, 
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef void * (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
-typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t);
+typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
 
 /*
 -- count number of rows in column (excluding the deletes)

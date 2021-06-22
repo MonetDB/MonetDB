@@ -18,8 +18,8 @@ with SQLTestCase() as mdb1:
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table integers add primary key (i);').assertSucceeded()
         mdb2.execute('insert into integers values (5,1),(5,2),(5,3);').assertSucceeded()
-        mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb1.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+        mdb2.execute('commit;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
