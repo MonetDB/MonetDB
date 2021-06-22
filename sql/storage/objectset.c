@@ -624,8 +624,13 @@ tc_valid_change(sql_trans *tr, sql_change *change)
 	objectversion *ov = (objectversion*)change->data;
 	bte state = os_atmc_get_state(ov);
 
-	if (ov->ts == tr->tid && state == active && ov->os->validate)
-		ok = ov->os->validate(tr, ov->b);
+	if (ov->ts == tr->tid && ov->os->validate) {
+		if (state == active) {
+			ok = ov->os->validate(tr, ov->b, 0);
+		} else if (state == deleted) {
+			ok = ov->os->validate(tr, ov->b, 1);
+		}
+	}
 	return ok;
 }
 
