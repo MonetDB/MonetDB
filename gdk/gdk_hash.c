@@ -1069,7 +1069,7 @@ HASHprobe(const Hash *h, const void *v)
 	}
 }
 
-inline void
+void
 HASHappend_locked(BAT *b, BUN i, const void *v)
 {
 	Hash *h = b->thash;
@@ -1140,7 +1140,7 @@ HASHappend(BAT *b, BUN i, const void *v)
 }
 
 /* insert value v at position p into the hash table of b */
-inline void
+void
 HASHinsert_locked(BAT *b, BUN p, const void *v)
 {
 	Hash *h = b->thash;
@@ -1223,7 +1223,7 @@ HASHinsert(BAT *b, BUN p, const void *v)
 }
 
 /* delete value v at position p from the hash table of b */
-inline void
+void
 HASHdelete_locked(BAT *b, BUN p, const void *v)
 {
 	Hash *h = b->thash;
