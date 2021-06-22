@@ -1811,11 +1811,18 @@ destroy_storage(storage *bat)
 }
 
 static int
-segments_conflict(sql_trans *tr, segments *segs)
+segments_conflict(sql_trans *tr, segments *segs, int uncommitted)
 {
-	for (segment *s = segs->h; s; s = s->next)
-		if (!VALID_4_READ(s->ts,tr))
-			return 1;
+	if (uncommitted) {
+		for (segment *s = segs->h; s; s = s->next)
+			if (!VALID_4_READ(s->ts,tr))
+				return 1;
+	} else {
+		for (segment *s = segs->h; s; s = s->next)
+			if (s->ts < TRANSACTION_ID_BASE && !VALID_4_READ(s->ts,tr))
+				return 1;
+	}
+
 	return 0;
 }
 
@@ -1837,7 +1844,7 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 	}
 	if (!isTempTable(t) && !clear)
 		return obat;
-	if (!isTempTable(t) && clear && segments_conflict(tr, obat->segs)) {
+	if (!isTempTable(t) && clear && segments_conflict(tr, obat->segs, 1)) {
 		*clear = true;
 		return NULL;
 	}
@@ -3639,11 +3646,21 @@ key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
-	if ((s = bind_del_data(tr, t, NULL)) == NULL || segments_conflict(tr, s->segs))
+	if ((s = bind_del_data(tr, t, NULL)) == NULL || segments_conflict(tr, s->segs, 1))
 		/* TODO check for other inserts ! */
 		return NULL;
 
 	return claim_segments(tr, t, s, cnt); /* find slot(s) */
+}
+
+static int
+tab_validate(sql_trans *tr, sql_table *t)
+{
+	storage *s;
+
+	if ((s = bind_del_data(tr, t, NULL)) == NULL)
+		return LOG_ERR;
+	return segments_conflict(tr, s->segs, 0);
 }
 
 static BAT *
@@ -3762,6 +3779,7 @@ bat_storage_init( store_functions *sf)
 
 	sf->claim_tab = &claim_tab;
 	sf->key_claim_tab = &key_claim_tab;
+	sf->tab_validate = &tab_validate;
 
 	sf->append_col = &append_col;
 	sf->append_idx = &append_idx;

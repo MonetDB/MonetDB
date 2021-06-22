@@ -50,6 +50,7 @@ typedef struct objectset {
 	int refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
+	validate_fptr validate;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
 	versionhead  *name_based_t;
@@ -619,19 +620,24 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 static int
 tc_valid_change(sql_trans *tr, sql_change *change)
 {
-	(void)tr;
-	(void)change;
-	return LOG_OK;
+	int ok = LOG_OK;
+	objectversion *ov = (objectversion*)change->data;
+	bte state = os_atmc_get_state(ov);
+
+	if (state == active && ov->os->validate)
+		ok = ov->os->validate(tr, ov->b);
+	return ok;
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, validate_fptr validate, bool temporary, bool unique, bool concurrent, sql_store store)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
 		.refcnt = 1,
 		.sa = sa,
 		.destroy = destroy,
+		.validate = validate,
 		.temporary = temporary,
 		.unique = unique,
 		.concurrent = concurrent,
