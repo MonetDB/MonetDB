@@ -3643,24 +3643,36 @@ static void *
 key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 {
 	storage *s;
+	int ok = LOG_OK;
 
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
-	if ((s = bind_del_data(tr, t, NULL)) == NULL || segments_conflict(tr, s->segs, 1))
+	if ((s = bind_del_data(tr, t, NULL)) == NULL)
 		/* TODO check for other inserts ! */
 		return NULL;
 
+	lock_table(tr->store, t->base.id);
+	ok = segments_conflict(tr, s->segs, 1);
+	unlock_table(tr->store, t->base.id);
+
+	if (ok != LOG_OK)
+		return NULL;
 	return claim_segments(tr, t, s, cnt); /* find slot(s) */
 }
 
 static int
-tab_validate(sql_trans *tr, sql_table *t)
+tab_validate(sql_trans *tr, sql_table *t, int uncommitted)
 {
 	storage *s;
+	int ok = LOG_OK;
 
 	if ((s = bind_del_data(tr, t, NULL)) == NULL)
 		return LOG_ERR;
-	return segments_conflict(tr, s->segs, 0);
+
+	lock_table(tr->store, t->base.id);
+	ok = segments_conflict(tr, s->segs, uncommitted);
+	unlock_table(tr->store, t->base.id);
+	return ok;
 }
 
 static BAT *

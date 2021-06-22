@@ -268,13 +268,13 @@ key_validate(sql_trans *tr, sql_key *k) /* updates while keys are added not poss
 	sqlstore *store = tr->store;
 
 	if (k->t && isTable(k->t) && !isNew(k->t) && !isTempTable(k->t))
-		if ((ok = store->storage_api.tab_validate(tr, k->t)))
+		if ((ok = store->storage_api.tab_validate(tr, k->t, 1)))
 			return ok;
 
 	if (k->type == fkey) {
 		sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
 		if (rk && rk->t && isTable(rk->t) && !isNew(rk->t) && !isTempTable(rk->t))
-			if ((ok = store->storage_api.tab_validate(tr, rk->t)))
+			if ((ok = store->storage_api.tab_validate(tr, rk->t, 1)))
 				return ok;
 	}
 	return ok;
@@ -288,7 +288,7 @@ part_validate(sql_trans *tr, sql_part *pt) /* updates while keys are added not p
 	sql_table *t = find_sql_table_id(tr, pt->t->s, pt->member);
 
 	if (t && isTable(t) && !isNew(t) && !isTempTable(t))
-		if ((ok = store->storage_api.tab_validate(tr, t)))
+		if ((ok = store->storage_api.tab_validate(tr, t, 1)))
 			return ok;
 	return ok;
 }
@@ -3471,7 +3471,7 @@ sql_trans_valid(sql_trans *tr)
 			sql_column *c = p->c;
 
 			if (c->t && isTable(c->t) && !isNew(c->t) && !isTempTable(c->t)) {
-				if ((ok = store->storage_api.tab_validate(tr, c->t)))
+				if ((ok = store->storage_api.tab_validate(tr, c->t, 0)))
 					break;
 			}
 		}
@@ -3519,6 +3519,7 @@ sql_trans_commit(sql_trans *tr)
 				break;
 		}
 		if (ok != LOG_OK) {
+			sql_trans_rollback(tr, 1);
 			store_unlock(store);
 			MT_lock_unset(&store->commit);
 			return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
