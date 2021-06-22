@@ -142,6 +142,7 @@ typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, 
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef void * (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
+typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- count number of rows in column (excluding the deletes)
@@ -216,6 +217,7 @@ typedef struct store_functions {
 	delete_tab_fptr delete_tab;
 	claim_tab_fptr claim_tab;
 	claim_tab_fptr key_claim_tab;
+	tab_validate_fptr tab_validate;
 
 	count_del_fptr count_del;
 	count_col_fptr count_col;

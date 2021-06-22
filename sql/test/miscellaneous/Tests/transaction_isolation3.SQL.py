@@ -5,6 +5,14 @@ with SQLTestCase() as mdb1:
         mdb1.connect(username="monetdb", password="monetdb")
         mdb2.connect(username="monetdb", password="monetdb")
 
+        mdb1.execute("CREATE TABLE notpossible (i int, j int);").assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('insert into notpossible values (5,1),(5,2),(5,3);').assertSucceeded()
+        mdb2.execute('alter table notpossible add primary key (i);').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
         mdb1.execute("CREATE TABLE integers (i int, j int);").assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
@@ -99,6 +107,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('drop table notpossible;').assertSucceeded()
         mdb1.execute('drop table y;').assertSucceeded()
         mdb1.execute('drop trigger myt;').assertSucceeded()
         mdb1.execute('drop table longs;').assertSucceeded()
