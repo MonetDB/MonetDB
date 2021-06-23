@@ -119,10 +119,12 @@ find_type(logger *lg, int tpe)
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &tpe) {
 			MT_rwlock_rdunlock(&cni.b->thashlock);
+			bat_iterator_end(&cni);
 			return res[p];
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return -1;
 }
 
@@ -138,31 +140,35 @@ find_type_nr(logger *lg, bte tpe)
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_bte(cni, cni.b->thash, p, &tpe) {
 			MT_rwlock_rdunlock(&cni.b->thashlock);
+			bat_iterator_end(&cni);
 			return res[p];
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return -1;
 }
 
 static BUN
 log_find(BAT *b, BAT *d, int val)
 {
-	BATiter cni = bat_iterator(b);
 	BUN p;
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b) == GDK_SUCCEED) {
+		BATiter cni = bat_iterator(b);
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return p;
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		bat_iterator_end(&cni);
 	} else {		/* unlikely: BAThash failed */
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
@@ -190,11 +196,13 @@ internal_find_bat(logger *lg, log_id id)
 			oid pos = p;
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return 0;
 }
 
@@ -550,11 +558,13 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 			assert(lg->catalog_cnt->hseqbase == 0);
 			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return GDK_FAIL;
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return GDK_SUCCEED;
 
 }
@@ -609,15 +619,18 @@ la_bat_updates(logger *lg, logaction *la)
 					if (q < cnt) {
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					} else {
 						if (BUNappend(b, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					}
 				}
+				bat_iterator_end(&vi);
 			}
 		}
 		cnt = (BUN)(la->offset + la->nr);
@@ -636,9 +649,11 @@ la_bat_updates(logger *lg, logaction *la)
 
 			if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
 				logbat_destroy(b);
+				bat_iterator_end(&vi);
 				return GDK_FAIL;
 			}
 		}
+		bat_iterator_end(&vi);
 	}
 	if (b)
 		logbat_destroy(b);
@@ -705,7 +720,7 @@ la_bat_create(logger *lg, logaction *la)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
-	if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
+	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
 	    logger_add_bat(lg, b, la->cid) != GDK_SUCCEED) {
 		logbat_destroy(b);
 		return GDK_FAIL;
@@ -2366,6 +2381,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
+	bat_iterator_end(&bi);
 	if (ok != GDK_SUCCEED) {
 		const char *err = mnstr_peek_error(lg->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
@@ -2504,6 +2520,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
+	bat_iterator_end(&vi);
 	if (ok != GDK_SUCCEED) {
 		const char *err = mnstr_peek_error(lg->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");

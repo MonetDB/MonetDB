@@ -14,82 +14,103 @@
 
 #define ANALYTICAL_DIFF_IMP(TPE)				\
 	do {							\
-		TPE *restrict bp = (TPE*)Tloc(b, 0), prev = bp[0];		\
+		MT_lock_set(&b->theaplock);			\
+		Heap *bh = b->theap;				\
+		HEAPincref(bh);					\
+		BUN bb = b->tbaseoff;				\
+		MT_lock_unset(&b->theaplock);			\
+		TPE *restrict bp = (TPE*)bh->base + bb, prev = bp[0];	\
 		if (np) {					\
-			for (; i < cnt; i++) {	\
-				TPE next = bp[i]; \
+			for (; i < cnt; i++) {			\
+				TPE next = bp[i];		\
 				if (next != prev) {		\
 					rb[i] = TRUE;		\
 					prev = next;		\
-				} else {	\
-					rb[i] = np[i];			\
-				}			\
+				} else {			\
+					rb[i] = np[i];		\
+				}				\
 			}					\
-		} else if (npbit) {					\
-			for (; i < cnt; i++) {	\
-				TPE next = bp[i]; \
+		} else if (npbit) {				\
+			for (; i < cnt; i++) {			\
+				TPE next = bp[i];		\
 				if (next != prev) {		\
 					rb[i] = TRUE;		\
 					prev = next;		\
-				} else {	\
-					rb[i] = npb;			\
-				}			\
+				} else {			\
+					rb[i] = npb;		\
+				}				\
 			}					\
 		} else {					\
-			for (; i < cnt; i++) {		\
-				TPE next = bp[i]; \
+			for (; i < cnt; i++) {			\
+				TPE next = bp[i];		\
 				if (next == prev) {		\
 					rb[i] = FALSE;		\
 				} else {			\
 					rb[i] = TRUE;		\
 					prev = next;		\
 				}				\
-			}				\
-		}				\
+			}					\
+		}						\
+		HEAPdecref(bh, false);				\
 	} while (0)
 
 /* We use NaN for floating point null values, which always output false on equality tests */
 #define ANALYTICAL_DIFF_FLOAT_IMP(TPE)					\
 	do {								\
-		TPE *restrict bp = (TPE*)Tloc(b, 0), prev = bp[0];		\
+		MT_lock_set(&b->theaplock);				\
+		Heap *bh = b->theap;					\
+		HEAPincref(bh);						\
+		BUN bb = b->tbaseoff;					\
+		MT_lock_unset(&b->theaplock);				\
+		TPE *restrict bp = (TPE*)bh->base + bb, prev = bp[0];	\
 		if (np) {						\
-			for (; i < cnt; i++) {		\
-				TPE next = bp[i]; \
+			for (; i < cnt; i++) {				\
+				TPE next = bp[i];			\
 				if (next != prev && (!is_##TPE##_nil(next) || !is_##TPE##_nil(prev))) { \
 					rb[i] = TRUE;			\
 					prev = next;			\
-				} else {	\
+				} else {				\
 					rb[i] = np[i];			\
-				}			\
+				}					\
 			}						\
-		} else if (npbit) {						\
-			for (; i < cnt; i++) {		\
-				TPE next = bp[i]; \
+		} else if (npbit) {					\
+			for (; i < cnt; i++) {				\
+				TPE next = bp[i];			\
 				if (next != prev && (!is_##TPE##_nil(next) || !is_##TPE##_nil(prev))) { \
 					rb[i] = TRUE;			\
 					prev = next;			\
-				} else {	\
+				} else {				\
 					rb[i] = npb;			\
-				}			\
+				}					\
 			}						\
 		} else {						\
-			for (; i < cnt; i++) {			\
-				TPE next = bp[i]; \
+			for (; i < cnt; i++) {				\
+				TPE next = bp[i];			\
 				if (next == prev || (is_##TPE##_nil(next) && is_##TPE##_nil(prev))) { \
 					rb[i] = FALSE;			\
 				} else {				\
 					rb[i] = TRUE;			\
-					prev = next;		\
-				}				\
-			}				\
-		}				\
+					prev = next;			\
+				}					\
+			}						\
+		}							\
+		HEAPdecref(bh, false);					\
 	} while (0)
 
 gdk_return
 GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 {
 	BUN i = 0, cnt = BATcount(b);
-	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) Tloc(p, 0) : NULL, npb = npbit ? *npbit : 0;
+	Heap *ph = NULL;
+	BUN pb = 0;
+	if (p) {
+		MT_lock_set(&p->theaplock);
+		ph = p->theap;
+		HEAPincref(ph);
+		pb = p->tbaseoff;
+		MT_lock_unset(&p->theaplock);
+	}
+	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) ph->base + pb : NULL, npb = npbit ? *npbit : 0;
 
 	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
@@ -156,8 +177,11 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 				}
 			}
 		}
+		bat_iterator_end(&it);
 	}
 	}
+	if (p)
+		HEAPdecref(ph, false);
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
@@ -827,6 +851,7 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 			for ( ; j < k ; j++)
 				rb[j] = l;
 		}
+		bat_iterator_end(&it);
 	}
 	}
 

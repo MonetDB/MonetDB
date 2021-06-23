@@ -334,7 +334,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].b->tnonil=false;
 	mat[0].b->tsorted=false;
 	mat[0].b->trevsorted=false;
-	mat[0].bi = bat_iterator(mat[0].b);
+	mat[0].bi = bat_iterator_nolock(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, 0);
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
 
@@ -355,8 +355,10 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 wrapup:
 	// restore the argument types
 	for (i = pci->retc; i < pci->argc; i++){
-		if ( mat[i].b)
+		if ( mat[i].b) {
+			bat_iterator_end(&mat[i].bi);
 			BBPunfix(mat[i].b->batCacheid);
+		}
 	}
 	GDKfree(mat);
 	return msg;

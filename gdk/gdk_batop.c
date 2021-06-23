@@ -142,6 +142,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				toff = 0;
 			} else if (b->tvheap->parentid != bid &&
 				   unshare_varsized_heap(b) != GDK_SUCCEED) {
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 		} else if (oldcnt == 0) {
@@ -154,8 +155,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			MT_thread_setalgorithm("copy vheap, copy heap");
 			if (b->tvheap->size < n->tvheap->free) {
 				Heap *h = HEAPgrow(b->tvheap, n->tvheap->free);
-				if (h == NULL)
+				if (h == NULL) {
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
+				}
 				MT_lock_set(&b->theaplock);
 				HEAPdecref(b->tvheap, false);
 				b->tvheap = h;
@@ -205,8 +208,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				/* if in "force" mode, the heap may be
 				 * shared when memory mapped */
 				Heap *h = HEAPgrow(b->tvheap, toff + n->tvheap->size);
-				if (h == NULL)
+				if (h == NULL) {
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
+				}
 				MT_lock_set(&b->theaplock);
 				HEAPdecref(b->tvheap, false);
 				b->tvheap = h;
@@ -225,13 +230,17 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			}
 		}
 	} else if (b->tvheap != n->tvheap &&
-		   unshare_varsized_heap(b) != GDK_SUCCEED)
+		   unshare_varsized_heap(b) != GDK_SUCCEED) {
+		bat_iterator_end(&ni);
 		return GDK_FAIL;
+	}
 
 	/* make sure there is (vertical) space in the offset heap, we
 	 * may also widen if v was set to some limit above */
-	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, false) != GDK_SUCCEED)
+	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, false) != GDK_SUCCEED) {
+		bat_iterator_end(&ni);
 		return GDK_FAIL;
+	}
 
 	if (toff == 0 && n->twidth == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
@@ -339,8 +348,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			cnt--;
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(ni, p);
-			if (bunfastappVAR(b, tp) != GDK_SUCCEED)
+			if (bunfastappVAR(b, tp) != GDK_SUCCEED) {
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
+			}
 			r++;
 		}
 	} else {
@@ -392,12 +403,15 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				}
 				b->batCount++;
 			} else {
-				if (bunfastappVAR(b, tp) != GDK_SUCCEED)
+				if (bunfastappVAR(b, tp) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
+				}
 			}
 			r++;
 		}
 	}
+	bat_iterator_end(&ni);
 	assert(b->batCapacity >= b->batCount);
 	b->theap->dirty = true;
 	/* maintain hash */
@@ -515,12 +529,15 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		cnt--;
 		BUN p = canditer_next(ci) - hseq;
 		const void *t = BUNtvar(ni, p);
-		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED) {
+			bat_iterator_end(&ni);
 			return GDK_FAIL;
+		}
 		if (b->thash)
 			HASHappend(b, r, t);
 		r++;
 	}
+	bat_iterator_end(&ni);
 	b->theap->dirty = true;
 	return GDK_SUCCEED;
 }
@@ -847,7 +864,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	} else {
 		BUN last = r - 1;
 		BATiter ni = bat_iterator(n);
-		BATiter bi = bat_iterator(b);
+		BATiter bi = bat_iterator_nolock(b);
 		int xx = ATOMcmp(b->ttype,
 				 BUNtail(ni, ci.seq - hseq),
 				 BUNtail(bi, last));
@@ -874,6 +891,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
+		bat_iterator_end(&ni);
 	}
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, n, &ci, mayshare) != GDK_SUCCEED) {
@@ -922,12 +940,14 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				const void *t = BUNtail(ni, p);
 				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
 				if (b->thash)
 					HASHappend_locked(b, r, t);
 				r++;
 			}
+			bat_iterator_end(&ni);
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
 		b->theap->dirty = true;
@@ -953,7 +973,7 @@ BATdel(BAT *b, BAT *d)
 {
 	gdk_return (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 
 	assert(ATOMtype(d->ttype) == TYPE_oid);
 	assert(d->tsorted);
@@ -1118,13 +1138,14 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 		return GDK_FAIL;
 	}
 
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	BATiter ni = bat_iterator(n);
 #if 0 /* questionable: what if p point outside b, even if !mayappend? */
 	if (BATcount(b) == 0 ||
 	    (b->tsorted && b->trevsorted &&
 	     n->tsorted && n->trevsorted &&
 	     ATOMcmp(b->ttype, BUNtail(bi, 0), BUNtail(ni, 0)) == 0)) {
+		bat_iterator_end(&ni);
 		return GDK_SUCCEED;
 	}
 #endif
@@ -1157,11 +1178,13 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
 				GDKerror("updating committed value\n");
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 
@@ -1170,11 +1193,16 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
 				while (BATcount(b) < updid) {
-					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
+						bat_iterator_end(&ni);
 						return GDK_FAIL;
+					}
 				}
-				if (BUNappend(b, new, force) != GDK_SUCCEED)
+				if (BUNappend(b, new, force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
+				}
+				bi = bat_iterator_nolock(b);
 				continue;
 			}
 
@@ -1252,6 +1280,7 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			}
 			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
@@ -1259,8 +1288,10 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
+				bi = bat_iterator_nolock(b);
 			}
 			switch (b->twidth) {
 			case 1:
@@ -1290,24 +1321,30 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
 				GDKerror("updating committed value\n");
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
 				while (BATcount(b) < updid) {
-					if (BUNappend(b, &(msk){false}, force) != GDK_SUCCEED)
+					if (BUNappend(b, &(msk){false}, force) != GDK_SUCCEED) {
+						bat_iterator_end(&ni);
 						return GDK_FAIL;
+					}
 				}
-				if (BUNappend(b, &(msk){mskGetVal(n, i)}, force) != GDK_SUCCEED)
+				if (BUNappend(b, Tmsk(&ni, i), force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
+				}
 				continue;
 			}
-			mskSetVal(b, updid, mskGetVal(n, i));
+			mskSetVal(b, updid, *(msk *)Tmsk(&ni, i));
 		}
 	} else if (BATtdense(p)) {
 		oid updid = BUNtoid(p, 0);
@@ -1315,16 +1352,19 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 		if (updid < b->hseqbase ||
 		    (!mayappend && updid + BATcount(p) > hseqend)) {
 			GDKerror("id out of range\n");
+			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
 		updid -= b->hseqbase;
 		if (!force && updid < b->batInserted) {
 			GDKerror("updating committed value\n");
+			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
 
 		if (updid >= BATcount(b)) {
 			assert(mayappend);
+			bat_iterator_end(&ni);
 			while (BATcount(b) < updid) {
 				if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
 					return GDK_FAIL;
@@ -1332,8 +1372,10 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			return BATappend(b, n, NULL, force);
 		}
 		while (updid + BATcount(n) > BATcount(b)) {
-			if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+			if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
+			}
 		}
 
 		/* we copy all of n, so if there are nils in n we get
@@ -1459,11 +1501,13 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
 				GDKerror("updating committed value\n");
+				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 
@@ -1472,11 +1516,16 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
 				while (BATcount(b) < updid) {
-					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
+					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
+						bat_iterator_end(&ni);
 						return GDK_FAIL;
+					}
 				}
-				if (BUNappend(b, new, force) != GDK_SUCCEED)
+				if (BUNappend(b, new, force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
 					return GDK_FAIL;
+				}
+				bi = bat_iterator_nolock(b);
 				continue;
 			}
 
@@ -1563,6 +1612,7 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			MT_rwlock_wrunlock(&b->thashlock);
 		}
 	}
+	bat_iterator_end(&ni);
 	TRC_DEBUG(ALGO,
 		  "BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
@@ -1606,7 +1656,7 @@ BATslice(BAT *b, BUN l, BUN h)
 {
 	BUN low = l;
 	BAT *bn = NULL;
-	BATiter bni, bi = bat_iterator(b);
+	BATiter bni;
 	oid foid;		/* first oid value if oid column */
 
 	BATcheck(b, NULL);
@@ -1652,7 +1702,8 @@ BATslice(BAT *b, BUN l, BUN h)
 		    BATappend(bn, b, s, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			BBPreclaim(s);
-			return NULL;
+			bn = NULL;
+			goto doreturn;
 		}
 		BBPunfix(s->batCacheid);
 		goto doreturn;
@@ -1677,19 +1728,28 @@ BATslice(BAT *b, BUN l, BUN h)
 		     BATatoms[bn->ttype].atomPut == NULL &&
 		     BATatoms[bn->ttype].atomFix == NULL)) {
 			if (bn->ttype) {
-				memcpy(Tloc(bn, 0), Tloc(b, p),
+				MT_lock_set(&b->theaplock);
+				Heap *h = b->theap;
+				HEAPincref(h);
+				BUN baseoff = b->tbaseoff;
+				MT_lock_unset(&b->theaplock);
+				memcpy(Tloc(bn, 0), h->base + ((baseoff + p) << b->tshift),
 				       (q - p) * Tsize(bn));
+				HEAPdecref(h, false);
 				bn->theap->dirty = true;
 			}
 			BATsetcount(bn, h - l);
 		} else {
+			BATiter bi = bat_iterator(b);
 			for (; p < q; p++) {
 				if (bunfastapp(bn, BUNtail(bi, p)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					BBPreclaim(bn);
 					bn = NULL;
 					goto doreturn;
 				}
 			}
+			bat_iterator_end(&bi);
 		}
 		bn->theap->dirty = true;
 		bn->tsorted = b->tsorted;
@@ -1717,7 +1777,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	bn->tnil = false;	/* we just don't know */
 	bn->tnosorted = 0;
 	bn->tnokey[0] = bn->tnokey[1] = 0;
-	bni = bat_iterator(bn);
+	bni = bat_iterator_nolock(bn);
 	if (BATtdense(b)) {
 		BATtseqbase(bn, (oid) (b->tseqbase + low));
 	} else if (bn->ttype == TYPE_oid) {
@@ -1754,7 +1814,6 @@ bool
 BATkeyed(BAT *b)
 {
 	lng t0 = GDKusec();
-	BATiter bi = bat_iterator(b);
 	int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 	BUN p, q, hb;
 	Hash *hs = NULL;
@@ -1777,6 +1836,7 @@ BATkeyed(BAT *b)
 	}
 
 	b->batDirtydesc = true;
+	BATiter bi = bat_iterator(b);
 	if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
 		if (b->tsorted || b->trevsorted) {
 			const void *prev = BUNtail(bi, 0);
@@ -1894,6 +1954,7 @@ BATkeyed(BAT *b)
 		}
 	}
   doreturn:
+	bat_iterator_end(&bi);
 	return b->tkey;
 }
 
@@ -1963,6 +2024,7 @@ BATordered(BAT *b)
 	 * lock.  We reuse the theaplock lock for this, not because this
 	 * scanning interferes with heap reference counting, but because
 	 * it's there, and not so likely to be used at the same time. */
+	BATiter bi = bat_iterator(b);
 	MT_lock_set(&b->theaplock);
 	if (!b->tsorted && b->tnosorted == 0) {
 		b->batDirtydesc = true;
@@ -1991,7 +2053,6 @@ BATordered(BAT *b)
 			BAT_ORDERED_FP(dbl);
 			break;
 		default: {
-			BATiter bi = bat_iterator(b);
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
 				int c;
@@ -2030,6 +2091,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
+	bat_iterator_end(&bi);
 	MT_lock_unset(&b->theaplock);
 	return b->tsorted;
 }
@@ -2076,6 +2138,7 @@ BATordered_rev(BAT *b)
 		return is_oid_nil(b->tseqbase);
 	if (BATtdense(b) || b->tnorevsorted > 0)
 		return false;
+	BATiter bi = bat_iterator(b);
 	MT_lock_set(&b->theaplock);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		b->batDirtydesc = true;
@@ -2104,7 +2167,6 @@ BATordered_rev(BAT *b)
 			BAT_REVORDERED_FP(dbl);
 			break;
 		default: {
-			BATiter bi = bat_iterator(b);
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
 				if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
@@ -2120,6 +2182,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
+	bat_iterator_end(&bi);
 	MT_lock_unset(&b->theaplock);
 	return b->trevsorted;
 }
@@ -2869,12 +2932,14 @@ BATgetprop(BAT *b, enum prop_t idx)
 			if ((p = BATgetprop_nolock(b, GDK_MIN_POS)) != NULL) {
 				BATiter bi = bat_iterator(b);
 				p = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, BUNtail(bi, p->val.oval));
+				bat_iterator_end(&bi);
 			}
 			break;
 		case GDK_MAX_VALUE:
 			if ((p = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
 				BATiter bi = bat_iterator(b);
 				p = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, BUNtail(bi, p->val.oval));
+				bat_iterator_end(&bi);
 			}
 			break;
 		default:

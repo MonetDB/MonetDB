@@ -1116,6 +1116,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			}
 			bpi = bat_iterator(d);
 			default_value = BUNtail(bpi, 0);
+			bat_iterator_end(&bpi);
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);

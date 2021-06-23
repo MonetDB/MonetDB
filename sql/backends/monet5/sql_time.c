@@ -370,6 +370,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 				}
 			}
 		}
+		bat_iterator_end(&it);
 	} else {
 		str next = *(str*)in;
 		if (strNil(next))
@@ -854,6 +855,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		str next = *(str*)in;
 		if (strNil(next))
@@ -985,6 +987,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
 
@@ -1084,6 +1087,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
 
@@ -1294,7 +1298,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	lng *restrict ret = NULL, multiplier = 1;
-	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)), 
+	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)),
 		scale = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
 	bool is_a_bat = false, nils = false;
 	BAT *b = NULL, *s = NULL, *res = NULL;
@@ -1605,6 +1609,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 				}
 			}
 		}
+		bat_iterator_end(&it);
 	} else {
 		str next = *(str*)in;
 		if (strNil(next))

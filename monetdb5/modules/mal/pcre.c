@@ -803,7 +803,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 				 const char *replacement, const char *flags, bool global)
 {
 #ifdef HAVE_LIBPCRE
-	BATiter origin_strsi = bat_iterator(origin_strs);
 	const char *err_p = NULL;
 	char *tmpres;
 	int i, errpos = 0;
@@ -889,6 +888,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtvar(origin_strsi, p);
 		tmpres = single_replace(pcre_code, extra, origin_str,
@@ -897,6 +897,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 								len_replacement, backrefs, nbackrefs, global,
 								tmpres, &max_dest_size);
 		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
+			bat_iterator_end(&origin_strsi);
 			pcre_free_study(extra);
 			pcre_free(pcre_code);
 			GDKfree(ovector);
@@ -906,6 +907,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
+	bat_iterator_end(&origin_strsi);
 	pcre_free_study(extra);
 	pcre_free(pcre_code);
 	GDKfree(ovector);
@@ -1619,39 +1621,60 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 		for (BUN p = 0; p < q; p++) {
 			const str next_input = b ? BUNtail(bi, p) : input, np = BUNtail(pi, p);
 
-			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED)
+			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED) {
+				bat_iterator_end(&pi);
+				if (b)
+					bat_iterator_end(&bi);
 				goto bailout;
+			}
 
 			if (use_re) {
-				if ((msg = re_like_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
+				if ((msg = re_like_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED) {
+					bat_iterator_end(&pi);
+					if (b)
+						bat_iterator_end(&bi);
 					goto bailout;
+				}
 				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
 				re_like_clean(&re_simple, &wpat);
 			} else if (empty) {
 				ret[p] = bit_nil;
 			} else {
-				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 1)) != MAL_SUCCEED)
+				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 1)) != MAL_SUCCEED) {
+					bat_iterator_end(&pi);
+					if (b)
+						bat_iterator_end(&bi);
 					goto bailout;
-				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ex, ppat, anti)) != MAL_SUCCEED)
+				}
+				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ex, ppat, anti)) != MAL_SUCCEED) {
+					bat_iterator_end(&pi);
+					if (b)
+						bat_iterator_end(&bi);
 					goto bailout;
+				}
 				pcre_clean(&re, &ex);
 			}
 			has_nil |= is_bit_nil(ret[p]);
 			GDKfree(ppat);
 			ppat = NULL;
 		}
+		bat_iterator_end(&pi);
+		if (b)
+			bat_iterator_end(&bi);
 	} else {
-		bi = bat_iterator(b);
 		pat = *getArgReference_str(stk, pci, 2);
 		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &pat, esc)) != MAL_SUCCEED)
 			goto bailout;
 
+		bi = bat_iterator(b);
 		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
 							   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
 
 		if (use_re) {
-			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
+			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED) {
+				bat_iterator_end(&bi);
 				goto bailout;
+			}
 			for (BUN p = 0; p < q; p++) {
 				const str s = BUNtail(bi, p);
 				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
@@ -1662,15 +1685,20 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 				ret[p] = bit_nil;
 			has_nil = true;
 		} else {
-			if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, q)) != MAL_SUCCEED)
+			if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, q)) != MAL_SUCCEED) {
+				bat_iterator_end(&bi);
 				goto bailout;
+			}
 			for (BUN p = 0; p < q; p++) {
 				const str s = BUNtail(bi, p);
-				if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED)
+				if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED) {
+					bat_iterator_end(&bi);
 					goto bailout;
+				}
 				has_nil |= is_bit_nil(ret[p]);
 			}
 		}
+		bat_iterator_end(&bi);
 	}
 
 bailout:
@@ -1767,6 +1795,7 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN 
 		pcrescanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY);
 
 bailout:
+	bat_iterator_end(&bi);
 	pcre_clean(&re, &ex);
 	*rcnt = cnt;
 	return msg;
@@ -1812,6 +1841,7 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *r
 	}
 
 bailout:
+	bat_iterator_end(&bi);
 	re_like_clean(&re, &wpat);
 	*rcnt = cnt;
 	return msg;
@@ -2167,12 +2197,17 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 		msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the escape input at pcre join");
 		goto fail;
 	}
-	esc = BUNtvar(bat_iterator(escape), 0);
+	BATiter bi;
+	bi = bat_iterator(escape);
+	esc = BUNtvar(bi, 0);
+	bat_iterator_end(&bi);
 	if (BATcount(caseignore) != 1) {
 		msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the case ignore input at pcre join");
 		goto fail;
 	}
-	ci = *(bit*)BUNtail(bat_iterator(caseignore), 0);
+	bi = bat_iterator(caseignore);
+	ci = *(bit*)BUNtail(bi, 0);
+	bat_iterator_end(&bi);
 	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci, anti);
 	if (msg)
 		goto fail;

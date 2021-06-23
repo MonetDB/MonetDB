@@ -825,7 +825,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 								for (element_it = 0; element_it < elements;
 									 element_it++) {
 									// append current element to proper group
-									ptr[element_it][i][temp_indices[element_it]++] = 
+									ptr[element_it][i][temp_indices[element_it]++] =
 										batcontent[element_it];
 								}
 							} else {
@@ -1218,6 +1218,7 @@ returnvalues:
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&li);
 			}
 		}
 		if (argnode) {

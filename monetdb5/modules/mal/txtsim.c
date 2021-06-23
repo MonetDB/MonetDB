@@ -822,6 +822,8 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 			msg = fstrcmp_impl_internal(&vals[i], &fdiag_buf, &fdiag_buflen, x, y, 0.0);
 		}
 	}
+	bat_iterator_end(&lefti);
+	bat_iterator_end(&righti);
 
 bailout:
 	GDKfree(fdiag_buf);

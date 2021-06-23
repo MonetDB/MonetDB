@@ -256,6 +256,7 @@ BATunique(BAT *b, BAT *s)
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
+	bat_iterator_end(&bi);
 
 	bn->theap->dirty = true;
 	bn->tsorted = true;
@@ -280,6 +281,7 @@ BATunique(BAT *b, BAT *s)
 	return bn;
 
   bunins_failed:
+	bat_iterator_end(&bi);
 	if (seen)
 		GDKfree(seen);
 	if (hs != NULL && hs != b->thash) {
