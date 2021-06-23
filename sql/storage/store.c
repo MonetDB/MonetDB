@@ -372,16 +372,28 @@ table_validate(sql_trans *tr, sql_table *t, int deleted)
 }
 
 static int
-part_validate(sql_trans *tr, sql_part *pt, int deleted) /* disallow part changes with any other changes */
+part_validate(sql_trans *tr, sql_part *pt, int deleted)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
-	sql_table *t = find_sql_table_id(tr, pt->t->s, pt->member);
+	sql_table *mt = pt->t;
+	sql_part *parent = NULL;
+	bool partitioned_mergetable_child = false;
 
 	if (!isNew(pt) && deleted)
 		return deleted_object_validate(tr, &pt->base);
-	if (t && isTable(t) && !isNew(t) && !isTempTable(t))
-		ok = store->storage_api.tab_validate(tr, t, 1);
+
+	sql_table *t = find_sql_table_id(tr, pt->t->s, pt->member);
+	if (t && isTable(t) && !isNew(t) && !isTempTable(t)) {
+		while (mt && !partitioned_mergetable_child) {
+			partitioned_mergetable_child = isRangePartitionTable(mt) || isListPartitionTable(mt);
+			parent = partition_find_part(tr, mt, NULL);
+			mt = parent ? parent->t : NULL;
+		}
+
+		if (partitioned_mergetable_child) /* partitioned tables have interval constraints */
+			ok = store->storage_api.tab_validate(tr, t, 1);
+	}
 	return ok;
 }
 
