@@ -16,16 +16,556 @@
 #include <string.h>
 #include "sql_mvc.h"
 #include "sql.h"
-#ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
+#ifndef __clang_major__ /* stupid include file gdal/cpl_port.h */
 #define __clang_major__ 0
 #endif
 #include "shp.h"
-#include <cpl_conv.h>		/* for CPLFree */
+#include <cpl_conv.h> /* for CPLFree */
 #include "sql_execute.h"
 #include "mal_exception.h"
 
 #include "libgeom.h"
 
+GDALWConnection *GDALWConnect(char *source)
+{
+	GDALWConnection *conn = NULL;
+	OGRFeatureDefnH featureDefn;
+	int fieldCount, i;
+	OGRRegisterAll();
+	conn = malloc(sizeof(GDALWConnection));
+	if (conn == NULL)
+	{
+		TRC_ERROR(SHP, "Could not allocate memory\n");
+		return NULL;
+	}
+	conn->handler = OGROpen(source, 0, &(conn->driver));
+	if (conn->handler == NULL)
+	{
+		free(conn);
+		return NULL;
+	}
+
+	conn->layer = OGR_DS_GetLayer(conn->handler, 0);
+	if (conn->layer == NULL)
+	{
+		OGRReleaseDataSource(conn->handler);
+		free(conn);
+		return NULL;
+	}
+
+	conn->layername = (const char *)OGR_L_GetName(conn->layer);
+
+	featureDefn = OGR_L_GetLayerDefn(conn->layer);
+	fieldCount = OGR_FD_GetFieldCount(featureDefn);
+	conn->numFieldDefinitions = fieldCount;
+	conn->fieldDefinitions = malloc(fieldCount * sizeof(OGRFieldDefnH));
+	if (conn->fieldDefinitions == NULL)
+	{
+		OGRReleaseDataSource(conn->handler);
+		free(conn);
+		TRC_ERROR(SHP, "Could not allocate memory\n");
+		return NULL;
+	}
+	for (i = 0; i < fieldCount; i++)
+	{
+		conn->fieldDefinitions[i] = OGR_FD_GetFieldDefn(featureDefn, i);
+	}
+
+	return conn;
+}
+
+void GDALWClose(GDALWConnection *conn)
+{
+	free(conn->fieldDefinitions);
+	OGRReleaseDataSource(conn->handler);
+}
+
+GDALWSimpleFieldDef *GDALWGetSimpleFieldDefinitions(GDALWConnection conn)
+{
+	int i;
+	GDALWSimpleFieldDef *columns;
+	OGRFieldDefnH fieldDefn;
+	/*if (conn.layer == NULL || conn.handler == NULL || conn.driver == NULL) {
+		printf("Could not extract columns, initialize a connection first.\n");
+		exit(-1);
+	}*/
+	columns = malloc(conn.numFieldDefinitions * sizeof(GDALWSimpleFieldDef));
+	if (columns == NULL)
+	{
+		TRC_ERROR(SHP, "Could not allocate memory\n");
+		return NULL;
+	}
+	for (i = 0; i < conn.numFieldDefinitions; i++)
+	{
+		fieldDefn = conn.fieldDefinitions[i];
+		columns[i].fieldName = OGR_Fld_GetNameRef(fieldDefn);
+		columns[i].fieldType = OGR_GetFieldTypeName(OGR_Fld_GetType(fieldDefn));
+	}
+
+	return columns;
+}
+
+void GDALWPrintRecords(GDALWConnection conn)
+{
+	char *wkt;
+	int i;
+	OGRFeatureH feature;
+	OGRGeometryH geometry;
+	OGRFeatureDefnH featureDefn;
+	featureDefn = OGR_L_GetLayerDefn(conn.layer);
+	OGR_L_ResetReading(conn.layer);
+	while ((feature = OGR_L_GetNextFeature(conn.layer)) != NULL)
+	{
+		for (i = 0; i < OGR_FD_GetFieldCount(featureDefn); i++)
+		{
+			OGRFieldDefnH hFieldDefn = OGR_FD_GetFieldDefn(featureDefn, i);
+			if (OGR_Fld_GetType(hFieldDefn) == OFTInteger)
+				printf("%d,", OGR_F_GetFieldAsInteger(feature, i));
+			else if (OGR_Fld_GetType(hFieldDefn) == OFTReal)
+				printf("%.3f,", OGR_F_GetFieldAsDouble(feature, i));
+			else
+				printf("%s,", OGR_F_GetFieldAsString(feature, i));
+		}
+		geometry = OGR_F_GetGeometryRef(feature);
+		OGR_G_ExportToWkt(geometry, &wkt);
+		printf("%s", wkt);
+		printf("\n");
+		CPLFree(wkt);
+		OGR_F_Destroy(feature);
+	}
+}
+
+GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn)
+{
+	GDALWSpatialInfo spatialInfo;
+	OGRSpatialReferenceH spatialRef = OGR_L_GetSpatialRef(conn.layer);
+	char *proj4, *srsText, *srid;
+
+	OSRExportToProj4(spatialRef, &proj4);
+	OSRExportToWkt(spatialRef, &srsText);
+	srid = (char *)OSRGetAttrValue(spatialRef, "AUTHORITY", 1);
+	if (srid == NULL)
+	{
+		spatialInfo.epsg = 4326;
+	}
+	else
+	{
+		spatialInfo.epsg = atoi(OSRGetAttrValue(spatialRef, "AUTHORITY", 1));
+	}
+	spatialInfo.authName = OSRGetAttrValue(spatialRef, "AUTHORITY", 0);
+	if (spatialInfo.authName == NULL)
+	{
+		spatialInfo.authName = "EPSG";
+	}
+	spatialInfo.proj4Text = proj4;
+	spatialInfo.srsText = srsText;
+
+	return spatialInfo;
+}
+
+//Using mvc_* methods (not working yet)
+str createSHPtableMVC(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
+{
+	char *nameToLowerCase = NULL;
+	str msg = MAL_SUCCEED;
+
+	if (field_definitions == NULL)
+	{
+		/* Can't find shapefile field definitions */
+		GDALWClose(&shp_conn);
+		return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	/* Create the table that will store the data of the shape file (Allows integers, floats and strings) */
+	sql_table *shp_out;
+	sql_column *col;
+	shp_out = mvc_bind_table(m, sch, tablename);
+
+	if (shp_out == NULL)
+	{
+		shp_out = mvc_create_table(m, sch, tablename, tt_table, 0, SQL_PERSIST, 0, shp_conn.numFieldDefinitions, 0);
+		col = mvc_create_column_(m, shp_out, "gid", "int", 32);
+		if (col == NULL)
+		{
+			//Failure to create column
+			//TODO: Should this be the error that's returned?
+			free(field_definitions);
+			return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		printf("Created column gid\n");
+		fflush(stdout);
+		for (int i = 0; i < shp_conn.numFieldDefinitions; i++)
+		{
+			nameToLowerCase = toLower(field_definitions[i].fieldName);
+			if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
+			{
+				col = mvc_create_column_(m, shp_out, nameToLowerCase, "int", 32);
+			}
+			else if (strcmp(field_definitions[i].fieldType, "Real") == 0)
+			{
+				//TODO: Do real data types in Shapefiles have 32 or 64 bits?
+				col = mvc_create_column_(m, shp_out, nameToLowerCase, "real", 64);
+			}
+			else
+			{
+				col = mvc_create_column_(m, shp_out, nameToLowerCase, "clob", 0);
+			}
+			if (col == NULL)
+			{
+				//Failure to create column
+				//TODO: Should this be the error that's returned?
+				free(field_definitions);
+				return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			printf("Created column %s\n", nameToLowerCase);
+			fflush(stdout);
+			GDKfree(nameToLowerCase);
+		}
+
+		col = mvc_create_column_(m, shp_out, "geom", "geometry", 0);
+		if (col == NULL)
+		{
+			//Failure to create column
+			//TODO: Should this be the error that's returned?
+			free(field_definitions);
+			return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	else
+	{
+		//TODO: Table with tablename already created, warn the user
+	}
+	return msg;
+}
+
+//Using SQL query
+str createSHPtable(Client cntxt, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
+{
+	unsigned int size = BUFSIZ;
+	char *buf = malloc(BUFSIZ * sizeof(char)), *temp_buf = malloc(BUFSIZ * sizeof(char));
+	char *nameToLowerCase = NULL;
+	str msg = MAL_SUCCEED;
+
+	if (field_definitions == NULL)
+	{
+		/* Can't find shapefile field definitions */
+		GDALWClose(&shp_conn);
+		return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	/* Create the table that will store the data of the shape file (Allows integers, floats and strings) */
+	temp_buf[0] = '\0';
+	for (int i = 0; i < shp_conn.numFieldDefinitions; i++)
+	{
+		/*If the next column definition doesn't fit in the buffer, resize the buffers to double
+		Compare current buffer size with current lenght + field name lenght + 11 (lenght of string column definition)*/
+		if (size <= (11 + strlen(field_definitions[i].fieldName) + strlen(temp_buf)))
+		{
+			size = 2 * size;
+			buf = realloc(buf, size);
+			temp_buf = realloc(temp_buf, size);
+		}
+		nameToLowerCase = toLower(field_definitions[i].fieldName);
+		if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
+		{
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
+		}
+		else if (strcmp(field_definitions[i].fieldType, "Real") == 0)
+		{
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+		}
+		else
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+		GDKfree(nameToLowerCase);
+	}
+
+	//Each shapefile table has one geom column
+	sprintf(temp_buf + strlen(temp_buf), "geom GEOMETRY ");
+	snprintf(buf, size, CRTTBL, tablename, temp_buf);
+
+	if ((msg = SQLstatementIntern(cntxt, buf, "shp.load", TRUE, FALSE, NULL)) != MAL_SUCCEED)
+		//Create table command didn't succeed, free field_definitions
+		free(field_definitions);
+
+	free(buf);
+	free(temp_buf);
+	return msg;
+}
+
+str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info)
+{
+	sql_table *data_table = NULL;
+	sql_column **cols;
+	BAT **colsBAT;
+	int colsNum = 2; //we will have at least the gid column and a geometry column
+	int rowsNum = 0; //the number of rows in the shape file that will be imported
+	int gidNum = 0;
+	str msg = MAL_SUCCEED;
+	char *nameToLowerCase = NULL;
+	int i;
+
+	/* SHP-level descriptor */
+	OGRFieldDefnH hFieldDefn;
+	OGRFeatureH feature;
+	OGRFeatureDefnH featureDefn;
+
+	/* Count the number of lines in the shape file */
+	if ((rowsNum = OGR_L_GetFeatureCount(shp_conn.layer, false)) == -1)
+	{
+		OGR_L_ResetReading(shp_conn.layer);
+		rowsNum = 0;
+		while ((feature = OGR_L_GetNextFeature(shp_conn.layer)) != NULL)
+		{
+			rowsNum++;
+			OGR_F_Destroy(feature);
+		}
+	}
+
+	/* bind the columns of the data file that was just created
+	* and create a BAT for each of the columns */
+	if (!(data_table = mvc_bind_table(m, sch, tablename)))
+	{
+		/* Previously create output table is missing */
+		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Table 'sys.%s' missing", tablename);
+		GDALWClose(&shp_conn);
+		return msg;
+	}
+	colsNum += shp_conn.numFieldDefinitions;
+	if (!(cols = (sql_column **)GDKmalloc(sizeof(sql_column *) * colsNum)))
+	{
+		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDALWClose(&shp_conn);
+		return msg;
+	}
+	if (!(colsBAT = (BAT **)GDKzalloc(sizeof(BAT *) * colsNum)))
+	{
+		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDKfree(cols);
+		return msg;
+	}
+
+	/* Bind shapefile attributes to columns */
+	for (i = 0; i < colsNum - 2; i++)
+	{
+		cols[i] = NULL;
+		/* bind the column */
+		nameToLowerCase = toLower(field_definitions[i].fieldName);
+		cols[i] = mvc_bind_column(m, data_table, nameToLowerCase);
+		GDKfree(nameToLowerCase);
+		if (cols[i] == NULL)
+		{
+			msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column 'sys.%s(%s)' missing", tablename, toLower(field_definitions[i].fieldName));
+			goto unfree;
+		}
+		/*create the BAT */
+		if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
+		{
+			if (!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
+			{
+				msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto unfree;
+			}
+		}
+		else if (strcmp(field_definitions[i].fieldType, "Real") == 0)
+		{
+			if (!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT)))
+			{
+				msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto unfree;
+			}
+		}
+		else
+		{
+			if (!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT)))
+			{
+				msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto unfree;
+			}
+		}
+	}
+	/* Bind GID and GEOM columns */
+	if (!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid")))
+	{
+		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column 'sys.%s(gid)' missing", tablename);
+		goto unfree;
+	}
+	if (!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
+	{
+		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto unfree;
+	}
+	if (!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom")))
+	{
+		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column 'sys.%s(geom)' missing", tablename);
+		goto unfree;
+	}
+	if (!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT)))
+	{
+		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto unfree;
+	}
+
+	/* Import the data */
+	featureDefn = OGR_L_GetLayerDefn(shp_conn.layer);
+	OGR_L_ResetReading(shp_conn.layer);
+	/* Import shapefile attributes */
+	while ((feature = OGR_L_GetNextFeature(shp_conn.layer)) != NULL)
+	{
+		wkb *geomWKB;
+		int len;
+		int gidTemp = ++gidNum;
+		gdk_return rc;
+
+		OGRGeometryH geometry = OGR_F_GetGeometryRef(feature);
+
+		for (i = 0; i < colsNum - 2; i++)
+		{
+			hFieldDefn = OGR_FD_GetFieldDefn(featureDefn, i);
+			if (OGR_Fld_GetType(hFieldDefn) == OFTInteger)
+			{
+				int val = OGR_F_GetFieldAsInteger(feature, i);
+				rc = BUNappend(colsBAT[i], &val, false);
+			}
+			else if (OGR_Fld_GetType(hFieldDefn) == OFTReal)
+			{
+				double val = OGR_F_GetFieldAsDouble(feature, i);
+				rc = BUNappend(colsBAT[i], &val, false);
+			}
+			else
+			{
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), false);
+			}
+			if (rc != GDK_SUCCEED)
+			{
+				/* Append to column failed */
+				msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto unfree;
+			}
+		}
+
+		/* Import GID and GEOM columns */
+		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, false) != GDK_SUCCEED)
+		{
+			msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto unfree;
+		}
+
+		len = OGR_G_WkbSize(geometry);
+		if (!(geomWKB = GDKmalloc(sizeof(wkb) + len)))
+		{
+			msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			OGR_F_Destroy(feature);
+			goto unfree;
+		}
+		geomWKB->len = len;
+		/* Set SRID */
+		geomWKB->srid = spatial_info.epsg;
+		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
+		rc = BUNappend(colsBAT[colsNum - 1], geomWKB, false);
+
+		GDKfree(geomWKB);
+		OGR_F_Destroy(feature);
+		if (rc != GDK_SUCCEED)
+			goto unfree;
+	}
+	sqlstore *store = m->session->tr->store;
+	BAT *pos = NULL;
+	/* finalise the BATs */
+	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
+	if (!pos)
+		throw(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	for (i = 0; i < colsNum; i++)
+	{
+		if (store->storage_api.append_col(m->session->tr, cols[i], pos, colsBAT[i], TYPE_bat) != LOG_OK)
+		{
+			bat_destroy(pos);
+			msg = createException(MAL, "shp.load", SQLSTATE(38000) "Geos append column failed");
+			goto unfree;
+		}
+	}
+	bat_destroy(pos);
+
+unfree:
+	for (i = 0; i < colsNum; i++)
+	{
+		if (colsBAT[i])
+			BBPunfix(colsBAT[i]->batCacheid);
+	}
+	free(field_definitions);
+	GDKfree(colsBAT);
+	return msg;
+}
+
+/* Attach and load single shp file given its name and output table name */
+/* TODO: Use Shapefile table to avoid loading the same file more than once, or allow the user to load as many times as he wants? */
+str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	sql_schema *sch = NULL;
+	str msg = MAL_SUCCEED;
+
+	/* Shapefile name (argument 1) */
+	str fname = *(str *)getArgReference(stk, pci, 1);
+	/* Output table name (argument 2) */
+	str tablename = *(str *)getArgReference(stk, pci, 2);
+
+	/* SHP-level descriptor */
+	GDALWConnection shp_conn;
+	GDALWConnection *shp_conn_ptr = NULL;
+	GDALWSimpleFieldDef *field_definitions;
+	GDALWSpatialInfo spatial_info;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
+		return msg;
+	if (!(sch = mvc_bind_schema(m, "sys")))
+		return createException(MAL, "shp.load", SQLSTATE(38000) "Schema sys missing\n");
+
+	if ((shp_conn_ptr = GDALWConnect((char *)fname)) == NULL)
+	{
+		/* Can't find shapefile */
+		return createException(MAL, "shp.load", SQLSTATE(38000) "Missing shape file %s\n", fname);
+	}
+
+	if ((tablename != NULL) && (tablename[0] == '\0'))
+	{
+		/* Output table name is NULL */
+		return createException(MAL, "shp.load", SQLSTATE(38000) "Missing output table name %s\n", tablename);
+	}
+
+	/* Get info about fields and spatial attributes of shapefile*/
+	shp_conn = *shp_conn_ptr;
+	spatial_info = GDALWGetSpatialInfo(shp_conn);
+	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
+
+	/* Create table for outputting shapefile data */
+	if ((msg = createSHPtable(cntxt, tablename, shp_conn, field_definitions)) != MAL_SUCCEED)
+	{
+		/* Create table failed */
+		return msg;
+	}
+
+	/* Load shapefile data into table */
+	return loadSHPtable(m, sch, tablename, shp_conn, field_definitions, spatial_info);
+}
+
+#include "mel.h"
+static mel_func shp_init_funcs[] = {
+	pattern("shp", "load", SHPload, false, "Import an ESRI Shapefile", args(1, 3, arg("", void), arg("filename", str), arg("tablename", str))),
+	{.imp = NULL}};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU", read)
+#endif
+LIB_STARTUP_FUNC(init_shp_mal)
+{
+	mal_module("shp", NULL, shp_init_funcs);
+}
+
+//Old code
+#if 0
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.
  * When removing the 'rs' schame, the code of client/mapiclient/dump.c MUST be
@@ -59,129 +599,6 @@
 	}
 	handle = SBNOpenDiskTree(source, NULL);
 }*/
-
-GDALWConnection * GDALWConnect(char * source) {
-	GDALWConnection * conn = NULL;
-	OGRFeatureDefnH featureDefn;
-	int fieldCount, i;
-	OGRRegisterAll();
-	conn = malloc(sizeof(GDALWConnection));
-	if (conn == NULL) {
-		TRC_ERROR(SHP, "Could not allocate memory\n");
-		return NULL;
-	}
-	conn->handler = OGROpen(source, 0 , &(conn->driver));
-	if (conn->handler == NULL) {
-		free(conn);
-		return NULL;
-	}
-
-
-	conn->layer = OGR_DS_GetLayer(conn->handler, 0);
-	if (conn->layer == NULL) {
-		OGRReleaseDataSource(conn->handler);
-		free(conn);
-		return NULL;
-	}
-
-	conn->layername = (const char *) OGR_L_GetName(conn->layer);
-
-	featureDefn = OGR_L_GetLayerDefn(conn->layer);
-	fieldCount = OGR_FD_GetFieldCount(featureDefn);
-	conn->numFieldDefinitions = fieldCount;
-	conn->fieldDefinitions = malloc(fieldCount * sizeof(OGRFieldDefnH));
-	if (conn->fieldDefinitions == NULL) {
-		OGRReleaseDataSource(conn->handler);
-		free(conn);
-		TRC_ERROR(SHP, "Could not allocate memory\n");
-		return NULL;
-	}
-	for (i=0 ; i<fieldCount ; i++) {
-		conn->fieldDefinitions[i] = OGR_FD_GetFieldDefn(featureDefn, i);
-	}
-
-	return conn;
-}
-
-void GDALWClose(GDALWConnection * conn) {
-	free(conn->fieldDefinitions);
-	OGRReleaseDataSource(conn->handler);
-}
-
-GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection conn) {
-	int i;
-	GDALWSimpleFieldDef * columns;
-	OGRFieldDefnH fieldDefn;
-	/*if (conn.layer == NULL || conn.handler == NULL || conn.driver == NULL) {
-		printf("Could not extract columns, initialize a connection first.\n");
-		exit(-1);
-	}*/
-	columns = malloc(conn.numFieldDefinitions * sizeof(GDALWSimpleFieldDef));
-	if (columns == NULL) {
-		TRC_ERROR(SHP, "Could not allocate memory\n");
-		return NULL;
-	}
-	for (i=0 ; i<conn.numFieldDefinitions ; i++) {
-		fieldDefn = conn.fieldDefinitions[i];
-		columns[i].fieldName = OGR_Fld_GetNameRef(fieldDefn);
-		columns[i].fieldType = OGR_GetFieldTypeName(OGR_Fld_GetType(fieldDefn));
-	}
-
-	return columns;
-}
-
-void GDALWPrintRecords(GDALWConnection conn) {
-	char * wkt;
-	int i;
-	OGRFeatureH feature;
-	OGRGeometryH geometry;
-	OGRFeatureDefnH featureDefn;
-	featureDefn = OGR_L_GetLayerDefn(conn.layer);
-	OGR_L_ResetReading(conn.layer);
-	while( (feature = OGR_L_GetNextFeature(conn.layer)) != NULL ) {
-		for(i = 0; i < OGR_FD_GetFieldCount(featureDefn); i++ ) {
-			OGRFieldDefnH hFieldDefn = OGR_FD_GetFieldDefn( featureDefn, i );
-		    if( OGR_Fld_GetType(hFieldDefn) == OFTInteger )
-		    	printf( "%d,", OGR_F_GetFieldAsInteger( feature, i ) );
-		    else if( OGR_Fld_GetType(hFieldDefn) == OFTReal )
-		        printf( "%.3f,", OGR_F_GetFieldAsDouble( feature, i) );
-		    else
-		    	printf( "%s,", OGR_F_GetFieldAsString( feature, i) );
-
-		}
-		geometry = OGR_F_GetGeometryRef(feature);
-		OGR_G_ExportToWkt(geometry, &wkt);
-		printf("%s", wkt);
-		printf("\n");
-		CPLFree(wkt);
-		OGR_F_Destroy(feature);
-	}
-}
-
-GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn) {
-	GDALWSpatialInfo spatialInfo;
-	OGRSpatialReferenceH spatialRef = OGR_L_GetSpatialRef(conn.layer);
-	char * proj4, * srsText, * srid;
-
-	OSRExportToProj4(spatialRef, &proj4);
-	OSRExportToWkt(spatialRef, &srsText);
-	srid = (char *) OSRGetAttrValue(spatialRef, "AUTHORITY", 1);
-	if (srid == NULL) {
-		spatialInfo.epsg = 4326;
-	}
-	else {
-		spatialInfo.epsg = atoi(OSRGetAttrValue(spatialRef, "AUTHORITY", 1));
-	}
-	spatialInfo.authName = OSRGetAttrValue(spatialRef, "AUTHORITY", 0);
-	if (spatialInfo.authName == NULL) {
-		spatialInfo.authName = "EPSG";
-	}
-	spatialInfo.proj4Text = proj4;
-	spatialInfo.srsText = srsText;
-
-	return spatialInfo;
-
-}
 
 /* attach a single shp file given its name, fill in shp catalog tables */
 str
@@ -567,7 +984,6 @@ final:
 	return msg;
 }
 
-#if 0
 str
 SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	size_t pos = 0;
@@ -797,29 +1213,14 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return msg;
 
 }
-#endif
 
-str
-SHPimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str SHPimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	return SHPimportFile(cntxt, mb, stk, pci, false);
 }
 
-str
-SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	return SHPimportFile(cntxt, mb, stk, pci, true);
 }
-
-#include "mel.h"
-static mel_func shp_init_funcs[] = {
- pattern("shp", "attach", SHPattach, false, "Register an ESRI Shapefile in the vault catalog", args(1,2, arg("",void),arg("filename",str))),
- pattern("shp", "import", SHPimport, false, "Import an ESRI Shapefile with given id into the vault", args(1,2, arg("",void),arg("fileid",int))),
- pattern("shp", "import", SHPpartialimport, false, "Partially import an ESRI Shapefile with given id into the vault", args(1,3, arg("",void),arg("fileid",int),arg("po",wkb))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_shp_mal)
-{ mal_module("shp", NULL, shp_init_funcs); }

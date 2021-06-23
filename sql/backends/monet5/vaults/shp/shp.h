@@ -19,9 +19,9 @@
 #include <gdal.h>
 #include <ogr_api.h>
 
-OGRErr OSRExportToProj4 (OGRSpatialReferenceH, char **);
-OGRErr OSRExportToWkt (OGRSpatialReferenceH, char **);
-const char * OSRGetAttrValue (OGRSpatialReferenceH hSRS, const char *pszName, int iChild);
+OGRErr OSRExportToProj4(OGRSpatialReferenceH, char **);
+OGRErr OSRExportToWkt(OGRSpatialReferenceH, char **);
+const char *OSRGetAttrValue(OGRSpatialReferenceH hSRS, const char *pszName, int iChild);
 
 /* CURRENT_TIMESTAMP() ?*/
 #define INSFILE \
@@ -38,34 +38,36 @@ const char * OSRGetAttrValue (OGRSpatialReferenceH hSRS, const char *pszName, in
 #define INSTD \
 	"INSERT INTO %s (%s) VALUES (%s);"
 
-typedef struct {
-	const char * fieldName;
-	const char * fieldType;
+typedef struct
+{
+	const char *fieldName;
+	const char *fieldType;
 } GDALWSimpleFieldDef;
 
-typedef struct {
-	char * source;
+typedef struct
+{
+	char *source;
 	OGRDataSourceH handler;
-	const char * layername;
+	const char *layername;
 	OGRLayerH layer;
 	OGRSFDriverH driver;
-	OGRFieldDefnH * fieldDefinitions;
+	OGRFieldDefnH *fieldDefinitions;
 	int numFieldDefinitions;
 } GDALWConnection;
 
-typedef struct {
+typedef struct
+{
 	int epsg;
-	const char * authName;
-	const char * srsText;
-	const char * proj4Text;
-}GDALWSpatialInfo;
+	const char *authName;
+	const char *srsText;
+	const char *proj4Text;
+} GDALWSpatialInfo;
 
-GDALWConnection * GDALWConnect(char *);
-GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection);
+GDALWConnection *GDALWConnect(char *);
+GDALWSimpleFieldDef *GDALWGetSimpleFieldDefinitions(GDALWConnection);
 GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection);
 void GDALWPrintRecords(GDALWConnection);
 void GDALWClose(GDALWConnection *);
-
 
 #ifdef WIN32
 #ifndef LIBGTIFF /* change it! */
@@ -77,7 +79,13 @@ void GDALWClose(GDALWConnection *);
 #define shp_export extern
 #endif
 
-shp_export str SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-shp_export str SHPimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-shp_export str SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str createSHPtable(Client cntxt, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
+str createSHPtableMVC(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
+str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info);
+shp_export str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+/* Remove these?*/
+//shp_export str SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+//shp_export str SHPimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+//shp_export str SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
