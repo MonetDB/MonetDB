@@ -302,8 +302,12 @@ key_validate(sql_trans *tr, sql_key *k, int deleted) /* updates while keys are a
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!isNew(k) && deleted)
+	if (deleted) {
+		if (isNew(k)) /* key created and deleted within the same transaction */
+			return LOG_OK;
 		return deleted_object_validate(tr, &k->base);
+	}
+
 	if (isNew(k)) { /* for every new key, check if their underlying tables were touched */
 		if (k->t && isTable(k->t) && !isNew(k->t) && !isTempTable(k->t))
 			if ((ok = store->storage_api.tab_validate(tr, k->t, 1)))
@@ -380,8 +384,11 @@ part_validate(sql_trans *tr, sql_part *pt, int deleted)
 	sql_part *parent = NULL;
 	bool partitioned_mergetable_child = false;
 
-	if (!isNew(pt) && deleted)
+	if (deleted) {
+		if (isNew(pt)) /* part created and deleted within the same transaction */
+			return LOG_OK;
 		return deleted_object_validate(tr, &pt->base);
+	}
 
 	sql_table *t = find_sql_table_id(tr, pt->t->s, pt->member);
 	if (t && isTable(t) && !isNew(t) && !isTempTable(t)) {
