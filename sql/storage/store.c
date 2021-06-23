@@ -3585,7 +3585,7 @@ sql_trans_commit(sql_trans *tr)
 	sqlstore *store = tr->store;
 	bool locked = false;
 
-	if (!list_empty(tr->predicates)) {
+	if (!tr->parent && !list_empty(tr->predicates)) {
 		MT_lock_set(&store->commit);
 		store_lock(store);
 		locked = true;
@@ -3608,18 +3608,20 @@ sql_trans_commit(sql_trans *tr)
 		/* for each schema change check for updates, and visa versa */
 		/* ie go throug list of changes, check for table change, for those tables check if they got updated */
 		/* for updates check if these tables got recently changed. */
-		for(node *n = tr->changes->h; n; n = n->next) {
-			/* call validate function */
-			sql_change *c = n->data;
+		if (!tr->parent) { /* don't run validations on savepoints */
+			for(node *n = tr->changes->h; n; n = n->next) {
+				/* call validate function */
+				sql_change *c = n->data;
 
-			if (c->valid && (ok = c->valid(tr, c)) != LOG_OK)
-				break;
-		}
-		if (ok != LOG_OK) {
-			sql_trans_rollback(tr, 1);
-			store_unlock(store);
-			MT_lock_unset(&store->commit);
-			return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
+				if (c->valid && (ok = c->valid(tr, c)) != LOG_OK)
+					break;
+			}
+			if (ok != LOG_OK) {
+				sql_trans_rollback(tr, 1);
+				store_unlock(store);
+				MT_lock_unset(&store->commit);
+				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
+			}
 		}
 
 		ulng oldest = store_oldest(store);
