@@ -87,9 +87,6 @@ typedef enum sql_dependency {
 #define INOUT		6	/* output type equals input type */
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 
-/* Warning TR flags is a bitmask */
-#define TR_NEW 1
-
 #define RDONLY 0
 #define RD_INS 1
 #define RD_UPD_ID 2
@@ -196,20 +193,17 @@ typedef int sqlid;
 typedef void *sql_store;
 
 typedef struct sql_base {
-	int flags;			/* todo change into bool new */
-	unsigned char
+	unsigned int
 		new:1,
-		deleted:1;
-	int refcnt;
+		deleted:1,
+		refcnt:30;
 	sqlid id;
 	char *name;
 } sql_base;
 
-#define newFlagSet(x)     (((x) & TR_NEW) == TR_NEW)
-#define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
-#define isNew(x)          (newFlagSet((x)->base.flags))
+#define isNew(x)          ((x)->base.new)
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
 typedef struct changeset {
 	sql_allocator *sa;
@@ -275,8 +269,8 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs, void *data);
-extern void cs_add(changeset * cs, void *elm, int flag);
-extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
+extern void cs_add(changeset * cs, void *elm, bool isnew);
+extern void cs_del(changeset * cs, void *gdata, node *elm, bool isnew);
 extern int cs_size(changeset * cs);
 extern node *cs_find_id(changeset * cs, sqlid id);
 
