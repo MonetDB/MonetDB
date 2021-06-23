@@ -48,9 +48,9 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table floats alter f set not null").assertSucceeded()
         mdb2.execute("alter table floats alter f set default 1").assertSucceeded()
         mdb2.execute('drop trigger ups2;').assertFailed(err_code="42000", err_message="DROP TRIGGER: transaction conflict detected")
+        mdb2.execute('rollback;').assertSucceeded()
         mdb1.execute('drop trigger ups2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('rollback;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
