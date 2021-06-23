@@ -84,11 +84,15 @@ MTIMEcurrent_timestamp(timestamp *ret)
 
 #define INIT_VAR(VAR, VAR_BAT) VAR = Tloc(VAR_BAT, 0)
 
+#define EXIT_VAR(VAR)
+
 #define APPEND_VAR(MALFUNC) dst[i] = res;
 
 #define GET_NEXT_VAR(VAR, OFF) VAR[OFF]
 
 #define INIT_ITER(VAR, VAR_BAT) VAR = bat_iterator(VAR_BAT)
+
+#define EXIT_ITER(VAR) bat_iterator_end(&VAR)
 
 #define APPEND_STR(MALFUNC) \
 	if (tfastins_nocheckVAR(bn, i, res, Tsize(bn)) != GDK_SUCCEED) { \
@@ -118,7 +122,7 @@ bailout: \
 #define COPYFLAGS	do { bn->tsorted = b1->tsorted; bn->trevsorted = b1->trevsorted; } while (0)
 #define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
 #define func1(NAME, MALFUNC, INTYPE, OUTTYPE, FUNC, SETFLAGS, FUNC_CALL, DEC_SRC, DEC_OUTPUT, \
-			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)		\
+			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC, EXIT_SRC)						\
 static str																\
 NAME(OUTTYPE *ret, const INTYPE *src)									\
 {																		\
@@ -177,6 +181,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(dst[i]);							\
 		}																\
 	}																	\
+	EXIT_SRC(src1);														\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
 	BATsetcount(bn, n);													\
@@ -198,7 +203,7 @@ bailout: 																\
 #define func1_except(FUNC, RET, PARAM) msg = FUNC(&RET, PARAM); if (msg) break;
 
 #define func2(NAME, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL, DEC_SRC1, DEC_SRC2, DEC_OUTPUT, DEC_EXTRA, \
-			 INIT_SRC1, INIT_SRC2, INIT_OUTPUT, GET_NEXT_SRC1, GET_NEXT_SRC2, APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)	\
+			  INIT_SRC1, INIT_SRC2, INIT_OUTPUT, GET_NEXT_SRC1, GET_NEXT_SRC2, EXIT_SRC1, EXIT_SRC2, APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI) \
 static str																\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 {																		\
@@ -282,6 +287,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	EXIT_SRC1(src1);													\
+	EXIT_SRC2(src2);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
 	BATsetcount(bn, n);													\
@@ -458,9 +465,9 @@ date_diff_imp(const date d1, const date d2)
 	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
 }
 func2(MTIMEdate_diff, "diff", date, date, lng, date_diff_imp, func2_noexcept, \
-	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdaytime_diff_msec, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept, \
-	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_sub_msec_interval(date *ret, date d, lng ms)
@@ -485,9 +492,9 @@ date_add_msec_interval(date *ret, date d, lng ms)
 	return MAL_SUCCEED;
 }
 func2(MTIMEdate_sub_msec_interval, "date_sub_msec_interval", date, lng, date, date_sub_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdate_add_msec_interval, "date_add_msec_interval", date, lng, date, date_add_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
@@ -512,9 +519,9 @@ timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
 	return MAL_SUCCEED;
 }
 func2(MTIMEtimestamp_sub_msec_interval, "timestamp_sub_msec_interval", timestamp, lng, timestamp, timestamp_sub_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval", timestamp, lng, timestamp, timestamp_add_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
@@ -539,9 +546,9 @@ timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
 	return MAL_SUCCEED;
 }
 func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval", timestamp, int, timestamp, timestamp_sub_month_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEtimestamp_add_month_interval, "timestamp_add_month_interval", timestamp, int, timestamp, timestamp_add_month_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline daytime
 time_sub_msec_interval(const daytime t, const lng ms)
@@ -558,9 +565,9 @@ time_add_msec_interval(const daytime t, const lng ms)
 	return daytime_add_usec_modulo(t, ms * 1000);
 }
 func2(MTIMEtime_sub_msec_interval, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEtime_add_msec_interval, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_submonths(date *ret, date d, int m)
@@ -585,42 +592,42 @@ date_addmonths(date *ret, date d, int m)
 	return MAL_SUCCEED;
 }
 func2(MTIMEdate_submonths, "date_submonths", date, int, date, date_submonths, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdate_addmonths, "date_addmonths", date, int, date, date_addmonths, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 #define date_to_msec_since_epoch(t) is_date_nil(t) ? lng_nil : (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)), unixepoch) / 1000)
 #define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
 func1(MTIMEdate_extract_century, "date_century", date, int, date_century, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_decade, "date_decade", date, int, date_decade, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_year, "date_year", date, int, date_year, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_quarter, "date_quarter", date, int, date_quarter, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_month, "date_month", date, int, date_month, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_day, "date_day", date, int, date_day, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_dayofyear, "date_dayofyear", date, int, date_dayofyear, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_weekofyear, "date_weekofyear", date, int, date_weekofyear, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_usweekofyear, "date_usweekofyear", date, int, date_usweekofyear, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_dayofweek, "date_dayofweek", date, int, date_dayofweek, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdate_extract_epoch_ms, "epoch_ms", date, lng, date_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdaytime_extract_hours, "daytime_hour", daytime, int, daytime_hour, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdaytime_extract_minutes, "daytime_minutes", daytime, int, daytime_min, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdaytime_extract_sql_seconds, "daytime_seconds", daytime, int, daytime_sec_usec, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEdaytime_extract_epoch_ms, "epoch_ms", daytime, lng, daytime_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 static inline lng
 TSDIFF(timestamp t1, timestamp t2)
@@ -639,7 +646,7 @@ TSDIFF(timestamp t1, timestamp t2)
 	return diff;
 }
 func2(MTIMEtimestamp_diff_msec, "diff", timestamp, timestamp, lng, TSDIFF, func2_noexcept, \
-	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, EXIT_VAR, EXIT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline int
 timestamp_century(const timestamp t)
@@ -662,25 +669,25 @@ timestamp_century(const timestamp t)
 #define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
 #define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
 func1(MTIMEtimestamp_century, "timestamp_century", timestamp, int, timestamp_century, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_decade, "timestamp_decade", timestamp, int, timestamp_decade, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_year, "timestamp_year", timestamp, int, timestamp_year, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_quarter,"timestamp_quarter", timestamp, int, timestamp_quarter, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_month, "timestamp_month", timestamp, int, timestamp_month, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_day, "timestamp_day", timestamp, int, timestamp_day, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_hours, "timestamp_hours", timestamp, int, timestamp_hours, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_minutes, "timestamp_minutes", timestamp, int, timestamp_minutes, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_sql_seconds, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_extract_epoch_ms, "epoch_ms", timestamp, lng, timestamp_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 #define sql_year(m) is_int_nil(m) ? int_nil : m / 12
 #define sql_month(m) is_int_nil(m) ? int_nil : m % 12
@@ -690,19 +697,19 @@ func1(MTIMEtimestamp_extract_epoch_ms, "epoch_ms", timestamp, lng, timestamp_to_
 #define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
 #define msec_since_epoch(ts)	ts
 func1(MTIMEsql_year, "sql_year", int, int, sql_year, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEsql_month, "sql_month", int, int, sql_month, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEsql_day, "sql_day", lng, lng, sql_day, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEsql_hours, "sql_hours", lng, int, sql_hours, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEsql_minutes, "sql_minutes", lng, int, sql_minutes, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEsql_seconds, "sql_seconds", lng, int, sql_seconds, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEmsec_extract_epoch_ms, "msepoch", lng, lng, msec_since_epoch, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 static inline str
 date_fromstr_func(date *ret, str s)
@@ -712,14 +719,14 @@ date_fromstr_func(date *ret, str s)
 	return MAL_SUCCEED;
 }
 func1(MTIMEdate_fromstr, "date_fromstr", str, date, date_fromstr_func, SETFLAGS, func1_except, \
-	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER)
+	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER, EXIT_ITER)
 
 #define date_date(m) m
 func1(MTIMEdate_date, "date_date", date, date, date_date, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 func1(MTIMEtimestamp_extract_date, "date", timestamp, date, timestamp_date, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 static inline str
 timestamp_fromstr_func(timestamp *ret, str s)
@@ -729,19 +736,19 @@ timestamp_fromstr_func(timestamp *ret, str s)
 	return MAL_SUCCEED;
 }
 func1(MTIMEtimestamp_fromstr, "timestamp_fromstr", str, timestamp, timestamp_fromstr_func, SETFLAGS, func1_except, \
-	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER)
+	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER, EXIT_ITER)
 
 #define timestamp_timestamp(m) m
 func1(MTIMEtimestamp_timestamp, "timestamp_timestamp", timestamp, timestamp, timestamp_timestamp, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 #define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
 func1(MTIMEtimestamp_fromdate, "timestamp_fromdate", date, timestamp, mkts, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 #define seconds_since_epoch(t) is_timestamp_nil(t) ? int_nil : (int) (timestamp_diff(t, unixepoch) / 1000000);
 func1(MTIMEseconds_since_epoch, "seconds_since_epoch", timestamp, int, seconds_since_epoch, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 #define mktsfromsec(sec)	(is_int_nil(sec) ?							\
 							 timestamp_nil :							\
@@ -753,14 +760,14 @@ func1(MTIMEseconds_since_epoch, "seconds_since_epoch", timestamp, int, seconds_s
 												(msec) * LL_CONSTANT(1000)))
 /* TODO later I have to remove this call */
 func1(MTIMEtimestamp_fromsecond_epoch, "timestamp_fromsecond_epoch", int, timestamp, mktsfromsec, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_fromsecond, "timestamp_fromsecond", int, timestamp, mktsfromsec, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 /* TODO later I have to remove this call */
 func1(MTIMEtimestamp_frommsec_epoch, "timestamp_frommsec_epoch", lng, timestamp, mktsfrommsec, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 func1(MTIMEtimestamp_frommsec, "timestamp_frommsec", lng, timestamp, mktsfrommsec, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 static inline str
 daytime_fromstr_func(daytime *ret, str s)
@@ -770,11 +777,11 @@ daytime_fromstr_func(daytime *ret, str s)
 	return MAL_SUCCEED;
 }
 func1(MTIMEdaytime_fromstr, "daytime_fromstr", str, daytime, daytime_fromstr_func, SETFLAGS, func1_except, \
-	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER)
+	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER, EXIT_ITER)
 
 #define daytime_daytime(m) m
 func1(MTIMEdaytime_daytime, "daytime_daytime", daytime, daytime, daytime_daytime, COPYFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 static inline str
 daytime_fromseconds(daytime *ret, lng secs)
@@ -788,10 +795,10 @@ daytime_fromseconds(daytime *ret, lng secs)
 	return MAL_SUCCEED;
 }
 func1(MTIMEdaytime_fromseconds, "daytime_fromseconds", lng, daytime, daytime_fromseconds, COPYFLAGS, func1_except, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 func1(MTIMEtimestamp_extract_daytime, "timestamp_extract_daytime", timestamp, daytime, timestamp_daytime, SETFLAGS, func1_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR, EXIT_VAR)
 
 /* return current system time zone offset in seconds East of Greenwich */
 static int
@@ -955,7 +962,7 @@ str_to_date(date *ret, str s, str format)
 	return MAL_SUCCEED;
 }
 func2(MTIMEstr_to_date, "str_to_date", str, str, date, str_to_date, func2_except, \
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, EXIT_ITER, EXIT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 str_to_time(daytime *ret, str s, str format)
@@ -968,7 +975,7 @@ str_to_time(daytime *ret, str s, str format)
 	return MAL_SUCCEED;
 }
 func2(MTIMEstr_to_time, "str_to_time", str, str, daytime, str_to_time, func2_except, \
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, EXIT_ITER, EXIT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 str_to_timestamp_func(timestamp *ret, str s, str format)
@@ -976,7 +983,7 @@ str_to_timestamp_func(timestamp *ret, str s, str format)
 	return str_to_timestamp(ret, &s, &format, "timestamp", "mtime.str_to_timestamp");
 }
 func2(MTIMEstr_to_timestamp, "str_to_timestamp", str, str, timestamp, str_to_timestamp_func, func2_except, \
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, EXIT_ITER, EXIT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_to_str(str *ret, date d, str format)
@@ -985,7 +992,7 @@ date_to_str(str *ret, date d, str format)
 	return timestamp_to_str(ret, &ts, &format, "date", "mtime.date_to_str");
 }
 func2(MTIMEdate_to_str, "date_to_str", date, str, str, date_to_str, func2_except, \
-	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
+	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, EXIT_VAR, EXIT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
 static inline str
 time_to_str(str *ret, daytime d, str format)
@@ -994,7 +1001,7 @@ time_to_str(str *ret, daytime d, str format)
 	return timestamp_to_str(ret, &ts, &format, "time", "mtime.time_to_str");
 }
 func2(MTIMEtime_to_str, "time_to_str", daytime, str, str, time_to_str, func2_except, \
-	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
+	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, EXIT_VAR, EXIT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
 static inline str
 timestamp_to_str_func(str *ret, timestamp d, str format)
@@ -1002,7 +1009,7 @@ timestamp_to_str_func(str *ret, timestamp d, str format)
 	return timestamp_to_str(ret, &d, &format, "timestamp", "mtime.timestamp_to_str");
 }
 func2(MTIMEtimestamp_to_str, "timestamp_to_str", timestamp, str, str, timestamp_to_str_func, func2_except, \
-	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
+	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, EXIT_VAR, EXIT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
 #include "mel.h"
 static mel_func mtime_init_funcs[] = {

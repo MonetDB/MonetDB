@@ -1817,7 +1817,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			bat_destroy(b);
 			if (sem == NULL)
 				return GDK_FAIL;
-			if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
+			if ((sem = BATsetaccess(sem, BAT_READ)) == NULL ||
 				/* 2162 is sys.functions.semantics */
 				BUNappend(lg->catalog_id, &(int) {2162}, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &sem->batCacheid, false) != GDK_SUCCEED ||
@@ -2127,13 +2127,14 @@ bl_postversion(void *Store, old_logger *old_lg)
 
 			/* 2113 is sys.objects.nr */
 			if (BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2113}), &objs_nr->batCacheid, false) != GDK_SUCCEED ||
-				BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
-				BATsetaccess(objs_nr, BAT_READ) != GDK_SUCCEED ||
+				(objs_sub = BATsetaccess(objs_sub, BAT_READ)) == NULL ||
+				(objs_nr = BATsetaccess(objs_nr, BAT_READ)) == NULL ||
 				/* 2163 is sys.objects.sub */
 				BUNappend(lg->catalog_id, &(int) {2163}, false) != GDK_SUCCEED ||
 				BUNappend(old_lg->add, &objs_sub->batCacheid, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
 				bat_destroy(objs_sub);
+				bat_destroy(objs_nr);
 				return GDK_FAIL;
 			}
 			BBPretain(objs_sub->batCacheid);
@@ -2147,7 +2148,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			if (objs_sub == NULL) {
 				return GDK_FAIL;
 			}
-			if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
+			if ((objs_sub = BATsetaccess(objs_sub, BAT_READ)) == NULL ||
 				/* 2164 is tmp.objects.sub */
 				BUNappend(lg->catalog_id, &(int) {2164}, false) != GDK_SUCCEED ||
 				BUNappend(old_lg->add, &objs_sub->batCacheid, false) != GDK_SUCCEED ||

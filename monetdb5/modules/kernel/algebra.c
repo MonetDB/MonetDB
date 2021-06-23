@@ -1118,17 +1118,19 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 static str
 doALGfetch(ptr ret, BAT *b, BUN pos)
 {
-	BATiter bi = bat_iterator(b);
-
 	assert(pos <= BUN_MAX);
 	if (ATOMextern(b->ttype)) {
+		BATiter bi = bat_iterator(b);
 		ptr _src = BUNtail(bi,pos);
 		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
-		if( _dst == NULL)
+		if( _dst == NULL) {
+			bat_iterator_end(&bi);
 			throw(MAL,"doAlgFetch", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
+		bat_iterator_end(&bi);
 	} else {
 		size_t _s = ATOMsize(ATOMtype(b->ttype));
 		if (b->ttype == TYPE_void) {

@@ -181,6 +181,7 @@ log_find(BAT *b, BAT *d, int val)
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return p;
 			}
 		}
@@ -192,11 +193,14 @@ log_find(BAT *b, BAT *d, int val)
 		for (p = 0, q = BUNlast(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
-				if (BUNfnd(d, &pos) == BUN_NONE)
+				if (BUNfnd(d, &pos) == BUN_NONE) {
+					bat_iterator_end(&cni);
 					return p;
+				}
 			}
 		}
 	}
+	bat_iterator_end(&cni);
 	return BUN_NONE;
 }
 
@@ -307,12 +311,14 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 					oid lid = *(oid*) Tloc(lg->catalog_oid, p);
 					if (!lid) {
 						MT_rwlock_rdunlock(&cni.b->thashlock);
+						bat_iterator_end(&cni);
 						return *(log_bid *) Tloc(lg->catalog_bid, p);
 					}
 				}
 			}
 			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
+		bat_iterator_end(&cni);
 	} else {
 		BATiter cni = bat_iterator(lg->catalog_oid);
 		BUN p;
@@ -325,12 +331,14 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 				if (*(char*)Tloc(lg->catalog_tpe, p) == tpe) {
 					if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 						MT_rwlock_rdunlock(&cni.b->thashlock);
+						bat_iterator_end(&cni);
 						return *(log_bid *) Tloc(lg->catalog_bid, p);
 					}
 				}
 			}
 			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
+		bat_iterator_end(&cni);
 	}
 	return 0;
 }
@@ -659,21 +667,25 @@ la_bat_updates(old_logger *lg, logaction *la)
 					while (b->hseqbase + b->batCount < h) {
 						if (BUNappend(b, tv, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					}
 				}
 				if (BUNappend(b, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
+					bat_iterator_end(&vi);
 					return GDK_FAIL;
 				}
 			} else {
 				if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
+					bat_iterator_end(&vi);
 					return GDK_FAIL;
 				}
 			}
 		}
+		bat_iterator_end(&vi);
 	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
@@ -784,9 +796,11 @@ la_bat_create(old_logger *lg, logaction *la)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
-	if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
-	    logger_add_bat(lg, b, la->name, la->tpe, la->cid) != GDK_SUCCEED)
+	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
+	    logger_add_bat(lg, b, la->name, la->tpe, la->cid) != GDK_SUCCEED) {
+		logbat_destroy(b);
 		return GDK_FAIL;
+	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
 }

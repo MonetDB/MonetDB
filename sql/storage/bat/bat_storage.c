@@ -752,6 +752,10 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 			err = 1;
 		oip++;
 	}
+	if (uv) {
+		bat_iterator_end(&uvi);
+		bat_iterator_end(&ovi);
+	}
 	bat_destroy(ui);
 	bat_destroy(uv);
 	bat_destroy(oi);
@@ -1197,6 +1201,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							}
 							nip++;
 						}
+						bat_iterator_end(&ovi);
 						if (res == LOG_OK) {
 							temp_destroy(cs->uibid);
 							temp_destroy(cs->uvbid);
@@ -1210,6 +1215,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 				}
 			}
 		}
+		bat_iterator_end(&upi);
 		bat_destroy(b);
 		unlock_table(tr->store, t->base.id);
 		bat_destroy(ins);

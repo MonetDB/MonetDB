@@ -61,12 +61,14 @@ static str CLRbat##NAME(bat *ret, const bat *l)							\
 		if ((APP) != GDK_SUCCEED)										\
 			goto bunins_failed;											\
 	}																	\
+	bat_iterator_end(&bi);												\
 	bn->theap->dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
+	bat_iterator_end(&bi);												\
 	BBPunfix(b->batCacheid);											\
 	BBPunfix(bn->batCacheid);											\
 	if (msg)															\
@@ -146,6 +148,9 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 		if (bunfastappTYPE(color, bn, &y) != GDK_SUCCEED)				\
 			goto bunins_failed;											\
 	}																	\
+	bat_iterator_end(&bi);												\
+	bat_iterator_end(&b2i);												\
+	bat_iterator_end(&b3i);												\
 	bn->theap->dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
@@ -154,6 +159,9 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	BBPunfix(b3->batCacheid);											\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
+	bat_iterator_end(&bi);												\
+	bat_iterator_end(&b2i);												\
+	bat_iterator_end(&b3i);												\
 	BBPunfix(b->batCacheid);											\
 	BBPunfix(b2->batCacheid);											\
 	BBPunfix(b3->batCacheid);											\

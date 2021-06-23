@@ -208,7 +208,6 @@ static BAT *
 BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng t0)
 {
 	BAT *bn;
-	BATiter bi = bat_iterator(b);
 	oid *restrict oids;
 	BUN i, cnt;
 	struct canditer ci;
@@ -387,6 +386,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 	}
 	cnt -= n;
 
+	BATiter bi = bat_iterator(b);
+
 	if (asc) {
 		if (nilslast && !b->tnonil) {
 			switch (tpe) {
@@ -548,6 +549,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	if (lastp)
 		*lastp = oids[0]; /* store id of largest value */
 	/* output must be sorted since it's a candidate list */
@@ -713,7 +715,6 @@ static BAT *
 BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, oid *lastp, oid *lastgp, lng t0)
 {
 	BAT *bn;
-	BATiter bi = bat_iterator(b);
 	oid *restrict oids, *restrict goids;
 	const oid *restrict gv;
 	BUN i, j, cnt;
@@ -787,6 +788,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	}
 	cnt -= n;
 
+	BATiter bi = bat_iterator(b);
 	if (BATtvoid(b)) {
 		/* nilslast doesn't make a difference (all nil, or no nil) */
 		if (asc) {
@@ -993,6 +995,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 			break;
 		}
 	}
+	bat_iterator_end(&bi);
 	if (lastp)
 		*lastp = oids[0];
 	if (lastgp)
@@ -1064,6 +1067,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 
 			bn1 = bn;
 			bn2 = BATselect(b, s, BUNtail(bi, last - b->hseqbase), NULL, true, false, false);
+			bat_iterator_end(&bi);
 			if (bn2 == NULL) {
 				BBPunfix(bn1->batCacheid);
 				return GDK_FAIL;
@@ -1185,7 +1189,6 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 	if (!distinct && !b->tkey) {
 		BAT *bn1, *bn2, *bn3, *bn4;
-		BATiter bi = bat_iterator(b);
 
 		bn1 = bn;
 		bn2 = BATselect(g, NULL, &lastg, NULL, true, false, false);
@@ -1199,7 +1202,9 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return  GDK_FAIL;
 		}
+		BATiter bi = bat_iterator(b);
 		bn4 = BATselect(b, bn3, BUNtail(bi, last - b->hseqbase), NULL, true, false, false);
+		bat_iterator_end(&bi);
 		BBPunfix(bn3->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);

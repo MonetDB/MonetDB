@@ -150,8 +150,10 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 					} else {
 						next = BUNtvar(li, noid);
 					}
-					if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED)
+					if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED) {
+						bat_iterator_end(&li);
 						goto alloc_fail;
+					}
 				}
 			} else {
 				uint8_t *restrict rcast = (uint8_t *) Tloc(res, 0);
@@ -169,6 +171,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 					rcast += width;
 				}
 			}
+			bat_iterator_end(&li);
 		}
 		}
 		BATsetcount(res, ngrp);
@@ -297,6 +300,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						ret[gid] = TRUE;
 				}
 			}
+			bat_iterator_end(&li);
 		}
 		}
 		BATsetcount(res, ngrp);
@@ -435,6 +439,8 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
 		}
 		}
 		BATsetcount(res, ngrp);
@@ -548,6 +554,8 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
 		}
 		}
 		BATsetcount(res, ngrp);
@@ -627,11 +635,11 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &F, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
-		BATiter ii = bat_iterator(rid);
 		bit *restrict ret;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
+		BATiter ii = bat_iterator(rid);
 		ret = (bit *) Tloc(res, 0);
 		memset(ret, FALSE, ngrp * sizeof(bit));
 
@@ -693,8 +701,11 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
 		}
 		}
+		bat_iterator_end(&ii);
 		for (BUN i = 0 ; i < ngrp ; i++)
 			hasnil |= ret[i] == bit_nil;
 		BATsetcount(res, ngrp);
@@ -747,11 +758,11 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
-		BATiter ii = bat_iterator(rid);
 		bit *restrict ret;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
+		BATiter ii = bat_iterator(rid);
 		ret = (bit *) Tloc(res, 0);
 		memset(ret, TRUE, ngrp * sizeof(bit));
 
@@ -813,8 +824,11 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
 		}
 		}
+		bat_iterator_end(&ii);
 		for (BUN i = 0 ; i < ngrp ; i++)
 			hasnil |= ret[i] == bit_nil;
 		BATsetcount(res, ngrp);

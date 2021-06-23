@@ -1050,6 +1050,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			BATloop(b, p, q) {
 				tailv = ATOMformat(getBatType(type), BUNtail(bi, p));
 				if (tailv == NULL) {
+					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.put", GDK_EXCEPTION);
@@ -1060,6 +1061,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					mnstr_printf(sout, "%s\n", tailv);
 				GDKfree(tailv);
 			}
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 		}
 
