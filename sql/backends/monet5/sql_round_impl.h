@@ -698,13 +698,13 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		msg = createException(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto bailout1;
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	if (!(res = COLnew(ci.hseq, TPE(TYPE), q, TRANSIENT))) {
 		msg = createException(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto bailout1;
 	}
 	ret = (TYPE*) Tloc(res, 0);
 
@@ -717,7 +717,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ret[i] = NIL(TYPE);
 				nils = true;
 			} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
-				goto bailout;
+				goto bailout1;
 		}
 	} else {
 		for (BUN i = 0; i < q; i++) {
@@ -728,9 +728,11 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ret[i] = NIL(TYPE);
 				nils = true;
 			} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
-				goto bailout;
+				goto bailout1;
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(r, res, b, msg, nils, q, false);

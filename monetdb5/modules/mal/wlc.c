@@ -799,7 +799,9 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 				}
 				k++;
 				pci = pushStr(cntxt->wlc, pci ,(str) BUNtvar(bi,p));
-		} }
+			}
+			bat_iterator_end(&bi);
+		}
 		break;
 	default:
 		TRC_ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
@@ -970,7 +972,9 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushOid(cntxt->wlc, p, (ol? *ol++ : o++));
 				p = pushStr(cntxt->wlc, p , BUNtvar(bi,x));
 				k++;
-		} }
+			}
+			bat_iterator_end(&bi);
+		}
 		/* fall through */
 		default:
 			cntxt->wlc_kind = WLC_CATALOG;

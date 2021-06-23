@@ -413,6 +413,7 @@ bat_max_strlength(BAT *b)
 		if (l > max)
 			max = l;
 	}
+	bat_iterator_end(&bi);
 	return max;
 }
 
@@ -1481,6 +1482,8 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].type = NULL;
 		fmt[i].nullstr = NULL;
 	}
+	for (i = 1; i <= t->nr_cols; i++)
+		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
 	GDKfree(tres);
 	if (mnstr_errnr(s))

@@ -57,8 +57,7 @@ void_bat_create(int adt, BUN nr)
 	/* check for correct structures */
 	if (b == NULL)
 		return NULL;
-	if (BATsetaccess(b, BAT_APPEND) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
+	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL) {
 		return NULL;
 	}
 
@@ -139,7 +138,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 			}
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
-		fmt[i].ci = bat_iterator(fmt[i].c);
+		fmt[i].ci = bat_iterator_nolock(fmt[i].c);
 		nr++;
 	}
 	if (!nr)
@@ -164,7 +163,7 @@ TABLETcollect(BAT **bats, Tablet *as)
 			continue;
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
-		if (BATsetaccess(fmt[i].c, BAT_READ) != GDK_SUCCEED)
+		if ((fmt[i].c = BATsetaccess(fmt[i].c, BAT_READ)) == NULL)
 			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		fmt[i].c->tsorted = fmt[i].c->trevsorted = false;
 		fmt[i].c->tkey = false;
@@ -195,8 +194,10 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b->tsorted = b->trevsorted = false;
 		b->tkey = false;
 		BATsettrivprop(b);
-		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED)
+		if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
+			fmt[i].c = NULL;
 			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
+		}
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
 

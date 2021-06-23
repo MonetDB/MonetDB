@@ -2449,7 +2449,7 @@ BBPkeepref(bat i)
 		BAT *b;
 
 		if ((b = BBPdescriptor(i)) != NULL) {
-			BATsetaccess(b, BAT_READ);
+			b = BATsetaccess(b, BAT_READ);
 			BATsettrivprop(b);
 			if (GDKdebug & (CHECKMASK | PROPMASK))
 				BATassertProps(b);
@@ -2632,7 +2632,7 @@ BBPdestroy(BAT *b)
 		assert(b->batSharecnt == 0);
 		if (tunfix) {
 			BUN p, q;
-			BATiter bi = bat_iterator(b);
+			BATiter bi = bat_iterator_nolock(b);
 
 			BATloop(b, p, q) {
 				/* ignore errors */

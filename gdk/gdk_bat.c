@@ -635,11 +635,13 @@ BATclear(BAT *b, bool force)
 		/* TYPE_str has no del method, so we shouldn't get here */
 		assert(tatmdel == NULL || b->twidth == sizeof(var_t));
 		if (tatmdel) {
-			BATiter bi = bat_iterator(b);
+			MT_lock_set(&b->theaplock);
+			BATiter bi = bat_iterator_nolock(b);
 
 			for (p = b->batInserted, q = BUNlast(b); p < q; p++)
 				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
 			b->tvheap->dirty = true;
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 
@@ -903,10 +905,13 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			BATloop(b, p, q) {
 				const void *t = BUNtail(bi, p);
 
-				if (bunfastapp_nocheck(bn, r, t, Tsize(bn)) != GDK_SUCCEED)
+				if (bunfastapp_nocheck(bn, r, t, Tsize(bn)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					goto bunins_failed;
+				}
 				r++;
 			}
+			bat_iterator_end(&bi);
 			bn->theap->dirty |= bunstocopy > 0;
 		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
 			/* case (4): optimized for unary void
@@ -1112,7 +1117,7 @@ setcolprops(BAT *b, const void *x)
 	} else if (ATOMlinear(b->ttype)) {
 		const ValRecord *prop;
 
-		bi = bat_iterator(b);
+		bi = bat_iterator_nolock(b);
 		pos = BUNlast(b);
 		prv = BUNtail(bi, pos - 1);
 		cmp = ATOMcmp(b->ttype, prv, x);
@@ -1178,7 +1183,7 @@ setcolprops(BAT *b, const void *x)
 		}
 	} else if (BATcount(b) == 1) {
 		/* we'll only check keyness with a single other value */
-		bi = bat_iterator(b);
+		bi = bat_iterator_nolock(b);
 		prv = BUNtail(bi, 0);
 		b->tkey = ATOMcmp(b->ttype, prv, x) != 0;
 	} else {
@@ -1286,7 +1291,7 @@ gdk_return
 BUNdelete(BAT *b, oid o)
 {
 	BUN p;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	const void *val;
 	const ValRecord *prop;
 
@@ -1381,7 +1386,7 @@ static gdk_return
 BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, bool force, bool autoincr)
 {
 	BUN last = BUNlast(b) - 1;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int tt;
 	BUN prv, nxt;
 	const void *val;
@@ -1486,6 +1491,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
+				/* reinitialize iterator after heap upgrade */
+				bi = bat_iterator_nolock(b);
 			}
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
@@ -1662,9 +1669,12 @@ slowfnd(BAT *b, const void *v)
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 
 	BATloop(b, p, q) {
-		if ((*cmp)(v, BUNtail(bi, p)) == 0)
+		if ((*cmp)(v, BUNtail(bi, p)) == 0) {
+			bat_iterator_end(&bi);
 			return p;
+		}
 	}
+	bat_iterator_end(&bi);
 	return BUN_NONE;
 }
 
@@ -1717,12 +1727,13 @@ BUNfnd(BAT *b, const void *v)
 			return SORTfnd(b, v);
 	}
 	if (BAThash(b) == GDK_SUCCEED) {
+		bi = bat_iterator(b); /* outside of hashlock */
 		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash == NULL) {
 			MT_rwlock_rdunlock(&b->thashlock);
+			bat_iterator_end(&bi);
 			goto hashfnd_failed;
 		}
-		bi = bat_iterator(b);
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			HASHloop_bte(bi, b->thash, r, v)
@@ -1768,6 +1779,7 @@ BUNfnd(BAT *b, const void *v)
 			break;
 		}
 		MT_rwlock_rdunlock(&b->thashlock);
+		bat_iterator_end(&bi);
 		return r;
 	}
   hashfnd_failed:
@@ -2187,32 +2199,28 @@ BATcheckmodes(BAT *b, bool existing)
 	return GDK_SUCCEED;
 }
 
-gdk_return
+BAT *
 BATsetaccess(BAT *b, restrict_t newmode)
 {
 	restrict_t bakmode;
 	bool bakdirty;
 
 	BATcheck(b, GDK_FAIL);
-	if (isVIEW(b) && newmode != BAT_READ) {
-		if (VIEWreset(b) != GDK_SUCCEED)
-			return GDK_FAIL;
+	if ((isVIEW(b) || b->batSharecnt) && newmode != BAT_READ) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		BBPunfix(b->batCacheid);
+		b = bn;
 	}
 	bakmode = (restrict_t) b->batRestricted;
 	bakdirty = b->batDirtydesc;
-	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
+	if (bakmode != newmode) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
 		bool wr = (newmode == BAT_WRITE);
 		bool rd = (bakmode == BAT_WRITE);
 		storage_t m1, m3 = STORE_MEM;
 		storage_t b1, b3 = STORE_MEM;
-
-		if (b->batSharecnt && newmode != BAT_READ) {
-			TRC_DEBUG(BAT_, "%s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
-			GDKerror("%s has %d views\n",
-				 BATgetId(b), b->batSharecnt);
-			return GDK_FAIL;
-		}
 
 		b1 = b->theap->newstorage;
 		m1 = HEAPchangeaccess(b->theap, ACCESSMODE(wr, rd), existing);
@@ -2221,8 +2229,10 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			b3 = b->tvheap->newstorage;
 			m3 = HEAPchangeaccess(b->tvheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
-		if (m1 == STORE_INVALID || m3 == STORE_INVALID)
-			return GDK_FAIL;
+		if (m1 == STORE_INVALID || m3 == STORE_INVALID) {
+			BBPunfix(b->batCacheid);
+			return NULL;
+		}
 
 		/* set new access mode and mmap modes */
 		b->batRestricted = (unsigned int) newmode;
@@ -2238,10 +2248,11 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			b->theap->newstorage = b1;
 			if (b->tvheap)
 				b->tvheap->newstorage = b3;
-			return GDK_FAIL;
+			BBPunfix(b->batCacheid);
+			return NULL;
 		}
 	}
-	return GDK_SUCCEED;
+	return b;
 }
 
 restrict_t
@@ -2500,7 +2511,7 @@ BATassertProps(BAT *b)
 	if (v == NULL)
 		return;
 	b = v;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 
 	if (BATtdense(b)) {
 		assert(b->tseqbase + b->batCount <= GDK_oid_max);

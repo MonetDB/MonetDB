@@ -315,11 +315,13 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (!nil_matches &&
 	    (*ATOMcompare(l->ttype))(v, ATOMnilptr(l->ttype)) == 0) {
 		/* NIL doesn't match anything */
+		bat_iterator_end(&li);
 		return nomatch(r1p, r2p, l, r, lci, false, false,
 			       reason, t0);
 	}
 
 	bn = BATselect(r, rci->s, v, NULL, true, true, false);
+	bat_iterator_end(&li);
 	if (bn == NULL) {
 		return GDK_FAIL;
 	}
@@ -2655,6 +2657,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					HEAPfree(&hsh->heaplink, true);
 					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
+					bat_iterator_end(&ri);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false, __func__, t0);
 				}
@@ -2666,6 +2669,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
 				     (*cmp)(nil, BUNtail(ri, rb)) == 0)) {
+					bat_iterator_end(&ri);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false,
 						       __func__, t0);
@@ -2830,6 +2834,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		break;
 	}
+	bat_iterator_end(&ri);
+
 	if (hash_cand) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
@@ -2995,8 +3001,10 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		algomsg = "short-sized atoms";
 		assert(bvars == NULL);
 		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
-		if (seen == NULL)
+		if (seen == NULL) {
+			bat_iterator_end(&bi);
 			return;
+		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half) {
 				cnt = 0;
@@ -3036,6 +3044,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
+			bat_iterator_end(&bi);
 			return;
 		}
 		for (i = 0; i < ci.ncand; i++) {
@@ -3062,6 +3071,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		HEAPfree(&hs.heaplink, true);
 		HEAPfree(&hs.heapbckt, true);
 	}
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " BUNFMT " " BUNFMT " (%s -- " LLFMT "usec)\n",

@@ -83,9 +83,11 @@ BATXMLxml2str(bat *ret, const bat *bid)
 				goto bunins_failed;
 		}
 	}
+	bat_iterator_end(&bi);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.str", OPERATION_FAILED " during bulk coercion");
@@ -182,6 +184,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 			GDKfree(content);
 		content = NULL;
 	}
+	bat_iterator_end(&bi);
 	finalizeResult(ret, bn, b);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -189,6 +192,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		xmlFreeDoc(doc);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -256,10 +260,12 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -319,10 +325,12 @@ BATXMLdocument(bat *ret, const bat *bid)
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
@@ -391,12 +399,14 @@ BATXMLcontent(bat *ret, const bat *bid)
 		xmlBufferEmpty(xbuf);
 		xmlFreeNodeList(elem);
 	}
+	bat_iterator_end(&bi);
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
 	if (buf != NULL)
@@ -435,12 +445,14 @@ BATXMLisdocument(bat *ret, const bat *bid)
 			}
 		}
 		if (bunfastappTYPE(bit, bn, &val) != GDK_SUCCEED) {
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "xml.isdocument",
 				  OPERATION_FAILED " During bulk processing");
 		}
 	}
+	bat_iterator_end(&bi);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 }
@@ -520,11 +532,13 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 				goto bunins_failed;
 		}
 	}
+	bat_iterator_end(&bi);
 	GDKfree(val);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -582,10 +596,12 @@ BATXMLcomment(bat *ret, const bat *bid)
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -656,10 +672,12 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -739,10 +757,12 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -804,10 +824,12 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -893,10 +915,12 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -942,16 +966,21 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* collect the admin for the xml elements */
 	for (i = pci->retc; i < pci->argc; i++) {
-		if ((bi[i].b = BATdescriptor(*getArgReference_bat(stk, pci, i))) == NULL)
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, i));
+		if (b == NULL)
 			break;
+		bi[i] = bat_iterator(b);
 		p[i] = 0;
 		q[i] = BUNlast(bi[i].b);
 	}
 	/* check for errors */
 	if (i != pci->argc) {
 		for (i--; i >= pci->retc; i--)
-			if (bi[i].b)
-				BBPunfix(bi[i].b->batCacheid);
+			if (bi[i].b) {
+				BAT *b = bi[i].b;
+				bat_iterator_end(&bi[i]);
+				BBPunfix(b->batCacheid);
+			}
 		GDKfree(bi);
 		GDKfree(p);
 		GDKfree(q);
@@ -960,7 +989,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	prepareResult(bn, bi[pci->retc].b, TYPE_xml, "forest",
-				  for (i = pci->retc; i < pci->argc; i++) BBPunfix(bi[i].b->batCacheid);
+				  for (i = pci->retc; i < pci->argc; i++) {BAT *b = bi[i].b; bat_iterator_end(&bi[i]); BBPunfix(b->batCacheid);}
 				  GDKfree(bi); GDKfree(p); GDKfree(q); GDKfree(buf));
 
 	while (p[pci->retc] < q[pci->retc]) {
@@ -1011,15 +1040,29 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p[i]++;
 	}
 	GDKfree(buf);
-	finalizeResult(ret, bn, bi[pci->retc].b);
+	BATsetcount(bn, bn->batCount);
+	bn->theap->dirty |= bn->batCount > 0;
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	for (i = pci->retc; i < pci->argc; i++) {
+		BAT *b = bi[i].b;
+		if (b) {
+			bat_iterator_end(&bi[i]);
+			BBPunfix(b->batCacheid);
+		}
+	}
 	GDKfree(bi);
 	GDKfree(p);
 	GDKfree(q);
 	return MAL_SUCCEED;
 bunins_failed:
-	for (i = pci->retc; i < pci->argc; i++)
-		if (bi[i].b)
-			BBPunfix(bi[i].b->batCacheid);
+	for (i = pci->retc; i < pci->argc; i++) {
+		BAT *b = bi[i].b;
+		if (b) {
+			bat_iterator_end(&bi[i]);
+			BBPunfix(b->batCacheid);
+		}
+	}
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -1101,10 +1144,14 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 		rp++;
 		p++;
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&ri);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&ri);
 	BBPunfix(r->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
@@ -1167,10 +1214,12 @@ BATXMLgroup(xml *ret, const bat *bid)
 		}
 		offset += n;
 	}
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
   failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -1370,6 +1419,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bn->tkey = BATcount(bn) <= 1;
 
   out:
+	bat_iterator_end(&bi);
 	if (t2)
 		BBPunfix(t2->batCacheid);
 	if (freeb && b)
@@ -1382,6 +1432,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	return err;
 
   bunins_failed:
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	bn = NULL;
 	if (err == NULL)
