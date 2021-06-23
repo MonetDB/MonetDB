@@ -73,7 +73,7 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table ups.no drop column a;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb1.execute('select * from another();').assertSucceeded().assertDataResultMatch([(2,2)])
+        mdb1.execute('select * from another();').assertSucceeded().assertDataResultMatch([(2,)])
 
         mdb1.execute("CREATE TABLE y (i int);").assertSucceeded()
         mdb1.execute('truncate integers;').assertSucceeded()
