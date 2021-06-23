@@ -6,14 +6,6 @@
 
 module shp;
 
-pattern attach(filename:str) :void
-address SHPattach
-comment "Register an ESRI Shapefile in the vault catalog";
-
-pattern import(fileid:int) :void
-address SHPimport
-comment "Import an ESRI Shapefile with given id into the vault";
-
-pattern import(fileid:int, po:wkb) :void
-address SHPpartialimport
-comment "Partially import an ESRI Shapefile with given id into the vault";
+pattern load(filename:str, tablename:str) :void
+address SHPload
+comment "Import an ESRI Shapefile";
