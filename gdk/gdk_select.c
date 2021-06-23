@@ -13,22 +13,18 @@
 /* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 
-#define buninsfix(B,A,I,V,G,M,R)					\
-	do {								\
-		if ((I) == BATcapacity(B)) {				\
-			BATsetcount((B), (I));				\
-			if (BATextend((B),				\
-				      MIN(BATcapacity(B) + (G),		\
-					  (M))) != GDK_SUCCEED) {	\
-				if (locked)				\
-					MT_rwlock_rdunlock(&b->thashlock); \
-				BBPreclaim(B);				\
-				return (R);				\
-			}						\
-			A = (oid *) Tloc((B), 0);			\
-		}							\
-		A[(I)] = (V);						\
-	} while (false)
+static inline oid *
+buninsfix(BAT *b, oid *a, BUN i, oid v, BUN g, BUN m)
+{
+	if (i == BATcapacity(b)) {
+		BATsetcount(b, i);
+		if (BATextend(b, MIN(BATcapacity(b) + g, m)) != GDK_SUCCEED)
+			return NULL;
+		a = (oid *) Tloc(b, 0);
+	}
+	a[i] = v;
+	return a;
+}
 
 BAT *
 virtualize(BAT *bn)
@@ -108,7 +104,6 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	BUN l, h, d = 0;
 	oid seq;
 	int (*cmp)(const void *, const void *);
-	bool locked = false;
 
 	assert(bn->ttype == TYPE_oid);
 	seq = b->hseqbase;
@@ -147,28 +142,39 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
 	MT_rwlock_rdlock(&b->thashlock);
-	locked = true;
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
 			if (canditer_contains(ci, o)) {
-				buninsfix(bn, dst, cnt, o,
-					  maximum - BATcapacity(bn),
-					  maximum, NULL);
+				dst = buninsfix(bn, dst, cnt, o,
+						maximum - BATcapacity(bn),
+						maximum);
+				if (dst == NULL) {
+					MT_rwlock_rdunlock(&b->thashlock);
+					BBPreclaim(bn);
+					bat_iterator_end(&bi);
+					return NULL;
+				}
 				cnt++;
 			}
 		}
 	} else {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
-			buninsfix(bn, dst, cnt, o,
-				  maximum - BATcapacity(bn),
-				  maximum, NULL);
+			dst = buninsfix(bn, dst, cnt, o,
+					maximum - BATcapacity(bn),
+					maximum);
+			if (dst == NULL) {
+				MT_rwlock_rdunlock(&b->thashlock);
+				BBPreclaim(bn);
+				bat_iterator_end(&bi);
+				return NULL;
+			}
 			cnt++;
 		}
 	}
+	bat_iterator_end(&bi);
 	MT_rwlock_rdunlock(&b->thashlock);
-	locked = false;
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -196,7 +202,10 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			if ((im[icnt] & ~innermask) == 0) {		\
 				while (p < ci->ncand && o < e) {	\
 					v = src[o-hseq];		\
-					ADD;				\
+					if ((ADD) == NULL) {		\
+						BBPreclaim(bn);		\
+						return BUN_NONE;	\
+					}				\
 					cnt++;				\
 					p++;				\
 					o = canditer_next(ci);		\
@@ -204,7 +213,10 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			} else {					\
 				while (p < ci->ncand && o < e) {	\
 					v = src[o-hseq];		\
-					ADD;				\
+					if ((ADD) == NULL) {		\
+						BBPreclaim(bn);		\
+						return BUN_NONE;	\
+					}				\
 					cnt += (TEST) != 0;		\
 					p++;				\
 					o = canditer_next(ci);		\
@@ -226,7 +238,10 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			if ((im[icnt] & ~innermask) == 0) {		\
 				while (p < ci->ncand && o < e) {	\
 					v = src[o-hseq];		\
-					ADD;				\
+					if ((ADD) == NULL) {		\
+						BBPreclaim(bn);		\
+						return BUN_NONE;	\
+					}				\
 					cnt++;				\
 					p++;				\
 					o = canditer_next_dense(ci);	\
@@ -234,7 +249,10 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			} else {					\
 				while (p < ci->ncand && o < e) {	\
 					v = src[o-hseq];		\
-					ADD;				\
+					if ((ADD) == NULL) {		\
+						BBPreclaim(bn);		\
+						return BUN_NONE;	\
+					}				\
 					cnt += (TEST) != 0;		\
 					p++;				\
 					o = canditer_next_dense(ci);	\
@@ -292,11 +310,14 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		}							\
 	} while (false)
 
-#define quickins(dst, cnt, o, bn)			\
-	do {						\
-		assert((cnt) < BATcapacity(bn));	\
-		dst[cnt] = (o);				\
-	} while (false)
+static inline oid *
+quickins(oid *dst, BUN cnt, oid o, BAT *bn)
+{
+	(void) bn;
+	assert(cnt < BATcapacity(bn));
+	dst[cnt] = o;
+	return dst;
+}
 
 /* construct the mask */
 #define impsmask(ISDENSE,TEST,B)					\
@@ -329,12 +350,12 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 									\
 		if (BATcapacity(bn) < maximum) {			\
 			impsloop(ISDENSE, TEST,				\
-				 buninsfix(bn, dst, cnt, o,		\
-					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
-						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-					   maximum, BUN_NONE));		\
+				 dst = buninsfix(bn, dst, cnt, o,		\
+						 (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
+							* (dbl) (ci->ncand-p) * 1.1 + 1024), \
+						 maximum));		\
 		} else {						\
-			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
+			impsloop(ISDENSE, TEST, dst = quickins(dst, cnt, o, bn)); \
 		}							\
 	} while (false)
 
@@ -396,10 +417,14 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				o = canditer_next(ci);			\
 				v = src[o-hseq];			\
 				if (TEST) {				\
-					buninsfix(bn, dst, cnt, o,	\
+					dst = buninsfix(bn, dst, cnt, o, \
 						  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 							 * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-						  maximum, BUN_NONE);	\
+							maximum);	\
+					if (dst == NULL) {		\
+						BBPreclaim(bn);		\
+						return BUN_NONE;	\
+					}				\
 					cnt++;				\
 				}					\
 			}						\
@@ -496,7 +521,6 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	BUN pr_off = 0;							\
 	Imprints *imprints;						\
 	bat parent = 0;							\
-	const bool locked = false;					\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -552,7 +576,6 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	oid o;
 	BUN p;
 	int c;
-	const bool locked = false;
 
 	(void) maximum;
 	(void) use_imprints;
@@ -565,10 +588,15 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				o = canditer_next_dense(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((*cmp)(tl, v) == 0) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						bat_iterator_end(&bi);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -577,10 +605,15 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				o = canditer_next(ci);
 				v = BUNtail(bi, o-hseq);
 				if ((*cmp)(tl, v) == 0) {
-					buninsfix(bn, dst, cnt, o,
+					dst = buninsfix(bn, dst, cnt, o,
 						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+						maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						bat_iterator_end(&bi);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -598,10 +631,15 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 					(hval &&
 					((c = (*cmp)(th, v)) < 0 ||
 					(!hi && c == 0))))) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						bat_iterator_end(&bi);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -616,10 +654,15 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 					(hval &&
 					((c = (*cmp)(th, v)) < 0 ||
 					(!hi && c == 0))))) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						bat_iterator_end(&bi);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -637,10 +680,15 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 					(!hval ||
 					(c = cmp(th, v)) > 0 ||
 					(hi && c == 0)))) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						bat_iterator_end(&bi);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -655,15 +703,21 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 					(!hval ||
 					(c = cmp(th, v)) > 0 ||
 					(hi && c == 0)))) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						bat_iterator_end(&bi);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	return cnt;
 }
 
@@ -677,7 +731,6 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	var_t pos;
 	BUN p;
 	oid o;
-	const bool locked = false;
 
 	if (!equi || !GDK_ELIMDOUBLES(b->tvheap))
 		return fullscan_any(b, ci, bn, tl, th, li, hi, equi, anti,
@@ -697,10 +750,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -708,10 +765,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -725,10 +786,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -736,10 +801,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -753,10 +822,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -764,10 +837,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -781,10 +858,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next_dense(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}
@@ -792,10 +873,14 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 			for (p = 0; p < ci->ncand; p++) {
 				o = canditer_next(ci);
 				if (ptr[o - hseq] == pos) {
-					buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ci->ncand-p) * 1.1 + 1024),
-						maximum, BUN_NONE);
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ci->ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
 					cnt++;
 				}
 			}

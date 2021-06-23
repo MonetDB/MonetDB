@@ -27,6 +27,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else if (c == 1 || (c > 1 && *err == false)) {
 		BATiter bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
+		bat_iterator_end(&bi);
 	} else {
 		p = NULL;
 		BBPunfix(b->batCacheid);
@@ -203,6 +204,7 @@ SQLall(ptr ret, const bat *bid)
 						}
 					}
 				}
+				bat_iterator_end(&bi);
 			}
 			s = ATOMlen(ATOMtype(b->ttype), p);
 			if (ATOMextern(b->ttype)) {
@@ -327,6 +329,7 @@ SQLnil(bit *ret, const bat *bid)
 					break;
 				}
 			}
+			bat_iterator_end(&bi);
 		}
 		}
 	}
@@ -679,6 +682,8 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
 				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) == 0;
 			}
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
 		}
 		}
 
@@ -732,6 +737,8 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						break;
 					}
 				}
+				bat_iterator_end(&li);
+				bat_iterator_end(&ri);
 			}
 			}
 		}
@@ -938,6 +945,8 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
 				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) != 0;
 			}
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
 		}
 		}
 
@@ -991,6 +1000,8 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						break;
 					}
 				}
+				bat_iterator_end(&li);
+				bat_iterator_end(&ri);
 			}
 			}
 		}

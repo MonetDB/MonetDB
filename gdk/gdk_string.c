@@ -904,8 +904,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
-			if ((single_str = GDKmalloc(single_length + 1)) == NULL)
+			if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
+				bat_iterator_end(&bi);
+				if (sep)
+					bat_iterator_end(&bis);
 				return GDK_FAIL;
+			}
 			empty = true;
 			if (separator) {
 				for (i = 0; i < ncand; i++) {
@@ -946,6 +950,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
+					bat_iterator_end(&bi);
+					if (sep)
+						bat_iterator_end(&bis);
 					return GDK_FAIL;
 				}
 			} else {
@@ -955,12 +962,23 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 			GDKfree(single_str);
 		} else if (bn) {
-			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED)
+			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
+				if (sep)
+					bat_iterator_end(&bis);
 				return GDK_FAIL;
+			}
 		} else {
-			if (VALinit(pt, TYPE_str, str_nil) == NULL)
+			if (VALinit(pt, TYPE_str, str_nil) == NULL) {
+				bat_iterator_end(&bi);
+				if (sep)
+					bat_iterator_end(&bis);
 				return GDK_FAIL;
+			}
 		}
+		bat_iterator_end(&bi);
+		if (sep)
+			bat_iterator_end(&bis);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
@@ -1114,6 +1132,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	}
 
   finish:
+	bat_iterator_end(&bi);
+	if (sep)
+		bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
@@ -1147,6 +1168,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
 		separator = BUNtvar(bi, 0);
+		bat_iterator_end(&bi);
 		sep = NULL;
 	}
 
@@ -1187,6 +1209,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
 		separator = BUNtvar(bi, 0);
+		bat_iterator_end(&bi);
 		sep = NULL;
 	}
 
@@ -1405,6 +1428,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		bi = bat_iterator(sep);
 		separator = BUNtvar(bi, 0);
+		bat_iterator_end(&bi);
 		sep = NULL;
 	}
 
@@ -1433,15 +1457,24 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		}
 	}
 
+	bat_iterator_end(&bi);
+	if (sep)
+		bat_iterator_end(&bis);
 	GDKfree(single_str);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
   allocation_error:
+	bat_iterator_end(&bi);
+	if (sep)
+		bat_iterator_end(&bis);
 	GDKfree(single_str);
 	return GDK_FAIL;
   notimplemented:
+	bat_iterator_end(&bi);
+	if (sep)
+		bat_iterator_end(&bis);
 	GDKerror("str_group_concat not yet implemented for current row until unbounded case\n");
 	return GDK_FAIL;
 }

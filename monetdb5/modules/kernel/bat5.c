@@ -33,28 +33,6 @@
 #include "mal_exception.h"
 #include "mal_debugger.h"
 
-/* set access mode to bat, replacing input with output */
-static BAT *
-setaccess(BAT *b, restrict_t mode)
-{
-	BAT *bn = b;
-
-	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
-		if (b->batSharecnt && mode != BAT_READ) {
-			bn = COLcopy(b, b->ttype, true, TRANSIENT);
-			if (bn != NULL &&
-				BATsetaccess(bn, mode) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				bn = NULL;
-			}
-		} else {
-			bn = NULL;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	return bn;
-}
-
 /*
  * The remainder contains the wrapper code over the mserver version 4
  * InformationFunctions
@@ -199,7 +177,7 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
@@ -252,7 +230,7 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.append", OPERATION_FAILED);
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (u == 0 || *(str*)u == 0)
@@ -525,7 +503,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
-	if ((b = setaccess(b, m)) == NULL)
+	if ((b = BATsetaccess(b, m)) == NULL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
 	*res = b->batCacheid;
 	BATsettrivprop(b);
@@ -862,6 +840,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 					o++;
 				} else {
 					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+						bat_iterator_end(&bi);
 						BBPunfix(b->batCacheid);
 						BBPunfix(bn->batCacheid);
 						throw(MAL, "bat.shrink", GDK_EXCEPTION);
@@ -869,6 +848,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 					cnt++;
 				}
 			}
+			bat_iterator_end(&bi);
 		} else {
 			switch( b->twidth){
 			case 1:shrinkloop(bte); break;
@@ -1016,12 +996,14 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 					o++;
 				while (o < ol && b->hseqbase + p == *o);
 			} else if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bs->batCacheid);
 				throw(MAL, "bat.shrink", GDK_EXCEPTION);
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		BUN n = 0;
 		switch (b->twidth) {

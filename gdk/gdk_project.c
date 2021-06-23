@@ -305,28 +305,38 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 			oid o = canditer_next(ci);
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
+				bat_iterator_end(&r1i);
+				bat_iterator_end(&r2i);
 				return GDK_FAIL;
 			}
 			if (o < r1end)
 				v = BUNtail(r1i, o - r1seq);
 			else
 				v = BUNtail(r2i, o - r2seq);
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED) {
+				bat_iterator_end(&r1i);
+				bat_iterator_end(&r2i);
 				return GDK_FAIL;
+			}
 		}
 	} else if (BATtdense(l)) {
 		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
 			oid o = l->tseqbase + lo;
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
+				bat_iterator_end(&r1i);
+				bat_iterator_end(&r2i);
 				return GDK_FAIL;
 			}
 			if (o < r1end)
 				v = BUNtail(r1i, o - r1seq);
 			else
 				v = BUNtail(r2i, o - r2seq);
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED) {
+				bat_iterator_end(&r1i);
+				bat_iterator_end(&r2i);
 				return GDK_FAIL;
+			}
 		}
 	} else {
 		const oid *restrict ot = (const oid *) Tloc(l, 0);
@@ -338,16 +348,23 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 				bn->tnil = true;
 			} else if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
+				bat_iterator_end(&r1i);
+				bat_iterator_end(&r2i);
 				return GDK_FAIL;
 			} else if (o < r1end) {
 				v = BUNtail(r1i, o - r1seq);
 			} else {
 				v = BUNtail(r2i, o - r2seq);
 			}
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED) {
+				bat_iterator_end(&r1i);
+				bat_iterator_end(&r2i);
 				return GDK_FAIL;
+			}
 		}
 	}
+	bat_iterator_end(&r1i);
+	bat_iterator_end(&r2i);
 	BATsetcount(bn, lo);
 	bn->theap->dirty = true;
 	return GDK_SUCCEED;
@@ -1017,6 +1034,7 @@ BATprojectchain(BAT **bats)
 				}
 				if (o < ba[i].hlo || o >= ba[i].hhi) {
 					GDKerror("does not match always\n");
+					bat_iterator_end(&bi);
 					goto bunins_failed;
 				}
 				o -= ba[i].hlo;
@@ -1030,14 +1048,18 @@ BATprojectchain(BAT **bats)
 				v = nil;
 			} else if (o < ba[n].hlo || o >= ba[n].hhi) {
 				GDKerror("does not match always\n");
+				bat_iterator_end(&bi);
 				goto bunins_failed;
 			} else {
 				o -= ba[n].hlo;
 				v = BUNtail(bi, o);
 			}
-			if (bunfastapp(bn, v) != GDK_SUCCEED)
+			if (bunfastapp(bn, v) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				goto bunins_failed;
+			}
 		}
+		bat_iterator_end(&bi);
 		n++;		/* undo for debug print */
 	}
 	BATsetcount(bn, ba[0].cnt);

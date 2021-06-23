@@ -208,15 +208,16 @@ bat_to_sexp(BAT* b, int type)
 		break;
 	case TYPE_str: { // there is only one string type, thus no macro here
 		BUN p, q, j = 0;
-		BATiter li = bat_iterator(b);
 		varvalue = PROTECT(NEW_STRING(BATcount(b)));
 		if (varvalue == NULL) {
 			return NULL;
 		}
+		BATiter li = bat_iterator(b);
 		/* special case where we exploit the duplicate-eliminated string heap */
 		if (GDK_ELIMDOUBLES(b->tvheap)) {
 			SEXP* sexp_ptrs = GDKzalloc(b->tvheap->free * sizeof(SEXP));
 			if (!sexp_ptrs) {
+				bat_iterator_end(&li);
 				return NULL;
 			}
 			BATloop(b, p, q) {
@@ -251,6 +252,7 @@ bat_to_sexp(BAT* b, int type)
 				}
 			}
 		}
+		bat_iterator_end(&li);
 	} 	break;
 	}
 	return varvalue;
@@ -768,8 +770,10 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&li);
 				goto wrapup;
 			}
+			bat_iterator_end(&li);
 		}
 		msg = MAL_SUCCEED;
 	}

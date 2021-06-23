@@ -765,7 +765,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
-	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	gn = COLnew(hseqb, TYPE_oid, cnt, TRANSIENT);
 	if (gn == NULL)
@@ -832,6 +831,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			assert(0);
 		}
 	}
+
+	bi = bat_iterator(b);
 
 	if (subsorted ||
 	    ((BATordered(b) || BATordered_rev(b)) &&
@@ -1026,6 +1027,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			BAT *b2 = BBPdescriptor(parent);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
+			bat_iterator_end(&bi);
 			bi = bat_iterator(b);
 			algomsg = "existing parent hash -- ";
 			phash = true;
@@ -1228,6 +1230,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
+	bat_iterator_end(&bi);
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
 		en->tkey = true;
@@ -1273,6 +1276,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
   error:
+	bat_iterator_end(&bi);
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
