@@ -237,7 +237,7 @@ typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								
 typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
-typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b);
+typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
 extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, validate_fptr validate, bool temporary, bool unique, bool concurrent, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
