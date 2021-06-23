@@ -177,9 +177,9 @@ static int
 checksize(matlist_t *ml, int v)
 {
 	if (v >= ml->vsize) {
-		int sz = ml->vsize, i, nvsize, *nhorigin, *ntorigin, *nvars;
+		int sz = ml->vsize, i, *nhorigin, *ntorigin, *nvars;
 
-		nvsize = ml->vsize * 2;
+		unsigned int nvsize = ml->vsize * 2;
 		nhorigin = (int*) GDKrealloc(ml->horigin, sizeof(int)* nvsize);
 		ntorigin = (int*) GDKrealloc(ml->torigin, sizeof(int)* nvsize);
 		nvars = (int*) GDKrealloc(ml->vars, sizeof(int)* nvsize);
