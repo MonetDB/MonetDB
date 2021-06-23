@@ -969,6 +969,16 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		if (!otids)
 			return LOG_ERR;
 	}
+	if (updates && (updates->ttype == TYPE_msk || mask_cand(updates))) {
+		oupdates = BATunmask(updates);
+		if (!oupdates)
+			return LOG_ERR;
+	}
+	if (updates && updates->ttype == TYPE_void) { /* dense later use optimized log structure */
+		oupdates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
+		if (!oupdates)
+			return LOG_ERR;
+	}
 	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
 	/* currently only one update delta is possible */
 	lock_table(tr->store, t->base.id);
@@ -985,8 +995,11 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			if (otids != tids)
 				bat_destroy(otids);
 			otids = sorted;
-			oupdates = BATproject(order, oupdates);
+			BAT *noupdates = BATproject(order, oupdates);
 			bat_destroy(order);
+			if (oupdates != updates)
+				bat_destroy(oupdates);
+			oupdates = noupdates;
 			if (!oupdates) {
 				bat_destroy(otids);
 				unlock_table(tr->store, t->base.id);
@@ -1255,6 +1268,7 @@ cs_update_val( sql_trans *tr, column_storage *cs, sql_table *t, oid rid, void *u
 		if (cs_real_update_bats(cs, &ui, &uv) != LOG_OK)
 			return LOG_ERR;
 
+		assert(uv->ttype);
 		assert(BATcount(ui) == BATcount(uv));
 		if (BUNappend(ui, (ptr) &rid, true) != GDK_SUCCEED ||
 		    BUNappend(uv, (ptr) upd, true) != GDK_SUCCEED) {
@@ -2187,7 +2201,7 @@ static int
 commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
-	(void)tr; (void)oldest;
+	(void)oldest;
 
 	if(!isTempTable(c->t)) {
 		sql_delta *delta = ATOMIC_PTR_GET(&c->data);
@@ -2198,7 +2212,8 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 		if (!delta->cs.alter)
 			ok = merge_delta(delta);
 		delta->cs.alter = 0;
-		c->base.flags = 0;
+		if (!tr->parent)
+			c->base.new = 0;
 	}
 	return ok;
 }
@@ -2207,7 +2222,8 @@ static int
 commit_create_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_column *c = (sql_column*)change->obj;
-	c->base.flags = 0;
+	if (!tr->parent)
+		c->base.new = 0;
 	return commit_create_col_( tr, c, commit_ts, oldest);
 }
 
@@ -2287,7 +2303,7 @@ static int
 commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
-	(void)tr; (void)oldest;
+	(void)oldest;
 
 	if(!isTempTable(i->t)) {
 		sql_delta *delta = ATOMIC_PTR_GET(&i->data);
@@ -2296,7 +2312,8 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 
 		assert(delta->next == NULL);
 		ok = merge_delta(delta);
-		i->base.flags = 0;
+		if (!tr->parent)
+			i->base.new = 0;
 	}
 	return ok;
 }
@@ -2305,7 +2322,8 @@ static int
 commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_idx *i = (sql_idx*)change->obj;
-	i->base.flags = 0;
+	if (!tr->parent)
+		i->base.new = 0;
 	return commit_create_idx_(tr, i, commit_ts, oldest);
 }
 
@@ -2514,10 +2532,12 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 						ok = commit_create_idx_(tr, i, commit_ts, oldest);
 				}
 			}
-			t->base.flags = 0;
+			if (!tr->parent)
+				t->base.new = 0;
 		}
 	}
-	t->base.flags = 0;
+	if (!tr->parent)
+		t->base.new = 0;
 	return ok;
 }
 
@@ -3088,7 +3108,8 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
 				clear_cs(tr, &delta->cs, true);
 		}
-		c->t->base.flags = c->base.flags = 0;
+		if (!tr->parent)
+			c->t->base.new = c->base.new = 0;
 	}
 	return ok;
 }
@@ -3213,7 +3234,8 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 			else /* CA_DELETE as CA_DROP's are gone already */
 				clear_cs(tr, &delta->cs, true);
 		}
-		i->t->base.flags = i->base.flags = 0;
+		if (!tr->parent)
+			i->t->base.new = i->base.new = 0;
 	}
 	return ok;
 }
@@ -3339,7 +3361,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			else /* CA_DELETE as CA_DROP's are gone already */
 				clear_storage(tr, dbat);
 		}
-		t->base.flags = 0;
+		t->base.new = 0;
 		return ok;
 	}
 	lock_table(tr->store, t->base.id);

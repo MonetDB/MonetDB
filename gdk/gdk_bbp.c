@@ -2358,7 +2358,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			}
 		}
 	}
-	if (b && b->batCount > b->batInserted) {
+	if (b && b->batCount > b->batInserted && !isVIEW(b)) {
 		/* if batCount is larger than batInserted and the dirty
 		 * bits are off, it may be that a (sub)commit happened
 		 * in parallel to an update; we must undo the turning
