@@ -156,11 +156,11 @@ bool is_commutative(const char *fnm)
 }
 
 void
-base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name)
+base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name)
 {
 	*b = (sql_base) {
 		.id = id,
-		.flags = flags,
+		.new = isnew,
 		.refcnt = 1,
 		.name = (name) ? SA_STRDUP(sa, name) : NULL,
 	};
@@ -603,7 +603,7 @@ sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, uns
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
-	base_init(sa, &t->base, local_id++, 0, sqlname);
+	base_init(sa, &t->base, local_id++, false, sqlname);
 	t->impl = sa_strdup(sa, impl);
 	t->digits = digits;
 	t->scale = scale;
@@ -653,7 +653,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	}
 	if (res)
 		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	base_init(sa, &t->base, local_id++, 0, name);
+	base_init(sa, &t->base, local_id++, false, name);
 
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
