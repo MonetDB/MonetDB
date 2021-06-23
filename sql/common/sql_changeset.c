@@ -32,21 +32,21 @@ cs_destroy(changeset * cs, void *data)
 }
 
 void
-cs_add(changeset * cs, void *elm, int flags)
+cs_add(changeset * cs, void *elm, bool isnew)
 {
 	if (!cs->set)
 		cs->set = list_new(cs->sa, cs->destroy);
 	list_append(cs->set, elm);
-	if (newFlagSet(flags) && !cs->nelm)
+	if (isnew && !cs->nelm)
 		cs->nelm = cs->set->t;
 }
 
 void
-cs_del(changeset * cs, void *gdata, node *elm, int flags)
+cs_del(changeset * cs, void *gdata, node *elm, bool isnew)
 {
 	if (cs->nelm == elm)
 		cs->nelm = elm->next;
-	if (newFlagSet(flags)) {	/* remove just added */
+	if (isnew) {	/* remove just added */
 		list_remove_node(cs->set, gdata, elm);
 	} else {
 		if (!cs->dset)
