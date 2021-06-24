@@ -220,6 +220,7 @@ BATmaterialize(BAT *b)
 			assert(ccand_free(b) % SIZEOF_OID == 0);
 			BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
 			const oid *exc = (const oid *) ccand_first(b);
+			BUN i;
 			for (p = 0, i = 0; p < q; p++) {
 				while (i < nexc && t == exc[i]) {
 					i++;
