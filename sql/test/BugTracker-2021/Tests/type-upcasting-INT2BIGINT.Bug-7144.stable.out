@@ -1,0 +1,28 @@
+stdout of test 'type-upcasting-INT2BIGINT.Bug-7144` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 10:56:57 >  
+# 10:56:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1437508" "--port=33843"
+# 10:56:57 >  
+
+#create table ints (id int);
+#insert into ints values (24), (42);
+[ 2	]
+#create table t (i bigint, j bigint);
+#insert into t(i) select id from ints;
+[ 2	]
+#insert into t(j) select id from ints;
+[ 2	]
+#insert into t(i, j) select id, id from ints;
+[ 2	]
+#insert into t(i, j) select cast(id as bigint), id from ints;
+[ 2	]
+#insert into t(i, j) select id, cast(id as bigint) from ints;
+[ 2	]
+#drop table t;
+#drop table ints;
+
+# 10:56:57 >  
+# 10:56:57 >  "Done."
+# 10:56:57 >  
+
