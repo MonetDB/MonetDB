@@ -204,10 +204,10 @@ BATmaterialize(BAT *b)
 	x = (oid *) tail->base;
 	t = b->tseqbase;
 	if (is_oid_nil(t)) {
-		for (BUN p = 0; p < q; p++)
+		for (p = 0; p < q; p++)
 			x[p] = oid_nil;
 	} else {
-		for (BUN p = 0; p < q; p++)
+		for (p = 0; p < q; p++)
 			x[p] = t++;
 	}
 	ATOMIC_INIT(&tail->refs, 1);
@@ -221,7 +221,7 @@ BATmaterialize(BAT *b)
 			assert(ccand_free(b) % SIZEOF_OID == 0);
 			BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
 			const oid *exc = (const oid *) ccand_first(b);
-			for (BUN p = 0, i = 0; p < q; p++) {
+			for (p = 0, i = 0; p < q; p++) {
 				while (i < nexc && t == exc[i]) {
 					i++;
 					t++;
@@ -234,7 +234,7 @@ BATmaterialize(BAT *b)
 			const uint32_t *src = (const uint32_t *) ccand_first(b);
 			BUN n = 0;
 			t -= (oid) CCAND(b)->firstbit;
-			for (BUN p = 0; p < nmsk; p++) {
+			for (p = 0; p < nmsk; p++) {
 				uint32_t val = src[p];
 				if (val == 0)
 					continue;
