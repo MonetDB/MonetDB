@@ -174,7 +174,7 @@
 
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* DIFFER */	TYPE##_neq(w[p], pw)		,	\
@@ -297,7 +297,7 @@
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 		    	TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
@@ -404,7 +404,7 @@
 
 #define GRP_use_existing_hash_table_tpe(TYPE)			\
 	GRP_use_existing_hash_table(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
 	)
@@ -564,7 +564,7 @@ ctz(oid x)
 
 #define GRP_create_partial_hash_table_tpe(TYPE)			\
 	GRP_create_partial_hash_table(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
@@ -941,7 +941,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 256 groups, so the group id
 		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
-		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
+		const unsigned char *restrict w = (const unsigned char *) bi.base;
 		unsigned char v;
 
 		algomsg = "byte-sized groups -- ";
@@ -974,7 +974,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 65536 groups, so the group
 		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
+		const unsigned short *restrict w = (const unsigned short *) bi.base;
 		unsigned short v;
 
 		algomsg = "short-sized groups -- ";
@@ -1149,7 +1149,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const bte *w = (bte *) Tloc(b, 0);
+				const bte *w = (bte *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
@@ -1166,7 +1166,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const sht *w = (sht *) Tloc(b, 0);
+				const sht *w = (sht *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
@@ -1183,7 +1183,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const int *w = (int *) Tloc(b, 0);
+				const int *w = (int *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
@@ -1197,7 +1197,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #ifdef HAVE_HGE
 			if (grps) {
 				uhge v;
-				const lng *w = (lng *) Tloc(b, 0);
+				const lng *w = (lng *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),

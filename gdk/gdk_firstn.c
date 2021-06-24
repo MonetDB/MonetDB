@@ -181,7 +181,7 @@
 
 #define shuffle_unique(TYPE, OP)					\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		heapify(OP##fix, SWAP1);				\
 		while (cnt > 0) {					\
 			cnt--;						\
@@ -683,7 +683,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 
 #define shuffle_unique_with_groups(TYPE, OP)				\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		heapify(OP##fixgrp, SWAP2);				\
 		while (cnt > 0) {					\
 			cnt--;						\
