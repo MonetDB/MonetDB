@@ -800,25 +800,6 @@ typedef struct BAT {
 #define tprops		T.props
 
 
-typedef struct BATiter {
-	BAT *b;
-	Heap *h;
-	void *base;
-	Heap *vh;
-	BUN count;
-	uint16_t width;
-	uint8_t shift;
-	int8_t type;
-	oid tseq;
-	union {
-		oid tvid;
-		bool tmsk;
-	};
-#ifndef NDEBUG
-	bool locked;
-#endif
-} BATiter;
-
 /* some access functions for the bitmask type */
 static inline void
 mskSet(BAT *b, BUN p)
@@ -889,6 +870,26 @@ gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
+
+/* BAT iterator, also protects use of BAT heaps with reference counts */
+typedef struct BATiter {
+	BAT *b;
+	Heap *h;
+	void *base;
+	Heap *vh;
+	BUN count;
+	uint16_t width;
+	uint8_t shift;
+	int8_t type;
+	oid tseq;
+	union {
+		oid tvid;
+		bool tmsk;
+	};
+#ifndef NDEBUG
+	bool locked;
+#endif
+} BATiter;
 
 static inline BATiter
 bat_iterator(BAT *b)
@@ -1114,6 +1115,8 @@ typedef var_t stridx_t;
 static inline oid
 BUNtoid(BAT *b, BUN p)
 {
+	oid o;
+
 	assert(ATOMtype(b->ttype) == TYPE_oid);
 	/* BATcount is the number of valid entries, so with
 	 * exceptions, the last value can well be larger than
@@ -1122,13 +1125,18 @@ BUNtoid(BAT *b, BUN p)
 	assert(b->ttype == TYPE_void || b->tvheap == NULL);
 	if (is_oid_nil(b->tseqbase)) {
 		if (b->ttype == TYPE_void)
-			return b->tseqbase;
-		return ((const oid *) b->theap->base)[p + b->tbaseoff];
+			return b->tseqbase; /* i.e. oid_nil */
+		MT_lock_set(&b->theaplock);
+		o = ((const oid *) b->theap->base)[p + b->tbaseoff];
+		MT_lock_unset(&b->theaplock);
+		return o;
 	}
-	oid o = b->tseqbase + p;
+	o = b->tseqbase + p;
 	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
 		return o;
 	}
+	/* b->tvheap != NULL, so we know there will be no parallel
+	 * modifications (so no locking) */
 	assert(!mask_cand(b));
 	/* exceptions only allowed on transient BATs */
 	assert(b->batRole == TRANSIENT);
@@ -2000,10 +2008,16 @@ Tpos(BATiter *bi, BUN p)
 	return (void*)&bi->tvid;
 }
 
+static inline bool
+Tmskval(BATiter *bi, BUN p)
+{
+	return ((uint32_t *) bi->h->base)[p / 32] & (1U << (p % 32));
+}
+
 static inline void *
 Tmsk(BATiter *bi, BUN p)
 {
-	bi->tmsk = ((uint32_t *) bi->h->base)[p / 32] & (1U << (p % 32));
+	bi->tmsk = Tmskval(bi, p);
 	return &bi->tmsk;
 }
 

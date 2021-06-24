@@ -793,12 +793,11 @@ BAT *
 COLcopy(BAT *b, int tt, bool writable, role_t role)
 {
 	BUN bunstocopy = BUN_NONE;
-	BUN cnt;
 	BAT *bn = NULL;
+	BATiter bi;
 
 	BATcheck(b, NULL);
 	assert(tt != TYPE_bat);
-	cnt = b->batCount;
 
 	/* maybe a bit ugly to change the requested bat type?? */
 	if (b->ttype == TYPE_void && !writable)
@@ -809,6 +808,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
+	bi = bat_iterator(b);
+
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
 	if (!writable &&
@@ -818,39 +819,41 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    (!VIEWtparent(b) ||
 	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase, b);
-		if (bn == NULL)
+		if (bn == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
+		}
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
 			bn->tvarsized = ATOMvarsized(tt);
-			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? b->tseqbase : oid_nil;
+			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? bi.tseq : oid_nil;
 		}
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting bunstocopy != BUN_NONE) */
-		if (ATOMsize(tt) != ATOMsize(b->ttype)) {
+		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
-			bunstocopy = cnt;
+			bunstocopy = bi.count;
 		} else if (BATatoms[tt].atomFix) {
 			/* oops, we need to fix/unfix atoms */
-			bunstocopy = cnt;
-		} else if (isVIEW(b)) {
+			bunstocopy = bi.count;
+		} else if (bi.h && bi.h->parentid != b->batCacheid) {
 			/* extra checks needed for views */
-			bat tp = VIEWtparent(b);
-
-			if (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt)
+			if (BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count)
 				/* reduced slice view: do not copy too
 				 * much garbage */
-				bunstocopy = cnt;
+				bunstocopy = bi.count;
 		}
 
 		bn = COLnew(b->hseqbase, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
-		if (bn == NULL)
+		if (bn == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
+		}
 
 		if (bn->tvarsized && bn->ttype && bunstocopy == BUN_NONE) {
-			bn->tshift = b->tshift;
-			bn->twidth = b->twidth;
+			bn->tshift = bi.shift;
+			bn->twidth = bi.width;
 			if (HEAPextend(bn->theap, BATcapacity(bn) << bn->tshift, true) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
@@ -865,11 +868,11 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			Heap bthp, thp;
 
 			bthp = (Heap) {
-				.farmid = BBPselectfarm(role, b->ttype, offheap),
+				.farmid = BBPselectfarm(role, bi.type, offheap),
 				.parentid = bn->batCacheid,
 			};
 			thp = (Heap) {
-				.farmid = BBPselectfarm(role, b->ttype, varheap),
+				.farmid = BBPselectfarm(role, bi.type, varheap),
 				.parentid = bn->batCacheid,
 			};
 			settailname(&bthp, BBP_physical(bn->batCacheid),
@@ -877,11 +880,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			strconcat_len(thp.filename, sizeof(thp.filename),
 				      BBP_physical(bn->batCacheid),
 				      ".theap", NULL);
-			if ((b->ttype && HEAPcopy(&bthp, b->theap, b->tbaseoff << b->tshift) != GDK_SUCCEED) ||
-			    (bn->tvheap && HEAPcopy(&thp, b->tvheap, 0) != GDK_SUCCEED)) {
+			if ((bi.type && HEAPcopy(&bthp, bi.h, (size_t) ((char *) bi.base - bi.h->base)) != GDK_SUCCEED) ||
+			    (bn->tvheap && HEAPcopy(&thp, bi.vh, 0) != GDK_SUCCEED)) {
 				HEAPfree(&thp, true);
 				HEAPfree(&bthp, true);
 				BBPreclaim(bn);
+				bat_iterator_end(&bi);
 				return NULL;
 			}
 			/* succeeded; replace dummy small heaps by the
@@ -900,7 +904,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = 0;
-			BATiter bi = bat_iterator(b);
 
 			BATloop(b, p, q) {
 				const void *t = BUNtail(bi, p);
@@ -911,12 +914,11 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				}
 				r++;
 			}
-			bat_iterator_end(&bi);
 			bn->theap->dirty |= bunstocopy > 0;
-		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
+		} else if (tt != TYPE_void && bi.type == TYPE_void) {
 			/* case (4): optimized for unary void
 			 * materialization */
-			oid cur = b->tseqbase, *dst = (oid *) Tloc(bn, 0);
+			oid cur = bi.tseq, *dst = (oid *) Tloc(bn, 0);
 			oid inc = !is_oid_nil(cur);
 
 			bn->theap->free = bunstocopy * sizeof(oid);
@@ -925,27 +927,27 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				*dst++ = cur;
 				cur += inc;
 			}
-		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		} else if (ATOMstorage(bi.type) == TYPE_msk) {
 			/* convert number of bits to number of bytes,
 			 * and round the latter up to a multiple of
 			 * 4 (copy in units of 4 bytes) */
 			bn->theap->free = (bunstocopy + 7) / 8;
 			bn->theap->free = (bn->theap->free + 3) & ~(size_t)3;
 			bn->theap->dirty |= bunstocopy > 0;
-			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap->free);
+			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		} else {
 			/* case (4): optimized for simple array copy */
 			bn->theap->free = bunstocopy * Tsize(bn);
 			bn->theap->dirty |= bunstocopy > 0;
-			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap->free);
+			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		}
 		/* copy all properties (size+other) from the source bat */
-		BATsetcount(bn, cnt);
+		BATsetcount(bn, bi.count);
 	}
 	/* set properties (note that types may have changed in the copy) */
-	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
+	if (ATOMtype(tt) == ATOMtype(bi.type)) {
 		if (ATOMtype(tt) == TYPE_oid) {
-			BATtseqbase(bn, b->tseqbase);
+			BATtseqbase(bn, bi.tseq);
 		} else {
 			BATtseqbase(bn, oid_nil);
 		}
@@ -1003,56 +1005,13 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->batRestricted = BAT_READ;
 	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
+	bat_iterator_end(&bi);
 	return bn;
       bunins_failed:
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }
-
-#ifdef HAVE_HGE
-#define un_move_sz16(src, dst, sz)			\
-		if (sz == 16) {				\
-			* (hge *) dst = * (hge *) src;	\
-		} else
-#else
-#define un_move_sz16(src, dst, sz)				\
-		if (sz == 16) {					\
-			* (uuid *) dst = * (uuid *) src;	\
-		} else
-#endif
-
-#define un_move(src, dst, sz)				\
-	do {						\
-		un_move_sz16(src,dst,sz)		\
-		if (sz == 8) {				\
-			* (lng *) dst = * (lng *) src;	\
-		} else if (sz == 4) {			\
-			* (int *) dst = * (int *) src;	\
-		} else if (sz > 0) {			\
-			char *_dst = (char *) dst;	\
-			char *_src = (char *) src;	\
-			char *_end = _src + sz;		\
-							\
-			while (_src < _end)		\
-				*_dst++ = *_src++;	\
-		}					\
-	} while (0)
-#define acc_move(l, p)							\
-	do {								\
-		char tmp[16];						\
-		/* avoid compiler warning: dereferencing type-punned pointer \
-		 * will break strict-aliasing rules */			\
-		char *tmpp = tmp;					\
-									\
-		assert(ts <= 16);					\
-									\
-		/* move first to tmp */					\
-		un_move(Tloc(b, l), tmpp, ts);				\
-		/* move delete to first */				\
-		un_move(Tloc(b, p), Tloc(b, l), ts);			\
-		/* move first to deleted */				\
-		un_move(tmpp, Tloc(b, p), ts);				\
-	} while (0)
 
 static void
 setcolprops(BAT *b, const void *x)
