@@ -803,8 +803,8 @@ typedef struct BAT {
 typedef struct BATiter {
 	BAT *b;
 	Heap *h;
+	void *base;
 	Heap *vh;
-	BUN baseoff;
 	BUN count;
 	uint16_t width;
 	uint8_t shift;
@@ -900,8 +900,8 @@ bat_iterator(BAT *b)
 		bi = (BATiter) {
 			.b = b,
 			.h = b->theap,
+			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
 			.vh = b->tvheap,
-			.baseoff = b->tbaseoff,
 			.count = b->batCount,
 			.width = b->twidth,
 			.shift = b->tshift,
@@ -947,8 +947,8 @@ bat_iterator_nolock(BAT *b)
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
+			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
 			.vh = b->tvheap,
-			.baseoff = b->tbaseoff,
 			.count = b->batCount,
 			.width = b->twidth,
 			.shift = b->tshift,
@@ -1094,9 +1094,9 @@ typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#define BUNtvaroff(bi,p) VarHeapVal((bi).h->base + ((bi).baseoff << (bi).shift), (p), (bi).width)
+#define BUNtvaroff(bi,p) VarHeapVal((bi).base, (p), (bi).width)
 
-#define BUNtloc(bi,p)	(ATOMstorage((bi).type) == TYPE_msk ? Tmsk(&(bi), p) : (bi).h->base + (((bi).baseoff + (p)) << (bi).shift))
+#define BUNtloc(bi,p)	(ATOMstorage((bi).type) == TYPE_msk ? Tmsk(&(bi), p) : (void *) ((char *) (bi).base + ((p) << (bi).shift)))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))

@@ -927,15 +927,11 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
-	nils = dosum(h->base + (baseoff << b->tshift), b->tnonil, b->hseqbase, &ci, ncand,
+	BATiter bi = bat_iterator(b);
+	nils = dosum(bi.base, b->tnonil, b->hseqbase, &ci, ncand,
 		     Tloc(bn, 0), ngrp, b->ttype, tp, gids, min, max,
 		     skip_nils, abort_on_error, true, __func__, &algo);
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
@@ -968,19 +964,15 @@ mskCountOnes(BAT *b, struct canditer *ci)
 	if (ci->s == NULL && mask_cand(b))
 		return BATcount(b);
 	if (ci->tpe == cand_dense && ncand > 0 && !mask_cand(b)) {
-		MT_lock_set(&b->theaplock);
-		Heap *h = b->theap;
-		BUN baseoff = b->tbaseoff;
-		HEAPincref(h);
-		MT_lock_unset(&b->theaplock);
-		const uint32_t *restrict src = (const uint32_t *) (h->base + baseoff + 4 * ((ci->seq - b->hseqbase) / 32));
+		BATiter bi = bat_iterator(b);
+		const uint32_t *restrict src = (const uint32_t *) bi.base + (ci->seq - b->hseqbase) / 32;
 		int bits = (ci->seq - b->hseqbase) % 32;
 		if (bits + ncand <= 32) {
 			if (ncand == 32)
 				cnt = candmask_pop(src[0]);
 			else
 				cnt = candmask_pop(src[0] & (((1U << ncand) - 1) << bits));
-			HEAPdecref(h, false);
+			bat_iterator_end(&bi);
 			return cnt;
 		}
 		if (bits != 0) {
@@ -995,7 +987,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 		}
 		if (ncand > 0)
 			cnt += candmask_pop(*src & ((1U << ncand) - 1));
-		HEAPdecref(h, false);
+		bat_iterator_end(&bi);
 		return cnt;
 	}
 	for (BUN i = 0; i < ncand; i++) {
@@ -1167,15 +1159,11 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	}
 	if (ncand == 0)
 		return GDK_SUCCEED;
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
-	nils = dosum(h->base + (baseoff << b->tshift), b->tnonil, b->hseqbase, &ci, ncand,
+	BATiter bi = bat_iterator(b);
+	nils = dosum(bi.base, b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	if (algo)
 		MT_thread_setalgorithm(algo);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
@@ -1615,15 +1603,11 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
-	nils = doprod(h->base + (baseoff << b->tshift), b->hseqbase, &ci, ncand, Tloc(bn, 0), ngrp,
+	BATiter bi = bat_iterator(b);
+	nils = doprod(bi.base, b->hseqbase, &ci, ncand, Tloc(bn, 0), ngrp,
 		      b->ttype, tp, gids, true, min, max, skip_nils,
 		      abort_on_error, true, __func__);
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
@@ -1695,15 +1679,11 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	}
 	if (ncand == 0)
 		return GDK_SUCCEED;
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
-	nils = doprod(h->base + (baseoff << b->tshift), b->hseqbase, &ci, ncand, res, true,
+	BATiter bi = bat_iterator(b);
+	nils = doprod(bi.base, b->hseqbase, &ci, ncand, res, true,
 		      b->ttype, tp, &min, false, min, max,
 		      skip_nils, abort_on_error, nil_if_empty, __func__);
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
 		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -1716,10 +1696,12 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 
 #define AGGR_AVG(TYPE)							\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) h->base + baseoff; \
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
-		if (avgs == NULL)					\
+		if (avgs == NULL) {					\
+			bat_iterator_end(&bi);				\
 			goto alloc_fail;				\
+		}							\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -1754,7 +1736,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 
 #define AGGR_AVG_FLOAT(TYPE)						\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) h->base + baseoff; \
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
 		while (ncand > 0) {					\
@@ -1894,14 +1876,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h;
-	h = b->theap;
-	HEAPincref(h);
-	BUN baseoff;
-	baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
-
+	BATiter bi;
+	bi = bat_iterator(b);
 	switch (b->ttype) {
 	case TYPE_bte:
 		AGGR_AVG(bte);
@@ -1927,7 +1903,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		AGGR_AVG_FLOAT(dbl);
 		break;
 	default:
-		HEAPdecref(h, false);
+		bat_iterator_end(&bi);
 		GDKfree(rems);
 		if (cn)
 			BBPreclaim(cn);
@@ -1937,7 +1913,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		GDKerror("type (%s) not supported.\n", ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	GDKfree(rems);
 	if (cn == NULL)
 		GDKfree(cnts);
@@ -2043,15 +2019,11 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
 	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
+	BATiter bi = bat_iterator(b);
 
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte: {
-		const bte *vals = (const bte *) h->base + baseoff;
+		const bte *vals = (const bte *) bi.base;
 		bte *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			o = canditer_next(&ci) - b->hseqbase;
@@ -2099,7 +2071,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		break;
 	}
 	case TYPE_sht: {
-		const sht *vals = (const sht *) h->base + baseoff;
+		const sht *vals = (const sht *) bi.base;
 		sht *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			o = canditer_next(&ci) - b->hseqbase;
@@ -2147,7 +2119,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		break;
 	}
 	case TYPE_int: {
-		const int *vals = (const int *) h->base + baseoff;
+		const int *vals = (const int *) bi.base;
 		int *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			o = canditer_next(&ci) - b->hseqbase;
@@ -2195,7 +2167,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		break;
 	}
 	case TYPE_lng: {
-		const lng *vals = (const lng *) h->base + baseoff;
+		const lng *vals = (const lng *) bi.base;
 		lng *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			o = canditer_next(&ci) - b->hseqbase;
@@ -2244,7 +2216,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
-		const hge *vals = (const hge *) h->base + baseoff;
+		const hge *vals = (const hge *) bi.base;
 		hge *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			o = canditer_next(&ci) - b->hseqbase;
@@ -2293,7 +2265,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	}
 #endif
 	}
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	BATsetcount(bn, ngrp);
 	BATsetcount(rn, ngrp);
 	BATsetcount(cn, ngrp);
@@ -2669,15 +2641,11 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
 	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
 
-	MT_lock_set(&avg->theaplock);
-	Heap *h = avg->theap;
-	HEAPincref(h);
-	BUN baseoff = avg->tbaseoff;
-	MT_lock_unset(&avg->theaplock);
+	BATiter bi = bat_iterator(avg);
 
 	switch (ATOMbasetype(avg->ttype)) {
 	case TYPE_bte: {
-		const bte *vals = (const bte *) h->base + baseoff;
+		const bte *vals = (const bte *) bi.base;
 		bte *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			if (ngrp > 1)
@@ -2718,7 +2686,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		break;
 	}
 	case TYPE_sht: {
-		const sht *vals = (const sht *) h->base + baseoff;
+		const sht *vals = (const sht *) bi.base;
 		sht *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			if (ngrp > 1)
@@ -2759,7 +2727,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		break;
 	}
 	case TYPE_int: {
-		const int *vals = (const int *) h->base + baseoff;
+		const int *vals = (const int *) bi.base;
 		int *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			if (ngrp > 1)
@@ -2800,7 +2768,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		break;
 	}
 	case TYPE_lng: {
-		const lng *vals = (const lng *) h->base + baseoff;
+		const lng *vals = (const lng *) bi.base;
 		lng *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			if (ngrp > 1)
@@ -2842,7 +2810,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
-		const hge *vals = (const hge *) h->base + baseoff;
+		const hge *vals = (const hge *) bi.base;
 		hge *avgs = Tloc(bn, 0);
 		for (i = 0; i < ncand; i++) {
 			if (ngrp > 1)
@@ -2884,7 +2852,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	}
 #endif
 	}
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	BBPreclaim(rn);
 	BBPreclaim(cn);
 	BATsetcount(bn, ngrp);
@@ -2994,13 +2962,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 
 	ncand = canditer_init(&ci, b, s);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
-
-	src = h->base + (baseoff << b->tshift);
+	BATiter bi = bat_iterator(b);
+	src = bi.base;
 
 	switch (b->ttype) {
 	case TYPE_bte:
@@ -3027,12 +2990,12 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		AVERAGE_FLOATTYPE(dbl);
 		break;
 	default:
-		HEAPdecref(h, false);
+		bat_iterator_end(&bi);
 		GDKerror("average of type %s unsupported.\n",
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	if (scale != 0 && !is_dbl_nil(*avg))
 		*avg *= pow(10.0, (double) scale);
 	if (vals)
@@ -3045,7 +3008,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 
 #define AGGR_COUNT(TYPE)						\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) h->base + baseoff; \
+		const TYPE *restrict vals = (const TYPE *) bi.base; \
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -3061,31 +3024,6 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 			}						\
 		}							\
 	} while (0)
-
-static inline void *
-BUNheaps(Heap *h, Heap *vh, uint8_t shift, BUN baseoff, BUN p)
-{
-	void *v = h->base + ((baseoff + p) << shift);
-	if (vh) {
-		switch (shift) {
-		case 0:
-			v = vh->base + *(uint8_t *)v + GDK_VAROFFSET;
-			break;
-		case 1:
-			v = vh->base + *(uint16_t *)v + GDK_VAROFFSET;
-			break;
-#if SIZEOF_VAR_T == 8
-		case 2:
-			v = vh->base + *(uint32_t *)v;
-			break;
-#endif
-		default:
-			v = vh->base + *(var_t *)v;
-			break;
-		}
-	}
-	return v;
-}
 
 /* calculate group counts with optional candidates list */
 BAT *
@@ -3161,14 +3099,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 		atomcmp = ATOMcompare(t);
 		t = ATOMbasetype(t);
 
-		MT_lock_set(&b->theaplock);
-		Heap *h = b->theap;
-		Heap *vh = b->tvheap;
-		HEAPincref(h);
-		if (vh)
-			HEAPincref(vh);
-		BUN baseoff = b->tbaseoff;
-		MT_lock_unset(&b->theaplock);
+		BATiter bi = bat_iterator(b);
 
 		switch (t) {
 		case TYPE_bte:
@@ -3204,17 +3135,14 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 						gid = gids[i] - min;
 					else
 						gid = (oid) i;
-					const void *v = BUNheaps(h, vh, b->tshift, baseoff, i);
-					if ((*atomcmp)(v, nil) != 0) {
+					if ((*atomcmp)(BUNtail(bi, i), nil) != 0) {
 						cnts[gid]++;
 					}
 				}
 			}
 			break;
 		}
-		HEAPdecref(h, false);
-		if (vh)
-			HEAPdecref(vh, false);
+		bat_iterator_end(&bi);
 	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
@@ -3283,13 +3211,9 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
+	BATiter bi = bat_iterator(b);
 
-	bits = (const bit *) h->base + baseoff;
+	bits = (const bit *) bi.base;
 
 	while (ncand > 0) {
 		ncand--;
@@ -3299,7 +3223,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 			cnts[gids ? gids[i] - min : (oid) i]++;
 		}
 	}
-	HEAPdecref(h, false);
+	bat_iterator_end(&bi);
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -3320,7 +3244,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 
 #define AGGR_CMP(TYPE, OP)						\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) h->base + baseoff; \
+		const TYPE *restrict vals = (const TYPE *) bi.base; \
 		if (ngrp == ncand) {					\
 			/* single element groups */			\
 			while (ncand > 0) {				\
@@ -3381,14 +3305,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	Heap *vh = b->tvheap;
-	if (vh)
-		HEAPincref(vh);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
+	BATiter bi = bat_iterator(b);
 
 	switch (t) {
 	case TYPE_bte:
@@ -3448,7 +3365,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
-				    (*atomcmp)(BUNheaps(h, vh, b->tshift, baseoff, i), nil) != 0) {
+				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
 					oids[i] = i + b->hseqbase;
 					nils--;
 				}
@@ -3460,7 +3377,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
-					const void *v = BUNheaps(h, vh, b->tshift, baseoff, i);
+					const void *v = BUNtail(bi, i);
 					if (gids)
 						gid = gids[i] - min;
 					if (!skip_nils ||
@@ -3469,7 +3386,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 							oids[gid] = i + b->hseqbase;
 							nils--;
 						} else if (t != TYPE_void) {
-							const void *g = BUNheaps(h, vh, b->tshift, baseoff, (BUN) (oids[gid] - b->hseqbase));
+							const void *g = BUNtail(bi, (BUN) (oids[gid] - b->hseqbase));
 							if ((*atomcmp)(g, nil) != 0 &&
 							    ((*atomcmp)(v, nil) == 0 ||
 							     LT((*atomcmp)(v, g), 0)))
@@ -3482,9 +3399,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		break;
 	}
 
-	HEAPdecref(h, false);
-	if (vh)
-		HEAPdecref(vh, false);
+	bat_iterator_end(&bi);
 
 	return nils;
 }
@@ -3515,14 +3430,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
 
-	MT_lock_set(&b->theaplock);
-	Heap *h = b->theap;
-	HEAPincref(h);
-	Heap *vh = b->tvheap;
-	if (vh)
-		HEAPincref(vh);
-	BUN baseoff = b->tbaseoff;
-	MT_lock_unset(&b->theaplock);
+	BATiter bi = bat_iterator(b);
 
 	switch (t) {
 	case TYPE_bte:
@@ -3581,7 +3489,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
-				    (*atomcmp)(BUNheaps(h, vh, b->tshift, baseoff, i), nil) != 0) {
+				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
 					oids[i] = i + b->hseqbase;
 					nils--;
 				}
@@ -3593,7 +3501,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
-					const void *v = BUNheaps(h, vh, b->tshift, baseoff, i);
+					const void *v = BUNtail(bi, i);
 					if (gids)
 						gid = gids[i] - min;
 					if (!skip_nils ||
@@ -3602,7 +3510,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 							oids[gid] = i + b->hseqbase;
 							nils--;
 						} else {
-							const void *g = BUNheaps(h, vh, b->tshift, baseoff, (BUN) (oids[gid] - b->hseqbase));
+							const void *g = BUNtail(bi, (BUN) (oids[gid] - b->hseqbase));
 							if (t == TYPE_void ||
 							    ((*atomcmp)(g, nil) != 0 &&
 							     ((*atomcmp)(v, nil) == 0 ||
@@ -3616,9 +3524,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		break;
 	}
 
-	HEAPdecref(h, false);
-	if (vh)
-		HEAPdecref(vh, false);
+	bat_iterator_end(&bi);
 
 	return nils;
 }
@@ -3740,22 +3646,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			BUN r;
 			if (!b->tnonil) {
 				MT_thread_setalgorithm(pb ? "binsearch on parent oidx" : "binsearch on oids");
-				MT_lock_set(&b->theaplock);
-				Heap *h = b->theap;
-				HEAPincref(h);
-				Heap *vh = b->tvheap;
-				if (vh)
-					HEAPincref(vh);
-				BUN baseoff = b->tbaseoff;
-				MT_lock_unset(&b->theaplock);
-
-				r = binsearch(ords, 0, b->ttype, h->base + (baseoff << b->tshift),
-					      vh ? vh->base : NULL,
-					      b->twidth, 0, BATcount(b),
+				BATiter bi = bat_iterator(b);
+				r = binsearch(ords, 0, b->ttype, bi.base,
+					      bi.vh ? bi.vh->base : NULL,
+					      bi.width, 0, bi.count,
 					      ATOMnilptr(b->ttype), 1, 1);
-				HEAPdecref(h, false);
-				if (vh)
-					HEAPdecref(vh, false);
+				bat_iterator_end(&bi);
 				if (r == 0) {
 					b->tnonil = true;
 					b->batDirtydesc = true;
@@ -4087,9 +3983,9 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			p = binsearch_oid(NULL, 0, grps, r, q - 1, prev, 1, 1);
 			if (skip_nils && !b->tnonil) {
 				/* within group, locate start of non-nils */
-				r = binsearch(NULL, 0, tp, Tloc(b, 0),
-					      b->tvheap ? b->tvheap->base : NULL,
-					      b->twidth, r, p, nil,
+				r = binsearch(NULL, 0, tp, bi.base,
+					      bi.vh ? bi.vh->base : NULL,
+					      bi.width, r, p, nil,
 					      1, 1);
 			}
 			if (r == p) {
@@ -4179,15 +4075,16 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				ords = (const oid *) Tloc(t1, 0);
 		}
 
+		bi = bat_iterator(b);
+
 		if (skip_nils && !b->tnonil)
-			r = binsearch(ords, 0, tp, Tloc(b, 0),
-				      b->tvheap ? b->tvheap->base : NULL,
-				      b->twidth, 0, p,
+			r = binsearch(ords, 0, tp, bi.base,
+				      bi.vh ? bi.vh->base : NULL,
+				      bi.width, 0, p,
 				      nil, 1, 1);
 		else
 			r = 0;
 
-		bi = bat_iterator(b);
 		if (r == p) {
 			/* no non-nil values, so quantile is nil */
 			v = dnil;
@@ -4376,8 +4273,9 @@ BATcalcstdev_population(dbl *avgp, BAT *b)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, false);
+	BATiter bi = bat_iterator(b);
+	dbl v = calcvariance(avgp, bi.base, bi.count, bi.type, false);
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
@@ -4389,8 +4287,9 @@ BATcalcstdev_sample(dbl *avgp, BAT *b)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, true);
+	BATiter bi = bat_iterator(b);
+	dbl v = calcvariance(avgp, bi.base, bi.count, bi.type, true);
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
@@ -4402,8 +4301,9 @@ BATcalcvariance_population(dbl *avgp, BAT *b)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, false);
+	BATiter bi = bat_iterator(b);
+	dbl v = calcvariance(avgp, bi.base, bi.count, bi.type, false);
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return v;
@@ -4415,8 +4315,9 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, true);
+	BATiter bi = bat_iterator(b);
+	dbl v = calcvariance(avgp, bi.base, bi.count, bi.type, true);
+	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), GDKusec() - t0);
 	return v;
@@ -4489,8 +4390,10 @@ BATcalccovariance_population(BAT *b1, BAT *b2)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0),
-			       BATcount(b1), b1->ttype, false);
+	BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+	dbl v = calccovariance(b1i.base, b2i.base, b1i.count, b1i.type, false);
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return v;
@@ -4502,8 +4405,10 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0),
-			      BATcount(b1), b1->ttype, true);
+	BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+	dbl v = calccovariance(b1i.base, b2i.base, b1i.count, b1i.type, true);
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return v;
@@ -4536,8 +4441,9 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 {
 	BUN n = 0, i, cnt = BATcount(b1);
 	dbl mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
-	const void *v1 = (const void *) Tloc(b1, 0), *v2 = (const void *) Tloc(b2, 0);
-	int tp = b1->ttype;
+	BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
+	const void *v1 = b1i.base, *v2 = b2i.base;
+	int tp = b1i.type;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -4567,10 +4473,13 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		AGGR_CORRELATION_SINGLE(dbl);
 		break;
 	default:
-		GDKerror("type (%s) not supported.\n",
-			 ATOMname(tp));
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
+		GDKerror("type (%s) not supported.\n", ATOMname(tp));
 		return dbl_nil;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	if (n != 0 && down1 != 0 && down2 != 0)
 		aux = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
 	else
@@ -4579,13 +4488,15 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return aux;
   overflow:
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	GDKerror("22003!overflow in calculation.\n");
 	return dbl_nil;
 }
 
 #define AGGR_STDEV(TYPE)						\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -4615,7 +4526,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
 			} else if (isinf(m2[i])) {			\
-				goto overflow;		\
+				goto overflow;				\
 			} else if (variance) {				\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			} else {					\
@@ -4710,6 +4621,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		m2[i] = 0;
 	}
 
+	BATiter bi;
+	bi = bat_iterator(b);
 	if (BATtdense(g))
 		gids = NULL;
 	else
@@ -4740,6 +4653,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		AGGR_STDEV(dbl);
 		break;
 	default:
+		bat_iterator_end(&bi);
 		if (an)
 			BBPreclaim(an);
 		else
@@ -4752,6 +4666,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			 func, ATOMname(b->ttype));
 		return NULL;
 	}
+	bat_iterator_end(&bi);
 	if (an) {
 		BATsetcount(an, ngrp);
 		an->tkey = ngrp <= 1;
@@ -4787,6 +4702,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		  func, GDKusec() - t0);
 	return bn;
   overflow:
+	bat_iterator_end(&bi);
 	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	if (an)
@@ -4838,8 +4754,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 #define AGGR_COVARIANCE(TYPE)						\
 	do {								\
-		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
-		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
+		const TYPE *vals1 = (const TYPE *) b1i.base;		\
+		const TYPE *vals2 = (const TYPE *) b2i.base;		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
@@ -4947,6 +4863,9 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	else
 		gids = (const oid *) Tloc(g, 0);
 
+	BATiter b1i, b2i;
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
 	switch (b1->ttype) {
 	case TYPE_bte:
 		AGGR_COVARIANCE(bte);
@@ -4972,16 +4891,13 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		AGGR_COVARIANCE(dbl);
 		break;
 	default:
-		BBPreclaim(bn);
-		GDKfree(mean1);
-		GDKfree(mean2);
-		GDKfree(delta1);
-		GDKfree(delta2);
-		GDKfree(m2);
-		GDKfree(cnts);
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("%s: type (%s) not supported.\n", func, ATOMname(b1->ttype));
-		return NULL;
+		goto alloc_fail;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	GDKfree(mean1);
 	GDKfree(mean2);
 
@@ -5010,6 +4926,8 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		  func, GDKusec() - t0);
 	return bn;
   overflow:
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	BBPreclaim(bn);
@@ -5040,8 +4958,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 
 #define AGGR_CORRELATION(TYPE)						\
 	do {								\
-		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
-		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
+		const TYPE *vals1 = (const TYPE *) b1i.base;		\
+		const TYPE *vals2 = (const TYPE *) b2i.base;		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
@@ -5151,6 +5069,9 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	else
 		gids = (const oid *) Tloc(g, 0);
 
+	BATiter b1i, b2i;
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
 	switch (b1->ttype) {
 	case TYPE_bte:
 		AGGR_CORRELATION(bte);
@@ -5176,18 +5097,13 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		AGGR_CORRELATION(dbl);
 		break;
 	default:
-		BBPreclaim(bn);
-		GDKfree(mean1);
-		GDKfree(mean2);
-		GDKfree(delta1);
-		GDKfree(delta2);
-		GDKfree(up);
-		GDKfree(down1);
-		GDKfree(down2);
-		GDKfree(cnts);
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("type (%s) not supported.\n", ATOMname(b1->ttype));
-		return NULL;
+		goto alloc_fail;
 	}
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	GDKfree(mean1);
 	GDKfree(mean2);
 	GDKfree(delta1);
@@ -5214,6 +5130,8 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		  GDKusec() - t0);
 	return bn;
   overflow:
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	BBPreclaim(bn);
