@@ -13,8 +13,6 @@ stdout of test 'type-upcasting-INT2BIGINT.Bug-7144` in directory 'sql/test/BugTr
 [ 2	]
 #insert into t(j) select id from ints;
 [ 2	]
-#insert into t(i, j) select id, id from ints;
-[ 2	]
 #insert into t(i, j) select cast(id as bigint), id from ints;
 [ 2	]
 #insert into t(i, j) select id, cast(id as bigint) from ints;

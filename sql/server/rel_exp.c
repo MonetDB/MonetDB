@@ -2818,6 +2818,38 @@ exp_aggr_is_count(sql_exp *e)
 	return 0;
 }
 
+list *
+check_distinct_exp_names(mvc *sql, list *exps)
+{
+	list *distinct_exps = NULL;
+	bool duplicates = false;
+
+	if (list_length(exps) < 2) {
+		return exps; /* always true */
+	} else if (list_length(exps) < 5) {
+		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
+	} else { /* for longer lists, use hashing */
+		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
+
+		for (node *n = exps->h; n && !duplicates; n = n->next) {
+			sql_exp *e = n->data;
+			int key = ht->key(e);
+			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+
+			for (; he && !duplicates; he = he->chain) {
+				sql_exp *f = he->value;
+
+				if (!exp_equal(e, f))
+					duplicates = true;
+			}
+			hash_add(ht, key, e);
+		}
+	}
+	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
+		return NULL;
+	return exps;
+}
+
 void
 exps_reset_freevar(list *exps)
 {
