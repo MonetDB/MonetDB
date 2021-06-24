@@ -1222,7 +1222,6 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		}
 		hb = hb2;
 	}
-	bat_iterator_end(&bi);
 }
 
 void
