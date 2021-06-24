@@ -397,9 +397,13 @@ table_fetch_value(res_table *rt, sql_column *c)
 	BAT *b = (BAT*)rt->cols[c->colnr].p;
 	BATiter bi = bat_iterator(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
-	void *p = BUNtail(bi, rt->cur_row);
+	const void *p = BUNtail(bi, rt->cur_row);
+	size_t sz = ATOMlen(bi.type, p);
+	void *r = GDKmalloc(sz);
+	if (r)
+		memcpy(r, p, sz);
 	bat_iterator_end(&bi);
-	return p;
+	return r;
 }
 
 static void
