@@ -1,0 +1,31 @@
+statement ok
+create table ints (id int)
+
+statement ok rowcount 2
+insert into ints values (24), (42)
+
+statement ok
+create table t (i bigint, j bigint)
+
+statement ok rowcount 2
+insert into t(i) select id from ints
+
+statement ok rowcount 2
+insert into t(j) select id from ints
+
+statement ok rowcount 2
+insert into t(i, j) select id, id from ints
+
+statement ok rowcount 2
+insert into t(i, j) select cast(id as bigint), id from ints
+
+statement ok rowcount 2
+insert into t(i, j) select id, cast(id as bigint) from ints
+
+statement ok
+drop table t
+
+statement ok
+drop table ints
+
+
