@@ -394,16 +394,16 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 static void *
 table_fetch_value(res_table *rt, sql_column *c)
 {
+	/* this function is only ever called during startup, and therefore
+	 * there are no other threads that may be modifying the BAT under
+	 * our hands, so returning a pointer into the heap is fine */
 	BAT *b = (BAT*)rt->cols[c->colnr].p;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
-	const void *p = BUNtail(bi, rt->cur_row);
-	size_t sz = ATOMlen(bi.type, p);
-	void *r = GDKmalloc(sz);
-	if (r)
-		memcpy(r, p, sz);
-	bat_iterator_end(&bi);
-	return r;
+	if (b->tvarsized)
+		return BUNtvar(bi, rt->cur_row);
+	return Tloc(b, rt->cur_row);
+	//return (void*)BUNtail(bi, rt->cur_row);
 }
 
 static void
