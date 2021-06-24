@@ -271,6 +271,7 @@ load_keycolumn(sql_trans *tr, sql_key *k, res_table *rt_keycols/*, oid rid*/)
 
 	str v = (char*)store->table_api.table_fetch_value(rt_keycols, find_sql_column(objects, "name"));
 	kc->c = find_sql_column(k->t, v);
+	GDKfree(v);
 	list_append(k->columns, kc);
 	assert(kc->c);
 }
@@ -283,12 +284,17 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 	sql_table *objects = find_sql_table(tr, syss, "objects");
 	sqlstore *store = tr->store;
 
-	key_type ktype = (key_type) *(int*) store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "type"));
+	void *p = store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "type"));
+	key_type ktype = (key_type) *(int*) p;
+	GDKfree(p);
 	sql_key *nk = (ktype != fkey)?(sql_key*)SA_ZNEW(tr->sa, sql_ukey):(sql_key*)SA_ZNEW(tr->sa, sql_fkey);
-	sqlid kid = *(sqlid*) store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "id"));
+	p = store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "id"));
+	sqlid kid = *(sqlid*) p;
+	GDKfree(p);
 	str v = (char*) store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "name"));
 
 	base_init(tr->sa, &nk->base, kid, 0, v);
+	GDKfree(v);
 	nk->type = ktype;
 	nk->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nk->t = t;
@@ -300,15 +306,21 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 			t->pkey = uk;
 	} else {
 		sql_fkey *fk = (sql_fkey *) nk;
-		int action = *(int*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "action"));
+		void *p = store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "action"));
+		int action = *(int*)p;
+		GDKfree(p);
 		fk->on_delete = action & 255;
 		fk->on_update = (action>>8) & 255;
 
-		fk->rkey = *(sqlid*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "rkey"));
+		p = store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "rkey"));
+		fk->rkey = *(sqlid*)p;
+		GDKfree(p);
 	}
 
 	for ( ; rt_keycols->cur_row < rt_keycols->nr_rows; rt_keycols->cur_row++) {
-		sqlid nid = *(sqlid*)store->table_api.table_fetch_value(rt_keycols, find_sql_column(objects, "id"));
+		void *p = store->table_api.table_fetch_value(rt_keycols, find_sql_column(objects, "id"));
+		sqlid nid = *(sqlid*)p;
+		GDKfree(p);
 		if (nid != nk->base.id)
 			break;
 		load_keycolumn(tr, nk, rt_keycols);
@@ -334,6 +346,7 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, res_table *rt_idxcols/*, oid rid*/)
 
 	v = (char*)store->table_api.table_fetch_value(rt_idxcols, find_sql_column(objects, "name"));
 	kc->c = find_sql_column(i->t, v);
+	GDKfree(v);
 	assert(kc->c);
 	list_append(i->columns, kc);
 	if (hash_index(i->type))
@@ -357,10 +370,15 @@ load_idx(sql_trans *tr, sql_table *t, res_table *rt_idx, res_table *rt_idxcols/*
 	sql_table *objects = find_sql_table(tr, syss, "objects");
 	sqlstore *store = tr->store;
 
-	sqlid iid = *(sqlid*)store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "id"));
+	void *p = store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "id"));
+	sqlid iid = *(sqlid*)p;
+	GDKfree(p);
 	str v = (char*)store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "name"));
 	base_init(tr->sa, &ni->base, iid, 0, v);
-	ni->type = (idx_type) *(int*) store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "type"));
+	GDKfree(v);
+	p = store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "type"));
+	ni->type = (idx_type) *(int*) p;
+	GDKfree(p);
 	ni->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	ni->t = t;
 	ni->key = NULL;
@@ -369,7 +387,9 @@ load_idx(sql_trans *tr, sql_table *t, res_table *rt_idx, res_table *rt_idxcols/*
 		store->storage_api.create_idx(tr, ni);
 
 	for ( ; rt_idxcols->cur_row < rt_idxcols->nr_rows; rt_idxcols->cur_row++) {
-		sqlid nid = *(sqlid*)store->table_api.table_fetch_value(rt_idxcols, find_sql_column(objects, "id"));
+		void *p = store->table_api.table_fetch_value(rt_idxcols, find_sql_column(objects, "id"));
+		sqlid nid = *(sqlid*)p;
+		GDKfree(p);
 		if (nid != ni->base.id)
 			break;
 		load_idxcolumn(tr, ni, rt_idxcols);
@@ -387,6 +407,7 @@ load_triggercolumn(sql_trans *tr, sql_trigger * i, res_table *rt_triggercols)
 
 	str v = (char*)store->table_api.table_fetch_value(rt_triggercols, find_sql_column(objects, "name"));
 	kc->c = find_sql_column(i->t, v);
+	GDKfree(v);
 	list_append(i->columns, kc);
 	assert(kc->c);
 }
@@ -400,32 +421,47 @@ load_trigger(sql_trans *tr, sql_table *t, res_table *rt_triggers, res_table *rt_
 	sql_table *objects = find_sql_table(tr, syss, "objects");
 	sqlstore *store = tr->store;
 
-	sqlid tid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "id"));
+	void *p = store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "id"));
+	sqlid tid = *(sqlid*)p;
+	GDKfree(p);
 	str v = (char*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "name"));
 	base_init(tr->sa, &nt->base, tid, 0, v);
+	GDKfree(v);
 
-	nt->time = *(sht*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "time"));
-	nt->orientation = *(sht*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "orientation"));
-	nt->event = *(sht*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "event"));
+	p = store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "time"));
+	nt->time = *(sht*) p;
+	GDKfree(p);
+	p = store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "orientation"));
+	nt->orientation = *(sht*)p;
+	GDKfree(p);
+	p = store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "event"));
+	nt->event = *(sht*)p;
+	GDKfree(p);
 
 	v = (char*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "old_name"));
 	if (!strNil(v))
 		nt->old_name = SA_STRDUP(tr->sa, v);
+	GDKfree(v);
 	v = (char*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "new_name"));
 	if (!strNil(v))
 		nt->new_name = SA_STRDUP(tr->sa, v);
+	GDKfree(v);
 	v = (char*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "condition"));
 	if (!strNil(v))
 		nt->condition = SA_STRDUP(tr->sa, v);
+	GDKfree(v);
 	v = (char*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "statement"));
 	if (!strNil(v))
 		nt->statement = SA_STRDUP(tr->sa, v);
+	GDKfree(v);
 
 	nt->t = t;
 	nt->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 
 	for ( ; rt_triggercols->cur_row < rt_triggercols->nr_rows; rt_triggercols->cur_row++) {
-		sqlid nid = *(sqlid*)store->table_api.table_fetch_value(rt_triggercols, find_sql_column(objects, "id"));
+		void *p = store->table_api.table_fetch_value(rt_triggercols, find_sql_column(objects, "id"));
+		sqlid nid = *(sqlid*)p;
+		GDKfree(p);
 		if (nid != nt->base.id)
 			break;
 		load_triggercolumn(tr, nt, rt_triggercols);
@@ -443,32 +479,47 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	str v, def, tpe, st;
 	int sz, d;
 
-	sqlid cid = *(sqlid*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "id"));
+	void *p = store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "id"));
+	sqlid cid = *(sqlid*)p;
+	GDKfree(p);
 	v = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "name"));
 	base_init(tr->sa, &c->base, cid, 0, v);
+	GDKfree(v);
 
-	sz = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_digits"));
-	d = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_scale"));
+	p = store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_digits"));
+	sz = *(int*)p;
+	GDKfree(p);
+	p = store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_scale"));
+	d = *(int*)p;
+	GDKfree(p);
 	tpe = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type"));
 	if (!sql_find_subtype(&c->type, tpe, sz, d)) {
 		sql_type *lt = sql_trans_bind_type(tr, t->s, tpe);
 		if (lt == NULL) {
 			TRC_ERROR(SQL_STORE, "SQL type '%s' is missing\n", tpe);
+			GDKfree(tpe);
 			return NULL;
 		}
 		sql_init_subtype(&c->type, lt, sz, d);
 	}
+	GDKfree(tpe);
 	c->def = NULL;
 	def = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "default"));
 	if (!strNil(def))
 		c->def = SA_STRDUP(tr->sa, def);
-	c->null = *(bit*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "null"));
-	c->colnr = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "number"));
+	GDKfree(def);
+	p = store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "null"));
+	c->null = *(bit*)p;
+	GDKfree(p);
+	p = store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "number"));
+	c->colnr = *(int*)p;
+	GDKfree(p);
 	c->unique = 0;
 	c->storage_type = NULL;
 	st = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "storage"));
 	if (!strNil(st))
 		c->storage_type = SA_STRDUP(tr->sa, st);
+	GDKfree(st);
 	c->t = t;
 	if (isTable(c->t))
 		store->storage_api.create_col(tr, c);
@@ -598,23 +649,35 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	sqlid pcolid = int_nil;
 	str v, exp = NULL;
 
-	sqlid ntid = *(sqlid*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "id"));
+	void *p = store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "id"));
+	sqlid ntid = *(sqlid*)p;
+	GDKfree(p);
 	assert(tid == ntid);
 	v = (char*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "name"));
 	base_init(tr->sa, &t->base, tid, 0, v);
+	GDKfree(v);
 	t->query = NULL;
 	v = (char*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "query"));
 	if (!strNil(v))
 		t->query = SA_STRDUP(tr->sa, v);
-	t->type = *(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "type"));
-	t->system = *(bit*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "system"));
-	t->commit_action = (ca_t)*(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "commit_action"));
+	GDKfree(v);
+	p = store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "type"));
+	t->type = *(sht*)p;
+	GDKfree(p);
+	p = store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "system"));
+	t->system = *(bit*)p;
+	GDKfree(p);
+	p = store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "commit_action"));
+	t->commit_action = (ca_t)*(sht*)p;
+	GDKfree(p);
 	t->persistence = SQL_PERSIST;
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
-	t->access = *(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "access"));
+	p = store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "access"));
+	t->access = *(sht*)p;
+	GDKfree(p);
 
 	t->pkey = NULL;
 	t->s = s;
@@ -638,16 +701,23 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 
 	sql_table *partitions = find_sql_table(tr, syss, "table_partitions");
 	if (rt_parts->cur_row < rt_parts->nr_rows) {
-		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "table_id"));
+		p = store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "table_id"));
+		ntid = *(sqlid*)p;
+		GDKfree(p);
 		if (ntid == tid) {
-			t->properties |= *(bte*)store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "type"));
+			p = store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "type"));
+			t->properties |= *(bte*)p;
+			GDKfree(p);
 
 			if (isPartitionedByColumnTable(t)) {
-				pcolid = *(sqlid*)store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "column_id"));
+				p = store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "column_id"));
+				pcolid = *(sqlid*)p;
+				GDKfree(p);
 			} else {
 				v = (char*)store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "expression"));
 				assert(!strNil(v));
 				exp = SA_STRDUP(tr->sa, v);
+				GDKfree(v);
 			}
 			rt_parts->cur_row++;
 		}
@@ -661,10 +731,14 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 		t->part.pexp->cols = SA_LIST(tr->sa, (fdestroy) &int_destroy);
 	}
 	for ( ; rt_cols->cur_row < rt_cols->nr_rows; rt_cols->cur_row++) {
-		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_cols, find_sql_column(cols, "table_id"));
+		p = store->table_api.table_fetch_value(rt_cols, find_sql_column(cols, "table_id"));
+		ntid = *(sqlid*)p;
+		GDKfree(p);
 		while (instore(ntid)) {
 			rt_cols->cur_row++;
-			ntid = *(sqlid*)store->table_api.table_fetch_value(rt_cols, find_sql_column(cols, "table_id"));
+			p = store->table_api.table_fetch_value(rt_cols, find_sql_column(cols, "table_id"));
+			ntid = *(sqlid*)p;
+			GDKfree(p);
 		}
 
 		if (ntid != t->base.id)
@@ -685,7 +759,9 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 
 	/* load idx's first as the may be needed by the keys */
 	for ( ; rt_idx->cur_row < rt_idx->nr_rows; rt_idx->cur_row++) {
-		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "table_id"));
+		p = store->table_api.table_fetch_value(rt_idx, find_sql_column(idxs, "table_id"));
+		ntid = *(sqlid*)p;
+		GDKfree(p);
 
 		if (ntid != t->base.id)
 			break;
@@ -699,7 +775,9 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	}
 
 	for ( ; rt_keys->cur_row < rt_keys->nr_rows; rt_keys->cur_row++) {
-		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "table_id"));
+		p = store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "table_id"));
+		ntid = *(sqlid*)p;
+		GDKfree(p);
 
 		if (ntid != t->base.id)
 			break;
@@ -714,7 +792,9 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	}
 
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
-		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
+		p = store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
+		ntid = *(sqlid*)p;
+		GDKfree(p);
 
 		if (ntid != t->base.id)
 			break;
@@ -938,13 +1018,16 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	sql_column *func_schema, *func_id, *seq_schema, *seq_id;
 	rids *rs;
 
-	sqlid sid = *(sqlid*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "id"));
+	void *p = store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "id"));
+	sqlid sid = *(sqlid*)p;
+	GDKfree(p);
 	if (instore(sid)) {
 		s = find_sql_schema_id(tr, sid);
 
 		if (s==NULL) {
 			char *name = (char*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "name"));
 			s = find_sql_schema(tr, name);
+			GDKfree(name);
 			if (s == NULL) {
 				GDKerror("SQL schema missing or incompatible, rebuild from archive");
 				return NULL;
@@ -957,9 +1040,16 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 			return NULL;
 		char *name = (char*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "name"));
 		base_init(tr->sa, &s->base, sid, 0, name);
-		s->auth_id = *(sqlid*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "authorization"));
-		s->system = *(bte*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "system"));
-		s->owner = *(sqlid*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "owner"));
+		GDKfree(name);
+		p = store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "authorization"));
+		s->auth_id = *(sqlid*)p;
+		GDKfree(p);
+		p = store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "system"));
+		s->system = *(bte*)p;
+		GDKfree(p);
+		p = store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "owner"));
+		s->owner = *(sqlid*)p;
+		GDKfree(p);
 
 		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, store);
 		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true, store);
@@ -993,8 +1083,12 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	table_schema = find_sql_column(tables, "schema_id");
 	table_id = find_sql_column(tables, "id");
 	for ( ; rt_tables->cur_row < rt_tables->nr_rows; rt_tables->cur_row++) {
-		sqlid nsid = *(sqlid*)store->table_api.table_fetch_value(rt_tables, table_schema);
-		sqlid tid = *(sqlid*)store->table_api.table_fetch_value(rt_tables, table_id);
+		p = store->table_api.table_fetch_value(rt_tables, table_schema);
+		sqlid nsid = *(sqlid*)p;
+		GDKfree(p);
+		p = store->table_api.table_fetch_value(rt_tables, table_id);
+		sqlid tid = *(sqlid*)p;
+		GDKfree(p);
 		if (nsid > s->base.id)
 			break;
 		if (nsid < s->base.id)
