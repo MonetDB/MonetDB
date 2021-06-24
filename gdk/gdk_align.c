@@ -182,6 +182,7 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
+	(void) p;
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
 
 	/* cleanup possible ACC's */
