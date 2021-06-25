@@ -2164,7 +2164,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 	restrict_t bakmode;
 	bool bakdirty;
 
-	BATcheck(b, GDK_FAIL);
+	BATcheck(b, NULL);
 	if ((isVIEW(b) || b->batSharecnt) && newmode != BAT_READ) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
 		if (bn == NULL)
