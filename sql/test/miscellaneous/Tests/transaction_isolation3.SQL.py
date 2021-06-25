@@ -46,7 +46,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
-        mdb1.execute('create merge table parent2(a int) PARTITION BY RANGE ON (a);').assertSucceeded() # not fixed yet
+        mdb1.execute('create merge table parent2(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
         mdb1.execute('create table child2(c int);').assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()

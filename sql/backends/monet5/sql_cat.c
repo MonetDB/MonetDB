@@ -527,8 +527,8 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, tri->base.id, TRIGGER_DEPENDENCY);
+			list *blist = rel_dependencies(sql, r);
+			mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY);
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
@@ -924,14 +924,14 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n;
-			list *id_l = rel_dependencies(sql, r);
+			list *blist = rel_dependencies(sql, r);
 
 			if (!f->vararg && f->ops) {
 				for (n = f->ops->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
 					if (a->type.type->s)
-						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+						mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY);
 				}
 			}
 			if (!f->varres && f->res) {
@@ -939,10 +939,10 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 					sql_arg *a = n->data;
 
 					if (a->type.type->s)
-						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+						mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY);
 				}
 			}
-			mvc_create_dependencies(sql, id_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+			mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
