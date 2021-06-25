@@ -268,6 +268,10 @@ sql_trans_add_dependency(sql_trans* tr, sqlid id)
 	if (!local_id)
 		return LOG_ERR;
 	*local_id = id;
+	if (!tr->dependencies && !(tr->dependencies = list_create((fdestroy) &id_destroy))) {
+		_DELETE(local_id);
+		return LOG_ERR;
+	}
 	list_append(tr->dependencies, local_id);
 	return LOG_OK;
 }
@@ -279,6 +283,10 @@ transaction_add_removal(sql_trans *tr, sqlid id)
 	if (!local_id)
 		return LOG_ERR;
 	*local_id = id;
+	if (!tr->removals && !(tr->removals = list_create((fdestroy) &id_destroy))) {
+		_DELETE(local_id);
+		return LOG_ERR;
+	}
 	list_append(tr->removals, local_id);
 	return LOG_OK;
 }
@@ -3259,10 +3267,6 @@ sql_trans_rollback(sql_trans *tr, int locked)
 {
 	sqlstore *store = tr->store;
 
-	if (tr->predicates) {
-		list_destroy(tr->predicates);
-		tr->predicates = NULL;
-	}
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3348,6 +3352,19 @@ sql_trans_rollback(sql_trans *tr, int locked)
 			n = next;
 		}
 	}
+
+	if (tr->predicates) {
+		list_destroy(tr->predicates);
+		tr->predicates = NULL;
+	}
+	if (tr->dependencies) {
+		list_destroy(tr->dependencies);
+		tr->dependencies = NULL;
+	}
+	if (tr->removals) {
+		list_destroy(tr->removals);
+		tr->removals = NULL;
+	}
 }
 
 sql_trans *
@@ -3362,8 +3379,6 @@ sql_trans_destroy(sql_trans *tr)
 	}
 	if (tr->changes)
 		sql_trans_rollback(tr, 0);
-	list_destroy(tr->dependencies);
-	list_destroy(tr->removals);
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
@@ -3379,15 +3394,6 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (!tr)
 		return NULL;
-	if (!(tr->dependencies = list_create((fdestroy) &id_destroy))) {
-		_DELETE(tr);
-		return NULL;
-	}
-	if (!(tr->removals = list_create((fdestroy) &id_destroy))) {
-		_DELETE(tr->dependencies);
-		_DELETE(tr);
-		return NULL;
-	}
 	cs_new(&tr->localtmps, tr->sa, (fdestroy) &table_destroy);
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
@@ -3481,8 +3487,6 @@ sql_trans_valid(sql_trans *tr)
 			}
 		}
 	}
-	list_destroy(tr->predicates);
-	tr->predicates = NULL;
 	return ok;
 }
 
@@ -3571,7 +3575,7 @@ sql_trans_commit(sql_trans *tr)
 			locked = true;
 		}
 
-		if ((ok = transaction_check_dependencies_and_removals(tr)) != LOG_OK) {
+		if (!tr->parent && (ok = transaction_check_dependencies_and_removals(tr)) != LOG_OK) {
 			sql_trans_rollback(tr, 1);
 			store_unlock(store);
 			MT_lock_unset(&store->commit);
@@ -3686,6 +3690,19 @@ sql_trans_commit(sql_trans *tr)
 		tr->localtmps.dset = NULL;
 	}
 	tr->localtmps.nelm = NULL;
+
+	if (tr->predicates) {
+		list_destroy(tr->predicates);
+		tr->predicates = NULL;
+	}
+	if (tr->dependencies) {
+		list_destroy(tr->dependencies);
+		tr->dependencies = NULL;
+	}
+	if (tr->removals) {
+		list_destroy(tr->removals);
+		tr->removals = NULL;
+	}
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
