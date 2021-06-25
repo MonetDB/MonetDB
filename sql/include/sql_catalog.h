@@ -239,7 +239,7 @@ typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng olde
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, validate_fptr validate, bool temporary, bool unique, bool concurrent, sql_store store);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -311,13 +311,15 @@ typedef struct sql_trans {
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	list *changes;		/* list of changes */
-	list *predicates;	/* list of read predicates logged during update transactions */
-	int logchanges;		/* count number of changes to be applied too the wal */
-
-	int active;			/* is active transaction */
-	int status;			/* status of the last query */
 
 	list *dropped;  	/* protection against recursive cascade action*/
+	list *predicates;	/* list of read predicates logged during update transactions */
+	list *dependencies;	/* list of dependencies created (list of sqlids from the objects) */
+	list *removals;		/* list of old objects removed or renamed (it would be tested for conflicts at the end of the transaction) */
+
+	int logchanges;		/* count number of changes to be applied too the wal */
+	int active;			/* is active transaction */
+	int status;			/* status of the last query */
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */

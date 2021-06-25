@@ -13,7 +13,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
 
-        mdb1.execute("CREATE TABLE notpossible (i int, j int);").assertSucceeded()
+        mdb1.execute("CREATE TABLE notpossible (i int, j int);").assertSucceeded() # not fixed yet
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('insert into notpossible values (5,1),(5,2),(5,3);').assertSucceeded()
@@ -21,20 +21,20 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
-        mdb1.execute("CREATE TABLE integers (i int, j int);").assertSucceeded()
+        mdb1.execute("CREATE TABLE integers (i int, j int);").assertSucceeded() # not fixed yet
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table integers add primary key (i);').assertSucceeded()
         mdb2.execute('insert into integers values (5,1),(5,2),(5,3);').assertSucceeded()
-        mdb1.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb2.execute('commit;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
-        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded() # not fixed yet
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table integers alter j set not null;').assertSucceeded()
         mdb2.execute('insert into integers values (6,NULL),(7,NULL),(8,NULL);').assertSucceeded()
-        mdb1.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb2.execute('commit;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('create schema ups;').assertSucceeded()
         mdb1.execute('create merge table parent1(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
@@ -43,17 +43,17 @@ with SQLTestCase() as mdb1:
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("ALTER TABLE parent1 ADD TABLE child1 AS PARTITION FROM '1' TO '2';").assertSucceeded()
         mdb2.execute("alter table child1 set schema ups;").assertSucceeded()
-        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
-        mdb1.execute('create merge table parent2(a int) PARTITION BY RANGE ON (a);').assertSucceeded()
+        mdb1.execute('create merge table parent2(a int) PARTITION BY RANGE ON (a);').assertSucceeded() # not fixed yet
         mdb1.execute('create table child2(c int);').assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("ALTER TABLE parent2 ADD TABLE child2 AS PARTITION FROM '1' TO '2';").assertSucceeded()
         mdb2.execute("insert into child2 values (3);").assertSucceeded()
-        mdb1.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb2.execute('commit;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('create table x(y int, z int);').assertSucceeded()
         mdb1.execute('insert into x values (1, 1);').assertSucceeded()
@@ -76,15 +76,15 @@ with SQLTestCase() as mdb1:
         mdb1.execute('select * from another();').assertSucceeded().assertDataResultMatch([(2,)])
 
         mdb1.execute("CREATE TABLE y (i int);").assertSucceeded()
-        mdb1.execute('truncate integers;').assertSucceeded()
-        mdb1.execute('insert into integers values (1,1),(2,2),(3,3);').assertSucceeded()
-        mdb1.execute('alter table integers add primary key (i);').assertSucceeded()
+        mdb1.execute('CREATE TABLE integers2 (i int, j int);').assertSucceeded()
+        mdb1.execute('insert into integers2 values (1,1),(2,2),(3,3);').assertSucceeded()
+        mdb1.execute('alter table integers2 add primary key (i);').assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
-        mdb1.execute("alter table y add constraint nono foreign key(i) references integers(i);").assertSucceeded()
+        mdb1.execute("alter table y add constraint nono foreign key(i) references integers2(i);").assertSucceeded()
         mdb2.execute("insert into y values (4);").assertSucceeded() # violates foreign key if mdb1 committed successfuly
-        mdb1.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
-        mdb2.execute('commit;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute("create function pain() returns int return 1;").assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
@@ -146,12 +146,12 @@ with SQLTestCase() as mdb1:
         mdb1.execute('DROP TABLE w;').assertSucceeded()
         mdb1.execute('drop table notpossible;').assertSucceeded()
         mdb1.execute('drop table y;').assertSucceeded()
+        mdb1.execute('drop table integers2;').assertSucceeded()
         mdb1.execute('drop trigger myt;').assertSucceeded()
         mdb1.execute('drop table longs;').assertSucceeded()
         mdb1.execute('drop table integers;').assertSucceeded()
         mdb1.execute('drop function another;').assertSucceeded()
         mdb1.execute('DROP VIEW myv5;').assertSucceeded()
-        mdb1.execute('drop table xx;').assertSucceeded()
         mdb1.execute('drop table zz;').assertSucceeded()
         mdb1.execute('drop table ups.xx;').assertSucceeded()
         mdb1.execute('drop table ups.no;').assertSucceeded()

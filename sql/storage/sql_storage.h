@@ -411,6 +411,7 @@ extern int sql_trans_begin(sql_session *s);
 extern int sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
+extern int sql_trans_add_dependency(sql_trans* tr, sqlid id);
 extern int sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern int sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
 extern int sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
@@ -467,6 +468,8 @@ typedef struct sqlstore {
 	int debug;				/* debug mask */
 	store_type active_type;
 	list *changes;			/* pending changes too cleanup */
+	sql_hash *dependencies; /* pending dependencies created too cleanup */
+	sql_hash *removals;		/* pending removals created too cleanup */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;
@@ -483,13 +486,12 @@ typedef struct sql_change {
 	void *data;	/* data changes */
 	bool committed;	/* commit or rollback */
 	bool handled;	/* handled in commit */
-	tc_valid_fptr valid;	/* callback to check if changes are valid for serializability */
 	tc_log_fptr log;		/* callback to log changes */
 	tc_commit_fptr commit;	/* callback to commit or rollback the changes */
 	tc_cleanup_fptr cleanup;/* callback to cleanup changes */
 } sql_change;
 
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, tc_valid_fptr valid);
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 #endif /*SQL_STORAGE_H */

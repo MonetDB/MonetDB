@@ -335,6 +335,7 @@ hash_delete(sql_hash *h, void *data)
 		else
 			e->chain = p->chain;
 	}
+	h->entries--;
 }
 
 static node *
