@@ -1085,8 +1085,12 @@ SQLworker(void *arg)
 					if (SQLload_parse_line(task, j) < 0) {
 						task->errorcnt++;
 						// early break unless best effort
-						if (!task->besteffort)
+						if (!task->besteffort) {
+							for (j++; j < task->top[task->cur] && j < piece * (task->id +1); j++)
+								for (i = 0; i < task->as->nr_attrs; i++)
+									task->fields[i][j] = NULL;
 							break;
+						}
 					}
 				}
 			task->wtime = GDKusec() - t0;
@@ -1227,6 +1231,7 @@ SQLproducer(void *p)
 	char quote = task->quote;
 	dfa_t rdfa;
 	lng rowno = 0;
+	int more = 0;
 
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
@@ -1433,6 +1438,7 @@ SQLproducer(void *p)
 			task->cur = cur;
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
+			more = !ateof[cur] || (e < end && task->top[cur] == task->limit);
 /*			TRC_DEBUG(MAL_SERVER, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);*/
 
 			MT_sema_up(&task->consumer);
@@ -1450,7 +1456,7 @@ SQLproducer(void *p)
 /*		TRC_DEBUG(MAL_SERVER, "Continue producer buffer: %d\n", cur);*/
 
 		/* we ran out of input? */
-		if (task->ateof) {
+		if (task->ateof && !more) {
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			GDKfree(rdfa);
 			return;
@@ -1514,7 +1520,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	BUN i, attr;
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
+	int threads = (maxrow< 0 || maxrow > (1 << 16)) && GDKnr_threads > 1 ? (GDKnr_threads < MAXWORKERS ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	char name[MT_NAME_LEN];
 
@@ -1821,6 +1827,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			task.maxrow = cnt;
 			task.state = ENDOFCOPY;
 		}
+		if (task.ateof && task.top[task.cur] < task.limit)
+			break;
+		task.top[task.cur] = 0;
 		MT_sema_up(&task.producer);
 	}
 
