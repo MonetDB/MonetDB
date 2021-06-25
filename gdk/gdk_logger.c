@@ -2554,34 +2554,23 @@ log_bat_clear(logger *lg, int id)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024)
-//(LL_CONSTANT(2)*1024)
+#define LOG_MINI	(LL_CONSTANT(2)*1024)
+#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
 static gdk_return
-pre_allocate(logger *lg)
+new_logfile(logger *lg)
 {
-	// FIXME: this causes serious issues on Windows at least with MinGW
+	lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 	assert(!LOG_DISABLED(lg));
-#ifndef WIN32
 	lng p;
 	p = (lng) getfilepos(getFile(lg->output_log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (p > LOG_LARGE) {
+	if (p > log_large) {
 		lg->id++;
 		logger_close_output(lg);
 		return logger_open_output(lg);
 	}
-	if (p + DBLKSZ > lg->end) {
-		p &= ~(DBLKSZ - 1);
-		p += SEGSZ;
-		if (GDKextendf(getFileNo(lg->output_log), (size_t) p, "WAL file") != GDK_SUCCEED)
-			return GDK_FAIL;
-		lg->end = p;
-	}
-#else
-	(void) lg;
-#endif
 	return GDK_SUCCEED;
 }
 
@@ -2616,7 +2605,7 @@ log_tend(logger *lg, ulng commit_ts)
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-	    pre_allocate(lg) != GDK_SUCCEED) {
+	    new_logfile(lg) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
