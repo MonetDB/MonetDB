@@ -803,6 +803,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		if (p != BUN_NONE) {
 			BATiter bi = bat_iterator(b[1]);
 			mnstr_printf(f, " %s\n", (str) BUNtvar(bi, p));
+			bat_iterator_end(&bi);
 		} else {
 			mnstr_printf(f, " not found\n");
 		}
@@ -1330,7 +1331,7 @@ partial:
 					mnstr_printf(out, "#'%s' not resolved\n", c);
 					break;
 				}
-			} 
+			}
 			showMalBlkHistory(out, mb);
 			break;
 		}

@@ -17,3 +17,5 @@ merge-delete.Bug-7136
 HAVE_LIBPY3?python-aggregates-void-bat.Bug-7138
 count-distinct.Bug-7141
 HAVE_LIBPY3?aggregates-tables.Bug-7142
+type-upcasting-INT2BIGINT.Bug-7144
+rollup-distinct-count.Bug-7146

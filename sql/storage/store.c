@@ -2100,17 +2100,6 @@ store_manager(sqlstore *store)
 	for (;;) {
 		int res;
 
-		if (ATOMIC_GET(&store->nr_active) == 0) {
-			store_lock(store);
-			if (ATOMIC_GET(&store->nr_active) == 0) {
-				ulng oldest = store_timestamp(store)+1;
-				store_pending_changes(store, oldest);
-				hash_clear(store->dependencies);
-				hash_clear(store->removals);
-			}
-			store_unlock(store);
-			store->logger_api.activate(store); /* rotate too new log file */
-		}
 		if (GDKexiting())
 			break;
 		const int sleeptime = 100;
@@ -2336,7 +2325,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 {
 	gdk_return ret = GDK_FAIL;
 	const char *p = plan; // our cursor in the plan
-	time_t timestamp = 0;
+	time_t timestamp = 1234567890; // dummy date, Sat 14 Feb 2009 12:31:30 AM CET
 	// Name convention: _path for the absolute path
 	// and _name for the corresponding local relative path
 	char abs_src_path[2 * FILENAME_MAX];
@@ -3313,6 +3302,15 @@ sql_trans_rollback(sql_trans *tr, int locked)
 		tr->logchanges = 0;
 		if (!locked)
 			store_unlock(store);
+	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		store_lock(store);
+		ulng oldest = store_timestamp(store);
+		store_pending_changes(store, oldest);
+		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
+			hash_clear(store->dependencies);
+			hash_clear(store->removals);
+		}
+		store_unlock(store);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3577,7 +3575,7 @@ sql_trans_commit(sql_trans *tr)
 		int flush = 0;
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
-			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
+			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 			if (flush)
 				MT_lock_set(&store->flush);
@@ -3643,11 +3641,24 @@ sql_trans_commit(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->ts = commit_ts;
+	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		if (!locked)
+			store_lock(store);
+		ulng oldest = store_timestamp(store);
+		store_pending_changes(store, oldest);
+		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
+			hash_clear(store->dependencies);
+			hash_clear(store->removals);
+		}
+		store_unlock(store);
+		if (locked)
+			MT_lock_unset(&store->commit);
+		locked = false;
 	}
 	if (locked) {
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
-	}
+	} 
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
 		for(node *n=tr->localtmps.set->h; n; ) {

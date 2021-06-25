@@ -147,7 +147,7 @@
 	do {								\
 		uint##B##_t mask, prvmask;				\
 		uint##B##_t *restrict im = (uint##B##_t *) imps;	\
-		const TYPE *restrict col = (TYPE *) Tloc(b, 0);		\
+		const TYPE *restrict col = (TYPE *) bi.base;		\
 		const TYPE *restrict bins = (TYPE *) inbins;		\
 		const BUN page = IMPS_PAGE / sizeof(TYPE);		\
 		prvmask = 0;						\
@@ -225,6 +225,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 #endif
 	memset(cnt_bins, 0, 64 * SIZEOF_BUN);
 
+	BATiter bi = bat_iterator(b);
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		BINSIZE(bits, IMPS_CREATE, bte);
@@ -253,6 +254,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		/* should never reach here */
 		assert(0);
 	}
+	bat_iterator_end(&bi);
 
 	*dictcnt = dcnt;
 	*impcnt = icnt;

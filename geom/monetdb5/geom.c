@@ -3279,8 +3279,6 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "geom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	//iterator over the BATs
-	inBAT_iter = bat_iterator(inBAT);
 
 	/* TODO: what should be returned if the input BAT is less than
 	 * two rows? --sjoerd */
@@ -3290,8 +3288,11 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 			throw(MAL, "geom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
+	//iterator over the BATs
+	inBAT_iter = bat_iterator(inBAT);
 	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
+		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
@@ -3315,6 +3316,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	}
 
 	BBPunfix(inBAT->batCacheid);
+	bat_iterator_end(&inBAT_iter);
 
 	return err;
 }
@@ -4245,6 +4247,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 
 	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
+		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
@@ -4266,6 +4269,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	}
 
 	BBPunfix(inBAT->batCacheid);
+	bat_iterator_end(&inBAT_iter);
 
 	return err;
 

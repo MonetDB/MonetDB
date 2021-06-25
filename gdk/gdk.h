@@ -776,14 +776,6 @@ typedef struct BAT {
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 } BAT;
 
-typedef struct BATiter {
-	BAT *b;
-	union {
-		oid tvid;
-		bool tmsk;
-	};
-} BATiter;
-
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
@@ -878,6 +870,98 @@ gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
+
+/* BAT iterator, also protects use of BAT heaps with reference counts */
+typedef struct BATiter {
+	BAT *b;
+	Heap *h;
+	void *base;
+	Heap *vh;
+	BUN count;
+	uint16_t width;
+	uint8_t shift;
+	int8_t type;
+	oid tseq;
+	union {
+		oid tvid;
+		bool tmsk;
+	};
+#ifndef NDEBUG
+	bool locked;
+#endif
+} BATiter;
+
+static inline BATiter
+bat_iterator(BAT *b)
+{
+	/* needs matching bat_iterator_end */
+	BATiter bi;
+	if (b) {
+		MT_lock_set(&b->theaplock);
+		bi = (BATiter) {
+			.b = b,
+			.h = b->theap,
+			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
+			.vh = b->tvheap,
+			.count = b->batCount,
+			.width = b->twidth,
+			.shift = b->tshift,
+			.type = b->ttype,
+			.tseq = b->tseqbase,
+#ifndef NDEBUG
+			.locked = true,
+#endif
+		};
+		HEAPincref(bi.h);
+		if (bi.vh)
+			HEAPincref(bi.vh);
+		MT_lock_unset(&b->theaplock);
+	} else {
+		bi = (BATiter) {
+			.b = NULL,
+#ifndef NDEBUG
+			.locked = true,
+#endif
+		};
+	}
+	return bi;
+}
+
+static inline void
+bat_iterator_end(BATiter *bip)
+{
+	/* matches bat_iterator */
+	assert(bip);
+	assert(bip->locked);
+	if (bip->h)
+		HEAPdecref(bip->h, false);
+	if (bip->vh)
+		HEAPdecref(bip->vh, false);
+	*bip = (BATiter) {0};
+}
+
+static inline BATiter
+bat_iterator_nolock(BAT *b)
+{
+	/* does not get matched by bat_iterator_end */
+	if (b) {
+		return (BATiter) {
+			.b = b,
+			.h = b->theap,
+			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
+			.vh = b->tvheap,
+			.count = b->batCount,
+			.width = b->twidth,
+			.shift = b->tshift,
+			.type = b->ttype,
+			.tseq = b->tseqbase,
+#ifndef NDEBUG
+			.locked = false,
+#endif
+		};
+	}
+	return (BATiter) {0};
+}
 
 /*
  * @- Internal HEAP Chunk Management
@@ -1011,12 +1095,12 @@ typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#define BUNtvaroff(bi,p) VarHeapVal(Tloc((bi).b, 0), (p), (bi).b->twidth)
+#define BUNtvaroff(bi,p) VarHeapVal((bi).base, (p), (bi).width)
 
-#define BUNtloc(bi,p)	(ATOMstorage((bi).b->ttype) == TYPE_msk ? Tmsk(&(bi), p) : Tloc((bi).b,p))
+#define BUNtloc(bi,p)	(ATOMstorage((bi).type) == TYPE_msk ? Tmsk(&(bi), p) : (void *) ((char *) (bi).base + ((p) << (bi).shift)))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), (void *) (Tbase((bi).b)+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
+#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
@@ -1031,6 +1115,8 @@ typedef var_t stridx_t;
 static inline oid
 BUNtoid(BAT *b, BUN p)
 {
+	oid o;
+
 	assert(ATOMtype(b->ttype) == TYPE_oid);
 	/* BATcount is the number of valid entries, so with
 	 * exceptions, the last value can well be larger than
@@ -1039,13 +1125,18 @@ BUNtoid(BAT *b, BUN p)
 	assert(b->ttype == TYPE_void || b->tvheap == NULL);
 	if (is_oid_nil(b->tseqbase)) {
 		if (b->ttype == TYPE_void)
-			return b->tseqbase;
-		return ((const oid *) b->theap->base)[p + b->tbaseoff];
+			return b->tseqbase; /* i.e. oid_nil */
+		MT_lock_set(&b->theaplock);
+		o = ((const oid *) b->theap->base)[p + b->tbaseoff];
+		MT_lock_unset(&b->theaplock);
+		return o;
 	}
-	oid o = b->tseqbase + p;
+	o = b->tseqbase + p;
 	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
 		return o;
 	}
+	/* b->tvheap != NULL, so we know there will be no parallel
+	 * modifications (so no locking) */
 	assert(!mask_cand(b));
 	/* exceptions only allowed on transient BATs */
 	assert(b->batRole == TRANSIENT);
@@ -1071,8 +1162,6 @@ BUNtoid(BAT *b, BUN p)
 	}
 	return o + hi;
 }
-
-#define bat_iterator(_b)	((BATiter) {.b = (_b), .tvid = 0})
 
 /*
  * @- BAT properties
@@ -1144,7 +1233,8 @@ typedef enum {
 	BAT_APPEND,		  /* only reads and appends allowed */
 } restrict_t;
 
-gdk_export gdk_return BATsetaccess(BAT *b, restrict_t mode);
+gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
+	__attribute__((__warn_unused_result__));
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
@@ -1867,14 +1957,67 @@ BATdescriptor(bat i)
 static inline void *
 Tpos(BATiter *bi, BUN p)
 {
+	if (bi->h->base) {
+		bi->tvid = ((const oid *) bi->h->base)[p];
+	} else if (bi->vh) {
+		oid o;
+		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
+			BUN nexc = (bi->vh->free - sizeof(ccand_t)) / SIZEOF_OID;
+			o = bi->tseq + p;
+			if (nexc > 0) {
+				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
+				if (o >= exc[0]) {
+					if (o + nexc > exc[nexc - 1]) {
+						o += nexc;
+					} else {
+						BUN lo = 0;
+						BUN hi = nexc - 1;
+						while (hi - lo > 1) {
+							BUN mid = (hi + lo) / 2;
+							if (exc[mid] - mid > o)
+								hi = mid;
+							else
+								lo = mid;
+						}
+						o += hi;
+					}
+				}
+			}
+		} else {
+			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
+			BUN nmsk = (bi->vh->free - sizeof(ccand_t)) / sizeof(uint32_t);
+			o = 0;
+			for (BUN i = 0; i < nmsk; i++) {
+				uint32_t m = candmask_pop(msk[i]);
+				if (o + m > p) {
+					m = msk[i];
+					for (i = 0; i < 32; i++) {
+						if (m & (1U << i) && ++o == p)
+							break;
+					}
+					break;
+				}
+				o += m;
+			}
+		}
+		bi->tvid = o;
+	} else {
+		bi->tvid = bi->tseq + p;
+	}
 	bi->tvid = BUNtoid(bi->b, p);
 	return (void*)&bi->tvid;
+}
+
+static inline bool
+Tmskval(BATiter *bi, BUN p)
+{
+	return ((uint32_t *) bi->h->base)[p / 32] & (1U << (p % 32));
 }
 
 static inline void *
 Tmsk(BATiter *bi, BUN p)
 {
-	bi->tmsk = mskGetVal(bi->b, p);
+	bi->tmsk = Tmskval(bi, p);
 	return &bi->tmsk;
 }
 
@@ -2003,8 +2146,6 @@ gdk_export void BATundo(BAT *b);
  * @tab VIEWhparent   (BAT *b)
  * @item bat
  * @tab VIEWtparent   (BAT *b)
- * @item BAT*
- * @tab VIEWreset    (BAT *b)
  * @end multitable
  *
  * Alignments of two columns of a BAT means that the system knows
@@ -2022,10 +2163,6 @@ gdk_export void BATundo(BAT *b);
  * any) is returned by VIEWtparent (otherwise it returns 0).
  *
  * VIEW bats are read-only!!
- *
- * VIEWreset creates a normal BAT with the same contents as its view
- * parameter (it converts void columns with seqbase!=nil to
- * materialized oid columns).
  */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 

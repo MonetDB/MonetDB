@@ -259,6 +259,7 @@ MKEYbathash(bat *res, const bat *bid)
 			else
 				r[i] = (ulng) (*hash)(v);
 		}
+		bat_iterator_end(&bi);
 		break;
 	}
 	}
@@ -417,6 +418,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 				const void *restrict s = BUNtvar(bi, i);
 				r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
 			}
+			bat_iterator_end(&bi);
 			break;
 		}
 		/* fall through */
@@ -426,6 +428,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 
 		for (BUN i = 0; i < n; i++)
 			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
+		bat_iterator_end(&bi);
 		break;
 	}
 	}
@@ -592,6 +595,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 				const char *restrict s = BUNtvar(bi, i);
 				r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
 			}
+			bat_iterator_end(&bi);
 			break;
 		}
 		/* fall through */
@@ -601,6 +605,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 
 		for (BUN i = 0; i < n; i++)
 			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
+		bat_iterator_end(&bi);
 		break;
 	}
 	}

@@ -995,26 +995,31 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			seq = NULL;
 			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
 				msg = createException(SQL, call, SQLSTATE(3F000) "Cannot find the schema %s", nsname);
-				goto bailout;
+				goto bailout1;
 			}
 			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
 				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-				goto bailout;
+				goto bailout1;
 			}
 			if (!(seq = find_sql_sequence(m->session->tr, s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
 				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
-				goto bailout;
+				goto bailout1;
 			}
 		}
 		if (!bulk_func(sb, &l)) {
 			msg = createException(SQL, call, SQLSTATE(HY050) "Cannot %s sequence value %s.%s", action, nsname, nseqname);
-			goto bailout;
+			goto bailout1;
 		}
 		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
 			msg = createException(SQL, call, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 	}
+bailout1:
+	if (b)
+		bat_iterator_end(&bi);
+	if (c)
+		bat_iterator_end(&ci);
 
 bailout:
 	if (sb)
@@ -1191,48 +1196,53 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seq = NULL;
 			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", nsname);
-				goto bailout;
+				goto bailout1;
 			}
 			if (!mvc_schema_privs(m, s)) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-				goto bailout;
+				goto bailout1;
 			}
 			if (!(seq = find_sql_sequence(m->session->tr, s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
-				goto bailout;
+				goto bailout1;
 			}
 		}
 		if (is_lng_nil(nstart)) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
-			goto bailout;
+			goto bailout1;
 		}
 		if (seq->minvalue && nstart < seq->minvalue) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
-			goto bailout;
+			goto bailout1;
 		}
 		if (seq->maxvalue && nstart > seq->maxvalue) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
-			goto bailout;
+			goto bailout1;
 		}
 		switch (sql_trans_seqbulk_restart(m->session->tr, sb, nstart)) {
 			case -1:
 				msg = createException(SQL,"sql.restart",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			case -2:
 			case -3:
 				msg = createException(SQL,"sql.restart",SQLSTATE(42000) "RESTART SEQUENCE: transaction conflict detected");
-				goto bailout;
+				goto bailout1;
 			case -4:
 				msg = createException(SQL,"sql.restart",SQLSTATE(HY050) "Cannot restart sequence %s.%s", nsname, nseqname);
-				goto bailout;
+				goto bailout1;
 			default:
 				break;
 		}
 		if (BUNappend(r, &nstart, false) != GDK_SUCCEED) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 	}
+bailout1:
+	if (b)
+		bat_iterator_end(&bi);
+	if (c)
+		bat_iterator_end(&ci);
 
 bailout:
 	if (sb)
@@ -2017,25 +2027,10 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static BAT *
+static inline BAT *
 setwritable(BAT *b)
 {
-	BAT *bn = b;
-
-	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
-		if (b->batSharecnt) {
-			bn = COLcopy(b, b->ttype, true, TRANSIENT);
-			if (bn != NULL)
-				if (BATsetaccess(bn, BAT_WRITE) != GDK_SUCCEED) {
-					BBPreclaim(bn);
-					bn = NULL;
-				}
-		} else {
-			bn = NULL;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	return bn;
+	return BATsetaccess(b, BAT_WRITE);
 }
 
 str
@@ -2436,6 +2431,9 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
+	bat_iterator_end(&itertbl);
+	bat_iterator_end(&iteratr);
+	bat_iterator_end(&itertpe);
 	/* now send it to the channel cntxt->fdout */
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
@@ -2536,6 +2534,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
+	bat_iterator_end(&itertbl);
+	bat_iterator_end(&iteratr);
+	bat_iterator_end(&itertpe);
 	if ( msg )
 		goto wrapup_result_set1;
 
@@ -2642,6 +2643,9 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
+	bat_iterator_end(&itertbl);
+	bat_iterator_end(&iteratr);
+	bat_iterator_end(&itertpe);
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	mb->starttime = 0;
@@ -2736,6 +2740,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
+	bat_iterator_end(&itertbl);
+	bat_iterator_end(&iteratr);
+	bat_iterator_end(&itertpe);
 	/* now select the file channel */
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
@@ -3582,6 +3589,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	oc = BUNtail(bi, 0);
 	gc = BUNtail(gi, 0);
 	if (!ALIGNsynced(b, g)) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&gi);
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		throw(SQL, name, SQLSTATE(45000) "Internal error, columns not aligned");
@@ -3595,6 +3604,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 */
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&gi);
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3610,6 +3621,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		oc = on;
 		gc = gn;
 		if (BUNappend(r, &rank, false) != GDK_SUCCEED) {
+			bat_iterator_end(&bi);
+			bat_iterator_end(&gi);
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
 			BBPunfix(r->batCacheid);
@@ -3617,6 +3630,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		}
 		nrank += !dense || c;
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&gi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
@@ -3646,6 +3661,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	cur = BUNtail(bi, 0);
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -3666,10 +3682,12 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			nrank += !dense || c;
 		}
 	}
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
   bailout:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
 	throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3950,6 +3968,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										if (--cnt1 <= 0)
 											break;
 									}
+									bat_iterator_end(&bi);
 									if (cnt2)
 										w = (int) (sum / cnt2);
 								} else if (ATOMvarsized(bn->ttype)) {
@@ -4072,6 +4091,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											if (--cnt1 <= 0)
 												break;
 										}
+										bat_iterator_end(&bi);
 										if (cnt2)
 											w = (int) (sum / cnt2);
 									}
@@ -4923,8 +4943,10 @@ finalize:
 		GDKfree(res);
 		if (input)
 			for (int i = 0; i<nrinput; i++) {
-				if (input[i])
+				if (input[i]) {
+					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
+				}
 			}
 		GDKfree(input);
 		GDKfree(bi);
