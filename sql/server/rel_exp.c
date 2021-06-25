@@ -3201,7 +3201,7 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 		case e_column: {
 			/* if the column pretended is found, set its type */
 			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
-			if (next_rel && !strcmp(next_rel, *relname)) {
+			if (next_rel && *relname && !strcmp(next_rel, *relname)) {
 				*relname = (e->type == e_column && e->l) ? (const char*) e->l : next_rel;
 				if (next_exp && !strcmp(next_exp, *expname)) {
 					*expname = (e->type == e_column && e->r) ? (const char*) e->r : next_exp;
