@@ -28,6 +28,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	bool nils = false;
 	wkb *inWKB = NULL, *outWKB = NULL;
 
+	bi = bat_iterator(b);
 	//get the descriptor of the BAT
 	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
@@ -39,7 +40,6 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
-	bi = bat_iterator(b);
 	//create a new BAT, aligned with input BAT
 	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), q, TRANSIENT))) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
