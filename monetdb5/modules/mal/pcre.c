@@ -1927,7 +1927,7 @@ bailout:
 }
 
 #define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
+#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
 
 #ifdef HAVE_LIBPCRE
 #define PCRE_EXEC \
@@ -1946,7 +1946,7 @@ bailout:
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
 	do { \
-		for (BUN ri = 0; ri < rci.ncand; ri++) { \
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
 			ro = canditer_next(&rci); \
 			vr = VALUE(r, ro - r->hseqbase); \
 			nl = 0; \
@@ -1964,7 +1964,7 @@ bailout:
 					pcrepat = NULL; \
 				} \
 				canditer_reset(&lci); \
-				for (BUN li = 0; li < lci.ncand; li++) { \
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
 					lo = canditer_next(&lci); \
 					vl = VALUE(l, lo - l->hseqbase); \
 					if (strNil(vl)) { \
@@ -2041,7 +2041,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 {
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
-	int lwidth, rwidth, rskipped = 0;	/* whether we skipped values in r */
+	int rskipped = 0;			/* whether we skipped values in r */
 	oid lo, ro, lastl = 0;		/* last value inserted into r1 */
 	BUN nl, newcap;
 	char *pcrepat = NULL, *msg = MAL_SUCCEED;
@@ -2079,13 +2079,13 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
 
-	lvals = (const char *) Tloc(l, 0);
-	rvals = (const char *) Tloc(r, 0);
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	lvals = (const char *) li.base;
+	rvals = (const char *) ri.base;
 	assert(r->tvarsized && r->ttype);
-	lvars = l->tvheap->base;
-	rvars = r->tvheap->base;
-	lwidth = l->twidth;
-	rwidth = r->twidth;
+	lvars = li.vh->base;
+	rvars = ri.vh->base;
 
 	r1->tkey = true;
 	r1->tsorted = true;
@@ -2109,6 +2109,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 			pcre_join_loop(strcmp(vl, vr) != 0, !re_match_no_ignore(vl, re), PCRE_EXEC_COND);
 		}
 	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 
 	assert(!r2 || BATcount(r1) == BATcount(r2));
 	/* also set other bits of heap to correct value to indicate size */
@@ -2145,6 +2147,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	return MAL_SUCCEED;
 
 bailout:
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 	GDKfree(pcrepat);
 	re_like_clean(&re, &wpat);
 	pcre_clean(&pcrere, &pcreex);

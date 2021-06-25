@@ -80,11 +80,13 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(b = BATdescriptor(*bid)))
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
 
-		j = BATcount(b);
-		bb = Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		j = bi.count;
+		bb = bi.base;
 
 		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
 			BBPunfix(b->batCacheid);
+			bat_iterator_end(&bi);
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		rb = Tloc(r, 0);
@@ -100,11 +102,13 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SLEEP_MULTI(int);
 				break;
 			default: {
+				bat_iterator_end(&bi);
 				BBPreclaim(r);
 				BBPunfix(b->batCacheid);
 				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(tpe));
 			}
 		}
+		bat_iterator_end(&bi);
 
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
