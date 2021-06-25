@@ -110,7 +110,7 @@ logger_unlock(logger *lg)
 static bte
 find_type(logger *lg, int tpe)
 {
-	BATiter cni = bat_iterator(lg->type_nr);
+	BATiter cni = bat_iterator_nolock(lg->type_nr);
 	bte *res = (bte*)Tloc(lg->type_id, 0);
 	BUN p;
 
@@ -119,19 +119,17 @@ find_type(logger *lg, int tpe)
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &tpe) {
 			MT_rwlock_rdunlock(&cni.b->thashlock);
-			bat_iterator_end(&cni);
 			return res[p];
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
-	bat_iterator_end(&cni);
 	return -1;
 }
 
 static int
 find_type_nr(logger *lg, bte tpe)
 {
-	BATiter cni = bat_iterator(lg->type_id);
+	BATiter cni = bat_iterator_nolock(lg->type_id);
 	int *res = (int*)Tloc(lg->type_nr, 0);
 	BUN p;
 
@@ -140,12 +138,10 @@ find_type_nr(logger *lg, bte tpe)
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_bte(cni, cni.b->thash, p, &tpe) {
 			MT_rwlock_rdunlock(&cni.b->thashlock);
-			bat_iterator_end(&cni);
 			return res[p];
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
-	bat_iterator_end(&cni);
 	return -1;
 }
 
@@ -157,18 +153,16 @@ log_find(BAT *b, BAT *d, int val)
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b) == GDK_SUCCEED) {
-		BATiter cni = bat_iterator(b);
+		BATiter cni = bat_iterator_nolock(b);
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
-				bat_iterator_end(&cni);
 				return p;
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
-		bat_iterator_end(&cni);
 	} else {		/* unlikely: BAThash failed */
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
@@ -187,7 +181,7 @@ log_find(BAT *b, BAT *d, int val)
 static log_bid
 internal_find_bat(logger *lg, log_id id)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
+	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -196,13 +190,11 @@ internal_find_bat(logger *lg, log_id id)
 			oid pos = p;
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
-				bat_iterator_end(&cni);
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
-	bat_iterator_end(&cni);
 	return 0;
 }
 
@@ -548,7 +540,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 static gdk_return
 la_bat_update_count(logger *lg, log_id id, lng cnt)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
+	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -558,13 +550,11 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 			assert(lg->catalog_cnt->hseqbase == 0);
 			if (ocnt < cnt && BUNreplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
-				bat_iterator_end(&cni);
 				return GDK_FAIL;
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
-	bat_iterator_end(&cni);
 	return GDK_SUCCEED;
 
 }
@@ -2351,13 +2341,13 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		offset = 0;
 	if (b->ttype == TYPE_msk) {
 		if (offset % 32 == 0) {
-			if (!mnstr_writeIntArray(lg->output_log, Tloc(b, offset / 32), (size_t) ((nr + 31) / 32)))
+			if (!mnstr_writeIntArray(lg->output_log, (int *) ((char *) bi.base + offset / 32), (size_t) ((nr + 31) / 32)))
 				ok = GDK_FAIL;
 		} else {
 			for (lng i = 0; i < nr; i += 32) {
 				uint32_t v = 0;
 				for (int j = 0; j < 32 && i + j < nr; j++)
-					v |= (uint32_t) mskGetVal(b, (BUN) (offset + i + j)) << j;
+					v |= (uint32_t) Tmskval(&bi, (BUN) (offset + i + j)) << j;
 				if (!mnstr_writeInt(lg->output_log, (int) v)) {
 					ok = GDK_FAIL;
 					break;
@@ -2506,7 +2496,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		ok = wh(&id, lg->output_log, 1);
 	}
 	if (uval->ttype == TYPE_msk) {
-		if (!mnstr_writeIntArray(lg->output_log, Tloc(uval, 0), (BUNlast(uval) + 31) / 32))
+		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
 			ok = GDK_FAIL;
 	} else {
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
