@@ -28,12 +28,12 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	bool nils = false;
 	wkb *inWKB = NULL, *outWKB = NULL;
 
-	bi = bat_iterator(b);
 	//get the descriptor of the BAT
 	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
+	bi = bat_iterator(b);
 	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -81,7 +81,8 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	}
 
 bailout:
-	bat_iterator_end(&bi);
+	if (b)
+		bat_iterator_end(&bi);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)
