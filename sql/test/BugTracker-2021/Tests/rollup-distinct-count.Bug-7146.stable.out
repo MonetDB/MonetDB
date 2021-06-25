@@ -1,0 +1,118 @@
+stdout of test 'rollup-distinct-count.Bug-7146` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:00:14 >  
+# 09:00:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-90365" "--port=36769"
+# 09:00:14 >  
+
+#select count(distinct b) from (
+#select 'a' b, 'A' c
+#union all select 'b', 'C'
+#) T group by rollup(c);
+% .%10 # table_name
+% %10 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 2	]
+#select c, count(distinct b) from (
+#select 1 a, 'a' b, 'A' c
+#union all select 2, 'b', 'C'
+#union all select 3, 'c', 'C'
+#union all select 4, 'a', 'A'
+#union all select 5, 'c', 'B'
+#union all select 6, 'd', 'A'
+#union all select 7, 'a', 'B'
+#union all select 8, 'b', 'D'
+#union all select 9, null, 'D'
+#) T
+#group by rollup(c);
+% .t,	.%101 # table_name
+% c,	%101 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	2	]
+[ "C",	2	]
+[ "B",	2	]
+[ "D",	1	]
+[ NULL,	4	]
+#select c, count(b) from (
+#select 1 a, 'a' b, 'A' c
+#union all select 2, 'b', 'C'
+#union all select 3, 'c', 'C'
+#union all select 4, 'a', 'A'
+#union all select 5, 'c', 'B'
+#union all select 6, 'd', 'A'
+#union all select 7, 'a', 'B'
+#union all select 8, 'b', 'D'
+#union all select 9, null, 'D'
+#) T
+#group by rollup(c);
+% .t,	.%101 # table_name
+% c,	%101 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	3	]
+[ "C",	2	]
+[ "B",	2	]
+[ "D",	1	]
+[ NULL,	8	]
+#select count(distinct b) from (
+#select 'a' b, 'A' c
+#union all select 'b', 'C'
+#) T group by cube(c);
+% .%10 # table_name
+% %10 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 2	]
+#select c, count(distinct b) from (
+#select 1 a, 'a' b, 'A' c
+#union all select 2, 'b', 'C'
+#union all select 3, 'c', 'C'
+#union all select 4, 'a', 'A'
+#union all select 5, 'c', 'B'
+#union all select 6, 'd', 'A'
+#union all select 7, 'a', 'B'
+#union all select 8, 'b', 'D'
+#union all select 9, null, 'D'
+#) T
+#group by cube(c);
+% .t,	.%101 # table_name
+% c,	%101 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	2	]
+[ "C",	2	]
+[ "B",	2	]
+[ "D",	1	]
+[ NULL,	4	]
+#select c, count(b) from (
+#select 1 a, 'a' b, 'A' c
+#union all select 2, 'b', 'C'
+#union all select 3, 'c', 'C'
+#union all select 4, 'a', 'A'
+#union all select 5, 'c', 'B'
+#union all select 6, 'd', 'A'
+#union all select 7, 'a', 'B'
+#union all select 8, 'b', 'D'
+#union all select 9, null, 'D'
+#) T
+#group by cube(c);
+% .t,	.%101 # table_name
+% c,	%101 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	3	]
+[ "C",	2	]
+[ "B",	2	]
+[ "D",	1	]
+[ NULL,	8	]
+
+# 09:00:14 >  
+# 09:00:14 >  "Done."
+# 09:00:14 >  
+

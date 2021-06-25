@@ -1,0 +1,12 @@
+stderr of test 'rollup-distinct-count.Bug-7146` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:00:14 >  
+# 09:00:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-90365" "--port=36769"
+# 09:00:14 >  
+
+
+# 09:00:14 >  
+# 09:00:14 >  "Done."
+# 09:00:14 >  
+

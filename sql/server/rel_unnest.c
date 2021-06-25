@@ -3101,8 +3101,9 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
 					} else {
-						ne = exp_ref(v->sql, e);
-						append(exps, e);
+						sql_exp *ec = exp_copy(v->sql, e);
+						ne = exp_ref(v->sql, ec);
+						append(exps, ec);
 					}
 					append(pexps, ne);
 				}
