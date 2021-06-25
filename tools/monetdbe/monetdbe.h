@@ -161,6 +161,7 @@ monetdbe_export char* monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_
 
 monetdbe_export char* monetdbe_prepare(monetdbe_database dbhdl, char *query, monetdbe_statement **stmt);
 monetdbe_export char* monetdbe_bind(monetdbe_statement *stmt, void *data, size_t parameter_nr);
+monetdbe_export char* monetdbe_get_type_info(monetdbe_statement *stmt, char** data, size_t parameter_nr);
 monetdbe_export char* monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cnt* affected_rows);
 monetdbe_export char* monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt);
 

@@ -1103,7 +1103,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	monetdbe_database_internal *mdbe	= ((struct prepare_callback_context*) context)->mdbe;
 	int *prepare_id						= ((struct prepare_callback_context*) context)->prepare_id;
 
-	if (nr_results != 6) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn
+	if (nr_results != 7) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn
 		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "result table for prepared statement is wrong.");
 
 	backend *be = NULL;
@@ -1111,6 +1111,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		return mdbe->msg;
 
 	BAT* btype = NULL;
+	BAT* bimpl = NULL;
 	BAT* bdigits = NULL;
 	BAT* bscale = NULL;
 	BAT* bschema = NULL;
@@ -1120,6 +1121,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	size_t nparams = 0;
 	BATiter bcolumn_iter = {0};
 	BATiter btable_iter = {0};
+	BATiter bimpl_iter = {0};
 	char* function = NULL;
 	Symbol prg = NULL;
 	MalBlkPtr mb = NULL;
@@ -1134,11 +1136,12 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	str msg = MAL_SUCCEED;
 	if (!(btype		= BATdescriptor(results[0].id))	||
-		!(bdigits	= BATdescriptor(results[1].id))	||
-		!(bscale	= BATdescriptor(results[2].id))	||
-		!(bschema	= BATdescriptor(results[3].id))	||
-		!(btable	= BATdescriptor(results[4].id))	||
-		!(bcolumn	= BATdescriptor(results[5].id)))
+		!(bimpl		= BATdescriptor(results[1].id))	||
+		!(bdigits	= BATdescriptor(results[2].id))	||
+		!(bscale	= BATdescriptor(results[3].id))	||
+		!(bschema	= BATdescriptor(results[4].id))	||
+		!(btable	= BATdescriptor(results[5].id))	||
+		!(bcolumn	= BATdescriptor(results[6].id)))
 	{
 		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Cannot access prepare result");
 		goto cleanup;
@@ -1147,6 +1150,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	nparams = BATcount(btype);
 
 	if (nparams 	!= BATcount(bdigits) ||
+		nparams 	!= BATcount(bimpl) ||
 		nparams 	!= BATcount(bscale) ||
 		nparams 	!= BATcount(bschema) ||
 		nparams + 1 != BATcount(btable) ||
@@ -1158,6 +1162,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	bcolumn_iter	= bat_iterator(bcolumn);
 	btable_iter		= bat_iterator(btable);
+	bimpl_iter		= bat_iterator(bimpl);
 	function		=  BUNtvar(btable_iter, BATcount(btable)-1);
 
 	{
@@ -1212,12 +1217,14 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	for (size_t i = 0; i < nparams; i++) {
 
-		char* table =  BUNtvar(btable_iter, i);
+		char* table	= BUNtvar(btable_iter, i);
 
 		if (strNil(table)) {
 			// input argument
 			sql_type *t = SA_ZNEW(sa, sql_type);
 			t->localtype = *(int*) Tloc(btype, i);
+			char* impl = BUNtvar(bimpl_iter, i);
+			t->impl	= GDKstrdup(impl);
 
 			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
 			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
@@ -1283,6 +1290,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 cleanup:
 	// clean these up
 	if (btype)		BBPunfix(btype->batCacheid);
+	if (bimpl)		BBPunfix(bimpl->batCacheid);
 	if (bdigits)	BBPunfix(bdigits->batCacheid);
 	if (bscale)		BBPunfix(bscale->batCacheid);
 	if (bschema)	BBPunfix(bschema->batCacheid);
@@ -1547,6 +1555,19 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
+	return MAL_SUCCEED;
+}
+
+char*
+monetdbe_get_type_info(monetdbe_statement *stmt, str* data, size_t i)
+{
+	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
+
+	if (i >= stmt->nparam)
+		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
+	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
+	assert(a);
+	*data = a->type.type->impl;
 	return MAL_SUCCEED;
 }
 
