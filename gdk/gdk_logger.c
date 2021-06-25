@@ -110,7 +110,7 @@ logger_unlock(logger *lg)
 static bte
 find_type(logger *lg, int tpe)
 {
-	BATiter cni = bat_iterator(lg->type_nr);
+	BATiter cni = bat_iterator_nolock(lg->type_nr);
 	bte *res = (bte*)Tloc(lg->type_id, 0);
 	BUN p;
 
@@ -129,7 +129,7 @@ find_type(logger *lg, int tpe)
 static int
 find_type_nr(logger *lg, bte tpe)
 {
-	BATiter cni = bat_iterator(lg->type_id);
+	BATiter cni = bat_iterator_nolock(lg->type_id);
 	int *res = (int*)Tloc(lg->type_nr, 0);
 	BUN p;
 
@@ -148,12 +148,12 @@ find_type_nr(logger *lg, bte tpe)
 static BUN
 log_find(BAT *b, BAT *d, int val)
 {
-	BATiter cni = bat_iterator(b);
 	BUN p;
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b) == GDK_SUCCEED) {
+		BATiter cni = bat_iterator_nolock(b);
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
@@ -181,7 +181,7 @@ log_find(BAT *b, BAT *d, int val)
 static log_bid
 internal_find_bat(logger *lg, log_id id)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
+	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -540,7 +540,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 static gdk_return
 la_bat_update_count(logger *lg, log_id id, lng cnt)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
+	BATiter cni = bat_iterator_nolock(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -609,15 +609,18 @@ la_bat_updates(logger *lg, logaction *la)
 					if (q < cnt) {
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					} else {
 						if (BUNappend(b, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					}
 				}
+				bat_iterator_end(&vi);
 			}
 		}
 		cnt = (BUN)(la->offset + la->nr);
@@ -636,9 +639,11 @@ la_bat_updates(logger *lg, logaction *la)
 
 			if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
 				logbat_destroy(b);
+				bat_iterator_end(&vi);
 				return GDK_FAIL;
 			}
 		}
+		bat_iterator_end(&vi);
 	}
 	if (b)
 		logbat_destroy(b);
@@ -705,7 +710,7 @@ la_bat_create(logger *lg, logaction *la)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
-	if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
+	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
 	    logger_add_bat(lg, b, la->cid) != GDK_SUCCEED) {
 		logbat_destroy(b);
 		return GDK_FAIL;
@@ -2336,13 +2341,13 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		offset = 0;
 	if (b->ttype == TYPE_msk) {
 		if (offset % 32 == 0) {
-			if (!mnstr_writeIntArray(lg->output_log, Tloc(b, offset / 32), (size_t) ((nr + 31) / 32)))
+			if (!mnstr_writeIntArray(lg->output_log, (int *) ((char *) bi.base + offset / 32), (size_t) ((nr + 31) / 32)))
 				ok = GDK_FAIL;
 		} else {
 			for (lng i = 0; i < nr; i += 32) {
 				uint32_t v = 0;
 				for (int j = 0; j < 32 && i + j < nr; j++)
-					v |= (uint32_t) mskGetVal(b, (BUN) (offset + i + j)) << j;
+					v |= (uint32_t) Tmskval(&bi, (BUN) (offset + i + j)) << j;
 				if (!mnstr_writeInt(lg->output_log, (int) v)) {
 					ok = GDK_FAIL;
 					break;
@@ -2366,6 +2371,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
+	bat_iterator_end(&bi);
 	if (ok != GDK_SUCCEED) {
 		const char *err = mnstr_peek_error(lg->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
@@ -2490,7 +2496,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		ok = wh(&id, lg->output_log, 1);
 	}
 	if (uval->ttype == TYPE_msk) {
-		if (!mnstr_writeIntArray(lg->output_log, Tloc(uval, 0), (BUNlast(uval) + 31) / 32))
+		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
 			ok = GDK_FAIL;
 	} else {
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
@@ -2504,6 +2510,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
+	bat_iterator_end(&vi);
 	if (ok != GDK_SUCCEED) {
 		const char *err = mnstr_peek_error(lg->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
@@ -2537,34 +2544,23 @@ log_bat_clear(logger *lg, int id)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024)
-//(LL_CONSTANT(2)*1024)
+#define LOG_MINI	(LL_CONSTANT(2)*1024)
+#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
 static gdk_return
-pre_allocate(logger *lg)
+new_logfile(logger *lg)
 {
-	// FIXME: this causes serious issues on Windows at least with MinGW
+	lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 	assert(!LOG_DISABLED(lg));
-#ifndef WIN32
 	lng p;
 	p = (lng) getfilepos(getFile(lg->output_log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (p > LOG_LARGE) {
+	if (p > log_large) {
 		lg->id++;
 		logger_close_output(lg);
 		return logger_open_output(lg);
 	}
-	if (p + DBLKSZ > lg->end) {
-		p &= ~(DBLKSZ - 1);
-		p += SEGSZ;
-		if (GDKextendf(getFileNo(lg->output_log), (size_t) p, "WAL file") != GDK_SUCCEED)
-			return GDK_FAIL;
-		lg->end = p;
-	}
-#else
-	(void) lg;
-#endif
 	return GDK_SUCCEED;
 }
 
@@ -2599,7 +2595,7 @@ log_tend(logger *lg, ulng commit_ts)
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-	    pre_allocate(lg) != GDK_SUCCEED) {
+	    new_logfile(lg) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}

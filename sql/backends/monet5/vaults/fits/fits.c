@@ -1082,7 +1082,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			TRC_INFO(FITS, "String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
 		else {
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
+			BATiter bi = bat_iterator_nolock(tmp);
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bi, 0), &anynull, &status);
 			BATsetcount(tmp, rows);
 			tmp->tsorted = false;
 			tmp->trevsorted = false;

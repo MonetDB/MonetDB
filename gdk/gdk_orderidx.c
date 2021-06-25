@@ -226,7 +226,7 @@ BATorderidx(BAT *b, bool stable)
 
 #define BINARY_MERGE(TYPE)						\
 	do {								\
-		TYPE *v = (TYPE *) Tloc(b, 0);				\
+		TYPE *v = (TYPE *) bi.base;				\
 		if (p0 < q0 && p1 < q1) {				\
 			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) { \
 				*mv++ = *p0++;				\
@@ -291,7 +291,7 @@ BATorderidx(BAT *b, bool stable)
 #define NWAY_MERGE(TYPE)						\
 	do {								\
 		TYPE *minhp, t;						\
-		TYPE *v = (TYPE *) Tloc(b, 0);				\
+		TYPE *v = (TYPE *) bi.base;				\
 		if ((minhp = GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {	\
 			goto bailout;					\
 		}							\
@@ -359,9 +359,11 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ACCELERATOR, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
+	BATiter bi = bat_iterator(b);
 	MT_lock_set(&b->batIdxLock);
 	if (b->torderidx) {
 		MT_lock_unset(&b->batIdxLock);
+		bat_iterator_end(&bi);
 		return GDK_SUCCEED;
 	}
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
@@ -371,6 +373,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
 		GDKfree(m);
 		MT_lock_unset(&b->batIdxLock);
+		bat_iterator_end(&bi);
 		return GDK_FAIL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
@@ -426,6 +429,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&b->batIdxLock);
+			bat_iterator_end(&bi);
 			return GDK_FAIL;
 		}
 
@@ -442,6 +446,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&b->batIdxLock);
+			bat_iterator_end(&bi);
 			return GDK_FAIL;
 		}
 		for (i = 0; i < n_ar; i++) {
@@ -491,6 +496,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 
 	b->batDirtydesc = true;
 	MT_lock_unset(&b->batIdxLock);
+	bat_iterator_end(&bi);
 	return GDK_SUCCEED;
 }
 

@@ -97,15 +97,18 @@ ntile##IMP##TPE: \
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
-		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
+		const TPE *restrict nn = (TPE*)ni.base;	\
 		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile;); \
 	} while (0)
 
 gdk_return
 GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 {
+	BATiter bi = bat_iterator(b);
+	BATiter pi = bat_iterator(p);
+	BATiter ni = bat_iterator(n);
 	lng i = 0, k = 0, cnt = (lng) BATcount(b);
-	bit *restrict np = p ? Tloc(p, 0) : NULL;
+	const bit *restrict np = pi.base;
 	bool has_nils = false, last = false;
 
 	assert((n && !ntile) || (!n && ntile));
@@ -170,23 +173,33 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 			goto nosupport;
 		}
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&pi);
+	bat_iterator_end(&ni);
 	BATsetcount(r, BATcount(b));
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 nosupport:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&pi);
+	bat_iterator_end(&ni);
 	GDKerror("42000!type %s not supported for the ntile type.\n", ATOMname(tpe));
 	return GDK_FAIL;
 invalidntile:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&pi);
+	bat_iterator_end(&ni);
 	GDKerror("42000!ntile must be greater than zero.\n");
 	return GDK_FAIL;
 }
 
 #define ANALYTICAL_FIRST_FIXED(TPE)				\
 	do {							\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0);	\
+		const TPE *bp = (TPE*)bi.base;			\
+		TPE *restrict rb = (TPE*)Tloc(r, 0);		\
 		for (; k < cnt; k++) { \
-			TPE *bs = bp + start[k], *be = bp + end[k];			\
+			const TPE *bs = bp + start[k], *be = bp + end[k]; \
 			TPE curval = (be > bs) ? *bs : TPE##_nil;	\
 			rb[k] = curval;				\
 			has_nils |= is_##TPE##_nil(curval);		\
@@ -196,9 +209,12 @@ invalidntile:
 gdk_return
 GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 {
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
 	bool has_nils = false;
-	oid k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
-	BATiter bpi = bat_iterator(b);
+	oid k = 0, cnt = BATcount(b);
+	const oid *restrict start = si.base, *restrict end = ei.base;
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
@@ -229,16 +245,20 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtvar(bpi, start[k]) : nil;
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+				const void *curval = (end[k] > start[k]) ? BUNtvar(bi, start[k]) : nil;
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					bat_iterator_end(&si);
+					bat_iterator_end(&ei);
 					return GDK_FAIL;
+				}
 				has_nils |= atomcmp(curval, nil) == 0;
 			}
 		} else {
 			uint16_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtloc(bpi, start[k]) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtloc(bi, start[k]) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
 				has_nils |= atomcmp(curval, nil) == 0;
@@ -246,6 +266,9 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		}
 	}
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
@@ -255,9 +278,10 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 
 #define ANALYTICAL_LAST_FIXED(TPE)				\
 	do {							\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0);	\
+		const TPE *bp = (TPE*)bi.base;			\
+		TPE *restrict rb = (TPE*)Tloc(r, 0);		\
 		for (; k < cnt; k++) { \
-			TPE *bs = bp + start[k], *be = bp + end[k];			\
+			const TPE *bs = bp + start[k], *be = bp + end[k]; \
 			TPE curval = (be > bs) ? *(be - 1) : TPE##_nil;	\
 			rb[k] = curval;				\
 			has_nils |= is_##TPE##_nil(curval);		\
@@ -267,9 +291,12 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 gdk_return
 GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 {
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
 	bool has_nils = false;
-	oid k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
-	BATiter bpi = bat_iterator(b);
+	oid k = 0, cnt = BATcount(b);
+	const oid *restrict start = si.base, *restrict end = ei.base;
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
@@ -300,16 +327,20 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtvar(bpi, end[k] - 1) : nil;
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+				const void *curval = (end[k] > start[k]) ? BUNtvar(bi, end[k] - 1) : nil;
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					bat_iterator_end(&si);
+					bat_iterator_end(&ei);
 					return GDK_FAIL;
+				}
 				has_nils |= atomcmp(curval, nil) == 0;
 			}
 		} else {
 			uint16_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtloc(bpi, end[k] - 1) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtloc(bi, end[k] - 1) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
 				has_nils |= atomcmp(curval, nil) == 0;
@@ -317,6 +348,9 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		}
 	}
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
@@ -325,16 +359,17 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 
 #define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(TPE)			\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0);	\
+		const TPE *bp = (TPE*)bi.base;				\
+		TPE *restrict rb = (TPE*)Tloc(r, 0);			\
 		if (is_lng_nil(nth)) {					\
 			has_nils = true;				\
 			for (; k < cnt; k++)			\
 				rb[k] = TPE##_nil;			\
 		} else {						\
 			nth--;						\
-			for (; k < cnt; k++) {			\
-				TPE *bs = bp + start[k];			\
-				TPE *be = bp + end[k];			\
+			for (; k < cnt; k++) {				\
+				const TPE *bs = bp + start[k];		\
+				const TPE *be = bp + end[k];		\
 				TPE curval = (be > bs && nth < (lng)(end[k] - start[k])) ? *(bs + nth) : TPE##_nil; \
 				rb[k] = curval;				\
 				has_nils |= is_##TPE##_nil(curval);	\
@@ -344,11 +379,12 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 
 #define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE)			\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), curval, *restrict rb = (TPE*)Tloc(r, 0);	\
-		for (; k < cnt; k++) {				\
+		const TPE *bp = (TPE*)bi.base;				\
+		TPE curval, *restrict rb = (TPE*)Tloc(r, 0);		\
+		for (; k < cnt; k++) {					\
 			lng lnth = tp[k];				\
-			TPE *bs = bp + start[k];				\
-			TPE *be = bp + end[k];				\
+			const TPE *bs = bp + start[k];			\
+			const TPE *be = bp + end[k];			\
 			if (!is_lng_nil(lnth) && lnth <= 0) goto invalidnth;	\
 			if (is_lng_nil(lnth) || be <= bs || lnth - 1 > (lng)(end[k] - start[k])) { \
 				curval = TPE##_nil;	\
@@ -364,10 +400,15 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 gdk_return
 GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe)
 {
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
+	BATiter ti = bat_iterator(t);
 	bool has_nils = false;
-	oid k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
-	lng nth = pnth ? *pnth : 0, *restrict tp = t ? (lng*)Tloc(t, 0) : NULL;
-	BATiter bpi = bat_iterator(b);
+	oid k = 0, cnt = BATcount(b);
+	const oid *restrict start = si.base, *restrict end = ei.base;
+	lng nth = pnth ? *pnth : 0;
+	const lng *restrict tp = ti.base;
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
@@ -409,11 +450,16 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						curval = (void *) nil;
 						has_nils = true;
 					} else {
-						curval = BUNtvar(bpi, start[k] + (oid)(lnth - 1));
+						curval = BUNtvar(bi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
-					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+						bat_iterator_end(&bi);
+						bat_iterator_end(&si);
+						bat_iterator_end(&ei);
+						bat_iterator_end(&ti);
 						return GDK_FAIL;
+					}
 				}
 			} else {
 				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
@@ -425,7 +471,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						curval = (void *) nil;
 						has_nils = true;
 					} else {
-						curval = BUNtloc(bpi, start[k] + (oid)(lnth - 1));
+						curval = BUNtloc(bi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
 					memcpy(rcast, curval, width);
@@ -435,8 +481,9 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 		}
 		}
 	} else {
-		if (!is_lng_nil(nth) && nth <= 0)
+		if (!is_lng_nil(nth) && nth <= 0) {
 			goto invalidnth;
+		}
 		switch (ATOMbasetype(tpe)) {
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bte);
@@ -466,14 +513,24 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 				if (is_lng_nil(nth)) {
 					has_nils = true;
 					for (; k < cnt; k++)
-						if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED)
+						if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED) {
+							bat_iterator_end(&bi);
+							bat_iterator_end(&si);
+							bat_iterator_end(&ei);
+							bat_iterator_end(&ti);
 							return GDK_FAIL;
+						}
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
-						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(bpi, start[k] + (oid) nth) : nil;
-						if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(bi, start[k] + (oid) nth) : nil;
+						if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+							bat_iterator_end(&bi);
+							bat_iterator_end(&si);
+							bat_iterator_end(&ei);
+							bat_iterator_end(&ti);
 							return GDK_FAIL;
+						}
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
 				}
@@ -489,7 +546,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
-						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(bpi, start[k] + (oid) nth) : nil;
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(bi, start[k] + (oid) nth) : nil;
 						memcpy(rcast, curval, width);
 						rcast += width;
 						has_nils |= atomcmp(curval, nil) == 0;
@@ -499,15 +556,27 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 		}
 		}
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
+	bat_iterator_end(&ti);
 
 	BATsetcount(r, BATcount(b));
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 nosupport:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
+	bat_iterator_end(&ti);
 	GDKerror("42000!type %s not supported for the nth_value.\n", ATOMname(t->ttype));
 	return GDK_FAIL;
 invalidnth:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
+	bat_iterator_end(&ti);
 	GDKerror("42000!nth_value must be greater than zero.\n");
 	return GDK_FAIL;
 }
@@ -526,9 +595,10 @@ invalidnth:
 
 #define ANALYTICAL_LAG_IMP(TPE)						\
 	do {								\
-		TPE *rp, *rb, *bp, *nbp, *rend,				\
+		TPE *rp, *rb, *rend,					\
 			def = *((TPE *) default_value), next;		\
-		bp = (TPE*)Tloc(b, 0);					\
+		const TPE *bp, *nbp;					\
+		bp = (TPE*)bi.base;					\
 		rb = rp = (TPE*)Tloc(r, 0);				\
 		rend = rb + cnt;					\
 		if (lag == BUN_NONE) {					\
@@ -536,7 +606,7 @@ invalidnth:
 			for (; rb < rend; rb++)				\
 				*rb = TPE##_nil;			\
 		} else if (p) {						\
-			pnp = np = (bit*)Tloc(p, 0);			\
+			pnp = np = (bit*)pi.base;			\
 			end = np + cnt;					\
 			for (; np < end; np++) {			\
 				if (*np) {				\
@@ -559,21 +629,29 @@ invalidnth:
 #define ANALYTICAL_LAG_OTHERS						\
 	do {								\
 		for (i = 0; i < lag && k < j; i++, k++) {		\
-			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
+			if (BUNappend(r, default_value, false) != GDK_SUCCEED) { \
+				bat_iterator_end(&bi);			\
+				bat_iterator_end(&pi);			\
 				return GDK_FAIL;			\
+			}						\
 		}							\
-		has_nils |= (lag > 0 && atomcmp(default_value, nil) == 0);	\
+		has_nils |= (lag > 0 && atomcmp(default_value, nil) == 0); \
 		for (l = k - lag; k < j; k++, l++) {			\
-			curval = BUNtail(bpi, l);			\
-			if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
+			curval = BUNtail(bi, l);			\
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)	{ \
+				bat_iterator_end(&bi);			\
+				bat_iterator_end(&pi);			\
 				return GDK_FAIL;			\
-			has_nils |= atomcmp(curval, nil) == 0;			\
-		}	\
+			}						\
+			has_nils |= atomcmp(curval, nil) == 0;		\
+		}							\
 	} while (0)
 
 gdk_return
 GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_value, int tpe)
 {
+	BATiter bi = bat_iterator(b);
+	BATiter pi = bat_iterator(p);
 	int (*atomcmp) (const void *, const void *);
 	const void *restrict nil;
 	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
@@ -607,18 +685,20 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 		ANALYTICAL_LAG_IMP(dbl);
 		break;
 	default:{
-		BATiter bpi = bat_iterator(b);
 		const void *restrict curval;
 		nil = ATOMnilptr(tpe);
 		atomcmp = ATOMcompare(tpe);
 		if (lag == BUN_NONE) {
 			has_nils = true;
 			for (j = 0; j < cnt; j++) {
-				if (BUNappend(r, nil, false) != GDK_SUCCEED)
+				if (BUNappend(r, nil, false) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					bat_iterator_end(&pi);
 					return GDK_FAIL;
+				}
 			}
 		} else if (p) {
-			pnp = np = (bit *) Tloc(p, 0);
+			pnp = np = (bit *) pi.base;
 			end = np + cnt;
 			for (; np < end; np++) {
 				if (*np) {
@@ -635,6 +715,8 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 		}
 	}
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&pi);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
@@ -663,7 +745,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 	do {							\
 		TPE *rp, *rb, *bp, *rend,			\
 			def = *((TPE *) default_value), next;	\
-		bp = (TPE*)Tloc(b, 0);				\
+		bp = (TPE*)bi.base;				\
 		rb = rp = (TPE*)Tloc(r, 0);			\
 		rend = rb + cnt;				\
 		if (lead == BUN_NONE) {				\
@@ -671,7 +753,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			for (; rb < rend; rb++)			\
 				*rb = TPE##_nil;		\
 		} else if (p) {					\
-			pnp = np = (bit*)Tloc(p, 0);		\
+			pnp = np = (bit*)pi.base;		\
 			end = np + cnt;				\
 			for (; np < end; np++) {		\
 				if (*np) {			\
@@ -697,23 +779,31 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 		if (lead < ncnt) {					\
 			m = ncnt - lead;				\
 			for (i = 0,n = k + lead; i < m; i++, n++) {	\
-				curval = BUNtail(bpi, n);		\
-				if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
+				curval = BUNtail(bi, n);		\
+				if (BUNappend(r, curval, false) != GDK_SUCCEED)	{ \
+					bat_iterator_end(&bi);		\
+					bat_iterator_end(&pi);		\
 					return GDK_FAIL;		\
-				has_nils |= atomcmp(curval, nil) == 0;		\
+				}					\
+				has_nils |= atomcmp(curval, nil) == 0;	\
 			}						\
 			k += i;						\
 		}							\
 		for (; k < j; k++) {					\
-			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
+			if (BUNappend(r, default_value, false) != GDK_SUCCEED) { \
+				bat_iterator_end(&bi);			\
+				bat_iterator_end(&pi);			\
 				return GDK_FAIL;			\
+			}						\
 		}							\
-		has_nils |= (lead > 0 && atomcmp(default_value, nil) == 0);	\
+		has_nils |= (lead > 0 && atomcmp(default_value, nil) == 0); \
 	} while (0)
 
 gdk_return
 GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default_value, int tpe)
 {
+	BATiter bi = bat_iterator(b);
+	BATiter pi = bat_iterator(p);
 	int (*atomcmp) (const void *, const void *);
 	const void *restrict nil;
 	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
@@ -748,18 +838,20 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		break;
 	default:{
 		BUN m = 0, n = 0;
-		BATiter bpi = bat_iterator(b);
 		const void *restrict curval;
 		nil = ATOMnilptr(tpe);
 		atomcmp = ATOMcompare(tpe);
 		if (lead == BUN_NONE) {
 			has_nils = true;
 			for (j = 0; j < cnt; j++) {
-				if (BUNappend(r, nil, false) != GDK_SUCCEED)
+				if (BUNappend(r, nil, false) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					bat_iterator_end(&pi);
 					return GDK_FAIL;
+				}
 			}
 		} else if (p) {
-			pnp = np = (bit *) Tloc(p, 0);
+			pnp = np = (bit *) pi.base;
 			end = np + cnt;
 			for (; np < end; np++) {
 				if (*np) {
@@ -776,6 +868,8 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		}
 	}
 	}
+	bat_iterator_end(&bi);
+	bat_iterator_end(&pi);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
@@ -894,7 +988,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) { \
 				j = k; \
 				do {	\
-					void *next = BUNtvar(bpi, k); \
+					void *next = BUNtvar(bi, k); \
 					if (atomcmp(next, nil) != 0) {		\
 						if (atomcmp(curval, nil) == 0)	\
 							curval = next;		\
@@ -904,15 +998,15 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					k++; \
 				} while (k < i && !op[k]);	\
 				for (; j < k; j++) \
-					if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
-						return GDK_FAIL; \
+					if ((res = tfastins_nocheckVAR(r, j, curval, Tsize(r))) != GDK_SUCCEED) \
+						goto cleanup; \
 				has_nils |= atomcmp(curval, nil) == 0;		\
 			} \
 		} else {	\
 			for (; k < i;) { \
 				j = k; \
 				do {	\
-					void *next = BUNtloc(bpi, k); \
+					void *next = BUNtloc(bi, k); \
 					if (atomcmp(next, nil) != 0) {		\
 						if (atomcmp(curval, nil) == 0)	\
 							curval = next;		\
@@ -936,7 +1030,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		l = i - 1; \
 		if (ATOMvarsized(tpe)) {	\
 			for (j = l; ; j--) { \
-				void *next = BUNtvar(bpi, j); \
+				void *next = BUNtvar(bi, j); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -945,8 +1039,8 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				}					\
 				if (op[j] || j == k) {	\
 					for (; ; l--) { \
-						if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
-							return GDK_FAIL; \
+						if ((res = tfastins_nocheckVAR(r, l, curval, Tsize(r))) != GDK_SUCCEED) \
+							goto cleanup; \
 						if (l == j)	\
 							break;	\
 					} \
@@ -958,7 +1052,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}	\
 		} else {	\
 			for (j = l; ; j--) { \
-				void *next = BUNtloc(bpi, j); \
+				void *next = BUNtloc(bi, j); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -988,7 +1082,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		void *curval = (void*) nil; \
 		if (ATOMvarsized(tpe)) {	\
 			for (j = k; j < i; j++) { \
-				void *next = BUNtvar(bpi, j);	\
+				void *next = BUNtvar(bi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -997,11 +1091,11 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				}					\
 			} \
 			for (; k < i; k++) \
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
+				if ((res = tfastins_nocheckVAR(r, k, curval, Tsize(r))) != GDK_SUCCEED) \
+					goto cleanup; \
 		} else {	\
 			for (j = k; j < i; j++) { \
-				void *next = BUNtloc(bpi, j);	\
+				void *next = BUNtloc(bi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1021,14 +1115,14 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do { \
 		if (ATOMvarsized(tpe)) {	\
 			for (; k < i; k++) { \
-				void *next = BUNtvar(bpi, k); \
-				if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
+				void *next = BUNtvar(bi, k); \
+				if ((res = tfastins_nocheckVAR(r, k, next, Tsize(r))) != GDK_SUCCEED) \
+					goto cleanup; \
 				has_nils |= atomcmp(next, nil) == 0;		\
 			} \
 		} else {	\
 			for (; k < i; k++) { \
-				void *next = BUNtloc(bpi, k); \
+				void *next = BUNtloc(bi, k); \
 				memcpy(rcast, next, width);	\
 				rcast += width;	\
 				has_nils |= atomcmp(next, nil) == 0;		\
@@ -1042,7 +1136,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	} while (0)
 #define COMPUTE_LEVEL0_MIN_MAX_OTHERS(X, GT_LT, NOTHING1, NOTHING2) \
 	do { \
-		computed = BUNtail(bpi, j + X); \
+		computed = BUNtail(bi, j + X); \
 	} while (0)
 #define COMPUTE_LEVELN_MIN_MAX_OTHERS(VAL, GT_LT, NOTHING1, NOTHING2) \
 	do { \
@@ -1077,7 +1171,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_PARTITIONS(TPE, MIN_MAX, IMP)		\
 	do {					\
-		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0); \
+		TPE *restrict bp = (TPE*)bi.base, *restrict rb = (TPE*)Tloc(r, 0); \
 		if (p) {					\
 			while (i < cnt) {		\
 				if (np[i]) 	{		\
@@ -1148,46 +1242,55 @@ minmaxvarsized##IMP: \
 
 #define ANALYTICAL_MIN_MAX(OP, MIN_MAX, GT_LT)				\
 gdk_return								\
-GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)		\
+GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 {									\
-	bool has_nils = false, last = false; \
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL, \
+	BATiter pi = bat_iterator(p);					\
+	BATiter oi = bat_iterator(o);					\
+	BATiter bi = bat_iterator(b);					\
+	BATiter si = bat_iterator(s);					\
+	BATiter ei = bat_iterator(e);					\
+	bool has_nils = false, last = false;				\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL; 	\
-	BATiter bpi = bat_iterator(b);				\
-	const void *nil = ATOMnilptr(tpe);			\
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
-	void *segment_tree = NULL; \
-	gdk_return res = GDK_SUCCEED; \
-	uint16_t width = r->twidth; \
-	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0); \
-	\
-	if (cnt > 0) {	\
-		switch (frame_type) {		\
+	bit *np = pi.base, *op = oi.base;				\
+	const void *nil = ATOMnilptr(tpe);				\
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);	\
+	void *segment_tree = NULL;					\
+	gdk_return res = GDK_SUCCEED;					\
+	uint16_t width = r->twidth;					\
+	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);		\
+									\
+	if (cnt > 0) {							\
+		switch (frame_type) {					\
 		case 3: /* unbounded until current row */	{	\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, UNBOUNDED_TILL_CURRENT_ROW); \
-		} break;		\
+		} break;						\
 		case 4: /* current row until unbounded */	{	\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW_TILL_UNBOUNDED); \
-		} break;		\
-		case 5: /* all rows */	{	\
+		} break;						\
+		case 5: /* all rows */	{				\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
-		} break;		\
-		case 6: /* current row */ {	\
+		} break;						\
+		case 6: /* current row */ {				\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
-		} break;		\
-		default: {		\
+		} break;						\
+		default: {						\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
-		}		\
-		}	\
-	} \
-	\
-	BATsetcount(r, cnt);	\
-	r->tnonil = !has_nils;	\
-	r->tnil = has_nils;		\
-cleanup: \
-	GDKfree(segment_tree); \
-	return res; \
+		}							\
+		}							\
+	}								\
+									\
+	BATsetcount(r, cnt);						\
+	r->tnonil = !has_nils;						\
+	r->tnil = has_nils;						\
+cleanup:								\
+	bat_iterator_end(&pi);						\
+	bat_iterator_end(&oi);						\
+	bat_iterator_end(&bi);						\
+	bat_iterator_end(&si);						\
+	bat_iterator_end(&ei);						\
+	GDKfree(segment_tree);						\
+	return res;							\
 }
 
 ANALYTICAL_MIN_MAX(min, MIN, >)
@@ -1332,7 +1435,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (; k < i; ) { \
 				j = k; \
 				do {	\
-					curval += cmp(BUNtail(bpi, k), nil) != 0; \
+					curval += cmp(BUNtail(bi, k), nil) != 0; \
 					k++; \
 				} while (k < i && !op[k]);	\
 				for (; j < k; j++) \
@@ -1361,7 +1464,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			}	\
 		} else { \
 			for (j = l; ; j--) { \
-				curval += cmp(BUNtail(bpi, j), nil) != 0;	\
+				curval += cmp(BUNtail(bi, j), nil) != 0;	\
 				if (op[j] || j == k) {	\
 					for (; ; l--) { \
 						rb[l] = curval; \
@@ -1384,7 +1487,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			curval = (lng)(i - k); \
 		} else {	\
 			for (; j < i; j++) \
-				curval += cmp(BUNtail(bpi, j), nil) != 0; \
+				curval += cmp(BUNtail(bi, j), nil) != 0; \
 		}	\
 		for (; k < i; k++) \
 			rb[k] = curval; \
@@ -1397,13 +1500,13 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = 1; \
 		} else { \
 			for (; k < i; k++) \
-				rb[k] = cmp(BUNtail(bpi, k), nil) != 0; \
+				rb[k] = cmp(BUNtail(bi, k), nil) != 0; \
 		} \
 	} while (0)
 
 #define COMPUTE_LEVEL0_COUNT_OTHERS(X, NOTHING1, NOTHING2, NOTHING3) \
 	do { \
-		computed = cmp(BUNtail(bpi, j + X), nil) != 0; \
+		computed = cmp(BUNtail(bi, j + X), nil) != 0; \
 	} while (0)
 #define ANALYTICAL_COUNT_OTHERS_OTHERS	\
 	do { \
@@ -1496,15 +1599,19 @@ countothers##IMP: \
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int tpe, int frame_type)
 {
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng curval = 0, *restrict rb = (lng *) Tloc(r, 0);
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	bit *np = pi.base, *op = oi.base;
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
-	const void *restrict bheap = Tloc(b, 0);
+	const void *restrict bheap = bi.base;
 	bool count_all = !ignore_nils || b->tnonil, last = false;
-	BATiter bpi = bat_iterator(b);
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 
@@ -1532,6 +1639,11 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	r->tnonil = true;
 	r->tnil = false;
 cleanup:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(segment_tree);
 	return res;
 }
@@ -1674,7 +1786,7 @@ cleanup:
 
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)		\
 	do {						\
-		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);	 \
+		TPE1 *restrict bp = (TPE1*)bi.base;	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			while (i < cnt) {		\
@@ -1814,10 +1926,15 @@ sum##TPE1##TPE2##IMP: \
 gdk_return
 GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	bit *np = pi.base, *op = oi.base;
 	int abort_on_error = 1;
 	BUN nils = 0;
 	void *segment_tree = NULL;
@@ -1855,11 +1972,17 @@ calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;
 cleanup:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(segment_tree);
 	return res;
 nosupport:
 	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
+	res = GDK_FAIL;
+	goto cleanup;
 }
 
 /* product on integers */
@@ -2166,7 +2289,7 @@ nosupport:
 
 #define ANALYTICAL_PROD_CALC_NUM_PARTITIONS(TPE1, TPE2, TPE3_OR_REAL_IMP, IMP)		\
 	do {						\
-		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);	 \
+		TPE1 *restrict bp = (TPE1*)bi.base;	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			while (i < cnt) {		\
@@ -2325,10 +2448,15 @@ prod##TPE1##TPE2##IMP: \
 gdk_return
 GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	bit *np = pi.base, *op = oi.base;
 	int abort_on_error = 1;
 	BUN nils = 0;
 	void *segment_tree = NULL;
@@ -2362,11 +2490,17 @@ calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;
 cleanup:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(segment_tree);
 	return res;
 nosupport:
 	GDKerror("42000!type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
+	res = GDK_FAIL;
+	goto cleanup;
 }
 
 #ifdef HAVE_HGE
@@ -2655,7 +2789,7 @@ avg_fp_deltas(dbl)
 
 #define ANALYTICAL_AVG_PARTITIONS(TPE, IMP, REAL_IMP)		\
 	do {						\
-		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)bi.base; \
 		if (p) {					\
 			while (i < cnt) {		\
 				if (np[i]) 	{		\
@@ -2713,12 +2847,17 @@ avg_num_deltas(hge)
 gdk_return
 GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng n = 0, rr = 0;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	bit *np = pi.base, *op = oi.base;
 	bool abort_on_error = true;
 	BUN nils = 0;
 	void *segment_tree = NULL;
@@ -2753,11 +2892,17 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 cleanup:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(segment_tree);
 	return res;
 nosupport:
 	GDKerror("42000!average of type %s to dbl unsupported.\n", ATOMname(tpe));
-	return GDK_FAIL;
+	res = GDK_FAIL;
+	goto cleanup;
 }
 
 #ifdef TRUNCATE_NUMBERS
@@ -2913,7 +3058,7 @@ avg_int_deltas(lng)
 
 #define ANALYTICAL_AVG_INT_PARTITIONS(TPE, IMP)		\
 	do {						\
-		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0); \
+		TPE *restrict bp = (TPE*)bi.base, *restrict rb = (TPE *) Tloc(r, 0); \
 		if (p) {					\
 			while (i < cnt) {		\
 				if (np[i]) 	{		\
@@ -2965,11 +3110,16 @@ avg_int_deltas(hge)
 gdk_return
 GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng rem = 0, ncnt = 0;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 
@@ -2997,16 +3147,22 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 cleanup:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(segment_tree);
 	return res;
 nosupport:
 	GDKerror("42000!average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
-	return GDK_FAIL;
+	res = GDK_FAIL;
+	goto cleanup;
 }
 
 #define ANALYTICAL_STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)bi.base; \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -3037,7 +3193,7 @@ nosupport:
 
 #define ANALYTICAL_STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)bi.base; \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			TPE v = bp[j]; \
@@ -3077,7 +3233,7 @@ nosupport:
 
 #define ANALYTICAL_STDEV_VARIANCE_ALL_ROWS(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)bi.base; \
 		for (; j < i; j++) { \
 			TPE v = bp[j]; \
 			if (is_##TPE##_nil(v))		\
@@ -3147,7 +3303,7 @@ typedef struct stdev_var_deltas {
 	} while (0)
 #define ANALYTICAL_STDEV_VARIANCE_OTHERS(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)bi.base; \
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(stdev_var_deltas), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
@@ -3212,52 +3368,63 @@ statistics##TPE##IMP: \
 		}	\
 	} while (0)
 
-#define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC) \
-gdk_return \
+#define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC)		\
+gdk_return								\
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
-{ \
-	bool has_nils = false, last = false;	\
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,	\
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0; \
-	lng n = 0;	\
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
+{									\
+	BATiter pi = bat_iterator(p);					\
+	BATiter oi = bat_iterator(o);					\
+	BATiter bi = bat_iterator(b);					\
+	BATiter si = bat_iterator(s);					\
+	BATiter ei = bat_iterator(e);					\
+	bool has_nils = false, last = false;				\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
+	lng n = 0;							\
+	bit *np = pi.base, *op = oi.base;				\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
-	void *segment_tree = NULL; \
-	gdk_return res = GDK_SUCCEED; \
-	\
-	if (cnt > 0) {	\
-		switch (frame_type) {	\
+	void *segment_tree = NULL;					\
+	gdk_return res = GDK_SUCCEED;					\
+									\
+	if (cnt > 0) {							\
+		switch (frame_type) {					\
 		case 3: /* unbounded until current row */	{	\
-			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
-		} break;	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP); \
+		} break;						\
 		case 4: /* current row until unbounded */	{	\
-			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
-		} break;	\
-		case 5: /* all rows */	{	\
-			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_ALL_ROWS, SAMPLE, OP);	\
-		} break;	\
-		case 6: /* current row */ {	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP); \
+		} break;						\
+		case 5: /* all rows */	{				\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_ALL_ROWS, SAMPLE, OP); \
+		} break;						\
+		case 6: /* current row */ {				\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
-		} break;	\
-		default: {	\
-			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP);	\
-		}	\
-		}	\
-	}	\
-	\
-	BATsetcount(r, cnt); \
-	r->tnonil = !has_nils;	\
-	r->tnil = has_nils;	\
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */	\
-overflow:	\
-	GDKerror("22003!overflow in calculation.\n");	\
-	res = GDK_FAIL;	\
-cleanup:	\
-	GDKfree(segment_tree);	\
-	return res;	\
-nosupport:	\
+		} break;						\
+		default: {						\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP); \
+		}							\
+		}							\
+	}								\
+									\
+	BATsetcount(r, cnt);						\
+	r->tnonil = !has_nils;						\
+	r->tnil = has_nils;						\
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */ \
+overflow:								\
+	GDKerror("22003!overflow in calculation.\n");			\
+	res = GDK_FAIL;							\
+cleanup:								\
+	bat_iterator_end(&pi);						\
+	bat_iterator_end(&oi);						\
+	bat_iterator_end(&bi);						\
+	bat_iterator_end(&si);						\
+	bat_iterator_end(&ei);						\
+	GDKfree(segment_tree);						\
+	return res;							\
+nosupport:								\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
-	return GDK_FAIL; \
+	res = GDK_FAIL;							\
+	goto cleanup;							\
 }
 
 GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)), "standard deviation")
@@ -3267,7 +3434,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 
 #define ANALYTICAL_COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base; \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -3301,7 +3468,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 
 #define ANALYTICAL_COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base; \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			TPE v1 = bp1[j], v2 = bp2[j]; \
@@ -3344,7 +3511,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 
 #define ANALYTICAL_COVARIANCE_ALL_ROWS(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base; \
 		for (; j < i; j++) { \
 			TPE v1 = bp1[j], v2 = bp2[j]; \
 			if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
@@ -3408,7 +3575,7 @@ typedef struct covariance_deltas {
 #define FINALIZE_AGGREGATE_COVARIANCE(TPE, SAMPLE, OP) FINALIZE_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP)
 #define ANALYTICAL_COVARIANCE_OTHERS(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base;	\
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
@@ -3418,52 +3585,65 @@ typedef struct covariance_deltas {
 		j = k; \
 	} while (0)
 
-#define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP) \
-gdk_return \
+#define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP)			\
+gdk_return								\
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
-{ \
-	bool has_nils = false, last = false; \
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,	\
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0; \
-	lng n = 0;	\
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
+{									\
+	BATiter pi = bat_iterator(p);					\
+	BATiter oi = bat_iterator(o);					\
+	BATiter b1i = bat_iterator(b1);					\
+	BATiter b2i = bat_iterator(b2);					\
+	BATiter si = bat_iterator(s);					\
+	BATiter ei = bat_iterator(e);					\
+	bool has_nils = false, last = false;				\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = si.base, *restrict end = ei.base,	\
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
+	lng n = 0;							\
+	bit *np = pi.base, *op = oi.base;				\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
-	void *segment_tree = NULL; \
-	gdk_return res = GDK_SUCCEED; \
-	\
-	if (cnt > 0) {	\
-		switch (frame_type) {	\
+	void *segment_tree = NULL;					\
+	gdk_return res = GDK_SUCCEED;					\
+									\
+	if (cnt > 0) {							\
+		switch (frame_type) {					\
 		case 3: /* unbounded until current row */	{	\
-			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
-		} break;	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP); \
+		} break;						\
 		case 4: /* current row until unbounded */	{	\
-			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
-		} break;	\
-		case 5: /* all rows */	{	\
-			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_ALL_ROWS, SAMPLE, OP);	\
-		} break;	\
-		case 6: /* current row */ {	\
-			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP);	\
-		} break;	\
-		default: {	\
-			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP);	\
-		}	\
-		}	\
-	}	\
-	\
-	BATsetcount(r, cnt); \
-	r->tnonil = !has_nils;	\
-	r->tnil = has_nils;	\
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */	\
-overflow:	\
-	GDKerror("22003!overflow in calculation.\n");	\
-	res = GDK_FAIL;	\
-cleanup:	\
-	GDKfree(segment_tree);	\
-	return res;	\
-nosupport:	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP); \
+		} break;						\
+		case 5: /* all rows */	{				\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_ALL_ROWS, SAMPLE, OP); \
+		} break;						\
+		case 6: /* current row */ {				\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP); \
+		} break;						\
+		default: {						\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP); \
+		}							\
+		}							\
+	}								\
+									\
+	BATsetcount(r, cnt);						\
+	r->tnonil = !has_nils;						\
+	r->tnil = has_nils;						\
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */ \
+overflow:								\
+	GDKerror("22003!overflow in calculation.\n");			\
+	res = GDK_FAIL;							\
+cleanup:								\
+	bat_iterator_end(&pi);						\
+	bat_iterator_end(&oi);						\
+	bat_iterator_end(&b1i);						\
+	bat_iterator_end(&b2i);						\
+	bat_iterator_end(&si);						\
+	bat_iterator_end(&ei);						\
+	GDKfree(segment_tree);						\
+	return res;							\
+nosupport:								\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
-	return GDK_FAIL; \
+	res = GDK_FAIL;							\
+	goto cleanup;							\
 }
 
 GDK_ANALYTICAL_COVARIANCE(covariance_samp, 1, m2 / (n - 1))
@@ -3471,7 +3651,7 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 
 #define ANALYTICAL_CORRELATION_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base; \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -3511,7 +3691,7 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 
 #define ANALYTICAL_CORRELATION_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base; \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			TPE v1 = bp1[j], v2 = bp2[j]; \
@@ -3557,7 +3737,7 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 
 #define ANALYTICAL_CORRELATION_ALL_ROWS(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base; \
 		for (; j < i; j++) { \
 			TPE v1 = bp1[j], v2 = bp2[j]; \
 			if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
@@ -3647,7 +3827,7 @@ typedef struct correlation_deltas {
 	} while (0)
 #define ANALYTICAL_CORRELATION_OTHERS(TPE, SAMPLE, OP) 	/* SAMPLE and OP not used */	\
 	do { \
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
+		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base;	\
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(correlation_deltas), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
@@ -3661,10 +3841,17 @@ gdk_return
 GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1),
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+	const oid *restrict start = si.base, *restrict end = ei.base;
 	lng n = 0;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	const bit *np = pi.base, *op = oi.base;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
@@ -3697,9 +3884,16 @@ overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;
 cleanup:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(segment_tree);
 	return res;
   nosupport:
 	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
-	return GDK_FAIL;
+	res = GDK_FAIL;
+	goto cleanup;
 }
