@@ -2079,15 +2079,6 @@ store_manager(sqlstore *store)
 	for (;;) {
 		int res;
 
-		if (ATOMIC_GET(&store->nr_active) == 0) {
-			store_lock(store);
-			if (ATOMIC_GET(&store->nr_active) == 0) {
-				ulng oldest = store_timestamp(store)+1;
-				store_pending_changes(store, oldest);
-			}
-			store_unlock(store);
-			store->logger_api.activate(store); /* rotate too new log file */
-		}
 		if (GDKexiting())
 			break;
 		const int sleeptime = 100;
@@ -3279,6 +3270,11 @@ sql_trans_rollback(sql_trans *tr)
 		tr->changes = NULL;
 		tr->logchanges = 0;
 		store_unlock(store);
+	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		store_lock(store);
+		ulng oldest = store_timestamp(store);
+		store_pending_changes(store, oldest);
+		store_unlock(store);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3428,7 +3424,7 @@ sql_trans_commit(sql_trans *tr)
 		int flush = 0;
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
-			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 100000;
+			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 			if (flush)
 				MT_lock_set(&store->flush);
@@ -3494,6 +3490,11 @@ sql_trans_commit(sql_trans *tr)
 		tr->ts = commit_ts;
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
+	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		store_lock(store);
+		ulng oldest = store_timestamp(store);
+		store_pending_changes(store, oldest);
+		store_unlock(store);
 	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
