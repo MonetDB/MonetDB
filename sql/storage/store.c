@@ -3263,10 +3263,51 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 }
 
 static void
+clean_predicates_and_propagate_to_parent(sql_trans *tr)
+{
+	if (tr->predicates) {
+		/*if (tr->parent) {  propagate to the parent */
+			/*for(node *n=tr->predicates->h; n ; n = n->next) {
+				pl *old = n->data;
+				pl *p = SA_ZNEW(tr->sa, pl);
+
+				p->c = old->c;
+				p->cmp = old->cmp;
+				p->anti = old->anti;
+				p->semantics = old->semantics;
+				if (old->r)
+					p->r = atom_dup(tr->sa, old->r);
+				if (old->f)
+					p->f = atom_dup(tr->sa, old->f);
+
+				add_predicate(tr->sa, tr->parent->predicates, p);
+			}
+		}*/
+		list_destroy(tr->predicates);
+		tr->predicates = NULL;
+	}
+	if (!list_empty(tr->dependencies)) {
+		if (tr->parent) { /* propagate to the parent */
+			for(node *n=tr->dependencies->h; n ; n = n->next)
+				sql_trans_add_dependency(tr->parent, *(sqlid*)n->data);
+		}
+		list_destroy(tr->dependencies);
+		tr->dependencies = NULL;
+	}
+	if (!list_empty(tr->removals)) {
+		if (tr->parent) { /* propagate to the parent */
+			for(node *n=tr->removals->h; n ; n = n->next)
+				sql_trans_add_dependency(tr->parent, *(sqlid*)n->data);
+		}
+		list_destroy(tr->removals);
+		tr->removals = NULL;
+	}
+}
+
+static void
 sql_trans_rollback(sql_trans *tr, int locked)
 {
 	sqlstore *store = tr->store;
-
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3353,18 +3394,7 @@ sql_trans_rollback(sql_trans *tr, int locked)
 		}
 	}
 
-	if (tr->predicates) {
-		list_destroy(tr->predicates);
-		tr->predicates = NULL;
-	}
-	if (tr->dependencies) {
-		list_destroy(tr->dependencies);
-		tr->dependencies = NULL;
-	}
-	if (tr->removals) {
-		list_destroy(tr->removals);
-		tr->removals = NULL;
-	}
+	clean_predicates_and_propagate_to_parent(tr);
 }
 
 sql_trans *
@@ -3691,18 +3721,7 @@ sql_trans_commit(sql_trans *tr)
 	}
 	tr->localtmps.nelm = NULL;
 
-	if (tr->predicates) {
-		list_destroy(tr->predicates);
-		tr->predicates = NULL;
-	}
-	if (tr->dependencies) {
-		list_destroy(tr->dependencies);
-		tr->dependencies = NULL;
-	}
-	if (tr->removals) {
-		list_destroy(tr->removals);
-		tr->removals = NULL;
-	}
+	clean_predicates_and_propagate_to_parent(tr);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
