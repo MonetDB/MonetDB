@@ -75,7 +75,7 @@ typedef struct{
 					args[i] = (void*)  &mut->args[i].s;					\
 				} else {												\
 					mut->args[i].o++;									\
-					mut->args[i].s = (str *) Tloc(mut->args[i].b, mut->args[i].o); \
+					mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
 					args[i] = (void*)  &mut->args[i].s;					\
 				}														\
 			}															\
@@ -127,7 +127,7 @@ typedef struct{
 						args[i] =  (void*) & mut->args[i].s;			\
 					} else {											\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o); \
+						mut->args[i].s = (str*) BUNtloc(mut->args[i].bi, mut->args[i].o); \
 						args[i] =  (void*) & mut->args[i].s;			\
 					}													\
 				}														\
@@ -164,7 +164,7 @@ MANIFOLDjob(MULTItask *mut)
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
 				args[i] =  (void*) & mut->args[i].s;
 			} else {
-				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);
+				mut->args[i].s = (str*) BUNtloc(mut->args[i].bi, mut->args[i].o);
 				args[i] =  (void*) & mut->args[i].s;
 			}
 		} else {
@@ -289,6 +289,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				msg = createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
+			mat[i].bi = bat_iterator(mat[i].b);
 			mat[i].type = tpe = getBatType(getArgType(mb,pci,i));
 			if (mut.fvar == 0){
 				mut.fvar = i;
@@ -307,10 +308,9 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				o = mat[i].b->tseqbase;
 				mat[i].first = mat[i].last = (void*) &o;
 			} else {
-				mat[i].first = (void*)  Tloc(mat[i].b, 0);
-				mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
+				mat[i].first = (void*)  mat[i].bi.base;
+				mat[i].last = (void *) ((char*) mat[i].bi.base + (BUNlast(mat[i].b) << mat[i].bi.shift));
 			}
-			mat[i].bi = bat_iterator(mat[i].b);
 			mat[i].o = 0;
 			mat[i].q = BUNlast(mat[i].b);
 		} else {

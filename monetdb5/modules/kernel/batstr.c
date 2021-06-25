@@ -227,6 +227,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -248,8 +249,9 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
+	bi = bat_iterator(b);
 	off1 = b->hseqbase;
-	vals = Tloc(b, 0);
+	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -257,14 +259,18 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_int_nil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				nils = true;
 			} else {
-				if ((msg = str_from_wchr(&buf, &buflen, vals[p1])) != MAL_SUCCEED)
+				if ((msg = str_from_wchr(&buf, &buflen, vals[p1])) != MAL_SUCCEED) {
+					bat_iterator_end(&bi);
 					goto bailout;
+				}
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
@@ -277,20 +283,25 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_int_nil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				nils = true;
 			} else {
-				if ((msg = str_from_wchr(&buf, &buflen, vals[p1])) != MAL_SUCCEED)
+				if ((msg = str_from_wchr(&buf, &buflen, vals[p1])) != MAL_SUCCEED) {
+					bat_iterator_end(&bi);
 					goto bailout;
+				}
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -312,6 +323,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -334,7 +346,8 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	vals = Tloc(b, 0);
+	bi = bat_iterator(b);
+	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -376,6 +389,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -850,6 +864,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -872,7 +887,8 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	}
 
 	off1 = b->hseqbase;
-	inputs = Tloc(b, 0);
+	bi = bat_iterator(b);
+	inputs = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -914,6 +930,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -940,6 +957,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 		*n = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -969,7 +987,8 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
-	righti = Tloc(right, 0);
+	bi = bat_iterator(right);
+	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -1013,6 +1032,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 bailout1:
 	bat_iterator_end(&lefti);
 bailout:
@@ -1131,6 +1151,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		*n = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -1160,7 +1181,8 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
-	righti = Tloc(right, 0);
+	bi = bat_iterator(right);
+	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -1204,6 +1226,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 bailout1:
 	bat_iterator_end(&lefti);
 bailout:
@@ -1321,7 +1344,7 @@ bailout:
 static str
 do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, str (*func)(str*, size_t*, str, int, str))
 {
-	BATiter arg1i, arg3i;
+	BATiter arg1i, arg3i, bi;
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -1365,7 +1388,8 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	off2 = arg2->hseqbase;
 	off3 = arg3->hseqbase;
 	arg1i = bat_iterator(arg1);
-	arg2i = Tloc(arg2, 0);
+	bi = bat_iterator(arg2);
+	arg2i = bi.base;
 	arg3i = bat_iterator(arg3);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -1415,6 +1439,7 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 bailout1:
 	bat_iterator_end(&arg1i);
 	bat_iterator_end(&arg3i);
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -2083,7 +2108,7 @@ STRbatRstrSearch_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter lefti;
+	BATiter lefti, bi;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -2124,7 +2149,8 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
-	righti = Tloc(right, 0);
+	bi = bat_iterator(right);
+	righti = bi.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -2150,6 +2176,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
@@ -2239,6 +2266,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -2261,7 +2289,8 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	input = Tloc(b, 0);
+	bi = bat_iterator(b);
+	input = bi.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -2269,7 +2298,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			y = input[p1];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
-				goto bailout;
+				goto bailout1;
 			vals[i] = next;
 			nils |= is_int_nil(next);
 		}
@@ -2279,11 +2308,13 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			y = input[p1];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
-				goto bailout;
+				goto bailout1;
 			vals[i] = next;
 			nils |= is_int_nil(next);
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -2502,6 +2533,7 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -2524,7 +2556,8 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	}
 
 	off1 = b->hseqbase;
-	vals = Tloc(b, 0);
+	bi = bat_iterator(b);
+	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -2533,15 +2566,15 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -2553,19 +2586,21 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -2610,6 +2645,7 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -2632,7 +2668,8 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	vals = Tloc(b, 0);
+	bi = bat_iterator(b);
+	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -2641,15 +2678,15 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (strNil(x) || is_int_nil(y) || y < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_repeat(&buf, &buflen, x, y)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -2661,19 +2698,21 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (strNil(x) || is_int_nil(y) || y < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_repeat(&buf, &buflen, x, y)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -2697,6 +2736,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 		*r = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -2725,7 +2765,8 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
-	righti = Tloc(right, 0);
+	bi = bat_iterator(right);
+	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -2770,6 +2811,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 		}
 	}
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
@@ -2818,6 +2860,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*r = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -2846,7 +2889,8 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
-	righti = Tloc(right, 0);
+	bi = bat_iterator(right);
+	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -2891,6 +2935,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
@@ -3012,6 +3057,7 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*sid2 = pci->argc == 9 ? getArgReference_bat(stk, pci, 6) : NULL,
 		*sid3 = pci->argc == 9 ? getArgReference_bat(stk, pci, 7) : NULL,
 		*sid4 = pci->argc == 9 ? getArgReference_bat(stk, pci, 8) : NULL;
+	BATiter bi;
 
 	if (!buf) {
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3046,7 +3092,8 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	arg1i = bat_iterator(arg1);
 	arg2i = bat_iterator(arg2);
 	arg3i = bat_iterator(arg3);
-	arg4i = Tloc(arg4, 0);
+	bi = bat_iterator(arg4);
+	arg4i = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense && ci4.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2),
@@ -3097,6 +3144,7 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&arg1i);
 	bat_iterator_end(&arg2i);
 	bat_iterator_end(&arg3i);
@@ -3197,7 +3245,7 @@ bailout:
 static str
 STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter bi;
+	BATiter bi, fi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *f = NULL, *fs = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -3238,7 +3286,8 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	off1 = b->hseqbase;
 	off2 = f->hseqbase;
 	bi = bat_iterator(b);
-	field = Tloc(f, 0);
+	fi = bat_iterator(f);
+	field = fi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -3283,6 +3332,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 	}
 bailout1:
+	bat_iterator_end(&fi);
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
@@ -3406,6 +3456,7 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid3 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -3437,7 +3488,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off3 = arg3->hseqbase;
 	arg1i = bat_iterator(arg1);
 	arg2i = bat_iterator(arg2);
-	arg3i = Tloc(arg3, 0);
+	bi = bat_iterator(arg3);
+	arg3i = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
@@ -3484,6 +3536,7 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&arg1i);
 	bat_iterator_end(&arg2i);
 bailout:
@@ -3608,11 +3661,11 @@ bailout:
 static str
 STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter lefti, righti;
+	BATiter lefti, righti, starti, ncharsi;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *start = NULL, *ss = NULL, *nchars = NULL, *ns = NULL, *right = NULL, *rs = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *starti, *ncharsi, y, z;
+	int *sval, *lval, y, z;
 	str x, w, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0}, ci2 = {0}, ci3 = {0}, ci4 = {0};
@@ -3656,16 +3709,18 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off3 = nchars->hseqbase;
 	off4 = right->hseqbase;
 	lefti = bat_iterator(left);
-	starti = Tloc(start, 0);
-	ncharsi = Tloc(nchars, 0);
+	starti = bat_iterator(start);
+	ncharsi = bat_iterator(nchars);
+	sval = starti.base;
+	lval = ncharsi.base;
 	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense && ci4.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3), p4 = (canditer_next_dense(&ci4) - off4);
 			x = (str) BUNtvar(lefti, p1);
-			y = starti[p2];
-			z = ncharsi[p3];
+			y = sval[p2];
+			z = lval[p3];
 			w = (str) BUNtvar(righti, p4);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
@@ -3688,8 +3743,8 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3), p4 = (canditer_next(&ci4) - off4);
 			x = (str) BUNtvar(lefti, p1);
-			y = starti[p2];
-			z = ncharsi[p3];
+			y = sval[p2];
+			z = lval[p3];
 			w = (str) BUNtvar(righti, p4);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
@@ -3709,6 +3764,8 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&starti);
+	bat_iterator_end(&ncharsi);
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
@@ -3908,6 +3965,7 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -3930,7 +3988,8 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 
 	off1 = b->hseqbase;
-	input = Tloc(b, 0);
+	bi = bat_iterator(b);
+	input = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -3939,15 +3998,15 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -3959,19 +4018,21 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -3992,6 +4053,7 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -4014,7 +4076,8 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 
 	off1 = b->hseqbase;
-	input = Tloc(b, 0);
+	bi = bat_iterator(b);
+	input = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -4023,15 +4086,15 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -4043,19 +4106,21 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -4078,6 +4143,8 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*l = getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+	BATiter bi;
+	BATiter lbi;
 
 	(void) cntxt;
 	(void) mb;
@@ -4105,8 +4172,10 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = b->hseqbase;
 	off2 = lb->hseqbase;
-	vals1 = Tloc(b, 0);
-	vals2 = Tloc(lb, 0);
+	bi = bat_iterator(b);
+	lbi = bat_iterator(lb);
+	vals1 = bi.base;
+	vals2 = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -4116,15 +4185,15 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -4137,19 +4206,22 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&lbi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -4161,6 +4233,7 @@ static str
 STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
+	BATiter lbi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4201,7 +4274,8 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = b->hseqbase;
 	off2 = lb->hseqbase;
 	bi = bat_iterator(b);
-	len = Tloc(lb, 0);
+	lbi = bat_iterator(lb);
+	len = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -4246,6 +4320,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&lbi);
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
@@ -4257,7 +4332,7 @@ bailout:
 static str
 STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter bi;
+	BATiter bi, lbi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4298,7 +4373,8 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = b->hseqbase;
 	off2 = lb->hseqbase;
 	bi = bat_iterator(b);
-	start = Tloc(lb, 0);
+	lbi = bat_iterator(lb);
+	start = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -4343,6 +4419,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
+	bat_iterator_end(&lbi);
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
@@ -4354,11 +4431,11 @@ bailout:
 static str
 STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter lefti;
+	BATiter lefti, starti, lengthi;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *start = NULL, *ss = NULL, *length = NULL, *lens = NULL;
 	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *starti, *lengthi, y, z;
+	int *svals, *lvals, y, z;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0}, ci2 = {0}, ci3 = {0};
@@ -4398,14 +4475,16 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off2 = start->hseqbase;
 	off3 = length->hseqbase;
 	lefti = bat_iterator(left);
-	starti = Tloc(start, 0);
-	lengthi = Tloc(length, 0);
+	starti = bat_iterator(start);
+	lengthi = bat_iterator(length);
+	svals = starti.base;
+	lvals = lengthi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			x = (str) BUNtvar(lefti, p1);
-			y = starti[p2];
-			z = lengthi[p3];
+			y = svals[p2];
+			z = lvals[p3];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
@@ -4426,8 +4505,8 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			x = (str) BUNtvar(lefti, p1);
-			y = starti[p2];
-			z = lengthi[p3];
+			y = svals[p2];
+			z = lvals[p3];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
@@ -4447,6 +4526,8 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 bailout1:
 	bat_iterator_end(&lefti);
+	bat_iterator_end(&starti);
+	bat_iterator_end(&lengthi);
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
@@ -4729,10 +4810,10 @@ bailout:
 static str
 STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter lefti, righti;
+	BATiter lefti, righti, starti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL, *start = NULL, *ss = NULL;
 	BUN q = 0;
-	int *restrict vals, *restrict starti, z;
+	int *restrict vals, *restrict svals, z;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0}, ci2 = {0}, ci3 = {0};
@@ -4769,14 +4850,15 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off3 = start->hseqbase;
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
-	starti = Tloc(start, 0);
+	starti = bat_iterator(start);
+	svals = starti.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2), p3 = (canditer_next_dense(&ci3) - off3);
 			x = (str) BUNtvar(lefti, p1);
 			y = (str) BUNtvar(righti, p2);
-			z = starti[p3];
+			z = svals[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				vals[i] = int_nil;
@@ -4790,7 +4872,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2), p3 = (canditer_next(&ci3) - off3);
 			x = (str) BUNtvar(lefti, p1);
 			y = (str) BUNtvar(righti, p2);
-			z = starti[p3];
+			z = svals[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				vals[i] = int_nil;
@@ -4800,6 +4882,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&starti);
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
