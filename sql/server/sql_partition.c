@@ -284,8 +284,8 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 
 		nr = sql_processrelation(sql, nr, 0, 0);
 		if (nr) {
-			list *id_l = rel_dependencies(sql, nr);
-			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
+			list *blist = rel_dependencies(sql, nr);
+			mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY);
 		}
 		r->l = base;
 	}

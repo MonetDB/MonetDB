@@ -63,8 +63,8 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		if (r)
 			r = sql_processrelation(m, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(m, r);
-			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
+			list *blist = rel_dependencies(m, r);
+			mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY);
 		}
 		sa_reset(m->ta);
 		assert(r);
@@ -1313,29 +1313,32 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 void
-mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type)
+mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type)
 {
-	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", id, depend_id, (int) depend_type);
-	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
-		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
+	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", b->id, depend_id, (int) depend_type);
+	if ( (b->id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) ) {
+		if (!b->new)
+			sql_trans_add_dependency(m->session->tr, b->id);
+		sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
+	}
 }
 
 void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type)
+mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type)
 {
-	node *n = id_l->h;
-	int i;
-
 	TRC_DEBUG(SQL_TRANS, "Create dependencies on '%d' of type: %d\n", depend_id, (int) dep_type);
-	for (i = 0; i < list_length(id_l); i++)
-	{
-		mvc_create_dependency(m, *(sqlid *) n->data, depend_id, dep_type);
-		n = n->next;
+	if (!list_empty(blist)) {
+		for (node *n = blist->h ; n ; n = n->next) {
+			sql_base *b = n->data;
+			if (!b->new) /* only add old objects to the transaction dependency list */
+				sql_trans_add_dependency(m->session->tr, b->id);
+			mvc_create_dependency(m, b, depend_id, dep_type);
+		}
 	}
 }
 
 int
-mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
+mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 

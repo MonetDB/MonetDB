@@ -1590,18 +1590,18 @@ exps_deps(mvc *sql, list *exps, list *refs, list *l)
 }
 
 static int
-id_cmp(sqlid *id1, sqlid *id2)
+id_cmp(sql_base *id1, sql_base *id2)
 {
-	if (*id1 == *id2)
+	if (id1->id == id2->id)
 		return 0;
 	return -1;
 }
 
 static list *
-cond_append(list *l, sqlid *id)
+cond_append(list *l, sql_base *b)
 {
-	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
-		 list_append(l, id);
+	if (b->id >= FUNC_OIDS && !list_find(l, b, (fcmp) &id_cmp))
+		list_append(l, b);
 	return l;
 }
 
@@ -1644,7 +1644,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
 			return -1;
-		cond_append(l, &f->func->base.id);
+		cond_append(l, &f->func->base);
 		if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
 			/* add dependency on seq nr */
 			list *nl = e->l;
@@ -1657,7 +1657,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 				if (sche) {
 					sql_sequence *seq = find_sql_sequence(sql->session->tr, sche, seq_name);
 					if (seq)
-						cond_append(l, &seq->base.id);
+						cond_append(l, &seq->base);
 				}
 			}
 		}
@@ -1667,13 +1667,13 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
 			return -1;
-		cond_append(l, &a->func->base.id);
+		cond_append(l, &a->func->base);
 	} break;
 	case e_cmp: {
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (e->flag == cmp_filter) {
 				sql_subfunc *f = e->f;
-				cond_append(l, &f->func->base.id);
+				cond_append(l, &f->func->base);
 			}
 			if (exps_deps(sql, e->l, refs, l) != 0 ||
 				exps_deps(sql, e->r, refs, l) != 0)
@@ -1715,7 +1715,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		if (!t && c)
 			t = c->t;
 
-		cond_append(l, &t->base.id);
+		cond_append(l, &t->base);
 		/* find all used columns */
 		for (node *en = r->exps->h; en; en = en->next) {
 			sql_exp *exp = en->data;
@@ -1726,10 +1726,10 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				continue;
 			} else if (oname[0] == '%') {
 				sql_idx *i = find_sql_idx(t, oname+1);
-				cond_append(l, &i->base.id);
+				cond_append(l, &i->base);
 			} else {
 				sql_column *c = find_sql_column(t, oname);
-				cond_append(l, &c->base.id);
+				cond_append(l, &c->base);
 			}
 		}
 	} break;
@@ -1737,7 +1737,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		if ((IS_TABLE_PROD_FUNC(r->flag) || r->flag == TABLE_FROM_RELATION) && r->r) { /* table producing function, excluding rel_relational_func cases */
 			sql_exp *op = r->r;
 			sql_subfunc *f = op->f;
-			cond_append(l, &f->func->base.id);
+			cond_append(l, &f->func->base);
 		}
 	} break;
 	case op_join:

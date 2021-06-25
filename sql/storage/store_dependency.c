@@ -30,17 +30,6 @@ list_find_func_id(list *ids, sqlid id)
 	return 0;
 }
 
-int
-sql_trans_add_dependency(sql_trans* tr, sqlid id)
-{
-	sqlid *local_id = MNEW(sqlid);
-	if (!local_id)
-		return LOG_ERR;
-	*local_id = id;
-	list_append(tr->dependencies, local_id);
-	return LOG_OK;
-}
-
 /*Function to create a dependency*/
 int
 sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_dependency depend_type)
@@ -58,8 +47,6 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_depend
 	if (is_oid_nil(store->table_api.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &dtype, NULL)))
 		log_res = store->table_api.table_insert(tr, t, &id, &depend_id, &dtype);
 
-	if (log_res == LOG_OK) /* Append to the list of touched dependencies to validate later */
-		log_res = sql_trans_add_dependency(tr, id);
 	return log_res;
 }
 

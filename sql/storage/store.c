@@ -261,6 +261,17 @@ schema_destroy(sqlstore *store, sql_schema *s)
 	_DELETE(s);
 }
 
+int
+sql_trans_add_dependency(sql_trans* tr, sqlid id)
+{
+	sqlid *local_id = MNEW(sqlid);
+	if (!local_id)
+		return LOG_ERR;
+	*local_id = id;
+	list_append(tr->dependencies, local_id);
+	return LOG_OK;
+}
+
 static int
 transaction_add_removal(sql_trans *tr, sqlid id)
 {
@@ -4774,6 +4785,8 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 		return res;
 	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
+		return res;
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
 	if (!isNew(pt) && (res = transaction_add_removal(tr, pt->base.id))) /* protect from being added twice */
@@ -4910,7 +4923,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update)
 		res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
-	if (!isNew(pt) && update && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
@@ -5040,7 +5053,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 			return res;
 	}
-	if (!isNew(pt) && update && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
@@ -5411,6 +5424,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	sql_column *col;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
+	int res = LOG_OK;
 
 	if (!tpe)
 		return NULL;
@@ -5429,8 +5443,11 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 			return NULL;
 	}
 
-	if (tpe->type->s) /* column depends on type */
+	if (tpe->type->s) {/* column depends on type */
 		sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY);
+		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id)))
+			return NULL;
+	}
 	return col;
 }
 
@@ -5875,6 +5892,8 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 		return NULL;
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY);
+	if (!isNew(nk) && (res = sql_trans_add_dependency(tr, ((sql_fkey *) nk)->rkey)))
+		return NULL;
 	return (sql_fkey*) nk;
 }
 
@@ -5886,6 +5905,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 	int nr = list_length(k->columns);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(tr, syss, "objects");
+	int res = LOG_OK;
 
 	assert(c);
 	kc->c = c;
@@ -5895,6 +5915,8 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 
 	if (k->type == pkey) {
 		sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY);
+		if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id)))
+			return NULL;
 		if (sql_trans_alter_null(tr, c, 0)) /* should never happen */
 			return NULL;
 	}
@@ -5913,6 +5935,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 	int nr = list_length(k->columns);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(tr, syss, "objects");
+	int res = LOG_OK;
 
 	assert(c);
 	kc->c = c;
@@ -5921,6 +5944,8 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 		sql_trans_create_ic(tr, k->idx, c);
 
 	sql_trans_create_dependency(tr, c->base.id, k->base.id, FKEY_DEPENDENCY);
+	if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id)))
+		return NULL;
 
 	if (store->table_api.table_insert(tr, syskc, &k->base.id, &kc->c->base.name, &nr, ATOMnilptr(TYPE_int)))
 		return NULL;
@@ -6307,6 +6332,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysseqs = find_sql_table(tr, syss, "sequences");
 	sql_sequence *seq = create_sql_sequence_with_id(tr->sa, next_oid(tr->store), s, name, start, min, max, inc, cacheinc, cycle);
+	int res = LOG_OK;
 
 	if (os_add(s->seqs, tr, seq->base.name, &seq->base))
 		return NULL;
@@ -6315,8 +6341,11 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 		return NULL;
 
 	/*Create a BEDROPPED dependency for a SERIAL COLUMN*/
-	if (bedropped)
+	if (bedropped) {
 		sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY);
+		if (!isNew(seq) && (res = sql_trans_add_dependency(tr, seq->base.id)))
+			return NULL;
+	}
 	return seq;
 }
 

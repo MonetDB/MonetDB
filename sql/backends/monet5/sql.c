@@ -362,8 +362,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			/* For a self incremented column, it's sequence will get a BEDROPPED_DEPENDENCY,
 				so no additional dependencies are needed */
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
-				list *id_l = rel_dependencies(sql, r);
-				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+				list *blist = rel_dependencies(sql, r);
+				mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY);
 			}
 			rel_destroy(r);
 			sa_reset(sql->sa);
@@ -476,8 +476,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
+			list *blist = rel_dependencies(sql, r);
+			mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY);
 		}
 		sa_reset(sql->ta);
 		if (!r) {
