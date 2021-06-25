@@ -50,7 +50,6 @@ typedef struct objectset {
 	int refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
-	validate_fptr validate;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
 	versionhead  *name_based_t;
@@ -160,6 +159,7 @@ hash_delete(sql_hash *h, void *data)
 		if (!h->sa)
 			_DELETE(p);
 	}
+	h->entries--;
 }
 
 static void
@@ -617,32 +617,14 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 	return LOG_OK;
 }
 
-static int
-tc_valid_change(sql_trans *tr, sql_change *change)
-{
-	int ok = LOG_OK;
-	objectversion *ov = (objectversion*)change->data;
-	bte state = os_atmc_get_state(ov);
-
-	if (ov->ts == tr->tid && ov->os->validate) {
-		if (state == active) {
-			ok = ov->os->validate(tr, ov->b, 0);
-		} else if (state == deleted) {
-			ok = ov->os->validate(tr, ov->b, 1);
-		}
-	}
-	return ok;
-}
-
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, validate_fptr validate, bool temporary, bool unique, bool concurrent, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
 		.refcnt = 1,
 		.sa = sa,
 		.destroy = destroy,
-		.validate = validate,
 		.temporary = temporary,
 		.unique = unique,
 		.concurrent = concurrent,
@@ -888,12 +870,12 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_add_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return res;
 	}
 
 	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
@@ -986,12 +968,12 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_del_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return res;
 	}
 
 	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, &tc_valid_change);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 

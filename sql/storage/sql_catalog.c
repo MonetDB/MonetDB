@@ -71,8 +71,7 @@ _list_find_name(list *l, const char *name)
 }
 
 void
-trans_add(sql_trans *tr, sql_base *b, void *data,
-		tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, tc_valid_fptr valid)
+trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
 	sql_change *change = SA_ZNEW(tr->sa, sql_change);
 	change->obj = b;
@@ -80,7 +79,6 @@ trans_add(sql_trans *tr, sql_base *b, void *data,
 	change->cleanup = cleanup;
 	change->commit = commit;
 	change->log = log;
-	change->valid = valid;
 	MT_lock_set(&tr->lock);
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	if (log)

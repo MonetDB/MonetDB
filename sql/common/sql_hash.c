@@ -28,16 +28,31 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	if (ht == NULL)
 		return NULL;
 	ht->sa = sa;
+	ht->entries = 0;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
-	ht->buckets = (ht->sa)?SA_NEW_ARRAY(sa, sql_hash_e*, ht->size):NEW_ARRAY(sql_hash_e*, ht->size); // TODO: can fail
+	ht->buckets = (ht->sa)?SA_ZNEW_ARRAY(sa, sql_hash_e*, ht->size):ZNEW_ARRAY(sql_hash_e*, ht->size);
 	if (ht->buckets == NULL) {
 		_DELETE(ht);
 		return NULL;
 	}
-	for (int i = 0; i < ht->size; i++)
-		ht->buckets[i] = NULL;
 	return ht;
+}
+
+int
+hash_entries(sql_hash *h)
+{
+	if (h)
+		return h->entries;
+	return 0;
+}
+
+int
+hash_empty(sql_hash *h)
+{
+	if (h)
+		return hash_entries(h) == 0;
+	return 1;
 }
 
 void
@@ -50,13 +65,37 @@ hash_del(sql_hash *h, int key, void *value)
 		e = e->chain;
 	}
 	if (e) {
+		h->entries--;
 		if (p)
 			p->chain = e->chain;
 		else
 			h->buckets[key&(h->size-1)] = e->chain;
-		if(!h->sa)
+		if (!h->sa)
 			_DELETE(e);
 	}
+}
+
+/* clear all hash table entries */
+void
+hash_clear(sql_hash *h) /* this code should be called for hash tables created outside SQL allocators only! */
+{
+	if (h == NULL || h->sa)
+		return;
+	for (int i = 0; i < h->size; i++) {
+		sql_hash_e *e = h->buckets[i], *c = NULL;
+
+		if (e)
+			c = e->chain;
+		while (c) {
+			sql_hash_e *next = c->chain;
+
+			_DELETE(c);
+			c = next;
+		}
+		_DELETE(e);
+		h->buckets[i] = NULL;
+	}
+	h->entries = 0;
 }
 
 void
