@@ -1628,10 +1628,61 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 	return s;
 }
 
+/* TODO clean this */
 static inline int
 id_hash(sqlid *id)
 {
 	return (int) BATatoms[TYPE_int].atomHash(id);
+}
+
+static void
+id_hash_clear(sql_hash *h)
+{
+	if (h == NULL || h->sa)
+		return;
+	for (int i = 0; i < h->size; i++) {
+		sql_hash_e *e = h->buckets[i], *c = NULL;
+
+		if (e) {
+			_DELETE(e->value);
+			c = e->chain;
+		}
+		while (c) {
+			sql_hash_e *next = c->chain;
+
+			_DELETE(c->value);
+			_DELETE(c);
+			c = next;
+		}
+		_DELETE(e);
+		h->buckets[i] = NULL;
+	}
+	h->entries = 0;
+}
+
+static void
+id_hash_destroy(sql_hash *h)
+{
+	if (h == NULL || h->sa)
+		return;
+	for (int i = 0; i < h->size; i++) {
+		sql_hash_e *e = h->buckets[i], *c = NULL;
+
+		if (e) {
+			_DELETE(e->value);
+			c = e->chain;
+		}
+		while (c) {
+			sql_hash_e *next = c->chain;
+
+			_DELETE(c->value);
+			_DELETE(c);
+			c = next;
+		}
+		_DELETE(e);
+	}
+	_DELETE(h->buckets);
+	_DELETE(h);
 }
 
 static sqlstore *
@@ -2042,8 +2093,8 @@ store_exit(sqlstore *store)
 	store->logger_api.destroy(store);
 
 	list_destroy(store->active);
-	hash_destroy(store->dependencies);
-	hash_destroy(store->removals);
+	id_hash_destroy(store->dependencies);
+	id_hash_destroy(store->removals);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&store->flush);
@@ -3339,8 +3390,8 @@ sql_trans_rollback(sql_trans *tr, int locked)
 		}
 		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			hash_clear(store->dependencies);
-			hash_clear(store->removals);
+			id_hash_clear(store->dependencies);
+			id_hash_clear(store->removals);
 		}
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -3363,8 +3414,8 @@ sql_trans_rollback(sql_trans *tr, int locked)
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			hash_clear(store->dependencies);
-			hash_clear(store->removals);
+			id_hash_clear(store->dependencies);
+			id_hash_clear(store->removals);
 		}
 		store_unlock(store);
 	}
@@ -3652,8 +3703,8 @@ sql_trans_commit(sql_trans *tr)
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			oldest = commit_ts;
 			store_pending_changes(store, oldest);
-			hash_clear(store->dependencies);
-			hash_clear(store->removals);
+			id_hash_clear(store->dependencies);
+			id_hash_clear(store->removals);
 		}
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
@@ -3692,8 +3743,8 @@ sql_trans_commit(sql_trans *tr)
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			hash_clear(store->dependencies);
-			hash_clear(store->removals);
+			id_hash_clear(store->dependencies);
+			id_hash_clear(store->removals);
 		}
 		store_unlock(store);
 		if (locked)
