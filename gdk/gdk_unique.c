@@ -87,14 +87,14 @@ BATunique(BAT *b, BAT *s)
 	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	vals = Tloc(b, 0);
+	bi = bat_iterator(b);
+	vals = bi.base;
 	if (b->tvarsized && b->ttype)
-		vars = b->tvheap->base;
+		vars = bi.vh->base;
 	else
 		vars = NULL;
-	width = Tsize(b);
+	width = bi.width;
 	cmp = ATOMcompare(b->ttype);
-	bi = bat_iterator(b);
 
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
