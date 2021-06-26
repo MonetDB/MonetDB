@@ -1827,7 +1827,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			task.maxrow = cnt;
 			task.state = ENDOFCOPY;
 		}
-		if (task.ateof && task.top[task.cur] < task.limit)
+		if (task.ateof && task.top[task.cur] < task.limit && cnt != task.maxrow)
 			break;
 		task.top[task.cur] = 0;
 		MT_sema_up(&task.producer);
