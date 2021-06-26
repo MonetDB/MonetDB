@@ -1,0 +1,71 @@
+stderr of test 'distinct-union.Bug-7148` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:41:43 >  
+# 09:41:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-334782" "--port=33394"
+# 09:41:43 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-334782/.s.monetdb.33394
+QUERY = select
+        c1, min(c2)
+        from (
+        select 'A' c0, 'a' c1, 1 c2
+        union all select 'A', 'a', 2
+        union all select 'A', 'b', 3
+        union all select 'B', 'a', 4
+        union all select 'B', 'b', 5
+        union all select 'C', 'c', 6
+        union all select 'C', 'a', 7
+        union all select 'C', 'b', 8
+        union all select 'C', 'c', 9
+        union all select 'D', 'd', 0
+        union all select 'F', 'a', 1
+        union all select 'F', 'b', 2
+        union all select 'E', 'c', 3
+        union all select 'G', 'd', 4
+        union all select 'G', 'e', 5
+        union all select 'G', 'a', 6
+        union all select 'G', 'b', 7
+ERROR = !SELECT: cannot use non GROUP BY column 'c1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334782/.s.monetdb.33394
+QUERY = select
+        c1, min(c2)
+        from (
+        select 'A' c0, 'a' c1, 1 c2
+        except all select 'A', 'a', 2
+        ) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334782/.s.monetdb.33394
+QUERY = select
+        min(c1), c2
+        from (
+        select 'A' c0, 'a' c1, 1 c2
+        except all select 'A', 'a', 2
+        ) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c2' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334782/.s.monetdb.33394
+QUERY = select
+        c1, min(c2)
+        from (
+        select 'A' c0, 'a' c1, 1 c2
+        intersect all select 'A', 'a', 2
+        ) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334782/.s.monetdb.33394
+QUERY = select
+        min(c1), c2
+        from (
+        select 'A' c0, 'a' c1, 1 c2
+        intersect all select 'A', 'a', 2
+        ) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c2' in query results without an aggregate function
+CODE  = 42000
+
+# 09:41:43 >  
+# 09:41:43 >  "Done."
+# 09:41:43 >  
+

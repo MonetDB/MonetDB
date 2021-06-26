@@ -17,3 +17,5 @@ count-distinct.Bug-7141
 HAVE_LIBPY3?aggregates-tables.Bug-7142
 type-upcasting-INT2BIGINT.Bug-7144
 rollup-distinct-count.Bug-7146
+sum-union.Bug-7147
+distinct-union.Bug-7148

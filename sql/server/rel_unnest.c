@@ -1693,10 +1693,7 @@ exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_project:
-	case op_union:
-	case op_inter:
-	case op_except: {
+	case op_project: {
 		switch(e->type) {
 		case e_aggr:
 		case e_func: {
@@ -1736,6 +1733,11 @@ exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			break;
 		}
 	} break;
+	case op_inter:
+	case op_except:
+	case op_union: {
+		e->card = CARD_MULTI;
+	} break;
 	case op_groupby: {
 		switch(e->type) {
 		case e_aggr:
@@ -1759,7 +1761,7 @@ exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 	if (is_simple_project(rel->op) && need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
 		e->card = MIN(e->card, CARD_AGGR);
-	if (!is_groupby(rel->op) || !list_empty(rel->r)) /* global groupings have atomic cardinality */
+	if (!is_set(rel->op) && (!is_groupby(rel->op) || !list_empty(rel->r))) /* global groupings have atomic cardinality */
 		rel->card = MAX(e->card, rel->card); /* the relation cardinality may get updated too */
 	return e;
 }

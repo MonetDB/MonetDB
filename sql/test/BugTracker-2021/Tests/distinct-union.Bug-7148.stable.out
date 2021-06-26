@@ -1,0 +1,193 @@
+stdout of test 'distinct-union.Bug-7148` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:41:43 >  
+# 09:41:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-334782" "--port=33394"
+# 09:41:43 >  
+
+#select
+#distinct c1, c2
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#union all select 'A', 'a', 2
+#union all select 'A', 'b', 3
+#union all select 'B', 'a', 4
+#union all select 'B', 'b', 5
+#union all select 'C', 'c', 6
+#union all select 'C', 'a', 7
+#union all select 'C', 'b', 8
+#union all select 'C', 'c', 9
+#union all select 'D', 'd', 0
+#union all select 'F', 'a', 1
+#union all select 'F', 'b', 2
+#union all select 'E', 'c', 3
+#union all select 'G', 'd', 4
+#union all select 'G', 'e', 5
+#union all select 'G', 'a', 6
+#union all select 'G', 'b', 7
+% .t,	.t # table_name
+% c1,	c2 # name
+% char,	tinyint # type
+% 1,	1 # length
+[ "a",	1	]
+[ "a",	2	]
+[ "b",	3	]
+[ "a",	4	]
+[ "b",	5	]
+[ "c",	6	]
+[ "a",	7	]
+[ "b",	8	]
+[ "c",	9	]
+[ "d",	0	]
+[ "b",	2	]
+[ "c",	3	]
+[ "d",	4	]
+[ "e",	5	]
+[ "a",	6	]
+[ "b",	7	]
+[ "c",	8	]
+[ "d",	9	]
+[ "e",	0	]
+#select
+#c1, c2
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#union all select 'A', 'a', 2
+#union all select 'A', 'b', 3
+#union all select 'B', 'a', 4
+#union all select 'B', 'b', 5
+#union all select 'C', 'c', 6
+#union all select 'C', 'a', 7
+#union all select 'C', 'b', 8
+#union all select 'C', 'c', 9
+#union all select 'D', 'd', 0
+#union all select 'F', 'a', 1
+#union all select 'F', 'b', 2
+#union all select 'E', 'c', 3
+#union all select 'G', 'd', 4
+#union all select 'G', 'e', 5
+#union all select 'G', 'a', 6
+#union all select 'G', 'b', 7
+% .t,	.t # table_name
+% c1,	c2 # name
+% char,	tinyint # type
+% 1,	1 # length
+[ "a",	1	]
+[ "a",	2	]
+[ "b",	3	]
+[ "a",	4	]
+[ "b",	5	]
+[ "c",	6	]
+[ "a",	7	]
+[ "b",	8	]
+[ "c",	9	]
+[ "d",	0	]
+[ "a",	1	]
+[ "b",	2	]
+[ "c",	3	]
+[ "d",	4	]
+[ "e",	5	]
+[ "a",	6	]
+[ "b",	7	]
+[ "c",	8	]
+[ "d",	9	]
+[ "e",	0	]
+#select
+#min(c1), min(c2)
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#union all select 'A', 'a', 2
+#union all select 'A', 'b', 3
+#union all select 'B', 'a', 4
+#union all select 'B', 'b', 5
+#union all select 'C', 'c', 6
+#union all select 'C', 'a', 7
+#union all select 'C', 'b', 8
+#union all select 'C', 'c', 9
+#union all select 'D', 'd', 0
+#union all select 'F', 'a', 1
+#union all select 'F', 'b', 2
+#union all select 'E', 'c', 3
+#union all select 'G', 'd', 4
+#union all select 'G', 'e', 5
+#union all select 'G', 'a', 6
+#union all select 'G', 'b', 7
+% .%231,	.%232 # table_name
+% %231,	%232 # name
+% char,	tinyint # type
+% 1,	1 # length
+[ "a",	0	]
+#select
+#min(c1), min(c2)
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#except all select 'A', 'a', 2
+#) T;
+% .%11,	.%12 # table_name
+% %11,	%12 # name
+% char,	tinyint # type
+% 1,	1 # length
+[ "a",	1	]
+#select
+#min(c1), min(c2)
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#intersect all select 'A', 'a', 2
+#) T;
+% .%11,	.%12 # table_name
+% %11,	%12 # name
+% char,	tinyint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+#select
+#distinct c1, c2
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#except all select 'A', 'a', 2
+#except all select 'A', 'b', 3
+#except all select 'B', 'a', 4
+#except all select 'B', 'b', 5
+#except all select 'C', 'c', 6
+#except all select 'C', 'a', 7
+#except all select 'C', 'b', 8
+#except all select 'C', 'c', 9
+#except all select 'D', 'd', 0
+#except all select 'F', 'a', 1
+#except all select 'F', 'b', 2
+#except all select 'E', 'c', 3
+#except all select 'G', 'd', 4
+#except all select 'G', 'e', 5
+#except all select 'G', 'a', 6
+#except all select 'G', 'b', 7
+% .t,	.t # table_name
+% c1,	c2 # name
+% char,	tinyint # type
+% 1,	1 # length
+[ "a",	1	]
+#select
+#distinct c1, c2
+#from (
+#select 'A' c0, 'a' c1, 1 c2
+#intersect all select 'A', 'a', 2
+#intersect all select 'A', 'b', 3
+#intersect all select 'B', 'a', 4
+#intersect all select 'B', 'b', 5
+#intersect all select 'C', 'c', 6
+#intersect all select 'C', 'a', 7
+#intersect all select 'C', 'b', 8
+#intersect all select 'C', 'c', 9
+#intersect all select 'D', 'd', 0
+#intersect all select 'F', 'a', 1
+#intersect all select 'F', 'b', 2
+#intersect all select 'E', 'c', 3
+#intersect all select 'G', 'd', 4
+#intersect all select 'G', 'e', 5
+% .t,	.t # table_name
+% c1,	c2 # name
+% char,	tinyint # type
+% 1,	1 # length
+
+# 09:41:43 >  
+# 09:41:43 >  "Done."
+# 09:41:43 >  
+

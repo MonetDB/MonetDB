@@ -1,0 +1,82 @@
+stdout of test 'sum-union.Bug-7147` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:41:20 >  
+# 09:41:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-334578" "--port=32009"
+# 09:41:20 >  
+
+#select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0;
+% .%12,	.t # table_name
+% %12,	c0 # name
+% bigint,	char # type
+% 1,	1 # length
+[ 3,	"A"	]
+#select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0;
+% .t,	.%12 # table_name
+% c0,	%12 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	3	]
+#select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0, c2;
+% .%12,	.t # table_name
+% %12,	c0 # name
+% bigint,	char # type
+% 1,	1 # length
+[ 1,	"A"	]
+[ 2,	"A"	]
+#select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0, c2;
+% .t,	.%12 # table_name
+% c0,	%12 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	1	]
+[ "A",	2	]
+#select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0;
+% .%12,	.t # table_name
+% %12,	c0 # name
+% bigint,	char # type
+% 1,	1 # length
+[ 1,	"A"	]
+#select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0;
+% .t,	.%12 # table_name
+% c0,	%12 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	1	]
+#select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0, c2;
+% .%12,	.t # table_name
+% %12,	c0 # name
+% bigint,	char # type
+% 1,	1 # length
+[ 1,	"A"	]
+#select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0, c2;
+% .t,	.%12 # table_name
+% c0,	%12 # name
+% char,	bigint # type
+% 1,	1 # length
+[ "A",	1	]
+#select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0;
+% .%12,	.t # table_name
+% %12,	c0 # name
+% bigint,	char # type
+% 1,	1 # length
+#select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0;
+% .t,	.%12 # table_name
+% c0,	%12 # name
+% char,	bigint # type
+% 1,	1 # length
+#select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0, c2;
+% .%12,	.t # table_name
+% %12,	c0 # name
+% bigint,	char # type
+% 1,	1 # length
+#select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0, c2;
+% .t,	.%12 # table_name
+% c0,	%12 # name
+% char,	bigint # type
+% 1,	1 # length
+
+# 09:41:20 >  
+# 09:41:20 >  "Done."
+# 09:41:20 >  
+

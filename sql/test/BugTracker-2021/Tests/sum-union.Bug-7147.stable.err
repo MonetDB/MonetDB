@@ -1,0 +1,60 @@
+stderr of test 'sum-union.Bug-7147` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:41:20 >  
+# 09:41:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-334578" "--port=32009"
+# 09:41:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c2;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c2;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c2;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c2;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c2;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-334578/.s.monetdb.32009
+QUERY = select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c2;
+ERROR = !SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+CODE  = 42000
+
+# 09:41:20 >  
+# 09:41:20 >  "Done."
+# 09:41:20 >  
+
