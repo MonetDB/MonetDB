@@ -5774,8 +5774,10 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *) Tloc(bpx, 0);
-	py = (dbl *) Tloc(bpy, 0);
+	BATiter bpxi = bat_iterator(bpx);
+	BATiter bpyi = bat_iterator(bpy);
+	px = (dbl *) bpxi.base;
+	py = (dbl *) bpyi.base;
 
 	nv = nvert - 1;
 	cnt = BATcount(bpx);
@@ -5795,6 +5797,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		}
 		*cs++ = wn & 1;
 	}
+	bat_iterator_end(&bpxi);
+	bat_iterator_end(&bpyi);
 
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
@@ -5838,8 +5842,10 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *) Tloc(bpx, 0);
-	py = (dbl *) Tloc(bpy, 0);
+	BATiter bpxi = bat_iterator(bpx);
+	BATiter bpyi = bat_iterator(bpy);
+	px = (dbl *) bpxi.base;
+	py = (dbl *) bpyi.base;
 	cnt = BATcount(bpx);
 	cs = (bit *) Tloc(bo, 0);
 	for (i = 0; i < cnt; i++) {
@@ -5884,6 +5890,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
+	bat_iterator_end(&bpxi);
+	bat_iterator_end(&bpyi);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
 	BATsetcount(bo, cnt);

@@ -917,7 +917,8 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 	}
 
 	//pointers to the first valid elements of the x and y BATS
-	inWKB = (wkb **) Tloc(inBAT, 0);
+	BATiter inBATi = bat_iterator(inBAT);
+	inWKB = (wkb **) inBATi.base;
 	for (i = 0; i < BATcount(inBAT); i++) {	//iterate over all valid elements
 		str err = NULL;
 		if ((err = wkbFromWKB(&outWKB, &inWKB[i])) != MAL_SUCCEED) {
@@ -934,6 +935,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 		GDKfree(outWKB);
 		outWKB = NULL;
 	}
+	bat_iterator_end(&inBATi);
 
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);

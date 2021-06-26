@@ -329,6 +329,36 @@ log_read_id(logger *lg, log_id *id)
 #endif
 
 static log_return
+string_reader(logger *lg, BAT *b, lng nr)
+{
+	int sz = 0;
+	log_return res = LOG_OK;
+
+	if (mnstr_readInt(lg->input_log, &sz) != 1)
+		return LOG_EOF;
+	char *buf = GDKmalloc(sz);
+
+	if (!buf || mnstr_read(lg->input_log, buf, sz, 1) != 1) {
+		GDKfree(buf);
+		return LOG_EOF;
+	}
+	/* handle strings */
+	if (b) {
+		char *t = buf;
+		for(int i=0; i<nr && res == LOG_OK; i++) {
+			if (BUNappend(b, t, true) != GDK_SUCCEED)
+				res = LOG_ERR;
+			/* find next */
+			while(*t)
+				t++;
+			t++;
+		}
+	}
+	GDKfree(buf);
+	return res;
+}
+
+static log_return
 log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 {
 	log_return res = LOG_OK;
@@ -427,6 +457,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 						if (r && BUNappendmulti(r, t, cnt, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 					}
+				} else if (tpe == TYPE_str) {
+					/* efficient string */
+					res = string_reader(lg, r, nr);
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->bufsize;
@@ -487,6 +520,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 						break;
 					}
 				}
+			} else if (tpe == TYPE_str) {
+				/* efficient string */
+				res = string_reader(lg, r, nr);
 			} else {
 				for (; res == LOG_OK && nr > 0; nr--) {
 					size_t tlen = lg->bufsize;
@@ -2297,6 +2333,33 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 }
 
 static gdk_return
+string_writer(logger *lg, BAT *b, lng offset, lng nr)
+{
+	int sz = 0;
+	BUN end = (BUN)(offset + nr);
+
+	BATiter bi = bat_iterator(b);
+	for(BUN p = (BUN)offset; p < end; p++) {
+		char *s = BUNtail(bi, p);
+		sz += strlen(s)+1; /* we need a seperator */
+	}
+	char *buf = GDKmalloc(sz), *dst = buf;
+	if (buf) {
+		for(BUN p = (BUN)offset; p < end; p++) {
+			char *s = BUNtail(bi, p);
+			strcpy(dst, s);
+			dst += strlen(s)+1;
+		}
+	}
+	gdk_return res = GDK_FAIL;
+	if (buf && mnstr_writeInt(lg->output_log, (int) sz) && mnstr_write(lg->output_log, buf, sz, 1) == 1)
+		res = GDK_SUCCEED;
+	GDKfree(buf);
+	bat_iterator_end(&bi);
+	return res;
+}
+
+static gdk_return
 internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 {
 	bte tpe = find_type(lg, b->ttype);
@@ -2323,7 +2386,6 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		return GDK_SUCCEED;
 	}
 
-	BATiter bi = bat_iterator(b);
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 	if (is_row)
@@ -2340,6 +2402,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	if (sliced)
 		offset = 0;
 	if (b->ttype == TYPE_msk) {
+		BATiter bi = bat_iterator(b);
 		if (offset % 32 == 0) {
 			if (!mnstr_writeIntArray(lg->output_log, (int *) ((char *) bi.base + offset / 32), (size_t) ((nr + 31) / 32)))
 				ok = GDK_FAIL;
@@ -2354,24 +2417,31 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else if (b->ttype < TYPE_str && !isVIEW(b)) {
+		BATiter bi = bat_iterator(b);
 		const void *t = BUNtail(bi, (BUN)offset);
 
 		ok = wt(t, lg->output_log, (size_t)nr);
+		bat_iterator_end(&bi);
+	} else if (b->ttype == TYPE_str) {
+		/* efficient string writes */
+		ok = string_writer(lg, b, offset, nr);
 	} else {
+		BATiter bi = bat_iterator(b);
 		BUN end = (BUN)(offset+nr);
 		for (p = (BUN)offset; p < end && ok == GDK_SUCCEED; p++) {
 			const void *t = BUNtail(bi, p);
 
 			ok = wt(t, lg->output_log, 1);
 		}
+		bat_iterator_end(&bi);
 	}
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
-	bat_iterator_end(&bi);
 	if (ok != GDK_SUCCEED) {
 		const char *err = mnstr_peek_error(lg->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
@@ -2498,6 +2568,9 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (uval->ttype == TYPE_msk) {
 		if (!mnstr_writeIntArray(lg->output_log, vi.base, (BUNlast(uval) + 31) / 32))
 			ok = GDK_FAIL;
+	} else if (uval->ttype == TYPE_str) {
+		/* efficient string writes */
+		ok = string_writer(lg, uval, 0, nr);
 	} else {
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 			const void *val = BUNtail(vi, p);

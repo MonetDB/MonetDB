@@ -1248,7 +1248,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 				}	\
 			} else { /* sep case */	\
 				assert(sep != NULL);	\
-				sl = BUNtvar(bis, m);	\
+				sl = BUNtvar(sepi, m);	\
 	\
 				if (!strNil(sb)) {	\
 					next_group_length += strlen(sb);	\
@@ -1300,7 +1300,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 					empty = false;	\
 				} else { /* sep case */	\
 					assert(sep != NULL);	\
-					sl = BUNtvar(bis, m);	\
+					sl = BUNtvar(sepi, m);	\
 \
 					if (strNil(sb))	\
 						continue;	\
@@ -1343,7 +1343,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 							nsep = (str) separator; \
 						} else { /* sep case */	\
 							assert(sep != NULL);	\
-							nsep = BUNtvar(bis, j);	\
+							nsep = BUNtvar(sepi, j);	\
 						}	\
 						if (!strNil(nsep))	\
 							slice_length += strlen(nsep);	\
@@ -1414,28 +1414,34 @@ gdk_return
 GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
 {
 	bool has_nils = false, empty;
-	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
-	BATiter bi, bis = (BATiter) {0};
+	BATiter pi = bat_iterator(p);
+	BATiter oi = bat_iterator(o);
+	BATiter bi = bat_iterator(b);
+	BATiter sepi = bat_iterator(sep);
+	BATiter si = bat_iterator(s);
+	BATiter ei = bat_iterator(e);
+	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base;
+	bit *np = pi.base, *op = oi.base;
 	str sb, sl, single_str = NULL, next_single_str;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
 
 	assert((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator));
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
 		GDKerror("only string type is supported\n");
+		bat_iterator_end(&pi);
+		bat_iterator_end(&oi);
+		bat_iterator_end(&bi);
+		bat_iterator_end(&sepi);
+		bat_iterator_end(&si);
+		bat_iterator_end(&ei);
 		return GDK_FAIL;
 	}
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
-		bat_iterator_end(&bi);
+		separator = BUNtvar(sepi, 0);
 		sep = NULL;
 	}
 
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
+	if (sep == NULL)
 		separator_length = strlen(separator);
 
 	if (cnt > 0) {
@@ -1457,24 +1463,33 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		}
 	}
 
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
 	bat_iterator_end(&bi);
-	if (sep)
-		bat_iterator_end(&bis);
+	bat_iterator_end(&sepi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(single_str);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
   allocation_error:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
 	bat_iterator_end(&bi);
-	if (sep)
-		bat_iterator_end(&bis);
+	bat_iterator_end(&sepi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKfree(single_str);
 	return GDK_FAIL;
   notimplemented:
+	bat_iterator_end(&pi);
+	bat_iterator_end(&oi);
 	bat_iterator_end(&bi);
-	if (sep)
-		bat_iterator_end(&bis);
+	bat_iterator_end(&sepi);
+	bat_iterator_end(&si);
+	bat_iterator_end(&ei);
 	GDKerror("str_group_concat not yet implemented for current row until unbounded case\n");
 	return GDK_FAIL;
 }

@@ -1546,11 +1546,13 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			);
 
 	if (v->batCount > 0) {
+		BATiter vi = bat_iterator(v);
 		mnstr_write(cntxt->fdout, /* tail */
-		Tloc(v, 0), v->batCount * Tsize(v), 1);
+					vi.base, vi.count * vi.width, 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-					Tbase(v), v->tvheap->free, 1);
+						vi.vh->base, vi.vh->free, 1);
+		bat_iterator_end(&vi);
 	}
 	/* flush is done by the calling environment (MAL) */
 

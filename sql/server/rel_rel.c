@@ -467,7 +467,7 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	rel->r = r;
 	rel->op = setop;
 	rel->exps = NULL;
-	rel->card = is_union(setop) ? CARD_MULTI : l->card;
+	rel->card = CARD_MULTI;
 	assert(l->nrcols == r->nrcols);
 	rel->nrcols = l->nrcols;
 	return rel;
@@ -521,9 +521,8 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 			else
 				set_has_no_nil(e);
 			e->p = NULL; /* remove all the properties on unions */
-			e->card = MAX(f->card, g->card);
-		} else
-			e->card = f->card;
+		}
+		e->card = CARD_MULTI; /* multi cardinality */
 	}
 	rel->nrcols = l->nrcols;
 	rel->exps = exps;

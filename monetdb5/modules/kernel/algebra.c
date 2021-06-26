@@ -59,33 +59,40 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 
 	if (r == NULL)
 		return GDK_FAIL;
+	BATiter ci = bat_iterator(cnts);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->tseqbase;
-		lng *cnt = (lng*)Tloc(cnts, 0);
+		lng *cnt = (lng*)ci.base;
 		for(j = 0; j < gcnt; j++) {
 			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, &id, false) != GDK_SUCCEED) {
 					BBPreclaim(r);
+					bat_iterator_end(&ci);
 					return GDK_FAIL;
 				}
 			}
 			id++;
 		}
 	} else {
-		oid *id = (oid*)Tloc(gids, 0);
-		lng *cnt = (lng*)Tloc(cnts, 0);
+		BATiter gi = bat_iterator(gids);
+		oid *id = (oid*)gi.base;
+		lng *cnt = (lng*)ci.base;
 		for(j = 0; j < gcnt; j++) {
 			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, id, false) != GDK_SUCCEED) {
 					BBPreclaim(r);
+					bat_iterator_end(&ci);
+					bat_iterator_end(&gi);
 					return GDK_FAIL;
 				}
 			}
 			id++;
 		}
+		bat_iterator_end(&gi);
 	}
+	bat_iterator_end(&ci);
 	r -> tkey = false;
 	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
@@ -1119,8 +1126,8 @@ static str
 doALGfetch(ptr ret, BAT *b, BUN pos)
 {
 	assert(pos <= BUN_MAX);
+	BATiter bi = bat_iterator(b);
 	if (ATOMextern(b->ttype)) {
-		BATiter bi = bat_iterator(b);
 		ptr _src = BUNtail(bi,pos);
 		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
@@ -1130,7 +1137,6 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		}
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
-		bat_iterator_end(&bi);
 	} else {
 		size_t _s = ATOMsize(ATOMtype(b->ttype));
 		if (b->ttype == TYPE_void) {
@@ -1138,21 +1144,22 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 			if (!is_oid_nil(b->tseqbase))
 				*(oid*)ret += pos;
 		} else if (_s == 4) {
-			*(int*) ret = *(int*) Tloc(b, pos);
+			*(int*) ret = ((int*) bi.base)[pos];
 		} else if (_s == 1) {
-			*(bte*) ret = *(bte*) Tloc(b, pos);
+			*(bte*) ret = ((bte*) bi.base)[pos];
 		} else if (_s == 2) {
-			*(sht*) ret = *(sht*) Tloc(b, pos);
+			*(sht*) ret = ((sht*) bi.base)[pos];
 		} else if (_s == 8) {
-			*(lng*) ret = *(lng*) Tloc(b, pos);
+			*(lng*) ret = ((lng*) bi.base)[pos];
 #ifdef HAVE_HGE
 		} else if (_s == 16) {
-			*(hge*) ret = *(hge*) Tloc(b, pos);
+			*(hge*) ret = ((hge*) bi.base)[pos];
 #endif
 		} else {
-			memcpy(ret, Tloc(b, pos), _s);
+			memcpy(ret, (const char *) bi.base + (pos << bi.shift), _s);
 		}
 	}
+	bat_iterator_end(&bi);
 	return MAL_SUCCEED;
 }
 

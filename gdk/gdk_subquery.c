@@ -14,7 +14,7 @@
 
 #define SQLall_grp_imp(TYPE)	\
 	do {			\
-		const TYPE *restrict vals = (const TYPE *) Tloc(l, 0); \
+		const TYPE *restrict vals = (const TYPE *) li.base;	\
 		TYPE *restrict rp = (TYPE *) Tloc(res, 0); \
 		while (ncand > 0) {					\
 			ncand--;					\
@@ -75,6 +75,8 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		if ((res = BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
+		BATiter li;
+
 		if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 		if ((oids = GDKmalloc(ngrp * sizeof(oid))) == NULL)
@@ -88,6 +90,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
+		li = bat_iterator(l);
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLall_grp_imp(bte);
@@ -115,7 +118,6 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l);
 
 			while (ncand > 0) {
 				ncand--;
@@ -171,9 +173,9 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 					rcast += width;
 				}
 			}
-			bat_iterator_end(&li);
 		}
 		}
+		bat_iterator_end(&li);
 		BATsetcount(res, ngrp);
 		res->tnil = hasnil != 0;
 		res->tnonil = hasnil == 0;
@@ -201,7 +203,7 @@ alloc_fail:
 
 #define SQLnil_grp_imp(TYPE)	\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(l, 0);		\
+		const TYPE *restrict vals = (const TYPE *) li.base;	\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - l->hseqbase;		\
@@ -246,6 +248,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 	} else {
 		bit *restrict ret;
+		BATiter li;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
@@ -257,6 +260,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
+		li = bat_iterator(l);
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLnil_grp_imp(bte);
@@ -284,7 +288,6 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l);
 
 			while (ncand > 0) {
 				ncand--;
@@ -300,9 +303,9 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						ret[gid] = TRUE;
 				}
 			}
-			bat_iterator_end(&li);
 		}
 		}
+		bat_iterator_end(&li);
 		BATsetcount(res, ngrp);
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
@@ -327,8 +330,8 @@ alloc_fail:
 
 #define SQLanyequal_or_not_grp_imp(TYPE, TEST)	\
 	do {								\
-		const TYPE *vals1 = (const TYPE *) Tloc(l, 0);		\
-		const TYPE *vals2 = (const TYPE *) Tloc(r, 0);		\
+		const TYPE *vals1 = (const TYPE *) li.base;		\
+		const TYPE *vals2 = (const TYPE *) ri.base;		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - l->hseqbase;		\
@@ -379,6 +382,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
+		BATiter li, ri;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
@@ -390,6 +394,8 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
+		li = bat_iterator(l);
+		ri = bat_iterator(r);
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp_imp(bte, TRUE);
@@ -417,7 +423,6 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
 			while (ncand > 0) {
 				ncand--;
@@ -439,10 +444,10 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
 		}
 		}
+		bat_iterator_end(&li);
+		bat_iterator_end(&ri);
 		BATsetcount(res, ngrp);
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
@@ -494,6 +499,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
+		BATiter li, ri;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
@@ -505,6 +511,8 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
+		li = bat_iterator(l);
+		ri = bat_iterator(r);
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp_imp(bte, FALSE);
@@ -532,7 +540,6 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
 			while (ncand > 0) {
 				ncand--;
@@ -554,10 +561,10 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
 		}
 		}
+		bat_iterator_end(&li);
+		bat_iterator_end(&ri);
 		BATsetcount(res, ngrp);
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
@@ -582,8 +589,8 @@ alloc_fail:
 
 #define SQLanyequal_or_not_grp2_imp(TYPE, VAL1, VAL2) \
 	do {								\
-		const TYPE *vals1 = (const TYPE *) Tloc(l, 0);		\
-		const TYPE *vals2 = (const TYPE *) Tloc(r, 0);		\
+		const TYPE *vals1 = (const TYPE *) li.base;		\
+		const TYPE *vals2 = (const TYPE *) ri.base;		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - l->hseqbase;		\
@@ -636,10 +643,10 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
+		BATiter ii, li, ri;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
-		BATiter ii = bat_iterator(rid);
 		ret = (bit *) Tloc(res, 0);
 		memset(ret, FALSE, ngrp * sizeof(bit));
 
@@ -648,6 +655,9 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
+		ii = bat_iterator(rid);
+		li = bat_iterator(l);
+		ri = bat_iterator(r);
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp2_imp(bte, TRUE, FALSE);
@@ -675,7 +685,6 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
 			while (ncand > 0) {
 				ncand--;
@@ -701,10 +710,10 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
 		}
 		}
+		bat_iterator_end(&li);
+		bat_iterator_end(&ri);
 		bat_iterator_end(&ii);
 		for (BUN i = 0 ; i < ngrp ; i++)
 			hasnil |= ret[i] == bit_nil;
@@ -759,10 +768,10 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
+		BATiter ii, li, ri;
 
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
-		BATiter ii = bat_iterator(rid);
 		ret = (bit *) Tloc(res, 0);
 		memset(ret, TRUE, ngrp * sizeof(bit));
 
@@ -771,6 +780,9 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
+		ii = bat_iterator(rid);
+		li = bat_iterator(l);
+		ri = bat_iterator(r);
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp2_imp(bte, FALSE, TRUE);
@@ -798,7 +810,6 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
 			while (ncand > 0) {
 				ncand--;
@@ -824,11 +835,11 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					}
 				}
 			}
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
 		}
 		}
 		bat_iterator_end(&ii);
+		bat_iterator_end(&li);
+		bat_iterator_end(&ri);
 		for (BUN i = 0 ; i < ngrp ; i++)
 			hasnil |= ret[i] == bit_nil;
 		BATsetcount(res, ngrp);
