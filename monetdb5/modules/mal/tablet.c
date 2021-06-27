@@ -1225,7 +1225,7 @@ SQLproducer(void *p)
 	bool blocked[MAXBUFFERS] = { false };
 	bool ateof[MAXBUFFERS] = { false };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
-	char *end, *e, *s = NULL, *base;
+	char *end, *e = NULL, *s = NULL, *base;
 	const char *rsep = task->rsep;
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
@@ -1438,7 +1438,7 @@ SQLproducer(void *p)
 			task->cur = cur;
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
-			more = !ateof[cur] || (e < end && task->top[cur] == task->limit);
+			more = !ateof[cur] || (e && e < end && task->top[cur] == task->limit);
 /*			TRC_DEBUG(MAL_SERVER, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);*/
 
 			MT_sema_up(&task->consumer);
