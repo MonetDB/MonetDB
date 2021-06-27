@@ -958,6 +958,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
 				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
 					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
+					bat_iterator_end(&qgrami);
+					bat_iterator_end(&idi);
+					bat_iterator_end(&posi);
+					bat_iterator_end(&leni);
 					BBPunfix(qgram->batCacheid);
 					BBPunfix(id->batCacheid);
 					BBPunfix(pos->batCacheid);
