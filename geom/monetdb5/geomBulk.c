@@ -104,54 +104,92 @@ bailout:
 str
 wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 {
-	BAT *outBAT = NULL, *inBAT = NULL;
-	char *inWKB = NULL;
-	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	return wkbFromText_bat_cand(outBAT_id, inBAT_id, NULL, srid, tpe);
+}
+
+str
+wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *tpe)
+{
+	BAT *b = NULL, *s = NULL, *dst = NULL;
+	BATiter bi;
+	str msg = MAL_SUCCEED;
+	struct canditer ci;
+	BUN q = 0;
+	oid off = 0;
+	bool nils = false;
 
 	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbFromText", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	bi = bat_iterator(b);
+	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
+	//create a new BAT, aligned with input BAT
+	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), q, TRANSIENT))) {
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
-	//create a new for the output BAT
-	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			str inWKB = (str) BUNtvar(bi, p);
+			wkb *outSingle;
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
-		str err = NULL;
-		wkb *outSingle;
-
-		inWKB = (char *) BUNtvar(inBAT_iter, p);
-		if ((err = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED) {
-			bat_iterator_end(&inBAT_iter);
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
-		}
-		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
-			bat_iterator_end(&inBAT_iter);
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
+			if ((msg = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, outSingle, Tsize(dst)) != GDK_SUCCEED) {
+				GDKfree(outSingle);
+				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_wkb_nil(outSingle);
 			GDKfree(outSingle);
-			throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			outSingle = NULL;
 		}
-		GDKfree(outSingle);
-		outSingle = NULL;
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next(&ci) - off);
+			str inWKB = (str) BUNtvar(bi, p);
+			wkb *outSingle;
+
+			if ((msg = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, outSingle, Tsize(dst)) != GDK_SUCCEED) {
+				GDKfree(outSingle);
+				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_wkb_nil(outSingle);
+			GDKfree(outSingle);
+			outSingle = NULL;
+		}
 	}
-	bat_iterator_end(&inBAT_iter);
 
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
-
-	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-
-	return MAL_SUCCEED;
+bailout:
+	if (b)
+		bat_iterator_end(&bi);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
+		BBPkeepref(*outBAT_id = dst->batCacheid);
+	} else if (dst)
+		BBPreclaim(dst);
+	return msg;
 }
 
 /*****************************************************************************/
