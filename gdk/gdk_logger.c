@@ -2335,7 +2335,7 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 static gdk_return
 string_writer(logger *lg, BAT *b, lng offset, lng nr)
 {
-	int sz = 0;
+	size_t sz = 0;
 	BUN end = (BUN)(offset + nr);
 
 	BATiter bi = bat_iterator(b);
