@@ -424,7 +424,8 @@ bat_max_##TPE##length(BAT *b) \
 	BUN p, q; \
 	HIGH max = 0, min = 0; \
 	size_t ret = 0; \
-	const TPE *restrict vals = (const TPE *) Tloc(b, 0); \
+	BATiter bi = bat_iterator(b); \
+	const TPE *restrict vals = (const TPE *) bi.base; \
  \
 	BATloop(b, p, q) { \
 		HIGH m = 0; \
@@ -437,6 +438,7 @@ bat_max_##TPE##length(BAT *b) \
 		if (m < min) \
 			min = m; \
 	} \
+	bat_iterator_end(&bi); \
 	if (-min > max / 10) { \
 		max = -min; \
 		ret++;		/* '-' */ \
@@ -852,9 +854,11 @@ mvc_export_binary_bat(stream *s, BAT* bn) {
 				);
 
 		if (bn->batCount > 0) {
-			mnstr_write(s, /* tail */ Tloc(bn, 0), bn->batCount * Tsize(bn), 1);
+			BATiter bni = bat_iterator(bn);
+			mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1);
 			if (sendtheap)
-				mnstr_write(s, /* theap */ Tbase(bn), bn->tvheap->free, 1);
+				mnstr_write(s, /* theap */ bni.vh->base, bni.vh->free, 1);
+			bat_iterator_end(&bni);
 		}
 }
 

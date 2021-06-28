@@ -48,11 +48,13 @@ ALARMusec(lng *ret)
 	do { \
 		for (i = 0; i < j ; i++) { \
 			if (is_##TPE##_nil(bb[i])) { \
+				bat_iterator_end(&bi); \
 				BBPreclaim(r); \
 				BBPunfix(b->batCacheid); \
 				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
 			} \
 			if (bb[i] < 0) { \
+				bat_iterator_end(&bi); \
 				BBPreclaim(r); \
 				BBPunfix(b->batCacheid); \
 				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \

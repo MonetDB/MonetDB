@@ -931,7 +931,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	sql_schema *s = NULL;
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
-	BATiter bi, ci;
+	BATiter bi =  (BATiter) { .b = NULL }, ci =  (BATiter) { .b = NULL };
 	bat *res = getArgReference_bat(stk, pci, 0);
 	bat schid = 0, seqid = 0;
 
@@ -1117,10 +1117,10 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = NULL;
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
-	BATiter bi, ci;
+	BATiter bi, ci, di;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	bat schid = 0, seqid = 0, startid = 0;
-	lng start = 0, *di = NULL;
+	lng start = 0, *dptr = NULL;
 
 	if (isaBatType(getArgType(mb, pci, 1)))
 		schid = *getArgReference_bat(stk, pci, 1);
@@ -1164,12 +1164,11 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!BATcount(it))
 		goto bailout; /* Success case */
 
-	if (b)
-		bi = bat_iterator(b);
-	if (c)
-		ci = bat_iterator(c);
+	bi = bat_iterator(b);
+	ci = bat_iterator(c);
+	di = bat_iterator(d);
 	if (d)
-		di = (lng *) Tloc(d, 0);
+		dptr = (lng *) di.base;
 
 	BATloop(it, p, q) {
 		str nsname, nseqname;
@@ -1183,8 +1182,8 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nseqname = BUNtvar(ci, p);
 		else
 			nseqname = seqname;
-		if (di)
-			nstart = di[p];
+		if (dptr)
+			nstart = dptr[p];
 		else
 			nstart = start;
 
@@ -1239,10 +1238,9 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout1:
-	if (b)
-		bat_iterator_end(&bi);
-	if (c)
-		bat_iterator_end(&ci);
+	bat_iterator_end(&bi);
+	bat_iterator_end(&ci);
+	bat_iterator_end(&di);
 
 bailout:
 	if (sb)
@@ -2271,6 +2269,7 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	BAT *c, *l, *r, *res;
 	oid *p, *lp, *rp;
 	BUN cnt = 0, i;
+	BATiter li, ri;
 
 	c = BATdescriptor(*Col);
 	if (c)
@@ -2296,8 +2295,10 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 
 	cnt = BATcount(l);
 	p = (oid*)Tloc(res, 0);
-	lp = (oid*)Tloc(l, 0);
-	rp = (oid*)Tloc(r, 0);
+	li = bat_iterator(l);
+	ri = bat_iterator(r);
+	lp = (oid*)li.base;
+	rp = (oid*)ri.base;
 	if (l->ttype == TYPE_void) {
 		oid lp = l->tseqbase;
 		if (r->ttype == TYPE_void) {
@@ -2317,6 +2318,8 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 		for(i=0;i<cnt; i++)
 			p[lp[i]] = rp[i];
 	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 	res->tsorted = false;
 	res->trevsorted = false;
 	res->tnil = false;
@@ -2389,7 +2392,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
-	BATiter itertbl,iteratr,itertpe;
+	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be = NULL;
 	BAT *b, *tbl, *atr, *tpe,*len,*scale;
 
@@ -2415,8 +2418,10 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,0);
-	scaledigits = (int*) Tloc(scale,0);
+	iterdig = bat_iterator(len);
+	iterscl = bat_iterator(scale);
+	digits = (int*) iterdig.base;
+	scaledigits = (int*) iterscl.base;
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
@@ -2434,6 +2439,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
 	bat_iterator_end(&itertpe);
+	bat_iterator_end(&iterdig);
+	bat_iterator_end(&iterscl);
 	/* now send it to the channel cntxt->fdout */
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
@@ -2472,7 +2479,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
-	BATiter itertbl,iteratr,itertpe;
+	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be;
 	mvc *m = NULL;
 	BAT *order = NULL, *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
@@ -2518,8 +2525,10 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,0);
-	scaledigits = (int*) Tloc(scale,0);
+	iterdig = bat_iterator(len);
+	iterscl = bat_iterator(scale);
+	digits = (int*) iterdig.base;
+	scaledigits = (int*) iterscl.base;
 
 	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
@@ -2537,6 +2546,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
 	bat_iterator_end(&itertpe);
+	bat_iterator_end(&iterdig);
+	bat_iterator_end(&iterscl);
 	if ( msg )
 		goto wrapup_result_set1;
 
@@ -2605,7 +2616,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
-	BATiter itertbl,iteratr,itertpe;
+	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be = NULL;
 	ptr v;
 	int mtype;
@@ -2628,8 +2639,10 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,0);
-	scaledigits = (int*) Tloc(scale,0);
+	iterdig = bat_iterator(len);
+	iterscl = bat_iterator(scale);
+	digits = (int*) iterdig.base;
+	scaledigits = (int*) iterscl.base;
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtvar(itertbl,o);
@@ -2646,6 +2659,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
 	bat_iterator_end(&itertpe);
+	bat_iterator_end(&iterdig);
+	bat_iterator_end(&iterscl);
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	mb->starttime = 0;
@@ -2682,7 +2697,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
-	BATiter itertbl,iteratr,itertpe;
+	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be;
 	mvc *m = NULL;
 	res_table *t = NULL;
@@ -2725,8 +2740,10 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,0);
-	scaledigits = (int*) Tloc(scale,0);
+	iterdig = bat_iterator(len);
+	iterscl = bat_iterator(scale);
+	digits = (int*) iterdig.base;
+	scaledigits = (int*) iterscl.base;
 
 	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtvar(itertbl,o);
@@ -2743,6 +2760,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
 	bat_iterator_end(&itertpe);
+	bat_iterator_end(&iterdig);
+	bat_iterator_end(&iterscl);
 	/* now select the file channel */
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
@@ -3140,16 +3159,18 @@ not_unique(bit *ret, const bat *bid)
 		return MAL_SUCCEED;
 	} else if (b->tsorted) {
 		BUN p, q;
-		oid c = *(oid *) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		oid c = ((oid *) bi.base)[0];
 
 		for (p = 1, q = BUNlast(b); p < q; p++) {
-			oid v = *(oid *) Tloc(b, p);
+			oid v = ((oid *) bi.base)[p];
 			if (v <= c) {
 				*ret = TRUE;
 				break;
 			}
 			c = v;
 		}
+		bat_iterator_end(&bi);
 	} else {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "not_unique", SQLSTATE(42000) "Input column should be sorted");
@@ -3243,7 +3264,8 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	s = sin(radians(*theta));
-	const dbl *vals = (const dbl *) Tloc(b, 0);
+	BATiter bi = bat_iterator(b);
+	const dbl *vals = (const dbl *) bi.base;
 	BATloop(b, p, q) {
 		dbl d = vals[p];
 		if (is_dbl_nil(d))
@@ -3257,9 +3279,11 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		}
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
+			bat_iterator_end(&bi);
 			throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
+	bat_iterator_end(&bi);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3278,12 +3302,13 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 	if ((b = BATdescriptor(*thetabid)) == NULL) {
 		throw(SQL, "alpha", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	thetas = (dbl *) Tloc(b, 0);
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	BATiter bi = bat_iterator(b);
+	thetas = (dbl *) bi.base;
 	BATloop(b, p, q) {
 		dbl d = *decl;
 		dbl theta = thetas[p];
@@ -3300,9 +3325,11 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 		}
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
+			bat_iterator_end(&bi);
 			throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
+	bat_iterator_end(&bi);
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

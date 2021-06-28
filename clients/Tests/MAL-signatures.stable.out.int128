@@ -8277,6 +8277,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batcalc",	"uuid",	"command batcalc.uuid(X_0:bat[:str], X_1:bat[:oid]):bat[:uuid] ",	"UUIDstr2uuid_bulk;",	""	]
 [ "batcalc",	"uuid",	"command batcalc.uuid(X_0:bat[:uuid], X_1:bat[:oid]):bat[:uuid] ",	"UUIDuuid2uuid_bulk;",	""	]
 [ "batcalc",	"wkb",	"command batcalc.wkb(X_0:bat[:wkb], X_1:bat[:oid], X_2:int, X_3:int):bat[:wkb] ",	"geom_2_geom_bat;",	""	]
+[ "batcalc",	"wkb",	"command batcalc.wkb(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:int):bat[:wkb] ",	"wkbFromText_bat_cand;",	""	]
 [ "batcalc",	"xml",	"command batcalc.xml(X_0:bat[:str]):bat[:xml] ",	"BATXMLstr2xml;",	""	]
 [ "batcalc",	"xor",	"pattern batcalc.xor(X_0:bat[:bit], X_1:bat[:bit]):bat[:bit] ",	"CMDbatXOR;",	""	]
 [ "batcalc",	"xor",	"pattern batcalc.xor(X_0:bat[:bit], X_1:bat[:bit], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] ",	"CMDbatXOR;",	""	]

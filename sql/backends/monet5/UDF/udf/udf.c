@@ -254,7 +254,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 /* actual implementation */
 static char *
-UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
+UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;

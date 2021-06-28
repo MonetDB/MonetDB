@@ -331,6 +331,8 @@
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
 
+typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
+
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -524,8 +526,6 @@ typedef size_t BUN;
 /*
  * @- Checking and Error definitions:
  */
-typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
-
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
 typedef enum {
@@ -1591,6 +1591,8 @@ gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
 #include "gdk_tracer.h"
+
+gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
 #define GDKerror(format, ...)					\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
