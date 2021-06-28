@@ -64,6 +64,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -94,7 +95,8 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (TYPE *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -121,6 +123,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
@@ -139,6 +142,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -161,7 +165,8 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (TYPE *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -170,10 +175,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (ISNIL(TYPE)(r)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -188,10 +193,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (ISNIL(TYPE)(r)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -200,6 +205,8 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
@@ -221,6 +228,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		*r = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter lefti, righti;
 
 	(void) cntxt;
 	(void) mb;
@@ -248,8 +256,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	src1 = (TYPE *) Tloc(left, 0);
-	src2 = (TYPE *) Tloc(right, 0);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	src1 = (TYPE *) lefti.base;
+	src2 = (TYPE *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -259,10 +269,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 			if (ISNIL(TYPE)(rr)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -278,10 +288,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 			if (ISNIL(TYPE)(rr)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -290,6 +300,9 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&lefti);
+	bat_iterator_end(&righti);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
@@ -356,6 +369,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -378,7 +392,8 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (TYPE *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -405,6 +420,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
@@ -426,6 +442,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -448,7 +465,8 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (bte *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (bte *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -475,6 +493,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
@@ -498,6 +517,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*r = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter lefti, righti;
 
 	(void) cntxt;
 	(void) mb;
@@ -529,8 +549,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	src1 = (TYPE *) Tloc(left, 0);
-	src2 = (bte *) Tloc(right, 0);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	src1 = (TYPE *) lefti.base;
+	src2 = (bte *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -559,6 +581,8 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&lefti);
+	bat_iterator_end(&righti);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
@@ -780,6 +804,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TYPE *restrict src;
 	BIG *restrict ret, multiplier = 1, divider = 1, offset = 0;
 	bool nils = false;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -801,7 +826,8 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	src = Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = bi.base;
 	ret = Tloc(res, 0);
 
 	if (sc < 3) {
@@ -852,6 +878,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(r, res, b, msg, nils, q, false);

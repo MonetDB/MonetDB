@@ -329,12 +329,13 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	b->tnokey[1] = 0;
 
 	uint32_t *restrict dst;
+	BATiter bi = bat_iterator(b);
 	for (; s ; s=s->next) {
 		if (s->ts == tr->tid && s->end != s->start) {
 			b->batDirtydesc = true;
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
-			dst = ((uint32_t*)Tloc(b, 0)) + (s->start/32);
+			dst = ((uint32_t*)bi.base) + (s->start/32);
 			uint32_t cur = 0;
 			if (s->deleted) {
 				size_t used = pos&31, end = 32;
@@ -379,6 +380,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	bat_destroy(b);
 	return LOG_OK;
 }
@@ -716,10 +718,12 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	oid uiseqb = ui->tseqbase;
 	oid oiseqb = oi->tseqbase;
 	oid *uipt = NULL, *oipt = NULL;
+	BATiter uii = bat_iterator(ui);
+	BATiter oii = bat_iterator(oi);
 	if (!BATtdense(ui))
-		uipt = Tloc(ui, 0);
+		uipt = uii.base;
 	if (!BATtdense(oi))
-		oipt = Tloc(oi, 0);
+		oipt = oii.base;
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
@@ -756,6 +760,8 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		bat_iterator_end(&uvi);
 		bat_iterator_end(&ovi);
 	}
+	bat_iterator_end(&uii);
+	bat_iterator_end(&oii);
 	bat_destroy(ui);
 	bat_destroy(uv);
 	bat_destroy(oi);
@@ -1144,10 +1150,12 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 						oid uiseqb = ui->tseqbase;
 						oid niseqb = otids->tseqbase;
 						oid *uipt = NULL, *nipt = NULL;
+						BATiter uii = bat_iterator(ui);
+						BATiter otidsi = bat_iterator(otids);
 						if (!BATtdense(ui))
-							uipt = Tloc(ui, 0);
+							uipt = uii.base;
 						if (!BATtdense(otids))
-							nipt = Tloc(otids, 0);
+							nipt = otidsi.base;
 						while (uip < uie && nip < nie && res == LOG_OK) {
 							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
 							oid niv = (nipt)?nipt[nip]: niseqb+nip;
@@ -1201,6 +1209,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							}
 							nip++;
 						}
+						bat_iterator_end(&uii);
+						bat_iterator_end(&otidsi);
 						bat_iterator_end(&ovi);
 						if (res == LOG_OK) {
 							temp_destroy(cs->uibid);
@@ -1522,7 +1532,9 @@ delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, void *i)
 	} else {
 		/* TODO handle multiple offsets */
 		assert(0);
+		MT_lock_set(&offsets->theaplock);
 		offset = *(oid*)Tloc(offsets, 0);
+		MT_lock_unset(&offsets->theaplock);
 	}
 	BUN cnt = BATcount(offsets);
 
@@ -1756,7 +1768,8 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 			assert(BATtordered(i));
 			BUN icnt = BATcount(i);
-			oid *o = Tloc(i,0), n = o[0]+1;
+			BATiter ii = bat_iterator(i);
+			oid *o = ii.base, n = o[0]+1;
 			size_t lcnt = 1;
 
 			lock_table(tr->store, t->base.id);
@@ -1774,6 +1787,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					lcnt = 1;
 				}
 			}
+			bat_iterator_end(&ii);
 			if (lcnt && ok == LOG_OK)
 				ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt);
 			unlock_table(tr->store, t->base.id);
@@ -2342,7 +2356,8 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 		} else {
 			assert(BATtordered(b));
 			BUN icnt = BATcount(b);
-			oid *o = Tloc(b,0), n = o[0]+1;
+			BATiter bi = bat_iterator(b);
+			oid *o = bi.base, n = o[0]+1;
 			size_t lcnt = 1;
 			for (size_t i=1; i<icnt; i++) {
 				if (o[i] == n) {
@@ -2360,6 +2375,7 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			}
 			if (lcnt && ok == LOG_OK)
 				ok = delete_range(tr, t, s, n-lcnt, lcnt);
+			bat_iterator_end(&bi);
 		}
 		if (ok == LOG_OK)
 			for (segment *seg = s->segs->h; seg; seg = seg->next)
