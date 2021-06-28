@@ -36,12 +36,15 @@ mcrypt_export char *mcrypt_SHA256Sum(const char *string, size_t len);
 #ifdef HAVE_SHA384_UPDATE
 mcrypt_export char *mcrypt_SHA384Sum(const char *string, size_t len);
 #endif
-#ifdef HAVE_SHA512_UPDATE
 mcrypt_export char *mcrypt_SHA512Sum(const char *string, size_t len);
-#endif
 #ifdef HAVE_RIPEMD160_UPDATE
 mcrypt_export char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
 #endif
 mcrypt_export char *mcrypt_BackendSum(const char *string, size_t len);
 mcrypt_export char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
+
+#ifndef SHA512_DIGEST_LENGTH
+#define SHA512_DIGEST_LENGTH 64
+#endif
+
 #endif

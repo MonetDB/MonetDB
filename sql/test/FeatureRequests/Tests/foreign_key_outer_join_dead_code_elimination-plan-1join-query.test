@@ -5,9 +5,7 @@ query T nosort
    plan select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1
 ----
 project (
-| group by (
-| | table("sys"."fk") [ "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ] COUNT 
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
@@ -41,9 +39,7 @@ query T nosort
    plan select count(*) from pk1 right outer join fk on fk.fk1 = pk1.pk1
 ----
 project (
-| group by (
-| | table("sys"."fk") [ "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ] COUNT 
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
@@ -77,9 +73,7 @@ query T nosort
    plan select count(*) from pk1 full outer join fk on fk.fk1 = pk1.pk1
 ----
 project (
-| group by (
-| | table("sys"."fk") [ "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ] COUNT 
-| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort

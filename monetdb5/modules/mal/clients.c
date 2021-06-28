@@ -307,15 +307,14 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		limit = *getArgReference_int(stk,pci,1);
 	}
 
-	if( limit > (int)(GDK_mem_maxsize / LL_CONSTANT(1048576)) )
-		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory ");
-
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setmemorylimit","Illegal session id");
 	if( is_int_nil(limit))
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
+	if( (size_t) limit > GDK_mem_maxsize / 1048576)
+		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
@@ -684,11 +683,9 @@ static str CLTsha2sum(str *ret, str *pw, int *bits) {
 	} else {
 		char *mret = 0;
 		switch (*bits) {
-#ifdef HAVE_SHA512_UPDATE
 			case 512:
 				mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
 				break;
-#endif
 #ifdef HAVE_SHA384_UPDATE
 			case 384:
 				mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
@@ -709,12 +706,10 @@ static str CLTsha2sum(str *ret, str *pw, int *bits) {
 				throw(ILLARG, "clients.sha2sum", "wrong number of bits "
 						"for SHA2 sum: %d", *bits);
 		}
-#if defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE)
 		if (!mret)
 			throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*ret = GDKstrdup(mret);
 		free(mret);
-#endif
 	}
 	if (*ret == NULL)
 		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);

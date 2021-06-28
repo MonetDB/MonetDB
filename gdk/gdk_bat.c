@@ -115,7 +115,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 	if (heapnames) {
 		assert(bn->theap != NULL);
-		ATOMIC_INIT(&bn->theap->refs, 1);
 		bn->theap->parentid = bn->batCacheid;
 		bn->theap->farmid = BBPselectfarm(role, bn->ttype, offheap);
 
@@ -135,6 +134,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
 		}
+		ATOMIC_INIT(&bn->theap->refs, 1);
 	} else {
 		assert(bn->theap == NULL);
 	}
@@ -748,7 +748,6 @@ heapmove(Heap *dst, Heap *src)
 	dst->size = src->size;
 	dst->base = src->base;
 	dst->farmid = src->farmid;
-	dst->hashash = src->hashash;
 	dst->cleanhash = src->cleanhash;
 	dst->storage = src->storage;
 	dst->newstorage = src->newstorage;
@@ -2366,7 +2365,6 @@ void
 BATassertProps(BAT *b)
 {
 	unsigned bbpstatus;
-	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
 	int cmp;
@@ -2387,7 +2385,6 @@ BATassertProps(BAT *b)
 	       ((bbpstatus & BBPEXISTING) != 0) +
 	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
-	assert(b != NULL);
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
@@ -2445,10 +2442,11 @@ BATassertProps(BAT *b)
 				/* candidate list with exceptions */
 				assert(b->batRole == TRANSIENT);
 				assert(b->tvheap->free <= b->tvheap->size);
+				assert(b->tvheap->free >= sizeof(ccand_t));
 				assert((negoid_cand(b) && ccand_free(b) % SIZEOF_OID == 0) || mask_cand(b));
 				if (negoid_cand(b) && ccand_free(b) > 0) {
-					const oid *oids = (const oid *) b->tvheap->base;
-					q = b->tvheap->free / SIZEOF_OID;
+					const oid *oids = (const oid *) ccand_first(b);
+					q = ccand_free(b) / SIZEOF_OID;
 					assert(oids != NULL);
 					assert(b->tseqbase + BATcount(b) + q <= GDK_oid_max);
 					/* exceptions within range */
@@ -2467,6 +2465,13 @@ BATassertProps(BAT *b)
 		}
 		return;
 	}
+	/* do the rest on a view in case some other thread changes b */
+	BAT *v = VIEWcreate(b->hseqbase, b);
+	if (v == NULL)
+		return;
+	b = v;
+	BATiter bi = bat_iterator(b);
+
 	if (BATtdense(b)) {
 		assert(b->tseqbase + b->batCount <= GDK_oid_max);
 		assert(b->ttype == TYPE_oid);
@@ -2479,6 +2484,7 @@ BATassertProps(BAT *b)
 			for (p = 1; p < q; p++)
 				assert(o[p - 1] + 1 == o[p]);
 		}
+		BBPunfix(b->batCacheid);
 		return;
 	}
 	assert(1 << b->tshift == b->twidth);
@@ -2523,6 +2529,7 @@ BATassertProps(BAT *b)
 	if (!b->tkey && !b->tsorted && !b->trevsorted &&
 	    !b->tnonil && !b->tnil) {
 		/* nothing more to prove */
+		BBPunfix(b->batCacheid);
 		return;
 	}
 
@@ -2662,7 +2669,7 @@ BATassertProps(BAT *b)
 				}
 				prb = HASHprobe(hs, valp);
 				for (hb = HASHget(hs, prb);
-				     hb != HASHnil(hs);
+				     hb != BUN_NONE;
 				     hb = HASHgetlink(hs, hb))
 					if (cmpf(valp, BUNtail(bi, hb)) == 0)
 						assert(!b->tkey);
@@ -2681,4 +2688,5 @@ BATassertProps(BAT *b)
 		assert(minval == NULL || seenmin);
 		assert(!b->tnil || seennil);
 	}
+	BBPunfix(b->batCacheid);
 }

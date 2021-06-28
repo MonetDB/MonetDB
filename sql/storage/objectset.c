@@ -590,6 +590,8 @@ tc_gc_objectversion(sql_store store, sql_change *change, ulng oldest)
 	assert(!change->handled);
 	objectversion *ov = (objectversion*)change->data;
 
+	if (oldest && oldest >= TRANSACTION_ID_BASE)
+		return 0;
 	int res = os_cleanup( (sqlstore*) store, ov, oldest);
 	change->handled = (res)?true:false;
 	return res;
@@ -602,7 +604,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 	if (commit_ts) {
 		assert(ov->ts == tr->tid);
 		ov->ts = commit_ts;
-		change->committed = true;
+		change->committed = commit_ts < TRANSACTION_ID_BASE ? true: false;
 		(void)oldest;
 	}
 	else {

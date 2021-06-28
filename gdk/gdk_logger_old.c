@@ -1651,16 +1651,19 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 	assert(lg != NULL);
 	if (GDKinmemory(0)) {
 		TRC_CRITICAL(GDK, "old logger can only be used with a disk-based database\n");
+		fclose(fp);
 		return NULL;
 	}
 	if (MT_path_absolute(logdir)) {
 		TRC_CRITICAL(GDK, "logdir must be relative path\n");
+		fclose(fp);
 		return NULL;
 	}
 
 	old_lg = GDKmalloc(sizeof(struct old_logger));
 	if (old_lg == NULL) {
 		TRC_CRITICAL(GDK, "allocating logger structure failed\n");
+		fclose(fp);
 		return NULL;
 	}
 
@@ -1695,6 +1698,7 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 	logbat_destroy(old_lg->add);
 	logbat_destroy(old_lg->del);
 	GDKfree(old_lg);
+	fclose(fp);
 	return NULL;
 }
 
@@ -1704,6 +1708,7 @@ old_logger_destroy(old_logger *lg)
 	BUN p, q;
 	BAT *b = NULL;
 	const log_bid *bids;
+	gdk_return rc;
 
 	bat *subcommit = GDKmalloc(sizeof(log_bid) * (BATcount(lg->add) + BATcount(lg->del) + 1));
 	if (subcommit == NULL) {
@@ -1748,26 +1753,31 @@ old_logger_destroy(old_logger *lg)
 	    BBPrename(lg->lg->catalog_id->batCacheid, bak) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_dcatalog", NULL) >= sizeof(bak) ||
 	    BBPrename(lg->lg->dcatalog->batCacheid, bak) < 0) {
+		GDKfree(subcommit);
 		return GDK_FAIL;
 	}
-	if (GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
+	if ((rc = GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak", true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		GDKfree(subcommit);
+		return rc;
 	}
-	if (logger_create_types_file(lg->lg, lg->filename) != GDK_SUCCEED) {
+	if ((rc = logger_create_types_file(lg->lg, lg->filename)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		GDKfree(subcommit);
+		return rc;
 	}
 	lg->lg->id = (ulng) lg->id;
 	lg->lg->saved_id = lg->lg->id;
-	if (TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid) != GDK_SUCCEED) {
+	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid);
+	GDKfree(subcommit);
+	if (rc != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		return rc;
 	}
 	snprintf(bak, sizeof(bak), "bak-" LLFMT, lg->id);
-	if (GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak) != GDK_SUCCEED) {
+	if ((rc = GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak, true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		return rc;
 	}
 
 	if (logger_cleanup(lg) != GDK_SUCCEED)

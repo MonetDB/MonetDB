@@ -39,11 +39,11 @@
 
 
 // ADAPTERS
-#define FOREACH_ADPTR(ADPTR)	\
+#define FOREACH_ADPTR(ADPTR)			\
 	ADPTR( BASIC )				\
 	ADPTR( PROFILER )			\
 	ADPTR( MBEDDED )			\
-								\
+						\
 	ADPTR( ADAPTERS_COUNT )
 
 typedef enum {
@@ -232,6 +232,8 @@ gdk_export log_level_t lvl_per_component[];
  */
 // Used for logrotate
 gdk_export void GDKtracer_reinit_basic(int sig);
+
+gdk_export gdk_return GDKtracer_set_tracefile(const char *tracefile);
 
 gdk_export gdk_return GDKtracer_stop(void);
 

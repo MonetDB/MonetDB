@@ -72,7 +72,7 @@ option.
 If the value of
 .I path
 is
-.BR :memory: ,
+.BR in-memory ,
 transient data is not stored on disk at all but kept in memory at all
 times.
 .TP
@@ -117,7 +117,9 @@ Run
 .I mserver5
 in-memory.
 .B No
-data will be persisted.
+data will be written to disk.
+The name of the database that a client can connect to is
+.BR in-memory .
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0

@@ -20,6 +20,8 @@
 			if (BATextend((B),				\
 				      MIN(BATcapacity(B) + (G),		\
 					  (M))) != GDK_SUCCEED) {	\
+				if (locked)				\
+					MT_rwlock_rdunlock(&b->thashlock); \
 				BBPreclaim(B);				\
 				return (R);				\
 			}						\
@@ -90,7 +92,7 @@ virtualize(BAT *bn)
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
-	     hb != HASHnil(h);				\
+	     hb != BUN_NONE;				\
 	     hb = HASHgetlink(h,hb))			\
 		if (hb >= (lo) && hb < (hi) &&		\
 		    (cmp == NULL ||			\
@@ -106,6 +108,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	BUN l, h, d = 0;
 	oid seq;
 	int (*cmp)(const void *, const void *);
+	bool locked = false;
 
 	size_t counter = 0;
 	lng timeoffset = 0;
@@ -151,6 +154,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
 	MT_rwlock_rdlock(&b->thashlock);
+	locked = true;
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
@@ -175,6 +179,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		}
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
+	locked = false;
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -343,7 +348,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				 buninsfix(bn, dst, cnt, o,		\
 					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-					   maximum, BUN_NONE)); \
+					   maximum, BUN_NONE));		\
 		} else {						\
 			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
@@ -508,6 +513,7 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	BUN pr_off = 0;							\
 	Imprints *imprints;						\
 	bat parent = 0;							\
+	const bool locked = false;					\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -572,6 +578,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	oid o;
 	BUN p;
 	int c;
+	const bool locked = false;
 
 	(void) maximum;
 	(void) use_imprints;
@@ -705,6 +712,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	var_t pos;
 	BUN p;
 	oid o;
+	const bool locked = false;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -1484,7 +1492,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		hash = phash = tmp && BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
-			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
 		if (!phash &&
