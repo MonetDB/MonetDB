@@ -759,7 +759,7 @@ BATmsync(BAT *b)
 }
 
 gdk_return
-BATsave(BAT *bd)
+BATsave_locked(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
@@ -782,8 +782,6 @@ BATsave(BAT *bd)
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
-	MT_rwlock_rdlock(&bd->thashlock);
-	MT_lock_set(&bd->theaplock);
 	BAT bs = *bd;
 	BAT *b = &bs;
 	Heap hs = *bd->theap;
@@ -862,11 +860,21 @@ BATsave(BAT *bd)
 		if (bd->thash && bd->thash != (Hash *) 1)
 			BAThashsave(bd, dosync);
 	}
-	MT_rwlock_rdunlock(&bd->thashlock);
-	MT_lock_unset(&bd->theaplock);
 	return err;
 }
 
+gdk_return
+BATsave(BAT *bd)
+{
+	gdk_return rc;
+
+	MT_rwlock_rdlock(&bd->thashlock);
+	MT_lock_set(&bd->theaplock);
+	rc = BATsave_locked(bd);
+	MT_rwlock_rdunlock(&bd->thashlock);
+	MT_lock_unset(&bd->theaplock);
+	return rc;
+}
 
 /*
  * TODO: move to gdk_bbp.c
