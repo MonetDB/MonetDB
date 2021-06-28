@@ -388,10 +388,12 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				j = 0;
 				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
-				const hge *vals = (const hge *) Tloc(b, 0);
+				BATiter bi = bat_iterator(b);
+				const hge *vals = (const hge *) bi.base;
 				BATloop(b, p, q) {
 					data[j++] = (npy_float64)vals[p];
 				}
+				bat_iterator_end(&bi);
 				break;
 			}
 #endif

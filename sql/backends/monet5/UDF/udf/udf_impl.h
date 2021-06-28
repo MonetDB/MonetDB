@@ -86,7 +86,7 @@ UF(UDFarrayfuse_,UI,UO,)  ( UO *res, const UI *one, const UI *two, BUN n )
 
 /* type-specific core algorithm on BATs */
 static char *
-UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN n,
+UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, BAT *bone, BAT *btwo, BUN n,
                           bit *two_tail_sorted_unsigned,
                           bit *two_tail_revsorted_unsigned )
 {
@@ -102,21 +102,23 @@ UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN
 	assert(bres->ttype == UT(UO));
 
 	/* get direct access to the tail arrays	*/
-	one = (UI*) Tloc(bone, 0);
-	two = (UI*) Tloc(btwo, 0);
+	BATiter bonei = bat_iterator(bone);
+	BATiter btwoi = bat_iterator(btwo);
+	one = (UI*) bonei.base;
+	two = (UI*) btwoi.base;
 	res = (UO*) Tloc(bres, 0);
 
 	/* call core function on arrays */
 	msg = UF(UDFarrayfuse_,UI,UO,) ( res, one, two , n );
-	if (msg != MAL_SUCCEED)
-		return msg;
-
-	*two_tail_sorted_unsigned =
-		BATtordered(btwo) && (two[0] >= 0 || two[n-1] < 0);
-	*two_tail_revsorted_unsigned =
-		BATtrevordered(btwo) &&	(two[0] < 0 || two[n-1] >= 0);
-
-	return MAL_SUCCEED;
+	if (msg == MAL_SUCCEED) {
+		*two_tail_sorted_unsigned =
+			BATtordered(btwo) && (two[0] >= 0 || two[n-1] < 0);
+		*two_tail_revsorted_unsigned =
+			BATtrevordered(btwo) &&	(two[0] < 0 || two[n-1] >= 0);
+	}
+	bat_iterator_end(&bonei);
+	bat_iterator_end(&btwoi);
+	return msg;
 }
 
 

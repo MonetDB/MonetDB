@@ -768,9 +768,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			// now split the columns one by one
 			for (i = 0; i < named_columns; i++) {
 				PyInput input = pyinput_values[i];
-				void *basevals = Tloc(input.bat, 0);
-
 				if (!input.scalar) {
+					BATiter bi = bat_iterator(input.bat);
+					void *basevals = bi.base;
+
 					switch (input.bat_type) {
 						case TYPE_void:
 							NP_SPLIT_BAT(oid);
@@ -845,9 +846,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 							msg = createException(
 								MAL, "pyapi3.eval", SQLSTATE(PY000) "Unrecognized BAT type %s",
 								BatType_Format(input.bat_type));
+							bat_iterator_end(&bi);
 							goto aggrwrapup;
-							break;
 					}
+					bat_iterator_end(&bi);
 				}
 			}
 
@@ -1209,17 +1211,17 @@ returnvalues:
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
+			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
+				if (VALinit(&stk->stk[pci->argv[i]], bat_type, li.base) ==
 					NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				BATiter li = bat_iterator(b);
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&li);
 			}
+			bat_iterator_end(&li);
 		}
 		if (argnode) {
 			argnode = argnode->next;
@@ -1644,7 +1646,9 @@ static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
+			MT_lock_set(&b->theaplock);
 			VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 }

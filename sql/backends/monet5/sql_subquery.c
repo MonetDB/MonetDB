@@ -122,7 +122,7 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 	do {		\
 		TPE val = TPE##_nil;	\
 		if (c > 0) { \
-			TPE *restrict bp = (TPE*)Tloc(b, 0); \
+			TPE *restrict bp = (TPE*)bi.base; \
 			if (c == 1 || (b->tsorted && b->trevsorted)) { \
 				val = bp[0]; \
 			} else { \
@@ -157,6 +157,7 @@ SQLall(ptr ret, const bat *bid)
 		oid p = oid_nil;
 		memcpy(ret, &p, sizeof(oid));
 	} else {
+		BATiter bi = bat_iterator(b);
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			SQLall_imp(bte);
@@ -187,7 +188,6 @@ SQLall(ptr ret, const bat *bid)
 			size_t s;
 
 			if (c > 0) {
-				BATiter bi = bat_iterator(b);
 				if (c == 1 || (b->tsorted && b->trevsorted)) {
 					p = BUNtail(bi, 0);
 				} else {
@@ -204,7 +204,6 @@ SQLall(ptr ret, const bat *bid)
 						}
 					}
 				}
-				bat_iterator_end(&bi);
 			}
 			s = ATOMlen(ATOMtype(b->ttype), p);
 			if (ATOMextern(b->ttype)) {
@@ -218,6 +217,7 @@ SQLall(ptr ret, const bat *bid)
 				memcpy(ret, p, s);
 		}
 		}
+		bat_iterator_end(&bi);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -270,7 +270,7 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define SQLnil_imp(TPE) \
 	do {		\
-		TPE *restrict bp = (TPE*)Tloc(b, 0);	\
+		TPE *restrict bp = (TPE*)bi.base;	\
 		for (BUN q = 0; q < o; q++) {	\
 			if (is_##TPE##_nil(bp[q])) { \
 				*ret = TRUE; \
@@ -293,6 +293,7 @@ SQLnil(bit *ret, const bat *bid)
 	if (BATcount(b) > 0) {
 		BUN o = BUNlast(b);
 
+		BATiter bi = bat_iterator(b);
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			SQLnil_imp(bte);
@@ -320,7 +321,6 @@ SQLnil(bit *ret, const bat *bid)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
 			const void *restrict nilp = ATOMnilptr(b->ttype);
-			BATiter bi = bat_iterator(b);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *restrict c = BUNtail(bi, q);
@@ -329,9 +329,9 @@ SQLnil(bit *ret, const bat *bid)
 					break;
 				}
 			}
-			bat_iterator_end(&bi);
 		}
 		}
+		bat_iterator_end(&bi);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -413,6 +413,7 @@ SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	BUN q = 0;
 	bit *restrict res_l = NULL, *cmp_l = NULL, *nl_l = NULL, *nr_l = NULL, cmp_at = FALSE, nl_at = FALSE, nr_at = FALSE, has_nil = 0;
+	BATiter cmpi, nli, nri;
 
 	(void) cntxt;
 	if (cid && (cmp = BATdescriptor(*cid)) == NULL) {
@@ -427,24 +428,27 @@ SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto bailout;
 	}
+	cmpi = bat_iterator(cmp);
+	nli = bat_iterator(nl);
+	nri = bat_iterator(nr);
 	if (cmp)
-		cmp_l = (bit *) Tloc(cmp, 0);
+		cmp_l = (bit *) cmpi.base;
 	else
 		cmp_at = *getArgReference_bit(stk, pci, 1);
 	if (nl)
-		nl_l = (bit *) Tloc(nl, 0);
+		nl_l = (bit *) nli.base;
 	else
 		nl_at = *getArgReference_bit(stk, pci, 2);
 	if (nr)
-		nr_l = (bit *) Tloc(nr, 0);
+		nr_l = (bit *) nri.base;
 	else
 		nr_at = *getArgReference_bit(stk, pci, 3);
 
 	if (cmp || nl || nr) {
-		q = cmp ? BATcount(cmp) : nl ? BATcount(nl) : BATcount(nr);
+		q = cmp ? cmpi.count : nl ? nli.count : nri.count;
 		if (!(res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT))) {
 			msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 		res_l = (bit *) Tloc(res, 0);
 	}
@@ -476,6 +480,10 @@ SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res->tnil = has_nil;
 		res->tnonil = !has_nil;
 	}
+bailout1:
+	bat_iterator_end(&cmpi);
+	bat_iterator_end(&nli);
+	bat_iterator_end(&nri);
 
 bailout:
 	if (res && !msg)
@@ -516,6 +524,7 @@ SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	BUN q = 0;
 	bit *restrict res_l = NULL, *cmp_l = NULL, *nl_l = NULL, *nr_l = NULL, cmp_at = FALSE, nl_at = FALSE, nr_at = FALSE, has_nil = 0;
+	BATiter cmpi, nli, nri;
 
 	(void) cntxt;
 	if (cid && (cmp = BATdescriptor(*cid)) == NULL) {
@@ -530,24 +539,27 @@ SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto bailout;
 	}
+	cmpi = bat_iterator(cmp);
+	nli = bat_iterator(nl);
+	nri = bat_iterator(nr);
 	if (cmp)
-		cmp_l = (bit *) Tloc(cmp, 0);
+		cmp_l = (bit *) cmpi.base;
 	else
 		cmp_at = *getArgReference_bit(stk, pci, 1);
 	if (nl)
-		nl_l = (bit *) Tloc(nl, 0);
+		nl_l = (bit *) nli.base;
 	else
 		nl_at = *getArgReference_bit(stk, pci, 2);
 	if (nr)
-		nr_l = (bit *) Tloc(nr, 0);
+		nr_l = (bit *) nri.base;
 	else
 		nr_at = *getArgReference_bit(stk, pci, 3);
 
 	if (cmp || nl || nr) {
-		q = cmp ? BATcount(cmp) : nl ? BATcount(nl) : BATcount(nr);
+		q = cmp ? cmpi.count : nl ? nli.count : nri.count;
 		if (!(res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT))) {
 			msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 		res_l = (bit *) Tloc(res, 0);
 	}
@@ -579,6 +591,10 @@ SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res->tnil = has_nil;
 		res->tnonil = !has_nil;
 	}
+bailout1:
+	bat_iterator_end(&cmpi);
+	bat_iterator_end(&nli);
+	bat_iterator_end(&nri);
 
 bailout:
 	if (res && !msg)
@@ -596,7 +612,7 @@ bailout:
 
 #define SQLanyequal_or_not_imp_single(TPE, OUTPUT) \
 	do {							\
-		TPE *rp = (TPE*)Tloc(r, 0), *lp = (TPE*)Tloc(l, 0), p = lp[0];	\
+		TPE *rp = (TPE*)ri.base, *lp = (TPE*)li.base, p = lp[0];	\
 		for (BUN q = 0; q < o; q++) {	\
 			TPE c = rp[q]; \
 			if (is_##TPE##_nil(c)) { \
@@ -610,7 +626,7 @@ bailout:
 
 #define SQLanyequal_or_not_imp_multi(TPE, CMP) \
 	do {							\
-		TPE *rp = (TPE*)Tloc(r, 0), *lp = (TPE*)Tloc(l, 0);	\
+		TPE *rp = (TPE*)ri.base, *lp = (TPE*)li.base;	\
 		for (BUN q = 0; q < o; q++) {	\
 			TPE c = rp[q], d = lp[q]; \
 			res_l[q] = (is_##TPE##_nil(c) || is_##TPE##_nil(d)) ? bit_nil : c CMP d; \
@@ -626,6 +642,7 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *res = NULL, *l = NULL, *r = NULL;
 	str msg = MAL_SUCCEED;
 	BUN o = 0;
+	BATiter li, ri;
 
 	(void) cntxt;
 	if ((l = BATdescriptor(*bid1)) == NULL) {
@@ -642,10 +659,12 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	o = BATcount(r);
+	ri = bat_iterator(r);
+	li = bat_iterator(l);
 	if (bret) {
 		if (!(res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT))) {
 			msg = createException(SQL, "sql.any =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 		bit *restrict res_l = (bit*) Tloc(res, 0);
 
@@ -676,14 +695,11 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
-			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
 				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) == 0;
 			}
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
 		}
 		}
 
@@ -725,7 +741,6 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			default: {
 				int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 				const void *nilp = ATOMnilptr(l->ttype);
-				BATiter li = bat_iterator(l), ri = bat_iterator(r);
 				const void *p = BUNtail(li, 0);
 
 				for (BUN q = 0; q < o; q++) {
@@ -737,12 +752,13 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						break;
 					}
 				}
-				bat_iterator_end(&li);
-				bat_iterator_end(&ri);
 			}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 
 bailout:
 	if (res && !msg)
@@ -889,6 +905,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *res = NULL, *l = NULL, *r = NULL;
 	str msg = MAL_SUCCEED;
 	BUN o = 0;
+	BATiter li, ri;
 
 	(void) cntxt;
 	if ((l = BATdescriptor(*bid1)) == NULL) {
@@ -905,6 +922,8 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	o = BATcount(r);
+	ri = bat_iterator(r);
+	li = bat_iterator(l);
 	if (bret) {
 		if (!(res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT))) {
 			msg = createException(SQL, "sql.all <>", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -988,7 +1007,6 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			default: {
 				int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
 				const void *nilp = ATOMnilptr(l->ttype);
-				BATiter li = bat_iterator(l), ri = bat_iterator(r);
 				const void *p = BUNtail(li, 0);
 
 				for (BUN q = 0; q < o; q++) {
@@ -1000,12 +1018,12 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						break;
 					}
 				}
-				bat_iterator_end(&li);
-				bat_iterator_end(&ri);
 			}
 			}
 		}
 	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 
 bailout:
 	if (res && !msg)
