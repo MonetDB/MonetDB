@@ -910,7 +910,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	}
 
 	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	     (BATcount(e) == ncand && e->hseqbase == ci.hseq)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
@@ -1586,7 +1586,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	}
 
 	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	     (BATcount(e) == ncand && e->hseqbase == ci.hseq)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
@@ -4583,7 +4583,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	}
 
 	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	     (BATcount(e) == ncand && e->hseqbase == ci.hseq)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil)) &&
 	    (issample || b->tnonil)) {
 		/* trivial: singleton groups, so all results are equal

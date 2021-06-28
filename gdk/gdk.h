@@ -1079,7 +1079,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
 #define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
-#define Tbase(b)	((b)->tvheap->base)
 
 #define Tsize(b)	((b)->twidth)
 
@@ -1410,8 +1409,8 @@ BATsettrivprop(BAT *b)
 		int c;
 		if (b->tvarsized)
 			c = ATOMcmp(b->ttype,
-				    Tbase(b) + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-				    Tbase(b) + VarHeapVal(Tloc(b, 0), 1, b->twidth));
+				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
 		else
 			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
 		b->tsorted = c <= 0;
