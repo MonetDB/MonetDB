@@ -726,6 +726,16 @@ SQLdestroyResult(res_table *destroy)
 	res_table_destroy(destroy);
 }
 
+static str
+RAcommit_statement(backend *be, str msg)
+{
+	mvc *m = be->mvc;
+	/* if an error already exists set the session status to dirty */
+	if (msg != MAL_SUCCEED && m->session->tr->active && !m->session->status)
+		m->session->status = -1;
+	return msg;
+}
+
 /* a hook is provided to execute relational algebra expressions */
 str
 RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -733,13 +743,13 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int pos = 0;
 	str *expr = getArgReference_str(stk, pci, 1);
 	bit *opt = getArgReference_bit(stk, pci, 2);
-	backend *b = NULL;
+	backend *be = NULL;
 	mvc *m = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	sql_rel *rel;
 	list *refs;
 
-	if ((msg = getSQLContext(c, mb, &m, &b)) != NULL)
+	if ((msg = getSQLContext(c, mb, &m, &be)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(c)) != NULL)
 		return msg;
@@ -748,10 +758,15 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!m->sa)
 		m->sa = sa_create(m->pa);
 	if (!m->sa)
-		return createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
-	if (rel) {
+	if (!rel) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(SQL, "RAstatement", "%s", m->errstr);
+		else
+			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
+	} else {
 		int oldvtop = c->curprg->def->vtop, oldstop = c->curprg->def->stop, oldvid = c->curprg->def->vid;
 
 		if (*opt && rel)
@@ -759,12 +774,12 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED) {
 			rel_destroy(rel);
-			return msg;
+			return RAcommit_statement(be, msg);
 		}
 
 		/* generate MAL code, ignoring any code generation error */
 		setVarType(c->curprg->def, 0, 0);
-		if (backend_dumpstmt(b, c->curprg->def, rel, 0, 1, NULL) < 0) {
+		if (backend_dumpstmt(be, c->curprg->def, rel, 0, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);
@@ -777,12 +792,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 		}
-		if (!msg)
-			msg = mvc_commit(m, 0, NULL, false);
-		else
-			msg = mvc_rollback(m, 0, NULL, false);
 	}
-	return msg;
+	return RAcommit_statement(be, msg);
 }
 
 static int
@@ -820,18 +831,14 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!m->sa)
 		m->sa = sa_create(m->pa);
-	if (!m->sa) {
-		sqlcleanup(be, 0);
-		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	if (!m->sa)
+		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 
 	/* keep copy of signature and relational expression */
 	snprintf(buf, BUFSIZ, "%s %s", sig, expr);
 
-	if (!stack_push_frame(m, NULL)) {
-		sqlcleanup(be, 0);
-		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	if (!stack_push_frame(m, NULL))
+		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	ops = sa_list(m->sa);
 	while (sig && *sig && !isspace((unsigned char) *sig)) {
 		char *vnme = sig, *tnme;
@@ -850,10 +857,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = strchr(p, (int)'(');
 		*p++ = 0;
 		tnme = sa_strdup(m->sa, tnme);
-		if (!tnme) {
-			sqlcleanup(be, 0);
-			return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
+		if (!tnme)
+			return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
@@ -872,10 +877,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			//	return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			//}
 		} else {
-			if (!push_global_var(m, "sys", vnme+1, &t)) {
-				sqlcleanup(be, 0);
-				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			if (!push_global_var(m, "sys", vnme+1, &t))
+				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, 0));
 		}
 		sig = strchr(p, (int)',');
@@ -920,6 +923,23 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(rel);
+	return RAcommit_statement(be, msg);
+}
+
+str
+RAstatementEnd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *be = NULL;
+	mvc *m = NULL;
+	str msg = MAL_SUCCEED;
+
+	(void) stk;
+	(void) pci;
+	if ((msg = getSQLContext(cntxt, mb, &m, &be)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
 	sqlcleanup(be, 0);
-	return msg;
+	return SQLautocommit(m);
 }
