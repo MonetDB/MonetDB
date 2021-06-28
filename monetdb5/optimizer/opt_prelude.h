@@ -102,6 +102,7 @@ mal_export  const char *defineRef;
 mal_export  const char *deleteRef;
 mal_export  const char *deltaRef;
 mal_export  const char *dense_rankRef;
+mal_export  const char *deregisterRef;
 mal_export  const char *diffcandRef;
 mal_export  const char *differenceRef;
 mal_export  const char *diffRef;
