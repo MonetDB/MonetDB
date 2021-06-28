@@ -259,6 +259,4 @@ gdk_export void GDKtracer_log(const char *file, const char *func,
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);
 
-gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
-
 #endif /* _GDK_TRACER_H_ */

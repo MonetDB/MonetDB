@@ -1232,12 +1232,13 @@ SQLproducer(void *p)
 	bool blocked[MAXBUFFERS] = { false };
 	bool ateof[MAXBUFFERS] = { false };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
-	char *end, *e, *s = NULL, *base;
+	char *end = NULL, *e = NULL, *s = NULL, *base;
 	const char *rsep = task->rsep;
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
 	dfa_t rdfa;
 	lng rowno = 0;
+	int more = 0;
 
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
@@ -1444,6 +1445,7 @@ SQLproducer(void *p)
 			task->cur = cur;
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
+			more = !ateof[cur] || (e && e < end && task->top[cur] == task->limit);
 /*			TRC_DEBUG(MAL_SERVER, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);*/
 
 			MT_sema_up(&task->consumer);
@@ -1461,7 +1463,7 @@ SQLproducer(void *p)
 /*		TRC_DEBUG(MAL_SERVER, "Continue producer buffer: %d\n", cur);*/
 
 		/* we ran out of input? */
-		if (task->ateof) {
+		if (task->ateof && !more) {
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			GDKfree(rdfa);
 			return;
@@ -1833,6 +1835,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			task.maxrow = cnt;
 			task.state = ENDOFCOPY;
 		}
+		if (task.ateof && task.top[task.cur] < task.limit && cnt != task.maxrow)
+			break;
+		task.top[task.cur] = 0;
 		MT_sema_up(&task.producer);
 	}
 

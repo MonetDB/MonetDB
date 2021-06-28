@@ -255,6 +255,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bat_iterator_end(&bi);
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
+				GDKfree(hash);
 				throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			GDKfree(hash);

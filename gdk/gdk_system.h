@@ -179,6 +179,7 @@ gdk_export int MT_join_thread(MT_Id t);
 #define USE_NATIVE_LOCKS 1
 
 #ifdef LOCK_STATS
+#include "gdk_tracer.h"
 
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
