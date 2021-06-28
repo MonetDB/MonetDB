@@ -2082,8 +2082,8 @@ store_exit(sqlstore *store)
 				} else
 					_DELETE(c);
 			}
-			list_destroy(store->changes);
 		}
+		list_destroy(store->changes);
 		MT_lock_unset(&store->commit);
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
@@ -3410,14 +3410,16 @@ sql_trans_rollback(sql_trans *tr, int locked)
 		if (!locked)
 			store_unlock(store);
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
-		store_lock(store);
+		if (!locked)
+			store_lock(store);
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
 			id_hash_clear(store->removals);
 		}
-		store_unlock(store);
+		if (!locked)
+			store_unlock(store);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3754,7 +3756,7 @@ sql_trans_commit(sql_trans *tr)
 	if (locked) {
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
-	} 
+	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
 		for(node *n=tr->localtmps.set->h; n; ) {
