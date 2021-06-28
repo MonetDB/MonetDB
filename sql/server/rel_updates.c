@@ -1041,6 +1041,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 				updates[c->colnr] = v;
+				rel_base_use(sql, bt, c->colnr);
 			}
 		} else {
 			char *cname = assignment->h->next->data.sval;
@@ -1069,6 +1070,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
+			rel_base_use(sql, bt, c->colnr);
 		}
 	}
 	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
@@ -1331,7 +1333,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-			if (!(insert = rel_insert(query->sql, rel_basetable(sql, t, bt_name), insert)))
+
+			sql_rel *ibt = rel_basetable(sql, t, bt_name);
+			rel_base_use_all(query->sql, ibt);
+			ibt = rewrite_basetable(query->sql, ibt);
+			if (!(insert = rel_insert(query->sql, ibt, insert)))
 				return NULL;
 		} else {
 			assert(0);

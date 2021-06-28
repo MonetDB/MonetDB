@@ -2648,9 +2648,7 @@ mapi_reconnect(Mapi mid)
 #ifdef HAVE_RIPEMD160_UPDATE
 		"RIPEMD160",
 #endif
-#ifdef HAVE_SHA512_UPDATE
 		"SHA512",
-#endif
 #ifdef HAVE_SHA384_UPDATE
 		"SHA384",
 #endif
@@ -2709,12 +2707,10 @@ mapi_reconnect(Mapi mid)
 							strlen(mid->password));
 		} else
 #endif
-#ifdef HAVE_SHA512_UPDATE
 		if (strcmp(serverhash, "SHA512") == 0) {
 			pwdhash = mcrypt_SHA512Sum(mid->password,
 							strlen(mid->password));
 		} else
-#endif
 #ifdef HAVE_SHA384_UPDATE
 		if (strcmp(serverhash, "SHA384") == 0) {
 			pwdhash = mcrypt_SHA384Sum(mid->password,
@@ -2747,7 +2743,6 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
 		if (pwdhash == NULL) {
 			snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
 					serverhash);
@@ -2759,7 +2754,6 @@ mapi_reconnect(Mapi mid)
 		mid->password = malloc(1 + strlen(pwdhash) + 1);
 		sprintf(mid->password, "\1%s", pwdhash);
 		free(pwdhash);
-#endif
 	}
 
 

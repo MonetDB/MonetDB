@@ -537,6 +537,8 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 			   "%n",
 			   &free, &size, &storage, &n) < 3) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
+			GDKfree(b->theap);
+			b->tvheap = NULL;
 			return -1;
 		}
 		b->tvheap->free = (size_t) free;
@@ -2205,6 +2207,8 @@ BBPuncacheit(bat i, bool unloaddesc)
 	if (BBPcheck(i, "BBPuncacheit")) {
 		BAT *b = BBP_desc(i);
 
+		assert(unloaddesc || BBP_refs(i) == 0);
+
 		if (b) {
 			if (BBP_cache(i)) {
 				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBPname(i));
@@ -2500,8 +2504,8 @@ incref(bat i, bool logical, bool lock)
 			if (b->theap != pb->theap) {
 				HEAPincref(pb->theap);
 				HEAPdecref(b->theap, false);
+				b->theap = pb->theap;
 			}
-			b->theap = pb->theap;
 		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING);

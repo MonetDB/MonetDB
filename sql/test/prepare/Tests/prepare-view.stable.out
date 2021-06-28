@@ -1,0 +1,16 @@
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 0,	1,	1,	0,	0,	0 # length
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 0,	1,	1,	0,	0,	0 # length
+% sys.mydata,	sys.mydata,	sys.mydata,	sys.mydata # table_name
+% sensor,	dt,	val,	exponent # name
+% varchar,	timestamp,	int,	int # type
+% 0,	26,	1,	1 # length
+% sys.myview,	sys.myview,	sys.myview # table_name
+% sensor,	dt,	v # name
+% varchar,	timestamp,	double # type
+% 0,	26,	24 # length

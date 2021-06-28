@@ -3472,18 +3472,18 @@ main(int argc, char **argv)
 		free(dbname);
 	dbname = NULL;
 
+	if (mid == NULL) {
+		mnstr_printf(stderr_stream, "failed to allocate Mapi structure\n");
+		exit(2);
+	}
+
 	mapi_cache_limit(mid, -1);
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
 
-	if (mid && mapi_error(mid) == MOK)
+	if (mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
-
-	if (mid == NULL) {
-		mnstr_printf(stderr_stream, "failed to allocate Mapi structure\n");
-		exit(2);
-	}
 
 	if (mapi_error(mid)) {
 		if (trace)

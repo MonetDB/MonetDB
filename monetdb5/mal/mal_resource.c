@@ -108,19 +108,19 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 {
 	(void) mb;
 	(void) pci;
-	if (argclaim == 0)
-		return 0;
 
-	MT_lock_set(&admissionLock);
 	/* Check if we are allowed to allocate another worker thread for this client */
 	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which should be counted for.
 	 * A way out is to attach the thread count to the MAL stacks, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
 	if(cntxt->workerlimit && cntxt->workerlimit < stk->workers){
-		MT_lock_unset(&admissionLock);
 		return -1;
 	}
+	if (argclaim == 0)
+		return 0;
+
+	MT_lock_set(&admissionLock);
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
 	if ( memorypool <= 0){
 		// we accidently released too much memory or need to initialize

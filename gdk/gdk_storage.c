@@ -856,8 +856,8 @@ BATsave(BAT *bd)
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
-		if (b->thash && b->thash != (Hash *) 1)
-			BAThashsave(b, dosync);
+		if (bd->thash && bd->thash != (Hash *) 1)
+			BAThashsave(bd, dosync);
 	}
 	MT_rwlock_rdunlock(&bd->thashlock);
 	MT_lock_unset(&bd->theaplock);
