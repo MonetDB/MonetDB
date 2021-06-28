@@ -818,11 +818,15 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	bit vararg = FALSE;
+	bit vararg = FALSE, union_err = 0;
 	char *F = NULL, *fn = NULL, is_func;
 
-	if (res && res->token == SQL_TABLE)
-		type = F_UNION;
+	if (res && res->token == SQL_TABLE) {
+		if (type == F_FUNC)
+			type = F_UNION;
+		else
+			union_err = 1;
+	}
 
 	FUNC_TYPE_STR(type, F, fn)
 
@@ -832,7 +836,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (create && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 
-	if (res && type == F_PROC)
+	if (union_err)
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss cannot return tables", F, fn);
+	else if (res && type == F_PROC)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: procedures cannot have return parameters", F);
 	else if (res && (type == F_FILT || type == F_LOADER))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions don't have to specify a return type", F, fn);

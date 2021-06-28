@@ -92,7 +92,7 @@ virtualize(BAT *bn)
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
-	     hb != HASHnil(h);				\
+	     hb != BUN_NONE;				\
 	     hb = HASHgetlink(h,hb))			\
 		if (hb >= (lo) && hb < (hi) &&		\
 		    (cmp == NULL ||			\
@@ -348,7 +348,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				 buninsfix(bn, dst, cnt, o,		\
 					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-					   maximum, BUN_NONE)); \
+					   maximum, BUN_NONE));		\
 		} else {						\
 			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
@@ -1492,7 +1492,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		hash = phash = tmp && BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
-			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
 		if (!phash &&
