@@ -173,7 +173,7 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 }
 
 sql_exp *
-exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
+exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int symmetric)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 	if (e == NULL)
@@ -184,6 +184,8 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (symmetric)
+		set_symmetric(e);
 	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
 		set_has_no_nil(e);
 	return e;
@@ -671,6 +673,8 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_anti(ne);
 	if (is_semantics(oe))
 		set_semantics(ne);
+	if (is_symmetric(oe))
+		set_symmetric(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))
@@ -1301,7 +1305,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		return 1;
 	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
 		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || is_semantics(e1) != is_semantics(e2) ||
-		need_distinct(e1) != need_distinct(e2))
+		is_symmetric(e1) != is_symmetric(e2) || need_distinct(e1) != need_distinct(e2))
 		return 0;
 	if (e1->type == e2->type) {
 		switch(e1->type) {
@@ -1309,7 +1313,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 		            exp_match_exp(e1->l, e2->l) &&
 			    exp_match_exp(e1->r, e2->r) &&
-			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
+			    ((!e1->f && !e2->f) || (e1->f && e2->f && exp_match_exp(e1->f, e2->f))))
 				return 1;
 			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
 		            exp_match_list(e1->l, e2->l) &&
@@ -1779,7 +1783,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     sql_exp* h = e->f;
     assert (v && l && h);
 
-    return exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
+    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
 }
 
 static inline bool
@@ -2728,7 +2732,7 @@ exp_copy(mvc *sql, sql_exp * e)
 
 			if (e->f) {
 				r2 = exp_copy(sql, e->f);
-				ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+				ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}

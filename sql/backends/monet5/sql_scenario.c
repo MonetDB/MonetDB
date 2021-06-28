@@ -569,11 +569,12 @@ SQLinit(Client c)
 str
 handle_error(mvc *m, int pstatus, str msg)
 {
-	str new = 0, newmsg= MAL_SUCCEED;
+	str new = NULL, newmsg = MAL_SUCCEED;
 
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
-		new = createException(SQL,"sql.execute",TRANS_ABORTED);
+		freeException(msg);
+		return createException(SQL,"sql.execute",TRANS_ABORTED);
 	} else if ( GDKerrbuf && GDKerrbuf[0]){
 		new = GDKstrdup(GDKerrbuf);
 		GDKerrbuf[0] = 0;
@@ -582,20 +583,14 @@ handle_error(mvc *m, int pstatus, str msg)
 		m->errstr[0] = 0;
 	}
 	if ( new && msg){
-		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
-		if (newmsg == NULL) {
-			newmsg = createException(SQL, "sql.execute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		} else {
-			strcpy(newmsg, msg);
-			/* strcat(newmsg,"!"); */
-			strcat(newmsg,new);
-		}
-		freeException(new);
-		freeException(msg);
+		newmsg = concatErrors(msg, new);
+		GDKfree(new);
 	} else if (msg)
 		newmsg = msg;
-	else if (new)
-		newmsg = new;
+	else if (new) {
+		newmsg = createException(SQL, "sql.execute", "%s", new);
+		GDKfree(new);
+	}
 	return newmsg;
 }
 
@@ -1139,7 +1134,7 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
-			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, c->query) < 0)
+			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
 				opt = 1;
@@ -1281,38 +1276,19 @@ SQLCacheRemove(Client c, const char *nme)
 str
 SQLcallback(Client c, str msg)
 {
-	char *newerr = NULL;
-
 	if (msg) {
-		if (!(newerr = GDKmalloc(strlen(msg) + 1))) {
-			msg = createException(SQL, "SQLcallback", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		} else {
-			/* remove exception decoration */
-			char *m, *n, *p, *s;
-			size_t l;
-
-			m = msg;
-			p = newerr;
-			while (m && *m) {
-				n = strchr(m, '\n');
-				s = getExceptionMessageAndState(m);
-				if (n) {
-					n++; /* include newline */
-					l = n - s;
-				} else {
-					l = strlen(s);
-				}
-				memcpy(p, s, l);
-				p += l;
-				m = n;
-			}
-			*p = 0;
-			freeException(msg);
-			if (!(msg = GDKrealloc(newerr, strlen(newerr) + 1))) {
-				GDKfree(newerr);
-				msg = createException(SQL, "SQLcallback", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		/* remove exception decoration */
+		for (char *m = msg; m && *m; ) {
+			char *n = strchr(m, '\n');
+			char *s = getExceptionMessageAndState(m);
+			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - s), s);
+			m = n;
+			if (n) {
+				m++; /* include newline */
 			}
 		}
+		freeException(msg);
+		return MAL_SUCCEED;
 	}
 	return MALcallback(c, msg);
 }

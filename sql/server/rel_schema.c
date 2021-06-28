@@ -319,7 +319,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
 			return res;
 		}
-		k->base.new = 1;
 
 		mvc_create_kc(sql, k, cs);
 		if (!mvc_create_ukey_done(sql, k)) {
@@ -383,7 +382,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
 			return res;
 		}
-		fk->k.base.new = 1;
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
 	} 	break;
@@ -582,7 +580,6 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
 			return SQL_ERR;
 		}
-		fk->k.base.new = 1;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
@@ -635,7 +632,6 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
 			return SQL_ERR;
 		}
-		k->base.new = 1;
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, nm);
@@ -729,7 +725,6 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		cs = mvc_create_column(sql, t, cname, ctype);
 		if (!cs || column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
-		cs->base.new = 1;
 	}
 	return res;
 }
@@ -1001,7 +996,6 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			default:
 				break;
 		}
-		col->base.deleted = 1;
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;
@@ -1946,7 +1940,6 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* add index here */
 	i = mvc_create_idx(sql, nt, iname, itype);
-	i->base.new = 1;
 	for (n = column_list->h; n; n = n->next) {
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 

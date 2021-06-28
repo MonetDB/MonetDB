@@ -149,7 +149,7 @@ char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t 
 void GDKlog(_In_z_ _Printf_format_string_ FILE * fl, const char *format, ...)
 	__attribute__((__format__(__printf__, 2, 3)))
 	__attribute__((__visibility__("hidden")));
-gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
+gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
@@ -166,7 +166,7 @@ gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict
 gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void GDKtracer_init(const char *dbname, const char *dbtrace)
+gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
@@ -445,11 +445,6 @@ extern MT_Lock GDKtmLock;
 #define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
-
-/* extra space in front of strings in string heaps when hashash is set
- * if at least (2*SIZEOF_BUN), also store length (heaps are then
- * incompatible) */
-#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */

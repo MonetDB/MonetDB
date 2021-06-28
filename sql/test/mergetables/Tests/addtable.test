@@ -34,7 +34,10 @@ create merge table ups(a int)
 statement ok
 create table notsame(b int)
 
-statement ok rowcount 2
+statement ok
+alter table ups add table notsame
+
+statement ok rowcount 1
 insert into notsame values (1)
 
 query II rowsort
@@ -75,3 +78,4 @@ select a as y, 2 from ups as x
 
 statement ok
 rollback
+

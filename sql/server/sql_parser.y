@@ -726,7 +726,8 @@ sqlstmt:
 	}
 
  | prepare 		{
-		  	  m->emode = m_prepare; 
+			  if (!m->emode) /* don't replace m_deps/instantiate */
+		  	  	m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			}
 	sql SCOLON 	{
@@ -5564,7 +5565,9 @@ string:
 
 exec:
      execute exec_ref
-		{ $$ = _symbol_create_symbol(SQL_CALL, $2); }
+		{
+		  m->emod |= mod_exec;
+		  $$ = _symbol_create_symbol(SQL_CALL, $2); }
  ;
 
 dealloc_ref:

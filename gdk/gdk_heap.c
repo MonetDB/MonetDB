@@ -98,7 +98,6 @@ HEAPgrow(const Heap *old, size_t size)
 		return NULL;
 	*new = (Heap) {
 		.farmid = old->farmid,
-		.hashash = old->hashash,
 		.cleanhash = old->cleanhash,
 		.dirty = true,
 		.remove = old->remove,
@@ -496,7 +495,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		if (exists == 0 &&
 		    (old->storage != STORE_MEM ||
 		     GDKmove(old->farmid, BATDIR, old->filename, NULL,
-			     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
+			     BAKDIR, filename, NULL, false) != GDK_SUCCEED)) {
 			int fd;
 			ssize_t ret = 0;
 			size_t size = n << b->tshift;
@@ -531,7 +530,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 			}
 			/* move tmp file to backup directory (without .tmp
 			 * extension) */
-			if (GDKmove(old->farmid, BATDIR, old->filename, "tmp", BAKDIR, filename, NULL) != GDK_SUCCEED) {
+			if (GDKmove(old->farmid, BATDIR, old->filename, "tmp", BAKDIR, filename, NULL, true) != GDK_SUCCEED) {
 				/* backup failed */
 				GDKunlink(old->farmid, BATDIR, old->filename, "tmp");
 				return GDK_FAIL;
@@ -544,7 +543,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		return GDK_FAIL;
 	*new = (Heap) {
 		.farmid = old->farmid,
-		.hashash = old->hashash,
 		.dirty = true,
 		.remove = old->remove,
 		.parentid = old->parentid,
@@ -658,7 +656,6 @@ HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	if (HEAPalloc(dst, src->free - offset, 1, 1) == GDK_SUCCEED) {
 		dst->free = src->free - offset;
 		memcpy(dst->base, src->base + offset, src->free - offset);
-		dst->hashash = src->hashash;
 		dst->cleanhash = src->cleanhash;
 		dst->dirty = true;
 		return GDK_SUCCEED;

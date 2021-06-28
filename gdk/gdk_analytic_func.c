@@ -72,11 +72,13 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tre
 	do {							\
 		TPE *restrict rb = (TPE*)Tloc(r, 0);		\
 		if (p) {						\
-			for (; i < cnt; i++) {			\
+			while (i < cnt) {			\
 				if (np[i]) 	{		\
 ntile##IMP##TPE: \
 					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION); \
 				} \
+				if (!last) \
+					i++; \
 			}				\
 		}				\
 		if (!last) { \
@@ -89,14 +91,14 @@ ntile##IMP##TPE: \
 #define ANALYTICAL_NTILE_SINGLE_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE ntl = *(TPE*) ntile; \
-		if (!is_##TPE##_nil(ntl) && ntl < 0) goto invalidntile; \
+		if (!is_##TPE##_nil(ntl) && ntl <= 0) goto invalidntile; \
 		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ;); \
 	} while (0)
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
-		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val < 0) goto invalidntile;); \
+		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile;); \
 	} while (0)
 
 gdk_return
@@ -1077,11 +1079,13 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do {					\
 		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0); \
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 minmaxfixed##TPE##IMP: \
 					ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX);	\
 				} \
+				if (!last) \
+					i++; \
 			}						\
 		}		\
 		if (!last) { /* hack to reduce code explosion, there's no need to duplicate the code to iterate each partition */ \
@@ -1124,11 +1128,13 @@ minmaxfixed##TPE##IMP: \
 			break;							\
 		default: {							\
 			if (p) {						\
-				for (; i < cnt; i++) {			\
-				if (np[i]) 	{		\
+				while (i < cnt) {			\
+					if (np[i]) 	{		\
 minmaxvarsized##IMP: \
-					ANALYTICAL_MIN_MAX_CALC_OTHERS_##IMP(GT_LT);	\
-				} \
+						ANALYTICAL_MIN_MAX_CALC_OTHERS_##IMP(GT_LT);	\
+					} \
+					if (!last) \
+						i++; \
 				}						\
 			} 					\
 			if (!last) { \
@@ -1420,11 +1426,13 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do {					\
 		TPE *restrict bp = (TPE*) bheap; \
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 count##TPE##IMP: \
 					ANALYTICAL_COUNT_FIXED_##IMP(TPE); \
 				} \
+				if (!last) \
+					i++; \
 			}						\
 		}	\
 		if (!last) { \
@@ -1467,12 +1475,14 @@ count##TPE##IMP: \
 			break;							\
 		default: {							\
 			if (p) {						\
-				for (; i < cnt; i++) {			\
+				while (i < cnt) {			\
 					if (np[i]) 	{		\
 countothers##IMP: \
 						ANALYTICAL_COUNT_OTHERS_##IMP;	\
 					} \
-				}						\
+					if (!last) \
+						i++; \
+				}			\
 			}	\
 			if (!last) { \
 				last = true; \
@@ -1667,11 +1677,13 @@ cleanup:
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 sum##TPE1##TPE2##IMP: \
 					IMP(TPE1, TPE2);	\
 				} \
+				if (!last) \
+					i++; \
 			}	\
 		}	\
 		if (!last) { \
@@ -1838,7 +1850,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 bailout:
 	GDKerror("42000!error while calculating floating-point sum\n");
 	res = GDK_FAIL;
-	goto cleanup; 
+	goto cleanup;
 calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;
@@ -2157,11 +2169,13 @@ nosupport:
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 prod##TPE1##TPE2##IMP: \
 					IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
 				} \
+				if (!last) \
+					i++; \
 			}						\
 		}	\
 		if (!last) { \
@@ -2643,12 +2657,14 @@ avg_fp_deltas(dbl)
 	do {						\
 		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 avg##TPE##IMP: \
 					REAL_IMP(TPE, IMP);	\
 				} \
-			}						\
+				if (!last) \
+					i++; \
+			}				\
 		}	\
 		if (!last) { \
 			last = true; \
@@ -2899,11 +2915,13 @@ avg_int_deltas(lng)
 	do {						\
 		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0); \
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 avg##TPE##IMP: \
 					IMP(TPE); \
 				} \
+				if (!last) \
+					i++; \
 			}						\
 		}	\
 		if (!last) { \
@@ -3142,12 +3160,14 @@ typedef struct stdev_var_deltas {
 #define ANALYTICAL_STATISTICS_PARTITIONS(TPE, SAMPLE, OP, IMP)		\
 	do {						\
 		if (p) {					\
-			for (; i < cnt; i++) {		\
+			while (i < cnt) {		\
 				if (np[i]) 	{		\
 statistics##TPE##IMP: \
 					IMP(TPE, SAMPLE, OP);	\
 				} \
-			}						\
+				if (!last) \
+					i++; \
+			}			\
 		}	\
 		if (!last) { \
 			last = true; \

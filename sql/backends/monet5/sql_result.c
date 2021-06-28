@@ -862,6 +862,7 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 	int error = -1;
 
 	BAT* btype		= COLnew(0, TYPE_int, nrows, TRANSIENT);
+	BAT* bimpl		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bdigits	= COLnew(0, TYPE_int, nrows, TRANSIENT);
 	BAT* bscale		= COLnew(0, TYPE_int, nrows, TRANSIENT);
 	BAT* bschema	= COLnew(0, TYPE_str, nrows, TRANSIENT);
@@ -897,6 +898,7 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 				name = "";
 
 			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
+					BUNappend(bimpl,	t->type->impl		, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
 					BUNappend(bschema,	schema				, false) != GDK_SUCCEED ||
@@ -914,6 +916,7 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 			t = &a->type;
 
 			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
+					BUNappend(bimpl,	t->type->impl		, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
 					BUNappend(bschema,	str_nil				, false) != GDK_SUCCEED ||
@@ -928,6 +931,7 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 		goto bailout;
 
 	mvc_export_binary_bat(out, btype);
+	mvc_export_binary_bat(out, bimpl);
 	mvc_export_binary_bat(out, bdigits);
 	mvc_export_binary_bat(out, bscale);
 	mvc_export_binary_bat(out, bschema);
@@ -953,7 +957,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 	node *n;
 	int nparam = q->f->ops ? list_length(q->f->ops) : 0;
 	int nrows = nparam;
-	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0;	/* column widths */
+	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
 	int len2 = 1, len3 = 1;
 	sql_arg *a;
 	sql_subtype *t;
@@ -997,6 +1001,9 @@ mvc_export_prepare(backend *b, stream *out, str w)
 			slen = name ? strlen(name) : 0;
 			if (slen > len6)
 				len6 = slen;
+			slen = strlen(t->type->impl);
+			if (slen > len7)
+				len7 = slen;
 		}
 	}
 
@@ -1023,20 +1030,27 @@ mvc_export_prepare(backend *b, stream *out, str w)
 		}
 	}
 
-	/* write header, query type: Q_PREPARE */
-	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-			"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
-			"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
-		return -1;
-	}
-
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
+
+		/* write header, query type: Q_PREPARE */
+		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
+				"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn,\timpl # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+				"%zu,\t%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6, len7) < 0) {
+			return -1;
+		}
 		if (mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
 			return -1;
 		if (mvc_export_prepare_columnar(out, q, nrows, r) < 0)
 			return -1;
 	}
 	else {
+
+		/* write header, query type: Q_PREPARE */
+		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
+				"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+				"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+			return -1;
+		}
 		if (r && is_project(r->op) && r->exps) {
 			for (n = r->exps->h; n; n = n->next) {
 				const char *name, *rname, *schema = NULL;
@@ -2034,12 +2048,12 @@ int
 mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) == NULL;
 }
 
 int
 mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p, false) == NULL;
 }

@@ -3195,7 +3195,7 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 		} else {
 			/* use hash, even though BAT is sorted */
 			for (BUN hb = HASHget(h, hash_int(h, &c));
-					hb != HASHnil(h);
+					hb != BUN_NONE;
 					hb = HASHgetlink(h, hb)) {
 				if (c == ((int *) from->theap->base)[hb]) {
 					c = ((int *) to->theap->base)[hb];
@@ -4510,7 +4510,7 @@ STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 
 static str
 STRlocate(int *ret, const str *needle, const str *haystack)
-{	
+{
 	str s = *needle, s2 = *haystack;
 
 	*ret = (strNil(s) || strNil(s2)) ? int_nil : str_locate2(s, s2, 1);

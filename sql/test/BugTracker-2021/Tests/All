@@ -14,3 +14,6 @@ batappend-undefined.Bug-7130
 WITH-alias-DELETE-1.deletes-wrong-tuples.Bug-7133
 WITH-alias-DELETE-2.deletes-too-many-tuples.Bug-7133
 merge-delete.Bug-7136
+HAVE_LIBPY3?python-aggregates-void-bat.Bug-7138
+count-distinct.Bug-7141
+HAVE_LIBPY3?aggregates-tables.Bug-7142
