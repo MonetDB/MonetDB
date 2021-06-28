@@ -930,7 +930,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	sql_schema *s = NULL;
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
-	BATiter bi, ci;
+	BATiter bi =  (BATiter) { .b = NULL }, ci =  (BATiter) { .b = NULL };
 	bat *res = getArgReference_bat(stk, pci, 0);
 	bat schid = 0, seqid = 0;
 
