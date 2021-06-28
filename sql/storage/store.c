@@ -2076,15 +2076,15 @@ store_exit(sqlstore *store)
 				if (c->cleanup && !c->cleanup(store, c, oldest)) {
 					/* try again with newer oldest, should cleanup any pending issues */
 					if (!c->cleanup(store, c, oldest+1))
-						printf("not deleted\n");
+						TRC_DEBUG(SQL_STORE, "not deleted\n");
 					else
 						_DELETE(c);
 				} else
 					_DELETE(c);
 			}
 		}
-		list_destroy(store->changes);
 		MT_lock_unset(&store->commit);
+		list_destroy(store->changes);
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
