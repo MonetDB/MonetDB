@@ -515,7 +515,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 
 		if (strNil(t)) {
 			if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bunins_failed1;
 		} else {
 			if (strlen(t) > size - 2 * len - 6) {
 				char *tmp;
@@ -523,13 +523,13 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 				tmp = (char *) GDKrealloc(val, size + strlen(t));
 				if (tmp == NULL) {
 					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-					goto bunins_failed;
+					goto bunins_failed1;
 				}
 				val = tmp;
 			}
 			snprintf(val + len + 2, size - len, "%s</%s>", t, *name);
 			if (bunfastappVAR(bn, val) != GDK_SUCCEED)
-				goto bunins_failed;
+				goto bunins_failed1;
 		}
 	}
 	bat_iterator_end(&bi);
@@ -537,8 +537,9 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-bunins_failed:
+bunins_failed1:
 	bat_iterator_end(&bi);
+bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -1300,7 +1301,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			BBPreclaim(bn);
 			bn = NULL;
 			err = GDK_EXCEPTION;
-			goto out;
+			goto out1;
 		}
 		if (freeg)
 			BBPunfix(g->batCacheid);
@@ -1418,8 +1419,9 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = BATcount(bn) <= 1;
 
-  out:
+  out1:
 	bat_iterator_end(&bi);
+  out:
 	if (t2)
 		BBPunfix(t2->batCacheid);
 	if (freeb && b)

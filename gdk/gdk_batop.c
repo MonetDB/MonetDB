@@ -409,7 +409,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	b->theap->dirty = true;
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHappend(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
+		HASHappend(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	return GDK_SUCCEED;
 }
