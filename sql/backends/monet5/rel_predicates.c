@@ -13,35 +13,6 @@
 #include "rel_exp.h"
 #include "mal_backend.h"
 
-#if 0
-static void
-pl_print(mvc *m, list *pls)
-{
-	if (list_empty(pls))
-		return;
-	for (node *n = pls->h; n; n = n->next) {
-		pl *p = n->data;
-		if (p->r) {
-			printf("# %s %s %s.%s.%s %s %s\n",
-				p->f?atom2string(m->pa, p->f):"NULL",
-				compare_func(range2lcompare(p->cmp), 0),
-				p->c->t->s?p->c->t->s->base.name:"",
-				p->c->t->base.name,
-				p->c->base.name,
-				compare_func(range2rcompare(p->cmp), 0),
-				atom2string(m->pa, p->r));
-		} else
-			printf("# %s.%s.%s %s %s %s\n",
-				p->c->t->s?p->c->t->s->base.name:"",
-				p->c->t->base.name,
-				p->c->base.name,
-				p->f?compare_func(p->cmp, 0):"all" ,
-				p->f?atom2string(m->pa, p->f):"",
-				p->r?atom2string(m->pa, p->r):"");
-	}
-}
-#endif
-
 static sql_column *
 bt_find_column( sql_rel *rel, char *tname, char *name)
 {
@@ -62,15 +33,6 @@ exp_find_column( sql_rel *rel, sql_exp *exp)
 	if (exp->type == e_convert)
 		return exp_find_column( rel, exp->l);
 	return NULL;
-}
-
-static list *
-add_predicate(sql_allocator *sa, list *l, pl *pred)
-{
-	if (!l)
-		l = sa_list(sa);
-	list_append(l, pred);
-	return l;
 }
 
 static sql_rel *
@@ -95,15 +57,31 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 				if (!is_compare(e->type) || !is_theta_exp(e->flag) || r->type != e_atom || !r->l || (r2 && (r2->type != e_atom || !r2->l)) || is_symmetric(e) || !(c = exp_find_column(rel, e->l))) {
 					needall = true;
 				} else {
-					pl *p = SA_ZNEW(v->sql->pa, pl);
-					p->c = c;
-					p->cmp = e->flag;
-					p->anti = is_anti(e);
-					p->semantics = is_semantics(e);
-					p->r = atom_dup(v->sql->pa, r->l);
-					if (r2)
-						p->f = atom_dup(v->sql->pa, r2->l);
-					v->sql->session->tr->predicates = add_predicate(v->sql->pa, v->sql->session->tr->predicates, p);
+					atom *e1 = r && r->l ? atom_dup(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_dup(NULL, r2->l) : NULL;
+
+					if ((r && r->l && !e1) || (r2 && r2->l && !e2)) {
+						if (e1) {
+							VALclear(&e1->data);
+							_DELETE(e1);
+						}
+						if (e2) {
+							VALclear(&e2->data);
+							_DELETE(e2);
+						}
+						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
+
+					if (sql_trans_add_predicate(v->sql->session->tr, c, e->flag, e1, e2, is_anti(e), is_semantics(e)) != LOG_OK) {
+						if (e1) {
+							VALclear(&e1->data);
+							_DELETE(e1);
+						}
+						if (e2) {
+							VALclear(&e2->data);
+							_DELETE(e2);
+						}
+						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 					*(int*)v->data = 1;
 				}
 			}
@@ -117,11 +95,13 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 				return rel;
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
+
 				if (!is_intern(e)) {
-					pl *p = SA_ZNEW(v->sql->pa, pl);
-					p->c = find_sql_column(t, e->r);
-					assert(p->c);
-					v->sql->session->tr->predicates = add_predicate(v->sql->pa, v->sql->session->tr->predicates, p);
+					sql_column *c = find_sql_column(t, e->r);
+
+					assert(c);
+					if (sql_trans_add_predicate(v->sql->session->tr, c, 0, NULL, NULL, false, false) != LOG_OK)
+						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					*(int*)v->data = 1;
 				}
 			}
@@ -130,17 +110,21 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-void
+sql_rel *
 rel_predicates(backend *be, sql_rel *rel)
 {
 	if (be->mvc->session->level < tr_serializable)
-		return ;
+		return rel;
 	int changes = 0;
 	visitor v = { .sql = be->mvc, .data = &changes };
 	rel = rel_visitor_topdown(&v, rel, &rel_find_predicates);
-#if 0
-	if (changes)
-		pl_print(be->mvc, be->mvc->session->tr->predicates);
-#endif
+	return rel;
 }
 
+int
+add_column_predicate(backend *be, sql_column *c)
+{
+	if (be->mvc->session->level < tr_serializable)
+		return LOG_OK;
+	return sql_trans_add_predicate(be->mvc->session->tr, c, 0, NULL, NULL, false, false);
+}

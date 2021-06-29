@@ -261,10 +261,47 @@ schema_destroy(sqlstore *store, sql_schema *s)
 	_DELETE(s);
 }
 
+static void
+predicate_destroy(sqlstore *store, pl *p)
+{
+	(void) store;
+	if (p->r) {
+		VALclear(&p->r->data);
+		_DELETE(p->r);
+	}
+	if (p->f) {
+		VALclear(&p->f->data);
+		_DELETE(p->f);
+	}
+	_DELETE(p);
+}
+
+int
+sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics)
+{
+	pl *p = ZNEW(pl);
+
+	if (!p)
+		return LOG_ERR;
+	p->c = c;
+	p->cmp = cmp;
+	p->anti = anti;
+	p->semantics = semantics;
+	p->r = r;
+	p->f = f;
+	if (!tr->predicates && !(tr->predicates = list_create((fdestroy) &predicate_destroy))) {
+		predicate_destroy(tr->store, p);
+		return LOG_ERR;
+	}
+	list_append(tr->predicates, p);
+	return LOG_OK;
+}
+
 int
 sql_trans_add_dependency(sql_trans* tr, sqlid id)
 {
 	sqlid *local_id = MNEW(sqlid);
+
 	if (!local_id)
 		return LOG_ERR;
 	*local_id = id;
@@ -280,6 +317,7 @@ int
 sql_trans_add_removal(sql_trans *tr, sqlid id)
 {
 	sqlid *local_id = MNEW(sqlid);
+
 	if (!local_id)
 		return LOG_ERR;
 	*local_id = id;
@@ -3316,24 +3354,15 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 static void
 clean_predicates_and_propagate_to_parent(sql_trans *tr)
 {
-	if (tr->predicates) {
-		/*if (tr->parent) {  propagate to the parent */
-			/*for(node *n=tr->predicates->h; n ; n = n->next) {
-				pl *old = n->data;
-				pl *p = SA_ZNEW(tr->sa, pl);
+	if (!list_empty(tr->predicates)) {
+		if (tr->parent) { /* propagate to the parent */
+			for(node *n=tr->predicates->h; n ; n = n->next) {
+				pl *p = (pl*) n->data;
+				atom *e1 = p->r ? atom_dup(NULL, p->r) : NULL, *e2 = p->f ? atom_dup(NULL, p->f) : NULL;
 
-				p->c = old->c;
-				p->cmp = old->cmp;
-				p->anti = old->anti;
-				p->semantics = old->semantics;
-				if (old->r)
-					p->r = atom_dup(tr->sa, old->r);
-				if (old->f)
-					p->f = atom_dup(tr->sa, old->f);
-
-				add_predicate(tr->sa, tr->parent->predicates, p);
+				sql_trans_add_predicate(tr->parent, p->c, p->cmp, e1, e2, p->anti, p->semantics);
 			}
-		}*/
+		}
 		list_destroy(tr->predicates);
 		tr->predicates = NULL;
 	}

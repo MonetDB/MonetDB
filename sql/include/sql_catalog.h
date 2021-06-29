@@ -861,5 +861,17 @@ typedef struct atom {
 	ValRecord data;
 } atom;
 
+/* duplicate atom */
+extern atom *atom_dup(sql_allocator *sa, atom *a);
+
+typedef struct pl {
+	sql_column *c;
+	unsigned int cmp;
+	atom *r; /* if r is NULL then a full match is required */
+	atom *f; /* make it match range expressions */
+	uint8_t
+	 anti:1,
+	 semantics:1;
+} pl;
 
 #endif /* SQL_CATALOG_H */

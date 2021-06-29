@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "mal_backend.h"
 
-extern void rel_predicates(backend *be, sql_rel *rel);
+extern sql_rel *rel_predicates(backend *be, sql_rel *rel);
+extern int add_column_predicate(backend *be, sql_column *c);
 
 #endif /*_REL_PREDICATES_H_*/
