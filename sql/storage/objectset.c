@@ -609,6 +609,8 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 		ov->ts = commit_ts;
 		change->committed = commit_ts < TRANSACTION_ID_BASE ? true: false;
 		(void)oldest;
+		if (!tr->parent)
+			change->obj->new = 0;
 	}
 	else {
 		os_rollback(ov, tr->store);
