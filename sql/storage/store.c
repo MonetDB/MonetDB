@@ -276,8 +276,8 @@ sql_trans_add_dependency(sql_trans* tr, sqlid id)
 	return LOG_OK;
 }
 
-static int
-transaction_add_removal(sql_trans *tr, sqlid id)
+int
+sql_trans_add_removal(sql_trans *tr, sqlid id)
 {
 	sqlid *local_id = MNEW(sqlid);
 	if (!local_id)
@@ -3918,7 +3918,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if (isGlobal(i->t))
 		if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
 			return res;
-	if (!isNew(i) && (res = transaction_add_removal(tr, i->base.id)))
+	if (!isNew(i) && (res = sql_trans_add_removal(tr, i->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
 		return res;
@@ -3974,7 +3974,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	if (k->t->pkey == (sql_ukey*)k)
 		k->t->pkey = NULL;
 
-	if (!isNew(k) && (res = transaction_add_removal(tr, k->base.id)))
+	if (!isNew(k) && (res = sql_trans_add_removal(tr, k->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, k->base.id)))
 		return res;
@@ -4014,7 +4014,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sysseqs, rid)))
 		return res;
-	if (!isNew(seq) && (res = transaction_add_removal(tr, seq->base.id)))
+	if (!isNew(seq) && (res = sql_trans_add_removal(tr, seq->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, seq->base.id)))
 		return res;
@@ -4121,7 +4121,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 	if (isGlobal(i->t))
 		if ((res = os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base))))
 			return res;
-	if (!isNew(i) && (res = transaction_add_removal(tr, i->base.id)))
+	if (!isNew(i) && (res = sql_trans_add_removal(tr, i->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
 		return res;
@@ -4141,7 +4141,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		return -1;
 	if ((res = store->table_api.table_delete(tr, syscolumn, rid)))
 		return res;
-	if (!isNew(col) && (res = transaction_add_removal(tr, col->base.id)))
+	if (!isNew(col) && (res = sql_trans_add_removal(tr, col->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, col->base.id)))
 		return res;
@@ -4258,7 +4258,7 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 		store->table_api.rids_destroy(rs);
 	}
 	/* merge table depends on part table */
-	if (!isNew(pt) && (res = transaction_add_removal(tr, mt->base.id)))
+	if (!isNew(pt) && (res = sql_trans_add_removal(tr, mt->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependency(tr, pt->member, mt->base.id, TABLE_DEPENDENCY)))
 		return res;
@@ -4343,7 +4343,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	if ((res = sql_trans_drop_any_comment(tr, t->base.id)))
 		return res;
-	if (!isNew(t) && (res = transaction_add_removal(tr, t->base.id)))
+	if (!isNew(t) && (res = sql_trans_add_removal(tr, t->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, t->base.id)))
 		return res;
@@ -4372,7 +4372,7 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sys_tab_type, rid)))
 		return res;
-	if (!isNew(type) && (res = transaction_add_removal(tr, type->base.id)))
+	if (!isNew(type) && (res = sql_trans_add_removal(tr, type->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, type->base.id)))
 		return res;
@@ -4409,7 +4409,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	if ((res = store->table_api.table_delete(tr, sys_tab_func, rid_func)))
 		return res;
 
-	if (!isNew(func) && (res = transaction_add_removal(tr, func->base.id)))
+	if (!isNew(func) && (res = sql_trans_add_removal(tr, func->base.id)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, func->base.id)))
 		return res;
@@ -4780,7 +4780,7 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) new_name)))
 		return res;
 
-	if (!isNew(s) && (res = transaction_add_removal(tr, id)))
+	if (!isNew(s) && (res = sql_trans_add_removal(tr, id)))
 		return res;
 	/* delete schema, add schema */
 	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
@@ -4820,7 +4820,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sysschema, rid)))
 		return res;
-	if (!isNew(s) && (res = transaction_add_removal(tr, id)))
+	if (!isNew(s) && (res = sql_trans_add_removal(tr, id)))
 		return res;
 	if ((res = sys_drop_funcs(tr, s, drop_action)))
 		return res;
@@ -4878,7 +4878,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 		return res;
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(pt) && (res = transaction_add_removal(tr, pt->base.id))) /* protect from being added twice */
+	if (!isNew(pt) && (res = sql_trans_add_removal(tr, pt->base.id))) /* protect from being added twice */
 		return res;
 	return res;
 }
@@ -5016,7 +5016,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		return res;
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(pt) && (res = transaction_add_removal(tr, pt->base.id))) /* protect from being added twice */
+	if (!isNew(pt) && (res = sql_trans_add_removal(tr, pt->base.id))) /* protect from being added twice */
 		return res;
 finish:
 	VALclear(&vmin);
@@ -5146,7 +5146,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		return res;
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(pt) && (res = transaction_add_removal(tr, pt->base.id))) /* protect from being added twice */
+	if (!isNew(pt) && (res = sql_trans_add_removal(tr, pt->base.id))) /* protect from being added twice */
 		return res;
 	return 0;
 }
@@ -5168,7 +5168,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 		return res;
 
 	if (isGlobal(t)) {
-		if (!isNew(t) && (res = transaction_add_removal(tr, id)))
+		if (!isNew(t) && (res = sql_trans_add_removal(tr, id)))
 			return res;
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
@@ -5201,7 +5201,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	if ((res = store->table_api.column_update_value(tr, find_sql_column(systable, "schema_id"), rid, &(ns->base.id))))
 		return res;
 
-	if (!isNew(t) && (res = transaction_add_removal(tr, id)))
+	if (!isNew(t) && (res = sql_trans_add_removal(tr, id)))
 		return res;
 	if ((res = os_del(os->tables, tr, t->base.name, dup_base(&t->base))))
 		return res;
@@ -5596,9 +5596,9 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_n
 		return -1;
 	sql_column *c = n->data;
 
-	if (!isNew(c->t) && (res = transaction_add_removal(tr, c->t->base.id)))
+	if (!isNew(c->t) && (res = sql_trans_add_removal(tr, c->t->base.id)))
 		return res;
-	if (!isNew(c) && (res = transaction_add_removal(tr, id)))
+	if (!isNew(c) && (res = sql_trans_add_removal(tr, id)))
 		return res;
 
 	_DELETE(c->base.name);
@@ -5667,7 +5667,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (!isNew(col) && (res = transaction_add_removal(tr, col->t->base.id)))
+	if (!isNew(col) && (res = sql_trans_add_removal(tr, col->t->base.id)))
 		return res;
 	if ((res = sys_drop_column(tr, col, drop_action)))
 		return res;

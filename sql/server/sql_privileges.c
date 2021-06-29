@@ -128,6 +128,12 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	if ((log_res = sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant)))
 		throw(SQL,"sql.grant_global",SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+
+	/* Add dependencies created */
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -190,6 +196,20 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 		if ((log_res = sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant)))
 			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
+
+	/* Add dependencies created */
+	if (privs == all || !c) {
+		if ((log_res = sql_trans_add_dependency(sql->session->tr, t->base.id)) != LOG_OK)
+			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else {
+		if ((log_res = sql_trans_add_dependency(sql->session->tr, c->base.id)) != LOG_OK)
+			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	return NULL;
 }
 
@@ -223,6 +243,12 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		throw(SQL,"sql.grant_func", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	if ((log_res = sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant)))
 		throw(SQL,"sql.grant_func", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+
+	/* Add dependencies created */
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, func_id)) != LOG_OK)
+		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
+		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
 
@@ -420,6 +446,10 @@ sql_drop_role(mvc *m, str auth)
 	store->table_api.rids_destroy(A);
 	if (log_res != LOG_OK)
 		throw(SQL, "sql.drop_role", SQLSTATE(42000) "DROP ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+
+	/* Flag as removed */
+	if ((log_res = sql_trans_add_removal(tr, role_id)) != LOG_OK)
+		throw(SQL, "sql.drop_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
 
@@ -562,14 +592,22 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: User '%s' already has ROLE '%s'", grantee, role);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, roles, &grantee_id, &role_id)) != LOG_OK)
-		throw(SQL, "sql.revoke_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		throw(SQL, "sql.grant_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	if (admin) {
 		int priv = PRIV_ROLE_ADMIN, one = 1;
 		sql_table *privs = find_sql_table(m->session->tr, sys, "privileges");
 
 		if ((log_res = store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one)) != LOG_OK)
-			throw(SQL, "sql.revoke_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			throw(SQL, "sql.grant_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
+
+	/* Add dependencies created */
+	if ((log_res = sql_trans_add_dependency(m->session->tr, grantee_id)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(m->session->tr, role_id)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(m->session->tr, grantor)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
 
@@ -880,6 +918,10 @@ sql_drop_user(mvc *sql, char *user)
 		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = sql_drop_granted_users(sql, user_id, user, deleted);
 	list_destroy(deleted);
+
+	/* Flag as removed */
+	if (!msg && sql_trans_add_removal(sql->session->tr, user_id) != LOG_OK)
+		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
