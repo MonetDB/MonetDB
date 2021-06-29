@@ -1764,7 +1764,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			GDKerror("Writing BBP.dir file failed.\n");
 			goto bailout;
 		}
-		if (fgets(buf, bufsize, *obbpfp) == NULL) {
+		if (fgets(buf, (int) bufsize, *obbpfp) == NULL) {
 			if (ferror(*obbpfp)) {
 				GDKerror("error reading backup BBP.dir.");
 				goto bailout;
@@ -1803,7 +1803,7 @@ BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf)
 		goto bailout;
 	}
 	while (obbpf) {
-		if (fgets(buf, bufsize, obbpf) == NULL) {
+		if (fgets(buf, (int) bufsize, obbpf) == NULL) {
 			if (ferror(obbpf)) {
 				GDKerror("error reading backup BBP.dir.");
 				goto bailout;
@@ -3519,13 +3519,11 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 			if (d)
 				MT_lock_set(&d->theaplock);
-//			else
-//				MT_lock_set(&GDKswapLock(i));
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-//					MT_lock_unset(&GDKswapLock(subcommit ? subcommit[idx] : idx));
-					MT_lock_unset(&BBP_desc(i)->theaplock);
+					if (d)
+						MT_lock_unset(&d->theaplock);
 					break;
 				}
 				if (b)
@@ -3536,8 +3534,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			}
 			if (d)
 				MT_lock_unset(&d->theaplock);
-//			else
-//				MT_lock_unset(&GDKswapLock(i));
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */

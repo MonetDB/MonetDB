@@ -1298,8 +1298,11 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				bi = bat_iterator_nolock(b);
 			}
+			/* in case ATOMreplaceVAR and/or
+			 * GDKupgradevarheap replaces a heap, we need to
+			 * reinitialize the iterator */
+			bi = bat_iterator_nolock(b);
 			switch (b->twidth) {
 			case 1:
 				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
@@ -3036,7 +3039,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 		break;
 	case TYPE_str:
 		base = bi.vh->base;
-		switch (b->twidth) {
+		switch (bi.width) {
 		case 1:
 			for (i = 0; i < n; i++)
 				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';

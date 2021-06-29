@@ -613,14 +613,18 @@ BATclear(BAT *b, bool force)
 		if (b->tvheap && b->tvheap->free > 0) {
 			Heap *th = GDKmalloc(sizeof(Heap));
 
-			if (th == NULL)
+			if (th == NULL) {
+				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
+			}
 			*th = (Heap) {
 				.farmid = b->tvheap->farmid,
 			};
 			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
-			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED)
+			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
+			}
 			ATOMIC_INIT(&th->refs, 1);
 			th->parentid = b->tvheap->parentid;
 			th->dirty = true;
@@ -1447,9 +1451,9 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
-				/* reinitialize iterator after heap upgrade */
-				bi = bat_iterator_nolock(b);
 			}
+			/* reinitialize iterator after possible heap upgrade */
+			bi = bat_iterator_nolock(b);
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
 			default:	/* only three or four cases possible */
