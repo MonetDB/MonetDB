@@ -1485,7 +1485,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			GDKerror("Writing BBP.dir file failed.\n");
 			goto bailout;
 		}
-		if (fgets(buf, bufsize, *obbpfp) == NULL) {
+		if (fgets(buf, (int) bufsize, *obbpfp) == NULL) {
 			if (ferror(*obbpfp)) {
 				GDKerror("error reading backup BBP.dir.");
 				goto bailout;
@@ -1524,7 +1524,7 @@ BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf)
 		goto bailout;
 	}
 	while (obbpf) {
-		if (fgets(buf, bufsize, obbpf) == NULL) {
+		if (fgets(buf, (int) bufsize, obbpf) == NULL) {
 			if (ferror(obbpf)) {
 				GDKerror("error reading backup BBP.dir.");
 				goto bailout;
