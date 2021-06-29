@@ -1448,9 +1448,9 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
-				/* reinitialize iterator after heap upgrade */
-				bi = bat_iterator_nolock(b);
 			}
+			/* reinitialize iterator after possible heap upgrade */
+			bi = bat_iterator_nolock(b);
 			_ptr = BUNtloc(bi, p);
 			switch (b->twidth) {
 			default:	/* only three or four cases possible */
