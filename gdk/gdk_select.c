@@ -347,7 +347,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 									\
 		if (BATcapacity(bn) < maximum) {			\
 			impsloop(ISDENSE, TEST,				\
-				 dst = buninsfix(bn, dst, cnt, o,		\
+				 dst = buninsfix(bn, dst, cnt, o,	\
 						 (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 							* (dbl) (ci->ncand-p) * 1.1 + 1024), \
 						 maximum));		\
@@ -526,7 +526,7 @@ NAME##_##TYPE(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn, \
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	if (use_imprints && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b))) {		\
+	if (use_imprints && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b))) { \
 		BAT *pbat = BBPdescriptor(parent);			\
 		assert(pbat);						\
 /* NOTE: this code is incorrect since pbat could be changed while */	\
@@ -1947,7 +1947,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 #define and3(a,b)	((a) == 0 || (b) == 0 ? 0 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 1)
 #define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
 
-#define between3(v, lo, linc, hi, hinc, TYPE)	\
+#define between3(v, lo, linc, hi, hinc, TYPE)				\
 	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
 
 #define BETWEEN(v, lo, linc, hi, hinc, TYPE)				\

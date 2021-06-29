@@ -20,6 +20,20 @@
 #include "rel_updates.h"
 #include "mal_exception.h"
 
+list *
+partition_find_mergetables(mvc *sql, sql_table *t)
+{
+	sql_trans *tr = sql->session->tr;
+	list *res = NULL;
+
+	for(sql_part *pt = partition_find_part(tr, t, NULL); pt; pt = partition_find_part(tr, t, pt)) {
+		if (!res)
+			res = sa_list(sql->sa);
+		list_append(res, pt);
+	}
+	return res;
+}
+
 static int
 key_column_colnr(sql_kc *pkey)
 {

@@ -81,6 +81,8 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
+gdk_return BATsave_locked(BAT *bd)
+	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
@@ -353,7 +355,7 @@ ilog2(BUN x)
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
-	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
