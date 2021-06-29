@@ -1787,6 +1787,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				if (as->format[attr].skip)
 					continue;
 				width = as->format[attr].c->twidth;
+				as->format[attr].ci = bat_iterator_nolock(as->format[attr].c);
 				switch (width){
 				case 1:
 					trimerrors(bte);
