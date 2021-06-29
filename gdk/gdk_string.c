@@ -1234,180 +1234,180 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	return bn;
 }
 
-#define compute_next_single_str(START, END)	\
-	do {	\
-		for (oid m = START; m < END; m++) {	\
-			sb = BUNtvar(bi, m);	\
-	\
-			if (separator) {	\
-				if (!strNil(sb)) {	\
-					next_group_length += strlen(sb);	\
-					if (!empty)	\
-						next_group_length += separator_length;	\
-					empty = false;	\
-				}	\
-			} else { /* sep case */	\
-				assert(sep != NULL);	\
-				sl = BUNtvar(sepi, m);	\
-	\
-				if (!strNil(sb)) {	\
-					next_group_length += strlen(sb);	\
+#define compute_next_single_str(START, END)				\
+	do {								\
+		for (oid m = START; m < END; m++) {			\
+			sb = BUNtvar(bi, m);				\
+									\
+			if (separator) {				\
+				if (!strNil(sb)) {			\
+					next_group_length += strlen(sb); \
+					if (!empty)			\
+						next_group_length += separator_length; \
+					empty = false;			\
+				}					\
+			} else { /* sep case */				\
+				assert(sep != NULL);			\
+				sl = BUNtvar(sepi, m);			\
+									\
+				if (!strNil(sb)) {			\
+					next_group_length += strlen(sb); \
 					if (!empty && !strNil(sl))	\
-						next_group_length += strlen(sl);	\
-					empty = false;	\
-				}	\
-			}	\
-		}	\
-		if (empty) {	\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */	\
-				max_group_length = 1;	\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-			} else if (1 > max_group_length) {	\
-				max_group_length = 1;	\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-				single_str = next_single_str;	\
-			}	\
-			strcpy(single_str, str_nil);	\
-			has_nils = true;	\
-		} else {	\
-			empty = true;	\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */	\
+						next_group_length += strlen(sl); \
+					empty = false;			\
+				}					\
+			}						\
+		}							\
+		if (empty) {						\
+			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
+				max_group_length = 1;			\
+				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+			} else if (1 > max_group_length) {		\
+				max_group_length = 1;			\
+				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+				single_str = next_single_str;		\
+			}						\
+			strcpy(single_str, str_nil);			\
+			has_nils = true;				\
+		} else {						\
+			empty = true;					\
+			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
 				max_group_length = next_group_length;	\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-			} else if (next_group_length > max_group_length) {	\
+				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+			} else if (next_group_length > max_group_length) { \
 				max_group_length = next_group_length;	\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)	\
-					goto allocation_error;	\
-				single_str = next_single_str;	\
-			}	\
-\
-			for (oid m = START; m < END; m++) {	\
-				sb = BUNtvar(bi, m);	\
-\
-				if (separator) {	\
-					if (strNil(sb))	\
-						continue;	\
-					if (!empty) {	\
-						memcpy(single_str + offset, separator, separator_length);	\
-						offset += separator_length;	\
-					}	\
+				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
+					goto allocation_error;		\
+				single_str = next_single_str;		\
+			}						\
+									\
+			for (oid m = START; m < END; m++) {		\
+				sb = BUNtvar(bi, m);			\
+									\
+				if (separator) {			\
+					if (strNil(sb))			\
+						continue;		\
+					if (!empty) {			\
+						memcpy(single_str + offset, separator, separator_length); \
+						offset += separator_length; \
+					}				\
 					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length);	\
-					offset += next_length;	\
-					empty = false;	\
-				} else { /* sep case */	\
-					assert(sep != NULL);	\
-					sl = BUNtvar(sepi, m);	\
-\
-					if (strNil(sb))	\
-						continue;	\
+					memcpy(single_str + offset, sb, next_length); \
+					offset += next_length;		\
+					empty = false;			\
+				} else { /* sep case */			\
+					assert(sep != NULL);		\
+					sl = BUNtvar(sepi, m);		\
+									\
+					if (strNil(sb))			\
+						continue;		\
 					if (!empty && !strNil(sl)) {	\
-						next_length = strlen(sl);	\
-						memcpy(single_str + offset, sl, next_length);	\
+						next_length = strlen(sl); \
+						memcpy(single_str + offset, sl, next_length); \
 						offset += next_length;	\
-					}	\
+					}				\
 					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length);	\
-					offset += next_length;	\
-					empty = false;	\
-				}	\
-			}	\
-\
-			single_str[offset] = '\0';	\
-		}	\
+					memcpy(single_str + offset, sb, next_length); \
+					offset += next_length;		\
+					empty = false;			\
+				}					\
+			}						\
+									\
+			single_str[offset] = '\0';			\
+		}							\
 } while (0)
 
-#define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW	\
-	do {	\
-		size_t slice_length = 0;	\
-		next_group_length = next_length = offset = 0;	\
-		empty = true;	\
-		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */	\
-		empty = true; \
-		for (; k < i;) { \
-			str nsep, nstr;	\
-			oid m = k;	\
-			j = k; \
-			do {	\
-				k++; \
-			} while (k < i && !op[k]);	\
-			for (; j < k; j++) {	\
-				nstr = BUNtvar(bi, j);	\
-				if (!strNil(nstr)) {	\
+#define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
+	do {								\
+		size_t slice_length = 0;				\
+		next_group_length = next_length = offset = 0;		\
+		empty = true;						\
+		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
+		empty = true;						\
+		for (; k < i;) {					\
+			str nsep, nstr;					\
+			oid m = k;					\
+			j = k;						\
+			do {						\
+				k++;					\
+			} while (k < i && !op[k]);			\
+			for (; j < k; j++) {				\
+				nstr = BUNtvar(bi, j);			\
+				if (!strNil(nstr)) {			\
 					slice_length += strlen(nstr);	\
-					if (!empty) {	\
+					if (!empty) {			\
 						if (separator) {	\
 							nsep = (str) separator; \
 						} else { /* sep case */	\
-							assert(sep != NULL);	\
-							nsep = BUNtvar(sepi, j);	\
-						}	\
+							assert(sep != NULL); \
+							nsep = BUNtvar(sepi, j); \
+						}			\
 						if (!strNil(nsep))	\
-							slice_length += strlen(nsep);	\
-					}	\
-					empty = false; \
-				} \
-			}	\
-			if (empty) {	\
-				for (j = m; j < k; j++) \
-					if (tfastins_nocheckVAR(r, j, str_nil, Tsize(r)) != GDK_SUCCEED)	\
+							slice_length += strlen(nsep); \
+					}				\
+					empty = false;			\
+				}					\
+			}						\
+			if (empty) {					\
+				for (j = m; j < k; j++)			\
+					if (tfastins_nocheckVAR(r, j, str_nil, Tsize(r)) != GDK_SUCCEED) \
 						goto allocation_error;	\
-				has_nils = true;	\
-			} else {	\
+				has_nils = true;			\
+			} else {					\
 				char save = single_str[slice_length];	\
 				single_str[slice_length] = '\0';	\
-				for (j = m; j < k; j++) \
-					if (tfastins_nocheckVAR(r, j, single_str, Tsize(r)) != GDK_SUCCEED)	\
+				for (j = m; j < k; j++)			\
+					if (tfastins_nocheckVAR(r, j, single_str, Tsize(r)) != GDK_SUCCEED) \
 						goto allocation_error;	\
-				single_str[slice_length] = save; \
-			}	\
-		} \
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS \
-	do {	\
-		next_group_length = next_length = offset = 0;	\
-		empty = true;	\
-		compute_next_single_str(k, i); \
-		for (; k < i; k++) 	\
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED)	\
-				goto allocation_error;	\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW \
-	do {	\
-		for (; k < i; k++) {	\
-			str next = BUNtvar(bi, k); \
-			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED)	\
-				goto allocation_error;	\
-			has_nils |= strNil(next); \
-		}	\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_OTHERS \
-	do { \
-		for (; k < i; k++) {	\
-			next_group_length = next_length = offset = 0;	\
-			empty = true;	\
-			compute_next_single_str(start[k], end[k]); \
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED)	\
-				goto allocation_error;	\
-		}	\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(IMP)		\
-	do {						\
-		if (p) {					\
-			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
-					IMP;	\
+				single_str[slice_length] = save;	\
 			}						\
-		}	\
-		i = cnt;			\
-		IMP;	\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS				\
+	do {								\
+		next_group_length = next_length = offset = 0;		\
+		empty = true;						\
+		compute_next_single_str(k, i);				\
+		for (; k < i; k++)					\
+			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED) \
+				goto allocation_error;			\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
+	do {								\
+		for (; k < i; k++) {					\
+			str next = BUNtvar(bi, k);			\
+			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
+				goto allocation_error;			\
+			has_nils |= strNil(next);			\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_OTHERS				\
+	do {								\
+		for (; k < i; k++) {					\
+			next_group_length = next_length = offset = 0;	\
+			empty = true;					\
+			compute_next_single_str(start[k], end[k]);	\
+			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED) \
+				goto allocation_error;			\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(IMP)	\
+	do {						\
+		if (p) {				\
+			for (; i < cnt; i++) {		\
+				if (np[i])		\
+					IMP;		\
+			}				\
+		}					\
+		i = cnt;				\
+		IMP;					\
 	} while (0)
 
 gdk_return
