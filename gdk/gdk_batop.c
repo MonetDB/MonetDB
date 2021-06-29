@@ -3044,7 +3044,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 		break;
 	case TYPE_str:
 		base = bi.vh->base;
-		switch (b->twidth) {
+		switch (bi.width) {
 		case 1:
 			for (i = 0; i < n; i++)
 				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';

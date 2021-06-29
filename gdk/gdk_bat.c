@@ -613,14 +613,18 @@ BATclear(BAT *b, bool force)
 		if (b->tvheap && b->tvheap->free > 0) {
 			Heap *th = GDKmalloc(sizeof(Heap));
 
-			if (th == NULL)
+			if (th == NULL) {
+				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
+			}
 			*th = (Heap) {
 				.farmid = b->tvheap->farmid,
 			};
 			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
-			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED)
+			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
+			}
 			ATOMIC_INIT(&th->refs, 1);
 			th->parentid = b->tvheap->parentid;
 			th->dirty = true;
