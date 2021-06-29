@@ -910,7 +910,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	}
 
 	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	     (BATcount(e) == ncand && e->hseqbase == ci.hseq)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
@@ -1586,7 +1586,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	}
 
 	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	     (BATcount(e) == ncand && e->hseqbase == ci.hseq)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
@@ -2901,7 +2901,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			} else {					\
 				sum = -sum;				\
 				a = - (TYPE) (sum / n); /* this fits */ \
-				r = (lng) (sum % n);		\
+				r = (lng) (sum % n);			\
 				if (r) {				\
 					a--;				\
 					r = n - r;			\
@@ -3008,7 +3008,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 
 #define AGGR_COUNT(TYPE)						\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) bi.base; \
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -3244,7 +3244,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 
 #define AGGR_CMP(TYPE, OP)						\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) bi.base; \
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		if (ngrp == ncand) {					\
 			/* single element groups */			\
 			while (ncand > 0) {				\
@@ -4337,8 +4337,8 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			delta2 = (dbl) y - mean2;			\
 			mean2 += delta2 / n;				\
 			m2 += delta1 * ((dbl) y - mean2);		\
-			if (isinf(m2))			\
-				goto overflow;		\
+			if (isinf(m2))					\
+				goto overflow;				\
 		}							\
 	} while (0)
 
@@ -4431,8 +4431,8 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			up += delta1 * aux;				\
 			down1 += delta1 * ((dbl) x - mean1);		\
 			down2 += delta2 * aux;				\
-			if (isinf(up) || isinf(down1) || isinf(down2))		\
-				goto overflow;		\
+			if (isinf(up) || isinf(down1) || isinf(down2))	\
+				goto overflow;				\
 		}							\
 	} while (0)
 
@@ -4583,7 +4583,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	}
 
 	if ((e == NULL ||
-	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	     (BATcount(e) == ncand && e->hseqbase == ci.hseq)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil)) &&
 	    (issample || b->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
@@ -4785,8 +4785,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
-			} else if (isinf(m2[i])) {		\
-				goto overflow;		\
+			} else if (isinf(m2[i])) {			\
+				goto overflow;				\
 			} else {					\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			}						\
@@ -4989,8 +4989,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
-			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) {	\
-				goto overflow;		\
+			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) { \
+				goto overflow;				\
 			} else {					\
 				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
 				assert(!is_dbl_nil(dbls[i]));		\

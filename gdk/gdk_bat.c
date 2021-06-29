@@ -174,7 +174,7 @@ void
 BATsetdims(BAT *b)
 {
 	b->twidth = b->ttype == TYPE_str ? 1 : ATOMsize(b->ttype);
-	b->tshift = ATOMelmshift(Tsize(b));
+	b->tshift = ATOMelmshift(b->twidth);
 	assert_shift_width(b->tshift, b->twidth);
 	b->tvarsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
@@ -602,6 +602,7 @@ BATclear(BAT *b, bool force)
 	PROPdestroy(b);
 
 	/* we must dispose of all inserted atoms */
+	MT_lock_set(&b->theaplock);
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
 		assert(b->tvheap == NULL || b->tvheap->parentid == b->batCacheid);
 		/* no stable elements: we do a quick heap clean */
@@ -621,12 +622,10 @@ BATclear(BAT *b, bool force)
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			ATOMIC_INIT(&th->refs, 1);
-			MT_lock_set(&b->theaplock);
 			th->parentid = b->tvheap->parentid;
 			th->dirty = true;
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
-			MT_lock_unset(&b->theaplock);
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
@@ -635,15 +634,14 @@ BATclear(BAT *b, bool force)
 		/* TYPE_str has no del method, so we shouldn't get here */
 		assert(tatmdel == NULL || b->twidth == sizeof(var_t));
 		if (tatmdel) {
-			MT_lock_set(&b->theaplock);
 			BATiter bi = bat_iterator_nolock(b);
 
 			for (p = b->batInserted, q = BUNlast(b); p < q; p++)
 				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
 			b->tvheap->dirty = true;
-			MT_lock_unset(&b->theaplock);
 		}
 	}
+	MT_lock_unset(&b->theaplock);
 
 	if (force)
 		b->batInserted = 0;

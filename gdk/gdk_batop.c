@@ -409,7 +409,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	b->theap->dirty = true;
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHappend(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
+		HASHappend(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	return GDK_SUCCEED;
 }
@@ -1303,8 +1303,11 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				bi = bat_iterator_nolock(b);
 			}
+			/* in case ATOMreplaceVAR and/or
+			 * GDKupgradevarheap replaces a heap, we need to
+			 * reinitialize the iterator */
+			bi = bat_iterator_nolock(b);
 			switch (b->twidth) {
 			case 1:
 				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);

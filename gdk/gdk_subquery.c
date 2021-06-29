@@ -12,10 +12,10 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
-#define SQLall_grp_imp(TYPE)	\
-	do {			\
+#define SQLall_grp_imp(TYPE)						\
+	do {								\
 		const TYPE *restrict vals = (const TYPE *) li.base;	\
-		TYPE *restrict rp = (TYPE *) Tloc(res, 0); \
+		TYPE *restrict rp = (TYPE *) Tloc(res, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - l->hseqbase;		\
@@ -25,26 +25,26 @@
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (oids[gid] != (BUN_NONE - 1)) { \
-					if (oids[gid] == BUN_NONE) { \
+				if (oids[gid] != (BUN_NONE - 1)) {	\
+					if (oids[gid] == BUN_NONE) {	\
 						if (!is_##TYPE##_nil(vals[i])) \
-							oids[gid] = i; \
-					} else { \
+							oids[gid] = i;	\
+					} else {			\
 						if (vals[oids[gid]] != vals[i] && !is_##TYPE##_nil(vals[i])) \
 							oids[gid] = BUN_NONE - 1; \
-					} \
-				} \
-			} \
-		} \
+					}				\
+				}					\
+			}						\
+		}							\
 		for (i = 0; i < ngrp; i++) { /* convert the found oids in values */ \
-			BUN noid = oids[i]; \
-			if (noid >= (BUN_NONE - 1)) { \
-				rp[i] = TYPE##_nil; \
-				hasnil = 1; \
-			} else { \
-				rp[i] = vals[noid]; \
-			} \
-		} \
+			BUN noid = oids[i];				\
+			if (noid >= (BUN_NONE - 1)) {			\
+				rp[i] = TYPE##_nil;			\
+				hasnil = 1;				\
+			} else {					\
+				rp[i] = vals[noid];			\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -201,7 +201,7 @@ alloc_fail:
 	return NULL;
 }
 
-#define SQLnil_grp_imp(TYPE)	\
+#define SQLnil_grp_imp(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) li.base;	\
 		while (ncand > 0) {					\
@@ -214,9 +214,9 @@ alloc_fail:
 				else					\
 					gid = (oid) i;			\
 				if (ret[gid] != TRUE && is_##TYPE##_nil(vals[i])) \
-					ret[gid] = TRUE; \
-			} \
-		} \
+					ret[gid] = TRUE;		\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -328,7 +328,7 @@ alloc_fail:
 	return NULL;
 }
 
-#define SQLanyequal_or_not_grp_imp(TYPE, TEST)	\
+#define SQLanyequal_or_not_grp_imp(TYPE, TEST)				\
 	do {								\
 		const TYPE *vals1 = (const TYPE *) li.base;		\
 		const TYPE *vals2 = (const TYPE *) ri.base;		\
@@ -341,16 +341,16 @@ alloc_fail:
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (ret[gid] != TEST) { \
+				if (ret[gid] != TEST) {			\
 					if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
-						ret[gid] = bit_nil; \
-						hasnil = 1; \
+						ret[gid] = bit_nil;	\
+						hasnil = 1;		\
 					} else if (vals1[i] == vals2[i]) { \
-						ret[gid] = TEST; \
-					} \
-				} \
-			} \
-		} \
+						ret[gid] = TEST;	\
+					}				\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 BAT *
@@ -587,7 +587,7 @@ alloc_fail:
 	return NULL;
 }
 
-#define SQLanyequal_or_not_grp2_imp(TYPE, VAL1, VAL2) \
+#define SQLanyequal_or_not_grp2_imp(TYPE, VAL1, VAL2)			\
 	do {								\
 		const TYPE *vals1 = (const TYPE *) li.base;		\
 		const TYPE *vals2 = (const TYPE *) ri.base;		\
@@ -600,18 +600,18 @@ alloc_fail:
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (ret[gid] != VAL1) { \
+				if (ret[gid] != VAL1) {			\
 					const oid id = *(oid*)BUNtail(ii, i); \
-					if (is_oid_nil(id)) { \
-						ret[gid] = VAL2; \
+					if (is_oid_nil(id)) {		\
+						ret[gid] = VAL2;	\
 					} else if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
-						ret[gid] = bit_nil; \
+						ret[gid] = bit_nil;	\
 					} else if (vals1[i] == vals2[i]) { \
-						ret[gid] = VAL1; \
-					} \
-				} \
-			} \
-		} \
+						ret[gid] = VAL1;	\
+					}				\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 BAT *

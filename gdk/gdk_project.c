@@ -23,7 +23,7 @@
 #define project1_loop(TYPE)						\
 static gdk_return							\
 project1_##TYPE(BAT *restrict bn, BAT *restrict l, BAT *restrict r1,	\
-		BATiter *restrict r1i)						\
+		BATiter *restrict r1i)					\
 {									\
 	BUN lo, hi;							\
 	const TYPE *restrict r1t;					\
