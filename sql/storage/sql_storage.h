@@ -408,6 +408,7 @@ extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
 extern int sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
+extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
 extern int sql_trans_add_dependency(sql_trans* tr, sqlid id);
 extern int sql_trans_add_removal(sql_trans *tr, sqlid id);
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);

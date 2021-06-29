@@ -3907,22 +3907,10 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	return sq;
 }
 
-static list *
-add_predicate(sql_allocator *sa, list *l, sql_column *c)
-{
-	pl *p = SA_ZNEW(sa, pl);
-	p->c = c;
-	if (!l)
-		l = sa_list(sa);
-	list_append(l, p);
-	return l;
-}
-
 static stmt *
 insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 {
 	mvc *sql = be->mvc;
-	sql_trans *tr = sql->session->tr;
 /* pkey's cannot have NULLs, ukeys however can
    current implementation switches on 'NOT NULL' on primary key columns */
 
@@ -3953,7 +3941,8 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
+				if (add_column_predicate(be, c->c) != LOG_OK)
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
@@ -3975,7 +3964,8 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
 				/* foreach column add predicate */
-				tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
+				if (add_column_predicate(be, c->c) != LOG_OK)
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4038,7 +4028,8 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
 
 		/* add predicate for this column */
-		tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
+		if (add_column_predicate(be, c->c) != LOG_OK)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4098,7 +4089,6 @@ static stmt *
 insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stmt *pin)
 {
 	mvc *sql = be->mvc;
-	sql_trans *tr = sql->session->tr;
 	char *msg = NULL;
 	stmt *cs = list_fetch(inserts, 0), *s = cs;
 	sql_subtype *lng = sql_bind_localtype("lng");
@@ -4110,7 +4100,8 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		sql_kc *c = m->data;
 
 		/* foreach column add predicate */
-		tr->predicates = add_predicate(sql->pa, tr->predicates, c->c);
+		if (add_column_predicate(be, c->c) != LOG_OK)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (pin && list_length(pin->op4.lval))
@@ -4210,11 +4201,10 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	return res;
 }
 
-static void
+static sql_table *
 sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
 	mvc *sql = be->mvc;
-	sql_trans *tr = sql->session->tr;
 	node *m, *n;
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 
@@ -4228,7 +4218,8 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			char *msg = NULL;
 
 			/* foreach column add predicate */
-			tr->predicates = add_predicate(sql->pa, tr->predicates, c);
+			if (add_column_predicate(be, c) != LOG_OK)
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
@@ -4242,6 +4233,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			(void)stmt_exception(be, s, msg, 00001);
 		}
 	}
+	return t; /* return something to say it succeeded */
 }
 
 static stmt **
@@ -4291,8 +4283,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint)
-		sql_insert_check_null(be, t, inserts->op4.lval);
+	if (constraint && !sql_insert_check_null(be, t, inserts->op4.lval))
+		return NULL;
 
 	l = sa_list(sql->sa);
 
@@ -4371,7 +4363,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	/* update predicate list */
-	rel_predicates(be, rel->r);
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
 	if (ddl) {
 		ret = ddl;
 		list_prepend(l, ddl);
@@ -5360,7 +5353,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
-	rel_predicates(be, rel->r);
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
 	return cnt;
 }
 
@@ -5600,7 +5594,8 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
 	}
-	rel_predicates(be, rel->r);
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
 	return stdelete;
 }
 

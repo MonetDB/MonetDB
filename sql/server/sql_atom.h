@@ -35,9 +35,6 @@ extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
 
-/* duplicate atom */
-extern atom *atom_dup( sql_allocator *sa, atom *a);
-
 /* cast atom a to type tp (success == 1, fail == 0) */
 extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
 
