@@ -71,7 +71,9 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 		if (BATcount(q) == 0) {
 			qvalue = 0.5;
 		} else {
+			MT_lock_set(&q->theaplock);
 			qvalue = ((const dbl *)Tloc(q, 0))[0];
+			MT_lock_unset(&q->theaplock);
 			if (qvalue < 0 || qvalue > 1) {
 				BBPunfix(b->batCacheid);
 				if (g)

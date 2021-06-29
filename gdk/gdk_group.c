@@ -182,7 +182,7 @@
 
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* DIFFER */	TYPE##_neq(w[p], pw)		,	\
@@ -309,7 +309,7 @@
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 		    	TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
@@ -420,7 +420,7 @@
 
 #define GRP_use_existing_hash_table_tpe(TYPE)			\
 	GRP_use_existing_hash_table(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
 	)
@@ -584,7 +584,7 @@ ctz(oid x)
 
 #define GRP_create_partial_hash_table_tpe(TYPE)			\
 	GRP_create_partial_hash_table(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
@@ -625,6 +625,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const ValRecord *prop;
 	lng t0 = 0;
 	const char *algomsg = "";
+	bool locked = false;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -790,7 +791,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
-	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	gn = COLnew(hseqb, TYPE_oid, cnt, TRANSIENT);
 	if (gn == NULL)
@@ -857,6 +857,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			assert(0);
 		}
 	}
+
+	bi = bat_iterator(b);
 
 	if (subsorted ||
 	    ((BATordered(b) || BATordered_rev(b)) &&
@@ -965,7 +967,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 256 groups, so the group id
 		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
-		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
+		const unsigned char *restrict w = (const unsigned char *) bi.base;
 		unsigned char v;
 
 		algomsg = "byte-sized groups -- ";
@@ -1000,7 +1002,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 65536 groups, so the group
 		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
+		const unsigned short *restrict w = (const unsigned short *) bi.base;
 		unsigned short v;
 
 		algomsg = "short-sized groups -- ";
@@ -1045,6 +1047,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * group */
 		bool phash = false;
 		algomsg = "existing hash -- ";
+		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash == NULL &&
 		    /* DISABLES CODE */ (0) &&
 		    (parent = VIEWtparent(b)) != 0) {
@@ -1054,11 +1057,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			BAT *b2 = BBPdescriptor(parent);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
+			bat_iterator_end(&bi);
 			bi = bat_iterator(b);
 			algomsg = "existing parent hash -- ";
 			phash = true;
 		}
 		hs = b->thash;
+		if (hs == NULL) {
+			MT_rwlock_rdunlock(&b->thashlock);
+			goto lost_hash;
+		}
+		locked = true;
 		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
@@ -1092,14 +1101,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_use_existing_hash_table_any();
 			break;
 		}
+		MT_rwlock_rdunlock(&b->thashlock);
+		locked = false;
 	} else {
-		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
+		bool gc;
 		const char *nme;
 		BUN prb;
-		int bits = 0;
+		int bits;
 		BUN nbucket;
 		oid grp;
 
+	  lost_hash:
+		gc = g != NULL && (BATordered(g) || BATordered_rev(g));
+		bits = 0;
 		GDKclrerr();	/* not interested in BAThash errors */
 
 		/* not sorted, and no pre-existing hash table: we'll
@@ -1165,7 +1179,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const bte *w = (bte *) Tloc(b, 0);
+				const bte *w = (bte *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
@@ -1182,7 +1196,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const sht *w = (sht *) Tloc(b, 0);
+				const sht *w = (sht *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
@@ -1199,7 +1213,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const int *w = (int *) Tloc(b, 0);
+				const int *w = (int *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
@@ -1213,7 +1227,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #ifdef HAVE_HGE
 			if (grps) {
 				uhge v;
-				const lng *w = (lng *) Tloc(b, 0);
+				const lng *w = (lng *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),
@@ -1246,6 +1260,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
+	bat_iterator_end(&bi);
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
 		en->tkey = true;
@@ -1291,11 +1306,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
   error:
+	bat_iterator_end(&bi);
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
+	if (locked)
+		MT_rwlock_rdunlock(&b->thashlock);
 	if (gn)
 		BBPunfix(gn->batCacheid);
 	if (en)

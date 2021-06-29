@@ -81,6 +81,8 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
+gdk_return BATsave_locked(BAT *bd)
+	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
@@ -168,13 +170,19 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	__attribute__((__visibility__("hidden")));
 void HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHappend_locked(BAT *b, BUN i, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHdelete(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHdelete_locked(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHinsert(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
+void HASHinsert_locked(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
@@ -255,9 +263,6 @@ gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
-	__attribute__((__visibility__("hidden")));
-gdk_return VIEWreset(BAT *b)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -350,7 +355,7 @@ ilog2(BUN x)
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
-	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
@@ -386,7 +391,6 @@ typedef struct {
 
 typedef struct {
 	MT_Lock cache;
-	MT_Lock trim;
 	bat free;
 } bbplock_t;
 
@@ -405,7 +409,6 @@ extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
@@ -430,7 +433,6 @@ extern MT_Lock GDKtmLock;
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
-#define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 

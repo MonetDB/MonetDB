@@ -286,6 +286,7 @@ GDKbatcopysize(BAT *bat, str colname)
 size_t
 GDKbatcopy(char *dest, BAT *bat, str colname)
 {
+	MT_lock_set(&bat->theaplock);
 	size_t batsize = bat->twidth * BATcount(bat);
 	size_t position = 0;
 
@@ -306,6 +307,7 @@ GDKbatcopy(char *dest, BAT *bat, str colname)
 		memcpy(dest + position, bat->tvheap->base, bat->tvheap->size);
 		position += align(bat->tvheap->size);
 	}
+	MT_lock_unset(&bat->theaplock);
 	return position;
 }
 

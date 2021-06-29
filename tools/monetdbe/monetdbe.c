@@ -1147,6 +1147,9 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		goto cleanup;
 	}
 
+	bcolumn_iter	= bat_iterator(bcolumn);
+	btable_iter		= bat_iterator(btable);
+	bimpl_iter		= bat_iterator(bimpl);
 	nparams = BATcount(btype);
 
 	if (nparams 	!= BATcount(bdigits) ||
@@ -1160,9 +1163,6 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		goto cleanup;
 	}
 
-	bcolumn_iter	= bat_iterator(bcolumn);
-	btable_iter		= bat_iterator(btable);
-	bimpl_iter		= bat_iterator(bimpl);
 	function		=  BUNtvar(btable_iter, BATcount(btable)-1);
 
 	{
@@ -1288,6 +1288,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
+	if (bcolumn) {
+		bat_iterator_end(&bcolumn_iter);
+		bat_iterator_end(&btable_iter);
+		bat_iterator_end(&bimpl_iter);
+	}
 	// clean these up
 	if (btype)		BBPunfix(btype->batCacheid);
 	if (bimpl)		BBPunfix(bimpl->batCacheid);
@@ -2539,11 +2544,13 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			} else {
 				bat_data->data[j] = GDKstrdup(t);
 				if (!bat_data->data[j]) {
+					bat_iterator_end(&li);
 					goto cleanup;
 				}
 			}
 			j++;
 		}
+		bat_iterator_end(&li);
 	} else if (bat_type == TYPE_date) {
 		date *baseptr;
 		GENERATE_BAT_INPUT_BASE(date);
@@ -2617,6 +2624,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 				bat_data->data[j].size = t->nitems;
 				bat_data->data[j].data = GDKmalloc(t->nitems);
 				if (!bat_data->data[j].data) {
+					bat_iterator_end(&li);
 					mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -2624,6 +2632,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			}
 			j++;
 		}
+		bat_iterator_end(&li);
 		bat_data->null_value.size = 0;
 		bat_data->null_value.data = NULL;
 	} else {
@@ -2652,6 +2661,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 				char *sresult = NULL;
 				size_t length = 0;
 				if (BATatoms[bat_type].atomToStr(&sresult, &length, t, true) == 0) {
+					bat_iterator_end(&li);
 					mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", "Failed to convert element to string");
 					goto cleanup;
 				}
@@ -2659,6 +2669,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			}
 			j++;
 		}
+		bat_iterator_end(&li);
 	}
 	if (column_result)
 		column_result->name = result->monetdbe_resultset->cols[column_index].name;

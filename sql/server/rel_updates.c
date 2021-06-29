@@ -461,6 +461,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 	mvc *sql = query->sql;
 	sql_rel *r = NULL;
 	size_t rowcount = 0;
+	bool is_subquery = false;
 	list *collist = check_table_columns(sql, t, columns, action, t->base.name);
 	if (!collist)
 		return NULL;
@@ -531,17 +532,18 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 
 		r = rel_subquery(query, NULL, val_or_q, ek);
 		rowcount++;
+		is_subquery = true;
 	}
 	if (!r)
 		return NULL;
 
-	/* In case of missing project, order by or distinct, we need to add
-	   and projection */
-	if (r->op != op_project || r->r || need_distinct(r))
+	/* For the subquery case a projection is always needed */
+	if (is_subquery)
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
-	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
-		(!r->exps && collist))
+	if ((r->exps && list_length(r->exps) != list_length(collist)) || (!r->exps && collist))
 		return sql_error(sql, 02, SQLSTATE(21S01) "%s: query result doesn't match number of columns in table '%s'", action, t->base.name);
+	if (is_subquery && !(r->exps = check_distinct_exp_names(sql, r->exps)))
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: duplicate column names in subquery column list", action);
 
 	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0, action);
 	if(!r->exps)
@@ -1782,6 +1784,9 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 
 	if (!r)
 		return NULL;
+	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
+	if (!(r->exps = check_distinct_exp_names(sql, r->exps)))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: duplicate column names in subquery column list");
 
 	tsep_e = exp_atom_clob(sql->sa, tsep);
 	rsep_e = exp_atom_clob(sql->sa, rsep);

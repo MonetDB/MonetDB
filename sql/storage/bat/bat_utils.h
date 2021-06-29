@@ -28,16 +28,12 @@ extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int tt, BUN size, role_t role);
 extern void bat_clear(BAT *b);
 
-extern BUN append_inserted(BAT *b, BAT *i );
-
 extern BAT *ebats[MAXATOMS];
 
 #define isEbat(b) 	(ebats[b->ttype] && ebats[b->ttype] == b)
 
-extern log_bid ebat2real(log_bid b, oid ibase);
 extern log_bid e_bat(int type);
 extern BAT *e_BAT(int type);
-extern log_bid ebat_copy(log_bid b);
 extern int bat_utils_init(void);
 
 #endif /* BAT_UTILS_H */

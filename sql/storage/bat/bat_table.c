@@ -131,6 +131,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 		res = GDKmalloc(sz);
 		if (res)
 			memcpy(res, r, sz);
+		bat_iterator_end(&bi);
 	}
 	bat_destroy(b);
 	return res;
@@ -154,6 +155,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 	if (q != BUN_NONE) { \
 		BATiter bi = bat_iterator(b); \
 		res = *(TPE*)BUNtail(bi, q); \
+		bat_iterator_end(&bi); \
 	} \
 	bat_destroy(b); \
 	return res; \
@@ -181,6 +183,7 @@ column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(*b);
 		res = (str) BUNtvar(bi, q);
+		bat_iterator_end(&bi);
 	}
 	return res;
 }
@@ -391,8 +394,11 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 static void *
 table_fetch_value(res_table *rt, sql_column *c)
 {
+	/* this function is only ever called during startup, and therefore
+	 * there are no other threads that may be modifying the BAT under
+	 * our hands, so returning a pointer into the heap is fine */
 	BAT *b = (BAT*)rt->cols[c->colnr].p;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
 	if (b->tvarsized)
 		return BUNtvar(bi, rt->cur_row);
@@ -656,6 +662,7 @@ subrids_next(subrids *r)
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
 		sqlid id = *(sqlid*)BUNtloc(ii, r->pos);
+		bat_iterator_end(&ii);
 		if (id == r->id)
 			return BUNtoid((BAT *) r->rids, r->pos++);
 	}
@@ -668,6 +675,7 @@ subrids_nextid(subrids *r)
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
 		r->id = *(sqlid*)BUNtloc(ii, r->pos);
+		bat_iterator_end(&ii);
 		return r->id;
 	}
 	return -1;

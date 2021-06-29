@@ -91,39 +91,7 @@ temp_copy(log_bid b, int temp)
 	return r;
 }
 
-BUN
-append_inserted(BAT *b, BAT *i )
-{
-	BUN nr = 0, r;
-	BATiter ii = bat_iterator(i);
-
-	for (r = i->batInserted; r < BUNlast(i); r++) {
-		if (BUNappend(b, BUNtail(ii,r), true) != GDK_SUCCEED)
-			return BUN_NONE;
-		nr++;
-	}
-	return nr;
-}
-
 BAT *ebats[MAXATOMS] = { NULL };
-
-log_bid
-ebat2real(log_bid b, oid ibase)
-{
-	/* make a copy of b */
-	log_bid r = BID_NIL;
-	BAT *o = temp_descriptor(b);
-	if(o) {
-		BAT *c = COLcopy(o, ATOMtype(o->ttype), true, PERSISTENT);
-		if(c) {
-			BAThseqbase(c, ibase );
-			r = temp_create(c);
-			bat_destroy(c);
-		}
-		bat_destroy(o);
-	}
-	return r;
-}
 
 log_bid
 e_bat(int type)
@@ -141,43 +109,6 @@ e_BAT(int type)
 	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
 		return NULL;
 	return temp_descriptor(ebats[type]->batCacheid);
-}
-
-log_bid
-ebat_copy(log_bid b)
-{
-	/* make a copy of b */
-	BAT *o = temp_descriptor(b);
-	BAT *c;
-	log_bid r;
-
-	if (!o)
-		return BID_NIL;
-	if (!ebats[o->ttype]) {
-		ebats[o->ttype] = bat_new(o->ttype, 0, TRANSIENT);
-		if (!ebats[o->ttype]) {
-			bat_destroy(o);
-			return BID_NIL;
-		}
-	}
-
-	if (BATcount(o)) {
-		c = COLcopy(o, o->ttype, true, PERSISTENT);
-		if (!c)
-			return BID_NIL;
-		BAThseqbase(c, 0);
-		BATcommit(c, BUN_NONE);
-		bat_set_access(c, BAT_READ);
-		r = temp_create(c);
-		bat_destroy(c);
-	} else {
-		c = ebats[o->ttype];
-		if (!c)
-			return BID_NIL;
-		r = temp_create(c);
-	}
-	bat_destroy(o);
-	return r;
 }
 
 int
