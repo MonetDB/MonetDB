@@ -6643,21 +6643,3 @@ sql_trans_end(sql_session *s, int ok)
 	store_unlock(store);
 	return ok;
 }
-
-int
-sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor)
-{
-	sqlstore *store = tr->store;
-	sqlid id;
-	sql_schema *sys = find_sql_schema(tr, "sys");
-	sql_table *auths = find_sql_table(tr, sys, "auths");
-	sql_column *auth_name = find_sql_column(auths, "name");
-
-	if (!is_oid_nil(store->table_api.column_find_row(tr, auth_name, auth, NULL)))
-		return -1;
-
-	id = store_next_oid(tr->store);
-	if (store->table_api.table_insert(tr, auths, &id, &auth, &grantor))
-		return -2;
-	return 0;
-}

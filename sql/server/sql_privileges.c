@@ -374,17 +374,22 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 str
 sql_create_role(mvc *m, str auth, sqlid grantor)
 {
+	sqlid id;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *auths = find_sql_table(tr, sys, "auths");
+	sql_column *auth_name = find_sql_column(auths, "name");
+	int log_res = LOG_OK;
+
 	if (!admin_privs(grantor))
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Insufficient privileges to create role '%s'", auth);
-
-	switch (sql_trans_create_role(m->session->tr, auth, grantor)) {
-	case -1:
+	if (!is_oid_nil(store->table_api.column_find_row(tr, auth_name, auth, NULL)))
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Role '%s' already exists", auth);
-	case -2:
-		throw(SQL, "sql.create_role", SQLSTATE(42000) "CREATE ROLE: failed due to conflict with another transaction");
-	default:
-		return NULL;
-	}
+
+	id = store_next_oid(tr->store);
+	if ((log_res = store->table_api.table_insert(tr, auths, &id, &auth, &grantor)) != LOG_OK)
+		throw(SQL, "sql.create_role", SQLSTATE(42000) "CREATE ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return NULL;
 }
 
