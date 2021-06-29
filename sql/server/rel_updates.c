@@ -15,6 +15,7 @@
 #include "rel_exp.h"
 #include "rel_schema.h"
 #include "sql_privileges.h"
+#include "sql_partition.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_dump.h"
@@ -391,9 +392,23 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 	return exps;
 }
 
+static bool
+has_complex_indexes(sql_table *t)
+{
+	for (node *n = ol_first_node(t->idxs); n; n = n->next) {
+		sql_idx *i = n->data;
+
+		if (hash_index(i->type) || oid_index(i->type) || i->type == no_idx)
+			return true;
+	}
+	return false;
+}
+
 sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 {
+	list *mts = NULL;
+
 	if (!t) {
 		if (sql->session->status) /* if find_table_or_view_on_scope was already called, don't overwrite error message */
 			return NULL;
@@ -404,6 +419,8 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
 	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_length(t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && has_complex_indexes(t)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: not possible to insert into a partitioned table with complex indexes at the moment", op);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
 	} else if (isReplicaTable(t)) {
@@ -413,10 +430,16 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 	}
 	if (t && !isTempTable(t) && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+	if (has_complex_indexes(t) && (mts = partition_find_mergetables(sql, t))) {
+		for (node *n = mts->h ; n ; n = n->next) {
+			sql_part *pt = n->data;
 
-	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
+			if ((isRangePartitionTable(pt->t) || isListPartitionTable(pt->t)))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: not possible to insert into a partitioned table with complex indexes at the moment", op);
+		}
 	}
+	if (!table_privs(sql, t, PRIV_INSERT))
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
 	return t;
 }
 
@@ -431,6 +454,8 @@ copy_allowed(mvc *sql, int from)
 sql_table *
 update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
 {
+	list *mts = NULL;
+
 	if (!t) {
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
@@ -441,6 +466,8 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s' has no partitions set", op, opname, tname);
 	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_length(t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && has_complex_indexes(t)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: not possible to update a partitioned table with complex indexes at the moment", op);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
 	} else if (isReplicaTable(t)) {
@@ -450,6 +477,14 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	}
 	if (t && !isTempTable(t) && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+	if (has_complex_indexes(t) && (mts = partition_find_mergetables(sql, t))) {
+		for (node *n = mts->h ; n ; n = n->next) {
+			sql_part *pt = n->data;
+
+			if ((isRangePartitionTable(pt->t) || isListPartitionTable(pt->t)))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: not possible to update a partitioned table with complex indexes at the moment", op);
+		}
+	}
 	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
 	return t;
@@ -925,25 +960,29 @@ static sql_rel *
 update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel *bt, dlist *assignmentlist, const char *action)
 {
 	mvc *sql = query->sql;
-	sql_table *mt = NULL;
 	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(t->columns));
-	list *exps, *pcols = NULL;
+	list *exps, *mts = partition_find_mergetables(sql, t);
 	dnode *n;
 	const char *rname = NULL;
 
-	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
-		mt = t;
-	else if (partition_find_part(sql->session->tr, t, NULL))
-		mt = partition_find_part(sql->session->tr, t, NULL)->t;
+	if (!list_empty(mts)) {
+		for (node *nn = mts->h; nn; ) { /* extract mergetable from the parts */
+			node *next = nn->next;
+			sql_part *pt = nn->data;
 
-	if (mt && isPartitionedByColumnTable(mt)) {
-		pcols = sa_list(sql->sa);
-		int *nid = sa_alloc(sql->sa, sizeof(int));
-		*nid = mt->part.pcol->colnr;
-		list_append(pcols, nid);
-	} else if (mt && isPartitionedByExpressionTable(mt)) {
-		pcols = mt->part.pexp->cols;
+			if (isPartitionedByColumnTable(pt->t) || isPartitionedByExpressionTable(pt->t))
+				nn->data = pt->t;
+			else
+				list_remove_node(mts, NULL, nn);
+			nn = next;
+		}
 	}
+	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) { /* validate update on mergetable */
+		if (!mts)
+			mts = sa_list(sql->sa);
+		list_append(mts, t);
+	}
+
 	/* first create the project */
 	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
@@ -1020,14 +1059,18 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
 				if (updates[c->colnr])
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: Multiple assignments to same column '%s'", action, c->base.name);
-				if (mt && pcols) {
-					for (node *nn = pcols->h; nn; nn = n->next) {
-						int next = *(int*) nn->data;
-						if (next == c->colnr) {
-							if (isPartitionedByColumnTable(mt)) {
+				if (!list_empty(mts)) {
+					for (node *nn = mts->h; nn; nn = nn->next) {
+						sql_table *mt = nn->data;
+
+						if (isPartitionedByColumnTable(mt)) {
+							if (mt->part.pcol->colnr == c->colnr)
 								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update on the partitioned column is not possible at the moment", action);
-							} else if (isPartitionedByExpressionTable(mt)) {
-								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
+						} else if (isPartitionedByExpressionTable(mt)) {
+							for (node *nnn = mt->part.pexp->cols->h ; nnn ; nnn = nnn->next) {
+								int next = *(int*) nnn->data;
+								if (next == c->colnr)
+									return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
 							}
 						}
 					}
@@ -1053,14 +1096,18 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
 			if (updates[c->colnr])
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: Multiple assignments to same column '%s'", action, c->base.name);
-			if (mt && pcols) {
-				for (node *nn = pcols->h; nn; nn = nn->next) {
-					int next = *(int*) nn->data;
-					if (next == c->colnr) {
-						if (isPartitionedByColumnTable(mt)) {
+			if (!list_empty(mts)) {
+				for (node *nn = mts->h; nn; nn = nn->next) {
+					sql_table *mt = nn->data;
+
+					if (isPartitionedByColumnTable(mt)) {
+						if (mt->part.pcol->colnr == c->colnr)
 							return sql_error(sql, 02, SQLSTATE(42000) "%s: Update on the partitioned column is not possible at the moment", action);
-						} else if (isPartitionedByExpressionTable(mt)) {
-							return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
+					} else if (isPartitionedByExpressionTable(mt)) {
+						for (node *nnn = mt->part.pexp->cols->h ; nnn ; nnn = nnn->next) {
+							int next = *(int*) nnn->data;
+							if (next == c->colnr)
+								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
 						}
 					}
 				}
@@ -1715,7 +1762,8 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel *rel = NULL;
-	sql_table* t;
+	sql_table *t;
+	list *mts;
 
 	if (!copy_allowed(sql, 1))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
@@ -1724,12 +1772,15 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
-	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
+	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-	else if (partition_find_part(sql->session->tr, t, NULL)) {
-		sql_part *mt = partition_find_part(sql->session->tr, t, NULL);
-		if (mt && (isPartitionedByColumnTable(mt->t) || isPartitionedByExpressionTable(mt->t)))
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
+	if ((mts = partition_find_mergetables(sql, t))) {
+		for (node *n = mts->h ; n ; n = n->next) {
+			sql_part *pt = n->data;
+
+			if ((isPartitionedByColumnTable(pt->t) || isPartitionedByExpressionTable(pt->t)))
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
+		}
 	}
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
