@@ -133,12 +133,10 @@ next_pair(PairIterator *pi) {
 
 static int8_t
 STRMPpairLookup(Strimps *s, CharPair *p) {
-	int8_t ret = -1;
 	size_t idx = 0;
 	size_t npairs = NPAIRS(((uint64_t *)s->strimps.base)[0]);
 	size_t offset = 0;
 	CharPair sp;
-	(void)p;
 
 	for (idx = 0; idx < npairs; idx++) {
 		sp.psize = s->sizes_base[idx];
@@ -148,7 +146,7 @@ STRMPpairLookup(Strimps *s, CharPair *p) {
 		offset += sp.psize;
 	}
 
-	return ret;
+	return -1;
 }
 
 static bool
@@ -160,8 +158,8 @@ ignored(CharPair *p, uint8_t elm) {
 #define MAX_PAIR_SIZE 8
 
 /* Given a strimp header and a string compute the bitstring of which
- * digrams(byte pairs) are present in the string. The strimp header is a
- * map from digram(byte pair) to index in the strimp.
+ * digrams are present in the string. The strimp header is a map from
+ * digram to index in the strimp.
  *
  * This should probably be inlined.
  */
@@ -179,8 +177,8 @@ STRMPmakebitstring(const str s, Strimps *r)
 
 	while(pair_at(&pi, &cp)) {
 		pair_idx = STRMPpairLookup(r, &cp);
-		if (pair_idx > 0)
-			ret |= 0x1 << pair_idx;
+		if (pair_idx >= 0)
+			ret |= ((uint64_t)0x1 << pair_idx);
 		next_pair(&pi);
 	}
 
@@ -617,7 +615,6 @@ STRMPcreate(BAT *b)
 }
 
 /* Left over code */
-
 #if 0
 /* This counts how many unicode codepoints the given string
  * contains.
