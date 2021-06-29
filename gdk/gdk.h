@@ -871,7 +871,40 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
-/* BAT iterator, also protects use of BAT heaps with reference counts */
+/* BAT iterator, also protects use of BAT heaps with reference counts.
+ *
+ * A BAT iterator has to be used with caution, but it does have to be
+ * used in many place.
+ *
+ * An iterator is initialized by assigning it the result of a call to
+ * either bat_iterator or bat_iterator_nolock.  The former must be
+ * accompanied by a call to bat_iterator_end to release resources.
+ *
+ * bat_iterator should be used for BATs that could possibly be modified
+ * in another thread while we're reading the contents of the BAT.
+ * Alternatively, but only for very quick access, the theaplock can be
+ * taken, the data read, and the lock released.  For longer duration
+ * accesses, it is better to use the iterator, even without the BUNt*
+ * macros, since the theaplock is only held very briefly.
+ *
+ * If BATs are to be modified, higher level code must assure that no
+ * other thread is going to modify the same BAT at the same time.  A
+ * to-be-modified BAT should not use bat_iterator.  It can use
+ * bat_iterator_nolock, but be aware that this creates a copy of the
+ * heap pointer(s) (i.e. theap and tvheap) and if the heaps get
+ * extended, the pointers in the BAT structure may be modified, but that
+ * does not modify the pointers in the iterator.  This means that after
+ * operations that may grow a heap, the iterator should be
+ * reinitialized.
+ *
+ * The BAT iterator provides a number of fields that can (and often
+ * should) be used to access information about the BAT.  For string
+ * BATs, if a parallel threads adds values, the offset heap (theap) may
+ * get replaced by a one that is wider.  This involves changing the
+ * twidth and tshift values in the BAT structure.  These changed values
+ * should not be used to access the data in the iterator.  Instead, use
+ * the width and shift values in the iterator itself.
+ */
 typedef struct BATiter {
 	BAT *b;
 	Heap *h;

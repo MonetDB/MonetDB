@@ -733,7 +733,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	const ValRecord *prop;
-	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
+	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();

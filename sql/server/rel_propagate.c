@@ -644,6 +644,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
+		sql_rel *bt = rel_basetable(sql, sub, sub->base.name);
 
 		if (!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
 			return NULL;
@@ -657,6 +658,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 				if (!c)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
+				rel_base_use(sql, bt, c->colnr);
 				if (!(e = update_check_column(sql, sub, c, e, rel, c->base.name, "UPDATE")))
 					return NULL;
 			}
@@ -671,7 +673,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
 			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
 
-		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, checked_updates);
+		s1 = rel_update(sql, bt, dup, NULL, checked_updates);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
@@ -812,6 +814,8 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 
 		new_table = rel_basetable(sql, sub, sub->base.name);
+		rel_base_use_all(query->sql, new_table);
+		new_table = rewrite_basetable(query->sql, new_table);
 		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
 
 		if (isPartitionedByExpressionTable(t)) {

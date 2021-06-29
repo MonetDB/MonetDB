@@ -353,19 +353,21 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 								d->tnil,
 								d->tkey))
 						goto cleanup_and_exit;
-#define keepprop(NME, LNME)\
-{const void *valp = BATgetprop(d, NME); \
-if ( valp){\
-	cv = VALformat(valp);\
-	if(cv){\
-		char * cvquote = mal_quote(cv, strlen(cv));\
-		ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);\
-		GDKfree(cv);\
-		GDKfree(cvquote);\
-		if (!ok)\
-			goto cleanup_and_exit;\
-	}\
-}}
+#define keepprop(NME, LNME)												\
+	do {																\
+		const void *valp = BATgetprop(d, NME);							\
+		if ( valp){														\
+			cv = VALformat(valp);										\
+			if (cv) {													\
+				char *cvquote = mal_quote(cv, strlen(cv));				\
+				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
+				GDKfree(cv);											\
+				GDKfree(cvquote);										\
+				if (!ok)												\
+					goto cleanup_and_exit;								\
+			}															\
+		}																\
+	} while (0)
 					keepprop(GDK_MIN_VALUE,"min");
 					keepprop(GDK_MAX_VALUE,"max");
 					keepprop(GDK_MIN_POS,"minpos");
