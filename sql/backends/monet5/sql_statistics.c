@@ -320,6 +320,11 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						GDKfree(minval);
 						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 					}
+					if (!isNew(c) && (log_res = sql_trans_add_dependency(tr, c->base.id)) != LOG_OK) {
+						GDKfree(maxval);
+						GDKfree(minval);
+						throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 				}
 			}
 		}
