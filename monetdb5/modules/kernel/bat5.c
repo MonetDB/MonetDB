@@ -946,7 +946,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	do {													\
 		Type *dst = (Type *) Tloc(bn, 0);					\
 		const Type *src = (const Type *) bi.base;			\
-		for (BUN p = 0; p < b->batCount; p++, src++) {		\
+		for (BUN p = 0; p < bi.count; p++, src++) {			\
 			if (o < ol && b->hseqbase + p == *o) {			\
 				do											\
 					o++;									\
@@ -991,7 +991,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		o++;
 	BATiter bi = bat_iterator(b);
 	if (b->tvarsized) {
-		for (BUN p = 0; p < b->batCount; p++) {
+		for (BUN p = 0; p < bi.count; p++) {
 			if (o < ol && b->hseqbase + p == *o) {
 				do
 					o++;
@@ -1006,7 +1006,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		}
 	} else {
 		BUN n = 0;
-		switch (b->twidth) {
+		switch (bi.width) {
 		case 1:
 			reuseloop(bte);
 			break;
@@ -1027,7 +1027,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		default: {
 			char *dst = (char *) Tloc(bn, 0);
 			const char *src = (const char *) bi.base;
-			for (BUN p = 0; p < b->batCount; p++) {
+			for (BUN p = 0; p < bi.count; p++) {
 				if (o < ol && b->hseqbase + p == *o) {
 					do
 						o++;

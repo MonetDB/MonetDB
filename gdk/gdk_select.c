@@ -2013,9 +2013,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 
 	rlvals = rl->ttype == TYPE_void ? NULL : (const char *) rli.base;
 	rhvals = rh->ttype == TYPE_void ? NULL : (const char *) rhi.base;
-	lwidth = l->twidth;
-	rlwidth = rl->twidth;
-	rhwidth = rh->twidth;
+	lwidth = li.width;
+	rlwidth = rli.width;
+	rhwidth = rhi.width;
 	dst1 = (oid *) Tloc(r1, 0);
 	dst2 = r2 ? (oid *) Tloc(r2, 0) : NULL;
 
