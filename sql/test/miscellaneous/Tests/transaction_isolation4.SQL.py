@@ -6,6 +6,7 @@ with SQLTestCase() as mdb1:
         mdb2.connect(username="monetdb", password="monetdb")
 
         mdb1.execute("create table myt (i int, j int);").assertSucceeded()
+        mdb1.execute("insert into myt values (1, 1), (2, 2)").assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("alter table myt add primary key (i);").assertSucceeded()
@@ -21,6 +22,20 @@ with SQLTestCase() as mdb1:
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("GRANT SELECT on table mys.myt2 to duser;").assertSucceeded()
         mdb2.execute('drop user duser;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("analyze sys.myt").assertSucceeded()
+        mdb2.execute('drop table myt;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('comment on table "sys"."myt" is \'amifine?\';').assertSucceeded()
+        mdb2.execute('drop table myt;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 

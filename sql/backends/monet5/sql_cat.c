@@ -1828,15 +1828,18 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
 			ok = store->table_api.table_insert(tx, comments, &objid, &remark);
 		}
+		if (ok != LOG_OK)
+			throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		if ((ok = sql_trans_add_dependency(tx, objid)) != LOG_OK) /* At the moment this adds dependencies for old objects :( */
+			throw(SQL, "sql.comment_on", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			/* DELETE FROM sys.comments WHERE id = %d */
-			ok = store->table_api.table_delete(tx, comments, rid);
+			if ((ok = store->table_api.table_delete(tx, comments, rid)) != LOG_OK)
+				throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		}
 	}
-	if (ok != LOG_OK)
-		throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
