@@ -349,19 +349,21 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 								d->tnil,
 								d->tkey))
 						return;
-#define keepprop(NME, LNME)\
-{const void *valp = BATgetprop(d, NME); \
-if ( valp){\
-	cv = VALformat(valp);\
-	if(cv){\
-		char * cvquote = mal_quote(cv, strlen(cv));\
-		ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);\
-		GDKfree(cv);\
-		GDKfree(cvquote);\
-		if (!ok)\
-			return;\
-	}\
-}}
+#define keepprop(NME, LNME)												\
+	do {																\
+		const void *valp = BATgetprop(d, NME);							\
+		if ( valp){														\
+			cv = VALformat(valp);										\
+			if (cv) {													\
+				char *cvquote = mal_quote(cv, strlen(cv));				\
+				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
+				GDKfree(cv);											\
+				GDKfree(cvquote);										\
+				if (!ok)												\
+					return;												\
+			}															\
+		}																\
+	} while (0)
 					keepprop(GDK_MIN_VALUE,"min");
 					keepprop(GDK_MAX_VALUE,"max");
 					keepprop(GDK_MIN_POS,"minpos");

@@ -3240,13 +3240,11 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 			if (d)
 				MT_lock_set(&d->theaplock);
-//			else
-//				MT_lock_set(&GDKswapLock(i));
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-//					MT_lock_unset(&GDKswapLock(subcommit ? subcommit[idx] : idx));
-					MT_lock_unset(&BBP_desc(i)->theaplock);
+					if (d)
+						MT_lock_unset(&d->theaplock);
 					break;
 				}
 				if (b)
@@ -3257,8 +3255,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			}
 			if (d)
 				MT_lock_unset(&d->theaplock);
-//			else
-//				MT_lock_unset(&GDKswapLock(i));
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
