@@ -135,7 +135,7 @@ typedef struct{
 			break;														\
 		}																\
 		}																\
-		mut->args[0].b->theap->dirty = true;								\
+		mut->args[0].b->theap->dirty = true;							\
 	} while (0)
 
 // single argument is preparatory step for GDK_mapreduce
@@ -331,7 +331,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].b->tnonil=false;
 	mat[0].b->tsorted=false;
 	mat[0].b->trevsorted=false;
-	mat[0].bi = bat_iterator_nolock(mat[0].b);
+	mat[0].bi = (BATiter) {.b = NULL,};
 	mat[0].first = (void *)  Tloc(mat[0].b, 0);
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
 
