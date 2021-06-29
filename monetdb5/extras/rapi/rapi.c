@@ -56,42 +56,43 @@
 #define M_TO_R_DATE(v)               mDate_to_rDate(v)
 #define R_TO_M_DATE(v)               rDate_to_mDate(v)
 
-#define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy,mapfun)	\
+#define BAT_TO_SXP(bat,bati,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy,mapfun) \
 	do {																\
 		tpe v; size_t j;												\
 		ctype *valptr = NULL;											\
-		tpe* p = (tpe*) Tloc(bat, 0);									\
-		retsxp = PROTECT(newfun(BATcount(bat)));						\
+		tpe* p = (tpe*) bati.base;										\
+		retsxp = PROTECT(newfun(bati.count));							\
 		if (!retsxp) break;												\
 		valptr = ptrfun(retsxp);										\
 		if (bat->tnonil && !bat->tnil) {								\
 			if (memcopy) {												\
 				memcpy(valptr, p,										\
-					BATcount(bat) * sizeof(tpe));						\
+					   bati.count * sizeof(tpe));						\
 			} else {													\
-				for (j = 0; j < BATcount(bat); j++) {					\
+				for (j = 0; j < bati.count; j++) {						\
 					valptr[j] = mapfun((ctype) p[j]);					\
 				}														\
 			}															\
 		} else {														\
-		for (j = 0; j < BATcount(bat); j++) {							\
-			v = p[j];													\
-			if ( is_##tpe##_nil(v))										\
-				valptr[j] = naval;										\
-			else														\
-				valptr[j] = mapfun((ctype) v);							\
-		}}																\
+			for (j = 0; j < bati.count; j++) {							\
+				v = p[j];												\
+				if ( is_##tpe##_nil(v))									\
+					valptr[j] = naval;									\
+				else													\
+					valptr[j] = mapfun((ctype) v);						\
+			}															\
+		}																\
 	} while (0)
 
-#define BAT_TO_INTSXP(bat,tpe,retsxp,memcopy)						\
-	BAT_TO_SXP(bat,tpe,retsxp,NEW_INTEGER,INTEGER_POINTER,int,NA_INTEGER,memcopy,M_TO_R_NOOP)\
+#define BAT_TO_INTSXP(bat,bati,tpe,retsxp,memcopy)						\
+	BAT_TO_SXP(bat,bati,tpe,retsxp,NEW_INTEGER,INTEGER_POINTER,int,NA_INTEGER,memcopy,M_TO_R_NOOP)\
 
-#define BAT_TO_REALSXP(bat,tpe,retsxp,memcopy)						\
-	BAT_TO_SXP(bat,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy,M_TO_R_NOOP)\
+#define BAT_TO_REALSXP(bat,bati,tpe,retsxp,memcopy)						\
+	BAT_TO_SXP(bat,bati,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy,M_TO_R_NOOP)\
 
 //DATE stored as integer in MonetDB with epoch 0, R uses double and epoch 1970
-#define BAT_TO_DATESXP(bat,tpe,retsxp,memcopy)							\
-	BAT_TO_SXP(bat,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy, M_TO_R_DATE); \
+#define BAT_TO_DATESXP(bat,bati,tpe,retsxp,memcopy)							\
+	BAT_TO_SXP(bat,bati,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy, M_TO_R_DATE); \
 	SEXP klass = mkString("Date");										\
 	classgets(retsxp, klass);
 
@@ -142,12 +143,14 @@ static SEXP
 bat_to_sexp(BAT* b, int type)
 {
 	SEXP varvalue = NULL;
+	BATiter bi = bat_iterator(b);
 	// TODO: deal with SQL types (DECIMAL/TIME/TIMESTAMP)
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void: {
 		size_t i = 0;
 		varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
 		if (!varvalue) {
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 		for (i = 0; i < BATcount(b); i++) {
@@ -156,10 +159,10 @@ bat_to_sexp(BAT* b, int type)
 		break;
 	}
 	case TYPE_bte:
-		BAT_TO_INTSXP(b, bte, varvalue, 0);
+		BAT_TO_INTSXP(b, bi, bte, varvalue, 0);
 		break;
 	case TYPE_sht:
-		BAT_TO_INTSXP(b, sht, varvalue, 0);
+		BAT_TO_INTSXP(b, bi, sht, varvalue, 0);
 		break;
 	case TYPE_int:
 		//Storage is int but the actual defined type may be different
@@ -169,58 +172,59 @@ bat_to_sexp(BAT* b, int type)
 			switch (type) {
 				case TYPE_int: {
 					// special case: memcpy for int-to-int conversion without NULLs
-					BAT_TO_INTSXP(b, int, varvalue, 1);
+					BAT_TO_INTSXP(b, bi, int, varvalue, 1);
 				} break;
 				default: {
 					if (type == ATOMindex("date")) {
-						BAT_TO_DATESXP(b, int, varvalue, 0);
+						BAT_TO_DATESXP(b, bi, int, varvalue, 0);
 					} else {
 						//Type stored as int but no implementation to decode into native R type
-						BAT_TO_INTSXP(b, int, varvalue, 1);
+						BAT_TO_INTSXP(b, bi, int, varvalue, 1);
 					}
 				}
 			}
 			break;
 		default:
 			if (type == TYPE_date) {
-				BAT_TO_DATESXP(b, int, varvalue, 0);
+				BAT_TO_DATESXP(b, bi, int, varvalue, 0);
 			} else {
 				//Type stored as int but no implementation to decode into native R type
-				BAT_TO_INTSXP(b, int, varvalue, 1);
+				BAT_TO_INTSXP(b, bi, int, varvalue, 1);
 			}
 			break;
 		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge: /* R's integers are stored as int, so we cannot be sure hge will fit */
-		BAT_TO_REALSXP(b, hge, varvalue, 0);
+		BAT_TO_REALSXP(b, bi, hge, varvalue, 0);
 		break;
 #endif
 	case TYPE_flt:
-		BAT_TO_REALSXP(b, flt, varvalue, 0);
+		BAT_TO_REALSXP(b, bi, flt, varvalue, 0);
 		break;
 	case TYPE_dbl:
 		// special case: memcpy for double-to-double conversion without NULLs
-		BAT_TO_REALSXP(b, dbl, varvalue, 1);
+		BAT_TO_REALSXP(b, bi, dbl, varvalue, 1);
 		break;
 	case TYPE_lng: /* R's integers are stored as int, so we cannot be sure long will fit */
-		BAT_TO_REALSXP(b, lng, varvalue, 0);
+		BAT_TO_REALSXP(b, bi, lng, varvalue, 0);
 		break;
 	case TYPE_str: { // there is only one string type, thus no macro here
 		BUN p, q, j = 0;
-		BATiter li = bat_iterator(b);
 		varvalue = PROTECT(NEW_STRING(BATcount(b)));
 		if (varvalue == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 		/* special case where we exploit the duplicate-eliminated string heap */
 		if (GDK_ELIMDOUBLES(b->tvheap)) {
 			SEXP* sexp_ptrs = GDKzalloc(b->tvheap->free * sizeof(SEXP));
 			if (!sexp_ptrs) {
+				bat_iterator_end(&bi);
 				return NULL;
 			}
 			BATloop(b, p, q) {
-				const char *t = (const char *) BUNtvar(li, p);
+				const char *t = (const char *) BUNtvar(bi, p);
 				ptrdiff_t offset = t - b->tvheap->base;
 				if (!sexp_ptrs[offset]) {
 					if (strNil(t)) {
@@ -237,12 +241,12 @@ bat_to_sexp(BAT* b, int type)
 			if (b->tnonil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, RSTR(
-									   (const char *) BUNtvar(li, p)));
+									   (const char *) BUNtvar(bi, p)));
 				}
 			}
 			else {
 				BATloop(b, p, q) {
-					const char *t = (const char *) BUNtvar(li, p);
+					const char *t = (const char *) BUNtvar(bi, p);
 					if (strNil(t)) {
 						SET_STRING_ELT(varvalue, j++, NA_STRING);
 					} else {
@@ -253,6 +257,7 @@ bat_to_sexp(BAT* b, int type)
 		}
 	} 	break;
 	}
+	bat_iterator_end(&bi);
 	return varvalue;
 }
 
@@ -768,8 +773,10 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&li);
 				goto wrapup;
 			}
+			bat_iterator_end(&li);
 		}
 		msg = MAL_SUCCEED;
 	}

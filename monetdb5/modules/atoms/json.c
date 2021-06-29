@@ -1891,6 +1891,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 		name = stk->stk[getArg(pci, i)].val.sval;
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, idx);
+		bat_iterator_end(&bi);
 		tpe = getBatType(getArgType(mb, pci, i + 1));
 		if ((val = ATOMformat(tpe, p)) == NULL) {
 			GDKfree(row);
@@ -2006,6 +2007,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	for (i = pci->retc; i < pci->argc; i++) {
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, idx);
+		bat_iterator_end(&bi);
 		tpe = getBatType(getArgType(mb, pci, i));
 		if ((val = ATOMformat(tpe, p)) == NULL) {
 			goto memfail;
@@ -2125,8 +2127,6 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	}
 	tpe = bv->ttype;
 	cnt = BATcount(bv);
-	bki = bat_iterator(bk);
-	bvi = bat_iterator(bv);
 	if (id) {
 		bo = BATdescriptor(*id);
 		if (bo == NULL) {
@@ -2148,6 +2148,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		o = BUNtoid(bo, 0);
 	}
 
+	bki = bat_iterator(bk);
+	bvi = bat_iterator(bv);
 	for (i = 0; i < cnt; i++) {
 		if (id && bk) {
 			if (BUNtoid(bo, i) != o) {
@@ -2164,6 +2166,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 				lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
 			p = GDKrealloc(row, lim);
 			if (p == NULL) {
+				bat_iterator_end(&bki);
+				bat_iterator_end(&bvi);
 				goto memfail;
 			}
 			row = p;
@@ -2173,13 +2177,15 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 			}
 		}
 
-		bvi = bat_iterator(bv);
 		p = BUNtail(bvi, i);
 		if (tpe == TYPE_json)
 			val = p;
 		else {
-			if ((val = ATOMformat(tpe, p))  == NULL)
+			if ((val = ATOMformat(tpe, p))  == NULL) {
+				bat_iterator_end(&bki);
+				bat_iterator_end(&bvi);
 				goto memfail;
+			}
 			if (strcmp(val, "nil") == 0) {
 				GDKfree(val);
 				val = NULL;
@@ -2192,6 +2198,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		if (p == NULL) {
 			if (tpe != TYPE_json)
 				GDKfree(val);
+			bat_iterator_end(&bki);
+			bat_iterator_end(&bvi);
 			goto memfail;
 		}
 		row = p;
@@ -2202,6 +2210,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		if (tpe != TYPE_json)
 			GDKfree(val);
 	}
+	bat_iterator_end(&bki);
+	bat_iterator_end(&bvi);
 	if (row[1]) {
 		row[len - 1] = ']';
 		row[len] = 0;
@@ -2354,12 +2364,14 @@ JSONgroupStr(str *ret, const bat *bid)
 		cnt++;
 		offset += n;
 	}
+	bat_iterator_end(&bi);
 	if (cnt)
 		offset += snprintf(buf + offset, size - offset, " ]");
 	BBPunfix(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
   failed:
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	GDKfree(buf);
 	throw(MAL, "json.agg", "%s", err);
@@ -2432,6 +2444,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		/* stable sort g */
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, true) != GDK_SUCCEED) {
 			err = GDK_EXCEPTION;
+			bat_iterator_end(&bi);
 			goto out;
 		}
 		if (freeg)
@@ -2650,6 +2663,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
+	bat_iterator_end(&bi);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -2675,6 +2689,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	return err;
 
   bunins_failed:
+	bat_iterator_end(&bi);
 	if (err == NULL)
 		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
 	goto out;

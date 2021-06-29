@@ -24,6 +24,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BUN i;
 	BUN nils = 0;
 	int e = 0, ex = 0;
+	BATiter bi;
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(bid)) == NULL)
@@ -52,9 +53,10 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
+	bi = bat_iterator(b);
 	switch (b->ttype) {
 	case TYPE_flt: {
-		const flt *restrict fsrc = (const flt *) Tloc(b, 0);
+		const flt *restrict fsrc = (const flt *) bi.base;
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
@@ -68,7 +70,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		break;
 	}
 	case TYPE_dbl: {
-		const dbl *restrict dsrc = (const dbl *) Tloc(b, 0);
+		const dbl *restrict dsrc = (const dbl *) bi.base;
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
@@ -84,6 +86,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	default:
 		assert(0);
 	}
+	bat_iterator_end(&bi);
 	e = errno;
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	BBPunfix(b->batCacheid);
@@ -128,6 +131,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	BUN i;
 	BUN nils = 0;
 	int e = 0, ex = 0;
+	BATiter b1i, b2i;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
@@ -201,13 +205,15 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		goto doreturn;
 	}
 
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
 	switch (tp1) {
 	case TYPE_flt:
 		if (b1 && b2) {
-			const flt *fsrc1 = (const flt *) Tloc(b1, 0);
-			const flt *fsrc2 = (const flt *) Tloc(b2, 0);
+			const flt *fsrc1 = (const flt *) b1i.base;
+			const flt *fsrc2 = (const flt *) b2i.base;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
@@ -221,7 +227,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 				}
 			}
 		} else if (b1) {
-			const flt *restrict fsrc1 = (const flt *) Tloc(b1, 0);
+			const flt *restrict fsrc1 = (const flt *) b1i.base;
 			flt fval2 = stk->stk[getArg(pci, 2)].val.fval;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
@@ -235,7 +241,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			}
 		} else /* b2 == NULL */ {
 			flt fval1 = stk->stk[getArg(pci, 1)].val.fval;
-			const flt *restrict fsrc2 = (const flt *) Tloc(b2, 0);
+			const flt *restrict fsrc2 = (const flt *) b2i.base;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
@@ -250,8 +256,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		break;
 	case TYPE_dbl:
 		if (b1 && b2) {
-			const dbl *dsrc1 = (const dbl *) Tloc(b1, 0);
-			const dbl *dsrc2 = (const dbl *) Tloc(b2, 0);
+			const dbl *dsrc1 = (const dbl *) b1i.base;
+			const dbl *dsrc2 = (const dbl *) b2i.base;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
@@ -265,7 +271,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 				}
 			}
 		} else if (b1) {
-			const dbl *restrict dsrc1 = (const dbl *) Tloc(b1, 0);
+			const dbl *restrict dsrc1 = (const dbl *) b1i.base;
 			dbl dval2 = stk->stk[getArg(pci, 2)].val.dval;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
@@ -279,7 +285,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			}
 		} else /* b2 == NULL */ {
 			dbl dval1 = stk->stk[getArg(pci, 1)].val.dval;
-			const dbl *restrict dsrc2 = (const dbl *) Tloc(b2, 0);
+			const dbl *restrict dsrc2 = (const dbl *) b2i.base;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
@@ -297,6 +303,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	}
 	e = errno;
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+	bat_iterator_end(&b1i);
+	bat_iterator_end(&b2i);
 
 	BATsetcount(bn, b1 ? ci1.ncand : ci2.ncand);
 	bn->tsorted = false;

@@ -505,6 +505,8 @@ mcrypt_hashPassword(
 	} else
 #endif
 	{
+		(void) len;
+		(void) ret;
 		(void) algo;
 		(void) password;
 		(void) challenge;

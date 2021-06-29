@@ -240,17 +240,21 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			char *hash, *msg;
 			msg = AUTHgetPasswordHash(&hash, cntxt, BUNtvar(bi, p));
 			if (msg != MAL_SUCCEED) {
+				bat_iterator_end(&bi);
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
 				return msg;
 			}
 			if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
+				GDKfree(hash);
 				throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			GDKfree(hash);
 		}
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		BBPkeepref(bn->batCacheid);
 		*getArgReference_bat(stk, pci, 0) = bn->batCacheid;

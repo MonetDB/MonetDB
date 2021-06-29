@@ -225,13 +225,15 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
 				goto bailout;
 			}
-			np = (bit*)Tloc(p, 0);
+			BATiter pi = bat_iterator(p);
+			np = (bit*)pi.base;
 			end = rp + cnt;
 			for(j=1; rp<end; j++, np++, rp++) {
 				if (*np)
 					j=1;
 				*rp = j;
 			}
+			bat_iterator_end(&pi);
 		} else { /* single value, ie no partitions, order info not used */
 			int icnt = (int) cnt;
 			for(j=1; j<=icnt; j++, rp++)
@@ -296,8 +298,10 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
-				no = (bit*)Tloc(o, 0);
+				BATiter pi = bat_iterator(p);
+				BATiter oi = bat_iterator(o);
+				np = (bit*)pi.base;
+				no = (bit*)oi.base;
 				for(j=1,k=1; rp<end; k++, np++, no++, rp++) {
 					if (*np)
 						j=k=1;
@@ -305,17 +309,21 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						j=k;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				for(j=1; rp<end; np++, rp++) {
 					if (*np)
 						j=1;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
 			}
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
@@ -323,12 +331,14 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no = (bit*)oi.base;
 				for(j=1,k=1; rp<end; k++, no++, rp++) {
 					if (*no)
 						j=k;
 					*rp = j;
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 1;
@@ -393,8 +403,10 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
-				no = (bit*)Tloc(o, 0);
+				BATiter pi = bat_iterator(p);
+				BATiter oi = bat_iterator(o);
+				np = (bit*)pi.base;
+				no = (bit*)oi.base;
 				for(j=1; rp<end; np++, no++, rp++) {
 					if (*np)
 						j=1;
@@ -402,17 +414,21 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						j++;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				for(j=1; rp<end; np++, rp++) {
 					if (*np)
 						j=1;
 					*rp = j;
 				}
+				bat_iterator_end(&pi);
 			}
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
@@ -420,12 +436,14 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no = (bit*)oi.base;
 				for(j=1; rp<end; no++, rp++) {
 					if (*no)
 						j++;
 					*rp = j;
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 1;
@@ -491,9 +509,11 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				np2 = np + BATcount(p);
-				no2 = no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no2 = no = (bit*)oi.base;
 
 				for (; np<np2; np++, no++) {
 					if (*np) {
@@ -513,6 +533,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 					}
 				}
+				bat_iterator_end(&pi);
 				ncnt = no - no2;
 				if (ncnt == 1) {
 					for (; no2<no; no2++, rp++)
@@ -527,6 +548,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						*rp = j / cnt_cast;
 					}
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 0.0;
@@ -539,7 +561,8 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				no = (bit*)oi.base;
 
 				if (cnt == 1) {
 					for (; rp<end; rp++)
@@ -554,6 +577,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						*rp = j / cnt_cast;
 					}
 				}
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
 					*rp = 0.0;
@@ -616,9 +640,11 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				np = (bit*)Tloc(p, 0);
+				BATiter pi = bat_iterator(p);
+				np = (bit*)pi.base;
 				end = np + BATcount(p);
-				bo1 = bo2 = no = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				bo1 = bo2 = no = (bit*)oi.base;
 
 				for (; np<end; np++, no++) {
 					if (*np) {
@@ -650,6 +676,8 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1.0;
+				bat_iterator_end(&pi);
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
@@ -663,7 +691,8 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 					goto bailout;
 				}
-				bo1 = bo2 = (bit*)Tloc(o, 0);
+				BATiter oi = bat_iterator(o);
+				bo1 = bo2 = (bit*)oi.base;
 				no = bo1 + BATcount(b);
 				cnt_cast = (dbl) BATcount(b);
 				for (; bo2<no; bo2++) {
@@ -676,6 +705,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1.0;
+				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
@@ -1046,7 +1076,9 @@ bailout:
 				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor"); \
 				goto bailout; \
 			} \
+			MT_lock_set(&l->theaplock); \
 			rval = ((TPE*)Tloc(l, 0))[0]; \
+			MT_lock_unset(&l->theaplock); \
 		} else { \
 			rval = *getArgReference_##TPE(stk, pci, 2); \
 		} \
@@ -1119,6 +1151,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			}
 			bpi = bat_iterator(d);
 			default_value = BUNtail(bpi, 0);
+			bat_iterator_end(&bpi);
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);
@@ -1620,7 +1653,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -1642,7 +1675,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			n += !is_##TPE##_nil(bp[j]);	\
@@ -1669,7 +1702,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_ALL_ROWS(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		for (; j < i; j++) \
 			n += !is_##TPE##_nil(bp[j]);	\
 		if (n > minimum) { /* covariance_samp requires at least one value */ \
@@ -1685,7 +1718,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		for (; k < i; k++) { \
 			n += !is_##TPE##_nil(bp[k]);	\
 			if (n > minimum) { /* covariance_samp requires at least one value */ \
@@ -1721,7 +1754,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE)	\
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		TPE *restrict bp = (TPE*)di.base; \
 		oid ncount = i - k; \
 		if (GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &nlevels) != GDK_SUCCEED) { \
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -1864,11 +1897,16 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		} else {
 			/* corner case, second column is a constant, calculate it this way... */
 			BAT *d = b ? b : c;
+			BATiter di = bat_iterator(d);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
-			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+			BATiter si = bat_iterator(s);
+			BATiter ei = bat_iterator(e);
+			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)si.base : NULL, *restrict end = e ? (oid*)ei.base : NULL,
 				tree_capacity = 0, nlevels = 0;
 			lng n = 0;
-			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
+			BATiter pi = bat_iterator(p);
+			BATiter oi = bat_iterator(o);
+			bit *np = pi.base, *opp = oi.base;
 			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
 			bool has_nils = is_dbl_nil(val), last = false;
 
@@ -1891,6 +1929,11 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 				}
 				}
 			}
+			bat_iterator_end(&di);
+			bat_iterator_end(&ei);
+			bat_iterator_end(&si);
+			bat_iterator_end(&oi);
+			bat_iterator_end(&pi);
 
 			BATsetcount(r, cnt);
 			r->tnonil = !has_nils;
