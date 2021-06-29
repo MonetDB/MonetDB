@@ -331,11 +331,13 @@ log_read_id(logger *lg, log_id *id)
 static log_return
 string_reader(logger *lg, BAT *b, lng nr)
 {
-	int sz = 0;
+	size_t sz = 0;
+	lng SZ = 0;
 	log_return res = LOG_OK;
 
-	if (mnstr_readInt(lg->input_log, &sz) != 1)
+	if (mnstr_readLng(lg->input_log, &SZ) != 1)
 		return LOG_EOF;
+	sz = (size_t)SZ;
 	char *buf = GDKmalloc(sz);
 
 	if (!buf || mnstr_read(lg->input_log, buf, sz, 1) != 1) {
@@ -2347,12 +2349,13 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 	if (buf) {
 		for(BUN p = (BUN)offset; p < end; p++) {
 			char *s = BUNtail(bi, p);
-			strcpy(dst, s);
-			dst += strlen(s)+1;
+			size_t len = strlen(s)+1;
+			memcpy(dst, s, len);
+			dst += len;
 		}
 	}
 	gdk_return res = GDK_FAIL;
-	if (buf && mnstr_writeInt(lg->output_log, (int) sz) && mnstr_write(lg->output_log, buf, sz, 1) == 1)
+	if (buf && mnstr_writeLng(lg->output_log, (lng) sz) && mnstr_write(lg->output_log, buf, sz, 1) == 1)
 		res = GDK_SUCCEED;
 	GDKfree(buf);
 	bat_iterator_end(&bi);
