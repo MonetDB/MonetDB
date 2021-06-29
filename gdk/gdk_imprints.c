@@ -122,7 +122,7 @@
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 
-#define BINSIZE(B, FUNC, T) \
+#define BINSIZE(B, FUNC, T)			\
 	do {					\
 		switch (B) {			\
 		case 8: FUNC(T,8); break;	\

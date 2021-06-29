@@ -211,16 +211,16 @@ gdk_export log_level_t lvl_per_component[];
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_ERROR_ENDIF(COMP, MSG, ...)				\
+#define TRC_ERROR_ENDIF(COMP, MSG, ...)					\
 	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_INFO_ENDIF(COMP, MSG, ...)				\
+#define TRC_INFO_ENDIF(COMP, MSG, ...)					\
 	GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_DEBUG_ENDIF(COMP, MSG, ...)				\
+#define TRC_DEBUG_ENDIF(COMP, MSG, ...)					\
 	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
 
 
