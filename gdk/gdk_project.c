@@ -604,18 +604,18 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 
 	assert(ATOMtype(l->ttype) == TYPE_oid || l->ttype == TYPE_msk);
 	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
-	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
+	assert(r2 == NULL || r1->hseqbase + r1i.count == r2->hseqbase);
 
 	if (BATtdense(l) && lcount > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
-		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1->batCount) {
+		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1i.count) {
 			bn = BATslice(r1, lo - r1->hseqbase, hi - r1->hseqbase);
 			BAThseqbase(bn, l->hseqbase);
 			msg = " (slice)";
 			goto doreturn;
 		}
-		if (lo < r1->hseqbase || r2 == NULL || hi > r2->hseqbase + r2->batCount) {
+		if (lo < r1->hseqbase || r2 == NULL || hi > r2->hseqbase + r2i.count) {
 			GDKerror("does not match always\n");
 			bat_iterator_end(&r1i);
 			bat_iterator_end(&r2i);
@@ -660,8 +660,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	if (ATOMstorage(tpe) == TYPE_str) {
 		if (l->tnonil &&
 		    r2 == NULL &&
-		    (r1->batCount == 0 ||
-		     lcount > (r1->batCount >> 3) ||
+		    (r1i.count == 0 ||
+		     lcount > (r1i.count >> 3) ||
 		     r1->batRestricted == BAT_READ)) {
 			/* insert strings as ints, we need to copy the
 			 * string heap whole sale; we can't do this if
@@ -670,7 +670,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			 * the right and the right is writable (meaning
 			 * we have to actually copy the right string
 			 * heap) */
-			tpe = r1->twidth == 1 ? TYPE_bte : (r1->twidth == 2 ? TYPE_sht : (r1->twidth == 4 ? TYPE_int : TYPE_lng));
+			tpe = r1i.width == 1 ? TYPE_bte : (r1i.width == 2 ? TYPE_sht : (r1i.width == 4 ? TYPE_int : TYPE_lng));
 			stringtrick = true;
 		} else if (l->tnonil &&
 			   r2 != NULL &&
@@ -701,7 +701,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		r1i = bat_iterator(r1);
 		r2i = bat_iterator(r2);
 	}
-	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1->twidth : 0);
+	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1i.width : 0);
 	if (bn == NULL) {
 		goto doreturn;
 	}
@@ -786,8 +786,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		}
 		bn->ttype = r1->ttype;
 		bn->tvarsized = true;
-		bn->twidth = r1->twidth;
-		bn->tshift = r1->tshift;
+		bn->twidth = r1i.width;
+		bn->tshift = r1i.shift;
 	}
 
 	if (!BATtdense(r1) || (r2 && !BATtdense(r2)))
