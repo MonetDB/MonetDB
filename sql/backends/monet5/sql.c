@@ -491,22 +491,24 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	return MAL_SUCCEED;
 }
 
-static BAT *
-mvc_claim_slots(sql_trans *tr, sql_table *t, size_t cnt)
+static int
+mvc_claim_slots(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **pos)
 {
 	sqlstore *store = tr->store;
-	return store->storage_api.claim_tab(tr, t, cnt);
+	return store->storage_api.claim_tab(tr, t, cnt, offset, pos);
 }
 
 str
 mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *res = getArgReference_bat(stk, pci, 0);
+	BUN *offset = (BUN*)getArgReference_oid(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 1);
 	mvc *m = NULL;
 	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 2);
-	const char *tname = *getArgReference_str(stk, pci, 3);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 4);
+	const char *sname = *getArgReference_str(stk, pci, 3);
+	const char *tname = *getArgReference_str(stk, pci, 4);
+	lng cnt = *(lng*)getArgReference_lng(stk, pci, 5);
+	BAT *pos = NULL;
 
 	sql_schema *s;
 	sql_table *t;
@@ -523,9 +525,10 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
-	BAT *pos = mvc_claim_slots(m->session->tr, t, (size_t)cnt);
-	if (pos) {
-		BBPkeepref(*res = pos->batCacheid);
+	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
+		*res = bat_nil;
+		if (pos)
+			BBPkeepref(*res = pos->batCacheid);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.claim", SQLSTATE(3F000) "Could not claim slots");
@@ -578,8 +581,9 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
-	BAT *pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
-	if (!pos)
+	BUN offset;
+	BAT *pos = NULL;
+	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: Could not insert data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
@@ -589,7 +593,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			bat_destroy(pos);
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		}
-		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED) {
+		if ((msg = mvc_append_column(sql->session->tr, col, offset, pos, b)) != MAL_SUCCEED) {
 			bat_destroy(pos);
 			return msg;
 		}
@@ -618,8 +622,9 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
-	BAT *pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
-	if (!pos)
+	BUN offset;
+	BAT *pos = NULL;
+	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
 		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: Could not append data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
@@ -629,7 +634,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 			bat_destroy(pos);
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		}
-		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED) {
+		if ((msg = mvc_append_column(sql->session->tr, col, offset, pos, b)) != MAL_SUCCEED) {
 			bat_destroy(pos);
 			return msg;
 		}
@@ -1753,10 +1758,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_append_column(sql_trans *t, sql_column *c, BAT *pos, BAT *ins)
+mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins)
 {
 	sqlstore *store = t->store;
-	int res = store->storage_api.append_col(t, c, pos, ins, TYPE_bat);
+	int res = store->storage_api.append_col(t, c, offset, pos, ins, BATcount(ins), TYPE_bat);
 	if (res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
@@ -1812,14 +1817,16 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
-	bat Pos = *getArgReference_bat(stk, pci, 5);
-	ptr ins = getArgReference(stk, pci, 6);
-	int tpe = getArgType(mb, pci, 6), log_res = LOG_OK;
+	BUN offset = *(BUN*)getArgReference_oid(stk, pci, 5);
+	bat Pos = *getArgReference_bat(stk, pci, 6);
+	ptr ins = getArgReference(stk, pci, 7);
+	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
 	sql_idx *i;
 	BAT *b = NULL, *pos = NULL;
+	BUN cnt = 1;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1828,7 +1835,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
-	if ((pos = BATdescriptor(Pos)) == NULL)
+	if (Pos != bat_nil && (pos = BATdescriptor(Pos)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
@@ -1843,28 +1850,25 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
 		bat_destroy(pos);
-		if (b)
-			BBPunfix(b->batCacheid);
+		bat_destroy(b);
 		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
 	}
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL) {
 		bat_destroy(pos);
-		if (b)
-			BBPunfix(b->batCacheid);
+		bat_destroy(b);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
 	}
-	if( b && BATcount(b) > 4096 && !b->batTransient)
-		BATmsync(b);
+	if (b)
+		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, pos, ins, tpe);
+		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, i, pos, ins, tpe);
+		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, tpe);
 	}
-	BBPunfix(pos->batCacheid);
-	if (b)
-		BBPunfix(b->batCacheid);
+	bat_destroy(pos);
+	bat_destroy(b);
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
@@ -1921,10 +1925,6 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(upd->batCacheid);
 		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
-	if( upd && BATcount(upd) > 4096 && !upd->batTransient)
-		BATmsync(upd);
-	if( tids && BATcount(tids) > 4096 && !tids->batTransient)
-		BATmsync(tids);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
@@ -2009,8 +2009,6 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
-	if( b && BATcount(b) > 4096 && !b->batTransient)
-		BATmsync(b);
 	sqlstore *store = m->session->tr->store;
 	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
@@ -5056,8 +5054,8 @@ static mel_func sql_init_funcs[] = {
  command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
- pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(1,5, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
- pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),batarg("offset",oid),argany("ins",0))),
+ pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))), pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
@@ -5806,7 +5804,7 @@ static mel_func sql_init_funcs[] = {
  pattern("wlr", "rollback", WLRrollback, false, "Mark the end of the work unit", noargs),
  pattern("wlr", "catalog", WLRcatalog, false, "A catalog changing query", args(0,1, arg("q",str))),
  pattern("wlr", "action", WLRaction, false, "A query producing updates", args(0,1, arg("q",str))),
- pattern("wlr", "append", WLRappend, false, "Apply the insertions in the workload-capture-replay list", args(1,5, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),varargany("ins",0))),
+ pattern("wlr", "append", WLRappend, false, "Apply the insertions in the workload-capture-replay list", args(1,7, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset", oid), batarg("pos", oid), varargany("ins",0))),
  pattern("wlr", "update", WLRupdate, false, "Apply the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("tid",oid),argany("val",0))),
  pattern("wlr", "delete", WLRdelete, false, "Apply the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),vararg("b",oid))),
  pattern("wlr", "clear_table", WLRclear_table, false, "Destroy the tuples in the table", args(1,3, arg("",int),arg("sname",str),arg("tname",str))),

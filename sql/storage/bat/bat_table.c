@@ -213,26 +213,24 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	void *val = NULL;
 	int cnt = 0;
 	int ok = LOG_OK;
+	BUN offset = 0;
 
 	va_start(va, t);
-	BAT *offset = store->storage_api.claim_tab(tr, t, 1);
-	if (!offset)
+	if (store->storage_api.claim_tab(tr, t, 1, &offset, NULL) != LOG_OK)
 		return LOG_ERR;
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, offset, NULL, val, 1, c->type.type->localtype);
 		if (ok != LOG_OK) {
-			BBPunfix(offset->batCacheid);
 			va_end(va);
 			return ok;
 		}
 		cnt++;
 	}
 	va_end(va);
-	BBPunfix(offset->batCacheid);
 	if (n) {
 		// This part of the code should never get reached
 		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, ol_length(t->columns), cnt);
