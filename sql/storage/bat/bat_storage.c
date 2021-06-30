@@ -1513,14 +1513,8 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
 			err = 1;
 	} else if (!offsets) {
-		BUN cnt = BATcount(oi);
-		BATiter oii = bat_iterator(oi);
-		for (BUN i=0;i<cnt; i++, offset++) {
-			void *v = BUNtail(oii, i);
-			if (BUNreplace(b, offset, v, true) != GDK_SUCCEED)
-				err = 1;
-		}
-		bat_iterator_end(&oii);
+		if (BATreplacepos(b, &offset, oi, true, true) != GDK_SUCCEED)
+			err = 1;
 	} else if ((BATtdense(offsets) && offsets->tseqbase == (b->hseqbase+BATcount(b)))) {
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
 			err = 1;
