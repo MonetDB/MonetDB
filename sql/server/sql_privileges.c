@@ -199,10 +199,10 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	/* Add dependencies created */
 	if (privs == all || !c) {
-		if ((log_res = sql_trans_add_dependency(sql->session->tr, t->base.id)) != LOG_OK)
+		if (!isNew(t) && (log_res = sql_trans_add_dependency(sql->session->tr, t->base.id)) != LOG_OK)
 			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		if ((log_res = sql_trans_add_dependency(sql->session->tr, c->base.id)) != LOG_OK)
+		if (!isNew(c) && (log_res = sql_trans_add_dependency(sql->session->tr, c->base.id)) != LOG_OK)
 			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id)) != LOG_OK)
@@ -245,7 +245,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		throw(SQL,"sql.grant_func", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 	/* Add dependencies created */
-	if ((log_res = sql_trans_add_dependency(sql->session->tr, func_id)) != LOG_OK)
+	if (!isNew(f) && (log_res = sql_trans_add_dependency(sql->session->tr, func_id)) != LOG_OK)
 		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
 		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -678,28 +678,6 @@ sql_find_auth(mvc *m, str auth)
 	return res;
 }
 
-sqlid
-sql_find_schema(mvc *m, str schema)
-{
-	sqlid schema_id = -1;
-	oid rid;
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *schemas = find_sql_table(m->session->tr, sys, "schemas");
-	sql_column *schemas_name = find_sql_column(schemas, "name");
-	sqlstore *store = m->session->tr->store;
-
-	rid = store->table_api.column_find_row(m->session->tr, schemas_name, schema, NULL);
-
-	if (!is_oid_nil(rid)) {
-		sql_column *schemas_id = find_sql_column(schemas, "id");
-		sqlid p = store->table_api.column_find_sqlid(m->session->tr, schemas_id, rid);
-
-		if (p > -1)
-			schema_id = p;
-	}
-	return schema_id;
-}
-
 int
 sql_schema_has_user(mvc *m, sql_schema *s)
 {
@@ -800,15 +778,21 @@ char *
 sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path)
 {
 	char *err;
+	sql_schema *s = NULL;
 	sqlid schema_id = 0;
 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "Insufficient privileges to create user '%s'", user);
 
 	if (backend_find_user(sql, user) >= 0)
-		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
-	if ((schema_id = sql_find_schema(sql, schema)) < 0)
+		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);	
+
+	if (!(s = find_sql_schema(sql->session->tr, schema)))
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
+	schema_id = s->base.id;
+	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id) != LOG_OK)
+		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
 	{
 		/* strip off MAL exception decorations */
@@ -928,7 +912,9 @@ sql_drop_user(mvc *sql, char *user)
 char *
 sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd)
 {
+	sql_schema *s = NULL;
 	sqlid schema_id = 0;
+
 	/* we may be called from MAL (nil) */
 	if (strNil(user))
 		user = NULL;
@@ -939,8 +925,13 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 
 	if (user != NULL && backend_find_user(sql, user) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
-	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0)
-		throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
+	if (schema) {
+		if (!(s = find_sql_schema(sql->session->tr, schema)))
+			throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
+		schema_id = s->base.id;
+		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id) != LOG_OK)
+			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;

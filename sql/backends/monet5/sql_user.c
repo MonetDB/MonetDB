@@ -275,6 +275,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static void
 monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
+	sql_schema *sys;
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
@@ -313,7 +314,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	mvc_create_column_(m, t, "schema_path", "clob", 0);
 
-	schema_id = sql_find_schema(m, "sys");
+	sys = find_sql_schema(m->session->tr, "sys");
+	schema_id = sys->base.id;
 	assert(schema_id >= 0);
 
 	sqlstore *store = m->session->tr->store;
