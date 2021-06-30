@@ -839,7 +839,7 @@ WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * (variable msg and tag cleanup will not be defined).
  */
 #define WLRcolumn(TPE) \
-	for( i = 4; i < pci->argc; i++){                                \
+	for( i = 6; i < pci->argc; i++){                                \
 		TPE val = *getArgReference_##TPE(stk,pci,i);            \
 		if (BUNappend(ins, (void*) &val, false) != GDK_SUCCEED) { \
 			msg = createException(MAL, "WLRappend", "BUNappend failed"); \
@@ -859,13 +859,15 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_idx *idx;
 	BAT *ins = NULL, *pos = NULL;
 	str msg = MAL_SUCCEED;
+	BUN cnt = 1;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 	cname = *getArgReference_str(stk,pci,3);
-	bat Pos = *getArgReference_bat(stk,pci,4);
+	BUN offset = *(BUN*)getArgReference_oid(stk,pci,4);
+	bat Pos = *getArgReference_bat(stk,pci,5);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -883,8 +885,10 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
 	// get the data into local BAT
+	if (pos)
+		cnt = BATcount(pos);
 
-	tpe= getArgType(mb,pci,5);
+	tpe= getArgType(mb,pci,7);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
 		bat_destroy(pos);
@@ -905,7 +909,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
-		for( i = 5; i < pci->argc; i++){
+		for( i = 6; i < pci->argc; i++){
 			str val = *getArgReference_str(stk,pci,i);
 			if (BUNappend(ins, (void*) val, false) != GDK_SUCCEED) {
 				msg = createException(MAL, "WLRappend", "BUNappend failed");
@@ -916,9 +920,9 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, pos, ins, TYPE_bat);
+		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, TYPE_bat);
 	} else if (cname[0] == '%' && (idx = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, idx, pos, ins, tpe);
+		log_res = store->storage_api.append_idx(m->session->tr, idx, offset, pos, ins, cnt, tpe);
 	}
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		msg = createException(MAL, "WLRappend", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -1067,8 +1071,6 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TRC_ERROR(SQL_TRANS, "Missing type in WLRupdate\n");
 	}
 
-	BATmsync(tids);
-	BATmsync(upd);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {

@@ -1091,6 +1091,10 @@ gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
+	__attribute__((__warn_unused_result__));
 
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
