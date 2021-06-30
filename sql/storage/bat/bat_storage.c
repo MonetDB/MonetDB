@@ -31,6 +31,8 @@ static int commit_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, 
 static int tc_gc_col( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_idx( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_del( sql_store Store, sql_change *c, ulng oldest);
+static int tc_gc_drop_col( sql_store Store, sql_change *c, ulng oldest);
+static int tc_gc_drop_idx( sql_store Store, sql_change *c, ulng oldest);
 
 static int merge_delta( sql_delta *obat);
 
@@ -2691,7 +2693,7 @@ drop_col(sql_trans *tr, sql_column *c)
 {
 	assert(!isNew(c) && !isTempTable(c->t));
 	sql_delta *d = ATOMIC_PTR_GET(&c->data);
-	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, &log_destroy_col);
+	trans_add(tr, &c->base, d, &tc_gc_drop_col, &commit_destroy_del, &log_destroy_col);
 	return LOG_OK;
 }
 
@@ -2700,7 +2702,7 @@ drop_idx(sql_trans *tr, sql_idx *i)
 {
 	assert(!isNew(i) && !isTempTable(i->t));
 	sql_delta *d = ATOMIC_PTR_GET(&i->data);
-	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, &log_destroy_idx);
+	trans_add(tr, &i->base, d, &tc_gc_drop_idx, &commit_destroy_del, &log_destroy_idx);
 	return LOG_OK;
 }
 
@@ -3370,9 +3372,8 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 /* only rollback (content version) case for now */
 static int
-tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
+gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 {
-	(void)Store;
 	sql_column *c = (sql_column*)change->obj;
 
 	if (!c) /* cleaned earlier */
@@ -3391,13 +3392,27 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 		destroy_delta(d->next, true);
 		d->next = NULL;
 	}
+	if (cleanup)
+		column_destroy(store, c);
 	return 1;
 }
 
 static int
-tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
+tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 {
-	(void)Store;
+	return gc_col(Store, change, oldest, false);
+}
+
+/* only rollback (content version) case for now */
+static int
+tc_gc_drop_col( sql_store Store, sql_change *change, ulng oldest)
+{
+	return gc_col(Store, change, oldest, true);
+}
+
+static int
+gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
+{
 	sql_idx *i = (sql_idx*)change->obj;
 
 	if (!i) /* cleaned earlier */
@@ -3416,8 +3431,23 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 		destroy_delta(d->next, true);
 		d->next = NULL;
 	}
+	if (cleanup)
+		idx_destroy(store, i);
 	return 1;
 }
+
+static int
+tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
+{
+	return gc_idx(Store, change, oldest, false);
+}
+
+static int
+tc_gc_drop_idx( sql_store Store, sql_change *change, ulng oldest)
+{
+	return gc_idx(Store, change, oldest, true);
+}
+
 
 static int
 tc_gc_del( sql_store Store, sql_change *change, ulng oldest)
