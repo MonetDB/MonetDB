@@ -2654,7 +2654,6 @@ gdk_return
 log_tend(logger *lg)
 {
 	logformat l;
-	gdk_return res = GDK_SUCCEED;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tend %d\n", lg->tid);
@@ -2663,8 +2662,7 @@ log_tend(logger *lg)
 	l.id = lg->tid;
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		gdk_return res = logger_commit(lg);
-		return res;
+		return logger_commit(lg);
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -2672,8 +2670,7 @@ log_tend(logger *lg)
 		return GDK_SUCCEED;
 	}
 
-	if (res != GDK_SUCCEED ||
-	    log_write_format(lg, &l) != GDK_SUCCEED ||
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 	    new_logfile(lg) != GDK_SUCCEED) {
