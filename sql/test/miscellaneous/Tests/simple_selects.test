@@ -831,6 +831,5 @@ alter table thisnamewontconflict drop column y
 statement ok
 rollback
 
-# when the leak gets fixed the table can be dropped
-#statement ok
-#drop table thisnamewontconflict
+statement ok
+drop table thisnamewontconflict
