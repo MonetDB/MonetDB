@@ -1,0 +1,11 @@
+statement ok
+create table thisnamewontconflict(y int, z int)
+
+statement ok
+start transaction
+
+statement ok
+alter table thisnamewontconflict drop column y
+
+statement ok
+rollback
