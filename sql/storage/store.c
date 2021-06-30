@@ -3439,10 +3439,12 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
+			if (ok == LOG_OK && !flush)
+				ok = store->logger_api.log_tend(store); /* flush/sync */
 			store_lock(store);
 			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (ok == LOG_OK && !flush)
-				ok = store->logger_api.log_tend(store, commit_ts);
+			if (ok == LOG_OK && !flush)					/* mark as done */
+				ok = store->logger_api.log_tdone(store, commit_ts);
 		} else {
 			store_lock(store);
 			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
@@ -3468,7 +3470,9 @@ sql_trans_commit(sql_trans *tr)
 		}
 		/* when directly flushing: flush logger after changes got applied */
 		if (ok == LOG_OK && flush) {
-			ok = store->logger_api.log_tend(store, commit_ts);
+			ok = store->logger_api.log_tend(store); /* flush/sync */
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
 			MT_lock_unset(&store->flush);
 		}
 		/* garbage collect */

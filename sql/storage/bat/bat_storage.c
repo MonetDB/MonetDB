@@ -1490,12 +1490,12 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 }
 
 static int
-delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
+delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offsets, BAT *i)
 {
 	BAT *b, *oi = i;
 	int err = 0;
 
-	assert(BATcount(offsets) == BATcount(i));
+	assert(!offsets || BATcount(offsets) == BATcount(i));
 	if (!BATcount(i))
 		return LOG_OK;
 	if (i && (i->ttype == TYPE_msk || mask_cand(i)))
@@ -1509,7 +1509,19 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 			bat_destroy(oi);
 		return LOG_ERR;
 	}
-	if ((BATtdense(offsets) && offsets->tseqbase == (b->hseqbase+BATcount(b)))) {
+	if (!offsets && offset == b->hseqbase+BATcount(b)) {
+		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
+			err = 1;
+	} else if (!offsets) {
+		BUN cnt = BATcount(oi);
+		BATiter oii = bat_iterator(oi);
+		for (BUN i=0;i<cnt; i++, offset++) {
+			void *v = BUNtail(oii, i);
+			if (BUNreplace(b, offset, v, true) != GDK_SUCCEED)
+				err = 1;
+		}
+		bat_iterator_end(&oii);
+	} else if ((BATtdense(offsets) && offsets->tseqbase == (b->hseqbase+BATcount(b)))) {
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
 			err = 1;
 	} else if (BATupdate(b, offsets, oi, true) != GDK_SUCCEED) {
@@ -1524,20 +1536,8 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, BAT *i)
 }
 
 static int
-delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BAT *offsets, void *i)
+delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, BUN cnt)
 {
-	size_t offset = 0;
-	if (BATtdense(offsets)) {
-		offset = offsets->tseqbase;
-	} else {
-		/* TODO handle multiple offsets */
-		assert(0);
-		MT_lock_set(&offsets->theaplock);
-		offset = *(oid*)Tloc(offsets, 0);
-		MT_lock_unset(&offsets->theaplock);
-	}
-	BUN cnt = BATcount(offsets);
-
 	lock_column(tr->store, id);
 	BAT *b = temp_descriptor(bat->cs.bid);
 	if (b == NULL) {
@@ -1590,7 +1590,7 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat, int temp)
 }
 
 static int
-append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, void *offset, void *incoming_data, bool is_bat)
+append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool is_bat)
 {
 	int ok = LOG_OK;
 
@@ -1598,15 +1598,15 @@ append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, void *offset, void
 		BAT *bat = incoming_data;
 
 		if (BATcount(bat))
-			ok = delta_append_bat(tr, delta, id, offset, bat);
+			ok = delta_append_bat(tr, delta, id, offset, offsets, bat);
 	} else {
-		ok = delta_append_val(tr, delta, id, offset, incoming_data);
+		ok = delta_append_val(tr, delta, id, offset, incoming_data, cnt);
 	}
 	return ok;
 }
 
 static int
-append_col(sql_trans *tr, sql_column *c, void *offset, void *i, int tpe)
+append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN cnt, int tpe)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
@@ -1618,11 +1618,11 @@ append_col(sql_trans *tr, sql_column *c, void *offset, void *i, int tpe)
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 
-	return append_col_execute(tr, delta, c->base.id, offset, i, tpe == TYPE_bat);
+	return append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe == TYPE_bat);
 }
 
 static int
-append_idx(sql_trans *tr, sql_idx * i, void *offset, void *data, int tpe)
+append_idx(sql_trans *tr, sql_idx * i, BUN offset, BAT *offsets, void *data, BUN cnt, int tpe)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
@@ -1634,7 +1634,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *offset, void *data, int tpe)
 	if ((!inTransaction(tr, i->t) && (odelta != delta || !segments_in_transaction(tr, i->t) || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 
-	return append_col_execute(tr, delta, i->base.id, offset, data, tpe == TYPE_bat);
+	return append_col_execute(tr, delta, i->base.id, offset, offsets, data, cnt, tpe == TYPE_bat);
 }
 
 static int
@@ -3448,34 +3448,35 @@ tc_gc_del( sql_store Store, sql_change *change, ulng oldest)
 	return 1;
 }
 
-static BAT *
-add_offsets(BAT *pos, BUN slot, size_t nr, size_t total)
+static int
+add_offsets(BUN slot, size_t nr, size_t total, BUN *offset, BAT **offsets)
 {
 	if (nr == 0)
-		return pos;
+		return LOG_OK;
 	assert (nr > 0);
-	if (!pos && nr == total)
-		return BATdense(0, slot, nr);
-	if (!pos) {
-		pos = COLnew(0, TYPE_oid, total, TRANSIENT);
-		if (!pos)
-			return NULL;
+	if ((!offsets || !*offsets) && nr == total) {
+		*offset = slot;
+		return LOG_OK;
 	}
-	oid *restrict dst = Tloc(pos, BATcount(pos));
+	if (!*offsets) {
+		*offsets = COLnew(0, TYPE_oid, total, TRANSIENT);
+		if (!*offsets)
+			return LOG_ERR;
+	}
+	oid *restrict dst = Tloc(*offsets, BATcount(*offsets));
 	for(size_t i = 0; i < nr; i++)
 		dst[i] = slot + i;
-	pos->batCount += nr;
-	return pos;
+	(*offsets)->batCount += nr;
+	return LOG_OK;
 }
 
-static BAT *
-claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
+static int
+claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets)
 {
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
-	BAT *pos = NULL;
 	size_t total = cnt;
 
 	lock_table(tr->store, t->base.id);
@@ -3488,8 +3489,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 					slot = p->end;
 					p->end += cnt;
 					seg->start += cnt;
-					pos = add_offsets(pos, slot, cnt, total);
-					if (!pos) {
+					if (add_offsets(slot, cnt, total, offset, offsets) != LOG_OK) {
 						ok = LOG_ERR;
 						break;
 					}
@@ -3508,8 +3508,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 			seg->ts = tr->tid;
 			seg->deleted = false;
 			slot = seg->start;
-			pos = add_offsets(pos, slot, (seg->end-seg->start), total);
-			if (!pos) {
+			if (add_offsets(slot, (seg->end-seg->start), total, offset, offsets) != LOG_OK) {
 				ok = LOG_ERR;
 				break;
 			}
@@ -3526,9 +3525,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 				s->segs->h = s->segs->t;
 			slot = s->segs->t->start;
 		}
-		pos = add_offsets(pos, slot, cnt, total);
-		if (!pos)
-			ok = LOG_ERR;
+		ok = add_offsets(slot, cnt, total, offset, offsets);
 	}
 	unlock_table(tr->store, t->base.id);
 
@@ -3538,7 +3535,8 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (!isLocalTemp(t))
 			tr->logchanges += (int) total;
 	}
-	if (pos) {
+	if (*offsets) {
+		BAT *pos = *offsets;
 		assert(BATcount(pos) == total);
 		BATsetcount(pos, total); /* set other properties */
 		pos->tnil = false;
@@ -3547,14 +3545,14 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		pos->tsorted = true;
 		pos->trevsorted = false;
 	}
-	return pos;
+	return ok;
 }
 
-static BAT *
-claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
+static int
+claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets)
 {
 	if (cnt > 1)
-		return claim_segmentsV2(tr, t, s, cnt);
+		return claim_segmentsV2(tr, t, s, cnt, offset, offsets);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
@@ -3607,9 +3605,11 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (!isLocalTemp(t))
 			tr->logchanges += (int) cnt;
 	}
-	if (ok == LOG_OK)
-		return BATdense(0, slot, cnt);
-	return NULL;
+	if (ok == LOG_OK) {
+		*offset = slot;
+		return LOG_OK;
+	}
+	return LOG_ERR;
 }
 
 /*
@@ -3618,17 +3618,17 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
  * level but used on the local transaction level. Besides this the local transaction needs
  * to update (and mark unused) any slot inbetween the old end and new slots.
  * */
-static void *
-claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
+static int
+claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)
 {
 	storage *s;
 
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
 	if ((s = bind_del_data(tr, t, NULL)) == NULL)
-		return NULL;
+		return LOG_ERR;
 
-	return claim_segments(tr, t, s, cnt); /* find slot(s) */
+	return claim_segments(tr, t, s, cnt, offset, offsets); /* find slot(s) */
 }
 
 static BAT *
