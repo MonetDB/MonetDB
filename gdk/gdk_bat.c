@@ -556,7 +556,7 @@ BATextend(BAT *b, BUN newcap)
 			  b->theap->filename, b->theap->size, theap_size);
 		MT_lock_set(&b->theaplock);
 		if (ATOMIC_GET(&b->theap->refs) == 1) {
-			rc = HEAPextend(b->theap, theap_size, true);
+			rc = HEAPextend(b->theap, theap_size, b->batRestricted == BAT_READ);
 		} else {
 			MT_lock_unset(&b->theaplock);
 			Heap *h = HEAPgrow(b->theap, theap_size);
