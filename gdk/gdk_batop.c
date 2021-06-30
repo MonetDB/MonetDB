@@ -1143,24 +1143,48 @@ BATdel(BAT *b, BAT *d)
 }
 
 /*
- * The last in this series is a BATreplace, which replaces all the
- * buns mentioned.
+ * Replace all values in b with values from n whose location is given by
+ * the oid in either p or positions.
+ * If positions is used, autoincr specifies whether it is the first of a
+ * dense range of positions or whether it is a full-blown array of
+ * position.
+ * If mayappend is set, the position in p/positions may refer to
+ * locations beyond the end of b.
  */
 static gdk_return
-BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
+BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
+		    bool mayappend, bool autoincr, bool force)
 {
 	lng t0 = GDKusec();
+	oid pos = oid_nil;
 
 	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
 		return GDK_SUCCEED;
 	}
-	if (BATcount(p) != BATcount(n)) {
-		GDKerror("update BATs not the same size\n");
-		return GDK_FAIL;
-	}
-	if (ATOMtype(p->ttype) != TYPE_oid) {
-		GDKerror("positions BAT not type OID\n");
-		return GDK_FAIL;
+	/* either p or positions */
+	assert((p == NULL) != (positions == NULL));
+	if (p != NULL) {
+		if (BATcount(p) != BATcount(n)) {
+			GDKerror("update BATs not the same size\n");
+			return GDK_FAIL;
+		}
+		if (ATOMtype(p->ttype) != TYPE_oid) {
+			GDKerror("positions BAT not type OID\n");
+			return GDK_FAIL;
+		}
+		if (BATtdense(p)) {
+			pos = p->tseqbase;
+			positions = &pos;
+			autoincr = true;
+			p = NULL;
+		} else if (p->ttype != TYPE_void) {
+			positions = (const oid *) Tloc(p, 0);
+			autoincr = false;
+		} else {
+			autoincr = false;
+		}
+	} else if (autoincr) {
+		pos = *positions;
 	}
 	if (BATcount(n) == 0) {
 		return GDK_SUCCEED;
@@ -1172,15 +1196,6 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 
 	BATiter bi = bat_iterator_nolock(b);
 	BATiter ni = bat_iterator(n);
-#if 0 /* questionable: what if p point outside b, even if !mayappend? */
-	if (BATcount(b) == 0 ||
-	    (b->tsorted && b->trevsorted &&
-	     n->tsorted && n->trevsorted &&
-	     ATOMcmp(b->ttype, BUNtail(bi, 0), BUNtail(ni, 0)) == 0)) {
-		bat_iterator_end(&ni);
-		return GDK_SUCCEED;
-	}
-#endif
 
 	OIDXdestroy(b);
 	IMPSdestroy(b);
@@ -1204,8 +1219,13 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 	b->theap->dirty = true;
 	if (b->tvarsized) {
 		b->tvheap->dirty = true;
-		for (BUN i = 0, j = BATcount(p); i < j; i++) {
-			oid updid = BUNtoid(p, i);
+		for (BUN i = 0; i < ni.count; i++) {
+			oid updid;
+			if (positions) {
+				updid = autoincr ? pos++ : *positions++;
+			} else {
+				updid = BUNtoid(p, i);
+			}
 
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
@@ -1350,8 +1370,13 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 		}
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
-		for (BUN i = 0, j = BATcount(p); i < j; i++) {
-			oid updid = BUNtoid(p, i);
+		for (BUN i = 0; i < ni.count; i++) {
+			oid updid;
+			if (positions) {
+				updid = autoincr ? pos++ : *positions++;
+			} else {
+				updid = BUNtoid(p, i);
+			}
 
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
@@ -1381,32 +1406,30 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			}
 			mskSetVal(b, updid, Tmskval(&ni, i));
 		}
-	} else if (BATtdense(p)) {
-		oid updid = BUNtoid(p, 0);
-
-		if (updid < b->hseqbase ||
-		    (!mayappend && updid + BATcount(p) > hseqend)) {
+	} else if (autoincr) {
+		if (pos < b->hseqbase ||
+		    (!mayappend && pos + ni.count > hseqend)) {
 			GDKerror("id out of range\n");
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
-		updid -= b->hseqbase;
-		if (!force && updid < b->batInserted) {
+		pos -= b->hseqbase;
+		if (!force && pos < b->batInserted) {
 			GDKerror("updating committed value\n");
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
 
-		if (updid >= BATcount(b)) {
+		if (pos >= BATcount(b)) {
 			assert(mayappend);
 			bat_iterator_end(&ni);
-			while (BATcount(b) < updid) {
+			while (BATcount(b) < pos) {
 				if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
 					return GDK_FAIL;
 			}
 			return BATappend(b, n, NULL, force);
 		}
-		while (updid + ni.count > BATcount(b)) {
+		while (pos + ni.count > BATcount(b)) {
 			if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
 				bat_iterator_end(&ni);
 				return GDK_FAIL;
@@ -1425,11 +1448,11 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 		 * in the first iteration, after which there is no hash
 		 * and the loop ends */
 		MT_rwlock_wrlock(&b->thashlock);
-		for (BUN i = updid, j = updid + BATcount(p); i < j && b->thash; i++)
+		for (BUN i = pos, j = pos + ni.count; i < j && b->thash; i++)
 			HASHdelete_locked(b, i, Tloc(b, i));
 		if (n->ttype == TYPE_void) {
 			assert(b->ttype == TYPE_oid);
-			oid *o = Tloc(b, updid);
+			oid *o = Tloc(b, pos);
 			if (is_oid_nil(ni.tseq)) {
 				/* we may or may not overwrite the old
 				 * min/max values */
@@ -1437,7 +1460,7 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				BATrmprop(b, GDK_MIN_VALUE);
 				BATrmprop(b, GDK_MAX_POS);
 				BATrmprop(b, GDK_MIN_POS);
-				for (BUN i = 0, j = BATcount(p); i < j; i++)
+				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = oid_nil;
 				b->tnil = true;
 			} else {
@@ -1447,16 +1470,16 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 				 * are smaller/larger than the old */
 				if (minprop && v <= minprop->val.oval) {
 					BATsetprop(b, GDK_MIN_VALUE, TYPE_oid, &v);
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
+					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){pos});
 				} else {
 					BATrmprop(b, GDK_MIN_VALUE);
 					BATrmprop(b, GDK_MIN_POS);
 				}
-				for (BUN i = 0, j = BATcount(p); i < j; i++)
+				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = v++;
 				if (maxprop && --v >= maxprop->val.oval) {
 					BATsetprop(b, GDK_MAX_VALUE, TYPE_oid, &v);
-					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){updid + BATcount(p) - 1});
+					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){pos + ni.count - 1});
 				} else {
 					BATrmprop(b, GDK_MAX_VALUE);
 					BATrmprop(b, GDK_MAX_POS);
@@ -1473,7 +1496,7 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			    atomcmp(VALptr(maxprop), VALptr(prop)) <= 0) {
 				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(prop));
 				if ((prop = BATgetprop(n, GDK_MAX_POS)) != NULL)
-					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){prop->val.oval + updid});
+					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){prop->val.oval + pos});
 				else
 					BATrmprop(b, GDK_MAX_POS);
 			} else {
@@ -1485,26 +1508,26 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			    atomcmp(VALptr(minprop), VALptr(prop)) >= 0) {
 				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(prop));
 				if ((prop = BATgetprop(n, GDK_MIN_POS)) != NULL)
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){prop->val.oval + updid});
+					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){prop->val.oval + pos});
 				else
 					BATrmprop(b, GDK_MIN_POS);
 			} else {
 				BATrmprop(b, GDK_MIN_VALUE);
 				BATrmprop(b, GDK_MIN_POS);
 			}
-			memcpy(Tloc(b, updid), ni.base,
-			       BATcount(p) * b->twidth);
+			memcpy(Tloc(b, pos), ni.base,
+			       ni.count * b->twidth);
 		}
 		/* either we have a hash that was updated above, or we
 		 * have no hash; we cannot have the case where there is
 		 * only a persisted (unloaded) hash since it would have
 		 * been destroyed above */
 		if (b->thash != NULL) {
-			for (BUN i = updid, j = updid + BATcount(p); i < j; i++)
+			for (BUN i = pos, j = pos + ni.count; i < j; i++)
 				HASHinsert_locked(b, i, Tloc(b, i));
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
-		if (BATcount(p) == BATcount(b)) {
+		if (ni.count == BATcount(b)) {
 			/* if we replaced all values of b by values
 			 * from n, we can also copy the min/max
 			 * properties */
@@ -1530,8 +1553,14 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 			}
 		}
 	} else {
-		for (BUN i = 0, j = BATcount(p); i < j; i++) {
-			oid updid = BUNtoid(p, i);
+		for (BUN i = 0, j = ni.count; i < j; i++) {
+			oid updid;
+			if (positions) {
+				/* assert(!autoincr) */
+				updid = *positions++;
+			} else {
+				updid = BUNtoid(p, i);
+			}
 
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
@@ -1659,14 +1688,29 @@ BATappend_or_update(BAT *b, BAT *p, BAT *n, bool mayappend, bool force)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	return BATappend_or_update(b, p, n, false, force);
+	return BATappend_or_update(b, p, NULL, n, false, false, force);
 }
 
 /* like BATreplace, but p may specify locations beyond the end of b */
 gdk_return
 BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 {
-	return BATappend_or_update(b, p, n, true, force);
+	return BATappend_or_update(b, p, NULL, n, true, false, force);
+}
+
+/* like BATreplace, but the positions are given by an array of oid values */
+gdk_return
+BATreplacepos(BAT *b, const oid *positions, BAT *n, bool force)
+{
+	return BATappend_or_update(b, NULL, positions, n, false, false, force);
+}
+
+/* like BATreplace, but the positions are given by an array of oid
+ * values, and they may specify locations beyond the end of b */
+gdk_return
+BATupdatepos(BAT *b, const oid *positions, BAT *n, bool force)
+{
+	return BATappend_or_update(b, NULL, positions, n, true, false, force);
 }
 
 /*
