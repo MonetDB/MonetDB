@@ -480,6 +480,11 @@ typedef struct sqlstore {
 	void *logger;			/* space to keep logging structure of storage backend */
 } sqlstore;
 
+typedef struct sql_dependency_change {
+	sqlid objid; /* id of the object where the dependency was created */
+	ulng ts; /* committed timestamp */
+} sql_dependency_change;
+
 typedef struct sql_change {
 	sql_base *obj;
 	ulng ts;        /* commit/rollback timestamp */
