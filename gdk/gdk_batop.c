@@ -1158,7 +1158,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	lng t0 = GDKusec();
 	oid pos = oid_nil;
 
-	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
+	if (b == NULL || b->ttype == TYPE_void || n == NULL) {
 		return GDK_SUCCEED;
 	}
 	/* either p or positions */
@@ -1696,17 +1696,17 @@ BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 
 /* like BATreplace, but the positions are given by an array of oid values */
 gdk_return
-BATreplacepos(BAT *b, const oid *positions, BAT *n, bool force)
+BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
-	return BATappend_or_update(b, NULL, positions, n, false, false, force);
+	return BATappend_or_update(b, NULL, positions, n, false, autoincr, force);
 }
 
 /* like BATreplace, but the positions are given by an array of oid
  * values, and they may specify locations beyond the end of b */
 gdk_return
-BATupdatepos(BAT *b, const oid *positions, BAT *n, bool force)
+BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
-	return BATappend_or_update(b, NULL, positions, n, true, false, force);
+	return BATappend_or_update(b, NULL, positions, n, true, autoincr, force);
 }
 
 /*
