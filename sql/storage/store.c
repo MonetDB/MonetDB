@@ -1676,23 +1676,18 @@ id_hash(sqlid *id)
 static void
 id_hash_clear(sql_hash *h)
 {
-	if (h == NULL || h->sa)
+	if (h == NULL || h->sa || h->entries == 0)
 		return;
 	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL;
+		sql_hash_e *e = h->buckets[i];
 
-		if (e) {
+		while (e) {
+			sql_hash_e *next = e->chain;
+
 			_DELETE(e->value);
-			c = e->chain;
+			_DELETE(e);
+			e = next;
 		}
-		while (c) {
-			sql_hash_e *next = c->chain;
-
-			_DELETE(c->value);
-			_DELETE(c);
-			c = next;
-		}
-		_DELETE(e);
 		h->buckets[i] = NULL;
 	}
 	h->entries = 0;
@@ -1704,20 +1699,15 @@ id_hash_destroy(sql_hash *h)
 	if (h == NULL || h->sa)
 		return;
 	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL;
+		sql_hash_e *e = h->buckets[i];
 
-		if (e) {
+		while (e) {
+			sql_hash_e *next = e->chain;
+
 			_DELETE(e->value);
-			c = e->chain;
+			_DELETE(e);
+			e = next;
 		}
-		while (c) {
-			sql_hash_e *next = c->chain;
-
-			_DELETE(c->value);
-			_DELETE(c);
-			c = next;
-		}
-		_DELETE(e);
 	}
 	_DELETE(h->buckets);
 	_DELETE(h);
@@ -2175,6 +2165,35 @@ store_resume_log(sqlstore *store)
 }
 
 static void
+id_hash_clear_older(sql_hash *h, ulng oldest)
+{
+	for (int i = 0; i < h->size; i++) {
+		sql_hash_e *e = h->buckets[i], *c = NULL, *first = NULL;
+
+		while (e) {
+			sql_hash_e *next = e->chain;
+			sql_dependency_change *dc = e->value;
+
+			if (dc->ts < oldest) {
+				_DELETE(e->value);
+				_DELETE(e);
+				h->entries--;
+			} else {
+				if (c)
+					c->chain = e;
+				else
+					first = e;
+				c = e;
+			}
+			e = next;
+		}
+		if (c)
+			c->chain = NULL;
+		h->buckets[i] = first;
+	}
+}
+
+static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
 	ulng oldest_changes = store_get_timestamp(store);
@@ -2194,6 +2213,10 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			n = next;
 		}
 	}
+	if (!hash_empty(store->dependencies))
+		id_hash_clear_older(store->dependencies, oldest);
+	if (!hash_empty(store->removals))
+		id_hash_clear_older(store->removals, oldest);
 	store->oldest_pending = oldest_changes;
 }
 
@@ -3416,11 +3439,11 @@ sql_trans_rollback(sql_trans *tr)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
 		}
-		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
 			id_hash_clear(store->removals);
 		}
+		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3438,12 +3461,12 @@ sql_trans_rollback(sql_trans *tr)
 		store_unlock(store);
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		store_lock(store);
-		ulng oldest = store_timestamp(store);
-		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
 			id_hash_clear(store->removals);
 		}
+		ulng oldest = store_timestamp(store);
+		store_pending_changes(store, oldest);
 		store_unlock(store);
 	}
 	if (tr->localtmps.dset) {
@@ -3598,21 +3621,25 @@ sql_trans_valid(sql_trans *tr)
 	return ok;
 }
 
-static int
-transaction_add_hash_entry(sql_hash *h, sqlid id)
+static inline int
+transaction_add_hash_entry(sql_hash *h, sqlid id, ulng commit_ts)
 {
 	int key = h->key(&id);
-	sqlid *local_id = MNEW(sqlid);
+	sql_dependency_change *next_change = MNEW(sql_dependency_change);
 
-	if (!local_id)
+	if (!next_change)
 		return LOG_ERR;
-	*local_id = id;
-	hash_add(h, key, local_id);
+	*next_change = (sql_dependency_change) {
+		.objid = id,
+		.ts = commit_ts
+	};
+
+	hash_add(h, key, next_change);
 	return LOG_OK;
 }
 
 static int
-transaction_check_dependencies_and_removals(sql_trans *tr)
+transaction_check_dependencies_and_removals(sql_trans *tr, ulng commit_ts)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
@@ -3625,9 +3652,9 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 			sql_hash_e *he = store->removals->buckets[key&(store->removals->size-1)];
 
 			for (; he && ok == LOG_OK; he = he->chain) {
-				sqlid nid = *(sqlid*) he->value;
+				sql_dependency_change *nid = (sql_dependency_change*) he->value;
 
-				if (id == nid)
+				if (id == nid->objid)
 					ok = LOG_CONFLICT;
 			}
 		}
@@ -3639,9 +3666,9 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 			sql_hash_e *he = store->dependencies->buckets[key&(store->dependencies->size-1)];
 
 			for (; he && ok == LOG_OK; he = he->chain) {
-				sqlid nid = *(sqlid*) he->value;
+				sql_dependency_change *nid = (sql_dependency_change*) he->value;
 
-				if (id == nid)
+				if (id == nid->objid)
 					ok = LOG_CONFLICT;
 			}
 		}
@@ -3649,10 +3676,10 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 	/* if all checks passed, add them to the storage */
 	if (ok == LOG_OK && !list_empty(tr->dependencies))
 		for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next)
-			ok = transaction_add_hash_entry(store->dependencies, *(sqlid*)n->data);
+			ok = transaction_add_hash_entry(store->dependencies, *(sqlid*)n->data, commit_ts);
 	if (ok == LOG_OK && !list_empty(tr->removals))
 		for (node *n = tr->removals->h; n && ok == LOG_OK; n = n->next)
-			ok = transaction_add_hash_entry(store->removals, *(sqlid*)n->data);
+			ok = transaction_add_hash_entry(store->removals, *(sqlid*)n->data, commit_ts);
 	return ok;
 }
 
@@ -3673,108 +3700,102 @@ sql_trans_commit(sql_trans *tr)
 		store_unlock(store);
 	}
 
-	if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->removals))) {
+	if (!list_empty(tr->changes) || (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->removals)))) {
+		int flush = 0;
+		ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+
 		MT_lock_set(&store->commit);
 		store_lock(store);
+		ulng oldest = store_oldest(store);
+		store_pending_changes(store, oldest);
+		oldest = store_oldest_pending(store);
 
-		if ((ok = transaction_check_dependencies_and_removals(tr)) != LOG_OK) {
+		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->removals)) &&
+			(ok = transaction_check_dependencies_and_removals(tr, commit_ts)) != LOG_OK) {
 			store_unlock(store);
 			MT_lock_unset(&store->commit);
 			sql_trans_rollback(tr);
 			return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 		}
 		store_unlock(store);
-		MT_lock_unset(&store->commit);
-	}
+		if (!list_empty(tr->changes)) {
+			/* log changes should only be done if there is something to log */
+			if (!tr->parent && tr->logchanges > 0) {
+				int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
+				flush = (tr->logchanges > min_changes && list_empty(store->changes));
+				if (flush)
+					MT_lock_set(&store->flush);
+				ok = store->logger_api.log_tstart(store, flush);
+				/* log */
+				for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+					sql_change *c = n->data;
 
-	if (!list_empty(tr->changes)) {
-		MT_lock_set(&store->commit);
-		store_lock(store);
-
-		ulng oldest = store_oldest(store);
-		store_pending_changes(store, oldest);
-		oldest = store_oldest_pending(store);
-		store_unlock(store);
-		ulng commit_ts = 0;
-		int flush = 0;
-		/* log changes should only be done if there is something to log */
-		if (!tr->parent && tr->logchanges > 0) {
-			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
-			flush = (tr->logchanges > min_changes && list_empty(store->changes));
-			if (flush)
-				MT_lock_set(&store->flush);
-			ok = store->logger_api.log_tstart(store, flush);
-			/* log */
+					if (c->log && ok == LOG_OK)
+						ok = c->log(tr, c);
+				}
+				if (ok == LOG_OK && store->prev_oid != store->obj_id)
+					ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
+				store->prev_oid = store->obj_id;
+				store_lock(store);
+				if (ok == LOG_OK && !flush)
+					ok = store->logger_api.log_tend(store, commit_ts);
+			} else {
+				oldest = tr->parent ? commit_ts : oldest;
+				if (tr->parent)
+					tr->parent->logchanges += tr->logchanges;
+				store_lock(store);
+			}
+			tr->logchanges = 0;
+			TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
+			/* apply committed changes */
+			if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
+				id_hash_clear(store->dependencies);
+				id_hash_clear(store->removals);
+				oldest = commit_ts;
+				store_pending_changes(store, oldest);
+			}
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
 
-				if (c->log && ok == LOG_OK)
-					ok = c->log(tr, c);
+				if (c->commit && ok == LOG_OK)
+					ok = c->commit(tr, c, commit_ts, oldest);
+				else
+					c->obj->new = 0;
+				c->ts = commit_ts;
 			}
-			if (ok == LOG_OK && store->prev_oid != store->obj_id)
-				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
-			store->prev_oid = store->obj_id;
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			if (ok == LOG_OK && !flush)
+			/* when directly flushing: flush logger after changes got applied */
+			if (ok == LOG_OK && flush) {
 				ok = store->logger_api.log_tend(store, commit_ts);
-		} else {
-			store_lock(store);
-			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-			oldest = tr->parent ? commit_ts : oldest;
-			if (tr->parent)
-				tr->parent->logchanges += tr->logchanges;
-		}
-		tr->logchanges = 0;
-		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
-		/* apply committed changes */
-		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			oldest = commit_ts;
-			store_pending_changes(store, oldest);
-			id_hash_clear(store->dependencies);
-			id_hash_clear(store->removals);
-		}
-		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
-			sql_change *c = n->data;
-
-			if (c->commit && ok == LOG_OK)
-				ok = c->commit(tr, c, commit_ts, oldest);
-			else
-				c->obj->new = 0;
-			c->ts = commit_ts;
-		}
-		/* when directly flushing: flush logger after changes got applied */
-		if (ok == LOG_OK && flush) {
-			ok = store->logger_api.log_tend(store, commit_ts);
-			MT_lock_unset(&store->flush);
-		}
-		/* garbage collect */
-		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
-			node *next = n->next;
-			sql_change *c = n->data;
-
-			if (!c->cleanup || c->cleanup(store, c, oldest)) {
-				_DELETE(c);
-			} else if (tr->parent) { /* need to keep everything */
-				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
-			} else {
-				store->changes = sa_list_append(tr->sa, store->changes, c);
+				MT_lock_unset(&store->flush);
 			}
-			n = next;
+			/* garbage collect */
+			for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
+				node *next = n->next;
+				sql_change *c = n->data;
+
+				if (!c->cleanup || c->cleanup(store, c, oldest)) {
+					_DELETE(c);
+				} else if (tr->parent) { /* need to keep everything */
+					tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
+				} else {
+					store->changes = sa_list_append(tr->sa, store->changes, c);
+				}
+				n = next;
+			}
+			store_unlock(store);
+			list_destroy(tr->changes);
+			tr->changes = NULL;
+			tr->ts = commit_ts;
 		}
-		list_destroy(tr->changes);
-		tr->changes = NULL;
-		tr->ts = commit_ts;
-		store_unlock(store);
 		MT_lock_unset(&store->commit);
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		store_lock(store);
-		ulng oldest = store_timestamp(store);
-		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
 			id_hash_clear(store->removals);
 		}
+		ulng oldest = store_timestamp(store);
+		store_pending_changes(store, oldest);
 		store_unlock(store);
 	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
