@@ -132,18 +132,15 @@ typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
-/*
--- append/update to columns and indices
-typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, size_t offset, void *d, int t, size_t cnt);
-typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, size_t offset, void *d, int t, size_t cnt);
-*/
+typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *d, BUN cnt, int t);
+typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *d, BUN cnt, int t);
+
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
-typedef void * (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
+typedef int (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets);
 typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
-
 /*
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
@@ -208,8 +205,8 @@ typedef struct store_functions {
 	bind_idx_fptr bind_idx;
 	bind_cands_fptr bind_cands;
 
-	update_col_fptr append_col;
-	update_idx_fptr append_idx;
+	append_col_fptr append_col;
+	append_idx_fptr append_idx;
 
 	update_col_fptr update_col;
 	update_idx_fptr update_idx;
@@ -262,7 +259,8 @@ typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *i
 
 typedef int (*log_isnew_fptr)(struct sqlstore *store);
 typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush);
-typedef int (*log_tend_fptr) (struct sqlstore *store, ulng commit_ts);
+typedef int (*log_tend_fptr) (struct sqlstore *store);
+typedef int (*log_tdone_fptr) (struct sqlstore *store, ulng commit_ts);
 typedef lng (*log_save_id_fptr) (struct sqlstore *store);
 typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
 
@@ -295,6 +293,7 @@ typedef struct logger_functions {
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
+	log_tdone_fptr log_tdone;
 	log_save_id_fptr log_save_id;
 	log_sequence_fptr log_sequence;
 } logger_functions;
