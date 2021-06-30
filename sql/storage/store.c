@@ -3661,34 +3661,35 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
-	bool locked = false;
 
-	if (!tr->parent && !list_empty(tr->predicates)) {
-		MT_lock_set(&store->commit);
+	if (!tr->parent && !list_empty(tr->predicates) && !list_empty(tr->changes)) {
 		store_lock(store);
-		locked = true;
 
 		if ((ok = sql_trans_valid(tr)) != LOG_OK) {
 			store_unlock(store);
-			MT_lock_unset(&store->commit);
 			sql_trans_rollback(tr);
 			return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 		}
+		store_unlock(store);
 	}
 
-	if (!list_empty(tr->changes)) {
-		if (!locked) {
-			MT_lock_set(&store->commit);
-			store_lock(store);
-			locked = true;
-		}
+	if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->removals))) {
+		MT_lock_set(&store->commit);
+		store_lock(store);
 
-		if (!tr->parent && (ok = transaction_check_dependencies_and_removals(tr)) != LOG_OK) {
+		if ((ok = transaction_check_dependencies_and_removals(tr)) != LOG_OK) {
 			store_unlock(store);
 			MT_lock_unset(&store->commit);
 			sql_trans_rollback(tr);
 			return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 		}
+		store_unlock(store);
+		MT_lock_unset(&store->commit);
+	}
+
+	if (!list_empty(tr->changes)) {
+		MT_lock_set(&store->commit);
+		store_lock(store);
 
 		ulng oldest = store_oldest(store);
 		store_pending_changes(store, oldest);
@@ -3764,9 +3765,10 @@ sql_trans_commit(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->ts = commit_ts;
+		store_unlock(store);
+		MT_lock_unset(&store->commit);
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
-		if (!locked)
-			store_lock(store);
+		store_lock(store);
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
@@ -3774,13 +3776,6 @@ sql_trans_commit(sql_trans *tr)
 			id_hash_clear(store->removals);
 		}
 		store_unlock(store);
-		if (locked)
-			MT_lock_unset(&store->commit);
-		locked = false;
-	}
-	if (locked) {
-		store_unlock(store);
-		MT_lock_unset(&store->commit);
 	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
