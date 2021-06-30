@@ -816,4 +816,21 @@ create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀�
 statement error
 select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
 
+statement ok
+create table thisnamewontconflict(y int, z int)
 
+statement ok rowcount 3
+insert into thisnamewontconflict values (1, 2), (9, 8), (5, 4)
+
+statement ok
+start transaction
+
+statement ok
+alter table thisnamewontconflict drop column y
+
+statement ok
+rollback
+
+# when the leak gets fixed the table can be dropped
+#statement ok
+#drop table thisnamewontconflict
