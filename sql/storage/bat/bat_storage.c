@@ -3652,7 +3652,7 @@ key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offset
 	lock_table(tr->store, t->base.id);
 	if ((res = segments_conflict(tr, s->segs, 1))) {
 		unlock_table(tr->store, t->base.id);
-		return res;
+		return LOG_CONFLICT;
 	}
 	res = claim_segments(tr, t, s, cnt, offset, offsets, true); /* find slot(s) */
 	unlock_table(tr->store, t->base.id);
