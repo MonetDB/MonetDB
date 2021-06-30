@@ -3612,7 +3612,7 @@ sql_trans_valid(sql_trans *tr)
 			pl *p = n->data;
 			sql_column *c = p->c;
 
-			if (c->t && isTable(c->t) && !isNew(c->t) && !isTempTable(c->t)) {
+			if (c->t && isTable(c->t) && !isNew(c) && !isTempTable(c->t)) {
 				if ((ok = store->storage_api.tab_validate(tr, c->t, 0)))
 					break;
 			}
