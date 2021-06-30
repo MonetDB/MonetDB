@@ -1244,11 +1244,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
-				while (BATcount(b) < updid) {
-					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
+				if (BATcount(b) < updid &&
+				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
 				if (BUNappend(b, new, force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
@@ -1392,11 +1391,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
-				while (BATcount(b) < updid) {
-					if (BUNappend(b, &(msk){false}, force) != GDK_SUCCEED) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
+				if (BATcount(b) < updid &&
+				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
 				if (BUNappend(b, Tmsk(&ni, i), force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
@@ -1423,17 +1421,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		if (pos >= BATcount(b)) {
 			assert(mayappend);
 			bat_iterator_end(&ni);
-			while (BATcount(b) < pos) {
-				if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED)
-					return GDK_FAIL;
+			if (BATcount(b) < pos &&
+			    BUNappendmulti(b, NULL, (BUN) (pos - BATcount(b)), force) != GDK_SUCCEED) {
+				return GDK_FAIL;
 			}
 			return BATappend(b, n, NULL, force);
 		}
-		while (pos + ni.count > BATcount(b)) {
-			if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
-			}
+		if (pos + ni.count > BATcount(b) &&
+		    BUNappendmulti(b, NULL, (BUN) (pos + ni.count - BATcount(b)), force) != GDK_SUCCEED) {
+			bat_iterator_end(&ni);
+			return GDK_FAIL;
 		}
 
 		/* we copy all of n, so if there are nils in n we get
@@ -1579,11 +1576,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
-				while (BATcount(b) < updid) {
-					if (BUNappend(b, ATOMnilptr(b->ttype), force) != GDK_SUCCEED) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
+				if (BATcount(b) < updid &&
+				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
 				if (BUNappend(b, new, force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
