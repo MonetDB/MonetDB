@@ -56,7 +56,7 @@ unshare_varsized_heap(BAT *b)
  * of inserting individual strings.  See the comments in the code for
  * more information. */
 static gdk_return
-insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
+insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare)
 {
 	BATiter ni;		/* iterator */
 	size_t toff = ~(size_t) 0;	/* tail offset */
@@ -147,14 +147,24 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				(var_t) 1 << 17;
 			MT_thread_setalgorithm("copy vheap, copy heap");
 			if (b->tvheap->size < ni.vh->free) {
-				Heap *h = HEAPgrow(b->tvheap, ni.vh->free);
-				if (h == NULL) {
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
-				}
 				MT_lock_set(&b->theaplock);
-				HEAPdecref(b->tvheap, false);
-				b->tvheap = h;
+				if (ATOMIC_GET(&b->tvheap->refs) == 1) {
+					if (HEAPextend(b->tvheap, ni.vh->free, force) != GDK_SUCCEED) {
+						MT_lock_unset(&b->theaplock);
+						bat_iterator_end(&ni);
+						return GDK_FAIL;
+					}
+				} else {
+					MT_lock_unset(&b->theaplock);
+					Heap *h = HEAPgrow(b->tvheap, ni.vh->free);
+					if (h == NULL) {
+						bat_iterator_end(&ni);
+						return GDK_FAIL;
+					}
+					MT_lock_set(&b->theaplock);
+					HEAPdecref(b->tvheap, false);
+					b->tvheap = h;
+				}
 				MT_lock_unset(&b->theaplock);
 			}
 			memcpy(b->tvheap->base, ni.vh->base, ni.vh->free);
@@ -200,14 +210,24 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				/* if in "force" mode, the heap may be
 				 * shared when memory mapped */
-				Heap *h = HEAPgrow(b->tvheap, toff + ni.vh->size);
-				if (h == NULL) {
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
-				}
 				MT_lock_set(&b->theaplock);
-				HEAPdecref(b->tvheap, false);
-				b->tvheap = h;
+				if (ATOMIC_GET(&b->tvheap->refs) == 1) {
+					if (HEAPextend(b->tvheap, toff + ni.vh->size, force) != GDK_SUCCEED) {
+						MT_lock_unset(&b->theaplock);
+						bat_iterator_end(&ni);
+						return GDK_FAIL;
+					}
+				} else {
+					MT_lock_unset(&b->theaplock);
+					Heap *h = HEAPgrow(b->tvheap, toff + ni.vh->size);
+					if (h == NULL) {
+						bat_iterator_end(&ni);
+						return GDK_FAIL;
+					}
+					MT_lock_set(&b->theaplock);
+					HEAPdecref(b->tvheap, false);
+					b->tvheap = h;
+				}
 				MT_lock_unset(&b->theaplock);
 				MT_thread_setalgorithm("append vheap");
 				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vh->free);
@@ -896,7 +916,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->tnil |= n->tnil && cnt == ni.count;
 	}
 	if (b->ttype == TYPE_str) {
-		if (insert_string_bat(b, n, &ci, mayshare) != GDK_SUCCEED) {
+		if (insert_string_bat(b, n, &ci, force, mayshare) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
