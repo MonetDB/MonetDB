@@ -1517,7 +1517,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
-	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBPquickdesc(VIEWvtparent(b), false)))
+	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b))))
 		v = COLcopy(b, b->ttype, true, TRANSIENT);
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"

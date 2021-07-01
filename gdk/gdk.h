@@ -559,7 +559,8 @@ typedef struct {
 	bte farmid;		/* id of farm where heap is located */
 	bool cleanhash:1,	/* string heaps must clean hash */
 		dirty:1,	/* specific heap dirty marker */
-		remove:1;	/* remove storage file when freeing */
+		remove:1,	/* remove storage file when freeing */
+		wasempty:1;	/* heap was empty when last saved/created */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -1090,6 +1091,10 @@ gdk_export gdk_return BATdel(BAT *b, BAT *d)
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
 /* Functions to perform a binary search on a sorted BAT.

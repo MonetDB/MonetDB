@@ -855,6 +855,9 @@ BATsave_locked(BAT *bd)
 	if (b->tvheap)
 		HEAPdecref(b->tvheap, false);
 	if (err == GDK_SUCCEED) {
+		bd->theap->wasempty = hs.wasempty;
+		if (bd->tvheap)
+			bd->tvheap->wasempty = vhs.wasempty;
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
 		if (bd->thash && bd->thash != (Hash *) 1)

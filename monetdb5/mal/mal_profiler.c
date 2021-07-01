@@ -327,7 +327,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					BAT *v;
 					cnt = BATcount(d);
 					if(isVIEW(d)){
-						v= BBPquickdesc(VIEWtparent(d), false);
+						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
 									",\"view\":\"true\""
 									",\"parent\":%d"
