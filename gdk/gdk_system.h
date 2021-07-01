@@ -187,6 +187,7 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 #define USE_NATIVE_LOCKS 1
 
 #ifdef LOCK_STATS
+#include "gdk_tracer.h"
 
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
@@ -453,7 +454,7 @@ typedef struct MT_RWLock {
 	char name[MT_NAME_LEN];
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)	\
+#define MT_RWLOCK_INITIALIZER(n)				\
 	{ .lock = PTHREAD_RWLOCK_INITIALIZER, .name = #n, }
 
 #define MT_rwlock_init(l, n)					\
@@ -548,7 +549,7 @@ typedef struct MT_RWLock {
 	ATOMIC_TYPE readers;
 } MT_RWLock;
 
-#define MT_RWLOCK_INITIALIZER(n)	\
+#define MT_RWLOCK_INITIALIZER(n)					\
 	{ .lock = MT_LOCK_INITIALIZER(n), .readers = ATOMIC_VAR_INIT(0), }
 
 #define MT_rwlock_init(l, n)			\

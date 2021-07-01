@@ -182,7 +182,7 @@
 
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* DIFFER */	TYPE##_neq(w[p], pw)		,	\
@@ -309,7 +309,7 @@
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 		    	TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
@@ -420,7 +420,7 @@
 
 #define GRP_use_existing_hash_table_tpe(TYPE)			\
 	GRP_use_existing_hash_table(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
 	)
@@ -584,7 +584,7 @@ ctz(oid x)
 
 #define GRP_create_partial_hash_table_tpe(TYPE)			\
 	GRP_create_partial_hash_table(				\
-	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
+	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
@@ -625,6 +625,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const ValRecord *prop;
 	lng t0 = 0;
 	const char *algomsg = "";
+	bool locked = false;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -790,20 +791,22 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
-	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	gn = COLnew(hseqb, TYPE_oid, cnt, TRANSIENT);
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
+	maxgrps = BUN_NONE;
 	MT_rwlock_rdlock(&b->thashlock);
 	if (b->thash && b->thash != (Hash *) 1)
 		maxgrps = b->thash->nunique;
-	else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-		maxgrps = prop->val.oval;
-	else
-		maxgrps = cnt / 10;
 	MT_rwlock_rdunlock(&b->thashlock);
+	if (maxgrps == BUN_NONE) {
+		if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+			maxgrps = prop->val.oval;
+		else
+			maxgrps = cnt / 10;
+	}
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
@@ -812,18 +815,20 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	if (b->twidth <= 2)
-		maxgrps = (BUN) 1 << (8 * b->twidth);
+	bi = bat_iterator(b);
+
+	if (bi.width <= 2)
+		maxgrps = (BUN) 1 << (8 * bi.width);
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
-			goto error;
+			goto error1;
 		exts = (oid *) Tloc(en, 0);
 	}
 	if (histo) {
 		hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
 		if (hn == NULL)
-			goto error;
+			goto error1;
 		cnts = (lng *) Tloc(hn, 0);
 	}
 	ngrp = 0;
@@ -837,8 +842,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
-	if (t == TYPE_str && GDK_ELIMDOUBLES(b->tvheap)) {
-		switch (b->twidth) {
+	if (t == TYPE_str && GDK_ELIMDOUBLES(bi.vh)) {
+		switch (bi.width) {
 		case 1:
 			t = TYPE_bte;
 			break;
@@ -923,7 +928,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* array to maintain last time we saw each old group */
 		pgrp = GDKmalloc(sizeof(BUN) * j);
 		if (pgrp == NULL)
-			goto error;
+			goto error1;
 		/* initialize to impossible position */
 		memset(pgrp, ~0, sizeof(BUN) * j);
 
@@ -965,12 +970,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 256 groups, so the group id
 		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
-		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
+		const unsigned char *restrict w = (const unsigned char *) bi.base;
 		unsigned char v;
 
 		algomsg = "byte-sized groups -- ";
 		if (bgrps == NULL)
-			goto error;
+			goto error1;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
@@ -1000,12 +1005,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 65536 groups, so the group
 		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
+		const unsigned short *restrict w = (const unsigned short *) bi.base;
 		unsigned short v;
 
 		algomsg = "short-sized groups -- ";
 		if (sgrps == NULL)
-			goto error;
+			goto error1;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
@@ -1045,6 +1050,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * group */
 		bool phash = false;
 		algomsg = "existing hash -- ";
+		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash == NULL &&
 		    /* DISABLES CODE */ (0) &&
 		    (parent = VIEWtparent(b)) != 0) {
@@ -1052,13 +1058,21 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
 			BAT *b2 = BBPdescriptor(parent);
+			MT_rwlock_rdunlock(&b->thashlock);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
+			bat_iterator_end(&bi);
 			bi = bat_iterator(b);
+			MT_rwlock_rdlock(&b->thashlock);
 			algomsg = "existing parent hash -- ";
 			phash = true;
 		}
 		hs = b->thash;
+		if (hs == NULL) {
+			MT_rwlock_rdunlock(&b->thashlock);
+			goto lost_hash;
+		}
+		locked = true;
 		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
@@ -1092,14 +1106,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_use_existing_hash_table_any();
 			break;
 		}
+		MT_rwlock_rdunlock(&b->thashlock);
+		locked = false;
 	} else {
-		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
+		bool gc;
 		const char *nme;
 		BUN prb;
-		int bits = 0;
+		int bits;
 		BUN nbucket;
 		oid grp;
 
+	  lost_hash:
+		gc = g != NULL && (BATordered(g) || BATordered_rev(g));
+		bits = 0;
 		GDKclrerr();	/* not interested in BAThash errors */
 
 		/* not sorted, and no pre-existing hash table: we'll
@@ -1107,7 +1126,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
 		algomsg = "new partial hash -- ";
-		nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+		nme = GDKinmemory(bi.h->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 		if (grps && !gc) {
 			/* we manipulate the hash value after having
 			 * calculated it, and when doing that, we
@@ -1145,7 +1164,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
-			goto error;
+			goto error1;
 		}
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
@@ -1153,7 +1172,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
-			goto error;
+			goto error1;
 		}
 		gn->tsorted = true; /* be optimistic */
 
@@ -1165,7 +1184,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const bte *w = (bte *) Tloc(b, 0);
+				const bte *w = (bte *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
@@ -1182,7 +1201,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const sht *w = (sht *) Tloc(b, 0);
+				const sht *w = (sht *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
@@ -1199,7 +1218,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 				) {
 				ulng v;
-				const int *w = (int *) Tloc(b, 0);
+				const int *w = (int *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
@@ -1213,7 +1232,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #ifdef HAVE_HGE
 			if (grps) {
 				uhge v;
-				const lng *w = (lng *) Tloc(b, 0);
+				const lng *w = (lng *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),
@@ -1246,6 +1265,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
+	bat_iterator_end(&bi);
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
 		en->tkey = true;
@@ -1290,12 +1310,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
+  error1:
+	bat_iterator_end(&bi);
   error:
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
+	if (locked)
+		MT_rwlock_rdunlock(&b->thashlock);
 	if (gn)
 		BBPunfix(gn->batCacheid);
 	if (en)

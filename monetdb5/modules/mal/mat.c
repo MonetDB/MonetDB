@@ -184,8 +184,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(obb->batCacheid);
 		b->unused--;
 		if(b->unused == 0)
-			if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED) {
-				BBPunfix(b->batCacheid);
+			if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
 		if( !(!b->tnil || !b->tnonil)){
