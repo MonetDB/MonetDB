@@ -7,4 +7,5 @@ timeout_join
 timeout_aggr
 timeout_select
 stop
+test_vacuum
 
