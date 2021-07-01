@@ -455,6 +455,7 @@ STRMPfilter(BAT *b, char *q)
 	BUN i;
 	uint64_t qbmask;
 	uint64_t *ptr;
+	int zz = 0;
 
 
 	if (b->tstrimps == NULL)
@@ -471,15 +472,19 @@ STRMPfilter(BAT *b, char *q)
 	qbmask = STRMPmakebitstring(q, b->tstrimps);
 	ptr = (uint64_t *)b->tstrimps->strimps_base;
 
-
 	for (i = 0; i < b->batCount; i++) {
-		if ((*ptr & qbmask) == qbmask) {
+		if ((*(ptr + i) & qbmask) == qbmask) {
 			oid pos = i;
 			if (BUNappend(r, &pos, false) != GDK_SUCCEED)
 				goto sfilter_fail;
 		}
+		else {
+			zz++;
+		}
 	}
+	printf("filtered out: %d entries\n", zz);
 
+	r->tkey = true;
 	return virtualize(r);
 
 
