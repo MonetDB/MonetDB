@@ -303,7 +303,7 @@ BATcheckimprints(BAT *b)
 
 	if (/* DISABLES CODE */ (0) && VIEWtparent(b)) {
 		assert(b->timprints == NULL);
-		b = BBPdescriptor(VIEWtparent(b));
+		b = BBP_cache(VIEWtparent(b));
 	}
 
 	if (b->timprints == (Imprints *) 1) {
@@ -472,7 +472,7 @@ BATimprints(BAT *b)
 		/* views always keep null pointer and need to obtain
 		 * the latest imprint from the parent at query time */
 		s2 = b;		/* remember for ACCELDEBUG print */
-		b = BBPdescriptor(VIEWtparent(b));
+		b = BBP_cache(VIEWtparent(b));
 		assert(b);
 		if (BATcheckimprints(b))
 			return GDK_SUCCEED;

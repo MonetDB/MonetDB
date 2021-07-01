@@ -69,7 +69,8 @@ gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 //gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
 gdk_export gdk_return log_tstart(logger *lg, bool flush);
-gdk_export gdk_return log_tend(logger *lg, ulng commit_ts);
+gdk_export gdk_return log_tend(logger *lg);
+gdk_export gdk_return log_tdone(logger *lg, ulng commit_ts);
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 gdk_export log_bid logger_find_bat(logger *lg, log_id id);

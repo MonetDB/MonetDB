@@ -2729,7 +2729,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else if (phash) {
 		/* there is a hash on the parent which we should use */
 		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
-		BAT *b = BBPdescriptor(VIEWtparent(r));
+		BAT *b = BBP_cache(VIEWtparent(r));
 		TRC_DEBUG(ALGO, "%s(%s): using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
 			  __func__,
@@ -3299,7 +3299,7 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			/* average chain length */
 			rcost *= (double) cnt / nheads;
 		} else if ((parent = VIEWtparent(r)) != 0 &&
-			   (b = BBPdescriptor(parent)) != NULL &&
+			   (b = BBP_cache(parent)) != NULL &&
 			   BATcheckhash(b)) {
 			MT_rwlock_rdlock(&b->thashlock);
 			rhash = prhash = b->thash != NULL;
@@ -3743,7 +3743,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	rcnt = canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBPdescriptor(parent);
+		BAT *b = BBP_cache(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b) &&
 		    ATOMtype(l->ttype) == ATOMtype(b->ttype)) {
@@ -3751,7 +3751,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBPdescriptor(parent);
+		BAT *b = BBP_cache(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b) &&
 		    ATOMtype(r->ttype) == ATOMtype(b->ttype)) {
@@ -4087,14 +4087,14 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBPdescriptor(parent);
+		BAT *b = BBP_cache(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b) &&
 		    ATOMtype(l->ttype) == ATOMtype(b->ttype))
 			l = b;
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBPdescriptor(parent);
+		BAT *b = BBP_cache(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b) &&
 		    ATOMtype(r->ttype) == ATOMtype(b->ttype))

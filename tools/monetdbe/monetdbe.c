@@ -2027,6 +2027,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	node *n;
 	Symbol remote_prg = NULL;
 	BAT *pos = NULL;
+	BUN offset;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -2152,8 +2153,7 @@ remote_cleanup:
 	}
 
 	cnt = input[0]->count;
-	pos = store->storage_api.claim_tab(m->session->tr, t, cnt);
-	if (!pos) {
+	if (store->storage_api.claim_tab(m->session->tr, t, cnt, &offset, &pos) != LOG_OK) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Claim failed");
 		goto cleanup;
 	}
@@ -2213,7 +2213,7 @@ remote_cleanup:
 				bn->tnil = false;
 			}
 
-			if (store->storage_api.append_col(m->session->tr, c, pos, bn, TYPE_bat) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
 				bn->theap->base = prev_base;
 				bn->theap->size = prev_size;
 				BBPreclaim(bn);
@@ -2231,7 +2231,7 @@ remote_cleanup:
 				if (!d[j])
 					d[j] = (char*) nil;
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				goto cleanup;
 			}
@@ -2253,7 +2253,7 @@ remote_cleanup:
 					d[j] = timestamp_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2278,7 +2278,7 @@ remote_cleanup:
 					d[j] = date_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2303,7 +2303,7 @@ remote_cleanup:
 					d[j] = time_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2337,7 +2337,7 @@ remote_cleanup:
 					d[j] = b;
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}

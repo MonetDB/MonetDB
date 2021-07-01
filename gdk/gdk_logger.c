@@ -347,14 +347,24 @@ string_reader(logger *lg, BAT *b, lng nr)
 	/* handle strings */
 	if (b) {
 		char *t = buf;
+		/* chunked */
+#define CHUNK_SIZE 1024
+		char *strings[CHUNK_SIZE];
+		int cur = 0;
+
 		for(int i=0; i<nr && res == LOG_OK; i++) {
-			if (BUNappend(b, t, true) != GDK_SUCCEED)
+			strings[cur++] = t;
+			if (cur == CHUNK_SIZE && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
 				res = LOG_ERR;
+			if (cur == CHUNK_SIZE)
+				cur = 0;
 			/* find next */
 			while(*t)
 				t++;
 			t++;
 		}
+		if (cur && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
+			res = LOG_ERR;
 	}
 	GDKfree(buf);
 	return res;
@@ -2641,10 +2651,9 @@ new_logfile(logger *lg)
 }
 
 gdk_return
-log_tend(logger *lg, ulng commit_ts)
+log_tend(logger *lg)
 {
 	logformat l;
-	gdk_return res = GDK_SUCCEED;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tend %d\n", lg->tid);
@@ -2653,13 +2662,7 @@ log_tend(logger *lg, ulng commit_ts)
 	l.id = lg->tid;
 	if (lg->flushnow) {
 		lg->flushnow = 0;
-		gdk_return res = logger_commit(lg);
-		return res;
-	}
-
-	if (lg->current) {
-		lg->current->last_tid = lg->tid;
-		lg->current->last_ts = commit_ts;
+		return logger_commit(lg);
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -2667,13 +2670,25 @@ log_tend(logger *lg, ulng commit_ts)
 		return GDK_SUCCEED;
 	}
 
-	if (res != GDK_SUCCEED ||
-	    log_write_format(lg, &l) != GDK_SUCCEED ||
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 	    new_logfile(lg) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+gdk_return
+log_tdone(logger *lg, ulng commit_ts)
+{
+	if (lg->debug & 1)
+		fprintf(stderr, "#log_tdone %d\n", lg->tid);
+
+	if (lg->current) {
+		lg->current->last_tid = lg->tid;
+		lg->current->last_ts = commit_ts;
 	}
 	return GDK_SUCCEED;
 }

@@ -1085,12 +1085,21 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		Heap *new = HEAPgrow(heap, newsize);
-		if (new == NULL)
-			return 0;
 		MT_lock_set(&b->theaplock);
-		HEAPdecref(heap, false);
-		b->tvheap = heap = new;
+		if (ATOMIC_GET(&heap->refs) == 1) {
+			if (HEAPextend(heap, newsize, false) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
+				return 0;
+			}
+		} else {
+			MT_lock_unset(&b->theaplock);
+			Heap *new = HEAPgrow(heap, newsize);
+			if (new == NULL)
+				return 0;
+			MT_lock_set(&b->theaplock);
+			HEAPdecref(heap, false);
+			b->tvheap = heap = new;
+		}
 		MT_lock_unset(&b->theaplock);
 		heap->free = newsize;
 		hheader = HEAP_index(heap, 0, HEADER);

@@ -118,7 +118,7 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
 	*algo = "hashselect";
 	if (phash) {
-		BAT *b2 = BBPdescriptor(VIEWtparent(b));
+		BAT *b2 = BBP_cache(VIEWtparent(b));
 		*algo = "hashselect on parent";
 		TRC_DEBUG(ALGO, ALGOBATFMT
 			  " using parent(" ALGOBATFMT ") "
@@ -550,7 +550,7 @@ NAME##_##TYPE(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn, \
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
 	}								\
 	if (use_imprints && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b))) { \
-		BAT *pbat = BBPdescriptor(parent);			\
+		BAT *pbat = BBP_cache(parent);				\
 		assert(pbat);						\
 /* NOTE: this code is incorrect since pbat could be changed while */	\
 /* we're using the heap, but this code is disabled, so we don't */	\
@@ -1608,7 +1608,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		BAT *view = NULL;
 		if (/* DISABLES CODE */ (0) && VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
-			b = BBPdescriptor(VIEWtparent(b));
+			b = BBP_cache(VIEWtparent(b));
 		}
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
@@ -2088,7 +2088,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	    (BATcheckorderidx(l) || (/* DISABLES CODE */ (0) && VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
 		use_orderidx = true;
 		if (/* DISABLES CODE */ (0) && VIEWtparent(l) && !BATcheckorderidx(l)) {
-			l = BBPdescriptor(VIEWtparent(l));
+			l = BBP_cache(VIEWtparent(l));
 		}
 	}
 
