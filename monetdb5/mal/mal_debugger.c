@@ -138,7 +138,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat) {
 		bat i = v->val.bval;
-		BAT *b = BBPquickdesc(i, true);
+		BAT *b = BBPquickdesc(i, false);
 
 		if (b) {
 			nme = getTypeName(newBatType(b->ttype));
