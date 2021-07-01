@@ -1521,7 +1521,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * hash chain (count divided by #slots) times the cost
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
-		tmp = BBPquickdesc(parent, false);
+		tmp = BBP_cache(parent);
 		if (tmp && BATcheckhash(tmp)) {
 			MT_rwlock_rdlock(&tmp->thashlock);
 			hash = phash = tmp->thash != NULL &&
@@ -1560,7 +1560,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    (BATcheckorderidx(b) ||
 	     (/* DISABLES CODE */ (0) &&
 	      VIEWtparent(b) &&
-	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
+	      BATcheckorderidx(BBP_cache(VIEWtparent(b)))))) {
 		BAT *view = NULL;
 		if (/* DISABLES CODE */ (0) && VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
@@ -1850,7 +1850,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			(!b->batTransient ||
 			 (/* DISABLES CODE */ (0) &&
 			  parent != 0 &&
-			  (tmp = BBPquickdesc(parent, false)) != NULL &&
+			  (tmp = BBP_cache(parent)) != NULL &&
 			  !tmp->batTransient));
 		bn = scanselect(b, &bi, &ci, bn, tl, th, li, hi, equi, anti,
 				lval, hval, lnil, maximum, use_imprints, &algo);
@@ -2035,7 +2035,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	}
 
 	if (!BATordered(l) && !BATordered_rev(l) &&
-	    (BATcheckorderidx(l) || (/* DISABLES CODE */ (0) && VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
+	    (BATcheckorderidx(l) || (/* DISABLES CODE */ (0) && VIEWtparent(l) && BATcheckorderidx(BBP_cache(VIEWtparent(l)))))) {
 		use_orderidx = true;
 		if (/* DISABLES CODE */ (0) && VIEWtparent(l) && !BATcheckorderidx(l)) {
 			l = BBP_cache(VIEWtparent(l));
@@ -2166,7 +2166,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		    !l->batTransient ||
 		    (/* DISABLES CODE */ (0) &&
 		     VIEWtparent(l) != 0 &&
-		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
+		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {

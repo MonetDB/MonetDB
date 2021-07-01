@@ -760,45 +760,47 @@ BBPcheckbats(unsigned bbpversion)
 			/* no files needed */
 			continue;
 		}
-		path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		if (path == NULL)
-			return GDK_FAIL;
+		if (b->theap->free > 0) {
+			path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
+			if (path == NULL)
+				return GDK_FAIL;
 #ifdef GDKLIBRARY_TAILN
-		/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
-		 * exist with either name .tail1 (etc) or .tail, if <=
-		 * GDKLIBRARY_TAILN, only with .tail */
-		char tailsave = 0;
-		size_t taillen = 0;
-		if (b->ttype == TYPE_str &&
-		    b->twidth < SIZEOF_VAR_T) {
-			/* old version: .tail, not .tail1, .tail2, .tail4 */
-			taillen = strlen(path) - 1;
-			tailsave = path[taillen];
-			path[taillen] = 0;
-		}
+			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
+			 * exist with either name .tail1 (etc) or .tail, if <=
+			 * GDKLIBRARY_TAILN, only with .tail */
+			char tailsave = 0;
+			size_t taillen = 0;
+			if (b->ttype == TYPE_str &&
+			    b->twidth < SIZEOF_VAR_T) {
+				/* old version: .tail, not .tail1, .tail2, .tail4 */
+				taillen = strlen(path) - 1;
+				tailsave = path[taillen];
+				path[taillen] = 0;
+			}
 #endif
-		if (MT_stat(path, &statb) < 0
+			if (MT_stat(path, &statb) < 0
 #ifdef GDKLIBRARY_TAILN
-		    && bbpversion > GDKLIBRARY_TAILN
-		    && b->ttype == TYPE_str
-		    && b->twidth < SIZEOF_VAR_T
-		    && (path[taillen] = tailsave) != 0
-		    && MT_stat(path, &statb) < 0
+			    && bbpversion > GDKLIBRARY_TAILN
+			    && b->ttype == TYPE_str
+			    && b->twidth < SIZEOF_VAR_T
+			    && (path[taillen] = tailsave) != 0
+			    && MT_stat(path, &statb) < 0
 #endif
-			) {
+				) {
 
-			GDKsyserror("cannot stat file %s (expected size %zu)\n",
-				    path, b->theap->free);
+				GDKsyserror("cannot stat file %s (expected size %zu)\n",
+					    path, b->theap->free);
+				GDKfree(path);
+				return GDK_FAIL;
+			}
+			if ((size_t) statb.st_size < b->theap->free) {
+				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
+				GDKfree(path);
+				return GDK_FAIL;
+			}
 			GDKfree(path);
-			return GDK_FAIL;
 		}
-		if ((size_t) statb.st_size < b->theap->free) {
-			GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
-			GDKfree(path);
-			return GDK_FAIL;
-		}
-		GDKfree(path);
-		if (b->tvheap != NULL) {
+		if (b->tvheap != NULL && b->tvheap->free > 0) {
 			path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "theap");
 			if (path == NULL)
 				return GDK_FAIL;
@@ -2386,7 +2388,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		 * while locked so no other thread thinks it's
 		 * available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
-		TRC_DEBUG(BAT_, "%s set to unloading BAT %d\n", func, i);
+		TRC_DEBUG(BAT_, "%s set to unloading BAT %d (status %u)\n", func, i, BBP_status(i));
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
 	}
@@ -2929,6 +2931,10 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 	gdk_return ret = GDK_SUCCEED;
 	char extnew[16];
 	bool istail = strncmp(ext, "tail", 4) == 0;
+
+	if (h->wasempty) {
+		return GDK_SUCCEED;
+	}
 
 	/* direct mmap is unprotected (readonly usage, or has WAL
 	 * protection); however, if we're backing up for subcommit

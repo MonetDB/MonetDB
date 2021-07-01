@@ -142,7 +142,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
-				BAT *d= BBPquickdesc(stk->stk[varid].val.bval, true);
+				BAT *d= BBPquickdesc(stk->stk[varid].val.bval, false);
 				if( d)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
