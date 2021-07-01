@@ -326,29 +326,63 @@ convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end
 }
 
 
-static void
-convert_line_endings(char *text)
+static str
+convert_and_validate(char *text)
 {
-	// Read- and write positions.
-	// We always have w <= r, or it wouldn't be safe.
-	const char *r = text;
-	char *w = text;
-	while (*r) {
-		if (r[0] == '\r' && r[1] == '\n')
-			r++;
-		*w++ = *r++;
+	unsigned char *r = (unsigned char*)text;
+	unsigned char *w = r;
+
+	if (*r == 0x80 && *(r+1) == 0) {
+		// Technically a utf-8 violation, but we treat it as the NULL marker
+		// GDK does so as well so we can just pass it on.
+		// The following asserts will fail if GDK ever moves to another string representation:
+		assert(sizeof(str_nil) == 2);
+		assert(str_nil[0] == 0x80);
+		assert(str_nil[1] == 0);
+		return MAL_SUCCEED;
+	}
+
+	while (*r != 0) {
+		unsigned char c = *w++ = *r++;
+
+		if (c == '\r' && *r == '\n') {
+			w--;
+			continue;
+		}
+		if ((c & 0x80) == 0x00) // 1xxx_xxxx: standalone byte
+			continue;
+		if ((c & 0xF8) == 0xF0) // 1111_0xxx
+			goto expect3;
+		if ((c & 0xF0) == 0xE0) // 1110_xxxx
+			goto expect2;
+		if ((c & 0xE0) == 0xC0) // 110x_xxxx
+			goto expect1;
+		goto bad_utf8;
+
+expect3:
+		if (((*w++ = *r++) & 0x80) != 0x80)
+			goto bad_utf8;
+expect2:
+		if (((*w++ = *r++) & 0x80) != 0x80)
+			goto bad_utf8;
+expect1:
+		if (((*w++ = *r++) & 0x80) != 0x80)
+			goto bad_utf8;
+
 	}
 	*w = '\0';
+	return MAL_SUCCEED;
+
+bad_utf8:
+	return createException(SQL, "BATattach_stream", SQLSTATE(42000) "malformed utf-8 byte sequence");
 }
 
 static str
-append_text(BAT *bat, char *start, char *end)
+append_text(BAT *bat, char *start)
 {
-	(void)bat;
-
-	char *cr = memchr(start, '\r', end - start);
-	if (cr)
-		convert_line_endings(cr);
+	str msg = convert_and_validate(start);
+	if (msg != MAL_SUCCEED)
+		return msg;
 
 	if (BUNappend(bat, start, false) != GDK_SUCCEED)
 		return createException(SQL, "sql.importColumn", GDK_EXCEPTION);
@@ -384,7 +418,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
 		char *buf_end = &bs->buf[bs->len];
 		char *start, *end;
 		for (start = buf_start; (end = memchr(start, '\0', buf_end - start)) != NULL; start = end + 1) {
-			msg = append_text(bat, start, end);
+			msg = append_text(bat, start);
 			if (msg != NULL)
 				goto end;
 		}
