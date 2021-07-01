@@ -4937,7 +4937,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 }
 
 static int
-sql_trans_propagate_dependencies_parents(sql_trans *tr, sql_table *mt)
+sql_trans_propagate_dependencies_parents(sql_trans *tr, sql_table *mt, bool *child_of_partitioned)
 {
 	int res = LOG_OK;
 	sql_part *pt = NULL;
@@ -4945,13 +4945,15 @@ sql_trans_propagate_dependencies_parents(sql_trans *tr, sql_table *mt)
 	for (; mt; mt = pt?pt->t:NULL) {
 		if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 			return res;
+		if (child_of_partitioned)
+			*child_of_partitioned |= (isRangePartitionTable(mt) || isListPartitionTable(mt));
 		pt = partition_find_part(tr, mt, NULL);
 	}
 	return res;
 }
 
 static int
-sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt)
+sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt, bool child_of_partitioned)
 {
 	int res = LOG_OK;
 
@@ -4960,7 +4962,7 @@ sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt)
 			return res;
 		if ((res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
 			return res;
-		if (isTable(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
+		if (child_of_partitioned && isTable(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
 			return res;
 	}
 	if (isMergeTable(pt) && !list_empty(pt->members)) {
@@ -4968,7 +4970,8 @@ sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt)
 			sql_part *pd = nt->data;
 			sql_table *t = find_sql_table_id(tr, pt->s, pd->member);
 
-			if ((res = sql_trans_propagate_dependencies_children(tr, t)))
+			child_of_partitioned |= (isRangePartitionTable(t) || isListPartitionTable(t));
+			if ((res = sql_trans_propagate_dependencies_children(tr, t, child_of_partitioned)))
 				return res;
 		}
 	}
@@ -4983,6 +4986,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	sql_table *sysobj = find_sql_table(tr, syss, "objects");
 	int res = 0;
 	sql_table *dup = NULL;
+	bool child_of_partitioned = false;
 
 	/* merge table depends on part table */
 	if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
@@ -5004,9 +5008,9 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 		return res;
 	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	if ((res = sql_trans_propagate_dependencies_parents(tr, mt)))
+	if ((res = sql_trans_propagate_dependencies_parents(tr, mt, &child_of_partitioned)))
 		return res;
-	if ((res = sql_trans_propagate_dependencies_children(tr, pt)))
+	if ((res = sql_trans_propagate_dependencies_children(tr, pt, child_of_partitioned)))
 		return res;
 	return res;
 }
@@ -5140,9 +5144,9 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update)
 		res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
-	if ((res = sql_trans_propagate_dependencies_parents(tr, mt)))
+	if ((res = sql_trans_propagate_dependencies_parents(tr, mt, NULL)))
 		return res;
-	if ((res = sql_trans_propagate_dependencies_children(tr, pt)))
+	if ((res = sql_trans_propagate_dependencies_children(tr, pt, true)))
 		return res;
 finish:
 	VALclear(&vmin);
@@ -5268,9 +5272,9 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 			return res;
 	}
-	if ((res = sql_trans_propagate_dependencies_parents(tr, mt)))
+	if ((res = sql_trans_propagate_dependencies_parents(tr, mt, NULL)))
 		return res;
-	if ((res = sql_trans_propagate_dependencies_children(tr, pt)))
+	if ((res = sql_trans_propagate_dependencies_children(tr, pt, true)))
 		return res;
 	return 0;
 }
