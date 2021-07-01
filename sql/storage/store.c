@@ -66,10 +66,17 @@ instore(sqlid id)
 }
 
 static void
-id_destroy(sqlstore *store, int *id)
+id_destroy(sqlstore *store, void *p)
 {
 	(void)store;
-	GDKfree(id);
+	GDKfree(p);
+}
+
+static void
+dep_destroy(sqlstore *store, sql_dependency_change *dep)
+{
+	(void)store;
+	GDKfree(dep);
 }
 
 static void
@@ -298,34 +305,40 @@ sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r,
 }
 
 int
-sql_trans_add_dependency(sql_trans* tr, sqlid id)
+sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp)
 {
-	sqlid *local_id = MNEW(sqlid);
+	sql_dependency_change *dep = MNEW(sql_dependency_change);
 
-	if (!local_id)
+	if (!dep)
 		return LOG_ERR;
-	*local_id = id;
-	if (!tr->dependencies && !(tr->dependencies = list_create((fdestroy) &id_destroy))) {
-		_DELETE(local_id);
+	*dep = (sql_dependency_change) {
+		.objid = id,
+		.type = tp
+	};
+	if (!tr->dependencies && !(tr->dependencies = list_create((fdestroy) &dep_destroy))) {
+		_DELETE(dep);
 		return LOG_ERR;
 	}
-	list_append(tr->dependencies, local_id);
+	list_append(tr->dependencies, dep);
 	return LOG_OK;
 }
 
 int
-sql_trans_add_removal(sql_trans *tr, sqlid id)
+sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp)
 {
-	sqlid *local_id = MNEW(sqlid);
+	sql_dependency_change *dep = MNEW(sql_dependency_change);
 
-	if (!local_id)
+	if (!dep)
 		return LOG_ERR;
-	*local_id = id;
-	if (!tr->removals && !(tr->removals = list_create((fdestroy) &id_destroy))) {
-		_DELETE(local_id);
+	*dep = (sql_dependency_change) {
+		.objid = id,
+		.type = tp
+	};
+	if (!tr->depchanges && !(tr->depchanges = list_create((fdestroy) &dep_destroy))) {
+		_DELETE(dep);
 		return LOG_ERR;
 	}
-	list_append(tr->removals, local_id);
+	list_append(tr->depchanges, dep);
 	return LOG_OK;
 }
 
@@ -1745,7 +1758,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	/* for now use malloc and free */
 	store->active = list_create(NULL);
 	store->dependencies = hash_new(NULL, 1024, (fkeyvalue)&id_hash);
-	store->removals = hash_new(NULL, 1024, (fkeyvalue)&id_hash);
+	store->depchanges = hash_new(NULL, 1024, (fkeyvalue)&id_hash);
 
 	if (store->first) {
 		/* cannot initialize database in readonly mode */
@@ -2122,7 +2135,7 @@ store_exit(sqlstore *store)
 
 	list_destroy(store->active);
 	id_hash_destroy(store->dependencies);
-	id_hash_destroy(store->removals);
+	id_hash_destroy(store->depchanges);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&store->flush);
@@ -2215,8 +2228,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 	}
 	if (!hash_empty(store->dependencies))
 		id_hash_clear_older(store->dependencies, oldest);
-	if (!hash_empty(store->removals))
-		id_hash_clear_older(store->removals, oldest);
+	if (!hash_empty(store->depchanges))
+		id_hash_clear_older(store->depchanges, oldest);
 	store->oldest_pending = oldest_changes;
 }
 
@@ -3401,19 +3414,23 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 	}
 	if (!list_empty(tr->dependencies)) {
 		if (tr->parent) { /* propagate to the parent */
-			for(node *n=tr->dependencies->h; n ; n = n->next)
-				sql_trans_add_dependency(tr->parent, *(sqlid*)n->data);
+			for(node *n=tr->dependencies->h; n ; n = n->next) {
+				sql_dependency_change *dp = (sql_dependency_change*)n->data;
+				sql_trans_add_dependency(tr->parent, dp->objid, dp->type);
+			}
 		}
 		list_destroy(tr->dependencies);
 		tr->dependencies = NULL;
 	}
-	if (!list_empty(tr->removals)) {
+	if (!list_empty(tr->depchanges)) {
 		if (tr->parent) { /* propagate to the parent */
-			for(node *n=tr->removals->h; n ; n = n->next)
-				sql_trans_add_dependency(tr->parent, *(sqlid*)n->data);
+			for(node *n=tr->depchanges->h; n ; n = n->next) {
+				sql_dependency_change *dp = (sql_dependency_change*)n->data;
+				sql_trans_add_dependency_change(tr->parent, dp->objid, dp->type);
+			}
 		}
-		list_destroy(tr->removals);
-		tr->removals = NULL;
+		list_destroy(tr->depchanges);
+		tr->depchanges = NULL;
 	}
 }
 
@@ -3451,7 +3468,7 @@ sql_trans_rollback(sql_trans *tr)
 		}
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
-			id_hash_clear(store->removals);
+			id_hash_clear(store->depchanges);
 		}
 		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
@@ -3473,7 +3490,7 @@ sql_trans_rollback(sql_trans *tr)
 		store_lock(store);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
-			id_hash_clear(store->removals);
+			id_hash_clear(store->depchanges);
 		}
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
@@ -3632,7 +3649,7 @@ sql_trans_valid(sql_trans *tr)
 }
 
 static inline int
-transaction_add_hash_entry(sql_hash *h, sqlid id, ulng commit_ts)
+transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe, ulng commit_ts)
 {
 	int key = h->key(&id);
 	sql_dependency_change *next_change = MNEW(sql_dependency_change);
@@ -3641,6 +3658,7 @@ transaction_add_hash_entry(sql_hash *h, sqlid id, ulng commit_ts)
 		return LOG_ERR;
 	*next_change = (sql_dependency_change) {
 		.objid = id,
+		.type = tpe,
 		.ts = commit_ts
 	};
 
@@ -3655,41 +3673,47 @@ transaction_check_dependencies_and_removals(sql_trans *tr, ulng commit_ts)
 	sqlstore *store = tr->store;
 
 	/* test dependencies and removals crossed for conflicts */
-	if (!list_empty(tr->dependencies) && !hash_empty(store->removals)) {
+	if (!list_empty(tr->dependencies) && !hash_empty(store->depchanges)) {
 		for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
-			sqlid id = *(sqlid*) n->data;
-			int key = store->removals->key(&id);
-			sql_hash_e *he = store->removals->buckets[key&(store->removals->size-1)];
+			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+			int key = store->depchanges->key(&lchange->objid);
+			sql_hash_e *he = store->depchanges->buckets[key&(store->depchanges->size-1)];
 
 			for (; he && ok == LOG_OK; he = he->chain) {
-				sql_dependency_change *nid = (sql_dependency_change*) he->value;
+				sql_dependency_change *schange = (sql_dependency_change*) he->value;
 
-				if (id == nid->objid)
+				if (lchange->objid == schange->objid && lchange->type == schange->type)
 					ok = LOG_CONFLICT;
 			}
 		}
 	}
-	if (ok == LOG_OK && !list_empty(tr->removals) && !hash_empty(store->dependencies)) {
-		for (node *n = tr->removals->h; n && ok == LOG_OK; n = n->next) {
-			sqlid id = *(sqlid*) n->data;
-			int key = store->dependencies->key(&id);
+	if (ok == LOG_OK && !list_empty(tr->depchanges) && !hash_empty(store->dependencies)) {
+		for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
+			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+			int key = store->dependencies->key(&lchange->objid);
 			sql_hash_e *he = store->dependencies->buckets[key&(store->dependencies->size-1)];
 
 			for (; he && ok == LOG_OK; he = he->chain) {
-				sql_dependency_change *nid = (sql_dependency_change*) he->value;
+				sql_dependency_change *schange = (sql_dependency_change*) he->value;
 
-				if (id == nid->objid)
+				if (lchange->objid == schange->objid && lchange->type == schange->type)
 					ok = LOG_CONFLICT;
 			}
 		}
 	}
 	/* if all checks passed, add them to the storage */
-	if (ok == LOG_OK && !list_empty(tr->dependencies))
-		for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next)
-			ok = transaction_add_hash_entry(store->dependencies, *(sqlid*)n->data, commit_ts);
-	if (ok == LOG_OK && !list_empty(tr->removals))
-		for (node *n = tr->removals->h; n && ok == LOG_OK; n = n->next)
-			ok = transaction_add_hash_entry(store->removals, *(sqlid*)n->data, commit_ts);
+	if (ok == LOG_OK && !list_empty(tr->dependencies)) {
+		for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
+			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+			ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
+		}
+	}
+	if (ok == LOG_OK && !list_empty(tr->depchanges)) {
+		for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
+			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+			ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
+		}
+	}
 	return ok;
 }
 
@@ -3713,7 +3737,7 @@ sql_trans_commit(sql_trans *tr)
 		ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store), oldest = 0;
 		int flush = 0;
 
-		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->removals))) {
+		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			store_lock(store);
 			ok = transaction_check_dependencies_and_removals(tr, commit_ts);
 			store_unlock(store);
@@ -3757,7 +3781,7 @@ sql_trans_commit(sql_trans *tr)
 		/* apply committed changes */
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
-			id_hash_clear(store->removals);
+			id_hash_clear(store->depchanges);
 			oldest = commit_ts;
 		}
 		store_pending_changes(store, oldest);
@@ -3800,7 +3824,7 @@ sql_trans_commit(sql_trans *tr)
 		store_lock(store);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
-			id_hash_clear(store->removals);
+			id_hash_clear(store->depchanges);
 		}
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
@@ -3967,7 +3991,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if (isGlobal(i->t))
 		if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
 			return res;
-	if (!isNew(i) && (res = sql_trans_add_removal(tr, i->base.id)))
+	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
 		return res;
@@ -4023,7 +4047,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	if (k->t->pkey == (sql_ukey*)k)
 		k->t->pkey = NULL;
 
-	if (!isNew(k) && (res = sql_trans_add_removal(tr, k->base.id)))
+	if (!isNew(k) && (res = sql_trans_add_dependency_change(tr, k->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, k->base.id)))
 		return res;
@@ -4063,7 +4087,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sysseqs, rid)))
 		return res;
-	if (!isNew(seq) && (res = sql_trans_add_removal(tr, seq->base.id)))
+	if (!isNew(seq) && (res = sql_trans_add_dependency_change(tr, seq->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, seq->base.id)))
 		return res;
@@ -4170,7 +4194,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 	if (isGlobal(i->t))
 		if ((res = os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base))))
 			return res;
-	if (!isNew(i) && (res = sql_trans_add_removal(tr, i->base.id)))
+	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
 		return res;
@@ -4190,7 +4214,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		return -1;
 	if ((res = store->table_api.table_delete(tr, syscolumn, rid)))
 		return res;
-	if (!isNew(col) && (res = sql_trans_add_removal(tr, col->base.id)))
+	if (!isNew(col) && (res = sql_trans_add_dependency_change(tr, col->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, col->base.id)))
 		return res;
@@ -4307,7 +4331,7 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 		store->table_api.rids_destroy(rs);
 	}
 	/* merge table depends on part table */
-	if (!isNew(pt) && (res = sql_trans_add_removal(tr, mt->base.id)))
+	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, mt->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependency(tr, pt->member, mt->base.id, TABLE_DEPENDENCY)))
 		return res;
@@ -4392,7 +4416,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	if ((res = sql_trans_drop_any_comment(tr, t->base.id)))
 		return res;
-	if (!isNew(t) && (res = sql_trans_add_removal(tr, t->base.id)))
+	if (!isNew(t) && (res = sql_trans_add_dependency_change(tr, t->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, t->base.id)))
 		return res;
@@ -4421,7 +4445,7 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sys_tab_type, rid)))
 		return res;
-	if (!isNew(type) && (res = sql_trans_add_removal(tr, type->base.id)))
+	if (!isNew(type) && (res = sql_trans_add_dependency_change(tr, type->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, type->base.id)))
 		return res;
@@ -4458,7 +4482,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	if ((res = store->table_api.table_delete(tr, sys_tab_func, rid_func)))
 		return res;
 
-	if (!isNew(func) && (res = sql_trans_add_removal(tr, func->base.id)))
+	if (!isNew(func) && (res = sql_trans_add_dependency_change(tr, func->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, func->base.id)))
 		return res;
@@ -4829,7 +4853,7 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) new_name)))
 		return res;
 
-	if (!isNew(s) && (res = sql_trans_add_removal(tr, id)))
+	if (!isNew(s) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 		return res;
 	/* delete schema, add schema */
 	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
@@ -4869,7 +4893,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sysschema, rid)))
 		return res;
-	if (!isNew(s) && (res = sql_trans_add_removal(tr, id)))
+	if (!isNew(s) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 		return res;
 	if ((res = sys_drop_funcs(tr, s, drop_action)))
 		return res;
@@ -4923,11 +4947,11 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 		return res;
 	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(pt) && (res = sql_trans_add_removal(tr, pt->base.id))) /* protect from being added twice */
+	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
 		return res;
 	return res;
 }
@@ -5061,11 +5085,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update)
 		res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(pt) && (res = sql_trans_add_removal(tr, pt->base.id))) /* protect from being added twice */
+	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
 		return res;
 finish:
 	VALclear(&vmin);
@@ -5191,11 +5215,11 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 			return res;
 	}
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id))) /* protect from another transaction changing the table's schema */
+	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
-	if (!isNew(pt) && (res = sql_trans_add_removal(tr, pt->base.id))) /* protect from being added twice */
+	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
 		return res;
 	return 0;
 }
@@ -5217,7 +5241,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 		return res;
 
 	if (isGlobal(t)) {
-		if (!isNew(t) && (res = sql_trans_add_removal(tr, id)))
+		if (!isNew(t) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 			return res;
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
@@ -5250,7 +5274,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	if ((res = store->table_api.column_update_value(tr, find_sql_column(systable, "schema_id"), rid, &(ns->base.id))))
 		return res;
 
-	if (!isNew(t) && (res = sql_trans_add_removal(tr, id)))
+	if (!isNew(t) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 		return res;
 	if ((res = os_del(os->tables, tr, t->base.name, dup_base(&t->base))))
 		return res;
@@ -5583,7 +5607,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 
 	if (tpe->type->s) {/* column depends on type */
 		sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY);
-		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id)))
+		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl)))
 			return NULL;
 	}
 	return col;
@@ -5645,9 +5669,9 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_n
 		return -1;
 	sql_column *c = n->data;
 
-	if (!isNew(c->t) && (res = sql_trans_add_removal(tr, c->t->base.id)))
+	if (!isNew(c->t) && (res = sql_trans_add_dependency_change(tr, c->t->base.id, ddl)))
 		return res;
-	if (!isNew(c) && (res = sql_trans_add_removal(tr, id)))
+	if (!isNew(c) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 		return res;
 
 	_DELETE(c->base.name);
@@ -5716,7 +5740,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (!isNew(col) && (res = sql_trans_add_removal(tr, col->t->base.id)))
+	if (!isNew(col) && (res = sql_trans_add_dependency_change(tr, col->t->base.id, ddl)))
 		return res;
 	if ((res = sys_drop_column(tr, col, drop_action)))
 		return res;
@@ -6030,7 +6054,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 		return NULL;
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY);
-	if (!isNew(nk) && (res = sql_trans_add_dependency(tr, ((sql_fkey *) nk)->rkey)))
+	if (!isNew(nk) && (res = sql_trans_add_dependency(tr, ((sql_fkey *) nk)->rkey, ddl)))
 		return NULL;
 	return (sql_fkey*) nk;
 }
@@ -6053,7 +6077,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 
 	if (k->type == pkey) {
 		sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY);
-		if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id)))
+		if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id, ddl)))
 			return NULL;
 		if (sql_trans_alter_null(tr, c, 0)) /* should never happen */
 			return NULL;
@@ -6082,7 +6106,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 		sql_trans_create_ic(tr, k->idx, c);
 
 	sql_trans_create_dependency(tr, c->base.id, k->base.id, FKEY_DEPENDENCY);
-	if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id)))
+	if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id, ddl)))
 		return NULL;
 
 	if (store->table_api.table_insert(tr, syskc, &k->base.id, &kc->c->base.name, &nr, ATOMnilptr(TYPE_int)))
@@ -6481,7 +6505,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	/*Create a BEDROPPED dependency for a SERIAL COLUMN*/
 	if (bedropped) {
 		sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY);
-		if (!isNew(seq) && (res = sql_trans_add_dependency(tr, seq->base.id)))
+		if (!isNew(seq) && (res = sql_trans_add_dependency(tr, seq->base.id, ddl)))
 			return NULL;
 	}
 	return seq;

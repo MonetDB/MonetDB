@@ -407,9 +407,6 @@ extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
 extern int sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
-extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
-extern int sql_trans_add_dependency(sql_trans* tr, sqlid id);
-extern int sql_trans_add_removal(sql_trans *tr, sqlid id);
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
 extern int sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern int sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
@@ -468,7 +465,7 @@ typedef struct sqlstore {
 	store_type active_type;
 	list *changes;			/* pending changes too cleanup */
 	sql_hash *dependencies; /* pending dependencies created too cleanup */
-	sql_hash *removals;		/* pending removals created too cleanup */
+	sql_hash *depchanges;	/* pending dependencies changes too cleanup */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;
@@ -479,8 +476,14 @@ typedef struct sqlstore {
 	void *logger;			/* space to keep logging structure of storage backend */
 } sqlstore;
 
+typedef enum sql_dependency_change_type {
+	ddl = 1,
+	dml = 2
+} sql_dependency_change_type;
+
 typedef struct sql_dependency_change {
 	sqlid objid; /* id of the object where the dependency was created */
+	sql_dependency_change_type type; /* type of dependency */
 	ulng ts; /* committed timestamp */
 } sql_dependency_change;
 
@@ -497,5 +500,9 @@ typedef struct sql_change {
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
+
+extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
+extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp);
+extern int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 
 #endif /*SQL_STORAGE_H */
