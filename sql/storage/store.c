@@ -2909,7 +2909,7 @@ new_table(sql_trans *tr, sql_table *t, sql_table **tres)
 {
 	int res = 0;
 	t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
-	if (!isLocalTemp(t) && !os_obj_intransaction(t->s->tables, tr, &t->base))
+	if (!isLocalTemp(t) && !isNew(t) && !os_obj_intransaction(t->s->tables, tr, &t->base))
 		res = table_dup(tr, t, t->s, NULL, tres);
 	else
 		*tres = t;
