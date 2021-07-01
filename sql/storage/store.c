@@ -3723,81 +3723,79 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
-		if (!list_empty(tr->changes)) {
-			MT_lock_set(&store->commit);
-			/* log changes should only be done if there is something to log */
-			if (!tr->parent && tr->logchanges > 0) {
-				int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
-				flush = (tr->logchanges > min_changes && list_empty(store->changes));
-				if (flush)
-					MT_lock_set(&store->flush);
-				ok = store->logger_api.log_tstart(store, flush);
-				/* log */
-				for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
-					sql_change *c = n->data;
-
-					if (c->log && ok == LOG_OK)
-						ok = c->log(tr, c);
-				}
-				if (ok == LOG_OK && store->prev_oid != store->obj_id)
-					ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
-				store->prev_oid = store->obj_id;
-				if (ok == LOG_OK && !flush)
-					ok = store->logger_api.log_tend(store); /* flush/sync */
-				store_lock(store);
-				if (ok == LOG_OK && !flush)					/* mark as done */
-					ok = store->logger_api.log_tdone(store, commit_ts);
-			} else {
-				store_lock(store);
-				if (tr->parent)
-					tr->parent->logchanges += tr->logchanges;
-			}
-			oldest = tr->parent ? commit_ts : oldest;
-			tr->logchanges = 0;
-			TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
-			/* apply committed changes */
-			if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-				id_hash_clear(store->dependencies);
-				id_hash_clear(store->removals);
-				oldest = commit_ts;
-			}
-			store_pending_changes(store, oldest);
+		MT_lock_set(&store->commit);
+		/* log changes should only be done if there is something to log */
+		if (!tr->parent && tr->logchanges > 0) {
+			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
+			flush = (tr->logchanges > min_changes && list_empty(store->changes));
+			if (flush)
+				MT_lock_set(&store->flush);
+			ok = store->logger_api.log_tstart(store, flush);
+			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;
 
-				if (c->commit && ok == LOG_OK)
-					ok = c->commit(tr, c, commit_ts, oldest);
-				else
-					c->obj->new = 0;
-				c->ts = commit_ts;
+				if (c->log && ok == LOG_OK)
+					ok = c->log(tr, c);
 			}
-			/* when directly flushing: flush logger after changes got applied */
-			if (ok == LOG_OK && flush) {
+			if (ok == LOG_OK && store->prev_oid != store->obj_id)
+				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
+			store->prev_oid = store->obj_id;
+			if (ok == LOG_OK && !flush)
 				ok = store->logger_api.log_tend(store); /* flush/sync */
-				if (ok == LOG_OK)
-					ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
-				MT_lock_unset(&store->flush);
-			}
-			/* garbage collect */
-			for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
-				node *next = n->next;
-				sql_change *c = n->data;
-
-				if (!c->cleanup || c->cleanup(store, c, oldest)) {
-					_DELETE(c);
-				} else if (tr->parent) { /* need to keep everything */
-					tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
-				} else {
-					store->changes = sa_list_append(tr->sa, store->changes, c);
-				}
-				n = next;
-			}
-			store_unlock(store);
-			MT_lock_unset(&store->commit);
-			list_destroy(tr->changes);
-			tr->changes = NULL;
-			tr->ts = commit_ts;
+			store_lock(store);
+			if (ok == LOG_OK && !flush)					/* mark as done */
+				ok = store->logger_api.log_tdone(store, commit_ts);
+		} else {
+			store_lock(store);
+			if (tr->parent)
+				tr->parent->logchanges += tr->logchanges;
 		}
+		oldest = tr->parent ? commit_ts : oldest;
+		tr->logchanges = 0;
+		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
+		/* apply committed changes */
+		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
+			id_hash_clear(store->dependencies);
+			id_hash_clear(store->removals);
+			oldest = commit_ts;
+		}
+		store_pending_changes(store, oldest);
+		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+			sql_change *c = n->data;
+
+			if (c->commit && ok == LOG_OK)
+				ok = c->commit(tr, c, commit_ts, oldest);
+			else
+				c->obj->new = 0;
+			c->ts = commit_ts;
+		}
+		/* when directly flushing: flush logger after changes got applied */
+		if (ok == LOG_OK && flush) {
+			ok = store->logger_api.log_tend(store); /* flush/sync */
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
+			MT_lock_unset(&store->flush);
+		}
+		/* garbage collect */
+		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
+			node *next = n->next;
+			sql_change *c = n->data;
+
+			if (!c->cleanup || c->cleanup(store, c, oldest)) {
+				_DELETE(c);
+			} else if (tr->parent) { /* need to keep everything */
+				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
+			} else {
+				store->changes = sa_list_append(tr->sa, store->changes, c);
+			}
+			n = next;
+		}
+		store_unlock(store);
+		MT_lock_unset(&store->commit);
+		list_destroy(tr->changes);
+		tr->changes = NULL;
+		tr->ts = commit_ts;
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		store_lock(store);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
