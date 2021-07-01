@@ -1,4 +1,7 @@
 statement ok
+select sys.debug(0)
+
+statement ok
 start transaction
 
 statement ok
