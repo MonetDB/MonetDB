@@ -71,16 +71,8 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1, 1) == GDK_SUCCEED) {
-		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		d->dirty = true;
-		memset(d->base, 0, d->free);
-		d->hashash = false;
-#ifndef NDEBUG
-		/* fill should solve initialization problems within valgrind */
-		memset(d->base + d->free, 0, d->size - d->free);
-#endif
-	}
+	if (HEAPalloc(d, size, 1, 1) != GDK_SUCCEED)
+		GDKerror("alloc failed");
 }
 
 
@@ -164,6 +156,11 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
+	if (h->free == 0) {
+		/* empty, so there are no strings */
+		return 0;
+	}
+
 	off = strHash(v);
 	off &= GDK_STRHASHMASK;
 
@@ -263,6 +260,35 @@ strPut(BAT *b, var_t *dst, const void *V)
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket;
 	BUN off, strhash;
+
+	if (h->free == 0) {
+		if (h->size < 64 * 1024) {
+			MT_lock_set(&b->theaplock);
+			if (ATOMIC_GET(&h->refs) == 1) {
+				if (HEAPextend(h, 64 * 1024, true) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
+					return 0;
+				}
+			} else {
+				MT_lock_unset(&b->theaplock);
+				Heap *new = HEAPgrow(h, 64 * 1024);
+				if (new == NULL)
+					return 0;
+				MT_lock_set(&b->theaplock);
+				HEAPdecref(h, false);
+				b->tvheap = h = new;
+			}
+			MT_lock_unset(&b->theaplock);
+		}
+		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->dirty = true;
+		memset(h->base, 0, h->free);
+		h->hashash = false;
+#ifndef NDEBUG
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base + h->free, 0, h->size - h->free);
+#endif
+	}
 
 	off = strHash(v);
 	strhash = off;
