@@ -4365,6 +4365,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	/* update predicate list */
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
+	if (!isNew(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	if (ddl) {
 		ret = ddl;
 		list_prepend(l, ddl);
@@ -5355,6 +5358,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql->cascade_action = NULL;
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
+	if (!isNew(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return cnt;
 }
 
@@ -5596,6 +5601,9 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	}
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
+	if (!isNew(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	return stdelete;
 }
 
@@ -5820,6 +5828,9 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
 	cascade = E_ATOM_INT(n->next->data);
+
+	if (!isNew(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	if (sql->cascade_action)
