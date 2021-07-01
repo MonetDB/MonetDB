@@ -606,6 +606,8 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 		ov->ts = commit_ts;
 		change->committed = commit_ts < TRANSACTION_ID_BASE ? true: false;
 		(void)oldest;
+		if (!tr->parent)
+			change->obj->new = 0;
 	}
 	else {
 		os_rollback(ov, tr->store);
@@ -1101,7 +1103,6 @@ os_obj_intransaction(objectset *os, struct sql_trans *tr, sql_base *b)
 	versionhead  *n = find_id(os, b->id);
 
 	if (n) {
-		//objectversion *ov = get_valid_object_id(tr, n->ov);
 		objectversion *ov = n->ov;
 
 		if (ov && os_atmc_get_state(ov) == active && ov->ts == tr->tid)

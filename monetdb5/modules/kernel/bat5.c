@@ -44,6 +44,17 @@
  */
 
 
+#define derefStr(b, v)							\
+	do {										\
+		int _tpe= ATOMstorage((b)->ttype);		\
+		if (_tpe >= TYPE_str) {					\
+			if ((v) == 0 || *(str*) (v) == 0)	\
+				(v) = (str) str_nil;			\
+			else								\
+				(v) = *(str *) (v);				\
+		}										\
+	} while (0)
+
 str
 BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 {
@@ -232,12 +243,7 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.append", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (u == 0 || *(str*)u == 0)
-			u = (ptr) str_nil;
-		else
-			u = (ptr) *(str *)u;
-	}
+	derefStr(b, u);
 	if (BUNappend(b, u, force ? *force : false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
@@ -262,6 +268,7 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	derefStr(b, t);
 	if (void_inplace(b, *id, t, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
@@ -280,6 +287,7 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	derefStr(b, t);
 	if (void_inplace(b, *id, t, *force) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);

@@ -2365,9 +2365,15 @@ bl_tstart(sqlstore *store, bool flush)
 }
 
 static int
-bl_tend(sqlstore *store, ulng commit_ts)
+bl_tend(sqlstore *store)
 {
-	return log_tend(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tend(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
+bl_tdone(sqlstore *store, ulng commit_ts)
+{
+	return log_tdone(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
@@ -2494,6 +2500,10 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	struct stat statbuf;
 	int len;
 
+	if (extent == 0) {
+		/* nothing to copy */
+		return GDK_SUCCEED;
+	}
 	// first check the backup dir
 	len = snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
@@ -2763,6 +2773,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_isnew = bl_log_isnew;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
+	lf->log_tdone = bl_tdone;
 	lf->log_sequence = bl_sequence;
 	lf->get_snapshot_files = bl_snapshot;
 }

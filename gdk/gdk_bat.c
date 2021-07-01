@@ -556,7 +556,7 @@ BATextend(BAT *b, BUN newcap)
 			  b->theap->filename, b->theap->size, theap_size);
 		MT_lock_set(&b->theaplock);
 		if (ATOMIC_GET(&b->theap->refs) == 1) {
-			rc = HEAPextend(b->theap, theap_size, true);
+			rc = HEAPextend(b->theap, theap_size, b->batRestricted == BAT_READ);
 		} else {
 			MT_lock_unset(&b->theaplock);
 			Heap *h = HEAPgrow(b->theap, theap_size);
@@ -1158,7 +1158,8 @@ setcolprops(BAT *b, const void *x)
 
 /* Append an array of values of length count to the bat.  For
  * fixed-sized values, `values' is an array of values, for
- * variable-sized values, `values' is an array of pointers to values. */
+ * variable-sized values, `values' is an array of pointers to values.
+ * If values equals NULL, count times nil will be appended. */
 gdk_return
 BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 {
@@ -1182,18 +1183,20 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
-		bool dense = b->batCount == 0 || b->tseqbase + 1 == ovals[0];
-		for (BUN i = 1; dense && i < count; i++) {
-			dense = ovals[i - 1] + 1 == ovals[i];
+		bool dense = b->batCount == 0 || (ovals != NULL && b->tseqbase + 1 == ovals[0]);
+		if (ovals) {
+			for (BUN i = 1; dense && i < count; i++) {
+				dense = ovals[i - 1] + 1 == ovals[i];
+			}
 		}
 		if (dense) {
 			if (b->batCount == 0)
-				b->tseqbase = ovals[0];
+				b->tseqbase = ovals ? ovals[0] : oid_nil;
 			BATsetcount(b, BATcount(b) + count);
 			return GDK_SUCCEED;
 		} else {
 			/* we need to materialize b; allocate enough capacity */
-			b->batCapacity = BATcount(b) + 1;
+			b->batCapacity = BATcount(b) + count;
 			if (BATmaterialize(b) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
@@ -1219,9 +1222,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 	b->theap->dirty |= count > 0;
 	MT_rwlock_wrlock(&b->thashlock);
+	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	for (BUN i = 0; i < count; i++) {
-		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
-			(void *) ((char *) values + i * Tsize(b));
+		if (values) {
+			t = b->ttype && b->tvarsized ? ((void **) values)[i] :
+				(void *) ((char *) values + i * Tsize(b));
+		}
 		setcolprops(b, t);
 		gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
 		if (rc != GDK_SUCCEED) {

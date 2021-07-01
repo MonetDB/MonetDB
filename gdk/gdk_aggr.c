@@ -3739,7 +3739,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (BATcheckorderidx(b) ||
 		    (/* DISABLES CODE */ (0) &&
 		     VIEWtparent(b) &&
-		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     (pb = BBP_cache(VIEWtparent(b))) != NULL &&
 		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
@@ -3770,9 +3770,9 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			}
 		} else if ((VIEWtparent(b) == 0 ||
 			    (/* DISABLES CODE */ (0) &&
-			     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) &&
+			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b))))) &&
 			   BATcheckimprints(b)) {
-			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			Imprints *imprints = VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->timprints : b->timprints;
 			int i;
 
 			MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
@@ -3853,7 +3853,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (BATcheckorderidx(b) ||
 		    (/* DISABLES CODE */ (0) &&
 		     VIEWtparent(b) &&
-		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     (pb = BBP_cache(VIEWtparent(b))) != NULL &&
 		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
@@ -3875,9 +3875,9 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 			}
 		} else if ((VIEWtparent(b) == 0 ||
 			    (/* DISABLES CODE */ (0) &&
-			     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) &&
+			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b))))) &&
 			   BATcheckimprints(b)) {
-			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			Imprints *imprints = VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->timprints : b->timprints;
 			int i;
 
 			MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
@@ -4170,7 +4170,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATcheckorderidx(b) ||
 		    (/* DISABLES CODE */ (0) &&
 		     VIEWtparent(b) &&
-		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     (pb = BBP_cache(VIEWtparent(b))) != NULL &&
 		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
