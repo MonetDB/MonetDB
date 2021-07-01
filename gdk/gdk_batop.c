@@ -1929,7 +1929,7 @@ BATkeyed(BAT *b)
 			    BAThash(b) == GDK_SUCCEED) ||
 			   (/* DISABLES CODE */ (0) &&
 			    VIEWtparent(b) != 0 &&
-			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
+			    BATcheckhash(BBP_cache(VIEWtparent(b))))) {
 			/* we already have a hash table on b, or b is
 			 * persistent and we could create a hash
 			 * table, or b is a view on a bat that already
@@ -1939,7 +1939,7 @@ BATkeyed(BAT *b)
 			MT_rwlock_rdlock(&b->thashlock);
 			hs = b->thash;
 			if (hs == NULL && VIEWtparent(b) != 0) {
-				BAT *b2 = BBPdescriptor(VIEWtparent(b));
+				BAT *b2 = BBP_cache(VIEWtparent(b));
 				lo = b->tbaseoff - b2->tbaseoff;
 				hs = b2->thash;
 			}
@@ -2445,7 +2445,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		return GDK_SUCCEED;
 	}
 	if (VIEWtparent(b)) {
-		pb = BBPdescriptor(VIEWtparent(b));
+		pb = BBP_cache(VIEWtparent(b));
 		if (/* DISABLES CODE */ (1) ||
 		    b->tbaseoff != pb->tbaseoff ||
 		    BATcount(b) != BATcount(pb) ||
