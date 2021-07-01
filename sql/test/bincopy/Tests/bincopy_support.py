@@ -134,7 +134,7 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'rn\nr\r' || id);
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\nR\r' || id);
 """, [f"{NRECS} affected rows", f"{NRECS}"])
 
 NULL_STRINGS = ("""
