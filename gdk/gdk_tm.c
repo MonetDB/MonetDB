@@ -106,7 +106,7 @@ epilogue(int cnt, bat *subcommit)
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, true);
+			BAT *b = BBPquickdesc(bid, false);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */

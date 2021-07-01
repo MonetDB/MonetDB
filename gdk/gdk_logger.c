@@ -1408,7 +1408,7 @@ bm_get_counts(logger *lg)
 		lng lid = lng_nil;
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
-			BAT *b = BBPquickdesc(bids[p], 1);
+			BAT *b = BBPquickdesc(bids[p], true);
 			cnt = BATcount(b);
 		} else {
 			deleted++;
