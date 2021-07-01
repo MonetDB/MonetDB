@@ -3108,8 +3108,18 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
 		return res;
 
-	if (nk->type == fkey && (res = sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY)))
-		return res;
+	if (nk->type == fkey) {
+		sql_key *rkey = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
+
+		if ((res = sql_trans_create_dependency(tr, rkey->base.id, nk->base.id, FKEY_DEPENDENCY)))
+			return res;
+		/* TODO this has to be cleaned out once the sql_cat.c cleanup is done */
+		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->base.id, ddl)))
+			return res;
+		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
+			return res;
+	}
+
 	for (n = nk->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *kc = n->data;
 
@@ -3128,7 +3138,15 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 			if ((res = sql_trans_alter_null(tr, kc->c, 0)))
 				return res;
 		}
+
+		/* TODO this has to be cleaned out too */
+		if (!isNew(kc->c) && (res = sql_trans_add_dependency(tr, kc->c->base.id, ddl)))
+			return res;
 	}
+
+	/* TODO this has to be cleaned out too */
+	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml))) /* disallow concurrent updates on t */
+		return res;
 	if (kres)
 		*kres = nk;
 	return res;
@@ -5091,6 +5109,8 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		return res;
 	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
 		return res;
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
+		return res;
 finish:
 	VALclear(&vmin);
 	VALclear(&vmax);
@@ -5220,6 +5240,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 		return res;
 	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
+		return res;
+	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
 		return res;
 	return 0;
 }
@@ -5669,7 +5691,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_n
 		return -1;
 	sql_column *c = n->data;
 
-	if (!isNew(c->t) && (res = sql_trans_add_dependency_change(tr, c->t->base.id, ddl)))
+	if (!isNew(c) && (res = sql_trans_add_dependency_change(tr, c->t->base.id, ddl)))
 		return res;
 	if (!isNew(c) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 		return res;
@@ -5780,6 +5802,9 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		if ((res = new_column(tr, col, &dup)))
 			return res;
 		dup->null = isnull;
+
+		if (!isnull && !isNew(col) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml))) /* disallow concurrent updates on pt */
+			return res;
 	}
 	return res;
 }
@@ -6054,8 +6079,6 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 		return NULL;
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY);
-	if (!isNew(nk) && (res = sql_trans_add_dependency(tr, ((sql_fkey *) nk)->rkey, ddl)))
-		return NULL;
 	return (sql_fkey*) nk;
 }
 
@@ -6067,7 +6090,6 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 	int nr = list_length(k->columns);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(tr, syss, "objects");
-	int res = LOG_OK;
 
 	assert(c);
 	kc->c = c;
@@ -6077,8 +6099,6 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 
 	if (k->type == pkey) {
 		sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY);
-		if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id, ddl)))
-			return NULL;
 		if (sql_trans_alter_null(tr, c, 0)) /* should never happen */
 			return NULL;
 	}
@@ -6097,7 +6117,6 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 	int nr = list_length(k->columns);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(tr, syss, "objects");
-	int res = LOG_OK;
 
 	assert(c);
 	kc->c = c;
@@ -6106,8 +6125,6 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 		sql_trans_create_ic(tr, k->idx, c);
 
 	sql_trans_create_dependency(tr, c->base.id, k->base.id, FKEY_DEPENDENCY);
-	if (!isNew(c) && (res = sql_trans_add_dependency(tr, c->base.id, ddl)))
-		return NULL;
 
 	if (store->table_api.table_insert(tr, syskc, &k->base.id, &kc->c->base.name, &nr, ATOMnilptr(TYPE_int)))
 		return NULL;
