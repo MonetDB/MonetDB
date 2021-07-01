@@ -560,7 +560,8 @@ typedef struct {
 	bool hashash:1,		/* the string heap contains hash values */
 		cleanhash:1,	/* string heaps must clean hash */
 		dirty:1,	/* specific heap dirty marker */
-		remove:1;	/* remove storage file when freeing */
+		remove:1,	/* remove storage file when freeing */
+		wasempty:1;	/* heap was empty when last saved/created */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
