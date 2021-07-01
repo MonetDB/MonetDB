@@ -130,9 +130,9 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 		throw(SQL,"sql.grant_global",SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 	/* Add dependencies created */
-	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -199,15 +199,15 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	/* Add dependencies created */
 	if (privs == all || !c) {
-		if (!isNew(t) && (log_res = sql_trans_add_dependency(sql->session->tr, t->base.id)) != LOG_OK)
+		if (!isNew(t) && (log_res = sql_trans_add_dependency(sql->session->tr, t->base.id, ddl)) != LOG_OK)
 			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		if (!isNew(c) && (log_res = sql_trans_add_dependency(sql->session->tr, c->base.id)) != LOG_OK)
+		if (!isNew(c) && (log_res = sql_trans_add_dependency(sql->session->tr, c->base.id, ddl)) != LOG_OK)
 			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	return NULL;
@@ -245,9 +245,9 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		throw(SQL,"sql.grant_func", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 	/* Add dependencies created */
-	if (!isNew(f) && (log_res = sql_trans_add_dependency(sql->session->tr, func_id)) != LOG_OK)
+	if (!isNew(f) && (log_res = sql_trans_add_dependency(sql->session->tr, func_id, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
@@ -448,7 +448,7 @@ sql_drop_role(mvc *m, str auth)
 		throw(SQL, "sql.drop_role", SQLSTATE(42000) "DROP ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
 	/* Flag as removed */
-	if ((log_res = sql_trans_add_removal(tr, role_id)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency_change(tr, role_id, ddl)) != LOG_OK)
 		throw(SQL, "sql.drop_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
@@ -602,11 +602,11 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	}
 
 	/* Add dependencies created */
-	if ((log_res = sql_trans_add_dependency(m->session->tr, grantee_id)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(m->session->tr, grantee_id, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((log_res = sql_trans_add_dependency(m->session->tr, role_id)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(m->session->tr, role_id, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((log_res = sql_trans_add_dependency(m->session->tr, grantor)) != LOG_OK)
+	if ((log_res = sql_trans_add_dependency(m->session->tr, grantor, ddl)) != LOG_OK)
 		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
@@ -790,7 +790,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	if (!(s = find_sql_schema(sql->session->tr, schema)))
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
 	schema_id = s->base.id;
-	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id) != LOG_OK)
+	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
@@ -904,7 +904,7 @@ sql_drop_user(mvc *sql, char *user)
 	list_destroy(deleted);
 
 	/* Flag as removed */
-	if (!msg && sql_trans_add_removal(sql->session->tr, user_id) != LOG_OK)
+	if (!msg && sql_trans_add_dependency_change(sql->session->tr, user_id, ddl) != LOG_OK)
 		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
@@ -929,7 +929,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 		if (!(s = find_sql_schema(sql->session->tr, schema)))
 			throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
 		schema_id = s->base.id;
-		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id) != LOG_OK)
+		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)

@@ -1830,7 +1830,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (ok != LOG_OK)
 			throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
-		if ((ok = sql_trans_add_dependency(tx, objid)) != LOG_OK) /* At the moment this adds dependencies for old objects :( */
+		if ((ok = sql_trans_add_dependency(tx, objid, ddl)) != LOG_OK) /* At the moment this adds dependencies for old objects :( */
 			throw(SQL, "sql.comment_on", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		if (!is_oid_nil(rid)) {

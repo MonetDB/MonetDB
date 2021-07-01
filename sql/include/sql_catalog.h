@@ -315,7 +315,7 @@ typedef struct sql_trans {
 	list *dropped;  	/* protection against recursive cascade action*/
 	list *predicates;	/* list of read predicates logged during update transactions */
 	list *dependencies;	/* list of dependencies created (list of sqlids from the objects) */
-	list *removals;		/* list of old objects removed or renamed (it would be tested for conflicts at the end of the transaction) */
+	list *depchanges;	/* list of dependencies changed (it would be tested for conflicts at the end of the transaction) */
 
 	int logchanges;		/* count number of changes to be applied too the wal */
 	int active;			/* is active transaction */

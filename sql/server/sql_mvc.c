@@ -1318,7 +1318,7 @@ mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depen
 	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", b->id, depend_id, (int) depend_type);
 	if ( (b->id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) ) {
 		if (!b->new)
-			sql_trans_add_dependency(m->session->tr, b->id);
+			sql_trans_add_dependency(m->session->tr, b->id, ddl);
 		sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
 	}
 }
@@ -1331,7 +1331,7 @@ mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep
 		for (node *n = blist->h ; n ; n = n->next) {
 			sql_base *b = n->data;
 			if (!b->new) /* only add old objects to the transaction dependency list */
-				sql_trans_add_dependency(m->session->tr, b->id);
+				sql_trans_add_dependency(m->session->tr, b->id, ddl);
 			mvc_create_dependency(m, b, depend_id, dep_type);
 		}
 	}
