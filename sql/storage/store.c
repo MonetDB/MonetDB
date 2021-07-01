@@ -4936,6 +4936,45 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	return 0;
 }
 
+static int
+sql_trans_propagate_dependencies_parents(sql_trans *tr, sql_table *mt)
+{
+	int res = LOG_OK;
+	sql_part *pt = NULL;
+
+	for (; mt; mt = pt?pt->t:NULL) {
+		if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
+			return res;
+		pt = partition_find_part(tr, mt, NULL);
+	}
+	return res;
+}
+
+static int
+sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt)
+{
+	int res = LOG_OK;
+
+	if (!isNew(pt)) {
+		if ((res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
+			return res;
+		if ((res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
+			return res;
+		if (isTable(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
+			return res;
+	}
+	if (isMergeTable(pt) && !list_empty(pt->members)) {
+		for (node *nt = pt->members->h; nt; nt = nt->next) {
+			sql_part *pd = nt->data;
+			sql_table *t = find_sql_table_id(tr, pt->s, pd->member);
+
+			if ((res = sql_trans_propagate_dependencies_children(tr, t)))
+				return res;
+		}
+	}
+	return res;
+}
+
 int
 sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 {
@@ -4965,11 +5004,9 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 		return res;
 	if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
+	if ((res = sql_trans_propagate_dependencies_parents(tr, mt)))
 		return res;
-	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
-		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
+	if ((res = sql_trans_propagate_dependencies_children(tr, pt)))
 		return res;
 	return res;
 }
@@ -5103,13 +5140,9 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update)
 		res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
+	if ((res = sql_trans_propagate_dependencies_parents(tr, mt)))
 		return res;
-	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
-		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
-		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
+	if ((res = sql_trans_propagate_dependencies_children(tr, pt)))
 		return res;
 finish:
 	VALclear(&vmin);
@@ -5235,13 +5268,9 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		if ((res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
 			return res;
 	}
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
+	if ((res = sql_trans_propagate_dependencies_parents(tr, mt)))
 		return res;
-	if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
-		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency_change(tr, pt->base.id, ddl))) /* protect from being added twice */
-		return res;
-	if (!isNew(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
+	if ((res = sql_trans_propagate_dependencies_children(tr, pt)))
 		return res;
 	return 0;
 }
