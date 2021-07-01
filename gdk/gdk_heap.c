@@ -103,6 +103,7 @@ HEAPgrow(const Heap *old, size_t size)
 		.dirty = true,
 		.remove = old->remove,
 		.parentid = old->parentid,
+		.wasempty = old->wasempty,
 	};
 	memcpy(new->filename, old->filename, sizeof(new->filename));
 	if (HEAPalloc(new, size, 1, 1) != GDK_SUCCEED) {
@@ -147,7 +148,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
 		h->base = GDKmalloc(h->size);
-		TRC_DEBUG(HEAP, "HEAPalloc %zu %p\n", h->size, h->base);
+		TRC_DEBUG(HEAP, "%s %zu %p\n", h->filename, h->size, h->base);
 	}
 	if (!GDKinmemory(h->farmid) && h->base == NULL) {
 		char *nme;
@@ -244,7 +245,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (!must_mmap) {
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = GDKrealloc(h->base, size);
-			TRC_DEBUG(HEAP, "Extending malloced heap %zu %zu %p %p\n", size, h->size, bak.base, h->base);
+			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu %zu %p %p\n", h->filename, size, h->size, bak.base, h->base);
 			h->size = size;
 			if (h->base)
 				return GDK_SUCCEED; /* success */
@@ -288,7 +289,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				h->newstorage = h->storage;
 
 				h->base = NULL;
-				TRC_DEBUG(HEAP, "Converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
+				TRC_DEBUG(HEAP, "Converting malloced to %s mmapped heap %s\n", h->newstorage == STORE_MMAP ? "shared" : "privately", h->filename);
 				/* try to allocate a memory-mapped based
 				 * heap */
 				if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
@@ -337,10 +338,8 @@ HEAPshrink(Heap *h, size_t size)
 	assert(size <= h->size);
 	if (h->storage == STORE_MEM) {
 		p = GDKrealloc(h->base, size);
-		TRC_DEBUG(HEAP, "Shrinking malloced "
-			  "heap %zu %zu %p "
-			  "%p\n", h->size, size,
-			  h->base, p);
+		TRC_DEBUG(HEAP, "Shrinking malloced heap %s %zu %zu %p %p\n",
+			  h->filename, h->size, size, h->base, p);
 	} else {
 		char *path;
 
@@ -548,6 +547,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		.dirty = true,
 		.remove = old->remove,
 		.parentid = old->parentid,
+		.wasempty = old->wasempty,
 	};
 	settailname(new, BBP_physical(b->batCacheid), b->ttype, width);
 	if (HEAPalloc(new, newsize, 1, 1) != GDK_SUCCEED) {
@@ -673,7 +673,7 @@ HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			TRC_DEBUG(HEAP, "HEAPfree %zu %p\n", h->size, h->base);
+			TRC_DEBUG(HEAP, "HEAPfree %s %zu %p\n", h->filename, h->size, h->base);
 			GDKfree(h->base);
 		} else if (h->storage == STORE_CMEM) {
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
@@ -773,7 +773,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 	}
 
-	TRC_DEBUG(HEAP, "HEAPload(%s%s%s,storage=%d,free=%zu,size=%zu)\n",
+	TRC_DEBUG(HEAP, "%s%s%s,storage=%d,free=%zu,size=%zu\n",
 		  nme, ext ? "." : "", ext ? ext : "",
 		  (int) h->storage, h->free, h->size);
 
@@ -801,7 +801,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	GDKfree(srcpath);
 	GDKfree(dstpath);
 
-	h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->newstorage);
+	if (h->storage == STORE_MEM && h->free == 0) {
+		h->base = GDKmalloc(h->size);
+		h->wasempty = true;
+	} else {
+		h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->storage);
+	}
 	if (h->base == NULL)
 		return GDK_FAIL; /* file could  not be read satisfactorily */
 
@@ -834,10 +839,21 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 {
 	storage_t store = h->newstorage;
 	long_str extension;
+	gdk_return rc;
 
 	if (h->base == NULL) {
 		GDKerror("no heap to save\n");
 		return GDK_FAIL;
+	}
+	if (h->free == 0) {
+		/* nothing to see, please move on */
+		h->wasempty = true;
+		TRC_DEBUG(HEAP,
+			  "not saving: "
+			  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
+			  nme?nme:"", ext, (int) h->newstorage, h->free, h->size,
+			  dosync?"true":"false");
+		return GDK_SUCCEED;
 	}
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
@@ -852,7 +868,10 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 		  nme?nme:"", ext, (int) h->newstorage, h->free, h->size,
 		  dosync?"true":"false");
-	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
+	rc = GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
+	if (rc == GDK_SUCCEED)
+		h->wasempty = false;
+	return rc;
 }
 
 gdk_return
