@@ -2375,9 +2375,10 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
 	     (b == NULL ||
-	      (BATdirty(b) && (BBP_status(i) & BBPHOT)) ||
-	      (BBP_status(i) & BBPSYNCING) || /* no swap during (sub)commit */
-	      (BBP_status(i) & (BBPPERSISTENT | BBPHOT)) == BBPHOT ||
+	      BATdirty(b) ||
+	      (BBP_status(i) & BBPHOT) ||
+	      (BBP_status(i) & BBPSYNCING) ||
+	      !(BBP_status(i) & BBPPERSISTENT) ||
 	      GDKinmemory(b->theap->farmid)))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
