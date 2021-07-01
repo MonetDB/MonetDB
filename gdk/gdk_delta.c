@@ -72,7 +72,7 @@ BATfakeCommit(BAT *b)
 void
 BATundo(BAT *b)
 {
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	BUN p, bunlast, bunfirst;
 
 	if (b == NULL)

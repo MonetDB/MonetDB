@@ -33,28 +33,6 @@
 #include "mal_exception.h"
 #include "mal_debugger.h"
 
-/* set access mode to bat, replacing input with output */
-static BAT *
-setaccess(BAT *b, restrict_t mode)
-{
-	BAT *bn = b;
-
-	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
-		if (b->batSharecnt && mode != BAT_READ) {
-			bn = COLcopy(b, b->ttype, true, TRANSIENT);
-			if (bn != NULL &&
-				BATsetaccess(bn, mode) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				bn = NULL;
-			}
-		} else {
-			bn = NULL;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	return bn;
-}
-
 /*
  * The remainder contains the wrapper code over the mserver version 4
  * InformationFunctions
@@ -199,7 +177,7 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
@@ -252,7 +230,7 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.append", OPERATION_FAILED);
 	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
 		if (u == 0 || *(str*)u == 0)
@@ -525,7 +503,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
-	if ((b = setaccess(b, m)) == NULL)
+	if ((b = BATsetaccess(b, m)) == NULL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
 	*res = b->batCacheid;
 	BATsettrivprop(b);
@@ -793,8 +771,8 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		Type *p = (Type*)Tloc(b, 0);				\
-		Type *q = (Type*)Tloc(b, BUNlast(b));		\
+		Type *p = (Type*)bi.base;					\
+		Type *q = p + bi.count;						\
 		Type *r = (Type*)Tloc(bn, 0);				\
 		cnt=0;										\
 		for (;p<q; oidx++, p++) {					\
@@ -839,6 +817,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	o = (oid*)Tloc(bs, 0);
 	ol= (oid*)Tloc(bs, BUNlast(bs));
 
+	BATiter bi = bat_iterator(b);
 	switch(ATOMstorage(b->ttype) ){
 	case TYPE_bte: shrinkloop(bte); break;
 	case TYPE_sht: shrinkloop(sht); break;
@@ -854,7 +833,6 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		if (ATOMvarsized(bn->ttype)) {
 			BUN p = 0;
 			BUN q = BUNlast(b);
-			BATiter bi = bat_iterator(b);
 
 			cnt=0;
 			for (;p<q; oidx++, p++) {
@@ -862,6 +840,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 					o++;
 				} else {
 					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+						bat_iterator_end(&bi);
 						BBPunfix(b->batCacheid);
 						BBPunfix(bn->batCacheid);
 						throw(MAL, "bat.shrink", GDK_EXCEPTION);
@@ -870,7 +849,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 				}
 			}
 		} else {
-			switch( b->twidth){
+			switch( bi.width){
 			case 1:shrinkloop(bte); break;
 			case 2:shrinkloop(sht); break;
 			case 4:shrinkloop(int); break;
@@ -879,12 +858,14 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 			case 16:shrinkloop(hge); break;
 #endif
 			default:
+				bat_iterator_end(&bi);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = false;
@@ -964,8 +945,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 #define reuseloop(Type)										\
 	do {													\
 		Type *dst = (Type *) Tloc(bn, 0);					\
-		const Type *src = (const Type *) Tloc(b, 0);		\
-		for (BUN p = 0; p < b->batCount; p++, src++) {		\
+		const Type *src = (const Type *) bi.base;			\
+		for (BUN p = 0; p < bi.count; p++, src++) {			\
 			if (o < ol && b->hseqbase + p == *o) {			\
 				do											\
 					o++;									\
@@ -1008,14 +989,15 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	const oid *ol = o + bs->batCount;
 	while (o < ol && *o < b->hseqbase)
 		o++;
+	BATiter bi = bat_iterator(b);
 	if (b->tvarsized) {
-		BATiter bi = bat_iterator(b);
-		for (BUN p = 0; p < b->batCount; p++) {
+		for (BUN p = 0; p < bi.count; p++) {
 			if (o < ol && b->hseqbase + p == *o) {
 				do
 					o++;
 				while (o < ol && b->hseqbase + p == *o);
 			} else if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bs->batCacheid);
@@ -1024,7 +1006,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		}
 	} else {
 		BUN n = 0;
-		switch (b->twidth) {
+		switch (bi.width) {
 		case 1:
 			reuseloop(bte);
 			break;
@@ -1044,18 +1026,18 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 #endif
 		default: {
 			char *dst = (char *) Tloc(bn, 0);
-			const char *src = (const char *) Tloc(b, 0);
-			for (BUN p = 0; p < b->batCount; p++) {
+			const char *src = (const char *) bi.base;
+			for (BUN p = 0; p < bi.count; p++) {
 				if (o < ol && b->hseqbase + p == *o) {
 					do
 						o++;
 					while (o < ol && b->hseqbase + p == *o);
 				} else {
-					memcpy(dst, src, b->twidth);
-					dst += b->twidth;
+					memcpy(dst, src, bi.width);
+					dst += bi.width;
 					n++;
 				}
-				src += b->twidth;
+				src += bi.width;
 			}
 			break;
 		}
@@ -1067,6 +1049,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		bn->tnonil = b->tnonil;
 		bn->tnil = false;		/* can't be sure if values deleted */
 	}
+	bat_iterator_end(&bi);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);

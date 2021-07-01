@@ -2028,7 +2028,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 	}
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
-		BATiter bi = bat_iterator(b);
+		BATiter bi = bat_iterator_nolock(b);
 		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
 			if (!*systabfixed &&
 				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)

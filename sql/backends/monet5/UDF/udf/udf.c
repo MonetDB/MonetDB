@@ -147,22 +147,24 @@ UDFBATreverse_(BAT **ret, BAT *src)
 			/* if the input string is null, then append directly */
 			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 				msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			}
 			nils = true;
 		} else {
 			/* revert tail value */
 			if ((msg = UDFreverse_(&buf, &buflen, x)) != MAL_SUCCEED)
-				goto bailout;
+				goto bailout1;
 			/* assert logical sanity */
 			assert(buf && x);
 			/* append to the output BAT. We are using a faster route, because we know what we are doing */
 			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
 				msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&li);
 
 bailout:
 	GDKfree(buf);
@@ -252,7 +254,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 /* actual implementation */
 static char *
-UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
+UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;

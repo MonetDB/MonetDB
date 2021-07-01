@@ -113,7 +113,9 @@ GDKgetenv(const char *name)
 
 		if (b != BUN_NONE) {
 			BATiter GDKenvi = bat_iterator(GDKval);
-			return BUNtvar(GDKenvi, b);
+			const char *v = BUNtvar(GDKenvi, b);
+			bat_iterator_end(&GDKenvi);
+			return v;
 		}
 	}
 	return NULL;
@@ -922,8 +924,6 @@ GDKinit(opt *set, int setlen, bool embedded)
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
 			MT_lock_init(&GDKbbpLock[i].cache, name);
-			snprintf(name, sizeof(name), "GDKtrimLock%d", i);
-			MT_lock_init(&GDKbbpLock[i].trim, name);
 			GDKbbpLock[i].free = 0;
 		}
 		if (mnstr_init() < 0) {
@@ -1293,8 +1293,9 @@ GDKexit(int status)
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-MT_Lock GDKnameLock = MT_LOCK_INITIALIZER(GDKnameLock);
 MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
+
+/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */
 MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
 
 /*

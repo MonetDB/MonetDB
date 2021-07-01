@@ -205,6 +205,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				data[p] = PyByteArray_FromStringAndSize(t->data, t->nitems);
 			}
 		}
+		bat_iterator_end(&li);
 	} else {
 		switch (inp->bat_type) {
 			case TYPE_void:
@@ -273,6 +274,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							PyObject **pyptrs =
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
+								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
 													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
@@ -296,6 +298,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 											PyUnicode_FromString(t);
 									}
 									if (!pyptrs[offset]) {
+										bat_iterator_end(&li);
 										msg = createException(
 											MAL, "pyapi3.eval",
 											SQLSTATE(PY000) "Failed to create string.");
@@ -323,6 +326,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								}
 
 								if (obj == NULL) {
+									bat_iterator_end(&li);
 									msg = createException(
 										MAL, "pyapi3.eval",
 										SQLSTATE(PY000) "Failed to create string.");
@@ -338,6 +342,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							PyObject **pyptrs =
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
+								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
 													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
@@ -361,6 +366,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								char *t = (char *)BUNtvar(li, p);
 								obj = PyString_FromString(t);
 								if (obj == NULL) {
+									bat_iterator_end(&li);
 									msg = createException(
 										MAL, "pyapi3.eval",
 										SQLSTATE(PY000) "Failed to create string.");
@@ -371,6 +377,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						}
 					}
 				}
+				bat_iterator_end(&li);
 			} break;
 #ifdef HAVE_HGE
 			case TYPE_hge: {
@@ -381,10 +388,12 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				j = 0;
 				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
-				const hge *vals = (const hge *) Tloc(b, 0);
+				BATiter bi = bat_iterator(b);
+				const hge *vals = (const hge *) bi.base;
 				BATloop(b, p, q) {
 					data[j++] = (npy_float64)vals[p];
 				}
+				bat_iterator_end(&bi);
 				break;
 			}
 #endif
@@ -474,6 +483,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 	if (!found_nil) {
 		Py_DECREF(nullmask);
@@ -1078,7 +1088,6 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	}
 
 	if (conv_type == TYPE_str) {
-		BATiter li = bat_iterator(b);
 		BUN p = 0, q = 0;
 		char *result = NULL;
 		size_t length = 0;
@@ -1090,19 +1099,23 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 			return createException(MAL, "pyapi3.eval",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
+		BATiter li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
 			void *element = (void *)BUNtail(li, p);
 			if (strConversion(&result, &length, element, false) < 0) {
+				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				return createException(MAL, "pyapi3.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
 			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
+				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
+		bat_iterator_end(&li);
 		if (result) {
 			GDKfree(result);
 		}

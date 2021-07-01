@@ -38,7 +38,6 @@ BATunique(BAT *b, BAT *s)
 	BUN hb;
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
-	bat parent = 0;
 	struct canditer ci;
 	const ValRecord *prop;
 	const char *algomsg = "";
@@ -95,14 +94,14 @@ BATunique(BAT *b, BAT *s)
 	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	vals = Tloc(b, 0);
+	bi = bat_iterator(b);
+	vals = bi.base;
 	if (b->tvarsized && b->ttype)
-		vars = b->tvheap->base;
+		vars = bi.vh->base;
 	else
 		vars = NULL;
-	width = Tsize(b);
+	width = bi.width;
 	cmp = ATOMcompare(b->ttype);
-	bi = bat_iterator(b);
 
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
@@ -173,11 +172,8 @@ BATunique(BAT *b, BAT *s)
 	} else if (BATcheckhash(b) ||
 		   (!b->batTransient &&
 		    cnt == BATcount(b) &&
-		    BAThash(b) == GDK_SUCCEED) ||
-		   (/* DISABLES CODE */ (0) &&
-		    (parent = VIEWtparent(b)) != 0 &&
-		    BATcheckhash(BBPdescriptor(parent)))) {
-		BUN lo;
+		    BAThash(b) == GDK_SUCCEED)) {
+		BUN lo = 0;
 		oid seq;
 
 		/* we already have a hash table on b, or b is
@@ -185,16 +181,12 @@ BATunique(BAT *b, BAT *s)
 		 * is a view on a bat that already has a hash table */
 		algomsg = "unique: existing hash";
 		seq = b->hseqbase;
-		if (b->thash == NULL && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b)) != 0) {
-			BAT *b2 = BBPdescriptor(parent);
-			lo = b->tbaseoff - b2->tbaseoff;
-			b = b2;
-			bi = bat_iterator(b);
-			algomsg = "unique: existing parent hash";
-		} else {
-			lo = 0;
-		}
+		MT_rwlock_rdlock(&b->thashlock);
 		hs = b->thash;
+		if (hs == NULL) {
+			MT_rwlock_rdunlock(&b->thashlock);
+			goto lost_hash;
+		}
 		for (i = 0; i < ci.ncand; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
@@ -215,15 +207,19 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 			if (hb == BUN_NONE || hb < lo) {
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED) {
+					MT_rwlock_rdunlock(&b->thashlock);
 					goto bunins_failed;
+				}
 			}
 		}
+		MT_rwlock_rdunlock(&b->thashlock);
 	} else {
 		BUN prb;
 		BUN p;
 		BUN mask;
 
+	  lost_hash:
 		GDKclrerr();	/* not interested in BAThash errors */
 		algomsg = "unique: new partial hash";
 		nme = BBP_physical(b->batCacheid);
@@ -277,6 +273,7 @@ BATunique(BAT *b, BAT *s)
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
+	bat_iterator_end(&bi);
 
 	bn->theap->dirty = true;
 	bn->tsorted = true;
@@ -301,6 +298,7 @@ BATunique(BAT *b, BAT *s)
 	return bn;
 
   bunins_failed:
+	bat_iterator_end(&bi);
 	if (seen)
 		GDKfree(seen);
 	if (hs != NULL && hs != b->thash) {

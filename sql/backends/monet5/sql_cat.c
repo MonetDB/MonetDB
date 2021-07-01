@@ -243,7 +243,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -2:
 		case -3:
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) 
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: failed due to conflict with another transaction");
 			break;
 		case -10:
@@ -406,7 +406,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 				break;
 			case -2:
 			case -3:
-				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) 
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 										  "ALTER TABLE: failed due to conflict with another transaction");
 				break;
 			case -4:
@@ -1200,6 +1200,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 	lng *val = NULL;
 	BAT *b = NULL;
+	BATiter bi = {0};
 
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
@@ -1213,8 +1214,10 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");
 		}
-		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng)
-			val = (lng*)Tloc(b, 0);
+		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng) {
+			bi = bat_iterator(b);
+			val = (lng*)bi.base;
+		}
 	}
 
 	if (val == NULL || is_lng_nil(*val))
@@ -1222,8 +1225,10 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);
 
-	if (b)
+	if (b) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
+	}
 	return msg;
 }
 
