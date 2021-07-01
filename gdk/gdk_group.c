@@ -1010,7 +1010,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		     BAThash(b) == GDK_SUCCEED) ||
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
-		     BATcheckhash(BBPdescriptor(parent))))) {
+		     BATcheckhash(BBP_cache(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table;
@@ -1027,7 +1027,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
-			BAT *b2 = BBPdescriptor(parent);
+			BAT *b2 = BBP_cache(parent);
 			MT_rwlock_rdunlock(&b->thashlock);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
