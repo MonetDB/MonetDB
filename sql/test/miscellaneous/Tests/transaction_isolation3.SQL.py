@@ -150,6 +150,14 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
+        mdb1.execute('create table fine(y int, z int);').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("alter table fine drop column y;").assertSucceeded()
+        mdb2.execute("create view myv7(a,b) as select y, z from sys.fine;").assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('DROP TABLE w;').assertSucceeded()
         mdb1.execute('drop table notpossible;').assertSucceeded()
@@ -177,4 +185,5 @@ with SQLTestCase() as mdb1:
         mdb1.execute('DROP TABLE ww;').assertSucceeded()
         mdb1.execute('DROP VIEW myv2;').assertSucceeded()
         mdb1.execute('DROP FUNCTION pain();').assertSucceeded()
+        mdb1.execute('DROP TABLE fine;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
