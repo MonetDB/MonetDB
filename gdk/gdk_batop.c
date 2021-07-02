@@ -147,25 +147,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				(var_t) 1 << 17;
 			MT_thread_setalgorithm("copy vheap, copy heap");
 			if (b->tvheap->size < ni.vh->free) {
-				MT_lock_set(&b->theaplock);
-				if (ATOMIC_GET(&b->tvheap->refs) == 1) {
-					if (HEAPextend(b->tvheap, ni.vh->free, force) != GDK_SUCCEED) {
-						MT_lock_unset(&b->theaplock);
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-				} else {
-					MT_lock_unset(&b->theaplock);
-					Heap *h = HEAPgrow(b->tvheap, ni.vh->free);
-					if (h == NULL) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-					MT_lock_set(&b->theaplock);
-					HEAPdecref(b->tvheap, false);
-					b->tvheap = h;
+				if (HEAPgrow(&b->theaplock, &b->tvheap, ni.vh->free, force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
-				MT_lock_unset(&b->theaplock);
 			}
 			memcpy(b->tvheap->base, ni.vh->base, ni.vh->free);
 			b->tvheap->free = ni.vh->free;
@@ -210,25 +195,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				/* if in "force" mode, the heap may be
 				 * shared when memory mapped */
-				MT_lock_set(&b->theaplock);
-				if (ATOMIC_GET(&b->tvheap->refs) == 1) {
-					if (HEAPextend(b->tvheap, toff + ni.vh->size, force) != GDK_SUCCEED) {
-						MT_lock_unset(&b->theaplock);
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-				} else {
-					MT_lock_unset(&b->theaplock);
-					Heap *h = HEAPgrow(b->tvheap, toff + ni.vh->size);
-					if (h == NULL) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-					MT_lock_set(&b->theaplock);
-					HEAPdecref(b->tvheap, false);
-					b->tvheap = h;
+				if (HEAPgrow(&b->theaplock, &b->tvheap, toff + ni.vh->size, force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
-				MT_lock_unset(&b->theaplock);
 				MT_thread_setalgorithm("append vheap");
 				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vh->free);
 				b->tvheap->free = toff + ni.vh->free;

@@ -199,7 +199,7 @@ gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-Heap *HEAPgrow(const Heap *old, size_t size)
+gdk_return HEAPgrow(MT_Lock *lock, Heap **old, size_t size, bool mayshare)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
