@@ -1022,11 +1022,16 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			if (*j == '}')
 				break;
-			if (*j != '}' && *j != ',') {
+			if (*j != ',') {
 				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or '}' expected at offset %td", j - string_start);
 				return idx;
 			}
 			j++;
+			skipblancs(j);
+			if (*j == '}') {
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' not expected at offset %td", j - string_start);
+				return idx;
+			}
 		}
 		if (*j != '}') {
 			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected at offset %td", j - string_start);
@@ -1083,12 +1088,16 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected at offset %td", j - string_start);
 				return idx;
 			}
-			if (*j != ']' && *j != ',') {
+			if (*j != ',') {
 				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or ']' expected at offset %td (context: %c%c%c)", j - string_start, *(j - 1), *j, *(j + 1));
 				return idx;
 			}
 			j++;
 			skipblancs(j);
+			if (*j == ']') {
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' not expected at offset %td", j - string_start);
+				return idx;
+			}
 		}
 		if (*j != ']') {
 			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected at offset %td", j - string_start);
