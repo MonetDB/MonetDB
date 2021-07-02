@@ -335,10 +335,8 @@ convert_and_validate(char *text)
 	if (*r == 0x80 && *(r+1) == 0) {
 		// Technically a utf-8 violation, but we treat it as the NULL marker
 		// GDK does so as well so we can just pass it on.
-		// The following asserts will fail if GDK ever moves to another string representation:
-		assert(sizeof(str_nil) == 2);
-		assert(str_nil[0] == 0x80);
-		assert(str_nil[1] == 0);
+		// load_zero_terminated_text() below contains an assert to ensure
+		// this remains the case.
 		return MAL_SUCCEED;
 	}
 
@@ -398,6 +396,9 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
+
+	// convert_and_validate() above counts on the following property to hold:
+	assert(strNil((const char[2]){ 0x80, 0 }));
 
 	bs = bstream_create(s, 1 << 20);
 	if (bs == NULL) {
