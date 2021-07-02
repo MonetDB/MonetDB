@@ -526,7 +526,6 @@ gdk_return
 BATextend(BAT *b, BUN newcap)
 {
 	size_t theap_size;
-	gdk_return rc = GDK_SUCCEED;
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, GDK_FAIL);
@@ -554,21 +553,9 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
-		MT_lock_set(&b->theaplock);
-		if (ATOMIC_GET(&b->theap->refs) == 1) {
-			rc = HEAPextend(b->theap, theap_size, b->batRestricted == BAT_READ);
-		} else {
-			MT_lock_unset(&b->theaplock);
-			Heap *h = HEAPgrow(b->theap, theap_size);
-			if (h == NULL)
-				return GDK_FAIL;
-			MT_lock_set(&b->theaplock);
-			HEAPdecref(b->theap, false);
-			b->theap = h;
-		}
-		MT_lock_unset(&b->theaplock);
+		return HEAPgrow(&b->theaplock, &b->theap, theap_size, b->batRestricted == BAT_READ);
 	}
-	return rc;
+	return GDK_SUCCEED;
 }
 
 
