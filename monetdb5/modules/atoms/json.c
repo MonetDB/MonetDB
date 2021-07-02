@@ -57,7 +57,6 @@ typedef str json;
 			if (*(J) != ' ' &&					\
 				*(J) != '\n' &&					\
 				*(J) != '\t' &&					\
-				*(J) != '\f' &&					\
 				*(J) != '\r')					\
 				break;							\
 	} while (0)
@@ -864,10 +863,6 @@ JSONstringParser(const char *j, const char **next)
 				throw(MAL, "json.parser", "illegal escape char");
 			}
 			break;
-		case '\t':
-		case '\n':
-		case '\r':
-			throw(MAL, "json.parser", "illegal white space char");
 		case '"':
 			if (seensurrogate)
 				throw(MAL, "json.parser", "illegal escape char");
@@ -875,6 +870,8 @@ JSONstringParser(const char *j, const char **next)
 			*next = j;
 			return MAL_SUCCEED;
 		default:
+			if ((unsigned char)*j < ' ')
+				throw(MAL, "json.parser", "illegal control char");
 			if (seensurrogate)
 				throw(MAL, "json.parser", "illegal escape char");
 			break;
@@ -915,6 +912,9 @@ JSONfractionParser(const char *j, const char **next) {
 
 	// skip the period character
 	j++;
+	// must be followed by more digits
+	if (!isdigit((unsigned char)*j))
+		return false;
 	for (; *j; j++)
 		if (!isdigit((unsigned char)*j))
 			break;
