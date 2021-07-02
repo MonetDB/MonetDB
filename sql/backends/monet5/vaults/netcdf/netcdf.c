@@ -864,8 +864,22 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BUN offset;
 	BAT *pos = NULL;
-	if (store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat), &offset, &pos) != LOG_OK)
+	if (store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat), &offset, &pos) != LOG_OK) {
+		GDKfree(dname);
+		GDKfree(dim_bids);
+		BBPunfix(vbatid);
+		BBPrelease(vbatid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if (!isNew(arr_table) && sql_trans_add_dependency_change(m->session->tr, arr_table->base.id, dml) != LOG_OK) {
+		GDKfree(dname);
+		GDKfree(dim_bids);
+		BBPunfix(vbatid);
+		BBPrelease(vbatid);
+		if (pos)
+			bat_destroy(pos);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	store->storage_api.append_col(m->session->tr, col, offset, pos, vbat, BATcount(vbat), TYPE_bat);
 	if (pos)
 		bat_destroy(pos);

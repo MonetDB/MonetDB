@@ -503,6 +503,6 @@ extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
 extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp);
-extern int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
+sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 
 #endif /*SQL_STORAGE_H */
