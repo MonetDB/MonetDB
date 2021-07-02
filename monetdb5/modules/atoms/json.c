@@ -864,6 +864,10 @@ JSONstringParser(const char *j, const char **next)
 				throw(MAL, "json.parser", "illegal escape char");
 			}
 			break;
+		case '\t':
+		case '\n':
+		case '\r':
+			throw(MAL, "json.parser", "illegal white space char");
 		case '"':
 			if (seensurrogate)
 				throw(MAL, "json.parser", "illegal escape char");
