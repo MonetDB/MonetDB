@@ -315,10 +315,12 @@ strPut(BAT *b, var_t *dst, const void *V)
 	/* check that string is correctly encoded UTF-8; there was no
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
+#ifndef NDEBUG
 	if (checkUTF8(v) != GDK_SUCCEED) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return 0;
 	}
+#endif
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
