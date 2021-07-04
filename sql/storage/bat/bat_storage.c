@@ -670,17 +670,30 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 }
 
 static BAT *
-cs_bind_ubat( column_storage *cs, int access, int type)
+cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max position < cnt */)
 {
 	BAT *b;
 
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
 	/* returns the updates for cs */
 	if (cs->uibid && cs->uvbid) {
-		if (access == RD_UPD_ID)
+		if (access == RD_UPD_ID) {
 			b = temp_descriptor(cs->uibid);
-		else
+			assert(b->tsorted);
+			if ((BATtdense(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
+			   (!BATtdense(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt)) {
+					oid nil = oid_nil;
+					/* less then cnt */
+					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);
+
+					BAT *nb = BATproject(s, b);
+					bat_destroy(s);
+					bat_destroy(b);
+					b = nb;
+			}
+		} else {
 			b = temp_descriptor(cs->uvbid);
+		}
 	} else {
 		b = e_BAT(access == RD_UPD_ID?TYPE_oid:type);
 	}
@@ -796,21 +809,21 @@ older_delta( sql_delta *d, sql_trans *tr)
 }
 
 static BAT *
-bind_ubat(sql_trans *tr, sql_delta *d, int access, int type)
+bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 {
 	assert(tr->active);
 	sql_delta *o = NULL;
 	BAT *ui = NULL, *uv = NULL;
 
-	ui = cs_bind_ubat(&d->cs, RD_UPD_ID, type);
+	ui = cs_bind_ubat(&d->cs, RD_UPD_ID, type, cnt);
 	if (access == RD_UPD_VAL)
-		uv = cs_bind_ubat(&d->cs, RD_UPD_VAL, type);
+		uv = cs_bind_ubat(&d->cs, RD_UPD_VAL, type, cnt);
 	while ((o = older_delta(d, tr)) != NULL) {
 		BAT *oui = NULL, *ouv = NULL;
 		if (!oui)
-			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type);
+			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type, cnt);
 		if (access == RD_UPD_VAL)
-			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type);
+			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type, cnt);
 		if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv)))
 			return NULL;
 		if ((ui = merge_updates(ui, &uv, oui, ouv)) == NULL)
@@ -825,16 +838,16 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type)
 }
 
 static BAT *
-bind_ucol(sql_trans *tr, sql_column *c, int access)
+bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
-	return bind_ubat(tr, col_timestamp_delta(tr, c), access, c->type.type->localtype);
+	return bind_ubat(tr, col_timestamp_delta(tr, c), access, c->type.type->localtype, cnt);
 }
 
 static BAT *
-bind_uidx(sql_trans *tr, sql_idx * i, int access)
+bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
 {
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	return bind_ubat(tr, idx_timestamp_delta(tr, i), access, type);
+	return bind_ubat(tr, idx_timestamp_delta(tr, i), access, type, cnt);
 }
 
 static BAT *
@@ -863,10 +876,10 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	assert(access == QUICK || tr->active);
 	if (!isTable(c->t))
 		return NULL;
-	if (access == RD_UPD_ID || access == RD_UPD_VAL)
-		return bind_ucol(tr, c, access);
 	sql_delta *d = col_timestamp_delta(tr, c);
 	size_t cnt = count_col(tr, c, 0);
+	if (access == RD_UPD_ID || access == RD_UPD_VAL)
+		return bind_ucol(tr, c, access, cnt);
 	return cs_bind_bat( &d->cs, access, cnt);
 }
 
@@ -876,10 +889,10 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	assert(access == QUICK || tr->active);
 	if (!isTable(i->t))
 		return NULL;
-	if (access == RD_UPD_ID || access == RD_UPD_VAL)
-		return bind_uidx(tr, i, access);
 	sql_delta *d = idx_timestamp_delta(tr, i);
 	size_t cnt = count_idx(tr, i, 0);
+	if (access == RD_UPD_ID || access == RD_UPD_VAL)
+		return bind_uidx(tr, i, access, cnt);
 	return cs_bind_bat( &d->cs, access, cnt);
 }
 
