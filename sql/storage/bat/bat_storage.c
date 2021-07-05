@@ -433,6 +433,9 @@ static sql_delta *
 temp_dup_delta(ulng tid, int type)
 {
 	sql_delta *bat = ZNEW(sql_delta);
+
+	if (!bat)
+		return NULL;
 	if (temp_dup_cs(&bat->cs, tid, type)) {
 		_DELETE(bat);
 		return NULL;
@@ -452,6 +455,9 @@ static storage *
 temp_dup_storage(sql_trans *tr)
 {
 	storage *bat = ZNEW(storage);
+
+	if (!bat)
+		return NULL;
 	if (temp_dup_cs(&bat->cs, tr->tid, TYPE_msk)) {
 		_DELETE(bat);
 		return NULL;
@@ -483,7 +489,8 @@ temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 	assert(isTempTable(c->t));
 	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&c->data), tr->tid);
 	if (!d) {
-		d = temp_dup_delta(tr->tid, c->type.type->localtype);
+		if (!(d = temp_dup_delta(tr->tid, c->type.type->localtype)))
+			return NULL;
 		do {
 			d->next = ATOMIC_PTR_GET(&c->data);
 		} while(!ATOMIC_PTR_CAS(&c->data, (void**)&d->next, d)); /* set c->data = d, when c->data == d->next else d->next = c->data */
@@ -506,7 +513,9 @@ temp_idx_timestamp_delta( sql_trans *tr, sql_idx *i)
 	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&i->data), tr->tid);
 	if (!d) {
 		int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-		d = temp_dup_delta(tr->tid, type);
+
+		if (!(d = temp_dup_delta(tr->tid, type)))
+			return NULL;
 		do {
 			d->next = ATOMIC_PTR_GET(&i->data);
 		} while(!ATOMIC_PTR_CAS(&i->data, (void**)&d->next, d)); /* set i->data = d, when i->data == d->next else d->next = i->data */
@@ -538,7 +547,8 @@ temp_tab_timestamp_storage( sql_trans *tr, sql_table *t)
 	assert(isTempTable(t));
 	storage *d = temp_storage(ATOMIC_PTR_GET(&t->data), tr->tid);
 	if (!d) {
-		d = temp_dup_storage(tr);
+		if (!(d = temp_dup_storage(tr)))
+			return NULL;
 		do {
 			d->next = ATOMIC_PTR_GET(&t->data);
 		} while(!ATOMIC_PTR_CAS(&t->data, (void**)&d->next, d)); /* set t->data = d, when t->data == d->next else d->next = t->data */
@@ -637,7 +647,7 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return 0;
 	d = tab_timestamp_storage(tr, c->t);
 	ds = col_timestamp_delta(tr, c);
-	if (!d)
+	if (!d ||!ds)
 		return 0;
 	if (access == 2)
 		return ds?ds->cs.ucnt:0;
@@ -665,7 +675,7 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 		return 0;
 	d = tab_timestamp_storage(tr, i->t);
 	ds = idx_timestamp_delta(tr, i);
-	if (!d)
+	if (!d || !ds)
 		return 0;
 	if (access == 2)
 		return ds?ds->cs.ucnt:0;
@@ -862,14 +872,22 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
-	return bind_ubat(tr, col_timestamp_delta(tr, c), access, c->type.type->localtype, cnt);
+	sql_delta *d = col_timestamp_delta(tr, c);
+
+	if (!d)
+		return NULL;
+	return bind_ubat(tr, d, access, c->type.type->localtype, cnt);
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
 {
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	return bind_ubat(tr, idx_timestamp_delta(tr, i), access, type, cnt);
+	sql_delta *d = idx_timestamp_delta(tr, i);
+
+	if (!d)
+		return NULL;
+	return bind_ubat(tr, d, access, type, cnt);
 }
 
 static BAT *
@@ -899,6 +917,8 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	if (!isTable(c->t))
 		return NULL;
 	sql_delta *d = col_timestamp_delta(tr, c);
+	if (!d)
+		return NULL;
 	size_t cnt = count_col(tr, c, 0);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access, cnt);
@@ -912,6 +932,8 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	if (!isTable(i->t))
 		return NULL;
 	sql_delta *d = idx_timestamp_delta(tr, i);
+	if (!d)
+		return NULL;
 	size_t cnt = count_idx(tr, i, 0);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access, cnt);
@@ -1414,8 +1436,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 {
 	sql_delta *obat = ATOMIC_PTR_GET(&c->data);
 
-	if (isTempTable(c->t))
-		obat = temp_col_timestamp_delta(tr, c);
+	if (isTempTable(c->t) && !(obat = temp_col_timestamp_delta(tr, c)))
+		return NULL;
 
 	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) /* on append there are no conflicts */
 		return obat;
@@ -1482,8 +1504,8 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 {
 	sql_delta *obat = ATOMIC_PTR_GET(&i->data);
 
-	if (isTempTable(i->t))
-		obat = temp_idx_timestamp_delta(tr, i);
+	if (isTempTable(i->t) && !(obat = temp_idx_timestamp_delta(tr, i)))
+		return NULL;
 
 	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) /* on append there are no conflicts */
 		return obat;
@@ -2297,16 +2319,20 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		return new_persistent_delta(ATOMIC_PTR_GET(&ni->data));
 	} else {
 		sql_column *c = ol_first_node(ni->t->columns)->data;
-		sql_delta *d;
+		sql_delta *d = col_timestamp_delta(tr, c);
 
-		d = col_timestamp_delta(tr, c);
-		/* Here we also handle indices created through alter stmts */
-		/* These need to be created aligned to the existing data */
-		if (d->cs.bid) {
-			bat->cs.bid = copyBat(d->cs.bid, type, 0);
-			if(bat->cs.bid == BID_NIL)
-				ok = LOG_ERR;
+		if (d) {
+			/* Here we also handle indices created through alter stmts */
+			/* These need to be created aligned to the existing data */
+			if (d->cs.bid) {
+				bat->cs.bid = copyBat(d->cs.bid, type, 0);
+				if(bat->cs.bid == BID_NIL)
+					ok = LOG_ERR;
+			}
+		} else {
+			ok = LOG_ERR;
 		}
+
 		bat->cs.ucnt = 0;
 		if (!isNew(c))
 			bat->cs.alter = 1;
