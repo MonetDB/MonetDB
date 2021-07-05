@@ -115,7 +115,7 @@ strCleanHash(Heap *h, bool rebuild)
 			strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
 		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
-		pos += strLen(s);
+		pos += strlen(s) + 1;
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
@@ -136,7 +136,7 @@ strCleanHash(Heap *h, bool rebuild)
 			pos += pad + extralen;
 			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
-			pos += strLen(s);
+			pos += strlen(s) + 1;
 		}
 	}
 #endif
@@ -170,7 +170,7 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (strCmp(v, (str) (next + 1) + extralen) == 0)
+		if (strcmp(v, (str) (next + 1) + extralen) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
 	}
 	return 0;
@@ -256,7 +256,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;
-	size_t pos, len = strLen(v);
+	size_t pos, len = strlen(v) + 1;
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket;
 	BUN off, strhash;
@@ -293,7 +293,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t) + extralen;
-				if (strCmp(v, h->base + pos) == 0) {
+				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
@@ -304,7 +304,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 			 * linked list, so only look at single
 			 * entry */
 			pos = *bucket + extralen;
-			if (strCmp(v, h->base + pos) == 0) {
+			if (strcmp(v, h->base + pos) == 0) {
 				/* already in heap: reuse */
 				return *dst = (var_t) pos;
 			}
