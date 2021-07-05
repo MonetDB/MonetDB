@@ -1223,6 +1223,16 @@ mkdfa(const unsigned char *sep, size_t seplen)
 	return dfa;
 }
 
+#ifdef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
+
 static void
 SQLproducer(void *p)
 {
@@ -1267,7 +1277,7 @@ SQLproducer(void *p)
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
 		if (ateof[cur] && partial) {
-			if (partial) {
+			if (unlikely(partial)) {
 				tablet_error(task, rowno, int_nil, "incomplete record at end of file", s);
 				task->b->pos += partial;
 			}
@@ -1275,7 +1285,7 @@ SQLproducer(void *p)
 		}
 
 		if (task->errbuf && task->errbuf[0]) {
-			if (GDKerrbuf && GDKerrbuf[0]) {
+			if (unlikely(GDKerrbuf && GDKerrbuf[0])) {
 				tablet_error(task, rowno, int_nil, GDKerrbuf, "SQLload_file");
 /*				TRC_DEBUG(MAL_SERVER, "Bailout on SQLload\n");*/
 				ateof[cur] = true;
@@ -1291,7 +1301,7 @@ SQLproducer(void *p)
 		s = task->input[cur];
 		base = end;
 		/* avoid too long records */
-		if (end - s + task->b->len - task->b->pos >= task->rowlimit[cur]) {
+		if (unlikely(end - s + task->b->len - task->b->pos >= task->rowlimit[cur])) {
 			/* the input buffer should be extended, but 'base' is not shared
 			   between the threads, which we can not now update.
 			   Mimick an ateof instead; */
@@ -1342,26 +1352,28 @@ SQLproducer(void *p)
 				} else {
 					/* check for correctly encoded UTF-8 */
 					if (nutf > 0) {
-						if ((*e & 0xC0) != 0x80)
+						if (unlikely((*e & 0xC0) != 0x80))
 							goto badutf8;
-						if (m != 0 && (*e & m) == 0)
+						if (unlikely(m != 0 && (*e & m) == 0))
 							goto badutf8;
 						m = 0;
 						nutf--;
-					} else if ((*e & 0xE0) == 0xC0) {
-						nutf = 1;
-						if ((e[0] & 0x1E) == 0)
-							goto badutf8;
-					} else if ((*e & 0xF0) == 0xE0) {
-						nutf = 2;
-						if ((e[0] & 0x0F) == 0)
-							m = 0x20;
-					} else if ((*e & 0xF8) == 0xF0) {
-						nutf = 3;
-						if ((e[0] & 0x07) == 0)
-							m = 0x30;
 					} else if ((*e & 0x80) != 0) {
-						goto badutf8;
+						if ((*e & 0xE0) == 0xC0) {
+							nutf = 1;
+							if (unlikely((e[0] & 0x1E) == 0))
+								goto badutf8;
+						} else if ((*e & 0xF0) == 0xE0) {
+							nutf = 2;
+							if ((e[0] & 0x0F) == 0)
+								m = 0x20;
+						} else if (likely((*e & 0xF8) == 0xF0)) {
+							nutf = 3;
+							if ((e[0] & 0x07) == 0)
+								m = 0x30;
+						} else {
+							goto badutf8;
+						}
 					}
 					/* check for quoting and the row separator */
 					if (bs) {
@@ -1385,7 +1397,7 @@ SQLproducer(void *p)
 			if (*e == 0) {
 				partial = e - s;
 				/* found an incomplete record, saved for next round */
-				if (s+partial < end) {
+				if (unlikely(s+partial < end)) {
 					/* found a EOS in the input */
 					tablet_error(task, rowno, int_nil, "record too long (EOS found)", "");
 					ateof[cur] = true;
@@ -1477,7 +1489,7 @@ SQLproducer(void *p)
 		/* move the non-parsed correct row data to the head of the next buffer */
 		end = s = task->input[cur];
 	}
-	if (cnt < task->maxrow && task->maxrow != BUN_NONE) {
+	if (unlikely(cnt < task->maxrow && task->maxrow != BUN_NONE)) {
 		char msg[256];
 		snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
 		task->as->error = GDKstrdup(msg);

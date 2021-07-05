@@ -365,7 +365,7 @@ ilog2(BUN x)
 	b && b->torderidx ? "O" : "",					\
 	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
-#define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
+#define BBP_BATMASK	((1 << (SIZEOF_SIZE_T + 5)) - 1)
 #define BBP_THREADMASK	63
 
 struct PROPrec {
