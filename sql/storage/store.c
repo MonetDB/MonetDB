@@ -2246,7 +2246,6 @@ store_manager(sqlstore *store)
 
 		if (store->debug&128 && ATOMIC_GET(&store->nr_active) == 0) {
 			MT_lock_unset(&store->flush);
-			MT_lock_set(&store->commit);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
 				ulng oldest = store_timestamp(store)+1;
@@ -2256,7 +2255,6 @@ store_manager(sqlstore *store)
 				store_pending_changes(store, oldest);
 			}
 			store_unlock(store);
-			MT_lock_unset(&store->commit);
 			MT_lock_set(&store->flush);
 			store->logger_api.activate(store); /* rotate too new log file */
 		}
