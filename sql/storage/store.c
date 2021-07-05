@@ -6770,6 +6770,7 @@ sql_trans_end(sql_session *s, int ok)
 	} else if (ok == SQL_ERR) { /* if a conflict happened, it was already rollbacked */
 		sql_trans_rollback(s->tr);
 	}
+	assert(s->tr->active);
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;

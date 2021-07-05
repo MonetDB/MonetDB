@@ -129,3 +129,19 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop table parent8;').assertSucceeded()
         mdb1.execute('drop schema mys2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
+
+with SQLTestCase() as mdb1:
+    with SQLTestCase() as mdb2:
+        mdb1.connect(username="monetdb", password="monetdb")
+        mdb1.execute('CREATE schema mys3;').assertSucceeded()
+        mdb1.execute("CREATE USER duser3 WITH PASSWORD 'ups' NAME 'ups' SCHEMA mys3;").assertSucceeded()
+
+        mdb2.connect(username="duser3", password="ups")
+        mdb2.execute('select 1;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('drop user duser3;').assertSucceeded()
+        mdb1.execute('drop schema mys3;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('start transaction;').assertFailed(err_code="42000", err_message="The user was not found in the database, this session is going to terminate")
+        # mbd2 cannot do anything else, the connection was terminated
