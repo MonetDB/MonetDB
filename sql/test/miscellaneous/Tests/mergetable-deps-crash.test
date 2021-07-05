@@ -37,4 +37,12 @@ select * from mt
 
 @connection(id=1)
 statement ok
+alter table mt drop table child
+
+@connection(id=1)
+statement ok
+drop table child
+
+@connection(id=1)
+statement ok
 drop table mt
