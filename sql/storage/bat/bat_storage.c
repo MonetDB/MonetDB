@@ -1445,6 +1445,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 		/* abort */
 		if (update_conflict)
 			*update_conflict = true;
+		else
+			return timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
 		return NULL;
 	}
 	assert(!isTempTable(c->t));
