@@ -129,24 +129,11 @@ static bool havehge = false;
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
-#ifndef NDEBUG
-static inline bool
-islocked(MT_Lock *l)
-{
-	if (MT_lock_try(l)) {
-		MT_lock_unset(l);
-		return false;
-	}
-	return true;
-}
-#endif
-
 static void
 BBP_insert(bat i)
 {
 	bat idx = (bat) (strHash(BBP_logical(i)) & BBP_mask);
 
-	assert(islocked(&BBPnameLock));
 	BBP_next(i) = BBP_hash[idx];
 	BBP_hash[idx] = i;
 }
@@ -158,7 +145,6 @@ BBP_delete(bat i)
 	const char *s = BBP_logical(i);
 	bat idx = (bat) (strHash(s) & BBP_mask);
 
-	assert(islocked(&BBPnameLock));
 	for (h += idx; (i = *h) != 0; h = &BBP_next(i)) {
 		if (strcmp(BBP_logical(i), s) == 0) {
 			*h = BBP_next(i);
@@ -400,7 +386,6 @@ BBPextend(int idx, bool buildhash)
 static gdk_return
 recover_dir(int farmid, bool direxists)
 {
-	assert(islocked(&GDKtmLock));
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
@@ -1689,10 +1674,6 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 	int n = 0;
 	lng ologno, otransid;
 
-#ifndef NDEBUG
-	assert(islocked(&GDKtmLock));
-#endif
-
 	if (obbpfp)
 		*obbpfp = NULL;
 	*nbbpfp = NULL;
@@ -2585,7 +2566,7 @@ BBPshare(bat parent)
 static inline int
 decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 {
-	int refs = 0;
+	int refs = 0, lrefs;
 	bool swap = false;
 	bat tp = 0, tvp = 0;
 	BAT *b;
@@ -2671,6 +2652,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
 	}
+	lrefs = BBP_lrefs(i);
 
 	/* unlock before re-locking in unload; as saving a dirty
 	 * persistent bat may take a long time */
@@ -2678,7 +2660,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		MT_lock_unset(&GDKswapLock(i));
 
 	if (swap && b != NULL) {
-		if (BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+		if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
 			/* free memory (if loaded) and delete from
 			 * disk (if transient but saved) */
 			BBPdestroy(b);
@@ -3153,7 +3135,6 @@ BBPprepare(bool subcommit)
 	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
 
-	assert(islocked(&GDKtmLock));
 	if(!(bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL)))
 		return GDK_FAIL;
 	if(!(subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL))) {

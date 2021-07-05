@@ -199,7 +199,7 @@ gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-Heap *HEAPgrow(const Heap *old, size_t size)
+gdk_return HEAPgrow(MT_Lock *lock, Heap **old, size_t size, bool mayshare)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
@@ -365,7 +365,7 @@ ilog2(BUN x)
 	b && b->torderidx ? "O" : "",					\
 	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
-#define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
+#define BBP_BATMASK	((1 << (SIZEOF_SIZE_T + 5)) - 1)
 #define BBP_THREADMASK	63
 
 struct PROPrec {
