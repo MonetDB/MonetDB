@@ -484,7 +484,7 @@ typedef enum sql_dependency_change_type {
 typedef struct sql_dependency_change {
 	sqlid objid; /* id of the object where the dependency was created */
 	sql_dependency_change_type type; /* type of dependency */
-	ulng ts; /* committed timestamp */
+	ulng ts; /* transaction timestamp of the dependency */
 } sql_dependency_change;
 
 typedef struct sql_change {
