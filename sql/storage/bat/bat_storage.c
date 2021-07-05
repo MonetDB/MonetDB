@@ -314,8 +314,10 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	segment *s = segs->h;
 
 	size_t nr = segs_end(segs, tr, t);
-	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED)
+	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED) {
+		bat_destroy(b);
 		return LOG_ERR;
+	}
 
 	if (nr > BATcount(b))
 		BATsetcount(b, nr);
@@ -693,13 +695,12 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
 	/* returns the updates for cs */
-	if (cs->uibid && cs->uvbid) {
+	if (cs->uibid && cs->uvbid && cs->ucnt) {
 		if (access == RD_UPD_ID) {
 			if (!(b = temp_descriptor(cs->uibid)))
 				return NULL;
-			assert(b->tsorted);
-			if ((BATtdense(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
-			   (!BATtdense(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt)) {
+			if (!b->tsorted || ((BATtdense(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
+			   (!BATtdense(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
 					oid nil = oid_nil;
 					/* less then cnt */
 					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);

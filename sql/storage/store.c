@@ -3571,6 +3571,7 @@ sql_trans_destroy(sql_trans *tr)
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
+	MT_lock_destroy(&tr->lock);
 	_DELETE(tr);
 	store_unlock(store);
 	return res;
