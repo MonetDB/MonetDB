@@ -3664,7 +3664,7 @@ sql_trans_valid(sql_trans *tr)
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!list_empty(tr->changes)) {
+	if (!list_empty(tr->predicates)) {
 		/* for each predicate check if that table/column has changes */
 		for(node *n = tr->predicates->h; n; n = n->next) {
 			pl *p = n->data;
@@ -3754,22 +3754,21 @@ sql_trans_commit(sql_trans *tr)
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
-	if (!tr->parent && !list_empty(tr->predicates) && !list_empty(tr->changes)) {
-		store_lock(store);
-		ok = sql_trans_valid(tr);
-		store_unlock(store);
-		if (ok != LOG_OK) {
-			sql_trans_rollback(tr);
-			return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
-		}
-	}
-
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
 		ulng commit_ts, oldest = 0;
 
 		MT_lock_set(&store->commit);
 		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
+
+		if (!tr->parent && !list_empty(tr->predicates)) {
+			ok = sql_trans_valid(tr);
+			if (ok != LOG_OK) {
+				MT_lock_unset(&store->commit);
+				sql_trans_rollback(tr);
+				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
+			}
+		}
 
 		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			ok = transaction_check_dependencies_and_removals(tr, commit_ts);
