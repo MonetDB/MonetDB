@@ -2180,6 +2180,8 @@ store_resume_log(sqlstore *store)
 static void
 id_hash_clear_older(sql_hash *h, ulng oldest)
 {
+	if (h->entries == 0)
+		return;
 	for (int i = 0; i < h->size; i++) {
 		sql_hash_e *e = h->buckets[i], *c = NULL, *first = NULL;
 
@@ -2226,10 +2228,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			n = next;
 		}
 	}
-	if (!hash_empty(store->dependencies))
-		id_hash_clear_older(store->dependencies, oldest);
-	if (!hash_empty(store->depchanges))
-		id_hash_clear_older(store->depchanges, oldest);
+	id_hash_clear_older(store->dependencies, oldest);
+	id_hash_clear_older(store->depchanges, oldest);
 	store->oldest_pending = oldest_changes;
 }
 
@@ -3680,7 +3680,7 @@ sql_trans_valid(sql_trans *tr)
 }
 
 static inline int
-transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe, ulng commit_ts)
+transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe, ulng ts)
 {
 	int key = h->key(&id);
 	sql_dependency_change *next_change = MNEW(sql_dependency_change);
@@ -3690,7 +3690,7 @@ transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe
 	*next_change = (sql_dependency_change) {
 		.objid = id,
 		.type = tpe,
-		.ts = commit_ts
+		.ts = ts
 	};
 
 	hash_add(h, key, next_change);
@@ -3698,7 +3698,7 @@ transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe
 }
 
 static int
-transaction_check_dependencies_and_removals(sql_trans *tr, ulng commit_ts)
+transaction_check_dependencies_and_removals(sql_trans *tr, ulng ts)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
@@ -3736,13 +3736,13 @@ transaction_check_dependencies_and_removals(sql_trans *tr, ulng commit_ts)
 	if (ok == LOG_OK && !list_empty(tr->dependencies)) {
 		for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
 			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
-			ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
+			ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, ts);
 		}
 	}
 	if (ok == LOG_OK && !list_empty(tr->depchanges)) {
 		for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
 			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
-			ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
+			ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, ts);
 		}
 	}
 	return ok;
@@ -3756,10 +3756,9 @@ sql_trans_commit(sql_trans *tr)
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
-		ulng commit_ts, oldest = 0;
+		ulng commit_ts = 0, oldest = 0;
 
 		MT_lock_set(&store->commit);
-		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 
 		if (!tr->parent && !list_empty(tr->predicates)) {
 			ok = sql_trans_valid(tr);
@@ -3771,7 +3770,7 @@ sql_trans_commit(sql_trans *tr)
 		}
 
 		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
-			ok = transaction_check_dependencies_and_removals(tr, commit_ts);
+			ok = transaction_check_dependencies_and_removals(tr, store_get_timestamp(store));
 			if (ok != LOG_OK) {
 				MT_lock_unset(&store->commit);
 				sql_trans_rollback(tr);
@@ -3799,10 +3798,12 @@ sql_trans_commit(sql_trans *tr)
 			if (ok == LOG_OK && !flush)
 				ok = store->logger_api.log_tend(store); /* flush/sync */
 			store_lock(store);
+			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 			if (ok == LOG_OK && !flush)					/* mark as done */
 				ok = store->logger_api.log_tdone(store, commit_ts);
 		} else {
 			store_lock(store);
+			commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 			if (tr->parent)
 				tr->parent->logchanges += tr->logchanges;
 		}
@@ -3848,11 +3849,11 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
+		tr->ts = commit_ts;
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
-		tr->ts = commit_ts;
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		MT_lock_set(&store->commit);
 		store_lock(store);
