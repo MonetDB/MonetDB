@@ -78,6 +78,7 @@ target_sources(sql
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
+  sql_strimps.c sql_strimps.h
   sql_time.c
   sql_bincopyfrom.c
   wlr.c wlr.h
