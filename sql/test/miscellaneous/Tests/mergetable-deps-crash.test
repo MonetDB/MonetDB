@@ -1,0 +1,40 @@
+@connection(id=1, username=monetdb, password=monetdb)
+statement ok
+create table child (i int);
+
+@connection(id=1)
+statement ok
+start transaction;
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+start transaction;
+
+@connection(id=1)
+statement ok
+create merge table mt (i int);
+
+@connection(id=1)
+statement ok
+alter table mt add table child;
+
+@connection(id=2)
+statement ok
+drop table child;
+
+@connection(id=1)
+statement ok
+commit;
+
+@connection(id=2)
+statement ok
+commit;
+
+@connection(id=1)
+query I rowsort
+select * from mt;
+----
+
+@connection(id=1)
+statement ok
+drop table mt;
