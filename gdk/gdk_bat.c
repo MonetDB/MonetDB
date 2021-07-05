@@ -1002,148 +1002,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	return NULL;
 }
 
-static void
-setcolprops(BAT *b, const void *x)
-{
-	bool isnil = b->ttype != TYPE_void &&
-		ATOMnilptr(b->ttype) != NULL &&
-		ATOMcmp(b->ttype, x, ATOMnilptr(b->ttype)) == 0;
-	BATiter bi;
-	BUN pos;
-	const void *prv;
-	int cmp;
-
-	/* x may only be NULL if the column type is VOID */
-	assert(x != NULL || b->ttype == TYPE_void);
-	if (b->batCount == 0) {
-		/* first value */
-		b->tsorted = b->trevsorted = ATOMlinear(b->ttype);
-		b->tnosorted = b->tnorevsorted = 0;
-		b->tkey = true;
-		b->tnokey[0] = b->tnokey[1] = 0;
-		if (b->ttype == TYPE_void) {
-			if (x) {
-				b->tseqbase = * (const oid *) x;
-			}
-			b->tnil = is_oid_nil(b->tseqbase);
-			b->tnonil = !b->tnil;
-		} else {
-			b->tnil = isnil;
-			b->tnonil = !isnil;
-			if (b->ttype == TYPE_oid) {
-				b->tseqbase = * (const oid *) x;
-			}
-			if (!isnil && ATOMlinear(b->ttype)) {
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
-				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){0});
-				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){0});
-			}
-		}
-		return;
-	} else if (b->ttype == TYPE_void) {
-		/* not the first value in a VOID column: we keep the
-		 * seqbase, and x is not used, so only some properties
-		 * are affected */
-		if (!is_oid_nil(b->tseqbase)) {
-			if (b->trevsorted) {
-				b->tnorevsorted = BUNlast(b);
-				b->trevsorted = false;
-			}
-			b->tnil = false;
-			b->tnonil = true;
-		} else {
-			if (b->tkey) {
-				b->tnokey[0] = 0;
-				b->tnokey[1] = BUNlast(b);
-				b->tkey = false;
-			}
-			b->tnil = true;
-			b->tnonil = false;
-		}
-		return;
-	} else if (ATOMlinear(b->ttype)) {
-		const ValRecord *prop;
-
-		bi = bat_iterator_nolock(b);
-		pos = BUNlast(b);
-		prv = BUNtail(bi, pos - 1);
-		cmp = ATOMcmp(b->ttype, prv, x);
-
-		if (b->tkey &&
-		    (cmp == 0 || /* definitely not KEY */
-		     (b->batCount > 1 && /* can't guarantee KEY if unordered */
-		      ((b->tsorted && cmp > 0) ||
-		       (b->trevsorted && cmp < 0) ||
-		       (!b->tsorted && !b->trevsorted))))) {
-			b->tkey = false;
-			if (cmp == 0) {
-				b->tnokey[0] = pos - 1;
-				b->tnokey[1] = pos;
-			}
-		}
-		if (b->tsorted) {
-			if (cmp > 0) {
-				/* out of order */
-				b->tsorted = false;
-				b->tnosorted = pos;
-			} else if (cmp < 0 && !isnil) {
-				/* new largest value */
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
-				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){BATcount(b)});
-			}
-		} else if (!isnil &&
-			   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
-			   ATOMcmp(b->ttype, VALptr(prop), x) < 0) {
-			BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
-			BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){BATcount(b)});
-		}
-		if (b->trevsorted) {
-			if (cmp < 0) {
-				/* out of order */
-				b->trevsorted = false;
-				b->tnorevsorted = pos;
-				/* if there is a nil in the BAT, it is
-				 * the smallest, but that doesn't
-				 * count for the property, so the new
-				 * value may still be smaller than the
-				 * smallest non-nil so far */
-				if (!b->tnonil && !isnil &&
-				    (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-				    ATOMcmp(b->ttype, VALptr(prop), x) > 0) {
-					BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
-				}
-			} else if (cmp > 0 && !isnil) {
-				/* new smallest value */
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
-				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
-			}
-		} else if (!isnil &&
-			   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-			   ATOMcmp(b->ttype, VALptr(prop), x) > 0) {
-			BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
-			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
-		}
-		if (BATtdense(b) && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
-			assert(b->ttype == TYPE_oid);
-			b->tseqbase = oid_nil;
-		}
-	} else if (BATcount(b) == 1) {
-		/* we'll only check keyness with a single other value */
-		bi = bat_iterator_nolock(b);
-		prv = BUNtail(bi, 0);
-		b->tkey = ATOMcmp(b->ttype, prv, x) != 0;
-	} else {
-		/* no guarantees that we don't have duplicates */
-		b->tkey = false;
-	}
-	if (isnil) {
-		b->tnonil = false;
-		b->tnil = true;
-	}
-}
-
 /* Append an array of values of length count to the bat.  For
  * fixed-sized values, `values' is an array of values, for
  * variable-sized values, `values' is an array of pointers to values.
@@ -1208,15 +1066,107 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
-	b->theap->dirty |= count > 0;
-	MT_rwlock_wrlock(&b->thashlock);
+	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
+	if (b->ttype == TYPE_oid) {
+		/* spend extra effort on oid (possible candidate list) */
+		if (values == NULL || is_oid_nil(((oid *) values)[0])) {
+			b->tnil = true;
+			b->tnonil = false;
+			b->tsorted = false;
+			b->trevsorted = false;
+			b->tkey = false;
+			b->tseqbase = oid_nil;
+		} else {
+			if (b->batCount == 0) {
+				b->tsorted = true;
+				b->trevsorted = true;
+				b->tkey = true;
+				b->tseqbase = ((oid *) values)[0];
+				b->tnil = false;
+				b->tnonil = true;
+			} else {
+				if (!is_oid_nil(b->tseqbase) &&
+				    b->tseqbase + b->batCount + 1 != ((oid *) values)[0])
+					b->tseqbase = oid_nil;
+				if (b->tsorted && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
+					b->tsorted = false;
+					if (b->tnosorted == 0)
+						b->tnosorted = b->batCount;
+				}
+				if (b->trevsorted && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
+					b->trevsorted = false;
+					if (b->tnorevsorted == 0)
+						b->tnorevsorted = b->batCount;
+				}
+				if (b->tkey) {
+					if (((oid *) b->theap->base)[b->batCount - 1] == ((oid *) values)[0]) {
+						b->tkey = false;
+						if (b->tnokey[1] == 0) {
+							b->tnokey[0] = b->batCount - 1;
+							b->tnokey[1] = b->batCount;
+						}
+					} else if (!b->tsorted && !b->trevsorted)
+						b->tkey = false;
+				}
+			}
+			for (BUN i = 1; i < count; i++) {
+				if (is_oid_nil(((oid *) values)[i])) {
+					b->tnil = true;
+					b->tnonil = false;
+					b->tsorted = false;
+					b->trevsorted = false;
+					b->tkey = false;
+					b->tseqbase = oid_nil;
+					break;
+				}
+				if (((oid *) values)[i - 1] == ((oid *) values)[i]) {
+					b->tkey = false;
+					if (b->tnokey[1] == 0) {
+						b->tnokey[0] = b->batCount + i - 1;
+						b->tnokey[1] = b->batCount + i;
+					}
+				} else if (((oid *) values)[i - 1] > ((oid *) values)[i]) {
+					b->tsorted = false;
+					if (b->tnosorted == 0)
+						b->tnosorted = b->batCount + i;
+					if (!b->trevsorted)
+						b->tkey = false;
+				} else {
+					if (((oid *) values)[i - 1] + 1 != ((oid *) values)[i])
+						b->tseqbase = oid_nil;
+					b->trevsorted = false;
+					if (b->tnorevsorted == 0)
+						b->tnorevsorted = b->batCount + i;
+					if (!b->tsorted)
+						b->tkey = false;
+				}
+			}
+		}
+	} else if (!ATOMlinear(b->ttype)) {
+		b->tnil = b->tnonil = false;
+		b->tsorted = b->trevsorted = b->tkey = false;
+	} else if (b->batCount == 0) {
+		if (values == NULL) {
+			b->tsorted = b->trevsorted = true;
+			b->tkey = count == 1;
+			b->tnil = true;
+			b->tnonil = false;
+		} else {
+			b->tsorted = b->trevsorted = b->tkey = count == 1;
+			b->tnil = b->tnonil = false;
+		}
+	} else {
+		b->tnil = values == NULL;
+		b->tnonil = false;
+		b->tsorted = b->trevsorted = b->tkey = false;
+	}
+	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		if (values) {
 			t = b->ttype && b->tvarsized ? ((void **) values)[i] :
 				(void *) ((char *) values + i * Tsize(b));
 		}
-		setcolprops(b, t);
 		gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
 		if (rc != GDK_SUCCEED) {
 			MT_rwlock_wrunlock(&b->thashlock);
