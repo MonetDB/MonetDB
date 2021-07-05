@@ -699,7 +699,6 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 		if (access == RD_UPD_ID) {
 			if (!(b = temp_descriptor(cs->uibid)))
 				return NULL;
-			assert(b->tsorted);
 			if ((BATtdense(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
 			   (!BATtdense(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt)) {
 					oid nil = oid_nil;
