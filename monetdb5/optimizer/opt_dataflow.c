@@ -204,7 +204,7 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 	if (p->fcnname != appendRef && p->fcnname != updateRef)
 		return false;
 
-	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,7, arg("",int),
+	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,8, arg("",int),
 	//              arg("mvc",int
 	//              arg("sname",str
 	//              arg("tname",str
@@ -220,7 +220,7 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 	//              argany("rids",0
 	//              argany("upd",0))
 
-	if (p->argc != 7)
+	if ((p->fcnname == appendRef && p->argc != 8) || (p->fcnname == updateRef && p->argc != 7))
 		return false;
 
 	int mvc_var = getArg(p, 1);
