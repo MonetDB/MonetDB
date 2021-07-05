@@ -2245,12 +2245,17 @@ store_manager(sqlstore *store)
 		int res;
 
 		if (store->debug&128 && ATOMIC_GET(&store->nr_active) == 0) {
+			MT_lock_set(&store->commit);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
 				ulng oldest = store_timestamp(store)+1;
+
+				id_hash_clear(store->dependencies);
+				id_hash_clear(store->depchanges);
 				store_pending_changes(store, oldest);
 			}
 			store_unlock(store);
+			MT_lock_unset(&store->commit);
 			store->logger_api.activate(store); /* rotate too new log file */
 		}
 
@@ -3478,6 +3483,7 @@ sql_trans_rollback(sql_trans *tr)
 			list_prepend(nl, n->data);
 
 		/* rollback */
+		MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
@@ -3503,12 +3509,14 @@ sql_trans_rollback(sql_trans *tr)
 			} else
 				_DELETE(c);
 		}
+		store_unlock(store);
+		MT_lock_unset(&store->commit);
 		list_destroy(nl);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
-		store_unlock(store);
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		MT_lock_set(&store->commit);
 		store_lock(store);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
@@ -3517,6 +3525,7 @@ sql_trans_rollback(sql_trans *tr)
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
+		MT_lock_unset(&store->commit);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3756,20 +3765,21 @@ sql_trans_commit(sql_trans *tr)
 	}
 
 	if (!list_empty(tr->changes)) {
-		ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store), oldest = 0;
 		int flush = 0;
+		ulng commit_ts, oldest = 0;
+
+		MT_lock_set(&store->commit);
+		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 
 		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
-			store_lock(store);
 			ok = transaction_check_dependencies_and_removals(tr, commit_ts);
-			store_unlock(store);
 			if (ok != LOG_OK) {
+				MT_lock_unset(&store->commit);
 				sql_trans_rollback(tr);
 				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 			}
 		}
 
-		MT_lock_set(&store->commit);
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
 			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
@@ -3845,6 +3855,7 @@ sql_trans_commit(sql_trans *tr)
 		tr->changes = NULL;
 		tr->ts = commit_ts;
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		MT_lock_set(&store->commit);
 		store_lock(store);
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
 			id_hash_clear(store->dependencies);
@@ -3853,6 +3864,7 @@ sql_trans_commit(sql_trans *tr)
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
+		MT_lock_unset(&store->commit);
 	}
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
