@@ -2238,13 +2238,14 @@ store_manager(sqlstore *store)
 {
 	MT_thread_setworking("sleeping");
 
-	// In the main loop we always hold the lock except when sleeping
+	// In the main loop we always hold the lock except when sleeping or doing cleanups
 	MT_lock_set(&store->flush);
 
 	for (;;) {
 		int res;
 
 		if (store->debug&128 && ATOMIC_GET(&store->nr_active) == 0) {
+			MT_lock_unset(&store->flush);
 			MT_lock_set(&store->commit);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -2256,6 +2257,7 @@ store_manager(sqlstore *store)
 			}
 			store_unlock(store);
 			MT_lock_unset(&store->commit);
+			MT_lock_set(&store->flush);
 			store->logger_api.activate(store); /* rotate too new log file */
 		}
 
