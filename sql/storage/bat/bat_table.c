@@ -32,13 +32,12 @@ full_column(sql_trans *tr, sql_column *c)
 	 * 	b := b.copy()
 		b := b.replace(u);
 	*/
-	BAT *b, *ui, *uv;
-	sql_delta *bat = col_timestamp_delta(tr, c);
+	sqlstore *store = tr->store;
+	BAT *b = store->storage_api.bind_col(tr, c, RDONLY);
+	BAT *ui = store->storage_api.bind_col(tr, c, RD_UPD_ID);
 
-	b = temp_descriptor(bat->cs.bid);
-	if (b && bat->cs.uibid && bat->cs.ucnt) {
-		ui = temp_descriptor(bat->cs.uibid);
-		uv = temp_descriptor(bat->cs.uvbid);
+	if (BATcount(ui)) {
+		BAT *uv = store->storage_api.bind_col(tr, c, RD_UPD_VAL);
 		if (ui && BATcount(ui)) {
 			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT);
 
