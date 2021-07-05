@@ -2287,7 +2287,7 @@ BBPshare(bat parent)
 static inline int
 decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 {
-	int refs = 0;
+	int refs = 0, lrefs;
 	bool swap = false;
 	bat tp = 0, tvp = 0;
 	BAT *b;
@@ -2373,6 +2373,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
 	}
+	lrefs = BBP_lrefs(i);
 
 	/* unlock before re-locking in unload; as saving a dirty
 	 * persistent bat may take a long time */
@@ -2380,7 +2381,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		MT_lock_unset(&GDKswapLock(i));
 
 	if (swap && b != NULL) {
-		if (BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+		if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
 			/* free memory (if loaded) and delete from
 			 * disk (if transient but saved) */
 			BBPdestroy(b);
