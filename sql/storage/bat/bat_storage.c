@@ -1445,6 +1445,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 		/* abort */
 		if (update_conflict)
 			*update_conflict = true;
+		else
+			return timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
 		return NULL;
 	}
 	assert(!isTempTable(c->t));
@@ -1915,8 +1917,8 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 {
 	storage *obat = ATOMIC_PTR_GET(&t->data);
 
-	if (isTempTable(t))
-		obat = temp_tab_timestamp_storage(tr, t);
+	if (isTempTable(t) && !(obat = temp_tab_timestamp_storage(tr, t)))
+		return NULL;
 
 	if (obat->cs.ts == tr->tid)
 		return obat;
@@ -2913,8 +2915,10 @@ clear_table(sql_trans *tr, sql_table *t)
 	node *n = ol_first_node(t->columns);
 	sql_column *c = n->data;
 	BUN sz = count_col(tr, c, 0), clear_ok;
-
 	storage *d = tab_timestamp_storage(tr, t);
+
+	if (!d)
+		return BUN_NONE;
 	lock_table(tr->store, t->base.id);
 	sz -= count_deletes_in_range(d->segs->h, tr, 0, sz);
 	unlock_table(tr->store, t->base.id);

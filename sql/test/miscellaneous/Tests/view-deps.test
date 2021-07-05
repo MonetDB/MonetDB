@@ -1,0 +1,34 @@
+@connection(id=1, username=monetdb, password=monetdb)
+statement ok
+create table fine(y int, z int);
+
+@connection(id=1)
+statement ok
+start transaction;
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+start transaction;
+
+@connection(id=1)
+statement ok
+alter table fine drop column y;
+
+@connection(id=2)
+statement ok
+create view myv7(a,b) as select y, z from sys.fine;
+
+@connection(id=1)
+statement ok
+commit;
+
+@connection(id=2)
+statement ok
+commit;
+
+@connection(id=2)
+query I,I roworder
+select * from myv7;
+----
+
+statement error code 40000 message "COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead"
