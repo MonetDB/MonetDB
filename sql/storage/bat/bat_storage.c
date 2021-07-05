@@ -314,8 +314,10 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	segment *s = segs->h;
 
 	size_t nr = segs_end(segs, tr, t);
-	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED)
+	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED) {
+		bat_destroy(b);
 		return LOG_ERR;
+	}
 
 	if (nr > BATcount(b))
 		BATsetcount(b, nr);

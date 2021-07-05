@@ -75,15 +75,15 @@ temp_copy(log_bid b, int temp)
 	if (!o)
 		return BID_NIL;
 	if (!temp) {
-		c = COLcopy(o, o->ttype, true, PERSISTENT);
-		if (!c)
+		if (!(c = COLcopy(o, o->ttype, true, PERSISTENT))) {
+			bat_destroy(o);
 			return BID_NIL;
+		}
 		bat_set_access(c, BAT_READ);
 		BATcommit(c, BUN_NONE);
-	} else {
-		c = bat_new(o->ttype, COLSIZE, PERSISTENT);
-		if (!c)
-			return BID_NIL;
+	} else if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT))) {
+		bat_destroy(o);
+		return BID_NIL;
 	}
 	r = temp_create(c);
 	bat_destroy(c);
