@@ -1297,7 +1297,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 			if (free > bytes)
 				free = bytes;
 		} else if (b->twidth > 0 && free / b->twidth > size)
-			free = size * b->twidth;
+			free = size << b->tshift;
 	}
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,

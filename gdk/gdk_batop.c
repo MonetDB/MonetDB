@@ -1305,7 +1305,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				return GDK_FAIL;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
-			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
@@ -1483,7 +1483,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				BATrmprop(b, GDK_MIN_POS);
 			}
 			memcpy(Tloc(b, pos), ni.base,
-			       ni.count * b->twidth);
+			       ni.count << b->tshift);
 		}
 		/* either we have a hash that was updated above, or we
 		 * have no hash; we cannot have the case where there is
@@ -1775,7 +1775,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			if (bn->ttype) {
 				BATiter bi = bat_iterator(b);
 				memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
-				       (q - p) * Tsize(bn));
+				       (q - p) << bn->tshift);
 				bat_iterator_end(&bi);
 				bn->theap->dirty = true;
 			}
@@ -1870,7 +1870,7 @@ BATkeyed(BAT *b)
 		return mskGetVal(b, 0) != mskGetVal(b, 1);
 	}
 	if (b->twidth < SIZEOF_BUN &&
-	    BATcount(b) > (BUN) 1 << (8 * b->twidth)) {
+	    BATcount(b) > (BUN) 1 << (8 << b->tshift)) {
 		/* more rows than possible bit combinations in the atom */
 		assert(!b->tkey);
 		return false;
