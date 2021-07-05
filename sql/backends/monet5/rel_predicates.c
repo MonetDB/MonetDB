@@ -43,7 +43,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 	if (is_basetable(rel->op)) {
 		sql_table *t = rel->l;
 
-		if (!t || !rel->exps || isNew(t) || t->persistence == SQL_DECLARED_TABLE)
+		if (!t || !rel->exps || isNew(t) || isTempTable(t))
 			return rel;
 		sql_rel *parent = v->parent;
 
@@ -56,6 +56,8 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 
 				if (!is_compare(e->type) || !is_theta_exp(e->flag) || r->type != e_atom || !r->l || (r2 && (r2->type != e_atom || !r2->l)) || is_symmetric(e) || !(c = exp_find_column(rel, e->l))) {
 					needall = true;
+				} else if (isNew(c)) {
+					continue;
 				} else {
 					atom *e1 = r && r->l ? atom_dup(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_dup(NULL, r2->l) : NULL;
 
@@ -82,7 +84,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 						}
 						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
-					*(int*)v->data = 1;
+					v->changes++;
 				}
 			}
 		}
@@ -91,7 +93,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 			/* any other case, add all predicates */
 			sql_table *t = rel->l;
 
-			if (!t || !rel->exps)
+			if (!t || !rel->exps || isNew(t) || isTempTable(t))
 				return rel;
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -100,9 +102,11 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 					sql_column *c = find_sql_column(t, e->r);
 
 					assert(c);
+					if (isNew(c))
+						continue;
 					if (sql_trans_add_predicate(v->sql->session->tr, c, 0, NULL, NULL, false, false) != LOG_OK)
 						return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					*(int*)v->data = 1;
+					v->changes++;
 				}
 			}
 		}
@@ -115,8 +119,7 @@ rel_predicates(backend *be, sql_rel *rel)
 {
 	if (be->mvc->session->level < tr_serializable)
 		return rel;
-	int changes = 0;
-	visitor v = { .sql = be->mvc, .data = &changes };
+	visitor v = { .sql = be->mvc };
 	rel = rel_visitor_topdown(&v, rel, &rel_find_predicates);
 	return rel;
 }
