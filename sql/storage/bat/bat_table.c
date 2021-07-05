@@ -32,28 +32,36 @@ full_column(sql_trans *tr, sql_column *c)
 	 * 	b := b.copy()
 		b := b.replace(u);
 	*/
-	BAT *b, *ui, *uv;
-	sql_delta *bat = col_timestamp_delta(tr, c);
+	sqlstore *store = tr->store;
+	BAT *b = store->storage_api.bind_col(tr, c, RDONLY);
+	BAT *ui = store->storage_api.bind_col(tr, c, RD_UPD_ID);
 
-	b = temp_descriptor(bat->cs.bid);
-	if (b && bat->cs.uibid && bat->cs.ucnt) {
-		ui = temp_descriptor(bat->cs.uibid);
-		uv = temp_descriptor(bat->cs.uvbid);
-		if (ui && BATcount(ui)) {
-			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT);
-
-			bat_destroy(b);
-			b = r;
-	    	if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
-				if (b) BBPunfix(b->batCacheid);
-				if (ui) BBPunfix(ui->batCacheid);
-				if (uv) BBPunfix(uv->batCacheid);
-				return NULL;
-			}
-		}
+	if (!b || !ui) {
+		bat_destroy(b);
 		bat_destroy(ui);
+		return NULL;
+	}
+	if (BATcount(ui)) {
+		BAT *uv = store->storage_api.bind_col(tr, c, RD_UPD_VAL), *r;
+
+		if (!uv) {
+			bat_destroy(b);
+			bat_destroy(ui);
+			return NULL;
+		}
+
+		r = COLcopy(b, b->ttype, true, TRANSIENT);
+		bat_destroy(b);
+		b = r;
+		if (!b || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
+			bat_destroy(b);
+			bat_destroy(ui);
+			bat_destroy(uv);
+			return NULL;
+		}
 		bat_destroy(uv);
 	}
+	bat_destroy(ui);
 	return b;
 }
 

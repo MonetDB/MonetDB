@@ -113,32 +113,30 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
 			PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
-		PyObject *maargs;
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
 
 		if (!nullmask) {
 			msg = createException(MAL, "pyapi3.eval", "Failed to create mask for some reason");
 			goto wrapup;
 		} else if (nullmask == Py_None) {
-			maargs = PyTuple_New(1);
-			PyTuple_SetItem(maargs, 0, vararray);
+			Py_DECREF(nullmask);
 		} else {
-			maargs = PyTuple_New(2);
+			PyObject *maargs = PyTuple_New(2);
 			PyTuple_SetItem(maargs, 0, vararray);
-			PyTuple_SetItem(maargs, 1, (PyObject *)nullmask);
-		}
+			PyTuple_SetItem(maargs, 1, nullmask);
 
-		// Now we will actually construct the mask by calling the masked array
-		// constructor
-		mask = PyObject_CallObject(mafunc, maargs);
-		if (!mask) {
-			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
-			goto wrapup;
+			// Now we will actually construct the mask by calling the masked
+			// array constructor
+			mask = PyObject_CallObject(mafunc, maargs);
+			if (!mask) {
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
+				goto wrapup;
+			}
+			Py_DECREF(maargs);
+
+			vararray = mask;
 		}
-		Py_DECREF(maargs);
 		Py_DECREF(mafunc);
-
-		vararray = mask;
 	}
 	return vararray;
 wrapup:

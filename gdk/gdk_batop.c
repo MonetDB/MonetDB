@@ -146,25 +146,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				(var_t) 1 << 17;
 			MT_thread_setalgorithm("copy vheap, copy heap");
 			if (b->tvheap->size < ni.vh->free) {
-				MT_lock_set(&b->theaplock);
-				if (ATOMIC_GET(&b->tvheap->refs) == 1) {
-					if (HEAPextend(b->tvheap, ni.vh->free, force) != GDK_SUCCEED) {
-						MT_lock_unset(&b->theaplock);
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-				} else {
-					MT_lock_unset(&b->theaplock);
-					Heap *h = HEAPgrow(b->tvheap, ni.vh->free);
-					if (h == NULL) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-					MT_lock_set(&b->theaplock);
-					HEAPdecref(b->tvheap, false);
-					b->tvheap = h;
+				if (HEAPgrow(&b->theaplock, &b->tvheap, ni.vh->free, force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
-				MT_lock_unset(&b->theaplock);
 			}
 			memcpy(b->tvheap->base, ni.vh->base, ni.vh->free);
 			b->tvheap->free = ni.vh->free;
@@ -207,25 +192,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				/* if in "force" mode, the heap may be
 				 * shared when memory mapped */
-				MT_lock_set(&b->theaplock);
-				if (ATOMIC_GET(&b->tvheap->refs) == 1) {
-					if (HEAPextend(b->tvheap, toff + ni.vh->size, force) != GDK_SUCCEED) {
-						MT_lock_unset(&b->theaplock);
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-				} else {
-					MT_lock_unset(&b->theaplock);
-					Heap *h = HEAPgrow(b->tvheap, toff + ni.vh->size);
-					if (h == NULL) {
-						bat_iterator_end(&ni);
-						return GDK_FAIL;
-					}
-					MT_lock_set(&b->theaplock);
-					HEAPdecref(b->tvheap, false);
-					b->tvheap = h;
+				if (HEAPgrow(&b->theaplock, &b->tvheap, toff + ni.vh->size, force) != GDK_SUCCEED) {
+					bat_iterator_end(&ni);
+					return GDK_FAIL;
 				}
-				MT_lock_unset(&b->theaplock);
 				MT_thread_setalgorithm("append vheap");
 				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vh->free);
 				b->tvheap->free = toff + ni.vh->free;
@@ -2117,6 +2087,40 @@ BATordered(BAT *b)
 			break;
 		case TYPE_dbl:
 			BAT_ORDERED_FP(dbl);
+			break;
+		case TYPE_str:
+			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
+				int c;
+				const char *p1 = BUNtail(bi, p - 1);
+				const char *p2 = BUNtail(bi, p);
+				if (p1 == p2)
+					c = 0;
+				else if (p1[0] == '\200') {
+					if (p2[0] == '\200')
+						c = 0;
+					else
+						c = -1;
+				} else if (p2[0] == '\200')
+					c = 1;
+				else
+					c = strcmp(p1, p2);
+				if (c > 0) {
+					b->tnosorted = p;
+					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0);
+					goto doreturn;
+				} else if (c < 0) {
+					assert(!b->trevsorted);
+					if (b->tnorevsorted == 0) {
+						b->tnorevsorted = p;
+						TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT "\n", p, ALGOBATPAR(b));
+					}
+				} else if (b->tnokey[1] == 0) {
+					assert(!b->tkey);
+					b->tnokey[0] = p - 1;
+					b->tnokey[1] = p;
+					TRC_DEBUG(ALGO, "Fixed nokey(" BUNFMT "," BUNFMT") for " ALGOBATFMT "\n", p - 1, p, ALGOBATPAR(b));
+				}
+			}
 			break;
 		default: {
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
