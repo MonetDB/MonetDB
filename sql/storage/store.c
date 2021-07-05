@@ -3700,7 +3700,7 @@ transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe
 }
 
 static int
-transaction_check_dependencies_and_removals(sql_trans *tr, ulng ts)
+transaction_check_dependencies_and_removals(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
@@ -3734,19 +3734,6 @@ transaction_check_dependencies_and_removals(sql_trans *tr, ulng ts)
 			}
 		}
 	}
-	/* if all checks passed, add them to the storage */
-	if (ok == LOG_OK && !list_empty(tr->dependencies)) {
-		for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
-			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
-			ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, ts);
-		}
-	}
-	if (ok == LOG_OK && !list_empty(tr->depchanges)) {
-		for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
-			sql_dependency_change *lchange = (sql_dependency_change*) n->data;
-			ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, ts);
-		}
-	}
 	return ok;
 }
 
@@ -3772,7 +3759,7 @@ sql_trans_commit(sql_trans *tr)
 		}
 
 		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
-			ok = transaction_check_dependencies_and_removals(tr, store_get_timestamp(store));
+			ok = transaction_check_dependencies_and_removals(tr);
 			if (ok != LOG_OK) {
 				MT_lock_unset(&store->commit);
 				sql_trans_rollback(tr);
@@ -3836,6 +3823,21 @@ sql_trans_commit(sql_trans *tr)
 					ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
 			}
 			MT_lock_unset(&store->flush);
+		}
+		/* propagate transaction dependencies to the storage if no other transactions are running */
+		if (ok == LOG_OK && !tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges)) && ATOMIC_GET(&store->nr_active) > 1) {
+			if (!list_empty(tr->dependencies)) {
+				for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
+					sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+					ok = transaction_add_hash_entry(store->dependencies, lchange->objid, lchange->type, commit_ts);
+				}
+			}
+			if (!list_empty(tr->depchanges)) {
+				for (node *n = tr->depchanges->h; n && ok == LOG_OK; n = n->next) {
+					sql_dependency_change *lchange = (sql_dependency_change*) n->data;
+					ok = transaction_add_hash_entry(store->depchanges, lchange->objid, lchange->type, commit_ts);
+				}
+			}
 		}
 		/* garbage collect */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
