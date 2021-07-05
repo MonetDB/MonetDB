@@ -455,18 +455,17 @@ STRMPfilter(BAT *b, char *q)
 	BUN i;
 	uint64_t qbmask;
 	uint64_t *ptr;
-	int zz = 0;
-
 
 	if (b->tstrimps == NULL)
 		goto sfilter_fail;
 
-	r = COLnew(0, TYPE_oid, b->batCount, TRANSIENT);
+	r = COLnew(b->hseqbase, TYPE_oid, b->batCount, TRANSIENT);
 	if (r == NULL) {
 		goto sfilter_fail;
 	}
 
 	if (!BATcheckstrimps(b)) {
+		BBPunfix(r->batCacheid);
 		goto sfilter_fail;
 	}
 	qbmask = STRMPmakebitstring(q, b->tstrimps);
@@ -478,18 +477,13 @@ STRMPfilter(BAT *b, char *q)
 			if (BUNappend(r, &pos, false) != GDK_SUCCEED)
 				goto sfilter_fail;
 		}
-		else {
-			zz++;
-		}
 	}
-	printf("filtered out: %d entries\n", zz);
 
 	r->tkey = true;
 	return virtualize(r);
 
 
  sfilter_fail:
-	BBPunfix(r->batCacheid);
 	return NULL;
 }
 
@@ -579,8 +573,14 @@ STRMPcreate(BAT *b)
 	assert(b->ttype == TYPE_str);
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
+
 	if (BATcheckstrimps(b))
 		return GDK_SUCCEED;
+
+	if (VIEWtparent(b)) {
+		assert(b->tstrimps == NULL);
+		b = BBPdescriptor(VIEWtparent(b));
+	}
 
 	if ((h = STRMPcreateStrimpHeap(b)) == NULL) {
 		return GDK_FAIL;
