@@ -1103,7 +1103,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	monetdbe_database_internal *mdbe	= ((struct prepare_callback_context*) context)->mdbe;
 	int *prepare_id						= ((struct prepare_callback_context*) context)->prepare_id;
 
-	if (nr_results != 7) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn
+	if (nr_results != 7) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn 7) bimpl
 		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "result table for prepared statement is wrong.");
 
 	backend *be = NULL;
@@ -1111,12 +1111,12 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		return mdbe->msg;
 
 	BAT* btype = NULL;
-	BAT* bimpl = NULL;
 	BAT* bdigits = NULL;
 	BAT* bscale = NULL;
 	BAT* bschema = NULL;
 	BAT* btable = NULL;
 	BAT* bcolumn = NULL;
+	BAT* bimpl = NULL;
 
 	size_t nparams = 0;
 	BATiter bcolumn_iter = {0};
@@ -1136,12 +1136,12 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	str msg = MAL_SUCCEED;
 	if (!(btype		= BATdescriptor(results[0].id))	||
-		!(bimpl		= BATdescriptor(results[1].id))	||
-		!(bdigits	= BATdescriptor(results[2].id))	||
-		!(bscale	= BATdescriptor(results[3].id))	||
-		!(bschema	= BATdescriptor(results[4].id))	||
-		!(btable	= BATdescriptor(results[5].id))	||
-		!(bcolumn	= BATdescriptor(results[6].id)))
+		!(bdigits	= BATdescriptor(results[1].id))	||
+		!(bscale	= BATdescriptor(results[2].id))	||
+		!(bschema	= BATdescriptor(results[3].id))	||
+		!(btable	= BATdescriptor(results[4].id))	||
+		!(bcolumn	= BATdescriptor(results[5].id))	||
+		!(bimpl		= BATdescriptor(results[6].id)))
 	{
 		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Cannot access prepare result");
 		goto cleanup;
@@ -1153,7 +1153,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		nparams 	!= BATcount(bimpl) ||
 		nparams 	!= BATcount(bscale) ||
 		nparams 	!= BATcount(bschema) ||
-		nparams + 1 != BATcount(btable) ||
+		nparams 	!= BATcount(btable) ||
 		nparams 	!= BATcount(bcolumn))
 	{
 		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "prepare results are incorrect.");
@@ -1443,7 +1443,7 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 }
 
 char*
-monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt)
+monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt, monetdbe_result** result)
 {
 	if (!dbhdl)
 		return NULL;
@@ -1458,7 +1458,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		mdbe->msg = monetdbe_query_remote(mdbe, query, NULL, NULL, &prepare_id);
 	} else {
 		*stmt = NULL;
-		mdbe->msg = monetdbe_query_internal(mdbe, query, NULL, NULL, &prepare_id, 'S');
+		mdbe->msg = monetdbe_query_internal(mdbe, query, result, NULL, &prepare_id, 'S');
 	}
 
 	if (mdbe->msg == MAL_SUCCEED) {
@@ -1564,7 +1564,7 @@ monetdbe_get_type_info(monetdbe_statement *stmt, str* data, size_t i)
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
 
 	if (i >= stmt->nparam)
-		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
+		return createException(MAL, "monetdbe.monetdbe_get_type_info", "Parameter %zu not bound to a value", i);
 	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
 	assert(a);
 	*data = a->type.type->impl;

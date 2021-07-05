@@ -858,7 +858,7 @@ mvc_export_binary_bat(stream *s, BAT* bn) {
 }
 
 static int
-mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
+create_prepare_result(backend *b, cq *q, int nrows) {
 	int error = -1;
 
 	BAT* btype		= COLnew(0, TYPE_int, nrows, TRANSIENT);
@@ -868,25 +868,55 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 	BAT* bschema	= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* btable		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bcolumn	= COLnew(0, TYPE_str, nrows, TRANSIENT);
+	BAT* order		= NULL;
 	node *n;
-	sql_subtype *t;
+
+	const size_t nr_columns = b->client->protocol == PROTOCOL_COLUMNAR? 7 : 6;
+
+	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
+	int len2 = 1, len3 = 1;
 	sql_arg *a;
+	sql_subtype *t;
+	sql_rel *r = q->rel;
 
-	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn)
-		goto bailout;
-
+	if (r && (is_topn(r->op) || is_sample(r->op)))
+		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
+		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
+		nrows += list_length(r->exps);
+
 		for (n = r->exps->h; n; n = n->next) {
-			const char *name, *rname, *schema = NULL;
+			const char *name = NULL, *rname = NULL, *schema = NULL;
 			sql_exp *e = n->data;
+			size_t slen;
 
 			t = exp_subtype(e);
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
+			slen = strlen(t->type->base.name);
+			if (slen > len1)
+				len1 = slen;
+			while (t->digits >= max2) {
+				len2++;
+				max2 *= 10;
+			}
+			while (t->scale >= max3) {
+				len3++;
+				max3 *= 10;
+			}
 			rname = exp_relname(e);
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
+			slen = name ? strlen(name) : 0;
+			if (slen > len5)
+				len5 = slen;
+			name = exp_name(e);
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
+			slen = name ? strlen(name) : 0;
+			if (slen > len6)
+				len6 = slen;
+			slen = strlen(t->type->impl);
+			if (slen > len7)
+				len7 = slen;
 
 			if (!schema)
 				schema = "";
@@ -904,9 +934,13 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 					BUNappend(bschema,	schema				, false) != GDK_SUCCEED ||
 					BUNappend(btable,	rname				, false) != GDK_SUCCEED ||
 					BUNappend(bcolumn,	name				, false) != GDK_SUCCEED)
-				goto bailout;
+				goto wrapup;
 		}
 	}
+
+
+	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn)
+		goto wrapup;
 
 	if (q->f->ops) {
 		int i;
@@ -922,170 +956,66 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 					BUNappend(bschema,	str_nil				, false) != GDK_SUCCEED ||
 					BUNappend(btable,	str_nil				, false) != GDK_SUCCEED ||
 					BUNappend(bcolumn,	str_nil				, false) != GDK_SUCCEED)
-				goto bailout;
+				goto wrapup;
 		}
 	}
 
-	// Little hack to get the name of the corresponding compiled MAL function known to the result receiver.
-	if (BUNappend(btable, q->f->imp, false) != GDK_SUCCEED)
-		goto bailout;
+	if (b->client->protocol == PROTOCOL_COLUMNAR) {
+			if (	BUNappend(btype,	&int_nil	, false) != GDK_SUCCEED ||
+					BUNappend(bimpl,	str_nil		, false) != GDK_SUCCEED ||
+					BUNappend(bdigits,	&int_nil	, false) != GDK_SUCCEED ||
+					BUNappend(bscale,	&int_nil	, false) != GDK_SUCCEED ||
+					BUNappend(bschema,	str_nil		, false) != GDK_SUCCEED ||
+					BUNappend(btable,	q->f->imp	, false) != GDK_SUCCEED ||
+					BUNappend(bcolumn,	str_nil		, false) != GDK_SUCCEED)
+				goto wrapup;
+	}
 
-	mvc_export_binary_bat(out, btype);
-	mvc_export_binary_bat(out, bimpl);
-	mvc_export_binary_bat(out, bdigits);
-	mvc_export_binary_bat(out, bscale);
-	mvc_export_binary_bat(out, bschema);
-	mvc_export_binary_bat(out, btable);
-	mvc_export_binary_bat(out, bcolumn);
+	order = BATdense(0, 0, BATcount(btype));
+	b->results = res_table_create(
+							b->mvc->session->tr,
+							b->result_id++,
+							b->mb? b->mb->tag: 0 /*TODO check if this is sensible*/,
+							nr_columns,
+							Q_PREPARE,
+							b->results,
+							order);
+
+	if (	mvc_result_column(b, "prepare", "type"		, "varchar",	len1, 0, btype) ||
+			mvc_result_column(b, "prepare", "digits"	, "int",		len2, 0, bdigits) ||
+			mvc_result_column(b, "prepare", "scale"		, "int",		len3, 0, bscale) ||
+			mvc_result_column(b, "prepare", "schema"	, "varchar",	len4, 0, bschema) ||
+			mvc_result_column(b, "prepare", "table"		, "varchar",	len5, 0, btable) ||
+			mvc_result_column(b, "prepare", "column"	, "varchar",	len6, 0, bcolumn))
+		goto wrapup;
+
+	if (b->client->protocol == PROTOCOL_COLUMNAR && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
+		goto wrapup;
 
 	error = 0;
 
-	bailout:
+	wrapup:
 		BBPreclaim(btype);
 		BBPreclaim(bdigits);
 		BBPreclaim(bscale);
 		BBPreclaim(bschema);
 		BBPreclaim(btable);
 		BBPreclaim(bcolumn);
+		BBPreclaim(order);
 		return error;
 }
 
 int
-mvc_export_prepare(backend *b, stream *out, str w)
+mvc_export_prepare(backend *b, stream *out)
 {
 	cq *q = b->q;
-	node *n;
 	int nparam = q->f->ops ? list_length(q->f->ops) : 0;
 	int nrows = nparam;
-	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
-	int len2 = 1, len3 = 1;
-	sql_arg *a;
-	sql_subtype *t;
-	sql_rel *r = q->rel;
 
-	if(!out || GDKembedded())
-		return 0;
-
-	if (r && (is_topn(r->op) || is_sample(r->op)))
-		r = r->l;
-	if (r && is_project(r->op) && r->exps) {
-		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
-		nrows += list_length(r->exps);
-
-		for (n = r->exps->h; n; n = n->next) {
-			const char *name;
-			sql_exp *e = n->data;
-			size_t slen;
-
-			t = exp_subtype(e);
-			slen = strlen(t->type->base.name);
-			if (slen > len1)
-				len1 = slen;
-			while (t->digits >= max2) {
-				len2++;
-				max2 *= 10;
-			}
-			while (t->scale >= max3) {
-				len3++;
-				max3 *= 10;
-			}
-			name = exp_relname(e);
-			if (!name && e->type == e_column && e->l)
-				name = e->l;
-			slen = name ? strlen(name) : 0;
-			if (slen > len5)
-				len5 = slen;
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			slen = name ? strlen(name) : 0;
-			if (slen > len6)
-				len6 = slen;
-			slen = strlen(t->type->impl);
-			if (slen > len7)
-				len7 = slen;
-		}
-	}
-
-	/* calculate column widths */
-	if (q->f->ops) {
-		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
-
-		for (n = q->f->ops->h; n; n = n->next) {
-			size_t slen;
-
-			a = n->data;
-			t = &a->type;
-			slen = strlen(t->type->base.name);
-			if (slen > len1)
-				len1 = slen;
-			while (t->digits >= max2) {
-				len2++;
-				max2 *= 10;
-			}
-			while (t->scale >= max3) {
-				len3++;
-				max3 *= 10;
-			}
-		}
-	}
-
-	if (b->client->protocol == PROTOCOL_COLUMNAR) {
-
-		/* write header, query type: Q_PREPARE */
-		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-				"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn,\timpl # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
-				"%zu,\t%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6, len7) < 0) {
-			return -1;
-		}
-		if (mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
-			return -1;
-		if (mvc_export_prepare_columnar(out, q, nrows, r) < 0)
-			return -1;
-	}
-	else {
-
-		/* write header, query type: Q_PREPARE */
-		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-				"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
-				"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
-			return -1;
-		}
-		if (r && is_project(r->op) && r->exps) {
-			for (n = r->exps->h; n; n = n->next) {
-				const char *name, *rname, *schema = NULL;
-				sql_exp *e = n->data;
-
-				t = exp_subtype(e);
-				name = exp_name(e);
-				if (!name && e->type == e_column && e->r)
-					name = e->r;
-				rname = exp_relname(e);
-				if (!rname && e->type == e_column && e->l)
-					rname = e->l;
-
-				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->base.name, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
-					return -1;
-				}
-			}
-		}
-
-		if (q->f->ops) {
-			int i;
-
-			for (n = q->f->ops->h, i = 0; n; n = n->next, i++) {
-				a = n->data;
-				t = &a->type;
-
-				if (!t || mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->base.name, t->digits, t->scale) < 0)
-					return -1;
-			}
-		}
-	}
-
-	if (mvc_export_warning(out, w) != 1)
+	if (create_prepare_result(b, q, nrows))
 		return -1;
-	return 0;
+
+	return mvc_export_result(b, out, b->results->id /*TODO is this right?*/, true, 0 /*TODO*/, 0 /*TODO*/);
 }
 
 /*
@@ -1919,8 +1849,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (b->output_format == OFMT_NONE) {
 		return 0;
 	}
-	/* we shouldn't have anything else but Q_TABLE here */
-	assert(t->query_type == Q_TABLE);
+	assert(t->query_type == Q_TABLE || t->query_type == Q_PREPARE);
 	if (t->tsep) {
 		if (header) {
 			/* need header */

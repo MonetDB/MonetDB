@@ -1195,7 +1195,7 @@ SQLparser(Client c)
 			assert(m->emode == m_prepare);
 			/* For prepared queries, return a table with result set structure*/
 			/* optimize the code block and rename it */
-			err = mvc_export_prepare(be, c->fdout, "");
+			err = mvc_export_prepare(be, c->fdout);
 		}
 
 		if (!err) {
