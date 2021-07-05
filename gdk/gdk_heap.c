@@ -86,38 +86,49 @@ decompose_filename(str nme)
 	return ext;
 }
 
-Heap *
-HEAPgrow(const Heap *old, size_t size)
+gdk_return
+HEAPgrow(MT_Lock *lock, Heap **hp, size_t size, bool mayshare)
 {
-	assert(size >= old->free);
-	assert(old->storage == STORE_MEM || old->storage == STORE_MMAP);
+	Heap *new;
 
-	TRC_DEBUG(HEAP, "Growing heap %s %zu", old->filename, size);
-	Heap *new = GDKmalloc(sizeof(Heap));
-	if (new == NULL)
-		return NULL;
-	*new = (Heap) {
-		.farmid = old->farmid,
-		.hashash = old->hashash,
-		.cleanhash = old->cleanhash,
-		.dirty = true,
-		.remove = old->remove,
-		.parentid = old->parentid,
-		.wasempty = old->wasempty,
-	};
-	memcpy(new->filename, old->filename, sizeof(new->filename));
-	if (HEAPalloc(new, size, 1, 1) != GDK_SUCCEED) {
-		GDKfree(new);
-		return NULL;
+	MT_lock_set(lock);
+	if (ATOMIC_GET(&(*hp)->refs) == 1) {
+		gdk_return rc = HEAPextend((*hp), size, mayshare);
+		MT_lock_unset(lock);
+		return rc;
 	}
-	ATOMIC_INIT(&new->refs, 1);
-	assert(new->storage == STORE_MEM || new->storage == STORE_MMAP);
-	new->free = old->free;
-	if (old->free > 0 &&
-	    (new->storage == STORE_MEM || old->storage == STORE_MEM))
-		memcpy(new->base, old->base, old->free);
-	/* else both are STORE_MMAP and refer to the same file */
-	return new;
+	new = GDKmalloc(sizeof(Heap));
+	if (new != NULL) {
+		Heap *old = *hp;
+		*new = (Heap) {
+			.farmid = old->farmid,
+			.hashash = old->hashash,
+			.dirty = true,
+			.remove = old->remove,
+			.parentid = old->parentid,
+			.wasempty = old->wasempty,
+		};
+		memcpy(new->filename, old->filename, sizeof(new->filename));
+		if (HEAPalloc(new, size, 1, 1) == GDK_SUCCEED) {
+			ATOMIC_INIT(&new->refs, 1);
+			new->free = old->free;
+			new->cleanhash = old->cleanhash;
+			if (old->free > 0 &&
+			    (new->storage == STORE_MEM || old->storage == STORE_MEM))
+				memcpy(new->base, old->base, old->free);
+			/* else both are STORE_MMAP and refer to the
+			 * same file and so we don't need to copy */
+
+			/* replace old heap with new */
+			HEAPdecref(*hp, false);
+			*hp = new;
+		} else {
+			GDKfree(new);
+			new = NULL;
+		}
+	}
+	MT_lock_unset(lock);
+	return new ? GDK_SUCCEED : GDK_FAIL;
 }
 
 /*
@@ -1107,22 +1118,10 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		MT_lock_set(&b->theaplock);
-		if (ATOMIC_GET(&heap->refs) == 1) {
-			if (HEAPextend(heap, newsize, false) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
-				return 0;
-			}
-		} else {
-			MT_lock_unset(&b->theaplock);
-			Heap *new = HEAPgrow(heap, newsize);
-			if (new == NULL)
-				return 0;
-			MT_lock_set(&b->theaplock);
-			HEAPdecref(heap, false);
-			b->tvheap = heap = new;
+		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, false) != GDK_SUCCEED) {
+			return 0;
 		}
-		MT_lock_unset(&b->theaplock);
+		heap = b->tvheap;
 		heap->free = newsize;
 		hheader = HEAP_index(heap, 0, HEADER);
 
