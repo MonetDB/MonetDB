@@ -339,69 +339,6 @@ PATstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 #endif
-static str
-PATstrimpCreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat bid;
-	BAT *b;
-	(void)cntxt;
-	(void)mb;
-
-	bid = *getArgReference_bat(stk, pci, 1);
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "bat.strimpHeader", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	if(STRMPcreate(b) != GDK_SUCCEED)
-		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
-
-	// *getArgReference_lng(stk, pci, 0) = 0;
-	return MAL_SUCCEED;
-}
-
-static str
-PATstrimpFilter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	(void)cntxt;
-	(void)mb;
-	(void)stk;
-	(void)pci;
-	throw(MAL, "bat.strimpfilter", SQLSTATE(HY002) "UNIMPLEMENTED");
-}
-
-static str
-PATstrimpFilterSelect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat bid, sid;
-	BAT *b, *s, *ob;
-	str pat;
-
-	(void)cntxt;
-	(void)mb;
-
-	bid = *getArgReference_bat(stk, pci, 1);
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "bat.strimpfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	sid = *getArgReference_bat(stk, pci, 2);
-	if ((s = BATdescriptor(sid)) == NULL)
-		throw(MAL, "bat.strimpfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	assert(s->ttype == TYPE_void);
-
-	if (!STRMPcreate(b)) {
-		throw(MAL, "bat.strimpfilter", SQLSTATE(HY002) OPERATION_FAILED);
-	}
-
-	pat = *getArgReference_str(stk, pci, 3);
-	if ((ob = STRMPfilter(b, pat)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.strimpfilter", SQLSTATE(HY002));
-	}
-
-	*getArgReference_bat(stk, pci, 0) = ob->batCacheid;
-	BBPkeepref(ob->batCacheid);
-
-	return MAL_SUCCEED;
-}
 
 #include "mel.h"
 mel_func batExtensions_init_funcs[] = {
@@ -432,14 +369,6 @@ mel_func batExtensions_init_funcs[] = {
 #endif
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
-
- /* String imprints */
- // pattern("bat", "strimpNDigrams", PATstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
- // pattern("bat", "strimpHistogram", PATstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
- pattern("bat", "mkstrimp", PATstrimpCreate, false, "construct the strimp a BAT", args(1,2,arg("",void),batarg("b",str))),
- pattern("bat", "strimpfilter", PATstrimpFilter, false, "", args(1,3,arg("",bit),arg("b",str),arg("q",str))),
- pattern("bat", "strimpfilterselect", PATstrimpFilterSelect, false, "", args(1,5,batarg("",oid),batarg("b",str),batarg("s",oid),arg("q",str),arg("a",bit))),
- pattern("bat", "strimpfilterjoin", PATstrimpFilter, false, "", args(2,8,batarg("",oid),batarg("b",str),arg("q",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
