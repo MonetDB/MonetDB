@@ -381,7 +381,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 					GDKfree(cv);
 					if (!ok)
 						return;
-					total += cnt * d->twidth;
+					total += cnt << d->tshift;
 					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
 						return;
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */

@@ -73,7 +73,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		}
 
 		/* calculate the basic scan size */
-		total += BATcount(b) * b->twidth;
+		total += BATcount(b) << b->tshift;
 		total += heapinfo(b->tvheap, b->batCacheid);
 
 		/* indices should help, find their maximum footprint */

@@ -262,8 +262,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off, strhash;
 
 	if (h->free == 0) {
-		if (h->size < 64 * 1024) {
-			if (HEAPgrow(&b->theaplock, &b->tvheap, 64 * 1024, true) != GDK_SUCCEED) {
+		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 				return 0;
 			}
 			h = b->tvheap;

@@ -447,7 +447,7 @@ getBatSpace(BAT *b){
 	lng space=0;
 	if( b == NULL)
 		return 0;
-	space += BATcount(b) * b->twidth;
+	space += BATcount(b) << b->tshift;
 	if( space){
 		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid);
 		space += hashinfo(b->thash, b->batCacheid);
