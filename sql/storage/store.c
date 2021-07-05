@@ -3825,7 +3825,7 @@ sql_trans_commit(sql_trans *tr)
 			}
 			MT_lock_unset(&store->flush);
 		}
-		/* propagate transaction dependencies to the storage if no other transactions are running */
+		/* propagate transaction dependencies to the storage only if other transactions are running */
 		if (ok == LOG_OK && !tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges)) && ATOMIC_GET(&store->nr_active) > 1) {
 			if (!list_empty(tr->dependencies)) {
 				for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
