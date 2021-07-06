@@ -618,9 +618,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return -2;
 	}
 
-	if (mvc_trans(m) < 0) {
+	if ((res = mvc_trans(m)) < 0) {
 		GDKfree(username);
-		return -1;
+		return res;
 	}
 
 	sys = find_sql_schema(m->session->tr, "sys");

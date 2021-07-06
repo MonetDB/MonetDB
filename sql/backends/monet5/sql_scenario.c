@@ -623,8 +623,14 @@ SQLtrans(mvc *m)
 	if (!m->session->tr->active) {
 		sql_session *s;
 
-		if (mvc_trans(m) < 0)
-			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		switch (mvc_trans(m)) {
+			case -1:
+				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -3:
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
+			default:
+				break;
+		}
 		s = m->session;
 		if (!s->schema) {
 			if (monet5_user_get_def_schema(m, m->user_id, &s->schema_name) < 0) {
@@ -637,7 +643,7 @@ SQLtrans(mvc *m)
 			}
 			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
 				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
 			}
 		}
 	}

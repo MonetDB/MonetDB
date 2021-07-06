@@ -447,25 +447,23 @@ mvc_cancel_session(mvc *m)
 int
 mvc_trans(mvc *m)
 {
-	int schema_changed = 0, err = m->session->status;
+	int res = 0, err = m->session->status;
 	assert(!m->session->tr->active);	/* can only start a new transaction */
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
-	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || err)){
-		if (schema_changed || err) {
-			int seqnr = m->qc->id;
-			if (m->qc)
-				qc_destroy(m->qc);
-			/* TODO Change into recreate all */
-			m->qc = qc_create(m->pa, m->clientid, seqnr);
-			if (!m->qc) {
+	res = sql_trans_begin(m->session);
+	if (m->qc && (res || err)) {
+		int seqnr = m->qc->id;
+		if (m->qc)
+			qc_destroy(m->qc);
+		/* TODO Change into recreate all */
+		if (!(m->qc = qc_create(m->pa, m->clientid, seqnr))) {
+			if (m->session->tr->active)
 				(void)sql_trans_end(m->session, SQL_ERR);
-				return -1;
-			}
+			return -1;
 		}
 	}
-	return 0;
+	return res;
 }
 
 str
@@ -473,7 +471,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *tr = m->session->tr;
 	int ok = SQL_OK;
-	str msg = NULL, other;
+	str msg = MAL_SUCCEED, other;
 	char operation[BUFSIZ];
 
 	assert(tr);
@@ -567,8 +565,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 	*/
 	(void)sql_trans_end(m->session, ok);
-	if (chain)
-		sql_trans_begin(m->session);
+	if (chain && sql_trans_begin(m->session) < 0)
+		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished sucessfuly, but the session's schema could not be found while starting the next transaction", operation);
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
 		"Commit done\n");
@@ -578,7 +576,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 str
 mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 {
-	str msg;
+	str msg = MAL_SUCCEED;
 
 	TRC_DEBUG(SQL_TRANS, "Rollback: %s\n", (name) ? name : "");
 	(void) disabling_auto_commit;
@@ -616,10 +614,11 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if (tr->changes)
 			tr->status = 1;
 		(void)sql_trans_end(m->session, SQL_ERR);
-		if (chain)
-			sql_trans_begin(m->session);
+		if (chain && sql_trans_begin(m->session) < 0)
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished sucessfuly, but the session's schema could not be found while starting the next transaction");
 	}
-	msg = WLCrollback(m->clientid);
+	if (msg == MAL_SUCCEED)
+		msg = WLCrollback(m->clientid);
 	if (msg != MAL_SUCCEED) {
 		m->session->status = -1;
 		return msg;

@@ -6748,8 +6748,12 @@ sql_trans_begin(sql_session *s)
 	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	tr->ts = store_timestamp(store);
+	if (!(s->schema = find_sql_schema(tr, s->schema_name))) {
+		TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT " with error, the schema %s was not found\n", tr->tid, s->schema_name);
+		store_unlock(store);
+		return -3;
+	}
 	tr->active = 1;
-	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
 
 	(void) ATOMIC_INC(&store->nr_active);

@@ -143,5 +143,21 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop user duser3;').assertSucceeded()
         mdb1.execute('drop schema mys3;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('start transaction;').assertFailed(err_code="42000", err_message="The user was not found in the database, this session is going to terminate")
+        mdb2.execute('start transaction;').assertFailed(err_code="42000", err_message="The session's schema was not found, this transaction won't start")
+        # mbd2 cannot do anything else, the connection was terminated
+
+with SQLTestCase() as mdb1:
+    with SQLTestCase() as mdb2:
+        mdb1.connect(username="monetdb", password="monetdb")
+        mdb1.execute('CREATE schema mys4;').assertSucceeded()
+        mdb1.execute("CREATE USER duser4 WITH PASSWORD 'ups' NAME 'ups' SCHEMA mys4;").assertSucceeded()
+        mdb2.connect(username="duser4", password="ups")
+
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb2.execute('select 1;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('drop user duser4;').assertSucceeded()
+        mdb1.execute('drop schema mys4;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback and chain;').assertFailed() # error: ROLLBACK finished sucessfuly, but the session's schema could not be found while starting the next transaction
         # mbd2 cannot do anything else, the connection was terminated
