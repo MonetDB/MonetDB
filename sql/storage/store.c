@@ -3328,16 +3328,18 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	return res;
 }
 
-static void
+static int
 clean_predicates_and_propagate_to_parent(sql_trans *tr)
 {
+	int res = LOG_OK;
+
 	if (!list_empty(tr->predicates)) {
 		if (tr->parent) { /* propagate to the parent */
-			for(node *n=tr->predicates->h; n ; n = n->next) {
+			for(node *n=tr->predicates->h; n && res == LOG_OK ; n = n->next) {
 				pl *p = (pl*) n->data;
 				atom *e1 = p->r ? atom_dup(NULL, p->r) : NULL, *e2 = p->f ? atom_dup(NULL, p->f) : NULL;
 
-				sql_trans_add_predicate(tr->parent, p->c, p->cmp, e1, e2, p->anti, p->semantics);
+				res = sql_trans_add_predicate(tr->parent, p->c, p->cmp, e1, e2, p->anti, p->semantics);
 			}
 		}
 		list_destroy(tr->predicates);
@@ -3345,9 +3347,9 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 	}
 	if (!list_empty(tr->dependencies)) {
 		if (tr->parent) { /* propagate to the parent */
-			for(node *n=tr->dependencies->h; n ; n = n->next) {
+			for(node *n=tr->dependencies->h; n && res == LOG_OK ; n = n->next) {
 				sql_dependency_change *dp = (sql_dependency_change*)n->data;
-				sql_trans_add_dependency(tr->parent, dp->objid, dp->type);
+				res = sql_trans_add_dependency(tr->parent, dp->objid, dp->type);
 			}
 		}
 		list_destroy(tr->dependencies);
@@ -3355,14 +3357,15 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 	}
 	if (!list_empty(tr->depchanges)) {
 		if (tr->parent) { /* propagate to the parent */
-			for(node *n=tr->depchanges->h; n ; n = n->next) {
+			for(node *n=tr->depchanges->h; n && res == LOG_OK ; n = n->next) {
 				sql_dependency_change *dp = (sql_dependency_change*)n->data;
-				sql_trans_add_dependency_change(tr->parent, dp->objid, dp->type);
+				res = sql_trans_add_dependency_change(tr->parent, dp->objid, dp->type);
 			}
 		}
 		list_destroy(tr->depchanges);
 		tr->depchanges = NULL;
 	}
+	return res;
 }
 
 static void
@@ -3457,7 +3460,18 @@ sql_trans_rollback(sql_trans *tr)
 		}
 	}
 
-	clean_predicates_and_propagate_to_parent(tr);
+	if (!list_empty(tr->predicates)) {
+		list_destroy(tr->predicates);
+		tr->predicates = NULL;
+	}
+	if (!list_empty(tr->dependencies)) {
+		list_destroy(tr->dependencies);
+		tr->dependencies = NULL;
+	}
+	if (!list_empty(tr->depchanges)) {
+		list_destroy(tr->depchanges);
+		tr->depchanges = NULL;
+	}
 }
 
 sql_trans *
@@ -3804,7 +3818,8 @@ sql_trans_commit(sql_trans *tr)
 	}
 	tr->localtmps.nelm = NULL;
 
-	clean_predicates_and_propagate_to_parent(tr);
+	if (ok == LOG_OK)
+		ok = clean_predicates_and_propagate_to_parent(tr);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
