@@ -514,7 +514,6 @@ mcrypt_hashPassword(
 		return NULL;
 	}
 
-#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	snprintf(ret, sizeof(ret),
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
@@ -542,7 +541,6 @@ mcrypt_hashPassword(
 	ret[len] = '\0';
 
 	return strdup(ret);
-#endif
 }
 
 #ifndef HAVE_SHA512_UPDATE

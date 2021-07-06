@@ -2500,6 +2500,10 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	struct stat statbuf;
 	int len;
 
+	if (extent == 0) {
+		/* nothing to copy */
+		return GDK_SUCCEED;
+	}
 	// first check the backup dir
 	len = snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
