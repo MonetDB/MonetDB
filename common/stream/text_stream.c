@@ -89,42 +89,69 @@ take_byte(inner_state_t *ist)
 static pump_result
 text_pump_in(inner_state_t *ist, pump_action action)
 {
-	bool crlf_pending = ist->crlf_pending;
+	assert(ist->dst_win.count > 0);
+	assert(ist->src_win.count > 0 || action == PUMP_FINISH);
 
-	while (ist->src_win.count > 0 && ist->dst_win.count > 0) {
-		char c = take_byte(ist);
-		switch (c) {
-			case '\r':
-				if (crlf_pending) {
-					// put the previous one, which is clearly not followed by an \n
-					put_byte(ist, '\r');
-				}
-				crlf_pending = true;
-				continue;
-			case '\n':
-				put_byte(ist, c);
-				crlf_pending = false;
-				continue;
-			default:
-				if (crlf_pending) {
-					put_byte(ist, '\r');
-					crlf_pending = false;
-					// if dst_win.count was 1, there is no room for another put_byte().
-					if (ist->dst_win.count > 0) {
-						put_byte(ist, c);
-					} else {
-						// no room anymore for char c, put it back!
-						ist->src_win.start--;
-						ist->src_win.count++;
-					}
-				} else {
-					put_byte(ist, c);
-				}
-				continue;
+	if (ist->crlf_pending) {
+		if (ist->src_win.count > 0) {
+			if (ist->src_win.start[0] != '\n') {
+				// CR not followed by a LF, emit it
+				put_byte(ist, '\r');
+			}
+		} else {
+			assert(action == PUMP_FINISH);
+			// CR followed by end of file, not LF, so emit it
+			put_byte(ist, '\r');
 		}
+		// in any case, the CR is no longer pending
+		ist->crlf_pending = false;
 	}
 
-	ist->crlf_pending = crlf_pending;
+	while (1) {
+		size_t span = ist->src_win.count < ist->dst_win.count
+					? ist->src_win.count
+					: ist->dst_win.count;
+		if (span == 0)
+			break;
+
+		if (ist->src_win.start[0] == '\r') {
+			// Looking at a CR. We'll handle just that, then make another round of the while loop
+			if (ist->src_win.count == 1) {
+				// Don't know what will follow, move it to the flag.
+				// Then stop, as all available input has been consumed
+				take_byte(ist);
+				ist->crlf_pending = true;
+				break;
+			}
+			assert(ist->src_win.count > 1); // We can safely look ahead
+			if (ist->src_win.start[1] == '\n') {
+				// Drop the CR, move the LF
+				take_byte(ist);
+				put_byte(ist, take_byte(ist));
+			} else {
+				// Move the CR
+				put_byte(ist, take_byte(ist));
+			}
+			// progress has been made, consider the situation anew
+			continue;
+		} else {
+			// The remaining input data does not start with a CR.
+			// Move all non-CR data to the output buffer
+			char *cr = memchr(ist->src_win.start, '\r', span);
+			if (cr != NULL) {
+				span = cr - ist->src_win.start;
+			}
+			assert(span > 0);
+			memcpy(ist->dst_win.start, ist->src_win.start, span);
+			ist->src_win.start += span;
+			ist->src_win.count -= span;
+			ist->dst_win.start += span;
+			ist->dst_win.count -= span;
+			continue;
+		}
+		// Unreachable, all branches above explicitly break or continue
+		assert(0 && "UNREACHABLE");
+	}
 
 	if (action == PUMP_FINISH) {
 		if (ist->src_win.count > 0)
