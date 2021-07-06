@@ -64,7 +64,11 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			r = sql_processrelation(m, r, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(m, r);
-			mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY);
+			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
+				sa_reset(m->ta);
+				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return NULL;
+			}
 		}
 		sa_reset(m->ta);
 		assert(r);
@@ -1311,29 +1315,37 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-void
+int
 mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type)
 {
+	int res = LOG_OK;
+
 	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", b->id, depend_id, (int) depend_type);
 	if ( (b->id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) ) {
 		if (!b->new)
-			sql_trans_add_dependency(m->session->tr, b->id, ddl);
-		sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
+			res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
+		if (res == LOG_OK)
+			res = sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
 	}
+	return res;
 }
 
-void
+int
 mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type)
 {
+	int res = LOG_OK;
+
 	TRC_DEBUG(SQL_TRANS, "Create dependencies on '%d' of type: %d\n", depend_id, (int) dep_type);
 	if (!list_empty(blist)) {
-		for (node *n = blist->h ; n ; n = n->next) {
+		for (node *n = blist->h ; n && res == LOG_OK ; n = n->next) {
 			sql_base *b = n->data;
 			if (!b->new) /* only add old objects to the transaction dependency list */
-				sql_trans_add_dependency(m->session->tr, b->id, ddl);
-			mvc_create_dependency(m, b, depend_id, dep_type);
+				res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
+			if (res == LOG_OK)
+				res = mvc_create_dependency(m, b, depend_id, dep_type);
 		}
 	}
+	return res;
 }
 
 int
