@@ -3328,6 +3328,7 @@ sql_trans_destroy(sql_trans *tr)
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
+	MT_lock_destroy(&tr->lock);
 	_DELETE(tr);
 	store_unlock(store);
 	return res;
@@ -3473,10 +3474,12 @@ sql_trans_commit(sql_trans *tr)
 			c->ts = commit_ts;
 		}
 		/* when directly flushing: flush logger after changes got applied */
-		if (ok == LOG_OK && flush) {
-			ok = store->logger_api.log_tend(store); /* flush/sync */
-			if (ok == LOG_OK)
-				ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
+		if (flush) {
+			if (ok == LOG_OK) {
+				ok = store->logger_api.log_tend(store); /* flush/sync */
+				if (ok == LOG_OK)
+					ok = store->logger_api.log_tdone(store, commit_ts); /* mark as done */
+			}
 			MT_lock_unset(&store->flush);
 		}
 		/* garbage collect */

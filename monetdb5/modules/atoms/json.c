@@ -57,7 +57,6 @@ typedef str json;
 			if (*(J) != ' ' &&					\
 				*(J) != '\n' &&					\
 				*(J) != '\t' &&					\
-				*(J) != '\f' &&					\
 				*(J) != '\r')					\
 				break;							\
 	} while (0)
@@ -871,6 +870,8 @@ JSONstringParser(const char *j, const char **next)
 			*next = j;
 			return MAL_SUCCEED;
 		default:
+			if ((unsigned char)*j < ' ')
+				throw(MAL, "json.parser", "illegal control char");
 			if (seensurrogate)
 				throw(MAL, "json.parser", "illegal escape char");
 			break;
@@ -911,6 +912,9 @@ JSONfractionParser(const char *j, const char **next) {
 
 	// skip the period character
 	j++;
+	// must be followed by more digits
+	if (!isdigit((unsigned char)*j))
+		return false;
 	for (; *j; j++)
 		if (!isdigit((unsigned char)*j))
 			break;
@@ -1022,11 +1026,16 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			if (*j == '}')
 				break;
-			if (*j != '}' && *j != ',') {
+			if (*j != ',') {
 				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or '}' expected at offset %td", j - string_start);
 				return idx;
 			}
 			j++;
+			skipblancs(j);
+			if (*j == '}') {
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' not expected at offset %td", j - string_start);
+				return idx;
+			}
 		}
 		if (*j != '}') {
 			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected at offset %td", j - string_start);
@@ -1083,12 +1092,16 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected at offset %td", j - string_start);
 				return idx;
 			}
-			if (*j != ']' && *j != ',') {
+			if (*j != ',') {
 				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or ']' expected at offset %td (context: %c%c%c)", j - string_start, *(j - 1), *j, *(j + 1));
 				return idx;
 			}
 			j++;
 			skipblancs(j);
+			if (*j == ']') {
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' not expected at offset %td", j - string_start);
+				return idx;
+			}
 		}
 		if (*j != ']') {
 			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected at offset %td", j - string_start);

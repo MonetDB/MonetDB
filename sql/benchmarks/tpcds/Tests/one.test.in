@@ -3511,7 +3511,7 @@ select  i_item_id,
 700 values hashing to 4768cbb63a3c1944e5a2bfbd752ba99a
 
 query TTIRRRR rowsort
--- query 27q
+-- query 27a
 with results as
  (select i_item_id,
         s_state, 0 as g_state,

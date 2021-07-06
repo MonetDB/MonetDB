@@ -71,15 +71,8 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1, 1) == GDK_SUCCEED) {
-		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		d->dirty = true;
-		memset(d->base, 0, d->free);
-#ifndef NDEBUG
-		/* fill should solve initialization problems within valgrind */
-		memset(d->base + d->free, 0, d->size - d->free);
-#endif
-	}
+	if (HEAPalloc(d, size, 1, 1) != GDK_SUCCEED)
+		GDKerror("alloc failed");
 }
 
 
@@ -117,7 +110,7 @@ strCleanHash(Heap *h, bool rebuild)
 		strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
 		newhash[off] = (stridx_t) (pos - sizeof(stridx_t));
-		pos += strLen(s);
+		pos += strlen(s) + 1;
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
@@ -138,7 +131,7 @@ strCleanHash(Heap *h, bool rebuild)
 			pos += pad;
 			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
-			pos += strLen(s);
+			pos += strlen(s) + 1;
 		}
 	}
 #endif
@@ -157,6 +150,11 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
+	if (h->free == 0) {
+		/* empty, so there are no strings */
+		return 0;
+	}
+
 	off = strHash(v);
 	off &= GDK_STRHASHMASK;
 
@@ -166,7 +164,7 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (strCmp(v, (str) (next + 1)) == 0)
+		if (strcmp(v, (str) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
 	return 0;
@@ -252,9 +250,26 @@ strPut(BAT *b, var_t *dst, const void *V)
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;
-	size_t pos, len = strLen(v);
+	size_t pos, len = strlen(v) + 1;
 	stridx_t *bucket;
 	BUN off;
+
+	if (h->free == 0) {
+		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				return 0;
+			}
+			h = b->tvheap;
+		}
+		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->dirty = true;
+#ifdef NDEBUG
+		memset(h->base, 0, h->free);
+#else
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base, 0, h->size);
+#endif
+	}
 
 	off = strHash(v);
 	off &= GDK_STRHASHMASK;
@@ -269,7 +284,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t);
-				if (strCmp(v, h->base + pos) == 0) {
+				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
@@ -280,7 +295,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 			 * linked list, so only look at single
 			 * entry */
 			pos = *bucket;
-			if (strCmp(v, h->base + pos) == 0) {
+			if (strcmp(v, h->base + pos) == 0) {
 				/* already in heap: reuse */
 				return *dst = (var_t) pos;
 			}
@@ -291,10 +306,12 @@ strPut(BAT *b, var_t *dst, const void *V)
 	/* check that string is correctly encoded UTF-8; there was no
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
+#ifndef NDEBUG
 	if (checkUTF8(v) != GDK_SUCCEED) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return 0;
 	}
+#endif
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
@@ -329,22 +346,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return 0;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		MT_lock_set(&b->theaplock);
-		if (ATOMIC_GET(&h->refs) == 1) {
-			if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
-				return 0;
-			}
-		} else {
-			MT_lock_unset(&b->theaplock);
-			Heap *new = HEAPgrow(h, newsize);
-			if (new == NULL)
-				return 0;
-			MT_lock_set(&b->theaplock);
-			HEAPdecref(h, false);
-			b->tvheap = h = new;
+		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED) {
+			return 0;
 		}
-		MT_lock_unset(&b->theaplock);
+		h = b->tvheap;
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
