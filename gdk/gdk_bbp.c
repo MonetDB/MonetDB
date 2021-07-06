@@ -1570,12 +1570,11 @@ BBPdir_init(void)
 void
 BBPdump(void)
 {
-	bat i;
 	size_t mem = 0, vm = 0;
 	size_t cmem = 0, cvm = 0;
 	int n = 0, nc = 0;
 
-	for (i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
+	for (bat i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
 		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
 			continue;
 		BAT *b = BBP_desc(i);
@@ -1590,6 +1589,10 @@ BBPdump(void)
 			BBP_lrefs(i),
 			status,
 			BBP_cache(i) ? "" : " not cached");
+		if (b == NULL) {
+			fprintf(stderr, ", no descriptor\n");
+			continue;
+		}
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
