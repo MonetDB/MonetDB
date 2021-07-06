@@ -3693,7 +3693,19 @@ transaction_add_hash_entry(sql_hash *h, sqlid id, sql_dependency_change_type tpe
 		.ts = ts
 	};
 
-	if (!hash_add(h, h->key(next_change), next_change)) {
+	int key = h->key(next_change);
+	sql_hash_e *he = h->buckets[key&(h->size-1)];
+
+	for (; he ; he = he->chain) { /* find if the entry is already present */
+		sql_dependency_change *schange = (sql_dependency_change*) he->value;
+
+		if (schange->objid == id && schange->ts == ts && schange->type == tpe) {
+			_DELETE(next_change);
+			return LOG_OK;
+		}
+	}
+
+	if (!hash_add(h, key, next_change)) {
 		_DELETE(next_change);
 		return LOG_ERR;
 	}
