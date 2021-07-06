@@ -148,7 +148,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
 	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 wrapup:
-	for(i=0; i< blkcnt; i++)
+	for(i=0; i<= blkcnt; i++)
 		if( top[i])
 			GDKfree(blocks[i]);
     GDKfree(depth);
