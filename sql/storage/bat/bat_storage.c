@@ -500,7 +500,7 @@ temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 	return d;
 }
 
-sql_delta *
+static sql_delta *
 col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
 	if (isTempTable(c->t))
