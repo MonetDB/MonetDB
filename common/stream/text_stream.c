@@ -30,6 +30,7 @@ struct inner_state {
 	pump_buffer src_win;
 	pump_buffer dst_win;
 	pump_buffer putback_win;
+	pump_state *outer_state;
 	char putback_buf[UTF8BOMLENGTH];
 	bool crlf_pending;
 	char buffer[BUFFER_SIZE];
@@ -150,16 +151,20 @@ text_pump_in(inner_state_t *ist, pump_action action)
 static pump_result
 text_pump_in_with_putback(inner_state_t *ist, pump_action action)
 {
-	if (ist->putback_win.count > 0) {
-		pump_buffer tmp = ist->src_win;
-		ist->src_win = ist->putback_win;
-		pump_result ret = text_pump_in(ist, PUMP_NO_FLUSH);
-		ist->putback_win = ist->src_win;
-		ist->src_win = tmp;
-		if (ret == PUMP_ERROR)
-			return PUMP_ERROR;
+	if (ist->putback_win.count == 0) {
+		// no need for this function anymore
+		assert(ist->outer_state->worker == text_pump_in_with_putback);
+		ist->outer_state->worker = text_pump_in;
+		return text_pump_in(ist, action);
 	}
-	return text_pump_in(ist, action);
+
+	// first empty the putback buffer
+	pump_buffer tmp = ist->src_win;
+	ist->src_win = ist->putback_win;
+	pump_result ret = text_pump_in(ist, PUMP_NO_FLUSH);
+	ist->putback_win = ist->src_win;
+	ist->src_win = tmp;
+	return ret;
 }
 
 
@@ -295,6 +300,7 @@ create_text_stream(stream *inner)
 	state->finalizer = text_end;
 	state->get_error = get_error;
 
+	inner_state->outer_state = state;
 	inner_state->putback_win.start = inner_state->putback_buf;
 	inner_state->putback_win.count = 0;
 	if (inner->readonly) {
