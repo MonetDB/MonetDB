@@ -1541,7 +1541,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->tnonil,
 			BATtdense(v),
 			v->batCount,
-			(size_t)v->batCount * Tsize(v),
+			(size_t)v->batCount << v->tshift,
 			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 

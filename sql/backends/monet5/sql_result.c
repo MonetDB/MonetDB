@@ -849,7 +849,7 @@ mvc_export_binary_bat(stream *s, BAT* bn) {
 				bn->tnonil,
 				BATtdense(bn),
 				bn->batCount,
-				(size_t)bn->batCount * Tsize(bn),
+				(size_t)bn->batCount << bn->tshift,
 				sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0
 				);
 

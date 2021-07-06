@@ -414,7 +414,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 		bn->tvheap->free = h1off + r2i->vh->free;
 	}
 
-	if (v >= ((var_t) 1 << (8 * bn->twidth)) &&
+	if (v >= ((var_t) 1 << (8 << bn->tshift)) &&
 	    GDKupgradevarheap(bn, v, false, false) != GDK_SUCCEED) {
 		BBPreclaim(bn);
 		return NULL;
