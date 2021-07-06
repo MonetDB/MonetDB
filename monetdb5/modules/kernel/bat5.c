@@ -345,12 +345,11 @@ static str
 BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
-	if (BBPcheck(*bid, "bat.getCapacity")) {
-		BAT *b = BBPquickdesc(*bid, false);
+	BAT *b = BBPquickdesc(*bid, false);
 
-		if (b != NULL)
-			*res = (lng) BATcapacity(b);
-	}
+	if (b == NULL)
+		throw(MAL, "bat.getCapacity", ILLEGAL_ARGUMENT);
+	*res = (lng) BATcapacity(b);
 	return MAL_SUCCEED;
 }
 
@@ -358,14 +357,11 @@ static str
 BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
+	BAT *b = BBPquickdesc(*bid, false);
 
-	if (BBPcheck(*bid, "bat.getColumnType")) {
-		BAT *b = BBPquickdesc(*bid, false);
-
-		if (b) {
-			ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
-		}
-	}
+	if (b == NULL)
+		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);
+	ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
 	*res = GDKstrdup(ret);
 	if(*res == NULL)
 		throw(MAL,"bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -683,7 +679,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getName", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = GDKstrdup(BBPname(b->batCacheid));
+	*ret = GDKstrdup(BBP_logical(b->batCacheid));
 	BBPunfix(b->batCacheid);
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
