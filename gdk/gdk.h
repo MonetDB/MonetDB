@@ -1713,7 +1713,7 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 		if (rc != GDK_SUCCEED)
 			return rc;
 		if (b->twidth < SIZEOF_VAR_T &&
-		    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+		    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 			/* doesn't fit in current heap, upgrade it */
 			rc = GDKupgradevarheap(b, d, 0, copyall);
 			if (rc != GDK_SUCCEED)
@@ -1735,9 +1735,9 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 			break;
 #endif
 		}
-	} else if (b->ttype == TYPE_msk) {
-		mskSetVal(b, p, * (msk *) v);
 	} else {
+		/* msk is handled by tfastins_nocheck, our only caller */
+		assert(b->ttype != TYPE_msk);
 		return ATOMputFIX(b->ttype, Tloc(b, p), v);
 	}
 	return GDK_SUCCEED;
@@ -1752,8 +1752,10 @@ tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 			((uint32_t *) b->theap->base)[b->theap->free / 4] = 0;
 			b->theap->free += 4;
 		}
-	} else
-		b->theap->free += s;
+		mskSetVal(b, p, * (msk *) v);
+		return GDK_SUCCEED;
+	}
+	b->theap->free += s;
 	return Tputvalue(b, p, v, false);
 }
 
@@ -1805,7 +1807,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
-	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, false);
 		if (rc != GDK_SUCCEED)

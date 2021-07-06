@@ -546,7 +546,7 @@ BATextend(BAT *b, BUN newcap)
 		newcap = (newcap + 31) & ~(BUN)31; /* round up to multiple of 32 */
 		theap_size = (size_t) (newcap / 8); /* in bytes */
 	} else {
-		theap_size = (size_t) newcap * Tsize(b);
+		theap_size = (size_t) newcap << b->tshift;
 	}
 	b->batCapacity = newcap;
 
@@ -925,7 +925,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		} else {
 			/* case (4): optimized for simple array copy */
-			bn->theap->free = bunstocopy * Tsize(bn);
+			bn->theap->free = bunstocopy << bn->tshift;
 			bn->theap->dirty |= bunstocopy > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		}
@@ -1161,20 +1161,32 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
 	MT_rwlock_wrlock(&b->thashlock);
-	for (BUN i = 0; i < count; i++) {
-		if (values) {
-			t = b->ttype && b->tvarsized ? ((void **) values)[i] :
-				(void *) ((char *) values + i * Tsize(b));
+	if (values && b->ttype) {
+		for (BUN i = 0; i < count; i++) {
+			t = b->tvarsized ? ((void **) values)[i] :
+				(void *) ((char *) values + (i << b->tshift));
+			gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
+			if (rc != GDK_SUCCEED) {
+				MT_rwlock_wrunlock(&b->thashlock);
+				return rc;
+			}
+			if (b->thash) {
+				HASHappend_locked(b, p, t);
+			}
+			p++;
 		}
-		gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
-		if (rc != GDK_SUCCEED) {
-			MT_rwlock_wrunlock(&b->thashlock);
-			return rc;
+	} else {
+		for (BUN i = 0; i < count; i++) {
+			gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
+			if (rc != GDK_SUCCEED) {
+				MT_rwlock_wrunlock(&b->thashlock);
+				return rc;
+			}
+			if (b->thash) {
+				HASHappend_locked(b, p, t);
+			}
+			p++;
 		}
-		if (b->thash) {
-			HASHappend_locked(b, p, t);
-		}
-		p++;
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 
@@ -1304,7 +1316,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
 		const void *t = b->ttype && b->tvarsized ?
 			((const void **) values)[i] :
-			(const void *) ((const char *) values + i * Tsize(b));
+			(const void *) ((const char *) values + (i << b->tshift));
 
 		val = BUNtail(bi, p);	/* old value */
 		if (ATOMcmp(b->ttype, val, t) == 0)
@@ -1388,7 +1400,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				return GDK_FAIL;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
-			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {
+			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, false) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);

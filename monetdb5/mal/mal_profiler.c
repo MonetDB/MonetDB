@@ -385,7 +385,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					GDKfree(cv);
 					if (!ok)
 						goto cleanup_and_exit;
-					total += cnt * d->twidth;
+					total += cnt << d->tshift;
 					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
 						goto cleanup_and_exit;
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */

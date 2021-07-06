@@ -4001,7 +4001,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
 
-								sz = BATcount(bs) * bn->twidth;
+								sz = BATcount(bs) << bn->tshift;
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
