@@ -273,10 +273,18 @@ SQLprepareClient(Client c, int login)
 	}
 	MT_lock_unset(&sql_contextLock);
 	if (login) {
-		str schema = monet5_user_set_def_schema(m, c->user);
-		if (!schema) {
-			msg = createException(PERMD,"sql.initClient", SQLSTATE(08004) "Schema authorization error");
-			goto bailout;
+		switch (monet5_user_set_def_schema(m, c->user)) {
+			case -1:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			case -2:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				goto bailout;
+			case -3:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				goto bailout;
+			default:
+				break;
 		}
 	}
 
@@ -615,18 +623,28 @@ SQLtrans(mvc *m)
 	if (!m->session->tr->active) {
 		sql_session *s;
 
-		if (mvc_trans(m) < 0)
-			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		switch (mvc_trans(m)) {
+			case -1:
+				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -3:
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
+			default:
+				break;
+		}
 		s = m->session;
 		if (!s->schema) {
-			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
+			if (monet5_user_get_def_schema(m, m->user_id, &s->schema_name) < 0) {
+				mvc_cancel_session(m);
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+			}
 			if (!s->schema_name) {
 				mvc_cancel_session(m);
 				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			assert(s->schema_name);
-			s->schema = find_sql_schema(s->tr, s->schema_name);
-			assert(s->schema);
+			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
+				mvc_cancel_session(m);
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
+			}
 		}
 	}
 	return MAL_SUCCEED;

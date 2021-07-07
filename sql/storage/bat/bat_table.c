@@ -224,8 +224,11 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	BUN offset = 0;
 
 	va_start(va, t);
-	if (store->storage_api.claim_tab(tr, t, 1, &offset, NULL) != LOG_OK)
-		return LOG_ERR;
+	ok = t->bootstrap?
+		store->storage_api.claim_tab(tr, t, 1, &offset, NULL):
+		store->storage_api.key_claim_tab(tr, t, 1, &offset, NULL);
+	if (ok != LOG_OK)
+		return ok;
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);

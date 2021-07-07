@@ -649,6 +649,19 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		getArg(p, 0) = lret[i];
 	}
 
+	/* end remote transaction */
+	p = newInstruction(curBlk, remoteRef, execRef);
+	p = pushArgument(curBlk, p, q);
+	p = pushStr(curBlk, p, sqlRef);
+	p = pushStr(curBlk, p, deregisterRef);
+	getArg(p, 0) = -1;
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushInt(curBlk, o, TYPE_int);
+	p = pushReturn(curBlk, p, getArg(o, 0));
+	pushInstruction(curBlk, p);
+
 	/* remote.disconnect(q); */
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
@@ -665,13 +678,32 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	/* catch exceptions */
-	p = newCatchStmt(curBlk,"MALexception");
-	p = newExitStmt(curBlk,"MALexception");
-	p = newCatchStmt(curBlk,"SQLexception");
-	p = newExitStmt(curBlk,"SQLexception");
+	p = newCatchStmt(curBlk,"MALException");
+	p = newExitStmt(curBlk,"MALException");
+	p = newCatchStmt(curBlk,"SQLException");
+	p = newExitStmt(curBlk,"SQLException");
+
+	/* end remote transaction */
+	p = newInstruction(curBlk, remoteRef, execRef);
+	p = pushArgument(curBlk, p, q);
+	p = pushStr(curBlk, p, sqlRef);
+	p = pushStr(curBlk, p, deregisterRef);
+	getArg(p, 0) = -1;
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushInt(curBlk, o, TYPE_int);
+	p = pushReturn(curBlk, p, getArg(o, 0));
+	pushInstruction(curBlk, p);
+
 	/* remote.disconnect(q); */
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
+
+	/* throw the exception back */
+	p = newStmt(curBlk, remoteRef, assertRef);
+	p = pushBit(curBlk, p, TRUE);
+	p = pushStr(curBlk, p, "Exception occurred in the remote server, please check the log there");
 
 	pushEndInstruction(curBlk);
 

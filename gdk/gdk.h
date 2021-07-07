@@ -1559,10 +1559,10 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 
 /* macros that nicely check parameters */
-#define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):0)
-#define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
-#define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-#define BBPname(i)	(BBPcheck((i), "BBPname") ? BBP_logical(i) : "")
+#define BBPstatus(i)	(BBPcheck(i) ? BBP_status(i) : 0)
+#define BBPrefs(i)	(BBPcheck(i) ? BBP_refs(i) : -1)
+#define BBPcache(i)	(BBPcheck(i) ? BBP_cache(i) : (BAT*) NULL)
+#define BBPname(i)	(BBPcheck(i) ? BBP_logical(i) : "")
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
@@ -1966,13 +1966,13 @@ gdk_export void *THRdata[THREADDATA];
 #define THRset_errbuf(t,b)	(t->data[2] = b)
 
 static inline bat
-BBPcheck(bat x, const char *y)
+BBPcheck(bat x)
 {
 	if (!is_bat_nil(x)) {
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
-			TRC_DEBUG(CHECK_, "%s: range error %d\n", y, (int) x);
+			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
 		} else {
 			return x;
 		}
@@ -1985,7 +1985,7 @@ BATdescriptor(bat i)
 {
 	BAT *b = NULL;
 
-	if (BBPcheck(i, "BATdescriptor")) {
+	if (BBPcheck(i)) {
 		if (BBPfix(i) <= 0)
 			return NULL;
 		b = BBP_cache(i);

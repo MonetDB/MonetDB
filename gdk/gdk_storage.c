@@ -772,7 +772,7 @@ BATsave_locked(BAT *bd)
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(bd)) {
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBPname(VIEWtparent(bd)));
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBP_logical(VIEWtparent(bd)));
 		return GDK_FAIL;
 	}
 	if (!BATdirty(bd)) {

@@ -1639,8 +1639,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	}
 	bat_iterator_end(&ni);
 	TRC_DEBUG(ALGO,
-		  "BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
-		  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
+		  "BATreplace(" ALGOBATFMT "," ALGOOPTBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOBATPAR(n),
 		  GDKusec() - t0);
 	return GDK_SUCCEED;
 }

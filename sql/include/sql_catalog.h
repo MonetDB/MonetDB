@@ -19,8 +19,9 @@
 #define tr_none		0
 #define tr_readonly	1
 #define tr_writable	2
-#define tr_serializable 4
-#define tr_append 	8
+#define tr_snapshot 4
+#define tr_serializable 8
+#define tr_append 	16
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -231,13 +232,14 @@ struct os_iter {
 };
 
 /* transaction changes */
-typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_valid_fptr) (struct sql_trans *tr, struct sql_change *c/*, ulng commit_ts, ulng oldest*/);
 typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								/* write changes to the log */
 typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
+typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -251,6 +253,7 @@ extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id
 extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
+extern bool os_has_changes(struct objectset *os, struct sql_trans *tr);
 
 extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store);
 extern void ol_destroy(objlist *ol, sql_store store);
@@ -308,12 +311,15 @@ typedef struct sql_trans {
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	list *changes;		/* list of changes */
-	int logchanges;		/* count number of changes to be applied too the wal */
-
-	int active;			/* is active transaction */
-	int status;			/* status of the last query */
 
 	list *dropped;  	/* protection against recursive cascade action*/
+	list *predicates;	/* list of read predicates logged during update transactions */
+	list *dependencies;	/* list of dependencies created (list of sqlids from the objects) */
+	list *depchanges;	/* list of dependencies changed (it would be tested for conflicts at the end of the transaction) */
+
+	int logchanges;		/* count number of changes to be applied too the wal */
+	int active;			/* is active transaction */
+	int status;			/* status of the last query */
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
@@ -849,5 +855,23 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 extern void arg_destroy(sql_store store, sql_arg *a);
 extern void part_value_destroy(sql_store store, sql_part_value *pv);
 
+typedef struct atom {
+	int isnull;
+	sql_subtype tpe;
+	ValRecord data;
+} atom;
+
+/* duplicate atom */
+extern atom *atom_dup(sql_allocator *sa, atom *a);
+
+typedef struct pl {
+	sql_column *c;
+	unsigned int cmp;
+	atom *r; /* if r is NULL then a full match is required */
+	atom *f; /* make it match range expressions */
+	uint8_t
+	 anti:1,
+	 semantics:1;
+} pl;
 
 #endif /* SQL_CATALOG_H */

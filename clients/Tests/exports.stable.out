@@ -940,6 +940,7 @@ const char *deleteRef;
 void deleteSymbol(Module scope, Symbol prg);
 const char *deltaRef;
 const char *dense_rankRef;
+const char *deregisterRef;
 malType destinationType(MalBlkPtr mb, InstrPtr p);
 const char *diffRef;
 const char *diffcandRef;

@@ -1849,12 +1849,11 @@ BBPdir_init(void)
 void
 BBPdump(void)
 {
-	bat i;
 	size_t mem = 0, vm = 0;
 	size_t cmem = 0, cvm = 0;
 	int n = 0, nc = 0;
 
-	for (i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
+	for (bat i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
 		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
 			continue;
 		BAT *b = BBP_desc(i);
@@ -1869,6 +1868,10 @@ BBPdump(void)
 			BBP_lrefs(i),
 			status,
 			BBP_cache(i) ? "" : " not cached");
+		if (b == NULL) {
+			fprintf(stderr, ", no descriptor\n");
+			continue;
+		}
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
@@ -2167,7 +2170,7 @@ BBPinsert(BAT *bn)
 		if (len == -1 || len >= FILENAME_MAX)
 			return 0;
 
-		TRC_DEBUG(BAT_, "%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
+		TRC_DEBUG(BAT_, "%d = new %s(%s)\n", (int) i, BBP_logical(i), ATOMname(bn->ttype));
 	}
 
 	return i;
@@ -2220,14 +2223,14 @@ BBPuncacheit(bat i, bool unloaddesc)
 {
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPuncacheit")) {
+	if (BBPcheck(i)) {
 		BAT *b = BBP_desc(i);
 
 		assert(unloaddesc || BBP_refs(i) == 0);
 
 		if (b) {
 			if (BBP_cache(i)) {
-				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBPname(i));
+				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBP_logical(i));
 
 				BBP_cache(i) = NULL;
 
@@ -2249,7 +2252,7 @@ BBPuncacheit(bat i, bool unloaddesc)
 static inline void
 bbpclear(bat i, int idx, bool lock)
 {
-	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBPname(i));
+	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
 	BBP_status_set(i, BBPUNLOADING);
@@ -2279,7 +2282,7 @@ BBPclear(bat i)
 	MT_Id pid = MT_getpid();
 	bool lock = locked_by == 0 || locked_by != pid;
 
-	if (BBPcheck(i, "BBPclear")) {
+	if (BBPcheck(i)) {
 		bbpclear(i, threadmask(pid), lock);
 	}
 }
@@ -2397,7 +2400,7 @@ BBPrename(bat bid, const char *nme)
 static inline void
 BBPspin(bat i, const char *s, unsigned event)
 {
-	if (BBPcheck(i, "BBPspin") && (BBP_status(i) & event)) {
+	if (BBPcheck(i) && (BBP_status(i) & event)) {
 		lng spin = LL_CONSTANT(0);
 
 		do {
@@ -2435,7 +2438,7 @@ incref(bat i, bool logical, bool lock)
 	BAT *b, *pb = NULL, *pvb = NULL;
 	bool load = false;
 
-	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
+	if (!BBPcheck(i))
 		return 0;
 
 	/* Before we get the lock and before we do all sorts of
@@ -2576,7 +2579,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
 		if (BBP_desc(i)->batSharecnt == 0) {
-			GDKerror("%s: %s does not have any shares.\n", func, BBPname(i));
+			GDKerror("%s: %s does not have any shares.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
 			--BBP_desc(i)->batSharecnt;
@@ -2599,14 +2602,14 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	/* decrement references by one */
 	if (logical) {
 		if (BBP_lrefs(i) == 0) {
-			GDKerror("%s: %s does not have logical references.\n", func, BBPname(i));
+			GDKerror("%s: %s does not have logical references.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
 			refs = --BBP_lrefs(i);
 		}
 	} else {
 		if (BBP_refs(i) == 0) {
-			GDKerror("%s: %s does not have pointer fixes.\n", func, BBPname(i));
+			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
 			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
@@ -2638,8 +2641,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	    (BBP_lrefs(i) > 0 &&
 	     (b == NULL ||
 	      BATdirty(b) ||
-	      (BBP_status(i) & BBPHOT) ||
-	      (BBP_status(i) & BBPSYNCING) ||
+	      (BBP_status(i) & (BBPHOT | BBPSYNCING)) ||
 	      !(BBP_status(i) & BBPPERSISTENT) ||
 	      GDKinmemory(b->theap->farmid)))) {
 		/* bat cannot be swapped out */
@@ -2681,7 +2683,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
-	if (BBPcheck(i, "BBPunfix") == 0) {
+	if (BBPcheck(i) == 0) {
 		return -1;
 	}
 	return decref(i, false, false, true, "BBPunfix");
@@ -2690,7 +2692,7 @@ BBPunfix(bat i)
 int
 BBPrelease(bat i)
 {
-	if (BBPcheck(i, "BBPrelease") == 0) {
+	if (BBPcheck(i) == 0) {
 		return -1;
 	}
 	return decref(i, true, false, true, "BBPrelease");
@@ -2706,9 +2708,7 @@ BBPrelease(bat i)
 void
 BBPkeepref(bat i)
 {
-	if (is_bat_nil(i))
-		return;
-	if (BBPcheck(i, "BBPkeepref")) {
+	if (BBPcheck(i)) {
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
 		BAT *b;
 
@@ -2774,7 +2774,7 @@ getBBPdescriptor(bat i, bool lock)
 	BAT *b = NULL;
 
 	assert(i > 0);
-	if (!BBPcheck(i, "BBPdescriptor")) {
+	if (!BBPcheck(i)) {
 		GDKerror("BBPcheck failed for bat id %d\n", i);
 		return NULL;
 	}
@@ -2802,7 +2802,7 @@ getBBPdescriptor(bat i, bool lock)
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 	if (load) {
-		TRC_DEBUG(IO_, "load %s\n", BBPname(i));
+		TRC_DEBUG(IO_, "load %s\n", BBP_logical(i));
 
 		b = BATload_intern(i, lock);
 
@@ -2977,11 +2977,11 @@ BBPquickdesc(bat bid, bool delaccess)
 {
 	BAT *b;
 
-	if (is_bat_nil(bid))
-		return NULL;
-	if (bid < 0) {
-		GDKerror("called with negative batid.\n");
-		assert(0);
+	if (!BBPcheck(bid)) {
+		if (!is_bat_nil(bid)) {
+			GDKerror("called with invalid batid.\n");
+			assert(0);
+		}
 		return NULL;
 	}
 	if ((b = BBP_cache(bid)) != NULL)

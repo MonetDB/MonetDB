@@ -1475,7 +1475,7 @@ bm_subcommit(logger *lg)
 		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid)
 			cleanup++;
 		if (lg->debug & 1)
-			fprintf(stderr, "#commit new %s (%d)\n", BBPname(col), col);
+			fprintf(stderr, "#commit new %s (%d)\n", BBP_logical(col), col);
 		assert(col);
 		sizes[i] = cnts?(BUN)cnts[p]:0;
 		n[i++] = col;
