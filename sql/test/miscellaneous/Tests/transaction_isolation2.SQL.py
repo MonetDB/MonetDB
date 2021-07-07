@@ -48,9 +48,9 @@ with SQLTestCase() as mdb1:
         mdb2.execute("alter table floats alter f set not null").assertSucceeded()
         mdb2.execute("alter table floats alter f set default 1").assertSucceeded()
         mdb2.execute('drop trigger ups2;').assertFailed(err_code="42000", err_message="DROP TRIGGER: transaction conflict detected")
+        mdb2.execute('rollback;').assertSucceeded()
         mdb1.execute('drop trigger ups2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('rollback;').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
@@ -63,7 +63,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('CREATE ROLE myrole;').assertSucceeded()
-        mdb2.execute('CREATE ROLE myrole;').assertFailed(err_code="42000", err_message="CREATE ROLE: transaction conflict detected") # I am not sure what do here
+        mdb2.execute('CREATE ROLE myrole;').assertFailed(err_code="42000", err_message="CREATE ROLE: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
 
@@ -84,7 +84,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("GRANT myrole TO dummyuser;").assertSucceeded()
-        mdb2.execute("GRANT myrole TO dummyuser;").assertFailed(err_code="42000", err_message="GRANT: transaction conflict detected") # I am not sure what do here
+        mdb2.execute("GRANT myrole TO dummyuser;").assertFailed(err_code="42000", err_message="GRANT: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'roles' table, so that cannot happen
@@ -101,7 +101,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('COMMENT ON TABLE "sys"."integers" IS \'something\';').assertSucceeded()
-        mdb2.execute('COMMENT ON TABLE "sys"."integers" IS \'somethingelse\';').assertFailed(err_code="42000", err_message="COMMENT: transaction conflict detected") # I am not sure what do here
+        mdb2.execute('COMMENT ON TABLE "sys"."integers" IS \'somethingelse\';').assertFailed(err_code="42000", err_message="Comment on failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'comments' table, so that cannot happen
@@ -112,7 +112,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('ANALYZE "sys"."integers";').assertSucceeded()
-        mdb2.execute('ANALYZE "sys"."integers";').assertFailed(err_code="42000", err_message="ANALYZE: transaction conflict detected") # I am not sure what do here
+        mdb2.execute('ANALYZE "sys"."integers";').assertFailed(err_code="42000", err_message="ANALYZE: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed() # Not sure here
         # The current setup gives a duplicate entry in the 'statistics' table, so that cannot happen
@@ -154,6 +154,8 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("ALTER TABLE parent ADD TABLE child1 AS PARTITION FROM '1' TO '2';").assertSucceeded()
+        mdb2.execute('create table myx (a int);').assertSucceeded()
+        mdb2.execute('drop table myx;').assertSucceeded()
         mdb2.execute("ALTER TABLE parent ADD TABLE child2 AS PARTITION FROM '0' TO '4';").assertFailed(err_code="42000", err_message="ALTER TABLE: failed due to conflict with another transaction")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
@@ -169,10 +171,12 @@ with SQLTestCase() as mdb1:
         mdb1.execute('create table child(c int);').assertSucceeded()
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
+        mdb2.execute('create table myx (a int);').assertSucceeded()
+        mdb2.execute('drop table myx;').assertSucceeded()
         mdb1.execute("ALTER TABLE parent1 ADD TABLE child AS PARTITION FROM '1' TO '2';").assertSucceeded()
-        mdb2.execute("ALTER TABLE parent2 ADD TABLE child AS PARTITION FROM '0' TO '4';").assertFailed(err_code="42000", err_message="ALTER TABLE: failed due to conflict with another transaction")
+        mdb2.execute("ALTER TABLE parent2 ADD TABLE child AS PARTITION FROM '0' TO '4';").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('rollback;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('ALTER TABLE parent1 DROP TABLE child;').assertSucceeded()
         mdb1.execute('DROP TABLE parent1;').assertSucceeded()
@@ -183,6 +187,8 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('CREATE FUNCTION myfunc() RETURNS INT RETURN 1;').assertSucceeded()
+        mdb2.execute('create table myx (a int);').assertSucceeded()
+        mdb2.execute('drop table myx;').assertSucceeded()
         mdb2.execute('CREATE FUNCTION myfunc() RETURNS INT RETURN 2;').assertFailed(err_code="42000", err_message="CREATE FUNCTION: transaction conflict detected")
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('rollback;').assertSucceeded()
@@ -193,7 +199,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('insert into longs values (4),(5),(6);').assertSucceeded()
         mdb2.execute('insert into longs values (5),(6),(7);').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed() # Duplicate values on the primary key 'i' from 'longs'
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # Duplicate values on the primary key 'i' from 'longs'
         mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,),(4,),(5,),(6,)])
 
         mdb1.execute('start transaction;').assertSucceeded()
@@ -201,7 +207,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('delete from longs where i > 3;').assertRowCount(3)
         mdb2.execute('insert into integers values (4);').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('commit;').assertFailed() # The foreign key value 4 doesn't exist on the primary key
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead") # The foreign key value 4 doesn't exist on the primary key
         mdb1.execute('SELECT i FROM longs order by i;').assertDataResultMatch([(1,),(2,),(3,)])
 
         mdb1.execute('start transaction;').assertSucceeded()

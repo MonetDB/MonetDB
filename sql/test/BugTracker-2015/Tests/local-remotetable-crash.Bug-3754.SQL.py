@@ -13,8 +13,8 @@ CREATE REMOTE TABLE rt (LIKE t1) ON 'mapi:monetdb://localhost:{}/{}';
 try:
     cur1.execute('SELECT * from rt;')
     print('Exception expected')
-except Exception as e:
-    if 'Remote tables not supported under remote connections' not in str(e):
+except pymonetdb.IntegrityError as e:
+    if 'Exception occurred in the remote server, please check the log there' not in str(e):
         print(str(e))
 
 cur1.close()

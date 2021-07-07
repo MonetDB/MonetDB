@@ -1300,7 +1300,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 #endif
 			}
 			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
+				Hash *h = b->thash;
+				b->thash = NULL;
 				MT_rwlock_wrunlock(&b->thashlock);
+				doHASHdestroy(b, h);
 				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
@@ -1308,7 +1311,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED) {
+					Hash *h = b->thash;
+					b->thash = NULL;
 					MT_rwlock_wrunlock(&b->thashlock);
+					doHASHdestroy(b, h);
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}

@@ -14,6 +14,7 @@
 
 #define SQL_OK 	1
 #define SQL_ERR 0
+#define SQL_CONFLICT 2
 
 #ifdef WIN32
 #ifdef LIBSQL
@@ -28,6 +29,7 @@
 #define MNEW( type ) (type*)GDKmalloc(sizeof(type) )
 #define ZNEW( type ) (type*)GDKzalloc(sizeof(type) )
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
+#define ZNEW_ARRAY( type, size ) (type*)GDKzalloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)

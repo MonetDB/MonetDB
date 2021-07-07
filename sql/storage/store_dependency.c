@@ -46,6 +46,7 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_depend
 
 	if (is_oid_nil(store->table_api.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &dtype, NULL)))
 		log_res = store->table_api.table_insert(tr, t, &id, &depend_id, &dtype);
+
 	return log_res;
 }
 

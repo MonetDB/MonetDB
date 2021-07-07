@@ -150,9 +150,10 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	str ret, pwd;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
-	sql_table *db_user_info, *auths;
+	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"), *auths = find_sql_table(m->session->tr, s, "auths");
 	Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
+	int log_res = 0;
 
 	if (!schema_path)
 		schema_path = default_schema_path;
@@ -165,6 +166,19 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	} else {
 		pwd = passwd;
 	}
+
+	user_id = store_next_oid(m->session->tr->store);
+	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path))) {
+		if (!enc)
+			free(pwd);
+		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
+		if (!enc)
+			free(pwd);
+		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
 	/* add the user to the M5 authorisation administration */
 	oid grant_user = c->user;
 	c->user = MAL_ADMIN;
@@ -172,15 +186,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	c->user = grant_user;
 	if (!enc)
 		free(pwd);
-	if (ret != MAL_SUCCEED)
-		return ret;
-
-	user_id = store_next_oid(m->session->tr->store);
-	db_user_info = find_sql_table(m->session->tr, s, "db_user_info");
-	auths = find_sql_table(m->session->tr, s, "auths");
-	store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path);
-	store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid);
-	return NULL;
+	return ret;
 }
 
 static int
@@ -269,6 +275,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static void
 monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
+	sql_schema *sys;
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
@@ -307,7 +314,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	mvc_create_column_(m, t, "schema_path", "clob", 0);
 
-	schema_id = sql_find_schema(m, "sys");
+	sys = find_sql_schema(m->session->tr, "sys");
+	schema_id = sys->base.id;
 	assert(schema_id >= 0);
 
 	sqlstore *store = m->session->tr->store;
@@ -545,8 +553,8 @@ monet5_user_init(backend_functions *be_funcs)
 	be_funcs->fschuserdep = &monet5_schema_user_dependencies;
 }
 
-str
-monet5_user_get_def_schema(mvc *m, int user)
+int
+monet5_user_get_def_schema(mvc *m, int user, str *schema)
 {
 	oid rid;
 	sqlid schema_id = int_nil;
@@ -555,7 +563,6 @@ monet5_user_get_def_schema(mvc *m, int user)
 	sql_table *schemas = NULL;
 	sql_table *auths = NULL;
 	str username = NULL;
-	str schema = NULL;
 	sqlstore *store = m->session->tr->store;
 	ptr cbat;
 
@@ -566,7 +573,7 @@ monet5_user_get_def_schema(mvc *m, int user)
 
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
 	if (is_oid_nil(rid))
-		return NULL;
+		return -1;
 	username = store->table_api.column_find_string_start(m->session->tr, find_sql_column(auths, "name"), rid, &cbat);
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
 	store->table_api.column_find_string_end(cbat);
@@ -577,14 +584,14 @@ monet5_user_get_def_schema(mvc *m, int user)
 		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas, "id"), &schema_id, NULL);
 		if (!is_oid_nil(rid)) {
 			str sname = store->table_api.column_find_string_start(m->session->tr, find_sql_column(schemas, "name"), rid, &cbat);
-			schema = sa_strdup(m->session->sa, sname);
+			*schema = sa_strdup(m->session->sa, sname);
 			store->table_api.column_find_string_end(cbat);
 		}
 	}
-	return schema;
+	return 0;
 }
 
-str
+int
 monet5_user_set_def_schema(mvc *m, oid user)
 {
 	oid rid;
@@ -598,20 +605,22 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_column *schemas_name = NULL;
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
+	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
-	str path_err = NULL, other = NULL, schema = NULL, schema_path = NULL, username = NULL, err = NULL;
+	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, err = NULL;
 	void *p = 0;
+	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
 
 	if ((err = AUTHresolveUser(&username, user)) != MAL_SUCCEED) {
 		freeException(err);
-		return (NULL);	/* don't reveal that the user doesn't exist */
+		return -2;
 	}
 
-	if (mvc_trans(m) < 0) {
+	if ((res = mvc_trans(m)) < 0) {
 		GDKfree(username);
-		return NULL;
+		return res;
 	}
 
 	sys = find_sql_schema(m->session->tr, "sys");
@@ -626,7 +635,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
 		GDKfree(username);
-		return NULL;
+		return -2;
 	}
 	schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
 
@@ -638,51 +647,54 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	schemas_name = find_sql_column(schemas, "name");
 	schemas_id = find_sql_column(schemas, "id");
 	auths = find_sql_table(m->session->tr, sys, "auths");
+	auths_id = find_sql_column(auths, "id");
 	auths_name = find_sql_column(auths, "name");
 
 	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
-	if (!is_oid_nil(rid))
-		schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
-
-	if (schema) {
-		char *old = schema;
-		schema = sa_strdup(m->session->sa, schema);
-		_DELETE(old);
+	if (is_oid_nil(rid)) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		_DELETE(schema_path);
+		return -3;
 	}
+	schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
+	schema_cpy = schema;
+	schema = sa_strdup(m->session->sa, schema);
+	_DELETE(schema_cpy);
 
-	/* only set schema if user is found */
+	/* check if username exists */
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, username, NULL);
-	if (!is_oid_nil(rid)) {
-		sql_column *auths_id = find_sql_column(auths, "id");
-		sqlid id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
-
-		m->user_id = m->role_id = id;
-	} else {
-		schema = NULL;
+	if (is_oid_nil(rid)) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		_DELETE(schema_path);
+		return -2;
 	}
+	m->user_id = m->role_id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
 
 	/* while getting the session's schema, set the search path as well */
-	if (!schema || !mvc_set_schema(m, schema) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
-		if (m->session->tr->active) {
-			if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-				freeException(other);
-		}
+	if (!(ok = mvc_set_schema(m, schema)) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
 		GDKfree(username);
 		_DELETE(schema_path);
 		freeException(path_err);
-		return NULL;
+		return ok == 0 ? -3 : -1;
 	}
+	
 	/* reset the user and schema names */
 	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
 		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
 		!sqlvar_set_string(find_global_var(m, sys, "current_role"), username)) {
-		schema = NULL;
+		res = -1;
 	}
 	GDKfree(username);
 	_DELETE(schema_path);
 	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
 		freeException(other);
-		return NULL;
+		return -1;
 	}
-	return schema;
+	return res;
 }

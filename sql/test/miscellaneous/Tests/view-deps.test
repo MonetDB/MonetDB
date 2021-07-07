@@ -1,34 +1,36 @@
 @connection(id=1, username=monetdb, password=monetdb)
 statement ok
-create table fine(y int, z int);
+create table fine(y int, z int)
 
 @connection(id=1)
 statement ok
-start transaction;
+start transaction
 
 @connection(id=2, username=monetdb, password=monetdb)
 statement ok
-start transaction;
+start transaction
 
 @connection(id=1)
 statement ok
-alter table fine drop column y;
+alter table fine drop column y
 
 @connection(id=2)
 statement ok
-create view myv7(a,b) as select y, z from sys.fine;
+create view myv7(a,b) as select y, z from sys.fine
 
 @connection(id=1)
 statement ok
-commit;
+commit
 
 @connection(id=2)
-statement ok
-commit;
+statement error 40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
 
 @connection(id=2)
-query I,I roworder
-select * from myv7;
+statement error 42S02!SELECT: no such table 'myv7'
+select * from myv7
 ----
 
-statement error code 40000 message "COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead"
+@connection(id=2)
+statement ok
+drop table fine
