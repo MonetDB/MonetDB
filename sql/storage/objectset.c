@@ -59,8 +59,10 @@ typedef struct objectset {
 	int id_based_cnt;
 	struct sql_hash *name_map;
 	struct sql_hash *id_map;
-	bool temporary;
-	bool unique;	/* names are unique */
+	bool
+		temporary:1,
+		unique:1, /* names are unique */
+		concurrent:1;	/* concurrent inserts are allowed */
 	sql_store store;
 } objectset;
 
@@ -157,6 +159,7 @@ hash_delete(sql_hash *h, void *data)
 		if (!h->sa)
 			_DELETE(p);
 	}
+	h->entries--;
 }
 
 static void
@@ -617,7 +620,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
@@ -626,6 +629,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql
 		.destroy = destroy,
 		.temporary = temporary,
 		.unique = unique,
+		.concurrent = concurrent,
 		.store = store
 	};
 	os->destroy = destroy;
@@ -852,6 +856,13 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->ts = tr->tid;
 	ov->b = b;
 	ov->os = os;
+
+	if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */
+		if (os->destroy)
+			os->destroy(os->store, ov->b);
+		_DELETE(ov);
+		return -3; /* conflict */
+	}
 
 	if ((res = os_add_id_based(os, tr, b->id, ov))) {
 		if (os->destroy)
@@ -1106,6 +1117,21 @@ os_obj_intransaction(objectset *os, struct sql_trans *tr, sql_base *b)
 		objectversion *ov = n->ov;
 
 		if (ov && os_atmc_get_state(ov) == active && ov->ts == tr->tid)
+			return true;
+	}
+	return false;
+}
+
+/* return true if this object set has changes pending for an other transaction */
+bool
+os_has_changes(objectset *os, struct sql_trans *tr)
+{
+	versionhead  *n = os->id_based_t;
+
+	if (n) {
+		objectversion *ov = n->ov;
+
+		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE)
 			return true;
 	}
 	return false;
