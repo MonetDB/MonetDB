@@ -960,15 +960,16 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 		}
 	}
 
+	// A little hack to inform the result receiver of the name of the compiled mal program.
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
-			if (	BUNappend(btype,	&int_nil	, false) != GDK_SUCCEED ||
-					BUNappend(bimpl,	str_nil		, false) != GDK_SUCCEED ||
-					BUNappend(bdigits,	&int_nil	, false) != GDK_SUCCEED ||
-					BUNappend(bscale,	&int_nil	, false) != GDK_SUCCEED ||
-					BUNappend(bschema,	str_nil		, false) != GDK_SUCCEED ||
-					BUNappend(btable,	q->f->imp	, false) != GDK_SUCCEED ||
-					BUNappend(bcolumn,	str_nil		, false) != GDK_SUCCEED)
-				goto wrapup;
+		if (	BUNappend(btype,	&int_nil	, false) != GDK_SUCCEED ||
+				BUNappend(bimpl,	str_nil		, false) != GDK_SUCCEED ||
+				BUNappend(bdigits,	&int_nil	, false) != GDK_SUCCEED ||
+				BUNappend(bscale,	&int_nil	, false) != GDK_SUCCEED ||
+				BUNappend(bschema,	str_nil		, false) != GDK_SUCCEED ||
+				BUNappend(btable,	q->f->imp	, false) != GDK_SUCCEED ||
+				BUNappend(bcolumn,	str_nil		, false) != GDK_SUCCEED)
+			goto wrapup;
 	}
 
 	order = BATdense(0, 0, BATcount(btype));

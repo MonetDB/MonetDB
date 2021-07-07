@@ -1050,46 +1050,72 @@ struct callback_context {
 };
 
 static str
-monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
-	monetdbe_database_internal *mdbe = ((struct callback_context*) context)->mdbe;
+monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results, size_t nr_results) {
+
+	char* error = NULL;
 
 	if (nr_results == 0)
 		return MAL_SUCCEED; // No work to do.
 
-	backend *be = NULL;
-	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
-		return mdbe->msg;
-
-	BAT* order = BATdescriptor(results[0].id);
-	if (!order) {
-		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
-		return mdbe->msg;
+	BAT* b_0 = BATdescriptor(results[0].id); // Fetch the first column to get the count.
+	if (!b_0) {
+		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot access column descriptor ");
+		return error;
 	}
 
-	mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
+	BAT* order = BATdense(0, 0, BATcount(b_0));
+	if (mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order)) {
+		BBPreclaim(order);
+		BBPunfix(b_0->batCacheid);
+		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
+		return error;
+	}
 
-	for (unsigned  i = 0; i < nr_results; i++) {
+	unsigned  i = 0;
+	for (i = 0; i < nr_results; i++) {
 		BAT *b = NULL;
 		if (i > 0) {
 			b = BATdescriptor(results[i].id);
 		}
 		else
-			b = order; // We already fetched this first column
+			b = b_0; // We already fetched this first column
 
 		char* colname	= results[i].colname;
 		char* tpename	= results[i].tpename;
 		int digits		= results[i].digits;
 		int scale		= results[i].scale;
 
-		if ( b == NULL)
-			mdbe->msg= createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
-		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-		if( b)
-			BBPkeepref(b->batCacheid);
+		if ( b == NULL) {
+			error= createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot access column descriptor ");
+			break;
+		}
+		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b)) {
+			error = createException(SQL, "monetdbe.monetdbe_set_remote_results", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			BBPunfix(b->batCacheid);
+			break;
+		}
+		BBPunfix(b->batCacheid);
+	}
+
+	BBPunfix(order->batCacheid);
+
+	if (error) {
+		res_table_destroy(be->results);
+		return error;
 	}
 
 	return MAL_SUCCEED;
+}
+
+static str
+monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
+	monetdbe_database_internal *mdbe = ((struct callback_context*) context)->mdbe;
+
+	backend *be = NULL;
+	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+	return monetdbe_set_remote_results(be, tblname, results, nr_results);
 }
 
 struct prepare_callback_context {
@@ -1108,6 +1134,9 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	backend *be = NULL;
 	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+	if ( (mdbe->msg =  monetdbe_set_remote_results(be, tblname, results, nr_results)) != NULL)
 		return mdbe->msg;
 
 	BAT* btype = NULL;
@@ -1455,7 +1484,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL");
 		assert(mdbe->msg != MAL_SUCCEED); /* help Coverity */
 	} else if (mdbe->mid) {
-		mdbe->msg = monetdbe_query_remote(mdbe, query, NULL, NULL, &prepare_id);
+		mdbe->msg = monetdbe_query_remote(mdbe, query, result, NULL, &prepare_id);
 	} else {
 		*stmt = NULL;
 		mdbe->msg = monetdbe_query_internal(mdbe, query, result, NULL, &prepare_id, 'S');
