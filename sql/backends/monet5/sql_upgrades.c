@@ -861,7 +861,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 					list *id_l = rel_dependencies(sql, r);
 
 					for (node *o = id_l->h ; o ; o = o->next) {
-						sqlid next = *(sqlid*) o->data;
+						sqlid next = ((sql_base*) o->data)->id;
 						if (next != f->base.id) {
 							pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
 											f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
@@ -897,7 +897,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						list *id_l = rel_dependencies(sql, r);
 
 						for (node *o = id_l->h ; o ; o = o->next) {
-							sqlid next = *(sqlid*) o->data;
+							sqlid next = ((sql_base*) o->data)->id;
 							if (next != t->base.id) {
 								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 												next, t->base.id, (int) VIEW_DEPENDENCY);
@@ -925,7 +925,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							list *id_l = rel_dependencies(sql, r);
 
 							for (node *o = id_l->h ; o ; o = o->next) {
-								sqlid next = *(sqlid*) o->data;
+								sqlid next = ((sql_base*) o->data)->id;
 								if (next != tr->base.id) {
 									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 													next, tr->base.id, (int) TRIGGER_DEPENDENCY);

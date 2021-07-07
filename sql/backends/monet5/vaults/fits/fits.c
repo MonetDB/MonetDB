@@ -720,14 +720,19 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = store->table_api.column_find_row(m->session->tr, col, fname, NULL);
 	if (!is_oid_nil(rid)) {
 		fits_close_file(fptr, &status);
-		msg = createException(SQL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
-		return msg;
+		throw(MAL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
 	}
 
 	/* add row in the fits_files catalog table */
 	BUN offset;
-	if (store->storage_api.claim_tab(m->session->tr, fits_fl, 1, &offset, NULL) != LOG_OK)
+	if (store->storage_api.claim_tab(m->session->tr, fits_fl, 1, &offset, NULL) != LOG_OK) {
+		fits_close_file(fptr, &status);
 		throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if (!isNew(fits_fl) && sql_trans_add_dependency_change(m->session->tr, fits_fl->base.id, dml) != LOG_OK) {
+		fits_close_file(fptr, &status);
+		throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	col = mvc_bind_column(m, fits_fl, "id");
 	fid = store->storage_api.count_col(tr, col, 1) + 1;
 	store->storage_api.append_col(m->session->tr,
@@ -801,8 +806,14 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_get_num_cols(fptr, &cnum, &status);
 
 		BUN offset;
-		if (store->storage_api.claim_tab(m->session->tr, fits_tbl, 1, &offset, NULL) != LOG_OK)
+		if (store->storage_api.claim_tab(m->session->tr, fits_tbl, 1, &offset, NULL) != LOG_OK) {
+			fits_close_file(fptr, &status);
 			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!isNew(fits_tbl) && sql_trans_add_dependency_change(m->session->tr, fits_tbl->base.id, dml) != LOG_OK) {
+			fits_close_file(fptr, &status);
+			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "id"), offset, NULL, &tid, 1, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
@@ -820,8 +831,14 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "comment"), offset, NULL, comm, 1, TYPE_str);
 
-		if (store->storage_api.claim_tab(m->session->tr, fits_tp, 1, &offset, NULL) != LOG_OK)
+		if (store->storage_api.claim_tab(m->session->tr, fits_tp, 1, &offset, NULL) != LOG_OK) {
+			fits_close_file(fptr, &status);
 			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!isNew(fits_tp) && sql_trans_add_dependency_change(m->session->tr, fits_tp->base.id, dml) != LOG_OK) {
+			fits_close_file(fptr, &status);
+			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "table_id"), offset, NULL, &tid, 1, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
@@ -842,17 +859,20 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* escape the various strings to avoid SQL injection attacks */
 			esc_cname = SQLescapeString(cname);
 			if (!esc_cname) {
+				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tform = SQLescapeString(tform);
 			if (!esc_tform) {
 				GDKfree(esc_cname);
+				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
 			if (!esc_tform) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
+				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);

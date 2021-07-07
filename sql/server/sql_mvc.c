@@ -63,8 +63,12 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		if (r)
 			r = sql_processrelation(m, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(m, r);
-			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
+			list *blist = rel_dependencies(m, r);
+			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
+				sa_reset(m->ta);
+				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return NULL;
+			}
 		}
 		sa_reset(m->ta);
 		assert(r);
@@ -441,31 +445,29 @@ mvc_debug_on(mvc *m, int flg)
 void
 mvc_cancel_session(mvc *m)
 {
-	(void)sql_trans_end(m->session, 0);
+	(void)sql_trans_end(m->session, SQL_ERR);
 }
 
 int
 mvc_trans(mvc *m)
 {
-	int schema_changed = 0, err = m->session->status;
+	int res = 0, err = m->session->status;
 	assert(!m->session->tr->active);	/* can only start a new transaction */
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
-	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || err)){
-		if (schema_changed || err) {
-			int seqnr = m->qc->id;
-			if (m->qc)
-				qc_destroy(m->qc);
-			/* TODO Change into recreate all */
-			m->qc = qc_create(m->pa, m->clientid, seqnr);
-			if (!m->qc) {
-				(void)sql_trans_end(m->session, 0);
-				return -1;
-			}
+	res = sql_trans_begin(m->session);
+	if (m->qc && (res || err)) {
+		int seqnr = m->qc->id;
+		if (m->qc)
+			qc_destroy(m->qc);
+		/* TODO Change into recreate all */
+		if (!(m->qc = qc_create(m->pa, m->clientid, seqnr))) {
+			if (m->session->tr->active)
+				(void)sql_trans_end(m->session, SQL_ERR);
+			return -1;
 		}
 	}
-	return 0;
+	return res;
 }
 
 str
@@ -473,7 +475,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *tr = m->session->tr;
 	int ok = SQL_OK;
-	str msg = NULL, other;
+	str msg = MAL_SUCCEED, other;
 	char operation[BUFSIZ];
 
 	assert(tr);
@@ -511,10 +513,9 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		if (sql_trans_end(m->session, 1) != SQL_OK) {
+		if (sql_trans_end(m->session, ok) != SQL_OK) {
 			/* transaction conflict */
-			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
-			return msg;
+			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 		}
 		msg = WLCcommit(m->clientid);
 		if (msg != MAL_SUCCEED) {
@@ -528,18 +529,21 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	/* commit and cleanup nested transactions */
 	if (tr->parent) {
 		while (tr->parent != NULL && ok == SQL_OK) {
-			if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+			if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			}
 			tr = sql_trans_destroy(tr);
 		}
+		while (tr->parent != NULL)
+			tr = sql_trans_destroy(tr);
 		m->session->tr = tr;
+		if (ok != SQL_OK)
+			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 	}
 
 	/* if there is nothing to commit reuse the current transaction */
 	if (tr->changes == NULL) {
 		if (!chain)
-			(void)sql_trans_end(m->session, 1);
+			(void)sql_trans_end(m->session, ok);
 		m->type = Q_TRANS;
 		/* save points not handled by WLC...
 		msg = WLCcommit(m->clientid);
@@ -554,9 +558,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 
-	if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+	if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-	}
 	/*
 	msg = WLCcommit(m->clientid);
 	if (msg != MAL_SUCCEED) {
@@ -565,9 +568,9 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 	*/
-	(void)sql_trans_end(m->session, 1);
-	if (chain)
-		sql_trans_begin(m->session);
+	(void)sql_trans_end(m->session, ok);
+	if (chain && sql_trans_begin(m->session) < 0)
+		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished sucessfuly, but the session's schema could not be found while starting the next transaction", operation);
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
 		"Commit done\n");
@@ -577,7 +580,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 str
 mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 {
-	str msg;
+	str msg = MAL_SUCCEED;
 
 	TRC_DEBUG(SQL_TRANS, "Rollback: %s\n", (name) ? name : "");
 	(void) disabling_auto_commit;
@@ -614,11 +617,12 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		/* make sure we do not reuse changed data */
 		if (tr->changes)
 			tr->status = 1;
-		(void)sql_trans_end(m->session, 0);
-		if (chain)
-			sql_trans_begin(m->session);
+		(void)sql_trans_end(m->session, SQL_ERR);
+		if (chain && sql_trans_begin(m->session) < 0)
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished sucessfuly, but the session's schema could not be found while starting the next transaction");
 	}
-	msg = WLCrollback(m->clientid);
+	if (msg == MAL_SUCCEED)
+		msg = WLCrollback(m->clientid);
 	if (msg != MAL_SUCCEED) {
 		m->session->status = -1;
 		return msg;
@@ -830,7 +834,7 @@ mvc_destroy(mvc *m)
 	tr = m->session->tr;
 	if (tr) {
 		if (m->session->tr->active)
-			(void)sql_trans_end(m->session, 0);
+			(void)sql_trans_end(m->session, SQL_ERR);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
 	}
@@ -1311,30 +1315,41 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-void
-mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type)
+int
+mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type)
 {
-	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", id, depend_id, (int) depend_type);
-	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
-		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
-}
+	int res = LOG_OK;
 
-void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type)
-{
-	node *n = id_l->h;
-	int i;
-
-	TRC_DEBUG(SQL_TRANS, "Create dependencies on '%d' of type: %d\n", depend_id, (int) dep_type);
-	for (i = 0; i < list_length(id_l); i++)
-	{
-		mvc_create_dependency(m, *(sqlid *) n->data, depend_id, dep_type);
-		n = n->next;
+	TRC_DEBUG(SQL_TRANS, "Create dependency: %d %d %d\n", b->id, depend_id, (int) depend_type);
+	if ( (b->id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) ) {
+		if (!b->new)
+			res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
+		if (res == LOG_OK)
+			res = sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
 	}
+	return res;
 }
 
 int
-mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
+mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type)
+{
+	int res = LOG_OK;
+
+	TRC_DEBUG(SQL_TRANS, "Create dependencies on '%d' of type: %d\n", depend_id, (int) dep_type);
+	if (!list_empty(blist)) {
+		for (node *n = blist->h ; n && res == LOG_OK ; n = n->next) {
+			sql_base *b = n->data;
+			if (!b->new) /* only add old objects to the transaction dependency list */
+				res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
+			if (res == LOG_OK)
+				res = mvc_create_dependency(m, b, depend_id, dep_type);
+		}
+	}
+	return res;
+}
+
+int
+mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 

@@ -375,6 +375,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("UNCOMMITTED", UNCOMMITTED);
 	failed += keywords_insert("COMMITTED", COMMITTED);
 	failed += keywords_insert("REPEATABLE", sqlREPEATABLE);
+	failed += keywords_insert("SNAPSHOT", SNAPSHOT);
 	failed += keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	failed += keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	failed += keywords_insert("SIZE", sqlSIZE);

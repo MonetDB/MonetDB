@@ -108,7 +108,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBPname(b->batCacheid));
+			mnstr_printf(fp, "<%s>", BBP_logical(b->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
