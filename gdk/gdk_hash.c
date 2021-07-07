@@ -105,7 +105,7 @@ HASHclear(Hash *h)
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
-static void
+void
 doHASHdestroy(BAT *b, Hash *hs)
 {
 	if (hs == (Hash *) 1) {

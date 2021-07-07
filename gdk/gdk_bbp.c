@@ -1012,6 +1012,58 @@ movestrbats(void)
 }
 #endif
 
+static void
+BBPmanager(void *dummy)
+{
+	(void) dummy;
+
+	for (;;) {
+		int n = 0;
+		for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+			MT_lock_set(&GDKswapLock(bid));
+			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
+				BBP_status_off(bid, BBPHOT);
+				n++;
+			}
+			MT_lock_unset(&GDKswapLock(bid));
+		}
+		TRC_DEBUG(BAT_, "cleared HOT bit from %d bats\n", n);
+		for (int i = 0; i < 100; i++) {
+			MT_sleep_ms(100);
+			if (GDKexiting())
+				return;
+		}
+		n = 0;
+		for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+			MT_lock_set(&GDKswapLock(bid));
+			BAT *b = NULL;
+			bool swap = false;
+			if (BBP_refs(bid) == 0 &&
+			    BBP_lrefs(bid) != 0 &&
+			    (b = BBP_cache(bid)) != NULL &&
+			    b->batSharecnt == 0 &&
+			    !BATdirty(b) &&
+			    !(BBP_status(bid) & (BBPHOT | BBPUNLOADING)) &&
+			    (BBP_status(bid) & BBPPERSISTENT)) {
+				BBP_status_on(bid, BBPUNLOADING);
+				swap = true;
+			}
+			MT_lock_unset(&GDKswapLock(bid));
+			if (swap) {
+				TRC_DEBUG(BAT_, "unload and free bat %d\n", bid);
+				if (BBPfree(b) != GDK_SUCCEED)
+					GDKerror("unload failed for bat %d", bid);
+				n++;
+			}
+		}
+		TRC_DEBUG(BAT_, "unloaded %d bats\n", n);
+		if (GDKexiting())
+			return;
+	}
+}
+
+static MT_Id manager;
+
 gdk_return
 BBPinit(void)
 {
@@ -1199,6 +1251,8 @@ BBPinit(void)
 			return GDK_FAIL;
 	}
 #endif
+
+	manager = THRcreate(BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager");
 	return GDK_SUCCEED;
 
   bailout:
@@ -2371,7 +2425,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		 * while locked so no other thread thinks it's
 		 * available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
-		TRC_DEBUG(BAT_, "%s set to unloading BAT %d (status %u)\n", func, i, BBP_status(i));
+		TRC_DEBUG(BAT_, "%s set to unloading BAT %d (status %u, lrefs %d)\n", func, i, BBP_status(i), BBP_lrefs(i));
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
 	}
