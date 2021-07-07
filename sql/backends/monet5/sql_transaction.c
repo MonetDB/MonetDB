@@ -100,7 +100,6 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int chain = *getArgReference_int(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int ret = 0;
 
 	initcontext();
 
@@ -111,11 +110,16 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	sql->session->level = chain;
-	ret = mvc_trans(sql);
-	if(msg)
+	if (msg)
 		return msg;
-	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	switch (mvc_trans(sql)) {
+		case -1:
+			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -3:
+			throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
+		default:
+			break;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -124,7 +128,6 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
-	int ret = 0;
 
 	(void) stk;
 	(void) pci;
@@ -140,10 +143,15 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	sql->session->level = 0;
-	ret = mvc_trans(sql);
-	if(msg)
+	if (msg)
 		return msg;
-	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	switch (mvc_trans(sql)) {
+		case -1:
+			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -3:
+			throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
+		default:
+			break;
+	}
 	return MAL_SUCCEED;
 }

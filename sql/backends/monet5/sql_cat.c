@@ -517,18 +517,25 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
-		sql->sa = sa_create(sql->pa);
-		if (!sql->sa)
-			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		buf = sa_strdup(sql->sa, query);
-		if (!buf)
-			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (!(sql->sa = sa_create(sql->pa))) {
+			sql->sa = sa;
+			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!(buf = sa_strdup(sql->sa, query))) {
+			sa_destroy(sql->sa);
+			sql->sa = sa;
+			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, tri->base.id, TRIGGER_DEPENDENCY);
+			list *blist = rel_dependencies(sql, r);
+			if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+				sa_destroy(sql->sa);
+				sql->sa = sa;
+				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
@@ -915,34 +922,49 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		sql_allocator *sa = sql->sa;
 
 		assert(nf->query);
-		if (!(sql->sa = sa_create(sql->pa)))
+		if (!(sql->sa = sa_create(sql->pa))) {
+			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (!(buf = sa_strdup(sql->sa, nf->query)))
+		}
+		if (!(buf = sa_strdup(sql->sa, nf->query))) {
+			sa_destroy(sql->sa);
+			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n;
-			list *id_l = rel_dependencies(sql, r);
+			list *blist = rel_dependencies(sql, r);
 
 			if (!f->vararg && f->ops) {
 				for (n = f->ops->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s)
-						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
+						sa_destroy(sql->sa);
+						sql->sa = sa;
+						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 				}
 			}
 			if (!f->varres && f->res) {
 				for (n = f->res->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s)
-						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
+						sa_destroy(sql->sa);
+						sql->sa = sa;
+						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 				}
 			}
-			mvc_create_dependencies(sql, id_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+			if (mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)) {
+				sa_destroy(sql->sa);
+				sql->sa = sa;
+				throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
@@ -1828,15 +1850,18 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
 			ok = store->table_api.table_insert(tx, comments, &objid, &remark);
 		}
+		if (ok != LOG_OK)
+			throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		if ((ok = sql_trans_add_dependency(tx, objid, ddl)) != LOG_OK) /* At the moment this adds dependencies for old objects :( */
+			throw(SQL, "sql.comment_on", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			/* DELETE FROM sys.comments WHERE id = %d */
-			ok = store->table_api.table_delete(tx, comments, rid);
+			if ((ok = store->table_api.table_delete(tx, comments, rid)) != LOG_OK)
+				throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		}
 	}
-	if (ok != LOG_OK)
-		throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 

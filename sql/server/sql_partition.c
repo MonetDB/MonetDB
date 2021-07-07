@@ -293,7 +293,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		}
 	}
 
-	if (instantiate) {
+	if (instantiate && !msg) {
 		r = rel_project(sql->sa, r, NULL);
 		sql_rel *base = r->l, *nr = r;
 		r->l = NULL; /* omit table from list of dependencies */
@@ -301,8 +301,9 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 
 		nr = sql_processrelation(sql, nr, 0, 0);
 		if (nr) {
-			list *id_l = rel_dependencies(sql, nr);
-			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
+			list *blist = rel_dependencies(sql, nr);
+			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))
+				msg = createException(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->l = base;
 	}

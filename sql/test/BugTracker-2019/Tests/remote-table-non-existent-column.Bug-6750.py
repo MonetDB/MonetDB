@@ -41,14 +41,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
             try:
                 cur2.execute("select col2 from tab1;")  # col2 doesn't exist
                 sys.stderr.write('Exception expected')
-            except pymonetdb.OperationalError as e:
-                if 'Identifier tab1.col2 doesn\'t exist' not in str(e):
+            except pymonetdb.IntegrityError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
                     sys.stderr.write(str(e))
             try:
                 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
                 sys.stderr.write('Exception expected')
-            except pymonetdb.OperationalError as e:
-                if 'Parameter 1 has wrong SQL type, expected double, but got tinyint instead' not in str(e):
+            except pymonetdb.IntegrityError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
                     sys.stderr.write(str(e))
             cur2.execute("drop table tab1;")
             cur2.execute("drop table tab2;")
@@ -63,8 +63,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
             try:
                 cur2.execute("select * from m2;")  # Infinite loop while resolving the children of m2
                 sys.stderr.write('Exception expected')
-            except pymonetdb.OperationalError as e:
-                if 'Merge tables not supported under remote connections' not in str(e):
+            except pymonetdb.IntegrityError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
                     sys.stderr.write(str(e))
 
             cur1.close()

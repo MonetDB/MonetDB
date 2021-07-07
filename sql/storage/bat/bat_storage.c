@@ -1898,11 +1898,18 @@ destroy_storage(storage *bat)
 }
 
 static int
-segments_conflict(sql_trans *tr, segments *segs)
+segments_conflict(sql_trans *tr, segments *segs, int uncommitted)
 {
-	for (segment *s = segs->h; s; s = s->next)
-		if (!VALID_4_READ(s->ts,tr))
-			return 1;
+	if (uncommitted) {
+		for (segment *s = segs->h; s; s = s->next)
+			if (!VALID_4_READ(s->ts,tr))
+				return 1;
+	} else {
+		for (segment *s = segs->h; s; s = s->next)
+			if (s->ts < TRANSACTION_ID_BASE && !VALID_4_READ(s->ts,tr))
+				return 1;
+	}
+
 	return 0;
 }
 
@@ -1924,7 +1931,7 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 	}
 	if (!isTempTable(t) && !clear)
 		return obat;
-	if (!isTempTable(t) && clear && segments_conflict(tr, obat->segs)) {
+	if (!isTempTable(t) && clear && segments_conflict(tr, obat->segs, 1)) {
 		*clear = true;
 		return NULL;
 	}
@@ -3575,7 +3582,7 @@ add_offsets(BUN slot, size_t nr, size_t total, BUN *offset, BAT **offsets)
 }
 
 static int
-claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets)
+claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets, bool locked)
 {
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
@@ -3583,7 +3590,8 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 	BUN slot = 0;
 	size_t total = cnt;
 
-	lock_table(tr->store, t->base.id);
+	if (!locked)
+		lock_table(tr->store, t->base.id);
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = seg->next) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* re-use old deleted or rolledback append */
@@ -3634,7 +3642,8 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		}
 		ok = add_offsets(slot, cnt, total, offset, offsets);
 	}
-	unlock_table(tr->store, t->base.id);
+	if (!locked)
+		unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
@@ -3656,17 +3665,18 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 }
 
 static int
-claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets)
+claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets, bool locked)
 {
 	if (cnt > 1)
-		return claim_segmentsV2(tr, t, s, cnt, offset, offsets);
+		return claim_segmentsV2(tr, t, s, cnt, offset, offsets, locked);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
 	int reused = 0;
 
-	lock_table(tr->store, t->base.id);
+	if (!locked)
+		lock_table(tr->store, t->base.id);
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = seg->next) {
@@ -3707,7 +3717,8 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 			}
 		}
 	}
-	unlock_table(tr->store, t->base.id);
+	if (!locked)
+		unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
@@ -3738,7 +3749,45 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)
 	if ((s = bind_del_data(tr, t, NULL)) == NULL)
 		return LOG_ERR;
 
-	return claim_segments(tr, t, s, cnt, offset, offsets); /* find slot(s) */
+	return claim_segments(tr, t, s, cnt, offset, offsets, false); /* find slot(s) */
+}
+
+/* some tables cannot be updated concurrently (user/roles etc) */
+static int
+key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)
+{
+	storage *s;
+	int res = 0;
+
+	/* we have a single segment structure for each persistent table
+	 * for temporary tables each has its own */
+	if ((s = bind_del_data(tr, t, NULL)) == NULL)
+		/* TODO check for other inserts ! */
+		return LOG_ERR;
+
+	lock_table(tr->store, t->base.id);
+	if ((res = segments_conflict(tr, s->segs, 1))) {
+		unlock_table(tr->store, t->base.id);
+		return LOG_CONFLICT;
+	}
+	res = claim_segments(tr, t, s, cnt, offset, offsets, true); /* find slot(s) */
+	unlock_table(tr->store, t->base.id);
+	return res;
+}
+
+static int
+tab_validate(sql_trans *tr, sql_table *t, int uncommitted)
+{
+	storage *s;
+	int res = 0;
+
+	if ((s = bind_del_data(tr, t, NULL)) == NULL)
+		return LOG_ERR;
+
+	lock_table(tr->store, t->base.id);
+	res = segments_conflict(tr, s->segs, uncommitted);
+	unlock_table(tr->store, t->base.id);
+	return res ? LOG_CONFLICT : LOG_OK;
 }
 
 static BAT *
@@ -3856,6 +3905,8 @@ bat_storage_init( store_functions *sf)
 	sf->bind_cands = &bind_cands;
 
 	sf->claim_tab = &claim_tab;
+	sf->key_claim_tab = &key_claim_tab;
+	sf->tab_validate = &tab_validate;
 
 	sf->append_col = &append_col;
 	sf->append_idx = &append_idx;
