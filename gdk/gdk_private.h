@@ -128,6 +128,8 @@ BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
+void doHASHdestroy(BAT *b, Hash *hs)
+	__attribute__((__visibility__("hidden")));
 void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKextend(const char *fn, size_t size)
