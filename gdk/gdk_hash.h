@@ -33,7 +33,6 @@ gdk_export gdk_return BAThash(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(const Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
-gdk_export gdk_return HASHgrowbucket(BAT *b);
 
 #define BUN2 2
 #define BUN4 4

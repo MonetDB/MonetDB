@@ -342,7 +342,6 @@ const char *GDKversion(void) __attribute__((__const__));
 size_t GDKvm_cursize(void);
 void *GDKzalloc(size_t size) __attribute__((__malloc__)) __attribute__((__alloc_size__(1))) __attribute__((__warn_unused_result__));
 void HASHdestroy(BAT *b);
-gdk_return HASHgrowbucket(BAT *b);
 BUN HASHlist(Hash *h, BUN i);
 BUN HASHprobe(const Hash *h, const void *v);
 void HEAP_free(Heap *heap, var_t block);

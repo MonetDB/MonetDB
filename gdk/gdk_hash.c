@@ -342,7 +342,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 	return GDK_SUCCEED;
 }
 
-gdk_return
+static gdk_return
 HASHgrowbucket(BAT *b)
 {
 	Hash *h = b->thash;
@@ -351,12 +351,6 @@ HASHgrowbucket(BAT *b)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-
-	if (HASHfix(h, false, true) != GDK_SUCCEED) {
-		doHASHdestroy(b, h);
-		b->thash = NULL;
-		return GDK_FAIL;
-	}
 
 	/* only needed to fix hash tables built before this fix was
 	 * introduced */
