@@ -291,6 +291,57 @@ HASHupgradehashheap(BAT *b)
 	return GDK_SUCCEED;
 }
 
+/* write/remove the bit into/from the hash file that indicates the hash
+ * is good to go; the bit is the last part to be written and the first
+ * to be removed */
+static inline gdk_return
+HASHfix(Hash *h, bool save, bool dosync)
+{
+	if (!h->heapbckt.dirty && !h->heaplink.dirty) {
+		const size_t mask = (size_t) 1 << 24;
+		if (((size_t *) h->heapbckt.base)[0] & mask) {
+			if (save)
+				return GDK_SUCCEED;
+			((size_t *) h->heapbckt.base)[0] &= ~mask;
+		} else {
+			if (!save)
+				return GDK_SUCCEED;
+			((size_t *) h->heapbckt.base)[0] |= mask;
+		}
+		if (h->heapbckt.storage == STORE_MEM) {
+			gdk_return rc = GDK_FAIL;
+			int fd = GDKfdlocate(h->heapbckt.farmid, h->heapbckt.filename, "rb+", NULL);
+			if (fd >= 0) {
+				if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) == SIZEOF_SIZE_T) {
+					if (dosync &&
+					    !(GDKdebug & NOSYNCMASK)) {
+#if defined(NATIVE_WIN32)
+						_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+						fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+						fsync(fd);
+#endif
+					}
+					rc = GDK_SUCCEED;
+				}
+				close(fd);
+			}
+			if (rc != GDK_SUCCEED)
+				((size_t *) h->heapbckt.base)[0] &= ~mask;
+			return rc;
+		} else {
+			if (dosync &&
+			    !(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
+				((size_t *) h->heapbckt.base)[0] &= ~mask;
+				return GDK_FAIL;
+			}
+		}
+	}
+	return GDK_SUCCEED;
+}
+
 gdk_return
 HASHgrowbucket(BAT *b)
 {
@@ -301,17 +352,10 @@ HASHgrowbucket(BAT *b)
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return GDK_FAIL;
-			}
-		}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		doHASHdestroy(b, h);
+		b->thash = NULL;
+		return GDK_FAIL;
 	}
 
 	/* only needed to fix hash tables built before this fix was
@@ -548,7 +592,6 @@ BATcheckhash(BAT *b)
 static gdk_return
 BAThashsave_intern(BAT *b, bool dosync)
 {
-	int fd;
 	gdk_return rc = GDK_SUCCEED;
 	Hash *h;
 	lng t0 = 0;
@@ -571,38 +614,8 @@ BAThashsave_intern(BAT *b, bool dosync)
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
-			if (hp->storage == STORE_MEM) {
-				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
-					((size_t *) hp->base)[0] |= (size_t) 1 << 24;
-					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-						rc = GDK_SUCCEED;
-						if (dosync &&
-						    !(GDKdebug & NOSYNCMASK)) {
-#if defined(NATIVE_WIN32)
-							_commit(fd);
-#elif defined(HAVE_FDATASYNC)
-							fdatasync(fd);
-#elif defined(HAVE_FSYNC)
-							fsync(fd);
-#endif
-						}
-						hp->dirty = false;
-					} else {
-						perror("write hash");
-						((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
-					}
-					close(fd);
-				}
-			} else {
-				((size_t *) hp->base)[0] |= (size_t) 1 << 24;
-				if (dosync && !(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
-					((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
-				} else {
-					hp->dirty = false;
-					rc = GDK_SUCCEED;
-				}
-			}
+			hp->dirty = false;
+			rc = HASHfix(h, true, dosync);
 			TRC_DEBUG(ACCELERATOR,
 				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
@@ -1088,17 +1101,10 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return;
-			}
-		}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		doHASHdestroy(b, h);
+		b->thash = NULL;
+		return;
 	}
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
@@ -1160,17 +1166,10 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return;
-			}
-		}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		doHASHdestroy(b, h);
+		b->thash = NULL;
+		return;
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
@@ -1246,17 +1245,10 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return;
-			}
-		}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		doHASHdestroy(b, h);
+		b->thash = NULL;
+		return;
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
