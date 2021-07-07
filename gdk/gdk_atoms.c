@@ -595,7 +595,7 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 	size_t i;
 	str s;
 
-	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
+	if (is_bat_nil(b) || !BBPcheck(b) || (s = BBP_logical(b)) == NULL || *s == 0) {
 		atommem(4);
 		if (external) {
 			strcpy(*dst, "nil");

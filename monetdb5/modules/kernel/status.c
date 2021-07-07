@@ -271,7 +271,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		if( c == NULL  || !BBPvalid(i))
 			continue;
 
-		s = BBPname(i);
+		s = BBP_logical(i);
 		sz = 0;
 		if (BBP_desc(i))
 			sz += sizeof(BAT);
@@ -386,7 +386,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (!BBPvalid(i))
 			continue;
 
-		s = BBPname(i);
+		s = BBP_logical(i);
  		c = BBP_cache(i);
 		if (c == NULL || isVIEW(c)) {
 			continue;
