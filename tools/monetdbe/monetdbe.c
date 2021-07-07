@@ -2135,6 +2135,11 @@ remote_cleanup:
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Claim failed");
 		goto cleanup;
 	}
+	/* signal an insert was made on the table */
+	if (!isNew(t) && sql_trans_add_dependency_change(m->session->tr, t->base.id, dml) != LOG_OK) {
+		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 
 	for (i = 0, n = ol_first_node(t->columns); i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;

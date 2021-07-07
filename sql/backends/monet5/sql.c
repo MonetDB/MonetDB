@@ -315,24 +315,25 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	node *n;
 	int check = 0;
 	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
+	const char *obj = t->query ? "VIEW" : "TABLE";
 
 	if (store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
-		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, (t->query) ? "TABLE" : "VIEW", sname);
+		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
 	if (mvc_bind_table(sql, s, t->base.name)) {
-		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, t->base.name);
+		return sql_message(SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, get_string_global_var(sql, "current_user"), s->base.name);
+		return sql_message(SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'", action, obj, get_string_global_var(sql, "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && ol_length(t->keys)) {
-		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
+		return sql_message(SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
 	}
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
 								t->sz, t->properties);
 	if (!nt)
-		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' name conflicts", action, t->base.name);
+		return sql_message(SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
 
 	osa = sql->sa;
 	sql->sa = sql->ta;
@@ -361,8 +362,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			/* For a self incremented column, it's sequence will get a BEDROPPED_DEPENDENCY,
 				so no additional dependencies are needed */
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
-				list *id_l = rel_dependencies(sql, r);
-				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+				list *blist = rel_dependencies(sql, r);
+				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
+					rel_destroy(r);
+					sa_reset(sql->sa);
+					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 			}
 			rel_destroy(r);
 			sa_reset(sql->sa);
@@ -475,8 +480,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
+			list *blist = rel_dependencies(sql, r);
+			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
+				sa_reset(sql->ta);
+				sql->sa = osa;
+				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 		sa_reset(sql->ta);
 		if (!r) {
@@ -5003,6 +5012,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "evalAlgebra", RAstatement, false, "Compile and execute a single 'relational algebra' statement", args(1,3, arg("",void),arg("cmd",str),arg("optimize",bit))),
  pattern("sql", "register", RAstatement2, false, "", args(1,5, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str))),
  pattern("sql", "register", RAstatement2, false, "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)", args(1,6, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str),arg("typ",str))),
+ pattern("sql", "deregister", RAstatementEnd, false, "Finish running transaction", args(1,1, arg("",int))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
