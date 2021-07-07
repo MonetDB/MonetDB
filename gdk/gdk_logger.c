@@ -1479,7 +1479,6 @@ bm_subcommit(logger *lg)
 		assert(col);
 		sizes[i] = cnts?(BUN)cnts[p]:0;
 		n[i++] = col;
-
 	}
 	/* now commit catalog, so it's also up to date on disk */
 	sizes[i] = lg->cnt;
@@ -1594,6 +1593,9 @@ bm_subcommit(logger *lg)
 
 		lg->catalog_cnt = ncnts;
 		lg->catalog_lid = nlids;
+		lg->cnt = BATcount(lg->catalog_bid);
+		lg->deleted -= cleanup;
+		assert(lg->deleted == BATcount(lg->dcatalog));
 	}
 	if (lg->seqs_id) {
 		sizes[i] = BATcount(lg->seqs_id);
@@ -2836,7 +2838,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (BUNappend(lg->dcatalog, &pos, false) == GDK_SUCCEED) {
-		lg->cnt--;
+		lg->deleted++;
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
