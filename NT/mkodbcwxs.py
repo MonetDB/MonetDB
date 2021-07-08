@@ -41,14 +41,20 @@ def main():
         arch = 'x86'
         libcrypto = ''
         vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
-    with open('CMakeCache.txt') as cache:
-        for line in cache:
-            if line.startswith('CMAKE_GENERATOR_INSTANCE:INTERNAL='):
-                comdir = line.split('=', 1)[1].strip().replace('/', '\\')
-                break
+    vcdir = os.getenv('VCINSTALLDIR')
+    if vcdir is None:
+        vsdir = os.getenv('VSINSTALLDIR')
+        if vsdir is not None:
+            vcdir = os.path.join(vsdir, 'VC')
+    if vcdir is None:
+        if os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
+            vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
+        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
+            vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'
         else:
-            comdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community'
-    msvc = os.path.join(comdir, r'VC\Redist\MSVC')
+            print(r"Don't know which visual studio directory to use")
+            return 1
+    msvc = os.path.join(vcdir, r'Redist\MSVC')
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
