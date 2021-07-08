@@ -246,7 +246,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
 				const void *curval = (end[k] > start[k]) ? BUNtvar(bi, start[k]) : nil;
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 					bat_iterator_end(&bi);
 					bat_iterator_end(&si);
 					bat_iterator_end(&ei);
@@ -328,7 +328,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
 				const void *curval = (end[k] > start[k]) ? BUNtvar(bi, end[k] - 1) : nil;
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 					bat_iterator_end(&bi);
 					bat_iterator_end(&si);
 					bat_iterator_end(&ei);
@@ -405,7 +405,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 	BATiter ei = bat_iterator(e);
 	BATiter ti = bat_iterator(t);
 	bool has_nils = false;
-	oid k = 0, cnt = BATcount(b);
+	oid k = 0, cnt = bi.count;
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	lng nth = pnth ? *pnth : 0;
 	const lng *restrict tp = ti.base;
@@ -453,7 +453,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						curval = BUNtvar(bi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
-					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 						bat_iterator_end(&bi);
 						bat_iterator_end(&si);
 						bat_iterator_end(&ei);
@@ -513,7 +513,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 				if (is_lng_nil(nth)) {
 					has_nils = true;
 					for (; k < cnt; k++)
-						if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED) {
+						if (tfastins_nocheckVAR(r, k, nil) != GDK_SUCCEED) {
 							bat_iterator_end(&bi);
 							bat_iterator_end(&si);
 							bat_iterator_end(&ei);
@@ -524,7 +524,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 					nth--;
 					for (; k < cnt; k++) {
 						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(bi, start[k] + (oid) nth) : nil;
-						if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) {
+						if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 							bat_iterator_end(&bi);
 							bat_iterator_end(&si);
 							bat_iterator_end(&ei);
@@ -561,7 +561,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 	bat_iterator_end(&ei);
 	bat_iterator_end(&ti);
 
-	BATsetcount(r, BATcount(b));
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -998,7 +998,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					k++;				\
 				} while (k < i && !op[k]);		\
 				for (; j < k; j++)			\
-					if ((res = tfastins_nocheckVAR(r, j, curval, Tsize(r))) != GDK_SUCCEED) \
+					if ((res = tfastins_nocheckVAR(r, j, curval)) != GDK_SUCCEED) \
 						goto cleanup;		\
 				has_nils |= atomcmp(curval, nil) == 0;	\
 			}						\
@@ -1039,7 +1039,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				}					\
 				if (op[j] || j == k) {			\
 					for (; ; l--) {			\
-						if ((res = tfastins_nocheckVAR(r, l, curval, Tsize(r))) != GDK_SUCCEED) \
+						if ((res = tfastins_nocheckVAR(r, l, curval)) != GDK_SUCCEED) \
 							goto cleanup;	\
 						if (l == j)		\
 							break;		\
@@ -1091,7 +1091,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				}					\
 			}						\
 			for (; k < i; k++)				\
-				if ((res = tfastins_nocheckVAR(r, k, curval, Tsize(r))) != GDK_SUCCEED) \
+				if ((res = tfastins_nocheckVAR(r, k, curval)) != GDK_SUCCEED) \
 					goto cleanup;			\
 		} else {						\
 			for (j = k; j < i; j++) {			\
@@ -1116,7 +1116,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		if (ATOMvarsized(tpe)) {				\
 			for (; k < i; k++) {				\
 				void *next = BUNtvar(bi, k);		\
-				if ((res = tfastins_nocheckVAR(r, k, next, Tsize(r))) != GDK_SUCCEED) \
+				if ((res = tfastins_nocheckVAR(r, k, next)) != GDK_SUCCEED) \
 					goto cleanup;			\
 				has_nils |= atomcmp(next, nil) == 0;	\
 			}						\
@@ -1150,7 +1150,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define FINALIZE_AGGREGATE_MIN_MAX_OTHERS(GT_LT, NOTHING1, NOTHING2)	\
 	do {								\
 		if (ATOMvarsized(tpe)) {				\
-			if ((res = tfastins_nocheckVAR(r, k, computed, Tsize(r))) != GDK_SUCCEED) \
+			if ((res = tfastins_nocheckVAR(r, k, computed)) != GDK_SUCCEED) \
 				goto cleanup;				\
 		} else {						\
 			memcpy(rcast, computed, width);			\

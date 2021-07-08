@@ -152,7 +152,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 					} else {
 						next = BUNtvar(li, noid);
 					}
-					if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(res, i, next) != GDK_SUCCEED) {
 						bat_iterator_end(&li);
 						goto alloc_fail;
 					}

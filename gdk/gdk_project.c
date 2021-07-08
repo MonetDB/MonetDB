@@ -321,7 +321,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 				v = BUNtail(*r1i, o - r1seq);
 			else
 				v = BUNtail(*r2i, o - r2seq);
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
@@ -336,7 +336,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 				v = BUNtail(*r1i, o - r1seq);
 			else
 				v = BUNtail(*r2i, o - r2seq);
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
@@ -358,7 +358,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 			} else {
 				v = BUNtail(*r2i, o - r2seq);
 			}
-			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				bat_iterator_end(&li);
 				return GDK_FAIL;
 			}
@@ -415,7 +415,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	}
 
 	if (v >= ((var_t) 1 << (8 << bn->tshift)) &&
-	    GDKupgradevarheap(bn, v, false, false) != GDK_SUCCEED) {
+	    GDKupgradevarheap(bn, v, false, 0) != GDK_SUCCEED) {
 		BBPreclaim(bn);
 		return NULL;
 	}

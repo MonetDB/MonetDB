@@ -529,6 +529,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 		.rs = rs,
 		.ws = ws,
 		.mode = LINE_N,
+		.raw_string_mode = GDKgetenv_istrue("raw_strings"),
 	};
 }
 
@@ -986,11 +987,9 @@ int scanner_symbol(mvc * c, int cur)
 			return cur;
 		return tokenize(c, cur);
 	case '\'':
-#ifdef SQL_STRINGS_USE_ESCAPES
-		if (lc->next_string_is_raw || GDKgetenv_istrue("raw_strings"))
+		if (lc->raw_string_mode || lc->next_string_is_raw)
 			return scanner_string(c, cur, false);
 		return scanner_string(c, cur, true);
-#endif
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
@@ -1273,9 +1272,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	if (token == IDENT || token == COMPARISON ||
 	    token == RANK || token == aTYPE || token == ALIAS) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
-#ifdef SQL_STRINGS_USE_ESCAPES
 		lc->next_string_is_raw = false;
-#endif
 	} else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
@@ -1308,9 +1305,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			strcpy(str, yylval->sval + 3);
 			token = yylval->sval[2] == '\'' ? USTRING : UIDENT;
 			quote = yylval->sval[2];
-#ifdef SQL_STRINGS_USE_ESCAPES
 			lc->next_string_is_raw = true;
-#endif
 			break;
 		case 'x':
 		case 'X':
@@ -1322,9 +1317,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			quote = '\'';
 			token = XSTRING;
-#ifdef SQL_STRINGS_USE_ESCAPES
 			lc->next_string_is_raw = true;
-#endif
 			break;
 		case 'r':
 		case 'R':
@@ -1337,9 +1330,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			break;
 		default:
-#ifdef SQL_STRINGS_USE_ESCAPES
-			if (GDKgetenv_istrue("raw_strings") ||
-			    lc->next_string_is_raw) {
+			if (lc->raw_string_mode || lc->next_string_is_raw) {
 				dst = str;
 				for (char *src = yylval->sval + 1; *src; dst++)
 					if ((*dst = *src++) == '\'' && *src == '\'')
@@ -1350,23 +1341,14 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 					      (unsigned char *)yylval->sval + 1,
 					      lc->yycur - lc->yysval - 1);
 			}
-#else
-			dst = str;
-			for (char *src = yylval->sval + 1; *src; dst++)
-				if ((*dst = *src++) == '\'' && *src == '\'')
-					src++;
-			*dst = 0;
-#endif
 			break;
 		}
 		yylval->sval = str;
 
 		/* reset original */
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote;
-#ifdef SQL_STRINGS_USE_ESCAPES
 	} else {
 		lc->next_string_is_raw = false;
-#endif
 	}
 
 	return(token);

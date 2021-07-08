@@ -402,13 +402,10 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 }
 
 /* grow the string offset heap so that the value v fits (i.e. wide
- * enough to fit the value), and it has space for at least cap
- * elements; if copyall is set, copy the whole heap (.size), else only
- * copy the allocated (.free) part; note that if the heap grows to be
- * memory-mapped, the width is grown to the max, even if v would fit
- * in a narrower column */
+ * enough to fit the value), and it has space for at least cap elements;
+ * copy ncopy BUNs, or up to the heap size, whichever is smaller */
 gdk_return
-GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
+GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 {
 	uint8_t shift = b->tshift;
 	uint16_t width = b->twidth;
@@ -451,11 +448,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 		return BATextend(b, newsize >> shift);
 	}
 
-	/* if copyall is set, we need to convert the whole heap, since
-	 * we may be in the middle of an insert loop that adjusts the
-	 * free value at the end; otherwise only copy the area
-	 * indicated by the "free" pointer */
-	n = (copyall ? old->size : old->free) >> b->tshift;
+	n = MIN(ncopy, old->size >> b->tshift);
 
 	if (width > b->twidth)
 		MT_thread_setalgorithm(n ? "widen offset heap" : "widen empty offset heap");

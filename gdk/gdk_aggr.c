@@ -4143,7 +4143,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !b->tnonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
-			if (bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn)) != GDK_SUCCEED) {
+			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);
 				goto bunins_failed;
 			}
@@ -4151,7 +4151,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		bat_iterator_end(&bi);
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
-			if (bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn)) != GDK_SUCCEED)
+			if (bunfastapp_nocheck(bn, dnil) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 		bn->theap->dirty = true;

@@ -2524,7 +2524,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						break;
 					}
 				}
-				if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 			bn->tnil = nils != 0;
@@ -2546,11 +2546,11 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				strncpy(buf + buflen, " ]", maxlen - buflen);
 				buflen += 2;
 				while (BATcount(bn) < prev - min) {
-					if (bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn)) != GDK_SUCCEED)
+					if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 						goto bunins_failed;
 					nils++;
 				}
-				if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
 				nils += strNil(buf);
 				strncpy(buf + buflen, str_nil, maxlen - buflen);
@@ -2673,7 +2673,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			}
 		}
-		if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);

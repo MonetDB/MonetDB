@@ -2158,7 +2158,7 @@ remote_cleanup:
 		goto cleanup;
 	}
 	/* signal an insert was made on the table */
-	if (!isNew(t) && sql_trans_add_dependency_change(m->session->tr, t->base.id, dml) != LOG_OK) {
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(m->session->tr, t->base.id, dml) != LOG_OK) {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}

@@ -2228,8 +2228,14 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			n = next;
 		}
 	}
-	id_hash_clear_older(store->dependencies, oldest);
-	id_hash_clear_older(store->depchanges, oldest);
+	if (ATOMIC_GET(&store->nr_active) < 2) { /* one or no transaction running */
+		dep_hash_clear(store->dependencies);
+		dep_hash_clear(store->depchanges);
+	} else {
+		ulng stoldest = store_oldest(store);
+		id_hash_clear_older(store->dependencies, stoldest);
+		id_hash_clear_older(store->depchanges, stoldest);
+	}
 	store->oldest_pending = oldest_changes;
 }
 
@@ -2249,9 +2255,6 @@ store_manager(sqlstore *store)
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
 				ulng oldest = store_timestamp(store)+1;
-
-				dep_hash_clear(store->dependencies);
-				dep_hash_clear(store->depchanges);
 				store_pending_changes(store, oldest);
 			}
 			store_unlock(store);
@@ -3123,7 +3126,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 			return res;
 		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, ddl))) /* this dependency is needed for merge tables */
 			return res;
-		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
+		if (!isNew(rkey) && isGlobal(rkey->t) && !isGlobalTemp(rkey->t) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
 			return res;
 	}
 
@@ -3154,7 +3157,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	/* TODO this has to be cleaned out too */
 	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl))) /* this dependency is needed for merge tables */
 		return res;
-	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml))) /* disallow concurrent updates on t */
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml))) /* disallow concurrent updates on t */
 		return res;
 	if (kres)
 		*kres = nk;
@@ -3401,10 +3404,6 @@ sql_trans_rollback(sql_trans *tr)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
 		}
-		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			dep_hash_clear(store->dependencies);
-			dep_hash_clear(store->depchanges);
-		}
 		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -3425,10 +3424,6 @@ sql_trans_rollback(sql_trans *tr)
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		MT_lock_set(&store->commit);
 		store_lock(store);
-		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			dep_hash_clear(store->dependencies);
-			dep_hash_clear(store->depchanges);
-		}
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
@@ -3731,11 +3726,8 @@ sql_trans_commit(sql_trans *tr)
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
-		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			dep_hash_clear(store->dependencies);
-			dep_hash_clear(store->depchanges);
+		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
 			oldest = commit_ts;
-		}
 		store_pending_changes(store, oldest);
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
@@ -3756,7 +3748,7 @@ sql_trans_commit(sql_trans *tr)
 			MT_lock_unset(&store->flush);
 		}
 		/* propagate transaction dependencies to the storage only if other transactions are running */
-		if (ok == LOG_OK && !tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges)) && ATOMIC_GET(&store->nr_active) > 1) {
+		if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {
 			if (!list_empty(tr->dependencies)) {
 				for (node *n = tr->dependencies->h; n && ok == LOG_OK; n = n->next) {
 					sql_dependency_change *lchange = (sql_dependency_change*) n->data;
@@ -3792,10 +3784,6 @@ sql_trans_commit(sql_trans *tr)
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		MT_lock_set(&store->commit);
 		store_lock(store);
-		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent) {
-			dep_hash_clear(store->dependencies);
-			dep_hash_clear(store->depchanges);
-		}
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
@@ -5788,7 +5776,8 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 			return res;
 		dup->null = isnull;
 
-		if (!isnull && !isNew(col) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml))) /* disallow concurrent updates on pt */
+		/* disallow concurrent updates on the column if not null is set */
+		if (!isnull && !isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
 			return res;
 	}
 	return res;

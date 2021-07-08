@@ -464,7 +464,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next_dense(&ci) - off);
 			blob *v = (blob*) BUNtvar(bi, p);
 
-			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				bat_iterator_end(&bi);
 				goto bailout;
@@ -476,7 +476,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next(&ci) - off);
 			blob *v = (blob*) BUNtvar(bi, p);
 
-			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				bat_iterator_end(&bi);
 				goto bailout;
