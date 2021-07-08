@@ -43,7 +43,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 	if (is_basetable(rel->op)) {
 		sql_table *t = rel->l;
 
-		if (!t || !rel->exps || isNew(t) || isTempTable(t))
+		if (!t || !rel->exps || isNew(t) || !isGlobal(t) || isGlobalTemp(t))
 			return rel;
 		sql_rel *parent = v->parent;
 
@@ -93,7 +93,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 			/* any other case, add all predicates */
 			sql_table *t = rel->l;
 
-			if (!t || !rel->exps || isNew(t) || isTempTable(t))
+			if (!t || !rel->exps || isNew(t) || !isGlobal(t) || isGlobalTemp(t))
 				return rel;
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -127,7 +127,7 @@ rel_predicates(backend *be, sql_rel *rel)
 int
 add_column_predicate(backend *be, sql_column *c)
 {
-	if (be->mvc->session->level < tr_serializable)
+	if (be->mvc->session->level < tr_serializable || isNew(c) || !isGlobal(c->t) || isGlobalTemp(c->t))
 		return LOG_OK;
 	return sql_trans_add_predicate(be->mvc->session->tr, c, 0, NULL, NULL, false, false);
 }
