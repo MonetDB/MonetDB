@@ -1299,7 +1299,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) < 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1315,7 +1315,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) < 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1505,7 +1505,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1525,7 +1525,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1691,7 +1691,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				} else {
 					p1 = cmp(p1, p2) < 0 ? p1 : p2;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
@@ -1837,7 +1837,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1846,7 +1846,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1981,7 +1981,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) > 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1997,7 +1997,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) > 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2150,7 +2150,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2171,7 +2171,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2324,7 +2324,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				} else {
 					p1 = cmp(p1, p2) > 0 ? p1 : p2;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
@@ -2448,7 +2448,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2457,7 +2457,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -4088,7 +4088,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			r = BUNtvar(b2i, x2);
 		if (strNil(l) || strNil(r)) {
 			nils++;
-			if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 		} else {
 			llen = strlen(l);
@@ -4101,7 +4101,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 					goto bunins_failed;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
-			if (tfastins_nocheckVAR(bn, i, s, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -14440,7 +14440,7 @@ BATcalcifthenelse_intern(BAT *b,
 						else
 							p = col2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 						BBPreclaim(bn);
 						return NULL;
 					}
@@ -14462,7 +14462,7 @@ BATcalcifthenelse_intern(BAT *b,
 					else
 						p = col2;
 				}
-				if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -15468,7 +15468,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			src = BUNtvar(bi, x);
 			if (strNil(src))
 				nils++;
-			if (tfastins_nocheckVAR(bn, i, src, bn->twidth) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(bn, i, src) != GDK_SUCCEED) {
 				goto bunins_failed;
 			}
 		}
@@ -15479,12 +15479,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			src = BUNtvar(bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-				if (tfastins_nocheckVAR(bn, i, str_nil, bn->twidth) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0 ||
-				    tfastins_nocheckVAR(bn, i, dst, bn->twidth) != GDK_SUCCEED) {
+				    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
@@ -15494,8 +15494,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			const char *v;
 			x = canditer_next(ci) - candoff;
 			v = Tmskval(&bi, x) ? "1" : "0";
-			if (tfastins_nocheckVAR(bn, i, v,
-						bn->twidth) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, v) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	} else {
@@ -15504,12 +15503,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			src = BUNtloc(bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-				if (tfastins_nocheckVAR(bn, i, str_nil, bn->twidth) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 					goto bunins_failed;
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0)
 					goto bunins_failed;
-				if (tfastins_nocheckVAR(bn, i, dst, bn->twidth) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 		}
@@ -15711,7 +15710,7 @@ convert_void_any(oid seq, BAT *bn,
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
 				goto bunins_failed;
-			if (tfastins_nocheckVAR(bn, i, s, bn->twidth) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 		GDKfree(s);

@@ -1367,14 +1367,14 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			}						\
 			if (empty) {					\
 				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, str_nil, Tsize(r)) != GDK_SUCCEED) \
+					if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED) \
 						goto allocation_error;	\
 				has_nils = true;			\
 			} else {					\
 				char save = single_str[slice_length];	\
 				single_str[slice_length] = '\0';	\
 				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, single_str, Tsize(r)) != GDK_SUCCEED) \
+					if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED) \
 						goto allocation_error;	\
 				single_str[slice_length] = save;	\
 			}						\
@@ -1387,7 +1387,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		empty = true;						\
 		compute_next_single_str(k, i);				\
 		for (; k < i; k++)					\
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
 				goto allocation_error;			\
 	} while (0)
 
@@ -1395,7 +1395,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	do {								\
 		for (; k < i; k++) {					\
 			str next = BUNtvar(bi, k);			\
-			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
 				goto allocation_error;			\
 			has_nils |= strNil(next);			\
 		}							\
@@ -1407,7 +1407,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			next_group_length = next_length = offset = 0;	\
 			empty = true;					\
 			compute_next_single_str(start[k], end[k]);	\
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
 	} while (0)

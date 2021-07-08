@@ -220,7 +220,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 
 	/* make sure there is (vertical) space in the offset heap, we
 	 * may also widen if v was set to some limit above */
-	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, false) != GDK_SUCCEED) {
+	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, b->batCount) != GDK_SUCCEED) {
 		bat_iterator_end(&ni);
 		return GDK_FAIL;
 	}
@@ -271,6 +271,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			assert(0);
 		}
 		MT_thread_setalgorithm("copy offset values");
+		r = b->batCount;
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - n->hseqbase;
@@ -296,27 +297,24 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			switch (b->twidth) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				((uint8_t *) b->theap->base)[b->batCount++] = (uint8_t) (v - GDK_VAROFFSET);
-				b->theap->free += 1;
+				((uint8_t *) b->theap->base)[r++] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				((uint16_t *) b->theap->base)[b->batCount++] = (uint16_t) (v - GDK_VAROFFSET);
-				b->theap->free += 2;
+				((uint16_t *) b->theap->base)[r++] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
 				assert(v < ((var_t) 1 << 32));
-				((uint32_t *) b->theap->base)[b->batCount++] = (uint32_t) v;
-				b->theap->free += 4;
+				((uint32_t *) b->theap->base)[r++] = (uint32_t) v;
 				break;
 #endif
 			default:
-				((var_t *) b->theap->base)[b->batCount++] = v;
-				b->theap->free += sizeof(var_t);
+				((var_t *) b->theap->base)[r++] = v;
 				break;
 			}
 		}
+		BATsetcount(b, r); /* set batCount and theap->free */
 	} else if (b->tvheap->free < ni.vh->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
@@ -324,19 +322,20 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		 * values occur in b's string heap; also, if b is
 		 * (still) fully double eliminated, we must continue
 		 * to use the double elimination mechanism */
-		r = BUNlast(b);
+		r = b->batCount;
 		oid hseq = n->hseqbase;
 		MT_thread_setalgorithm("insert string values");
 		while (cnt > 0) {
 			cnt--;
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(ni, p);
-			if (bunfastappVAR(b, tp) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
 				bat_iterator_end(&ni);
 				return GDK_FAIL;
 			}
 			r++;
 		}
+		BATsetcount(b, r);
 	} else {
 		/* Insert values from n individually into b; however,
 		 * we check whether there is a string in b's string
@@ -344,7 +343,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		 * string heap (in case b's string heap is a copy of
 		 * n's).  If this is the case, we just copy the
 		 * offset, otherwise we insert normally.  */
-		r = BUNlast(b);
+		r = b->batCount;
 		MT_thread_setalgorithm("insert string values with check");
 		while (cnt > 0) {
 			cnt--;
@@ -364,35 +363,31 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				switch (b->twidth) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-					*(unsigned char *)Tloc(b, BUNlast(b)) = (unsigned char) (v - GDK_VAROFFSET);
-					b->theap->free += 1;
+					((uint8_t *) b->theap->base)[r] = (unsigned char) (v - GDK_VAROFFSET);
 					break;
 				case 2:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-					*(unsigned short *)Tloc(b, BUNlast(b)) = (unsigned short) (v - GDK_VAROFFSET);
-					b->theap->free += 2;
+					((uint16_t *) b->theap->base)[r] = (unsigned short) (v - GDK_VAROFFSET);
 					break;
 #if SIZEOF_VAR_T == 8
 				case 4:
 					assert(v < ((var_t) 1 << 32));
-					*(unsigned int *)Tloc(b, BUNlast(b)) = (unsigned int) v;
-					b->theap->free += 4;
+					((uint32_t *) b->theap->base)[r] = (unsigned int) v;
 					break;
 #endif
 				default:
-					*(var_t *)Tloc(b, BUNlast(b)) = v;
-					b->theap->free += SIZEOF_VAR_T;
+					((var_t *) b->theap->base)[r] = v;
 					break;
 				}
-				b->batCount++;
 			} else {
-				if (bunfastappVAR(b, tp) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
 			}
 			r++;
 		}
+		BATsetcount(b, r);
 	}
 	bat_iterator_end(&ni);
 	assert(b->batCapacity >= b->batCount);
@@ -509,7 +504,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		cnt--;
 		BUN p = canditer_next(ci) - hseq;
 		const void *t = BUNtvar(ni, p);
-		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED) {
+		if (bunfastapp_nocheckVAR(b, t) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
@@ -933,7 +928,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				cnt--;
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED) {
+				if (bunfastapp_nocheck(b, t) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
@@ -1310,7 +1305,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
-				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED) {
+				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					Hash *h = b->thash;
 					b->thash = NULL;
 					MT_rwlock_wrunlock(&b->thashlock);
@@ -2840,7 +2835,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 		case TYPE_str:
 			/* insert the first value, then just copy the
 			 * offset lots of times */
-			if (tfastins_nocheck(bn, 0, v, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheck(bn, 0, v) != GDK_SUCCEED) {
 				BBPreclaim(bn);
 				return NULL;
 			}
@@ -2860,7 +2855,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 		default:
 			for (i = 0; i < n; i++)
-				if (tfastins_nocheck(bn, i, v, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheck(bn, i, v) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					return NULL;
 				}
