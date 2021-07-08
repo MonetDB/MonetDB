@@ -387,7 +387,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 				bat_iterator_end(&bi);
 				goto bailout;
 			}
-			if (tfastins_nocheckVAR(dst, i, buf, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				bat_iterator_end(&bi);
 				goto bailout;
@@ -404,7 +404,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 				bat_iterator_end(&bi);
 				goto bailout;
 			}
-			if (tfastins_nocheckVAR(dst, i, buf, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				bat_iterator_end(&bi);
 				goto bailout;
