@@ -70,7 +70,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tre
 
 #define ANALYTICAL_NTILE(IMP, TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION) \
 	do {								\
-		TPE *restrict rb = (TPE*)Tloc(r, 0);			\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
 		if (p) {						\
 			while (i < cnt) {				\
 				if (np[i]) 	{			\
@@ -197,7 +197,7 @@ invalidntile:
 #define ANALYTICAL_FIRST_FIXED(TPE)					\
 	do {								\
 		const TPE *bp = (TPE*)bi.base;				\
-		TPE *restrict rb = (TPE*)Tloc(r, 0);			\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
 		for (; k < cnt; k++) {					\
 			const TPE *bs = bp + start[k], *be = bp + end[k]; \
 			TPE curval = (be > bs) ? *bs : TPE##_nil;	\
@@ -279,7 +279,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #define ANALYTICAL_LAST_FIXED(TPE)					\
 	do {								\
 		const TPE *bp = (TPE*)bi.base;				\
-		TPE *restrict rb = (TPE*)Tloc(r, 0);			\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
 		for (; k < cnt; k++) {					\
 			const TPE *bs = bp + start[k], *be = bp + end[k]; \
 			TPE curval = (be > bs) ? *(be - 1) : TPE##_nil;	\
@@ -360,7 +360,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(TPE)			\
 	do {								\
 		const TPE *bp = (TPE*)bi.base;				\
-		TPE *restrict rb = (TPE*)Tloc(r, 0);			\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
 		if (is_lng_nil(nth)) {					\
 			has_nils = true;				\
 			for (; k < cnt; k++)				\
@@ -380,7 +380,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE)			\
 	do {								\
 		const TPE *bp = (TPE*)bi.base;				\
-		TPE curval, *restrict rb = (TPE*)Tloc(r, 0);		\
+		TPE curval, *rb = (TPE*)Tloc(r, 0);			\
 		for (; k < cnt; k++) {					\
 			lng lnth = tp[k];				\
 			const TPE *bs = bp + start[k];			\
@@ -1171,7 +1171,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_PARTITIONS(TPE, MIN_MAX, IMP)		\
 	do {								\
-		TPE *restrict bp = (TPE*)bi.base, *restrict rb = (TPE*)Tloc(r, 0); \
+		TPE *restrict bp = (TPE*)bi.base, *rb = (TPE*)Tloc(r, 0); \
 		if (p) {						\
 			while (i < cnt) {				\
 				if (np[i]) 	{			\
@@ -1606,7 +1606,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	BATiter ei = bat_iterator(e);
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
-	lng curval = 0, *restrict rb = (lng *) Tloc(r, 0);
+	lng curval = 0, *rb = (lng *) Tloc(r, 0);
 	bit *np = pi.base, *op = oi.base;
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
@@ -1787,7 +1787,7 @@ cleanup:
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)			\
 	do {							\
 		TPE1 *restrict bp = (TPE1*)bi.base;		\
-		TPE2 *restrict rb = (TPE2*)Tloc(r, 0);		\
+		TPE2 *rb = (TPE2*)Tloc(r, 0);			\
 		if (p) {					\
 			while (i < cnt) {			\
 				if (np[i]) 	{		\
@@ -2290,7 +2290,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_NUM_PARTITIONS(TPE1, TPE2, TPE3_OR_REAL_IMP, IMP) \
 	do {								\
 		TPE1 *restrict bp = (TPE1*)bi.base;			\
-		TPE2 *restrict rb = (TPE2*)Tloc(r, 0);			\
+		TPE2 *rb = (TPE2*)Tloc(r, 0);				\
 		if (p) {						\
 			while (i < cnt) {				\
 				if (np[i]) 	{			\
@@ -2856,7 +2856,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng n = 0, rr = 0;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
+	dbl *rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
 	bit *np = pi.base, *op = oi.base;
 	bool abort_on_error = true;
 	BUN nils = 0;
@@ -3058,7 +3058,7 @@ avg_int_deltas(lng)
 
 #define ANALYTICAL_AVG_INT_PARTITIONS(TPE, IMP)				\
 	do {								\
-		TPE *restrict bp = (TPE*)bi.base, *restrict rb = (TPE *) Tloc(r, 0); \
+		TPE *restrict bp = (TPE*)bi.base, *rb = (TPE *) Tloc(r, 0); \
 		if (p) {						\
 			while (i < cnt) {				\
 				if (np[i]) 	{			\
@@ -3382,7 +3382,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
+	dbl *rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;		\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
 									\
@@ -3600,7 +3600,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
+	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
 									\
@@ -3852,7 +3852,7 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	lng n = 0;
 	const bit *np = pi.base, *op = oi.base;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
+	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 
