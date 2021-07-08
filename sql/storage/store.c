@@ -3126,7 +3126,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 			return res;
 		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, ddl))) /* this dependency is needed for merge tables */
 			return res;
-		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
+		if (!isNew(rkey) && isGlobal(rkey->t) && !isGlobalTemp(rkey->t) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
 			return res;
 	}
 
@@ -3157,7 +3157,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	/* TODO this has to be cleaned out too */
 	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl))) /* this dependency is needed for merge tables */
 		return res;
-	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml))) /* disallow concurrent updates on t */
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml))) /* disallow concurrent updates on t */
 		return res;
 	if (kres)
 		*kres = nk;
@@ -5776,7 +5776,8 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 			return res;
 		dup->null = isnull;
 
-		if (!isnull && !isNew(col) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml))) /* disallow concurrent updates on pt */
+		/* disallow concurrent updates on the column if not null is set */
+		if (!isnull && !isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
 			return res;
 	}
 	return res;
