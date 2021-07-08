@@ -1463,11 +1463,13 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 			if ((lb = BATdescriptor(bids[pos])) == NULL ||
 				BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
 				TRC_WARNING(GDK, "Failed to set bat(%d) transient\n", bids[pos]);
-				err++;
+				if (!lb)
+					err++;
+				else
+					lids[pos] = -1; /* mark as transient */
 			} else {
-				lids[pos] = -1; /* mark freed */
+				lids[pos] = -1; /* mark as transient */
 			}
-			//assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
 			logbat_destroy(lb);
 		}
 	}
