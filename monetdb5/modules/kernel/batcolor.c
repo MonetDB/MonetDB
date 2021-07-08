@@ -77,7 +77,7 @@ bunins_failed:															\
 }
 
 BATwalk(Color,CLRcolor,char *,strNil,color,getAtomIndex("color",5,TYPE_int),bunfastappTYPE(color, bn, &y))
-BATwalk(Str,CLRstr,color,is_color_nil,str,TYPE_str,bunfastappVAR(bn, &y))
+BATwalk(Str,CLRstr,color,is_color_nil,str,TYPE_str,bunfastapp_nocheckVAR(bn, &y))
 
 BATwalk(Red,CLRred,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 BATwalk(Green,CLRgreen,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))

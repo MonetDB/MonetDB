@@ -74,12 +74,12 @@ BATXMLxml2str(bat *ret, const bat *bid)
 		const char *t = (const char *) BUNtvar(bi, p);
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, t) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, t) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 		} else {
 			assert(*t == 'A' || *t == 'C' || *t == 'D');
-			if (bunfastappVAR(bn, t + 1) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, t + 1) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -115,7 +115,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		size_t len;
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, t) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, t) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
@@ -172,13 +172,13 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		}
 		default:
 			assert(*t == 'A' || *t == 'C' || *t == 'D');
-			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
 		assert(content != NULL || buf != NULL);
-		if (bunfastappVAR(bn, content != NULL ? content : buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, content != NULL ? content : buf) != GDK_SUCCEED)
 			goto bunins_failed;
 		if (content != NULL)
 			GDKfree(content);
@@ -239,7 +239,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 		size_t len;
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
@@ -257,7 +257,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 		}
 		buf[0] = 'C';
 		XMLquotestring(t, buf + 1, size - 1);
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -298,7 +298,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 		xmlChar *s;
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
@@ -322,7 +322,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 		}
 		buf[0] = 'D';
 		strcpy(buf + 1, (char *) s);
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -369,7 +369,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 		const xmlChar *s;
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
@@ -394,7 +394,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 		}
 		buf[0] = 'C';
 		strcpy(buf + 1, (const char *) s);
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 		xmlBufferEmpty(xbuf);
 		xmlFreeNodeList(elem);
@@ -514,7 +514,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 		const char *t = (const char *) BUNtvar(bi, p);
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 				goto bunins_failed1;
 		} else {
 			if (strlen(t) > size - 2 * len - 6) {
@@ -528,7 +528,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 				val = tmp;
 			}
 			snprintf(val + len + 2, size - len, "%s</%s>", t, *name);
-			if (bunfastappVAR(bn, val) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, val) != GDK_SUCCEED)
 				goto bunins_failed1;
 		}
 	}
@@ -572,7 +572,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 		size_t len;
 
 		if (strNil(t)) {
-			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
@@ -594,7 +594,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 			}
 		}
 		snprintf(buf, size, "C<!--%s-->", t);
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -670,7 +670,7 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 			size_t m = XMLquotestring(t, buf + n, size - n);
 			strcpy(buf + n + m, "?>");
 		}
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -755,7 +755,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 				goto bunins_failed;
 			}
 		}
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -822,7 +822,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 			size_t m = XMLquotestring(t, buf + n, size - n);
 			strcpy(buf + n + m, "\"");
 		}
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -913,7 +913,7 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 			else
 				i += snprintf(buf + i, size - i, "/>");
 		}
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
@@ -1031,7 +1031,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			offset += n;
 		}
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 		if (offset == 0)
 			bn->tnonil = false;
@@ -1140,7 +1140,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 				goto bunins_failed;
 			}
 		}
-		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 		rp++;
 		p++;
@@ -1319,11 +1319,11 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		for (p = 0, q = BATcount(g); p <= q; p++) {
 			if (p == q || grps[p] != prev) {
 				while (BATcount(bn) < prev - min) {
-					if (bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn)) != GDK_SUCCEED)
+					if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 						goto bunins_failed;
 					nils++;
 				}
-				if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
 				nils += strNil(buf);
 				strncpy(buf, str_nil, maxlen);
@@ -1409,7 +1409,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto bunins_failed;
 			}
 		}
-		if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 	bn->theap->dirty = true;

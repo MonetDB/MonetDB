@@ -91,7 +91,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define GET_NEXT_VAR(ARG, OFF) ptr##ARG[OFF]
 
 #define APPEND_STR(MALFUNC) \
-	if (tfastins_nocheckVAR(bn, i, res, Tsize(bn)) != GDK_SUCCEED) { \
+	if (tfastins_nocheckVAR(bn, i, res) != GDK_SUCCEED) { \
 		msg = createException(SQL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		break; \
 	}

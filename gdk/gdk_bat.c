@@ -896,7 +896,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			BATloop(b, p, q) {
 				const void *t = BUNtail(bi, p);
 
-				if (bunfastapp_nocheck(bn, r, t, Tsize(bn)) != GDK_SUCCEED) {
+				if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
 					bat_iterator_end(&bi);
 					goto bunins_failed;
 				}
@@ -1165,7 +1165,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		for (BUN i = 0; i < count; i++) {
 			t = b->tvarsized ? ((void **) values)[i] :
 				(void *) ((char *) values + (i << b->tshift));
-			gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
+			gdk_return rc = bunfastapp_nocheck(b, t);
 			if (rc != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
 				return rc;
@@ -1177,7 +1177,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 	} else {
 		for (BUN i = 0; i < count; i++) {
-			gdk_return rc = bunfastapp_nocheck(b, p, t, Tsize(b));
+			gdk_return rc = bunfastapp_nocheck(b, t);
 			if (rc != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
 				return rc;
@@ -1268,7 +1268,9 @@ BUNdelete(BAT *b, oid o)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
+	MT_lock_set(&b->theaplock);
 	b->batCount--;
+	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
 		/* some trivial properties */
 		b->tkey = true;
@@ -1402,7 +1404,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
-				if (GDKupgradevarheap(b, _d, 0, false) != GDK_SUCCEED) {
+				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
@@ -1724,6 +1726,7 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(!is_oid_nil(b->hseqbase));
 	assert(cnt <= BUN_MAX);
 
+	MT_lock_set(&b->theaplock);
 	b->batCount = cnt;
 	b->batDirtydesc = true;
 	b->theap->dirty |= b->ttype != TYPE_void && b->theap->parentid == b->batCacheid;
@@ -1759,6 +1762,7 @@ BATsetcount(BAT *b, BUN cnt)
 		}
 	}
 	assert(b->batCapacity >= cnt);
+	MT_lock_unset(&b->theaplock);
 }
 
 /*

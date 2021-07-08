@@ -145,7 +145,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */
-			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(bn, p, str_nil) != GDK_SUCCEED) {
 				msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout1;
 			}
@@ -157,7 +157,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 			/* assert logical sanity */
 			assert(buf && x);
 			/* append to the output BAT. We are using a faster route, because we know what we are doing */
-			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(bn, p, buf) != GDK_SUCCEED) {
 				msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout1;
 			}
