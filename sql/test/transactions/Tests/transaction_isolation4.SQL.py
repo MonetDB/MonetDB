@@ -127,6 +127,15 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted, will ROLLBACK instead")
 
+        mdb1.execute('create merge table parent9(a int, b int);').assertSucceeded()
+        mdb1.execute('create merge table parent10(a int, b int);').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("ALTER TABLE parent9 ADD TABLE parent10;").assertSucceeded()
+        mdb2.execute("ALTER TABLE parent10 ADD TABLE parent9;").assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('rollback;').assertSucceeded()
+
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('drop table myt;').assertSucceeded()
         mdb1.execute('drop table t2;').assertSucceeded()
@@ -145,6 +154,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('alter table parent6 drop table child3;').assertSucceeded()
         mdb1.execute('alter table parent7 drop table child4;').assertSucceeded()
         mdb1.execute('alter table parent8 drop table child5;').assertSucceeded()
+        mdb1.execute('alter table parent9 drop table parent10;').assertSucceeded()
         mdb1.execute('drop table child1;').assertSucceeded()
         mdb1.execute('drop table child2;').assertSucceeded()
         mdb1.execute('drop table child3;').assertSucceeded()
@@ -158,6 +168,8 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop table parent6;').assertSucceeded()
         mdb1.execute('drop table parent7;').assertSucceeded()
         mdb1.execute('drop table parent8;').assertSucceeded()
+        mdb1.execute('drop table parent9;').assertSucceeded()
+        mdb1.execute('drop table parent10;').assertSucceeded()
         mdb1.execute('drop schema mys2;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
