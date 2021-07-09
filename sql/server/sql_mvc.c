@@ -541,7 +541,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	/* if there is nothing to commit reuse the current transaction */
-	if (tr->changes == NULL) {
+	if (list_empty(tr->changes)) {
 		if (!chain)
 			(void)sql_trans_end(m->session, ok);
 		m->type = Q_TRANS;
@@ -598,7 +598,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		tr = m->session->tr;
 		while (!tr->name || strcmp(tr->name, name) != 0) {
 			/* make sure we do not reuse changed data */
-			if (tr->changes)
+			if (!list_empty(tr->changes))
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
@@ -615,7 +615,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			tr = sql_trans_destroy(tr);
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
-		if (tr->changes)
+		if (!list_empty(tr->changes))
 			tr->status = 1;
 		(void)sql_trans_end(m->session, SQL_ERR);
 		if (chain && sql_trans_begin(m->session) < 0)
@@ -631,7 +631,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	TRC_INFO(SQL_TRANS,
 		"Commit%s%s rolled back%s\n",
 		name ? " " : "", name ? name : "",
-		!tr->changes ? " (no changes)" : "");
+		list_empty(tr->changes) ? " (no changes)" : "");
 	return msg;
 }
 
