@@ -632,11 +632,12 @@ BATclear(BAT *b, bool force)
 			b->tvheap->dirty = true;
 		}
 	}
-	MT_lock_unset(&b->theaplock);
 
 	if (force)
 		b->batInserted = 0;
-	BATsetcount(b,0);
+	b->batCount = 0;
+	if (b->ttype == TYPE_void)
+		b->batCapacity = 0;
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->batDirtydesc = true;
@@ -644,6 +645,7 @@ BATclear(BAT *b, bool force)
 	BATsettrivprop(b);
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
+	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
 
@@ -1162,22 +1164,42 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
-		for (BUN i = 0; i < count; i++) {
-			t = b->tvarsized ? ((void **) values)[i] :
-				(void *) ((char *) values + (i << b->tshift));
-			gdk_return rc = bunfastapp_nocheck(b, t);
-			if (rc != GDK_SUCCEED) {
-				MT_rwlock_wrunlock(&b->thashlock);
-				return rc;
+		if (b->tvarsized) {
+			for (BUN i = 0; i < count; i++) {
+				t = ((void **) values)[i];
+				gdk_return rc = tfastins_nocheckVAR(b, p, t);
+				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					return rc;
+				}
+				if (b->thash) {
+					HASHappend_locked(b, p, t);
+				}
+				p++;
 			}
-			if (b->thash) {
-				HASHappend_locked(b, p, t);
+		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+			for (BUN i = 0; i < count; i++) {
+				t = (void *) ((char *) values + (i << b->tshift));
+				mskSetVal(b, p, *(msk *) t);
+				p++;
 			}
-			p++;
+		} else {
+			for (BUN i = 0; i < count; i++) {
+				t = (void *) ((char *) values + (i << b->tshift));
+				gdk_return rc = tfastins_nocheckFIX(b, p, t);
+				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					return rc;
+				}
+				if (b->thash) {
+					HASHappend_locked(b, p, t);
+				}
+				p++;
+			}
 		}
 	} else {
 		for (BUN i = 0; i < count; i++) {
-			gdk_return rc = bunfastapp_nocheck(b, t);
+			gdk_return rc = tfastins_nocheck(b, p, t);
 			if (rc != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
 				return rc;
@@ -1189,6 +1211,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	BATsetcount(b, p);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);

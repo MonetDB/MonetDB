@@ -696,6 +696,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			maxgrp = g->tseqbase + BATcount(g);
 		else if (BATtordered(g))
 			maxgrp = * (oid *) Tloc(g, BATcount(g) - 1);
+		else if (BATtrevordered(g))
+			maxgrp = * (oid *) Tloc(g, 0);
 		else {
 			prop = BATgetprop(g, GDK_MAX_VALUE);
 			if (prop)
@@ -1148,15 +1150,21 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		} else {
 			nbucket = MAX(HASHmask(cnt), 1 << 16);
 		}
-		switch (t) {
-		case TYPE_bte:
-			nbucket = 256;
-			break;
-		case TYPE_sht:
-			nbucket = 65536;
-			break;
-		default:
-			break;
+		if (grps == NULL || is_oid_nil(maxgrp)
+#if SIZEOF_OID == SIZEOF_LNG
+		    || maxgrp >= ((oid) 1 << (SIZEOF_LNG * 8 - 8))
+#endif
+			) {
+			switch (t) {
+			case TYPE_bte:
+				nbucket = 256;
+				break;
+			case TYPE_sht:
+				nbucket = 65536;
+				break;
+			default:
+				break;
+			}
 		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
 		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
