@@ -229,7 +229,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), (const char *) ni.base + ((ci->seq - n->hseqbase) << ni.shift), cnt << ni.shift);
-		BATsetcount(b, oldcnt + cnt);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
 		 * have already made sure that they are all in b's
@@ -314,7 +313,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				break;
 			}
 		}
-		BATsetcount(b, r); /* set batCount and theap->free */
 	} else if (b->tvheap->free < ni.vh->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
@@ -335,7 +333,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			}
 			r++;
 		}
-		BATsetcount(b, r);
 	} else {
 		/* Insert values from n individually into b; however,
 		 * we check whether there is a string in b's string
@@ -387,8 +384,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			}
 			r++;
 		}
-		BATsetcount(b, r);
 	}
+	BATsetcount(b, oldcnt + ci->ncand);
 	bat_iterator_end(&ni);
 	assert(b->batCapacity >= b->batCount);
 	b->theap->dirty = true;
@@ -465,11 +462,13 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		b->theap->dirty = true;
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		/* maintain hash table */
+		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
-			HASHappend(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
+			HASHappend_locked(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
 		}
+		MT_rwlock_wrunlock(&b->thashlock);
 		bat_iterator_end(&ni);
 		return GDK_SUCCEED;
 	}
@@ -504,7 +503,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		cnt--;
 		BUN p = canditer_next(ci) - hseq;
 		const void *t = BUNtvar(ni, p);
-		if (bunfastapp_nocheckVAR(b, t) != GDK_SUCCEED) {
+		if (tfastins_nocheckVAR(b, r, t) != GDK_SUCCEED) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
@@ -512,6 +511,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			HASHappend(b, r, t);
 		r++;
 	}
+	BATsetcount(b, r);
 	bat_iterator_end(&ni);
 	b->theap->dirty = true;
 	return GDK_SUCCEED;
@@ -524,6 +524,8 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 		return GDK_SUCCEED;
 	if (BATextend(b, BATcount(b) + ci->ncand) != GDK_SUCCEED)
 		return GDK_FAIL;
+
+	MT_lock_set(&b->theaplock);
 
 	uint32_t boff = b->batCount % 32;
 	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
@@ -550,30 +552,29 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 					*bp &= ~mask;
 					*bp |= *np & mask;
 				}
-				bat_iterator_end(&ni);
-				return GDK_SUCCEED;
-			}
-			/* multiple words of b are affected */
-			if (boff != 0) {
-				/* first fill up the rest of the first
-				 * word */
-				mask = ~0U << boff;
-				*bp &= ~mask;
-				*bp++ |= *np++ & mask;
-				cnt -= 32 - boff;
-			}
-			if (cnt >= 32) {
-				/* copy an integral number of words fast */
-				BUN nw = cnt / 32;
-				memcpy(bp, np, nw*sizeof(int));
-				bp += nw;
-				np += nw;
-				cnt %= 32;
-			}
-			if (cnt > 0) {
-				/* do the left over bits */
-				mask = (1U << cnt) - 1;
-				*bp = *np & mask;
+			} else {
+				/* multiple words of b are affected */
+				if (boff != 0) {
+					/* first fill up the rest of the first
+					 * word */
+					mask = ~0U << boff;
+					*bp &= ~mask;
+					*bp++ |= *np++ & mask;
+					cnt -= 32 - boff;
+				}
+				if (cnt >= 32) {
+					/* copy an integral number of words fast */
+					BUN nw = cnt / 32;
+					memcpy(bp, np, nw*sizeof(int));
+					bp += nw;
+					np += nw;
+					cnt %= 32;
+				}
+				if (cnt > 0) {
+					/* do the left over bits */
+					mask = (1U << cnt) - 1;
+					*bp = *np & mask;
+				}
 			}
 		} else if (boff > noff) {
 			if (boff + cnt <= 32) {
@@ -585,42 +586,41 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 				mask = (1U << cnt) - 1;
 				*bp &= ~(mask << boff);
 				*bp |= (*np & (mask << noff)) << (boff - noff);
-				bat_iterator_end(&ni);
-				return GDK_SUCCEED;
-			}
-			/* first fill the rest of the last partial
-			 * word of b, so that's 32-boff bits */
-			mask = (1U << (32 - boff)) - 1;
-			*bp &= ~(mask << boff);
-			*bp++ |= (*np & (mask << noff)) << (boff - noff);
-			cnt -= 32 - boff;
+			} else {
+				/* first fill the rest of the last partial
+				 * word of b, so that's 32-boff bits */
+				mask = (1U << (32 - boff)) - 1;
+				*bp &= ~(mask << boff);
+				*bp++ |= (*np & (mask << noff)) << (boff - noff);
+				cnt -= 32 - boff;
 
-			/* set boff and noff to the amount we need to
-			 * shift bits in consecutive words of n around
-			 * to fit into the next word of b; set mask to
-			 * the mask of the bottom bits of n that fit
-			 * in a word of b (and the complement are the
-			 * top bits that go to another word of b) */
-			boff -= noff;
-			noff = 32 - boff;
-			mask = (1U << noff) - 1;
-			while (cnt >= 32) {
-				*bp = (*np++ & ~mask) >> noff;
-				*bp++ |= (*np & mask) << boff;
-				cnt -= 32;
-			}
-			if (cnt > boff) {
-				/* the last bits come from two words
-				 * in n */
-				*bp = (*np++ & ~mask) >> noff;
-				cnt -= noff;
-				mask = (1U << cnt) - 1;
-				*bp++ |= (*np & mask) << boff;
-			} else if (cnt > 0) {
-				/* the last bits come from a single
-				 * word in n */
-				mask = ((1U << cnt) - 1) << noff;
-				*bp = (*np & mask) >> noff;
+				/* set boff and noff to the amount we need to
+				 * shift bits in consecutive words of n around
+				 * to fit into the next word of b; set mask to
+				 * the mask of the bottom bits of n that fit
+				 * in a word of b (and the complement are the
+				 * top bits that go to another word of b) */
+				boff -= noff;
+				noff = 32 - boff;
+				mask = (1U << noff) - 1;
+				while (cnt >= 32) {
+					*bp = (*np++ & ~mask) >> noff;
+					*bp++ |= (*np & mask) << boff;
+					cnt -= 32;
+				}
+				if (cnt > boff) {
+					/* the last bits come from two words
+					 * in n */
+					*bp = (*np++ & ~mask) >> noff;
+					cnt -= noff;
+					mask = (1U << cnt) - 1;
+					*bp++ |= (*np & mask) << boff;
+				} else if (cnt > 0) {
+					/* the last bits come from a single
+					 * word in n */
+					mask = ((1U << cnt) - 1) << noff;
+					*bp = (*np & mask) >> noff;
+				}
 			}
 		} else {
 			/* boff < noff */
@@ -629,10 +629,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 				mask = (1U << cnt) - 1;
 				*bp &= ~(mask << boff);
 				*bp |= (*np & (mask << noff)) >> (noff - boff);
-				bat_iterator_end(&ni);
-				return GDK_SUCCEED;
-			}
-			if (boff + cnt <= 32) {
+			} else if (boff + cnt <= 32) {
 				/* only need to fill a single word of
 				 * b, but from two of n */
 				if (cnt < 32)
@@ -644,35 +641,32 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 				cnt -= 32 - noff;
 				mask = (1U << cnt) - 1;
 				*bp |= (*np & mask) << (32 - noff);
-				bat_iterator_end(&ni);
-				return GDK_SUCCEED;
-			}
-			if (boff > 0) {
-				/* fill the rest of the first word of b */
-				cnt -= 32 - boff;
-				*bp &= (1U << boff) - 1;
-				mask = ~((1U << noff) - 1);
-				noff -= boff;
-				boff = 32 - noff;
-				*bp |= (*np++ & mask) >> noff;
-				*bp |= (*np & ((1U << noff) - 1)) << boff;
 			} else {
-				boff = 32 - noff;
-			}
-			mask = (1U << noff) - 1;
-			while (cnt >= 32) {
-				*bp = (*np++ & ~mask) >> noff;
-				*bp++ |= (*np & mask) << boff;
-				cnt -= 32;
-			}
-			if (cnt > 0) {
-				*bp = (*np++ & ~mask) >> noff;
-				if (cnt > noff)
+				if (boff > 0) {
+					/* fill the rest of the first word of b */
+					cnt -= 32 - boff;
+					*bp &= (1U << boff) - 1;
+					mask = ~((1U << noff) - 1);
+					noff -= boff;
+					boff = 32 - noff;
+					*bp |= (*np++ & mask) >> noff;
+					*bp |= (*np & ((1U << noff) - 1)) << boff;
+				} else {
+					boff = 32 - noff;
+				}
+				mask = (1U << noff) - 1;
+				while (cnt >= 32) {
+					*bp = (*np++ & ~mask) >> noff;
 					*bp++ |= (*np & mask) << boff;
+					cnt -= 32;
+				}
+				if (cnt > 0) {
+					*bp = (*np++ & ~mask) >> noff;
+					if (cnt > noff)
+						*bp++ |= (*np & mask) << boff;
+				}
 			}
 		}
-		bat_iterator_end(&ni);
-		return GDK_SUCCEED;
 	} else {
 		oid o;
 		uint32_t v = boff > 0 ? *bp & ((1U << boff) - 1) : 0;
@@ -690,6 +684,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 		} while (!is_oid_nil(o));
 	}
 	bat_iterator_end(&ni);
+	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
 
@@ -922,13 +917,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				HASHappend_locked(b, r, Tloc(b, r));
 				r++;
 			}
-			BATsetcount(b, BATcount(b) + cnt);
 		} else {
 			while (cnt > 0) {
 				cnt--;
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				if (bunfastapp_nocheck(b, t) != GDK_SUCCEED) {
+				if (tfastins_nocheck(b, r, t) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
@@ -939,6 +933,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			}
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
+		BATsetcount(b, b->batCount + ci.ncand);
 		b->theap->dirty = true;
 	}
 
@@ -1021,7 +1016,9 @@ BATdel(BAT *b, BAT *d)
 			}
 			// o += b->hseqbase; // if this were to be used again
 		}
+		MT_lock_set(&b->theaplock);
 		b->batCount -= c;
+		MT_lock_unset(&b->theaplock);
 	} else {
 		BATiter di = bat_iterator(d);
 		const oid *o = (const oid *) di.base;
@@ -1089,7 +1086,9 @@ BATdel(BAT *b, BAT *d)
 			}
 		}
 		bat_iterator_end(&di);
+		MT_lock_set(&b->theaplock);
 		b->batCount -= nd;
+		MT_lock_unset(&b->theaplock);
 	}
 	if (b->batCount <= 1) {
 		/* some trivial properties */
