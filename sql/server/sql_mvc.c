@@ -499,15 +499,14 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (name && name[0] != '\0') {
 		sql_trans *tr = m->session->tr;
 		TRC_DEBUG(SQL_TRANS, "Savepoint\n");
-		m->session->tr = sql_trans_create(m->store, tr, name);
-		if (!m->session->tr) {
-			msg = createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
+		if (!(m->session->tr = sql_trans_create(m->store, tr, name)))
+			return createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while creating savepoint", operation);
+
+		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
+			m->session->tr = sql_trans_destroy(m->session->tr);
+			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished sucessfuly, but the session's schema could not be found on the current transaction", operation);
 		}
 		m->type = Q_TRANS;
-		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
 	}
@@ -608,7 +607,11 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			_DELETE(tr->name);
 			tr->name = NULL;
 		}
-		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished sucessfuly, but the session's schema could not be found on the current transaction");
+			m->session->status = -1;
+			return msg;
+		}
 	} else {
 		/* first release all intermediate savepoints */
 		while (tr->parent != NULL)
@@ -672,7 +675,11 @@ mvc_release(mvc *m, const char *name)
 	_DELETE(tr->name);
 	tr->name = NULL;
 	m->session->tr = tr;
-	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
+		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished sucessfuly, but the session's schema could not be found on the current transaction");
+		m->session->status = -1;
+		return msg;
+	}
 
 	m->type = Q_TRANS;
 	return msg;
