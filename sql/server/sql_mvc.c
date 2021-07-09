@@ -500,11 +500,11 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		sql_trans *tr = m->session->tr;
 		TRC_DEBUG(SQL_TRANS, "Savepoint\n");
 		if (!(m->session->tr = sql_trans_create(m->store, tr, name)))
-			return createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
+			return createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while creating savepoint", operation);
 
 		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
 			m->session->tr = sql_trans_destroy(m->session->tr);
-			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished sucessfuly, but the session's schema could not be found while starting the next transaction", operation);
+			return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished sucessfuly, but the session's schema could not be found on the current transaction", operation);
 		}
 		m->type = Q_TRANS;
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
@@ -608,7 +608,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			tr->name = NULL;
 		}
 		if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
-			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished sucessfuly, but the session's schema could not be found while starting the next transaction");
+			msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished sucessfuly, but the session's schema could not be found on the current transaction");
 			m->session->status = -1;
 			return msg;
 		}
@@ -676,7 +676,7 @@ mvc_release(mvc *m, const char *name)
 	tr->name = NULL;
 	m->session->tr = tr;
 	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
-		msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "RELEASE: finished sucessfuly, but the session's schema could not be found while starting the next transaction");
+		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished sucessfuly, but the session's schema could not be found on the current transaction");
 		m->session->status = -1;
 		return msg;
 	}
