@@ -1972,19 +1972,22 @@ BBPdump(void)
 				}
 			}
 		}
-		if (b->thash && b->thash != (Hash *) 1) {
-			size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
-			size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
-			fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
-				b->thash->heaplink.farmid,
-				b->thash->heapbckt.farmid);
-			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += m;
-				cvm += v;
-			} else {
-				mem += m;
-				vm += v;
+		if (MT_rwlock_rdtry(&b->thashlock)) {
+			if (b->thash && b->thash != (Hash *) 1) {
+				size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
+				size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
+				fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
+					b->thash->heaplink.farmid,
+					b->thash->heapbckt.farmid);
+				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
+					cmem += m;
+					cvm += v;
+				} else {
+					mem += m;
+					vm += v;
+				}
 			}
+			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		fprintf(stderr, " role: %s\n",
 			b->batRole == PERSISTENT ? "persistent" : "transient");
@@ -2890,9 +2893,11 @@ BBPsave(BAT *b)
 
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
 		/* do nothing */
+		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash && b->thash != (Hash *) 1 &&
 		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))
 			BAThashsave(b, (BBP_status(bid) & BBPPERSISTENT) != 0);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
 	if (lock)

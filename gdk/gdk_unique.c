@@ -209,6 +209,7 @@ BATunique(BAT *b, BAT *s)
 			if (hb == BUN_NONE || hb < lo) {
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED) {
 					MT_rwlock_rdunlock(&b->thashlock);
+					hs = NULL;
 					goto bunins_failed;
 				}
 			}
@@ -301,7 +302,7 @@ BATunique(BAT *b, BAT *s)
 	bat_iterator_end(&bi);
 	if (seen)
 		GDKfree(seen);
-	if (hs != NULL && hs != b->thash) {
+	if (hs != NULL) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);

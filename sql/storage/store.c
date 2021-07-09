@@ -3479,7 +3479,7 @@ sql_trans_destroy(sql_trans *tr)
 		_DELETE(tr->name);
 		tr->name = NULL;
 	}
-	if (tr->changes)
+	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr);
 	sqlstore *store = tr->store;
 	store_lock(store);
@@ -6608,19 +6608,20 @@ sql_session_create(sqlstore *store, sql_allocator *sa, int ac)
 	if (store->singleuser > 1)
 		return NULL;
 
-	s = SA_ZNEW(/*sa*/NULL, sql_session);
+	s = ZNEW(sql_session);
 	if (!s)
 		return NULL;
 	s->sa = sa;
 	assert(sa);
 	s->tr = sql_trans_create_(store, NULL, NULL);
 	if (!s->tr) {
+		_DELETE(s);
 		return NULL;
 	}
-	s->schema_name = NULL;
 	s->tr->active = 0;
 	if (!sql_session_reset(s, ac)) {
 		sql_trans_destroy(s->tr);
+		_DELETE(s);
 		return NULL;
 	}
 	if (store->singleuser)

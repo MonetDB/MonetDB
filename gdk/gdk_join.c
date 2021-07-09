@@ -2520,11 +2520,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *rvals = ri.base;					\
 		TYPE *lvals = li.base;					\
 		TYPE v;							\
-		if (!hash_cand) {					\
-			MT_rwlock_rdlock(&r->thashlock);		\
-			locked = true;	/* in case we abandon */	\
-			hsh = r->thash;	/* re-initialize inside lock */	\
-		}							\
 		while (lci->next < lci->ncand) {			\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 			lo = canditer_next(lci);			\
@@ -2625,10 +2620,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}						\
 			if (nr > 0 && BATcount(r1) > nr)		\
 				r1->trevsorted = false;			\
-		}							\
-		if (!hash_cand) {					\
-			locked = false;					\
-			MT_rwlock_rdunlock(&r->thashlock);		\
 		}							\
 	} while (0)
 
@@ -2735,17 +2726,21 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  __func__,
 			  BATgetId(r), ALGOBATPAR(b),
 			  swapped ? " (swapped)" : "");
-		hsh = b->thash;
 		roff = r->tbaseoff - b->tbaseoff;
 		rl += roff;
 		rh += roff;
 		r = b;
 		bat_iterator_end(&ri);
 		ri = bat_iterator(r);
+		MT_rwlock_rdlock(&r->thashlock);
+		hsh = r->thash;
+		locked = true;
 	} else if (hash) {
 		/* there is a hash on r which we should use */
 		MT_thread_setalgorithm(swapped ? "hashjoin using existing hash (swapped)" : "hashjoin using existing hash");
+		MT_rwlock_rdlock(&r->thashlock);
 		hsh = r->thash;
+		locked = true;
 		TRC_DEBUG(ALGO, ALGOBATFMT ": using "
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
@@ -2761,7 +2756,13 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  swapped ? " (swapped)" : "");
 		if (BAThash(r) != GDK_SUCCEED)
 			goto bailout;
+		MT_rwlock_rdlock(&r->thashlock);
 		hsh = r->thash;
+		locked = true;
+	}
+	if (locked && hsh == NULL) {
+		GDKerror("Hash disappeared for "ALGOBATFMT"\n", ALGOBATPAR(r));
+		goto bailout;
 	}
 	assert(hsh != NULL || BATtdense(r));
 	if (hsh) {
@@ -2777,6 +2778,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = canditer_idx(rci, rb);
 				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
+					assert(!locked);
 					HEAPfree(&hsh->heaplink, true);
 					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
@@ -2793,6 +2795,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
 				     (*cmp)(nil, BUNtail(ri, rb)) == 0)) {
+					if (locked)
+						MT_rwlock_rdunlock(&r->thashlock);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
 					return nomatch(r1p, r2p, l, r, lci,
@@ -2830,11 +2834,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		HASHJOIN(uuid);
 		break;
 	default:
-		if (!hash_cand && hsh) {
-			MT_rwlock_rdlock(&r->thashlock);
-			locked = true;	/* in case we abandon */
-			hsh = r->thash;	/* re-initialize inside lock */
-		}
 		while (lci->next < lci->ncand) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
@@ -2956,11 +2955,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
-		if (!hash_cand && hsh) {
-			locked = false;
-			MT_rwlock_rdunlock(&r->thashlock);
-		}
 		break;
+	}
+	if (locked) {
+		locked = false;
+		MT_rwlock_rdunlock(&r->thashlock);
 	}
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
