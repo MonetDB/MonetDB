@@ -96,7 +96,8 @@ virtualize(BAT *bn)
 
 static BAT *
 hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
-	   const void *tl, BUN maximum, bool phash, const char **algo)
+	   const void *tl, BUN maximum, bool havehash, bool phash,
+	   const char **algo)
 {
 	BUN i, cnt;
 	oid o, *restrict dst;
@@ -126,9 +127,18 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		*bi = bat_iterator(b);
 	}
 
-	if (BAThash(b) != GDK_SUCCEED) {
-		BBPreclaim(bn);
-		return NULL;
+	if (!havehash) {
+		if (BAThash(b) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+		MT_rwlock_rdlock(&b->thashlock);
+		if (b->thash == NULL) {
+			GDKerror("Hash destroyed before we could use it\n");
+			BBPreclaim(bn);
+			MT_rwlock_rdunlock(&b->thashlock);
+			return NULL;
+		}
 	}
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
@@ -141,7 +151,6 @@ hashselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	}
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
-	MT_rwlock_rdlock(&b->thashlock);
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(*bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
@@ -1199,7 +1208,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	bool lnil;		/* low value is nil */
 	bool hval;		/* high value used for comparison */
 	bool equi;		/* select for single value (not range) */
-	bool hash;		/* use hash (equi must be true) */
+	bool wanthash = false;	/* use hash (equi must be true) */
+	bool havehash = false;	/* we have a hash (and the hashlock) */
 	bool phash = false;	/* use hash on parent BAT (if view) */
 	int t;			/* data type */
 	bat parent;		/* b's parent bat (if b is a view) */
@@ -1507,12 +1517,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * parent already has a hash, or if b or its parent is
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
-	hash = equi &&
-		(BATcheckhash(b) ||
-		 (!b->batTransient &&
-		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
-		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2));
-	if (equi && !hash && parent != 0) {
+	if (equi) {
+		havehash = BATcheckhash(b);
+		if (havehash) {
+			MT_rwlock_rdlock(&b->thashlock);
+			if (b->thash == NULL) {
+				MT_rwlock_rdunlock(&b->thashlock);
+				havehash = false;
+			}
+		}
+		wanthash = havehash ||
+			(!b->batTransient &&
+			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
+	}
+
+	if (equi && !havehash && parent != 0) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
 		 * does not occur, or if it is cheaper to check the
@@ -1524,22 +1544,33 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		tmp = BBP_cache(parent);
 		if (tmp && BATcheckhash(tmp)) {
 			MT_rwlock_rdlock(&tmp->thashlock);
-			hash = phash = tmp->thash != NULL &&
+			phash = tmp->thash != NULL &&
 				(BATcount(tmp) == BATcount(b) ||
 				 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 				 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == BUN_NONE);
-			MT_rwlock_rdunlock(&tmp->thashlock);
+			if (phash)
+				havehash = wanthash = true;
+			else
+				MT_rwlock_rdunlock(&tmp->thashlock);
 		}
 		/* create a hash on the parent bat (and use it) if it is
 		 * the same size as the view and it is persistent */
 		if (!phash &&
 		    !tmp->batTransient &&
 		    BATcount(tmp) == BATcount(b) &&
-		    BAThash(tmp) == GDK_SUCCEED)
-			hash = phash = true;
+		    BAThash(tmp) == GDK_SUCCEED) {
+			MT_rwlock_rdlock(&tmp->thashlock);
+			if (tmp->thash)
+				havehash = wanthash = phash = true;
+			else
+				MT_rwlock_rdunlock(&tmp->thashlock);
+		}
 	}
+	/* at this point, if havehash is set, we have the hash lock
+	 * the lock is on the parent if phash is set, on b itself if not
+	 * also, if havehash is set, then so is wanthash (but not v.v.) */
 
-	if (!(hash && (phash || b->thash))) {
+	if (!havehash) {
 		/* make sure tsorted and trevsorted flags are set, but
 		 * we only need to know if we're not yet sure that we're
 		 * going for the hash (i.e. it already exists) */
@@ -1554,17 +1585,17 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * TODO: we do not support anti-select with order index */
 	bool poidx = false;
 	if (!anti &&
-	    !(hash && (phash || b->thash)) &&
+	    !havehash &&
 	    !(b->tsorted || b->trevsorted) &&
 	    ci.tpe == cand_dense &&
 	    (BATcheckorderidx(b) ||
 	     (/* DISABLES CODE */ (0) &&
-	      VIEWtparent(b) &&
-	      BATcheckorderidx(BBP_cache(VIEWtparent(b)))))) {
+	      parent &&
+	      BATcheckorderidx(BBP_cache(parent))))) {
 		BAT *view = NULL;
-		if (/* DISABLES CODE */ (0) && VIEWtparent(b) && !BATcheckorderidx(b)) {
+		if (/* DISABLES CODE */ (0) && parent && !BATcheckorderidx(b)) {
 			view = b;
-			b = BBP_cache(VIEWtparent(b));
+			b = BBP_cache(parent);
 		}
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
@@ -1589,8 +1620,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
-	if (!(hash && (phash || b->thash)) &&
-	    (b->tsorted || b->trevsorted || use_orderidx)) {
+	if (!havehash && (b->tsorted || b->trevsorted || use_orderidx)) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1780,10 +1810,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	if (hash &&
-	    !phash && /* phash implies there is a hash table already */
-	    estimate == BUN_NONE &&
-	    !b->thash) {
+	if (wanthash && !havehash && estimate == BUN_NONE) {
 		/* no exact result size, but we need estimate to
 		 * choose between hash- & scan-select (if we already
 		 * have a hash, it's a no-brainer: we use it) */
@@ -1821,7 +1848,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (ci.ncand / 100) - 1;
 			}
 		}
-		hash = estimate < ci.ncand / 100;
+		wanthash = estimate < ci.ncand / 100;
 	}
 	if (estimate == BUN_NONE) {
 		/* no better estimate possible/required:
@@ -1837,9 +1864,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 
 	BATiter bi = bat_iterator(b);
-	if (hash) {
-		bn = hashselect(b, &bi, &ci, bn, tl, maximum, phash, &algo);
+	if (wanthash) {
+		/* hashselect unlocks the hash lock */
+		bn = hashselect(b, &bi, &ci, bn, tl, maximum, havehash, phash, &algo);
 	} else {
+		assert(!havehash);
 		/* use imprints if
 		 *   i) bat is persistent, or parent is persistent
 		 *  ii) it is not an equi-select, and
