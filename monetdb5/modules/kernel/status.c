@@ -292,8 +292,10 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heap(1,c->theap,tbuns,"tbuns");
+		MT_rwlock_rdlock(&c->thashlock);
 		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
 		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
+		MT_rwlock_rdunlock(&b->thashlock);
 		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
@@ -392,8 +394,10 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heapvm(1,c->theap,tbuns,"tcuns");
+		MT_rwlock_rdlock(&c->thashlock);
 		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
 		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
+		MT_rwlock_rdunlock(&c->thashlock);
 		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
