@@ -1305,9 +1305,11 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	sql_trans *tr = sql->session->tr;
+	sql_schema *cur = cur_schema(sql);
+
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (s == cur_schema(sql))
+	if (cur && s->base.id == cur->base.id)
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: cannot drop current schema");
 	if (s->system)
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for '%s'", sname);
@@ -1876,6 +1878,8 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	sql_trans *tr = sql->session->tr;
+	sql_schema *cur = cur_schema(sql);
+
 	if (!(s = mvc_bind_schema(sql, old_name)))
 		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
 	if (!mvc_schema_privs(sql, s))
@@ -1898,7 +1902,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			break;
 	}
-	if (s == cur_schema(sql)) /* change current session schema name */
+	if (cur && s->base.id == cur->base.id) /* change current session schema name */
 		if (!mvc_set_schema(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;

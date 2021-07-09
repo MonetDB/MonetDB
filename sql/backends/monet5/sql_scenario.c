@@ -1098,7 +1098,6 @@ SQLparser(Client c)
 		sqlcleanup(be, err);
 		goto finalize;
 	}
-	assert(m->session->schema);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).
