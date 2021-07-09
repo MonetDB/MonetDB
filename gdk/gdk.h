@@ -1380,7 +1380,6 @@ gdk_export gdk_return BATprint(stream *s, BAT *b);
  * ordered. The result is returned and stored in the tsorted field of
  * the BAT.
  */
-gdk_export bool BATkeyed(BAT *b);
 gdk_export bool BATordered(BAT *b);
 gdk_export bool BATordered_rev(BAT *b);
 gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable)
