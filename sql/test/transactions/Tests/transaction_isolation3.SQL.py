@@ -90,7 +90,7 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("alter table y add constraint nono foreign key(i) references integers2(i);").assertSucceeded()
-        mdb2.execute("insert into y values (4);").assertSucceeded() # violates foreign key if mdb1 committed successfuly
+        mdb2.execute("insert into y values (4);").assertSucceeded() # violates foreign key if mdb1 committed successfully
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 

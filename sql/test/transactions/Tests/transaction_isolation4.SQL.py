@@ -202,5 +202,5 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop user duser4;').assertSucceeded()
         mdb1.execute('drop schema mys4;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('rollback and chain;').assertFailed() # error: ROLLBACK finished successfuly, but the session's schema could not be found while starting the next transaction
+        mdb2.execute('rollback and chain;').assertFailed() # error: ROLLBACK finished successfully, but the session's schema could not be found while starting the next transaction
         # mbd2 cannot do anything else, the connection was terminated
