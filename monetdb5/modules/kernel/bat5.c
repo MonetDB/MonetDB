@@ -422,7 +422,7 @@ BKCgetKey(bit *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	*ret = BATkeyed(b);
+	*ret = b->tkey;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

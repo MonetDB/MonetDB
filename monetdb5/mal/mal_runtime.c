@@ -465,7 +465,9 @@ getBatSpace(BAT *b){
 	space += BATcount(b) << b->tshift;
 	if( space){
 		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid);
+		MT_rwlock_rdlock(&b->thashlock);
 		space += hashinfo(b->thash, b->batCacheid);
+		MT_rwlock_rdunlock(&b->thashlock);
 		space += IMPSimprintsize(b);
 	}
 	return space;

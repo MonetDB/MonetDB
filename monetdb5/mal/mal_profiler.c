@@ -389,8 +389,12 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
 						goto cleanup_and_exit;
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid)))
+					MT_rwlock_rdlock(&d->thashlock);
+					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
+						MT_rwlock_rdunlock(&d->thashlock);
 						goto cleanup_and_exit;
+					}
+					MT_rwlock_rdunlock(&d->thashlock);
 					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
 						goto cleanup_and_exit;
 					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))

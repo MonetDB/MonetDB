@@ -4018,7 +4018,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
+								MT_rwlock_rdlock(&bs->thashlock);
 								sz = hashinfo(bs->thash, bs->batCacheid);
+								MT_rwlock_rdunlock(&bs->thashlock);
 								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
@@ -4135,7 +4137,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
+									MT_rwlock_rdlock(&bs->thashlock);
 									sz = bs->thash && bs->thash != (Hash *) 1 ? bs->thash->heaplink.size + bs->thash->heapbckt.size : 0; /* HASHsize() */
+									MT_rwlock_rdunlock(&bs->thashlock);
 									if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bs); */
