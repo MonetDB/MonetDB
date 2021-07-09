@@ -1696,6 +1696,12 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 }
 
 static inline gdk_return __attribute__((__warn_unused_result__))
+tfastins_nocheckFIX(BAT *b, BUN p, const void *v)
+{
+	return ATOMputFIX(b->ttype, Tloc(b, p), v);
+}
+
+static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v)
 {
 	assert(b->theap->parentid == b->batCacheid);
@@ -1707,7 +1713,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 	} else if (b->tvarsized) {
 		return tfastins_nocheckVAR(b, p, v);
 	} else {
-		return ATOMputFIX(b->ttype, Tloc(b, p), v);
+		return tfastins_nocheckFIX(b, p, v);
 	}
 	return GDK_SUCCEED;
 }
