@@ -390,9 +390,11 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	assert(b->batCapacity >= b->batCount);
 	b->theap->dirty = true;
 	/* maintain hash */
+	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHappend(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
+		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
+	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
 }
 
@@ -499,6 +501,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	}
 	/* copy data from n to b */
 	r = BUNlast(b);
+	MT_rwlock_wrlock(&b->thashlock);
 	while (cnt > 0) {
 		cnt--;
 		BUN p = canditer_next(ci) - hseq;
@@ -508,9 +511,10 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			return GDK_FAIL;
 		}
 		if (b->thash)
-			HASHappend(b, r, t);
+			HASHappend_locked(b, r, t);
 		r++;
 	}
+	MT_rwlock_wrunlock(&b->thashlock);
 	BATsetcount(b, r);
 	bat_iterator_end(&ni);
 	b->theap->dirty = true;
