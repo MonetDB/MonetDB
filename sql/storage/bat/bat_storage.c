@@ -639,6 +639,8 @@ count_deletes( segment *s, sql_trans *tr)
 	return cnt;
 }
 
+#define CNT_ACTIVE 10
+
 static size_t
 count_col(sql_trans *tr, sql_column *c, int access)
 {
@@ -657,7 +659,7 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return count_inserts(d->segs->h, tr);
 	if (access == QUICK || isTempTable(c->t))
 		return d->segs->t?d->segs->t->end:0;
-	if (access == 10) {
+	if (access == CNT_ACTIVE) {
 		size_t cnt = segs_end(d->segs, tr, c->t);
 		lock_table(tr->store, c->t->base.id);
 		cnt -= count_deletes_in_range(d->segs->h, tr, 0, cnt);
@@ -2859,18 +2861,16 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 	return 0;
 }
 
-static BUN
+static int
 clear_storage(sql_trans *tr, storage *s)
 {
-	BUN sz = count_deletes(s->segs->h, tr);
-
 	clear_cs(tr, &s->cs, true);
 	s->cs.cleared = 1;
 	if (s->segs)
 		destroy_segments(s->segs);
 	if (!(s->segs = new_segments(tr, 0)))
-		return BUN_NONE; /* BUN_NONE means error */
-	return sz;
+		return LOG_ERR;
+	return LOG_OK;
 }
 
 
@@ -2915,14 +2915,11 @@ clear_table(sql_trans *tr, sql_table *t)
 
 	node *n = ol_first_node(t->columns);
 	sql_column *c = n->data;
-	BUN sz = count_col(tr, c, 0), clear_ok;
 	storage *d = tab_timestamp_storage(tr, t);
 
 	if (!d)
 		return BUN_NONE;
-	lock_table(tr->store, t->base.id);
-	sz -= count_deletes_in_range(d->segs->h, tr, 0, sz);
-	unlock_table(tr->store, t->base.id);
+	BUN sz = count_col(tr, c, CNT_ACTIVE), clear_ok;
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
 		return clear_ok;
 
@@ -3410,12 +3407,12 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			if (t->commit_action == CA_COMMIT || t->commit_action == CA_PRESERVE)
 				commit_storage(tr, dbat);
 			else /* CA_DELETE as CA_DROP's are gone already */
-				clear_storage(tr, dbat);
+				ok = clear_storage(tr, dbat);
 		} else { /* rollback */
 			if (t->commit_action == CA_COMMIT/* || t->commit_action == CA_PRESERVE*/)
 				rollback_storage(tr, dbat);
 			else /* CA_DELETE as CA_DROP's are gone already */
-				clear_storage(tr, dbat);
+				ok = clear_storage(tr, dbat);
 		}
 		t->base.new = 0;
 		return ok;
