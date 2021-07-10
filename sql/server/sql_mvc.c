@@ -525,6 +525,9 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 
+	/* save points only */
+	assert(name || tr->parent);
+
 	/* commit and cleanup nested transactions */
 	if (tr->parent) {
 		while (tr->parent != NULL && ok == SQL_OK) {
@@ -536,7 +539,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			tr = sql_trans_destroy(tr);
 		m->session->tr = tr;
 		if (ok != SQL_OK)
-			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 	}
 
 	/* if there is nothing to commit reuse the current transaction */
@@ -544,14 +547,6 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (!chain)
 			(void)sql_trans_end(m->session, ok);
 		m->type = Q_TRANS;
-		/* save points not handled by WLC...
-		msg = WLCcommit(m->clientid);
-		if (msg != MAL_SUCCEED) {
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
-		}
-		*/
 		TRC_INFO(SQL_TRANS,
 			"Commit done (no changes)\n");
 		return msg;
@@ -559,14 +554,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 	if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-	/*
-	msg = WLCcommit(m->clientid);
-	if (msg != MAL_SUCCEED) {
-		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			freeException(other);
-		return msg;
-	}
-	*/
+
 	(void)sql_trans_end(m->session, ok);
 	if (chain && sql_trans_begin(m->session) < 0)
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
