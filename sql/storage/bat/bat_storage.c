@@ -1121,7 +1121,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							else {
 								BATsetcount(ins, ucnt); /* all full updates  */
 								msk = (int*)Tloc(ins, 0);
-								int end = (ucnt+31)/32;
+								int end = (int) ((ucnt+31)/32);
 								for (int i=0; i<end; i++)
 									msk[i] = 0;
 							}
@@ -1165,7 +1165,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							} else {
 								BATsetcount(ins, ucnt); /* all full updates  */
 								msk = (int*)Tloc(ins, 0);
-								int end = (ucnt+31)/32;
+								int end = (int) ((ucnt+31)/32);
 								for (int i=0; i<end; i++)
 									msk[i] = 0;
 							}
