@@ -22,7 +22,7 @@ extern BAT *quick_descriptor(log_bid b);
 extern void temp_destroy(log_bid b);
 extern log_bid temp_dup(log_bid b);
 extern log_bid temp_create(BAT *b);
-extern log_bid temp_copy(log_bid b, int temp);
+extern log_bid temp_copy(log_bid b, bool renew, bool temp);
 
 extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int tt, BUN size, role_t role);
