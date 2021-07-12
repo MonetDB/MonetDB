@@ -332,6 +332,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 
 	uint32_t *restrict dst;
 	for (; s ; s=s->next) {
+		if (s->start >= nr)
+			break;
 		if (s->ts == tr->tid && s->end != s->start) {
 			b->batDirtydesc = true;
 			size_t lnr = s->end-s->start;
