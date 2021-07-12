@@ -1578,8 +1578,8 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 	assert(!offsets || BATcount(offsets) == BATcount(i));
 	if (!BATcount(i))
 		return LOG_OK;
-	if (i && (i->ttype == TYPE_msk || mask_cand(i)))
-		oi = BATunmask(i);
+	if ((i->ttype == TYPE_msk || mask_cand(i)) && !(oi = BATunmask(i)))
+		return LOG_ERR;
 
 	lock_column(tr->store, id);
 	b = temp_descriptor(bat->cs.bid);
@@ -1803,8 +1803,8 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	BAT *oi = i;	/* update ids */
 	int ok = LOG_OK;
 
-	if (i->ttype == TYPE_msk || mask_cand(i))
-		i = BATunmask(i);
+	if ((i->ttype == TYPE_msk || mask_cand(i)) && !(i = BATunmask(i)))
+		return LOG_ERR;
 	if (BATcount(i)) {
 		if (BATtdense(i)) {
 			size_t start = i->tseqbase;
