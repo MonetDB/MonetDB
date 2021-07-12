@@ -860,8 +860,10 @@ BATsave_locked(BAT *bd)
 			bd->tvheap->wasempty = vhs.wasempty;
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
+		MT_rwlock_rdlock(&bd->thashlock);
 		if (bd->thash && bd->thash != (Hash *) 1)
 			BAThashsave(bd, dosync);
+		MT_rwlock_rdunlock(&bd->thashlock);
 	}
 	return err;
 }
