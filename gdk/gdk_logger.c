@@ -1465,11 +1465,8 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 				TRC_WARNING(GDK, "Failed to set bat(%d) transient\n", bids[pos]);
 				if (!lb)
 					err++;
-				else
-					lids[pos] = -1; /* mark as transient */
-			} else {
-				lids[pos] = -1; /* mark as transient */
 			}
+			lids[pos] = -1; /* mark as transient */
 			logbat_destroy(lb);
 		}
 	}
@@ -2648,7 +2645,8 @@ log_bat_clear(logger *lg, int id)
 static gdk_return
 new_logfile(logger *lg)
 {
-	lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
+	//lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
+	lng log_large = LOG_LARGE;
 	assert(!LOG_DISABLED(lg));
 	lng p;
 	p = (lng) getfilepos(getFile(lg->output_log));
