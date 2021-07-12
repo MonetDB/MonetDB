@@ -314,7 +314,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	segment *s = segs->h;
 
 	size_t nr = segs_end(segs, tr, t);
-	if (nr >= BATcapacity(b) && BATextend(b, nr) != GDK_SUCCEED) {
+	size_t rounded_nr = ((nr+31)&~31);
+	if (rounded_nr >= BATcapacity(b) && BATextend(b, rounded_nr) != GDK_SUCCEED) {
 		bat_destroy(b);
 		return LOG_ERR;
 	}
