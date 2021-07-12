@@ -320,32 +320,38 @@ os_append_name(objectset *os, objectversion *ov)
 	return os;
 }
 
+static void
+os_append_id_map(objectset *os)
+{
+	if (os->id_map)
+		hash_destroy(os->id_map);
+	os->id_map = hash_new(os->sa, os->id_based_cnt, (fkeyvalue)&os_id_key);
+	if (os->id_map == NULL)
+		return ;
+	for (versionhead  *n = os->id_based_h; n; n = n->next ) {
+		int key = os_id_key(n);
+
+		if (hash_add(os->id_map, key, n) == NULL) {
+			hash_destroy(os->id_map);
+			os->id_map = NULL;
+			return ;
+		}
+	}
+}
+
 static objectset *
 os_append_node_id(objectset *os, versionhead  *n)
 {
 	lock_writer(os);
-	if ((!os->id_map || (os->id_map->size*16 < os->id_based_cnt && os->id_based_cnt > HASH_MIN_SIZE)) && os->sa) {
-		hash_destroy(os->id_map);
-		os->id_map = hash_new(os->sa, os->id_based_cnt, (fkeyvalue)&os_id_key);
-		if (os->id_map == NULL) {
-			unlock_writer(os);
-			return NULL;
-		}
-		for (versionhead  *n = os->id_based_h; n; n = n->next ) {
-			int key = os_id_key(n);
-
-			if (hash_add(os->id_map, key, n) == NULL) {
-				unlock_writer(os);
-				return NULL;
-			}
-		}
-	}
+	if (!os->id_map || (os->id_map->size*16 < os->id_based_cnt && os->id_based_cnt > HASH_MIN_SIZE))
+		os_append_id_map(os); /* on failure just fall back too slow method */
 
 	if (os->id_map) {
 		int key = os->id_map->key(n);
 		if (hash_add(os->id_map, key, n) == NULL) {
-			unlock_writer(os);
-			return NULL;
+			hash_destroy(os->id_map);
+			os->id_map = NULL;
+			/* fall back too slow search */
 		}
 	}
 
@@ -671,10 +677,10 @@ os_destroy(objectset *os, sql_store store)
 		n = hn;
 	}
 
-	if (os->id_map && !os->id_map->sa)
+	if (os->id_map)
 		hash_destroy(os->id_map);
 
-	if (os->name_map && !os->name_map->sa)
+	if (os->name_map)
 		hash_destroy(os->name_map);
 
 	if (!os->sa)
