@@ -2432,8 +2432,10 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 		return LOG_ERR;
 	ib = b;
 
-	if (b->ttype == TYPE_msk || mask_cand(b))
-		b = BATunmask(b);
+	if ((b->ttype == TYPE_msk || mask_cand(b)) && !(b = BATunmask(b))) {
+		bat_destroy(ib);
+		return LOG_ERR;
+	}
 
 	if (BATcount(b)) {
 		if (ok == LOG_OK && !(s->segs = new_segments(tr, BATcount(ib))))
