@@ -140,7 +140,8 @@ res_table_destroy(res_table *t)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		res_col_destroy(c);
+		if (c)
+			res_col_destroy(c);
 	}
 	if (t->order)
 		bat_decref(t->order);
