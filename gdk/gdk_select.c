@@ -1219,7 +1219,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
 	lng vwo = 0;
-	bool use_orderidx = false;
+	Heap *oidxh = NULL;
 	const char *algo;
 	union {
 		bte v_bte;
@@ -1599,41 +1599,54 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	bool poidx = false;
 	if (!anti &&
 	    !havehash &&
-	    !(b->tsorted || b->trevsorted) &&
-	    ci.tpe == cand_dense &&
-	    (BATcheckorderidx(b) ||
-	     (/* DISABLES CODE */ (0) &&
-	      parent &&
-	      BATcheckorderidx(BBP_cache(parent))))) {
+	    !b->tsorted &&
+	    !b->trevsorted &&
+	    ci.tpe == cand_dense) {
 		BAT *view = NULL;
-		if (/* DISABLES CODE */ (0) && parent && !BATcheckorderidx(b)) {
-			view = b;
-			b = BBP_cache(parent);
-		}
-		/* Is query selective enough to use the ordered index ? */
-		/* TODO: Test if this heuristic works in practice */
-		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
-		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
-			use_orderidx = true;
-			if (view) {
-				poidx = true; /* using parent oidx */
-				vwo = (lng) (view->tbaseoff - b->tbaseoff);
-				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
-				vwh = vwl + canditer_last(&ci) - ci.seq;
-				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
-			} else {
-				vwl = ci.seq;
-				vwh = canditer_last(&ci);
+		(void) BATcheckorderidx(b);
+		MT_lock_set(&b->batIdxLock);
+		if ((oidxh = b->torderidx) != NULL)
+			HEAPincref(oidxh);
+		MT_lock_unset(&b->batIdxLock);
+		if (oidxh == NULL && parent) {
+			BAT *pb = BBP_cache(parent);
+			(void) BATcheckorderidx(pb);
+			MT_lock_set(&pb->batIdxLock);
+			if ((oidxh = pb->torderidx) != NULL) {
+				HEAPincref(oidxh);
+				view = b;
+				b = pb;
 			}
-		} else if (view) {
-			b = view;
-			view = NULL;
+			MT_lock_unset(&pb->batIdxLock);
 		}
-		if( view)
-			TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
+		if (oidxh) {
+			/* Is query selective enough to use the ordered index ? */
+			/* TODO: Test if this heuristic works in practice */
+			/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
+			if ((ORDERfnd(b, oidxh, th) - ORDERfnd(b, oidxh, tl)) < b->batCount/3) {
+				if (view) {
+					poidx = true; /* using parent oidx */
+					vwo = (lng) (view->tbaseoff - b->tbaseoff);
+					vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
+					vwh = vwl + canditer_last(&ci) - ci.seq;
+					vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
+					TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
+				} else {
+					vwl = ci.seq;
+					vwh = canditer_last(&ci);
+				}
+			} else {
+				if (view) {
+					b = view;
+					view = NULL;
+				}
+				HEAPdecref(oidxh, false);
+				oidxh = NULL;
+			}
+		}
 	}
 
-	if (!havehash && (b->tsorted || b->trevsorted || use_orderidx)) {
+	if (!havehash && (b->tsorted || b->trevsorted || oidxh != NULL)) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1645,6 +1658,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			oid h, l;
 			assert(b->tnonil);
 			assert(b->tsorted);
+			assert(oidxh == NULL);
 			algo = "select: dense";
 			h = * (oid *) th + hi;
 			if (h > b->tseqbase)
@@ -1664,6 +1678,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (low > high)
 				low = high;
 		} else if (b->tsorted) {
+			assert(oidxh == NULL);
 			algo = "select: sorted";
 			if (lval) {
 				if (li)
@@ -1681,6 +1696,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(b, th);
 			}
 		} else if (b->trevsorted) {
+			assert(oidxh == NULL);
 			algo = "select: reverse sorted";
 			if (lval) {
 				if (li)
@@ -1698,25 +1714,26 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					low = SORTfndlast(b, th);
 			}
 		} else {
-			assert(use_orderidx);
+			assert(oidxh != NULL);
 			algo = poidx ? "select: parent orderidx" : "select: orderidx";
 			if (lval) {
 				if (li)
-					low = ORDERfndfirst(b, tl);
+					low = ORDERfndfirst(b, oidxh, tl);
 				else
-					low = ORDERfndlast(b, tl);
+					low = ORDERfndlast(b, oidxh, tl);
 			} else {
 				/* skip over nils at start of column */
-				low = ORDERfndlast(b, nil);
+				low = ORDERfndlast(b, oidxh, nil);
 			}
 			if (hval) {
 				if (hi)
-					high = ORDERfndlast(b, th);
+					high = ORDERfndlast(b, oidxh, th);
 				else
-					high = ORDERfndfirst(b, th);
+					high = ORDERfndfirst(b, oidxh, th);
 			}
 		}
 		if (anti) {
+			assert(oidxh == NULL);
 			if (b->tsorted) {
 				BUN first = SORTfndlast(b, nil);
 				/* match: [first..low) + [high..last) */
@@ -1736,6 +1753,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			if (b->tsorted || b->trevsorted) {
+				assert(oidxh == NULL);
 				/* match: [low..high) */
 				bn = canditer_sliceval(&ci,
 						       low + b->hseqbase,
@@ -1746,11 +1764,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				const oid *rs;
 				oid *rbn;
 
-				rs = (const oid *) b->torderidx->base + ORDERIDXOFF;
+				rs = (const oid *) oidxh->base + ORDERIDXOFF;
 				rs += low;
 				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
-				if (bn == NULL)
+				if (bn == NULL) {
+					HEAPdecref(oidxh, false);
 					return NULL;
+				}
 
 				rbn = (oid *) Tloc((bn), 0);
 
@@ -1761,6 +1781,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					}
 					rs++;
 				}
+				HEAPdecref(oidxh, false);
 				BATsetcount(bn, cnt);
 
 				/* output must be sorted */
@@ -1790,6 +1811,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
+	assert(oidxh == NULL);
 	/* upper limit for result size */
 	maximum = ci.ncand;
 	if (b->tkey) {
@@ -2024,11 +2046,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which output column is sorted */
 	BAT *tmp = NULL;
-	bool use_orderidx = false;
 	const char *algo = NULL;
 	BATiter li = bat_iterator(l);
 	BATiter rli = bat_iterator(rl);
 	BATiter rhi = bat_iterator(rh);
+	Heap *oidxh = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(rl->ttype));
 	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
@@ -2067,26 +2089,38 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	if (l->tvarsized && l->ttype) {
 		assert(rl->tvarsized && rl->ttype);
 		assert(rh->tvarsized && rh->ttype);
-		lvars = l->tvheap->base;
-		rlvars = rl->tvheap->base;
-		rhvars = rh->tvheap->base;
+		lvars = li.vh->base;
+		rlvars = rli.vh->base;
+		rhvars = rhi.vh->base;
 	} else {
 		assert(!rl->tvarsized || !rl->ttype);
 		assert(!rh->tvarsized || !rh->ttype);
 		lvars = rlvars = rhvars = NULL;
 	}
 
-	if (!BATordered(l) && !BATordered_rev(l) &&
-	    (BATcheckorderidx(l) || (/* DISABLES CODE */ (0) && VIEWtparent(l) && BATcheckorderidx(BBP_cache(VIEWtparent(l)))))) {
-		use_orderidx = true;
-		if (/* DISABLES CODE */ (0) && VIEWtparent(l) && !BATcheckorderidx(l)) {
-			l = BBP_cache(VIEWtparent(l));
+	if (!anti && !symmetric && !BATordered(l) && !BATordered_rev(l)) {
+		(void) BATcheckorderidx(l);
+		MT_lock_set(&l->batIdxLock);
+		if ((oidxh = l->torderidx) != NULL)
+			HEAPincref(oidxh);
+		MT_lock_unset(&l->batIdxLock);
+#if 0 /* needs checking */
+		if (oidxh == NULL && VIEWtparent(l)) {
+			BAT *pb = BBP_cache(VIEWtparent(l));
+			(void) BATcheckorderidx(pb);
+			MT_lock_set(&pb->batIdxLock);
+			if ((oidxh = pb->torderidx) != NULL) {
+				HEAPincref(oidxh);
+				l = pb;
+			}
+			MT_lock_unset(&pb->batIdxLock);
 		}
+#endif
 	}
 
 	vrl = &rlval;
 	vrh = &rhval;
-	if (!anti && !symmetric && (BATordered(l) || BATordered_rev(l) || use_orderidx)) {
+	if (!anti && !symmetric && (BATordered(l) || BATordered_rev(l) || oidxh)) {
 		/* left column is sorted, use binary search */
 		sorted = 2;
 		for (BUN i = 0; i < rci->ncand; i++) {
@@ -2126,15 +2160,15 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				else
 					high = SORTfndfirst(l, vrl);
 			} else {
-				assert(use_orderidx);
+				assert(oidxh);
 				if (linc)
-					low = ORDERfndfirst(l, vrl);
+					low = ORDERfndfirst(l, oidxh, vrl);
 				else
-					low = ORDERfndlast(l, vrl);
+					low = ORDERfndlast(l, oidxh, vrl);
 				if (hinc)
-					high = ORDERfndlast(l, vrh);
+					high = ORDERfndlast(l, oidxh, vrh);
 				else
-					high = ORDERfndfirst(l, vrh);
+					high = ORDERfndfirst(l, oidxh, vrh);
 			}
 			if (high <= low)
 				continue;
@@ -2170,8 +2204,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			} else {
 				const oid *ord;
 
-				assert(use_orderidx);
-				ord = (const oid *) l->torderidx->base + ORDERIDXOFF;
+				assert(oidxh);
+				ord = (const oid *) oidxh->base + ORDERIDXOFF;
 
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
@@ -2201,6 +2235,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 			}
 		}
+		if (oidxh)
+			HEAPdecref(oidxh, false);
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if (!anti && !symmetric &&

@@ -32,7 +32,7 @@
  * If the value to be found occurs, the following relationship holds:
  *
  * SORTfndfirst(b, v) <= SORTfnd(b, v) < SORTfndlast(b, v)
- * ORDERfndfirst(b, v) <= ORDERfnd(b, v) < ORDERfndlast(b, v)
+ * ORDERfndfirst(b, oidxh, v) <= ORDERfnd(b, oidxh, v) < ORDERfndlast(b, oidxh, v)
  *
  * and the range from *fndfirst (included) up to *fndlast (not
  * included) are all values in the column that are equal to the value.
@@ -405,13 +405,12 @@ SORTfnd(BAT *b, const void *v)
 
 /* use orderidx, returns BUN on order index */
 BUN
-ORDERfnd(BAT *b, const void *v)
+ORDERfnd(BAT *b, Heap *oidxh, const void *v)
 {
-	assert(b->torderidx);
 	if (BATcount(b) == 0)
 		return BUN_NONE;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) b->torderidx->base + ORDERIDXOFF, 0, b->ttype,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, b->ttype,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, -1);
 	bat_iterator_end(&bi);
@@ -452,13 +451,12 @@ SORTfndfirst(BAT *b, const void *v)
 
 /* use orderidx, returns BUN on order index */
 BUN
-ORDERfndfirst(BAT *b, const void *v)
+ORDERfndfirst(BAT *b, Heap *oidxh, const void *v)
 {
-	assert(b->torderidx);
 	if (BATcount(b) == 0)
 		return 0;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) b->torderidx->base + ORDERIDXOFF, 0, bi.type,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, 0);
 	bat_iterator_end(&bi);
@@ -500,13 +498,12 @@ SORTfndlast(BAT *b, const void *v)
 
 /* use orderidx, returns BUN on order index */
 BUN
-ORDERfndlast(BAT *b, const void *v)
+ORDERfndlast(BAT *b, Heap *oidxh, const void *v)
 {
-	assert(b->torderidx);
 	if (BATcount(b) == 0)
 		return 0;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) b->torderidx->base + ORDERIDXOFF, 0, bi.type,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, 1);
 	bat_iterator_end(&bi);
