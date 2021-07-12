@@ -1127,7 +1127,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	h->heaplink.free += h->width;
 	BUN hb = HASHget(h, c);
 	BUN hb2;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	for (hb2 = hb;
 	     hb2 != BUN_NONE;
@@ -1135,7 +1135,6 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		if (atomcmp(v, BUNtail(bi, hb2)) == 0)
 			break;
 	}
-	bat_iterator_end(&bi);
 	h->nheads += hb == BUN_NONE;
 	h->nunique += hb2 == BUN_NONE;
 	HASHputlink(h, i, hb);
@@ -1173,7 +1172,7 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == BUN_NONE || hb < p) {
 		/* bucket is empty, or bucket is used by lower numbered
@@ -1190,7 +1189,6 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 					/* found another row with the
 					 * same value, so don't
 					 * increment nunique */
-					bat_iterator_end(&bi);
 					return;
 				}
 				hb = HASHgetlink(h, hb);
@@ -1198,7 +1196,6 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		}
 		/* this is a new value */
 		h->nunique++;
-		bat_iterator_end(&bi);
 		return;
 	}
 	bool seen = false;
@@ -1216,7 +1213,6 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 			}
 			if (!seen)
 				h->nunique++;
-			bat_iterator_end(&bi);
 			return;
 		}
 		hb = hb2;
@@ -1252,7 +1248,7 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == p) {
 		BUN hb2 = HASHgetlink(h, p);
@@ -1268,7 +1264,6 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 					/* found another row with the
 					 * same value, so don't
 					 * decrement nunique below */
-					bat_iterator_end(&bi);
 					return;
 				}
 				hb2 = HASHgetlink(h, hb2);
@@ -1277,7 +1272,6 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		/* no rows found with the same value, so number of
 		 * unique values is one lower */
 		h->nunique--;
-		bat_iterator_end(&bi);
 		return;
 	}
 	bool seen = false;
@@ -1301,7 +1295,6 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 	HASHputlink(h, p, BUN_NONE);
 	if (!seen)
 		h->nunique--;
-	bat_iterator_end(&bi);
 }
 
 void
