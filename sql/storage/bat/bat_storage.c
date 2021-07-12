@@ -1510,6 +1510,12 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
+	if (tpe == TYPE_bat) {
+		BAT *t = tids;
+		if (!BATcount(t))
+			return LOG_OK;
+	}
+
 	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
@@ -1560,6 +1566,12 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+
+	if (tpe == TYPE_bat) {
+		BAT *t = tids;
+		if (!BATcount(t))
+			return LOG_OK;
+	}
 
 	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
