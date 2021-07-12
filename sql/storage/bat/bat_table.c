@@ -318,14 +318,17 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 		bat_destroy(cr2);
 		bat_destroy(lcb);
 		bat_destroy(rcb);
-		if (ret != GDK_SUCCEED)
+		if (ret != GDK_SUCCEED) {
+			bat_destroy(cl);
+			bat_destroy(cr);
 			return NULL;
+		}
 		lcb = BATproject(l, cl);
 		rcb = BATproject(l, cr);
 		bat_destroy(l);
+		bat_destroy(cl);
+		bat_destroy(cr);
 		if (!lcb || !rcb) {
-			bat_destroy(cl);
-			bat_destroy(cr);
 			bat_destroy(lcb);
 			bat_destroy(rcb);
 			bat_destroy(r);
@@ -381,20 +384,30 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	cl = r;
 	/* project all in the new order */
 	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL, NULL);
+	if (!rt) {
+		bat_destroy(cl);
+		return NULL;
+	}
 	rt->nr_rows = BATcount(cl);
 	for (node *n = ol_first_node(t->columns); n; n = n->next) {
+		BAT *rc = NULL;
+
 		o = n->data;
 		b = full_column(tr, o);
 		if (b)
-			r = BATproject(cl, b);
+			rc = BATproject(cl, b);
 		bat_destroy(b);
-		if (!b || !r) {
+		if (!b || !rc) {
 			bat_destroy(cl);
 			bat_destroy(b);
 			res_table_destroy(rt);
 			return NULL;
 		}
-		(void)res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, r, true);
+		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, rc, true)) {
+			bat_destroy(cl);
+			res_table_destroy(rt);
+			return NULL;
+		}
 	}
 	bat_destroy(cl);
 	return rt;

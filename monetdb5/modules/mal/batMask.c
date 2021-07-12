@@ -108,10 +108,10 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mask.umask", SQLSTATE(42000) "msk type input expected");
 	}
-	if ((dst = BATunmask(b)) == NULL) {
-		BBPunfix(b->batCacheid);
+	dst = BATunmask(b);
+	BBPunfix(b->batCacheid);
+	if (dst == NULL)
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
-	}
 	*ret=  dst->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
