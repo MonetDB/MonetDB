@@ -2645,8 +2645,7 @@ log_bat_clear(logger *lg, int id)
 static gdk_return
 new_logfile(logger *lg)
 {
-	//lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
-	lng log_large = LOG_LARGE;
+	lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 	assert(!LOG_DISABLED(lg));
 	lng p;
 	p = (lng) getfilepos(getFile(lg->output_log));
