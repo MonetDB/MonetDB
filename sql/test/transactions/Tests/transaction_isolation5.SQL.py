@@ -6,7 +6,7 @@ with SQLTestCase() as mdb1:
     mdb1.execute('SAVEPOINT mys;').assertSucceeded()
     mdb1.execute('CREATE SCHEMA ups;').assertSucceeded()
     mdb1.execute('SET SCHEMA ups;').assertSucceeded()
-    mdb1.execute('ROLLBACK TO SAVEPOINT mys;').assertFailed(err_code="40000", err_message="ROLLBACK: finished sucessfuly, but the session's schema could not be found on the current transaction")
+    mdb1.execute('ROLLBACK TO SAVEPOINT mys;').assertFailed(err_code="40000", err_message="ROLLBACK: finished successfully, but the session's schema could not be found on the current transaction")
     mdb1.execute('rollback;').assertFailed()
 
 with SQLTestCase() as mdb1:

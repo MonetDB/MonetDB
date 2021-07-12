@@ -506,9 +506,9 @@ heapinit(BAT *b, const char *buf,
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
 	if (minpos < b->batCount)
-		BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
+		BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
 	if (maxpos < b->batCount)
-		BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
+		BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
 	if (b->theap->free > b->theap->size) {
 		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
 		return -1;
@@ -1621,8 +1621,8 @@ static inline int
 heap_entry(FILE *fp, BAT *b, BUN size)
 {
 	const ValRecord *minprop, *maxprop;
-	minprop = BATgetprop(b, GDK_MIN_POS);
-	maxprop = BATgetprop(b, GDK_MAX_POS);
+	minprop = BATgetprop_nolock(b, GDK_MIN_POS);
+	maxprop = BATgetprop_nolock(b, GDK_MAX_POS);
 	size_t free = b->theap->free;
 	if (size < BUN_NONE) {
 		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk)) {

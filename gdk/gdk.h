@@ -888,6 +888,8 @@ gdk_export void HEAPincref(Heap *h);
  * accesses, it is better to use the iterator, even without the BUNt*
  * macros, since the theaplock is only held very briefly.
  *
+ * Note, bat_iterator must only be used for read-only access.
+ *
  * If BATs are to be modified, higher level code must assure that no
  * other thread is going to modify the same BAT at the same time.  A
  * to-be-modified BAT should not use bat_iterator.  It can use
@@ -1103,9 +1105,9 @@ gdk_export BUN SORTfnd(BAT *b, const void *v);
 gdk_export BUN SORTfndfirst(BAT *b, const void *v);
 gdk_export BUN SORTfndlast(BAT *b, const void *v);
 
-gdk_export BUN ORDERfnd(BAT *b, const void *v);
-gdk_export BUN ORDERfndfirst(BAT *b, const void *v);
-gdk_export BUN ORDERfndlast(BAT *b, const void *v);
+gdk_export BUN ORDERfnd(BAT *b, Heap *oidxh, const void *v);
+gdk_export BUN ORDERfndfirst(BAT *b, Heap *oidxh, const void *v);
+gdk_export BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 

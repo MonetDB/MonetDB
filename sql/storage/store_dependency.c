@@ -213,10 +213,10 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 	rids *users;
 	oid rid;
 
-	if (!l)
+	if (!l || !(users = backend_schema_user_dependencies(tr, schema_id))) {
+		list_destroy(l);
 		return NULL;
-
-	users = backend_schema_user_dependencies(tr, schema_id);
+	}
 
 	for (rid = store->table_api.rids_next(users); !is_oid_nil(rid); rid = store->table_api.rids_next(users)) {
 		v = store->table_api.column_find_value(tr, auth_id, rid);

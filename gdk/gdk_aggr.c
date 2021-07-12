@@ -3716,7 +3716,7 @@ void *
 BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 {
 	const ValRecord *prop;
-	const void *res;
+	const void *res = NULL;
 	size_t s;
 	lng t0 = 0;
 
@@ -3730,24 +3730,50 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (BATcount(b) == 0) {
 		res = ATOMnilptr(b->ttype);
-	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-		res = VALptr(prop);
 	} else {
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL)
+			res = VALptr(prop);
+		else if ((prop = BATgetprop_nolock(b, GDK_MIN_POS)) != NULL) {
+			BATiter bi = bat_iterator_nolock(b);
+			if ((prop = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, BUNtail(bi, prop->val.oval))) != NULL)
+				res = VALptr(prop);
+		}
+		MT_lock_unset(&b->theaplock);
+	}
+	if (res == NULL) {
 		oid pos;
 		BAT *pb = NULL;
+		Heap *oidxh = NULL;
 
-		if (BATcheckorderidx(b) ||
-		    (/* DISABLES CODE */ (0) &&
-		     VIEWtparent(b) &&
-		     (pb = BBP_cache(VIEWtparent(b))) != NULL &&
-		     pb->tbaseoff == b->tbaseoff &&
-		     BATcount(pb) == BATcount(b) &&
-		     pb->hseqbase == b->hseqbase &&
-		     BATcheckorderidx(pb))) {
-			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+		if (BATcheckorderidx(b)) {
+			MT_lock_set(&b->batIdxLock);
+			oidxh = b->torderidx;
+			if (oidxh != NULL)
+				HEAPincref(oidxh);
+			MT_lock_unset(&b->batIdxLock);
+		}
+		if (oidxh == NULL &&
+		    VIEWtparent(b) &&
+		    (pb = BBP_cache(VIEWtparent(b))) != NULL &&
+		    BATcheckorderidx(pb)) {
+			/* no lock on b needed since it's a view */
+			MT_lock_set(&pb->batIdxLock);
+			MT_lock_set(&pb->theaplock);
+			if (pb->tbaseoff == b->tbaseoff &&
+			    BATcount(pb) == BATcount(b) &&
+			    pb->hseqbase == b->hseqbase &&
+			    (oidxh = pb->torderidx) != NULL) {
+				HEAPincref(oidxh);
+			}
+			MT_lock_unset(&pb->batIdxLock);
+			MT_lock_unset(&pb->theaplock);
+		}
+		if (oidxh != NULL) {
+			const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 			BUN r;
 			if (!b->tnonil) {
-				MT_thread_setalgorithm(pb ? "binsearch on parent oidx" : "binsearch on oids");
+				MT_thread_setalgorithm(pb ? "binsearch on parent oidx" : "binsearch on oidx");
 				BATiter bi = bat_iterator(b);
 				r = binsearch(ords, 0, b->ttype, bi.base,
 					      bi.vh ? bi.vh->base : NULL,
@@ -3765,9 +3791,10 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				/* no non-nil values */
 				pos = oid_nil;
 			} else {
-				MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
+				MT_thread_setalgorithm(pb ? "using parent oidx" : "using oidx");
 				pos = ords[r];
 			}
+			HEAPdecref(oidxh, false);
 		} else if ((VIEWtparent(b) == 0 ||
 			    (/* DISABLES CODE */ (0) &&
 			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b))))) &&
@@ -3793,11 +3820,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			BATiter bi = bat_iterator(b);
+			MT_lock_set(&b->theaplock);
+			BATiter bi = bat_iterator_nolock(b);
 			res = BUNtail(bi, pos - b->hseqbase);
-			BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
-			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){pos - b->hseqbase});
-			bat_iterator_end(&bi);
+			BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, res);
+			BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){pos - b->hseqbase});
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {
@@ -3831,7 +3859,7 @@ void *
 BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 {
 	const ValRecord *prop;
-	const void *res;
+	const void *res = NULL;
 	size_t s;
 	BATiter bi;
 	lng t0 = 0;
@@ -3844,21 +3872,47 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (BATcount(b) == 0) {
 		res = ATOMnilptr(b->ttype);
-	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-		res = VALptr(prop);
 	} else {
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL)
+			res = VALptr(prop);
+		else if ((prop = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
+			BATiter bi = bat_iterator_nolock(b);
+			if ((prop = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, BUNtail(bi, prop->val.oval))) != NULL)
+				res = VALptr(prop);
+		}
+		MT_lock_unset(&b->theaplock);
+	}
+	if (res == NULL) {
 		oid pos;
 		BAT *pb = NULL;
+		Heap *oidxh = NULL;
 
-		if (BATcheckorderidx(b) ||
-		    (/* DISABLES CODE */ (0) &&
-		     VIEWtparent(b) &&
-		     (pb = BBP_cache(VIEWtparent(b))) != NULL &&
-		     pb->tbaseoff == b->tbaseoff &&
-		     BATcount(pb) == BATcount(b) &&
-		     pb->hseqbase == b->hseqbase &&
-		     BATcheckorderidx(pb))) {
-			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+		if (BATcheckorderidx(b)) {
+			MT_lock_set(&b->batIdxLock);
+			oidxh = b->torderidx;
+			if (oidxh != NULL)
+				HEAPincref(oidxh);
+			MT_lock_unset(&b->batIdxLock);
+		}
+		if (oidxh == NULL &&
+		    VIEWtparent(b) &&
+		    (pb = BBP_cache(VIEWtparent(b))) != NULL &&
+		    BATcheckorderidx(pb)) {
+			/* no lock on b needed since it's a view */
+			MT_lock_set(&pb->batIdxLock);
+			MT_lock_set(&pb->theaplock);
+			if (pb->tbaseoff == b->tbaseoff &&
+			    BATcount(pb) == BATcount(b) &&
+			    pb->hseqbase == b->hseqbase &&
+			    (oidxh = pb->torderidx) != NULL) {
+				HEAPincref(oidxh);
+			}
+			MT_lock_unset(&pb->batIdxLock);
+			MT_lock_unset(&pb->theaplock);
+		}
+		if (oidxh != NULL) {
+			const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 
 			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
 			pos = ords[BATcount(b) - 1];
@@ -3873,6 +3927,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 					pos = z;
 				bat_iterator_end(&bi);
 			}
+			HEAPdecref(oidxh, false);
 		} else if ((VIEWtparent(b) == 0 ||
 			    (/* DISABLES CODE */ (0) &&
 			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b))))) &&
@@ -3898,13 +3953,14 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			bi = bat_iterator(b);
+			MT_lock_set(&b->theaplock);
+			bi = bat_iterator_nolock(b);
 			res = BUNtail(bi, pos - b->hseqbase);
 			if (b->tnonil) {
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, res);
-				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){pos - b->hseqbase});
+				BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, res);
+				BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){pos - b->hseqbase});
 			}
-			bat_iterator_end(&bi);
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {
@@ -4160,6 +4216,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BUN index, r, p = BATcount(b);
 		BAT *pb = NULL;
 		const oid *ords;
+		Heap *oidxh = NULL;
 
 		bn = COLnew(0, average ? TYPE_dbl : tp, 1, TRANSIENT);
 		if (bn == NULL)
@@ -4167,16 +4224,32 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 		t1 = NULL;
 
-		if (BATcheckorderidx(b) ||
-		    (/* DISABLES CODE */ (0) &&
-		     VIEWtparent(b) &&
-		     (pb = BBP_cache(VIEWtparent(b))) != NULL &&
-		     pb->tbaseoff == b->tbaseoff &&
-		     BATcount(pb) == BATcount(b) &&
-		     pb->hseqbase == b->hseqbase &&
-		     BATcheckorderidx(pb))) {
+		if (BATcheckorderidx(b)) {
+			MT_lock_set(&b->batIdxLock);
+			oidxh = b->torderidx;
+			if (oidxh != NULL)
+				HEAPincref(oidxh);
+			MT_lock_unset(&b->batIdxLock);
+		}
+		if (oidxh == NULL &&
+		    VIEWtparent(b) &&
+		    (pb = BBP_cache(VIEWtparent(b))) != NULL &&
+		    BATcheckorderidx(pb)) {
+			/* no lock on b needed since it's a view */
+			MT_lock_set(&pb->batIdxLock);
+			MT_lock_set(&pb->theaplock);
+			if (pb->tbaseoff == b->tbaseoff &&
+			    BATcount(pb) == BATcount(b) &&
+			    pb->hseqbase == b->hseqbase &&
+			    (oidxh = pb->torderidx) != NULL) {
+				HEAPincref(oidxh);
+			}
+			MT_lock_unset(&pb->batIdxLock);
+			MT_lock_unset(&pb->theaplock);
+		}
+		if (oidxh != NULL) {
 			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
-			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+			ords = (const oid *) oidxh->base + ORDERIDXOFF;
 		} else {
 			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false, false) != GDK_SUCCEED)
 				goto bunins_failed;
@@ -4244,10 +4317,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			v = BUNtail(bi, index);
 			nils += (*atomcmp)(v, dnil) == 0;
 		}
-		bat_iterator_end(&bi);
+		if (oidxh != NULL)
+			HEAPdecref(oidxh, false);
 		if (t1)
 			BBPunfix(t1->batCacheid);
-		if (BUNappend(bn, v, false) != GDK_SUCCEED)
+		gdk_return rc = BUNappend(bn, v, false);
+		bat_iterator_end(&bi);
+		if (rc != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 

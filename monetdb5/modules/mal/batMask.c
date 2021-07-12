@@ -37,8 +37,10 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.mask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if( !b->tkey || !b->tsorted )
+	if( !b->tkey || !b->tsorted ) {
+		BBPunfix(b->batCacheid);
 		throw(SQL, "bat.mask", SQLSTATE(HY002) "Input should be unique and in ascending order");
+	}
 	if (BATcount(b) == 0) {
 		dst = COLnew(0, TYPE_msk, 0, TRANSIENT);
 	} else {
@@ -105,11 +107,14 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.umask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	dst = BATunmask(b);
-	if (dst == NULL) {
+	if (b->ttype != TYPE_msk && !mask_cand(b)) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mask.umask", GDK_EXCEPTION);
+		throw(MAL, "mask.umask", SQLSTATE(42000) "msk type input expected");
 	}
+	dst = BATunmask(b);
+	BBPunfix(b->batCacheid);
+	if (dst == NULL)
+		throw(MAL, "mask.umask", GDK_EXCEPTION);
 	*ret=  dst->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
