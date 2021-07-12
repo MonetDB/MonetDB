@@ -104,8 +104,11 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.umask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	dst = BATunmask(b);
-	if (dst == NULL) {
+	if (b->ttype != TYPE_msk && !mask_cand(b)) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "mask.umask", SQLSTATE(42000) "msk type input expected");
+	}
+	if ((dst = BATunmask(b)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
 	}

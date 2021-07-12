@@ -1042,13 +1042,19 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	}
 	if (updates && (updates->ttype == TYPE_msk || mask_cand(updates))) {
 		oupdates = BATunmask(updates);
-		if (!oupdates)
+		if (!oupdates) {
+			if (otids != tids)
+				bat_destroy(otids);
 			return LOG_ERR;
+		}
 	}
 	if (updates && updates->ttype == TYPE_void) { /* dense later use optimized log structure */
 		oupdates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
-		if (!oupdates)
+		if (!oupdates) {
+			if (otids != tids)
+				bat_destroy(otids);
 			return LOG_ERR;
+		}
 	}
 	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
 	/* currently only one update delta is possible */
@@ -1060,6 +1066,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 			if (BATsort(&sorted, &order, NULL, otids, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 				if (otids != tids)
 					bat_destroy(otids);
+				if (oupdates != updates)
+					bat_destroy(oupdates);
 				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
 			}
