@@ -966,8 +966,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 	bat_iterator_end(&bi);
 	if (!hascand) {
+		MT_lock_set(&b->theaplock);
 		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
 		BATrmprop_nolock(b, GDK_NUNIQUE);
+		MT_lock_unset(&b->theaplock);
 	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;

@@ -3614,7 +3614,7 @@ void *
 BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 {
 	const ValRecord *prop;
-	const void *res;
+	const void *res = NULL;
 	size_t s;
 	lng t0 = 0;
 
@@ -3628,9 +3628,18 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (BATcount(b) == 0) {
 		res = ATOMnilptr(b->ttype);
-	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-		res = VALptr(prop);
 	} else {
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL)
+			res = VALptr(prop);
+		else if ((prop = BATgetprop_nolock(b, GDK_MIN_POS)) != NULL) {
+			BATiter bi = bat_iterator_nolock(b);
+			if ((prop = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, BUNtail(bi, prop->val.oval))) != NULL)
+				res = VALptr(prop);
+		}
+		MT_lock_unset(&b->theaplock);
+	}
+	if (res == NULL) {
 		oid pos;
 		BAT *pb = NULL;
 
@@ -3691,11 +3700,12 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			BATiter bi = bat_iterator(b);
+			MT_lock_set(&b->theaplock);
+			BATiter bi = bat_iterator_nolock(b);
 			res = BUNtail(bi, pos - b->hseqbase);
-			BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
-			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){pos - b->hseqbase});
-			bat_iterator_end(&bi);
+			BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, res);
+			BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){pos - b->hseqbase});
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {
@@ -3729,7 +3739,7 @@ void *
 BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 {
 	const ValRecord *prop;
-	const void *res;
+	const void *res = NULL;
 	size_t s;
 	BATiter bi;
 	lng t0 = 0;
@@ -3742,9 +3752,18 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (BATcount(b) == 0) {
 		res = ATOMnilptr(b->ttype);
-	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-		res = VALptr(prop);
 	} else {
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL)
+			res = VALptr(prop);
+		else if ((prop = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
+			BATiter bi = bat_iterator_nolock(b);
+			if ((prop = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, BUNtail(bi, prop->val.oval))) != NULL)
+				res = VALptr(prop);
+		}
+		MT_lock_unset(&b->theaplock);
+	}
+	if (res == NULL) {
 		oid pos;
 		BAT *pb = NULL;
 
@@ -3796,13 +3815,14 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
 		} else {
-			bi = bat_iterator(b);
+			MT_lock_set(&b->theaplock);
+			bi = bat_iterator_nolock(b);
 			res = BUNtail(bi, pos - b->hseqbase);
 			if (b->tnonil) {
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, res);
-				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){pos - b->hseqbase});
+				BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, res);
+				BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){pos - b->hseqbase});
 			}
-			bat_iterator_end(&bi);
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 	if (aggr == NULL) {

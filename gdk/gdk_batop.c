@@ -1244,8 +1244,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				    atomcmp(VALptr(maxprop), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
-					maxprop = BATsetprop(b, GDK_MAX_VALUE, b->ttype, new);
-					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){updid});
+					MT_lock_set(&b->theaplock);
+					maxprop = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, new);
+					BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){updid});
+					MT_lock_unset(&b->theaplock);
 				} else if (atomcmp(VALptr(maxprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
@@ -1253,8 +1255,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					 * smaller, so we don't know
 					 * anymore which is the
 					 * largest */
-					BATrmprop(b, GDK_MAX_VALUE);
-					BATrmprop(b, GDK_MAX_POS);
+					MT_lock_set(&b->theaplock);
+					BATrmprop_nolock(b, GDK_MAX_VALUE);
+					BATrmprop_nolock(b, GDK_MAX_POS);
+					MT_lock_unset(&b->theaplock);
 					maxprop = NULL;
 				}
 			}
@@ -1263,8 +1267,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				    atomcmp(VALptr(minprop), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
-					minprop = BATsetprop(b, GDK_MIN_VALUE, b->ttype, new);
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
+					MT_lock_set(&b->theaplock);
+					minprop = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, new);
+					BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
+					MT_lock_unset(&b->theaplock);
 				} else if (atomcmp(VALptr(minprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
@@ -1272,8 +1278,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					 * larger, so we don't know
 					 * anymore which is the
 					 * smallest */
-					BATrmprop(b, GDK_MIN_VALUE);
-					BATrmprop(b, GDK_MIN_POS);
+					MT_lock_set(&b->theaplock);
+					BATrmprop_nolock(b, GDK_MIN_VALUE);
+					BATrmprop_nolock(b, GDK_MIN_POS);
+					MT_lock_unset(&b->theaplock);
 					minprop = NULL;
 				}
 			}
@@ -1427,10 +1435,12 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (is_oid_nil(ni.tseq)) {
 				/* we may or may not overwrite the old
 				 * min/max values */
-				BATrmprop(b, GDK_MAX_VALUE);
-				BATrmprop(b, GDK_MIN_VALUE);
-				BATrmprop(b, GDK_MAX_POS);
-				BATrmprop(b, GDK_MIN_POS);
+				MT_lock_set(&b->theaplock);
+				BATrmprop_nolock(b, GDK_MAX_VALUE);
+				BATrmprop_nolock(b, GDK_MIN_VALUE);
+				BATrmprop_nolock(b, GDK_MAX_POS);
+				BATrmprop_nolock(b, GDK_MIN_POS);
+				MT_lock_unset(&b->theaplock);
 				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = oid_nil;
 				b->tnil = true;
@@ -1439,22 +1449,26 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				/* we know min/max of n, so we know
 				 * the new min/max of b if those of n
 				 * are smaller/larger than the old */
+				MT_lock_set(&b->theaplock);
 				if (minprop && v <= minprop->val.oval) {
-					BATsetprop(b, GDK_MIN_VALUE, TYPE_oid, &v);
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){pos});
+					BATsetprop_nolock(b, GDK_MIN_VALUE, TYPE_oid, &v);
+					BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){pos});
 				} else {
-					BATrmprop(b, GDK_MIN_VALUE);
-					BATrmprop(b, GDK_MIN_POS);
+					BATrmprop_nolock(b, GDK_MIN_VALUE);
+					BATrmprop_nolock(b, GDK_MIN_POS);
 				}
+				MT_lock_unset(&b->theaplock);
 				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = v++;
+				MT_lock_set(&b->theaplock);
 				if (maxprop && --v >= maxprop->val.oval) {
-					BATsetprop(b, GDK_MAX_VALUE, TYPE_oid, &v);
-					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){pos + ni.count - 1});
+					BATsetprop_nolock(b, GDK_MAX_VALUE, TYPE_oid, &v);
+					BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){pos + ni.count - 1});
 				} else {
-					BATrmprop(b, GDK_MAX_VALUE);
-					BATrmprop(b, GDK_MAX_POS);
+					BATrmprop_nolock(b, GDK_MAX_VALUE);
+					BATrmprop_nolock(b, GDK_MAX_POS);
 				}
+				MT_lock_unset(&b->theaplock);
 			}
 		} else {
 			/* if the extremes of n are at least as
@@ -1483,8 +1497,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				else
 					BATrmprop(b, GDK_MIN_POS);
 			} else {
-				BATrmprop(b, GDK_MIN_VALUE);
-				BATrmprop(b, GDK_MIN_POS);
+				MT_lock_set(&b->theaplock);
+				BATrmprop_nolock(b, GDK_MIN_VALUE);
+				BATrmprop_nolock(b, GDK_MIN_POS);
+				MT_lock_unset(&b->theaplock);
 			}
 			memcpy(Tloc(b, pos), ni.base,
 			       ni.count << b->tshift);
@@ -1582,8 +1598,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				    atomcmp(VALptr(maxprop), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
-					maxprop = BATsetprop(b, GDK_MAX_VALUE, b->ttype, new);
-					BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){updid});
+					MT_lock_set(&b->theaplock);
+					maxprop = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, new);
+					BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){updid});
+					MT_lock_unset(&b->theaplock);
 				} else if (atomcmp(VALptr(maxprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
@@ -1591,8 +1609,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					 * smaller, so we don't know
 					 * anymore which is the
 					 * largest */
-					BATrmprop(b, GDK_MAX_VALUE);
-					BATrmprop(b, GDK_MAX_POS);
+					MT_lock_set(&b->theaplock);
+					BATrmprop_nolock(b, GDK_MAX_VALUE);
+					BATrmprop_nolock(b, GDK_MAX_POS);
+					MT_lock_unset(&b->theaplock);
 					maxprop = NULL;
 				}
 			}
@@ -1601,8 +1621,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				    atomcmp(VALptr(minprop), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
-					minprop = BATsetprop(b, GDK_MIN_VALUE, b->ttype, new);
-					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
+					MT_lock_set(&b->theaplock);
+					minprop = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, new);
+					BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){updid});
+					MT_lock_unset(&b->theaplock);
 				} else if (atomcmp(VALptr(minprop), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
@@ -1610,8 +1632,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					 * larger, so we don't know
 					 * anymore which is the
 					 * smallest */
-					BATrmprop(b, GDK_MIN_VALUE);
-					BATrmprop(b, GDK_MIN_POS);
+					MT_lock_set(&b->theaplock);
+					BATrmprop_nolock(b, GDK_MIN_VALUE);
+					BATrmprop_nolock(b, GDK_MIN_POS);
+					MT_lock_unset(&b->theaplock);
 					minprop = NULL;
 				}
 			}
@@ -1915,10 +1939,10 @@ BATordered(BAT *b)
 
 	/* In order that multiple threads don't scan the same BAT at the
 	 * same time (happens a lot with mitosis/mergetable), we use a
-	 * lock.  We reuse the theaplock lock for this, not because this
+	 * lock.  We reuse the batIdxLock lock for this, not because this
 	 * scanning interferes with heap reference counting, but because
 	 * it's there, and not so likely to be used at the same time. */
-	MT_lock_set(&b->theaplock);
+	MT_lock_set(&b->batIdxLock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->tsorted && b->tnosorted == 0) {
 		b->batDirtydesc = true;
@@ -2019,7 +2043,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&b->theaplock);
+	MT_lock_unset(&b->batIdxLock);
 	return b->tsorted;
 }
 
@@ -2065,7 +2089,7 @@ BATordered_rev(BAT *b)
 		return is_oid_nil(b->tseqbase);
 	if (BATtdense(b) || b->tnorevsorted > 0)
 		return false;
-	MT_lock_set(&b->theaplock);
+	MT_lock_set(&b->batIdxLock);
 	BATiter bi = bat_iterator_nolock(b);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		b->batDirtydesc = true;
@@ -2109,7 +2133,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&b->theaplock);
+	MT_lock_unset(&b->batIdxLock);
 	return b->trevsorted;
 }
 
@@ -2834,9 +2858,9 @@ ValPtr
 BATgetprop_try(BAT *b, enum prop_t idx)
 {
 	ValPtr p = NULL;
-	if (MT_lock_try(&b->batIdxLock)) {
+	if (MT_lock_try(&b->theaplock)) {
 		p = BATgetprop_nolock(b, idx);
-		MT_lock_unset(&b->batIdxLock);
+		MT_lock_unset(&b->theaplock);
 	}
 	return p;
 }
@@ -2846,7 +2870,7 @@ BATgetprop(BAT *b, enum prop_t idx)
 {
 	ValPtr p;
 
-	MT_lock_set(&b->batIdxLock);
+	MT_lock_set(&b->theaplock);
 	p = BATgetprop_nolock(b, idx);
 	if (p == NULL) {
 		/* if looking for the min/max value, we may be able to
@@ -2856,23 +2880,21 @@ BATgetprop(BAT *b, enum prop_t idx)
 		switch (idx) {
 		case GDK_MIN_VALUE:
 			if ((p = BATgetprop_nolock(b, GDK_MIN_POS)) != NULL) {
-				BATiter bi = bat_iterator(b);
+				BATiter bi = bat_iterator_nolock(b);
 				p = BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, BUNtail(bi, p->val.oval));
-				bat_iterator_end(&bi);
 			}
 			break;
 		case GDK_MAX_VALUE:
 			if ((p = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
-				BATiter bi = bat_iterator(b);
+				BATiter bi = bat_iterator_nolock(b);
 				p = BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, BUNtail(bi, p->val.oval));
-				bat_iterator_end(&bi);
 			}
 			break;
 		default:
 			break;
 		}
 	}
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return p;
 }
 
@@ -2880,18 +2902,18 @@ ValPtr
 BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	ValPtr p;
-	MT_lock_set(&b->batIdxLock);
+	MT_lock_set(&b->theaplock);
 	p = BATsetprop_nolock(b, idx, type, v);
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 	return p;
 }
 
 void
 BATrmprop(BAT *b, enum prop_t idx)
 {
-	MT_lock_set(&b->batIdxLock);
+	MT_lock_set(&b->theaplock);
 	BATrmprop_nolock(b, idx);
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&b->theaplock);
 }
 
 
