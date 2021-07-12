@@ -36,8 +36,10 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.mask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if( !b->tkey || !b->tsorted )
+	if( !b->tkey || !b->tsorted ) {
+		BBPunfix(b->batCacheid);
 		throw(SQL, "bat.mask", SQLSTATE(HY002) "Input should be unique and in ascending order");
+	}
 	if (BATcount(b) == 0) {
 		dst = COLnew(0, TYPE_msk, 0, TRANSIENT);
 	} else {
