@@ -1318,11 +1318,12 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 	} else if (is_new || cs->cleared) {
 		BAT *b = temp_descriptor(cs->bid);
 
-		if (b == NULL)
+		if (b == NULL) {
 			res = LOG_ERR;
-		else if (BATcount(b)==0 && BATappend(b, updates, NULL, true) != GDK_SUCCEED) /* alter add column */
-			res = LOG_ERR;
-		else if (BATreplace(b, otids, updates, true) != GDK_SUCCEED)
+		} else if (BATcount(b)==0) {
+			if (BATappend(b, updates, NULL, true) != GDK_SUCCEED) /* alter add column */
+				res = LOG_ERR;
+		} else if (BATreplace(b, otids, updates, true) != GDK_SUCCEED)
 			res = LOG_ERR;
 		BBPcold(b->batCacheid);
 		bat_destroy(b);
