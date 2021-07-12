@@ -1014,8 +1014,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	TRC_INFO(FITS, "Loading %ld rows in table %s\n", rows, tname);
 
-	if (store->storage_api.claim_tab(m->session->tr, tbl, rows, &offset, &pos) != LOG_OK)
-		throw(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (store->storage_api.claim_tab(m->session->tr, tbl, rows, &offset, &pos) != LOG_OK) {
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
 		int time0 = GDKms();
@@ -1025,11 +1027,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		tmp = COLnew(0, mtype, rows, TRANSIENT);
 		if (tmp == NULL){
-			GDKfree(tpcode);
-			GDKfree(rep);
-			GDKfree(wid);
-			GDKfree(cname);
-			throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 		if (mtype == TYPE_blob) {
 			long i;
@@ -1040,42 +1039,34 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nilptr = ATOMnilptr(mtype);
 
 			if (v == NULL) {
-				GDKfree(tpcode);
-				GDKfree(rep);
-				GDKfree(wid);
-				GDKfree(cname);
-				throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				BBPreclaim(tmp);
+				msg = createException(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
 			}
 
 			for(i = 0; i < rows; i++) {
 				v[i] = (blob *)GDKmalloc(offsetof(blob, data) + nbytes);
 				if (v[i] == NULL) {
-					GDKfree(tpcode);
-					GDKfree(rep);
-					GDKfree(wid);
-					GDKfree(cname);
+					BBPreclaim(tmp);
 					long k = 0;
 					for (k = 0; k < i; k++) {
 						GDKfree(v[k]);
 					}
 					GDKfree(v);
-					throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
 					      (void *)v[i]->data, &anynull, &status);
 				v[i]->nitems = nbytes;
 				if (BUNappend(tmp, v[i], false) != GDK_SUCCEED) {
 					BBPreclaim(tmp);
-					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					GDKfree(tpcode);
-					GDKfree(rep);
-					GDKfree(wid);
-					GDKfree(cname);
 					for (i = 0; i < rows; i++) {
 						GDKfree(v[i]);
 					}
 					GDKfree(v);
-					return msg;
+					msg = createException(MAL,"fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 			}
 
@@ -1122,26 +1113,23 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (status) {
 			char buf[FLEN_ERRMSG + 1];
 			fits_read_errmsg(buf);
+			BBPreclaim(tmp);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
 			break;
 		}
 
 		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		if (store->storage_api.append_col(m->session->tr, col, offset, pos, tmp, BATcount(tmp), TYPE_bat) != LOG_OK) {
-			if (pos)
-				bat_destroy(pos);
-			BBPunfix(tmp->batCacheid);
+			BBPreclaim(tmp);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;
 		}
 		TRC_INFO(FITS, "Total %d ms\n", GDKms() - time0);
-		BBPunfix(tmp->batCacheid);
+		BBPreclaim(tmp);
 	}
-	if (pos)
-		bat_destroy(pos);
 
   bailout:
-
+	bat_destroy(pos);
 	GDKfree(tpcode);
 	GDKfree(rep);
 	GDKfree(wid);
