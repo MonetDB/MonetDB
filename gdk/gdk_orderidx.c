@@ -111,6 +111,7 @@ BATcheckorderidx(BAT *b)
 					    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
 					    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
 						close(fd);
+						ATOMIC_INIT(&hp->refs, 1);
 						b->torderidx = hp;
 						TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
@@ -127,7 +128,7 @@ BATcheckorderidx(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->torderidx != NULL;
-	if(ret)
+	if (ret)
 		TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
@@ -213,6 +214,7 @@ BATorderidx(BAT *b, bool stable)
 					return GDK_FAIL;
 				}
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
+				ATOMIC_INIT(&m->refs, 1);
 				b->torderidx = m;
 				b->batDirtydesc = true;
 				persistOIDX(b);
@@ -479,6 +481,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		GDKfree(q);
 	}
 
+	ATOMIC_INIT(&m->refs, 1);
 	b->torderidx = m;
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
@@ -510,12 +513,11 @@ OIDXfree(BAT *b)
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
 			if (GDKinmemory(b->theap->farmid)) {
 				b->torderidx = NULL;
-				HEAPfree(hp, true);
+				HEAPdecref(hp, true);
 			} else {
 				b->torderidx = (Heap *) 1;
-				HEAPfree(hp, false);
+				HEAPdecref(hp, false);
 			}
-			GDKfree(hp);
 		}
 		MT_lock_unset(&b->batIdxLock);
 	}
@@ -537,8 +539,7 @@ OIDXdestroy(BAT *b)
 				  BBP_physical(b->batCacheid),
 				  "torderidx");
 		} else if (hp != NULL) {
-			HEAPdelete(hp, BBP_physical(b->batCacheid), "torderidx");
-			GDKfree(hp);
+			HEAPdecref(hp, true);
 		}
 	}
 }
