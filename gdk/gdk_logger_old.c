@@ -170,7 +170,7 @@ static gdk_return tr_grow(trans *tr);
 static BUN
 log_find(BAT *b, BAT *d, int val)
 {
-	BATiter cni = bat_iterator(b);
+	BATiter cni = bat_iterator_nolock(b);
 	BUN p;
 
 	assert(b->ttype == TYPE_int);
@@ -181,7 +181,6 @@ log_find(BAT *b, BAT *d, int val)
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
-				bat_iterator_end(&cni);
 				return p;
 			}
 		}
@@ -194,13 +193,11 @@ log_find(BAT *b, BAT *d, int val)
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE) {
-					bat_iterator_end(&cni);
 					return p;
 				}
 			}
 		}
 	}
-	bat_iterator_end(&cni);
 	return BUN_NONE;
 }
 
@@ -300,7 +297,7 @@ log_bid
 old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 {
 	if (!tpe || !lg->with_ids) {
-		BATiter cni = bat_iterator(lg->catalog_nme);
+		BATiter cni = bat_iterator_nolock(lg->catalog_nme);
 		BUN p;
 
 		if (BAThash(lg->catalog_nme) == GDK_SUCCEED) {
@@ -311,16 +308,14 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 					oid lid = *(oid*) Tloc(lg->catalog_oid, p);
 					if (!lid) {
 						MT_rwlock_rdunlock(&cni.b->thashlock);
-						bat_iterator_end(&cni);
 						return *(log_bid *) Tloc(lg->catalog_bid, p);
 					}
 				}
 			}
 			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
-		bat_iterator_end(&cni);
 	} else {
-		BATiter cni = bat_iterator(lg->catalog_oid);
+		BATiter cni = bat_iterator_nolock(lg->catalog_oid);
 		BUN p;
 
 		if (BAThash(lg->catalog_oid) == GDK_SUCCEED) {
@@ -331,14 +326,12 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 				if (*(char*)Tloc(lg->catalog_tpe, p) == tpe) {
 					if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 						MT_rwlock_rdunlock(&cni.b->thashlock);
-						bat_iterator_end(&cni);
 						return *(log_bid *) Tloc(lg->catalog_bid, p);
 					}
 				}
 			}
 			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
-		bat_iterator_end(&cni);
 	}
 	return 0;
 }
