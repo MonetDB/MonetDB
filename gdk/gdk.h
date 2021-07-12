@@ -888,6 +888,8 @@ gdk_export void HEAPincref(Heap *h);
  * accesses, it is better to use the iterator, even without the BUNt*
  * macros, since the theaplock is only held very briefly.
  *
+ * Note, bat_iterator must only be used for read-only access.
+ *
  * If BATs are to be modified, higher level code must assure that no
  * other thread is going to modify the same BAT at the same time.  A
  * to-be-modified BAT should not use bat_iterator.  It can use

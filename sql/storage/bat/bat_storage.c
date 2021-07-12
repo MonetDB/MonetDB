@@ -320,9 +320,6 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 		return LOG_ERR;
 	}
 
-	if (nr > BATcount(b))
-		BATsetcount(b, nr);
-
 	/* disable all properties here */
 	b->tsorted = false;
 	b->trevsorted = false;
@@ -334,13 +331,12 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 	b->tnokey[1] = 0;
 
 	uint32_t *restrict dst;
-	BATiter bi = bat_iterator(b);
 	for (; s ; s=s->next) {
 		if (s->ts == tr->tid && s->end != s->start) {
 			b->batDirtydesc = true;
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
-			dst = ((uint32_t*)bi.base) + (s->start/32);
+			dst = (uint32_t *) Tloc(b, 0) + (s->start/32);
 			uint32_t cur = 0;
 			if (s->deleted) {
 				size_t used = pos&31, end = 32;
@@ -385,7 +381,9 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 			}
 		}
 	}
-	bat_iterator_end(&bi);
+	if (nr > BATcount(b))
+		BATsetcount(b, nr);
+
 	bat_destroy(b);
 	return LOG_OK;
 }
