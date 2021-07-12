@@ -1757,8 +1757,8 @@ store_load(sqlstore *store, sql_allocator *pa)
 
 	/* for now use malloc and free */
 	store->active = list_create(NULL);
-	store->dependencies = hash_new(NULL, 1024, (fkeyvalue)&dep_hash);
-	store->depchanges = hash_new(NULL, 1024, (fkeyvalue)&dep_hash);
+	store->dependencies = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
+	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 
 	if (store->first) {
 		/* cannot initialize database in readonly mode */
