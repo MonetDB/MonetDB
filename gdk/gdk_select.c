@@ -1415,12 +1415,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		const ValRecord *prop;
 		int c;
 
-		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
 			c = ATOMcmp(t, tl, VALptr(prop));
 			if (c < 0 || (li && c == 0)) {
-				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
 					c = ATOMcmp(t, th, VALptr(prop));
 					if (c > 0 || (hi && c == 0)) {
+						MT_lock_unset(&b->theaplock);
 						/* tl..th range fully
 						 * inside MIN..MAX
 						 * range of values in
@@ -1439,45 +1441,56 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			}
 		}
+		MT_lock_unset(&b->theaplock);
 	} else if (!equi || !lnil) {
 		const ValRecord *prop;
 		int c;
 
-		if (hval && (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, th, VALptr(prop));
-			if (c < 0 || (!hi && c == 0)) {
-				/* smallest value in BAT larger than
-				 * what we're looking for */
-				MT_thread_setalgorithm("select: nothing, out of range");
-				bn = BATdense(0, 0, 0);
-				TRC_DEBUG(ALGO, "b="
-					  ALGOBATFMT ",s="
-					  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-					  " (" LLFMT " usec): "
-					  "nothing, out of range\n",
-					  ALGOBATPAR(b),
-					  ALGOOPTBATPAR(s), anti,
-					  ALGOOPTBATPAR(bn), GDKusec() - t0);
-				return bn;
+		if (hval) {
+			MT_lock_set(&b->theaplock);
+			if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
+				c = ATOMcmp(t, th, VALptr(prop));
+				if (c < 0 || (!hi && c == 0)) {
+					MT_lock_unset(&b->theaplock);
+					/* smallest value in BAT larger than
+					 * what we're looking for */
+					MT_thread_setalgorithm("select: nothing, out of range");
+					bn = BATdense(0, 0, 0);
+					TRC_DEBUG(ALGO, "b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+						  " (" LLFMT " usec): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti,
+						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+					return bn;
+				}
 			}
+			MT_lock_unset(&b->theaplock);
 		}
-		if (lval && (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(prop));
-			if (c > 0 || (!li && c == 0)) {
-				/* largest value in BAT smaller than
-				 * what we're looking for */
-				MT_thread_setalgorithm("select: nothing, out of range");
-				bn = BATdense(0, 0, 0);
-				TRC_DEBUG(ALGO, "b="
-					  ALGOBATFMT ",s="
-					  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-					  " (" LLFMT " usec): "
-					  "nothing, out of range\n",
-					  ALGOBATPAR(b),
-					  ALGOOPTBATPAR(s), anti,
-					  ALGOOPTBATPAR(bn), GDKusec() - t0);
-				return bn;
+		if (lval) {
+			MT_lock_set(&b->theaplock);
+			if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
+				c = ATOMcmp(t, tl, VALptr(prop));
+				if (c > 0 || (!li && c == 0)) {
+					MT_lock_unset(&b->theaplock);
+					/* largest value in BAT smaller than
+					 * what we're looking for */
+					MT_thread_setalgorithm("select: nothing, out of range");
+					bn = BATdense(0, 0, 0);
+					TRC_DEBUG(ALGO, "b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+						  " (" LLFMT " usec): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti,
+						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+					return bn;
+				}
 			}
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 
