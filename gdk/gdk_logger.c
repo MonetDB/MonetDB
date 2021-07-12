@@ -1465,11 +1465,8 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 				TRC_WARNING(GDK, "Failed to set bat(%d) transient\n", bids[pos]);
 				if (!lb)
 					err++;
-				else
-					lids[pos] = -1; /* mark as transient */
-			} else {
-				lids[pos] = -1; /* mark as transient */
 			}
+			lids[pos] = -1; /* mark as transient */
 			logbat_destroy(lb);
 		}
 	}

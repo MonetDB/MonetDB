@@ -771,25 +771,32 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(fname);
 
 	/* Get info for variable vname from NetCDF file */
-	if ( (retval = nc_inq_varid(ncid, vname, &varid)) )
+	if ( (retval = nc_inq_varid(ncid, vname, &varid)) ) {
+		nc_close(ncid);
 		return createException(MAL, "netcdf.importvar",
 			   SQLSTATE(NC000) "Cannot read variable %s: %s",
 			   vname, nc_strerror(retval));
-	if ( (retval = nc_inq_var(ncid, varid, vname, &vtype, &vndims, vdims, &vnatts)))
+	}
+	if ( (retval = nc_inq_var(ncid, varid, vname, &vtype, &vndims, vdims, &vnatts))) {
+		nc_close(ncid);
 		return createException(MAL, "netcdf.importvar",
 				SQLSTATE(NC000) "Cannot read variable %d : %s",
 				varid, nc_strerror(retval));
+	}
 
 	/* compose 'create table' statement in the buffer */
 	dname = (char **) GDKzalloc( sizeof(char *) * vndims);
-	if (dname == NULL)
+	if (dname == NULL) {
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < vndims; i++) {
 		dname[i] = (char *) GDKzalloc(NC_MAX_NAME + 1);
 		if(!dname[i]) {
 			for (j = 0; j < i; j++)
 				GDKfree(dname[j]);
 			GDKfree(dname);
+			nc_close(ncid);
 			throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
@@ -800,7 +807,10 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dim(ncid, vdims[i], dname[i], &dlen))) {
+			for (j = 0; j < vndims; j++)
+				GDKfree(dname[j]);
 			GDKfree(dname);
+			nc_close(ncid);
 			return createException(MAL, "netcdf.importvar",
 								   SQLSTATE(NC000) "Cannot read dimension %d : %s",
 								   vdims[i], nc_strerror(retval));
@@ -822,21 +832,30 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* execute 'create table ' */
 	msg = SQLstatementIntern(cntxt, s, "netcdf.importvar", TRUE, FALSE, NULL);
 	if (msg != MAL_SUCCEED){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
+		nc_close(ncid);
 		return msg;
 	}
 
 /* load variable data */
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
 	if (dim_bids == NULL){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);
 	if ( msg != MAL_SUCCEED ) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
+		nc_close(ncid);
 		return msg;
 	}
 
@@ -844,40 +863,54 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	aname_sys = toLower(aname);
 	arr_table = mvc_bind_table(m, sch, aname_sys);
 	if (arr_table == NULL){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
-		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "netcdf table %s missing\n", aname_sys);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "netcdf table %s missing\n", aname_sys);
 	}
 
 	col = mvc_bind_column(m, arr_table, "value");
 	if (col == NULL){
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
-		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.value\n", aname_sys);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.value\n", aname_sys);
 	}
 
 	vbat = BATdescriptor(vbatid);
 	if(vbat == NULL) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
-		return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		nc_close(ncid);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	BUN offset;
 	BAT *pos = NULL;
 	if (store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat), &offset, &pos) != LOG_OK) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
 		BBPunfix(vbatid);
 		BBPrelease(vbatid);
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (!isNew(arr_table) && sql_trans_add_dependency_change(m->session->tr, arr_table->base.id, dml) != LOG_OK) {
+		for (i = 0; i < vndims; i++)
+			GDKfree(dname[i]);
 		GDKfree(dname);
 		GDKfree(dim_bids);
 		BBPunfix(vbatid);
 		BBPrelease(vbatid);
-		if (pos)
-			bat_destroy(pos);
+		bat_destroy(pos);
+		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	store->storage_api.append_col(m->session->tr, col, offset, pos, vbat, BATcount(vbat), TYPE_bat);
@@ -889,29 +922,36 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < vndims; i++){
 		col = mvc_bind_column(m, arr_table, dname[i]);
 		if (col == NULL){
+			for (i = 0; i < vndims; i++)
+				GDKfree(dname[i]);
 			GDKfree(dname);
 			GDKfree(dim_bids);
+			bat_destroy(pos);
+			nc_close(ncid);
 			throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
 		}
 
 		dimbat = BATdescriptor(dim_bids[i]);
 		if(dimbat == NULL) {
+			for (i = 0; i < vndims; i++)
+				GDKfree(dname[i]);
 			GDKfree(dname);
 			GDKfree(dim_bids);
-			return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			bat_destroy(pos);
+			nc_close(ncid);
+			throw(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		store->storage_api.append_col(m->session->tr, col, offset, pos, dimbat, BATcount(dimbat), TYPE_bat);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
 		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;
 	}
-	bat_destroy(pos);
 
 	for (i = 0; i < vndims; i++)
-        	GDKfree(dname[i]);
+		GDKfree(dname[i]);
 	GDKfree(dname);
 	GDKfree(dim_bids);
-
+	bat_destroy(pos);
 	nc_close(ncid);
 	return msg;
 }

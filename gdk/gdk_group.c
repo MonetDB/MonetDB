@@ -699,10 +699,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		else if (BATtrevordered(g))
 			maxgrp = * (oid *) Tloc(g, 0);
 		else {
-			prop = BATgetprop(g, GDK_MAX_VALUE);
+			MT_lock_set(&b->theaplock);
+			prop = BATgetprop_nolock(g, GDK_MAX_VALUE);
 			if (prop)
 				maxgrp = prop->val.oval;
-			else if (BATordered(g) && BATordered_rev(g))
+			MT_lock_unset(&b->theaplock);
+			if (is_oid_nil(maxgrp) &&
+			    BATordered(g) &&
+			    BATordered_rev(g))
 				maxgrp = 0;
 		}
 		if (maxgrp == 0)
@@ -804,10 +808,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = b->thash->nunique;
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
-		if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
 			maxgrps = prop->val.oval;
 		else
 			maxgrps = cnt / 10;
+		MT_lock_unset(&b->theaplock);
 	}
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
