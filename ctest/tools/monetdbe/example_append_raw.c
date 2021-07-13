@@ -74,6 +74,13 @@ main(void)
 	if ((err = monetdbe_append(mdbe, "sys", "test", (monetdbe_column**) &dcol, 6)) != NULL)
 		error(err)
 
+	// str with wrong utf8
+	char* dstr2[2] = { "\xc3\x28", "\xe2\x28\xa1" };
+	monetdbe_column col12 = { .type = monetdbe_str, .data = &dstr2, .count = 2 };
+	monetdbe_column* dcol2[6] = { &col0, &col12, &col2, &col3, &col4, &col5 };
+	if ((err = monetdbe_append(mdbe, "sys", "test", (monetdbe_column**) &dcol2, 6)) == NULL)
+		error("Invalid UTF-8 string expected")
+
 	if ((err = monetdbe_query(mdbe, "SELECT * FROM test; ", &result, NULL)) != NULL)
 		error(err)
 	fprintf(stdout, "Query result after append with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
