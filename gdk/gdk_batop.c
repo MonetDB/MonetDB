@@ -2328,8 +2328,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	if (VIEWtparent(b)) {
 		pb = BBP_cache(VIEWtparent(b));
-		if (/* DISABLES CODE */ (1) ||
-		    b->tbaseoff != pb->tbaseoff ||
+		if (b->tbaseoff != pb->tbaseoff ||
 		    BATcount(b) != BATcount(pb) ||
 		    b->hseqbase != pb->hseqbase ||
 		    BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)
@@ -2348,6 +2347,9 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				oidxh = pb->torderidx;
 				HEAPincref(oidxh);
 			}
+			mkorderidx = false;
+		} else if (b != pb) {
+			/* don't build orderidx on parent bat */
 			mkorderidx = false;
 		} else if (mkorderidx) {
 			/* keep lock when going to create */
