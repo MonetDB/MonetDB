@@ -132,9 +132,9 @@ with SQLTestCase() as mdb1:
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute("ALTER TABLE parent9 ADD TABLE parent10;").assertSucceeded()
-        mdb2.execute("ALTER TABLE parent10 ADD TABLE parent9;").assertFailed(err_code="42000", err_message="ALTER TABLE: transaction conflict detected")
+        mdb2.execute("ALTER TABLE parent10 ADD TABLE parent9;").assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
-        mdb2.execute('rollback;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('drop table myt;').assertSucceeded()
