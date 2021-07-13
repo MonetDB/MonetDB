@@ -1121,9 +1121,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							else {
 								BATsetcount(ins, ucnt); /* all full updates  */
 								msk = (int*)Tloc(ins, 0);
-								int end = (int) ((ucnt+31)/32);
-								for (int i=0; i<end; i++)
-									msk[i] = 0;
+								BUN end = (ucnt+31)/32;
+								memset(msk, 0, end * sizeof(int));
 							}
 						}
 						for (oid i = 0, rid = start; rid < lend && res == LOG_OK; rid++, i++) {
@@ -1165,9 +1164,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							} else {
 								BATsetcount(ins, ucnt); /* all full updates  */
 								msk = (int*)Tloc(ins, 0);
-								int end = (int) ((ucnt+31)/32);
-								for (int i=0; i<end; i++)
-									msk[i] = 0;
+								BUN end = (ucnt+31)/32;
+								memset(msk, 0, end * sizeof(int));
 							}
 						}
 						ptr upd = BUNtail(upi, i);
