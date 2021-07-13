@@ -180,70 +180,6 @@ strLocate(Heap *h, const char *v)
 #define likely(expr)	(expr)
 #endif
 
-/*
- * UTF-8 encoding is as follows:
- * U-00000000 - U-0000007F: 0xxxxxxx
- * U-00000080 - U-000007FF: 110zzzzx 10xxxxxx
- * U-00000800 - U-0000FFFF: 1110zzzz 10zxxxxx 10xxxxxx
- * U-00010000 - U-0010FFFF: 11110zzz 10zzxxxx 10xxxxxx 10xxxxxx
- *
- * To be correctly coded UTF-8, the sequence should be the shortest
- * possible encoding of the value being encoded.  This means that at
- * least one of the z bits must be non-zero.  Also note that the four
- * byte sequence can encode more than is allowed and that the values
- * U+D800..U+DFFF are not allowed to be encoded.
- */
-static inline gdk_return
-checkUTF8(const char *v)
-{
-	/* It is unlikely that this functions returns GDK_FAIL, because
-	 * it is likely that the string presented is a correctly coded
-	 * UTF-8 string.  So we annotate the tests that are very
-	 * unlikely to succeed, i.e. the ones that lead to a return of
-	 * GDK_FAIL, as being expected to return 0 using the
-	 * __builtin_expect function. */
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8 */
-		for (size_t i = 0; v[i]; i++) {
-			/* we do not annotate all tests, only the ones
-			 * leading directly to an unlikely return
-			 * statement */
-			if ((v[i] & 0x80) == 0) {
-				;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				if (unlikely((v[i] & 0x1E) == 0))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				if ((v[i++] & 0x0F) == 0) {
-					if (unlikely((v[i] & 0xE0) != 0xA0))
-						return GDK_FAIL;
-				} else {
-					if (unlikely((v[i] & 0xC0) != 0x80))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				if ((v[i++] & 0x07) == 0) {
-					if (unlikely((v[i] & 0x30) == 0))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else {
-				return GDK_FAIL;
-			}
-		}
-	}
-	return GDK_SUCCEED;
-}
-
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
 {
@@ -307,7 +243,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
 #ifndef NDEBUG
-	if (checkUTF8(v) != GDK_SUCCEED) {
+	if (!checkUTF8(v)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return 0;
 	}
@@ -654,13 +590,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
  * Convert a GDK string value to something printable.
  */
 /* all but control characters (in range 0 to 31) and DEL */
-#ifdef ASCII_CHR
-/* ASCII printable characters */
-#define printable_chr(ch)	(' ' <= (ch) && (ch) <= '~')
-#else
-/* everything except ASCII control characters */
 #define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
-#endif
 
 size_t
 escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
@@ -676,7 +606,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 		    || (sep1len && strncmp(src + end, sep1, sep1len) == 0)
 		    || (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
 			sz += 2;
-#ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
 			   0200 <= ((int) src[end + 1] & 0377) &&
 			   ((int) src[end + 1] & 0377) <= 0237) {
@@ -688,7 +617,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 			 * 1, together that's 8, i.e. the width of two
 			 * backslash-escaped octal coded characters */
 			sz += 7;
-#endif
 		} else if (!printable_chr(src[end])) {
 			sz += 4;
 		} else {
@@ -707,16 +635,13 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 	sep2len = sep2 ? strlen(sep2) : 0;
 	for (; src[cur] && l < dstlen; cur++)
 		if (!printable_chr(src[cur])
-#ifndef ASCII_CHR
 		    || (src[cur] == '\302'
 			&& 0200 <= (src[cur + 1] & 0377)
 			&& ((int) src[cur + 1] & 0377) <= 0237)
 		    || (cur > 0
 			&& src[cur - 1] == '\302'
 			&& 0200 <= (src[cur] & 0377)
-			&& (src[cur] & 0377) <= 0237)
-#endif
-			) {
+			&& (src[cur] & 0377) <= 0237)) {
 			dst[l++] = '\\';
 			switch (src[cur]) {
 			case '\t':
@@ -806,7 +731,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (checkUTF8(a) != GDK_SUCCEED) {
+	if (!checkUTF8(a)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return GDK_FAIL;
 	}

@@ -302,15 +302,18 @@ VIEWunlink(BAT *b)
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = NULL;
 		}
+
 		MT_lock_unset(&b->theaplock);
 
-		/* unlink properties shared with parent */
-		if (tpb && b->tprops && b->tprops == tpb->tprops)
-			b->tprops = NULL;
-
+		MT_lock_set(&b->batIdxLock);
 		/* unlink imprints shared with parent */
-		if (tpb && b->timprints && b->timprints == tpb->timprints)
+		if (b->timprints &&
+		    b->timprints != (Imprints *) 1 &&
+		    b->timprints->imprints.parentid != b->batCacheid) {
+			IMPSdecref(b->timprints, false);
 			b->timprints = NULL;
+		}
+		MT_lock_unset(&b->batIdxLock);
 	}
 }
 

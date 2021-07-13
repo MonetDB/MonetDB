@@ -3722,7 +3722,7 @@ sql_trans_commit(sql_trans *tr)
 			if (tr->parent)
 				tr->parent->logchanges += tr->logchanges;
 		}
-		oldest = tr->parent ? commit_ts : oldest;
+		oldest = tr->parent ? commit_ts : store_oldest(store);
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */

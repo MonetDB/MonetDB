@@ -3795,27 +3795,49 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				pos = ords[r];
 			}
 			HEAPdecref(oidxh, false);
-		} else if ((VIEWtparent(b) == 0 ||
-			    (/* DISABLES CODE */ (0) &&
-			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b))))) &&
-			   BATcheckimprints(b)) {
-			Imprints *imprints = VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->timprints : b->timprints;
-			int i;
-
-			MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
-			pos = oid_nil;
-			/* find first non-empty bin */
-			for (i = 0; i < imprints->bits; i++) {
-				if (imprints->stats[i + 128]) {
-					pos = imprints->stats[i] + b->hseqbase;
-					break;
+		} else {
+			Imprints *imprints = NULL;
+			if ((VIEWtparent(b) == 0 ||
+			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b)))) &&
+			    BATcheckimprints(b)) {
+				if (VIEWtparent(b)) {
+					BAT *pb = BBP_cache(VIEWtparent(b));
+					MT_lock_set(&pb->batIdxLock);
+					imprints = pb->timprints;
+					if (imprints != NULL)
+						IMPSincref(imprints);
+					else
+						imprints = NULL;
+					MT_lock_unset(&pb->batIdxLock);
+				} else {
+					MT_lock_set(&b->batIdxLock);
+					imprints = b->timprints;
+					if (imprints != NULL)
+						IMPSincref(imprints);
+					else
+						imprints = NULL;
+					MT_lock_unset(&b->batIdxLock);
 				}
 			}
-		} else {
-			struct canditer ci;
-			BUN ncand = canditer_init(&ci, b, NULL);
-			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, &ci, ncand,
-					   skipnil, false);
+			if (imprints) {
+				int i;
+
+				MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
+				pos = oid_nil;
+				/* find first non-empty bin */
+				for (i = 0; i < imprints->bits; i++) {
+					if (imprints->stats[i + 128]) {
+						pos = imprints->stats[i] + b->hseqbase;
+						break;
+					}
+				}
+				IMPSdecref(imprints, false);
+			} else {
+				struct canditer ci;
+				BUN ncand = canditer_init(&ci, b, NULL);
+				(void) do_groupmin(&pos, b, NULL, 1, 0, 0, &ci, ncand,
+						   skipnil, false);
+			}
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
@@ -3928,27 +3950,49 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 				bat_iterator_end(&bi);
 			}
 			HEAPdecref(oidxh, false);
-		} else if ((VIEWtparent(b) == 0 ||
-			    (/* DISABLES CODE */ (0) &&
-			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b))))) &&
-			   BATcheckimprints(b)) {
-			Imprints *imprints = VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->timprints : b->timprints;
-			int i;
-
-			MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
-			pos = oid_nil;
-			/* find last non-empty bin */
-			for (i = imprints->bits - 1; i >= 0; i--) {
-				if (imprints->stats[i + 128]) {
-					pos = imprints->stats[i + 64] + b->hseqbase;
-					break;
+		} else {
+			Imprints *imprints = NULL;
+			if ((VIEWtparent(b) == 0 ||
+			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b)))) &&
+			    BATcheckimprints(b)) {
+				if (VIEWtparent(b)) {
+					BAT *pb = BBP_cache(VIEWtparent(b));
+					MT_lock_set(&pb->batIdxLock);
+					imprints = pb->timprints;
+					if (imprints != NULL)
+						IMPSincref(imprints);
+					else
+						imprints = NULL;
+					MT_lock_unset(&pb->batIdxLock);
+				} else {
+					MT_lock_set(&b->batIdxLock);
+					imprints = b->timprints;
+					if (imprints != NULL)
+						IMPSincref(imprints);
+					else
+						imprints = NULL;
+					MT_lock_unset(&b->batIdxLock);
 				}
 			}
-		} else {
-			struct canditer ci;
-			BUN ncand = canditer_init(&ci, b, NULL);
-			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, &ci, ncand,
-					   skipnil, false);
+			if (imprints) {
+				int i;
+
+				MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
+				pos = oid_nil;
+				/* find last non-empty bin */
+				for (i = imprints->bits - 1; i >= 0; i--) {
+					if (imprints->stats[i + 128]) {
+						pos = imprints->stats[i + 64] + b->hseqbase;
+						break;
+					}
+				}
+				IMPSdecref(imprints, false);
+			} else {
+				struct canditer ci;
+				BUN ncand = canditer_init(&ci, b, NULL);
+				(void) do_groupmax(&pos, b, NULL, 1, 0, 0, &ci, ncand,
+						   skipnil, false);
+			}
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
