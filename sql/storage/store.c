@@ -1049,7 +1049,7 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, true, store);
 		s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, false, true, true, store);
 		s->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, false, true, true, store);
-		s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, false, false, false, store);
+		s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, false, false, true, store);
 	}
 
 	TRC_DEBUG(SQL_STORE, "Load schema: %s %d\n", s->base.name, s->base.id);
@@ -1668,7 +1668,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, true, store);
 	s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, false, true, true, store);
 	s->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, false, false, false, store);
+	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, false, false, true, store);
 	if (os_add(tr->cat->schemas, tr, s->base.name, &s->base)) {
 		return NULL;
 	}
@@ -3538,7 +3538,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
 	ns->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
 	ns->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, isTempSchema(s), true, true, store);
-	ns->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, false, store);
+	ns->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
 
 	/* table_dup will dup keys, idxs, triggers and parts */
 	struct os_iter oi;
@@ -4784,7 +4784,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
 	s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
 	s->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, isTempSchema(s), true, true, store);
-	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, false, store);
+	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
 	s->store = tr->store;
 
 	if (store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system)) {
