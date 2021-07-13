@@ -2150,6 +2150,9 @@ remote_cleanup:
 		if (mtype < 0) {
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
 			goto cleanup;
+		} else if (input[i]->count != cnt) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Number of values don't match between columns");
+			goto cleanup;
 		}
 		if (mtype >= TYPE_bit && mtype <=
 #ifdef HAVE_HGE
