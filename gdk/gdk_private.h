@@ -216,9 +216,13 @@ gdk_return HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
+void IMPSdecref(Imprints *imprints, bool remove)
+	__attribute__((__visibility__("hidden")));
 void IMPSfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
+	__attribute__((__visibility__("hidden")));
+void IMPSincref(Imprints *imprints)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)		/* never called: for debugging only */

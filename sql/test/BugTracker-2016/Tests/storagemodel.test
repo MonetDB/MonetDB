@@ -2,7 +2,7 @@ statement ok
 create table bug3923(i integer)
 
 query TTTTTITI rowsort
-select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints from storage('sys','_tables')
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints > 0 as imprints from storage('sys','_tables')
 ----
 sys
 _tables
@@ -108,7 +108,7 @@ statement ok
 create table bug3923(i integer)
 
 query TTTTTITI rowsort
-select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints from sys.storage('sys','_tables')
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, phash, imprints > 0 as imprints from sys.storage('sys','_tables')
 ----
 sys
 _tables
@@ -173,7 +173,7 @@ smallint
 writable
 2
 False
-0
+1
 
 statement ok
 call sys.storagemodelinit()
