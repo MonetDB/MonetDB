@@ -174,10 +174,6 @@ gdk_export int MT_join_thread(MT_Id t);
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */
 
-/* define this if you want to use pthread (or Windows) locks instead
- * of atomic instructions for locking (latching) */
-#define USE_NATIVE_LOCKS 1
-
 #ifdef LOCK_STATS
 #include "gdk_tracer.h"
 
@@ -280,8 +276,6 @@ gdk_export int MT_join_thread(MT_Id t);
 #define _DBG_LOCK_UNLOCKER(l)		((void) 0)
 
 #endif
-
-#ifdef USE_NATIVE_LOCKS
 
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
@@ -466,133 +460,6 @@ typedef struct MT_RWLock {
 #define MT_rwlock_wrtry(l)	(pthread_rwlock_trywrlock(&(l)->lock) == 0)
 
 #define MT_rwlock_wrunlock(l)	pthread_rwlock_unlock(&(l)->lock)
-
-#endif
-
-#else
-
-/* if LOCK_STATS is set, we maintain a bunch of counters and maintain
- * a linked list of active locks */
-typedef struct MT_Lock {
-	ATOMIC_FLAG lock;
-	char name[MT_NAME_LEN];
-#ifdef LOCK_STATS
-	size_t count;
-	ATOMIC_TYPE contention;
-	ATOMIC_TYPE sleep;
-	struct MT_Lock * volatile next;
-	const char *locker;
-	const char *thread;
-#endif
-} MT_Lock;
-
-#ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .next = (struct MT_Lock *) -1, .name = #n, }
-#else
-#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .name = #n, }
-#endif
-
-#define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
-
-#define MT_lock_set(l)						\
-	do {							\
-		_DBG_LOCK_COUNT_0(l);				\
-		if (!MT_lock_try(l)) {				\
-			/* we didn't get the lock */		\
-			unsigned _spincnt = 0;			\
-			_DBG_LOCK_CONTENTION(l);		\
-			MT_thread_setlockwait(l);		\
-			do {					\
-				if ((++_spincnt & 2047) == 0) {	\
-					_DBG_LOCK_SLEEP(l);	\
-					MT_sleep_ms(1);		\
-				}				\
-			} while (!MT_lock_try(l));		\
-			MT_thread_setlockwait(NULL);		\
-		}						\
-		_DBG_LOCK_LOCKER(l);				\
-		_DBG_LOCK_COUNT_2(l);				\
-	} while (0)
-
-#define MT_lock_init(l, n)				\
-	do {						\
-		size_t nlen;				\
-		ATOMIC_CLEAR(&(l)->lock);		\
-		nlen = strlen(n);			\
-		if (nlen >= sizeof((l)->name))		\
-			nlen = sizeof((l)->name) - 1;	\
-		memcpy((l)->name, (n), nlen + 1);	\
-		(l)->name[sizeof((l)->name) - 1] = 0;	\
-		_DBG_LOCK_INIT(l);			\
-	} while (0)
-
-#define MT_lock_unset(l)					\
-		do {						\
-			/* lock should be locked */		\
-			assert(ATOMIC_TAS(&(l)->lock) != 0);	\
-			_DBG_LOCK_UNLOCKER(l);			\
-			ATOMIC_CLEAR(&(l)->lock);		\
-		} while (0)
-
-#define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
-
-typedef struct MT_RWLock {
-	MT_Lock lock;
-	ATOMIC_TYPE readers;
-} MT_RWLock;
-
-#define MT_RWLOCK_INITIALIZER(n)					\
-	{ .lock = MT_LOCK_INITIALIZER(n), .readers = ATOMIC_VAR_INIT(0), }
-
-#define MT_rwlock_init(l, n)			\
-	do {					\
-		MT_lock_init(&(l)->lock, n);	\
-		ATOMIC_INIT(&(l)->readers, 0);	\
-	 } while (0)
-
-#define MT_rwlock_destroy(l)			\
-	do {					\
-		MT_lock_destroy(&(l)->lock);	\
-		ATOMIC_DESTROY(&(l)->readers);	\
-	} while (0)
-
-#define MT_rwlock_rdlock(l)				\
-	do {						\
-		MT_lock_set(&(l)->lock);		\
-		(void) ATOMIC_INC(&(l)->readers);	\
-		MT_lock_unset(&(l)->lock);		\
-	 } while (0)
-static inline bool
-MT_rwlock_rdtry(MT_RWLock *l)
-{
-	if (!MT_lock_try(l))
-		return false;
-	(void) ATOMIC_INC(&(l)->readers);
-	MT_lock_unset(&(l)->lock);
-	return true;
-}
-
-#define MT_rwlock_rdunlock(l)	((void) ATOMIC_DEC(&(l)->readers))
-
-#define MT_rwlock_wrlock(l)				\
-	do {						\
-		MT_lock_set(&(l)->lock);		\
-		while (ATOMIC_GET(&(l)->readers) > 0)	\
-			MT_sleep_ms(1);			\
-	 } while (0)
-static inline bool
-MT_rwlock_wrtry(MT_RWLock *l)
-{
-	if (!MT_lock_try(l))
-		return false;
-	if (ATOMIC_GET(&l->readers) > 0) {
-		MT_lock_unset(l);
-		return false;
-	}
-	return true;
-}
-
-#define MT_rwlock_wrunlock(l)	MT_lock_unset(&(l)->lock)
 
 #endif
 
