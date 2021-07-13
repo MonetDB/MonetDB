@@ -212,6 +212,9 @@ gdk_export int MT_join_thread(MT_Id t);
 			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
 			(l)->next = GDKlocklist;			\
+			(l)->prev = NULL;				\
+			if (GDKlocklist)				\
+				GDKlocklist->prev = (l);		\
 			GDKlocklist = (l);				\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		}							\
@@ -230,16 +233,17 @@ gdk_export int MT_join_thread(MT_Id t);
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			MT_Lock * volatile _p;				\
 			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
-			for (_p = GDKlocklist; _p; _p = _p->next)	\
-				assert(_p != (l));			\
+			if (GDKlocklist)				\
+				GDKlocklist->prev = (l);		\
 			(l)->next = GDKlocklist;			\
+			(l)->prev = NULL;				\
 			GDKlocklist = (l);				\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		} else {						\
 			(l)->next = NULL;				\
+			(l)->prev = NULL;				\
 		}							\
 	} while (0)
 
@@ -250,14 +254,14 @@ gdk_export int MT_join_thread(MT_Id t);
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			MT_Lock * volatile *_p;				\
 			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
-			for (_p = &GDKlocklist; *_p; _p = &(*_p)->next)	\
-				if ((l) == *_p) {			\
-					*_p = (l)->next;		\
-					break;				\
-				}					\
+			if ((l)->next)					\
+				(l)->next->prev = (l)->prev;		\
+			if ((l)->prev)					\
+				(l)->prev->next = (l)->next;		\
+			else if (GDKlocklist == (l))			\
+				GDKlocklist = (l)->next;		\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
 			ATOMIC_DESTROY(&(l)->contention);		\
 			ATOMIC_DESTROY(&(l)->sleep);			\
@@ -285,7 +289,8 @@ typedef struct MT_Lock {
 	size_t count;
 	ATOMIC_TYPE contention;
 	ATOMIC_TYPE sleep;
-	struct MT_Lock * volatile next;
+	struct MT_Lock *volatile next;
+	struct MT_Lock *volatile prev;
 	const char *locker;
 	const char *thread;
 #endif
@@ -383,7 +388,8 @@ typedef struct MT_Lock {
 	size_t count;
 	ATOMIC_TYPE contention;
 	ATOMIC_TYPE sleep;
-	struct MT_Lock * volatile next;
+	struct MT_Lock *volatile next;
+	struct MT_Lock *volatile prev;
 	const char *locker;
 	const char *thread;
 #endif
