@@ -2211,8 +2211,12 @@ remote_cleanup:
 			char **d = (char**)v;
 
 			for (size_t j=0; j<cnt; j++) {
-				if (!d[j])
+				if (!d[j]) {
 					d[j] = (char*) nil;
+				} else if (!checkUTF8(d[j])) {
+					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrectly encoded UTF-8");
+					goto cleanup;
+				}
 			}
 			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
