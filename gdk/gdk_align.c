@@ -303,10 +303,6 @@ VIEWunlink(BAT *b)
 			b->tvheap = NULL;
 		}
 
-		/* unlink properties shared with parent */
-		if (tpb && b->tprops && b->tprops == tpb->tprops)
-			b->tprops = NULL;
-
 		MT_lock_unset(&b->theaplock);
 
 		MT_lock_set(&b->batIdxLock);
