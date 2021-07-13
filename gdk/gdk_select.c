@@ -2559,7 +2559,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		}
 		IMPSdecref(imprints, false);
 	} else {
-	  nestedloop:
+	  nestedloop:;
 		/* nested loop implementation */
 		const void *vl;
 		const char *lvals;
