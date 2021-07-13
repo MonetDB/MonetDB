@@ -1121,9 +1121,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							else {
 								BATsetcount(ins, ucnt); /* all full updates  */
 								msk = (int*)Tloc(ins, 0);
-								int end = (ucnt+31)/32;
-								for (int i=0; i<end; i++)
-									msk[i] = 0;
+								BUN end = (ucnt+31)/32;
+								memset(msk, 0, end * sizeof(int));
 							}
 						}
 						for (oid i = 0, rid = start; rid < lend && res == LOG_OK; rid++, i++) {
@@ -1165,9 +1164,8 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 							} else {
 								BATsetcount(ins, ucnt); /* all full updates  */
 								msk = (int*)Tloc(ins, 0);
-								int end = (ucnt+31)/32;
-								for (int i=0; i<end; i++)
-									msk[i] = 0;
+								BUN end = (ucnt+31)/32;
+								memset(msk, 0, end * sizeof(int));
 							}
 						}
 						ptr upd = BUNtail(upi, i);
@@ -1510,6 +1508,12 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
+	if (tpe == TYPE_bat) {
+		BAT *t = tids;
+		if (!BATcount(t))
+			return LOG_OK;
+	}
+
 	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
@@ -1560,6 +1564,12 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+
+	if (tpe == TYPE_bat) {
+		BAT *t = tids;
+		if (!BATcount(t))
+			return LOG_OK;
+	}
 
 	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;

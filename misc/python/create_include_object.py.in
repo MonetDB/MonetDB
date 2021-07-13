@@ -81,15 +81,13 @@ def mal2c(content):
 def sql2c(content):
     comment_or_empty = re.compile('^[ \t]*(--|#|$)')
     comment = re.compile(r'/\*.*?\*/|--.*')
-    space = re.compile('[ \t]+')
     c_array = []
     length = 0
     for line in content.split('\n'):
         if comment_or_empty.match(line):
             continue
         line = comment.sub('', line)
-        line = space.sub(' ', line)
-        line = line.strip()
+        line = line.rstrip()
         if line.startswith('include '):
             continue
         if not line:
@@ -112,7 +110,6 @@ def create_c_sourcefile(srcfile, lang, mod, c_filename):
 def copy2c(content):
     return ",".join(str(ord(c)) for c in content) + ","
 
-    
 def txt2c(content, sql):
     buffer = bytearray()
 
@@ -183,7 +180,6 @@ def txt2c(content, sql):
     #return buffer
     return buffer_as_string
 
-    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("name", help="The name of the module to convert")
