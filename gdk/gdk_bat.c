@@ -1840,18 +1840,21 @@ BATkey(BAT *b, bool flag)
 		b->tseqbase = oid_nil;
 	} else
 		b->tnokey[0] = b->tnokey[1] = 0;
-	if (/* DISABLES CODE */ (0) && flag && VIEWtparent(b)) {
+	gdk_return rc = GDK_SUCCEED;
+	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
 		BAT *bp = BBP_cache(VIEWtparent(b));
+		MT_lock_set(&bp->theaplock);
 		if (BATcount(b) == BATcount(bp) &&
 		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
 		    !BATtkey(bp) &&
 		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
 		     BATcount(b) == 0))
-			return BATkey(bp, true);
+			rc = BATkey(bp, true);
+		MT_lock_unset(&bp->theaplock);
 	}
-	return GDK_SUCCEED;
+	return rc;
 }
 
 void
