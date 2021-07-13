@@ -448,7 +448,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 /* argument list for type-specific core scan select function call */
 #define scanargs							\
 	b, bi, ci, bn, tl, th, li, hi, equi, anti, lval, hval, lnil,	\
-	cnt, b->hseqbase, dst, maximum, use_imprints, algo
+	cnt, b->hseqbase, dst, maximum, imprints, algo
 
 #define PREVVALUEbte(x)	((x) - 1)
 #define PREVVALUEsht(x)	((x) - 1)
@@ -496,7 +496,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 
 #define choose(NAME, ISDENSE, TEST, TYPE)				\
 	do {								\
-		if (use_imprints) {					\
+		if (imprints) {						\
 			bitswitch(ISDENSE, TEST, TYPE);			\
 		} else {						\
 			scanloop(NAME, canditer_next##ISDENSE, TEST);	\
@@ -510,7 +510,7 @@ NAME##_##TYPE(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn, \
 	      const TYPE *tl, const TYPE *th, bool li, bool hi,		\
 	      bool equi, bool anti, bool lval, bool hval,		\
 	      bool lnil, BUN cnt, const oid hseq, oid *restrict dst,	\
-	      BUN maximum, bool use_imprints, const char **algo)	\
+	      BUN maximum, Imprints *imprints, const char **algo)	\
 {									\
 	TYPE vl = *tl;							\
 	TYPE vh = *th;							\
@@ -525,7 +525,6 @@ NAME##_##TYPE(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn, \
 	oid o, w;							\
 	BUN p;								\
 	BUN pr_off = 0;							\
-	Imprints *imprints;						\
 	bat parent = 0;							\
 	(void) li;							\
 	(void) hi;							\
@@ -535,22 +534,18 @@ NAME##_##TYPE(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn, \
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	if (use_imprints && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b))) { \
+	if (imprints && imprints->imprints.parentid != b->batCacheid) {	\
+		parent = imprints->imprints.parentid;			\
 		BAT *pbat = BBP_cache(parent);				\
 		assert(pbat);						\
-/* NOTE: this code is incorrect since pbat could be changed while */	\
-/* we're using the heap, but this code is disabled, so we don't */	\
-/* worry about it */							\
 		basesrc = (const TYPE *) Tloc(pbat, 0);			\
-		imprints = pbat->timprints;				\
 		pr_off = (BUN) (src - basesrc);				\
 	} else {							\
-		imprints = b->timprints;				\
 		basesrc = src;						\
 	}								\
 	w = canditer_last(ci);						\
 	if (equi) {							\
-		assert(!use_imprints);					\
+		assert(imprints == NULL);				\
 		if (lnil)						\
 			scanloop(NAME, canditer_next##ISDENSE, is_##TYPE##_nil(v)); \
 		else							\
@@ -576,7 +571,7 @@ fullscan_any(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     const void *tl, const void *th,
 	     bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
 	     bool lnil, BUN cnt, const oid hseq, oid *restrict dst,
-	     BUN maximum, bool use_imprints, const char **algo)
+	     BUN maximum, Imprints *imprints, const char **algo)
 {
 	const void *v;
 	const void *restrict nil = ATOMnilptr(b->ttype);
@@ -586,7 +581,7 @@ fullscan_any(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	int c;
 
 	(void) maximum;
-	(void) use_imprints;
+	(void) imprints;
 	(void) lnil;
 
 	if (equi) {
@@ -727,7 +722,7 @@ fullscan_str(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     const char *tl, const char *th,
 	     bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
 	     bool lnil, BUN cnt, const oid hseq, oid *restrict dst,
-	     BUN maximum, bool use_imprints, const char **algo)
+	     BUN maximum, Imprints *imprints, const char **algo)
 {
 	var_t pos;
 	BUN p;
@@ -736,7 +731,7 @@ fullscan_str(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (!equi || !GDK_ELIMDOUBLES(b->tvheap))
 		return fullscan_any(b, bi, ci, bn, tl, th, li, hi, equi, anti,
 				    lval, hval, lnil, cnt, hseq, dst,
-				    maximum, use_imprints, algo);
+				    maximum, imprints, algo);
 	if ((pos = strLocate(b->tvheap, tl)) == 0) {
 		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
@@ -917,7 +912,7 @@ static BAT *
 scanselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	   const void *tl, const void *th,
 	   bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	   bool lnil, BUN maximum, bool use_imprints, const char **algo)
+	   bool lnil, BUN maximum, Imprints *imprints, const char **algo)
 {
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
@@ -940,12 +935,6 @@ scanselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 #endif
 
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
-
-	/* build imprints if they do not exist */
-	if (use_imprints && (BATimprints(b) != GDK_SUCCEED)) {
-		GDKclrerr();	/* not interested in BATimprints errors */
-		use_imprints = false;
-	}
 
 	dst = (oid *) Tloc(bn, 0);
 
@@ -1909,15 +1898,37 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 *  ii) it is not an equi-select, and
 		 * iii) is not var-sized.
 		 */
+		tmp = NULL;
 		bool use_imprints = !equi &&
 			!b->tvarsized &&
 			(!b->batTransient ||
-			 (/* DISABLES CODE */ (0) &&
-			  parent != 0 &&
+			 (parent != 0 &&
 			  (tmp = BBP_cache(parent)) != NULL &&
 			  !tmp->batTransient));
+		Imprints *imprints = NULL;
+		if (use_imprints && BATimprints(b) == GDK_SUCCEED) {
+			if (tmp != NULL) {
+				MT_lock_set(&tmp->batIdxLock);
+				imprints = tmp->timprints;
+				if (imprints != NULL)
+					IMPSincref(imprints);
+				else
+					imprints = NULL;
+				MT_lock_unset(&tmp->batIdxLock);
+			} else {
+				MT_lock_set(&b->batIdxLock);
+				imprints = b->timprints;
+				if (imprints != NULL)
+					IMPSincref(imprints);
+				else
+					imprints = NULL;
+				MT_lock_unset(&b->batIdxLock);
+			}
+		}
 		bn = scanselect(b, &bi, &ci, bn, tl, th, li, hi, equi, anti,
-				lval, hval, lnil, maximum, use_imprints, &algo);
+				lval, hval, lnil, maximum, imprints, &algo);
+		if (imprints)
+			IMPSdecref(imprints, false);
 	}
 	bat_iterator_end(&bi);
 
@@ -2242,19 +2253,41 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	} else if (!anti && !symmetric &&
 		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
-		    (/* DISABLES CODE */ (0) &&
-		     VIEWtparent(l) != 0 &&
+		    (VIEWtparent(l) != 0 &&
 		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
-		(void) tmp;	/* void cast because of disabled code */
 		/* implementation using imprints on left column
 		 *
 		 * we use imprints if we can (the type is right for
 		 * imprints) and either the left bat is persistent or
 		 * already has imprints, or the right bats are long
 		 * enough (for creating imprints being worth it) */
+		Imprints *imprints = NULL;
+
+		if (tmp) {
+			MT_lock_set(&tmp->batIdxLock);
+			imprints = tmp->timprints;
+			if (imprints != NULL)
+				IMPSincref(imprints);
+			else
+				imprints = NULL;
+			MT_lock_unset(&tmp->batIdxLock);
+		} else {
+			MT_lock_set(&l->batIdxLock);
+			imprints = l->timprints;
+			if (imprints != NULL)
+				IMPSincref(imprints);
+			else
+				imprints = NULL;
+			MT_lock_unset(&l->batIdxLock);
+		}
+		/* in the unlikely case that the imprints were removed
+		 * before we could get at them, take the slow, nested
+		 * loop implementation */
+		if (imprints == NULL)
+			goto nestedloop;
 
 		sorted = 2;
 		cnt = 0;
@@ -2300,7 +2333,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 			case TYPE_sht: {
@@ -2327,7 +2360,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 			case TYPE_int:
@@ -2367,7 +2400,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 			case TYPE_lng:
@@ -2407,7 +2440,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 #ifdef HAVE_HGE
@@ -2435,7 +2468,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 #endif
@@ -2465,7 +2498,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 			case TYPE_dbl: {
@@ -2494,7 +2527,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
-						    true, &algo);
+						    imprints, &algo);
 				break;
 			}
 			default:
@@ -2502,16 +2535,20 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				GDKerror("unsupported type\n");
 				assert(0);
 			}
-			if (ncnt == BUN_NONE)
+			if (ncnt == BUN_NONE) {
+				IMPSdecref(imprints, false);
 				goto bailout;
+			}
 			assert(ncnt >= cnt || ncnt == 0);
 			if (ncnt == cnt || ncnt == 0)
 				continue;
 			if (r2) {
 				if (BATcapacity(r2) < ncnt) {
 					BATsetcount(r2, cnt);
-					if (BATextend(r2, BATcapacity(r1)) != GDK_SUCCEED)
+					if (BATextend(r2, BATcapacity(r1)) != GDK_SUCCEED) {
+						IMPSdecref(imprints, false);
 						goto bailout;
+					}
 					dst2 = (oid *) Tloc(r2, 0);
 				}
 				while (cnt < ncnt)
@@ -2520,7 +2557,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				cnt = ncnt;
 			}
 		}
+		IMPSdecref(imprints, false);
 	} else {
+	  nestedloop:
 		/* nested loop implementation */
 		const void *vl;
 		const char *lvals;
