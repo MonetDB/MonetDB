@@ -609,13 +609,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
  * Convert a GDK string value to something printable.
  */
 /* all but control characters (in range 0 to 31) and DEL */
-#ifdef ASCII_CHR
-/* ASCII printable characters */
-#define printable_chr(ch)	(' ' <= (ch) && (ch) <= '~')
-#else
-/* everything except ASCII control characters */
 #define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
-#endif
 
 size_t
 escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
@@ -631,7 +625,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 		    || (sep1len && strncmp(src + end, sep1, sep1len) == 0)
 		    || (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
 			sz += 2;
-#ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
 			   0200 <= ((int) src[end + 1] & 0377) &&
 			   ((int) src[end + 1] & 0377) <= 0237) {
@@ -643,7 +636,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 			 * 1, together that's 8, i.e. the width of two
 			 * backslash-escaped octal coded characters */
 			sz += 7;
-#endif
 		} else if (!printable_chr(src[end])) {
 			sz += 4;
 		} else {
@@ -662,16 +654,13 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 	sep2len = sep2 ? strlen(sep2) : 0;
 	for (; src[cur] && l < dstlen; cur++)
 		if (!printable_chr(src[cur])
-#ifndef ASCII_CHR
 		    || (src[cur] == '\302'
 			&& 0200 <= (src[cur + 1] & 0377)
 			&& ((int) src[cur + 1] & 0377) <= 0237)
 		    || (cur > 0
 			&& src[cur - 1] == '\302'
 			&& 0200 <= (src[cur] & 0377)
-			&& (src[cur] & 0377) <= 0237)
-#endif
-			) {
+			&& (src[cur] & 0377) <= 0237)) {
 			dst[l++] = '\\';
 			switch (src[cur]) {
 			case '\t':
