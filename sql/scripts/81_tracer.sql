@@ -8,39 +8,39 @@ CREATE SCHEMA logging;
 
 -- Flush the buffer
 CREATE PROCEDURE logging.flush()
-        EXTERNAL NAME logging.flush;
+	EXTERNAL NAME logging.flush;
 
 -- Sets the log level for a specific component
 CREATE PROCEDURE logging.setcomplevel(comp_id STRING, lvl_id STRING)
-        EXTERNAL NAME logging.setcomplevel;
+	EXTERNAL NAME logging.setcomplevel;
 
 -- Resets the log level for a specific component back to the default
 CREATE PROCEDURE logging.resetcomplevel(comp_id STRING)
-        EXTERNAL NAME logging.resetcomplevel;
+	EXTERNAL NAME logging.resetcomplevel;
 
 -- Sets the log level for a specific layer
 CREATE PROCEDURE logging.setlayerlevel(layer_id STRING, lvl_id STRING)
-        EXTERNAL NAME logging.setlayerlevel;
+	EXTERNAL NAME logging.setlayerlevel;
 
 -- Resets the log level for a specific layer back to the default
 CREATE PROCEDURE logging.resetlayerlevel(layer_id STRING)
-        EXTERNAL NAME logging.resetlayerlevel;
+	EXTERNAL NAME logging.resetlayerlevel;
 
 -- Sets the flush level
 CREATE PROCEDURE logging.setflushlevel(lvl_id STRING)
-       EXTERNAL NAME logging.setflushlevel;
+	EXTERNAL NAME logging.setflushlevel;
 
 -- Resets the flush level back to the default
 CREATE PROCEDURE logging.resetflushlevel()
-       EXTERNAL NAME logging.resetflushlevel;
+	EXTERNAL NAME logging.resetflushlevel;
 
 -- Sets the adapter
 CREATE PROCEDURE logging.setadapter(adapter_id STRING)
-       EXTERNAL NAME logging.setadapter;
+	EXTERNAL NAME logging.setadapter;
 
 -- Resets the adapter back to the default
 CREATE PROCEDURE logging.resetadapter()
-       EXTERNAL NAME logging.resetadapter;
+	EXTERNAL NAME logging.resetadapter;
 
 -- Returns in the form of a SQL result-set all the 
 -- components along with their ID and their current 
