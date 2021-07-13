@@ -186,70 +186,6 @@ strLocate(Heap *h, const char *v)
 #define likely(expr)	(expr)
 #endif
 
-/*
- * UTF-8 encoding is as follows:
- * U-00000000 - U-0000007F: 0xxxxxxx
- * U-00000080 - U-000007FF: 110zzzzx 10xxxxxx
- * U-00000800 - U-0000FFFF: 1110zzzz 10zxxxxx 10xxxxxx
- * U-00010000 - U-0010FFFF: 11110zzz 10zzxxxx 10xxxxxx 10xxxxxx
- *
- * To be correctly coded UTF-8, the sequence should be the shortest
- * possible encoding of the value being encoded.  This means that at
- * least one of the z bits must be non-zero.  Also note that the four
- * byte sequence can encode more than is allowed and that the values
- * U+D800..U+DFFF are not allowed to be encoded.
- */
-static inline gdk_return
-checkUTF8(const char *v)
-{
-	/* It is unlikely that this functions returns GDK_FAIL, because
-	 * it is likely that the string presented is a correctly coded
-	 * UTF-8 string.  So we annotate the tests that are very
-	 * unlikely to succeed, i.e. the ones that lead to a return of
-	 * GDK_FAIL, as being expected to return 0 using the
-	 * __builtin_expect function. */
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8 */
-		for (size_t i = 0; v[i]; i++) {
-			/* we do not annotate all tests, only the ones
-			 * leading directly to an unlikely return
-			 * statement */
-			if ((v[i] & 0x80) == 0) {
-				;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				if (unlikely((v[i] & 0x1E) == 0))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				if ((v[i++] & 0x0F) == 0) {
-					if (unlikely((v[i] & 0xE0) != 0xA0))
-						return GDK_FAIL;
-				} else {
-					if (unlikely((v[i] & 0xC0) != 0x80))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				if ((v[i++] & 0x07) == 0) {
-					if (unlikely((v[i] & 0x30) == 0))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else {
-				return GDK_FAIL;
-			}
-		}
-	}
-	return GDK_SUCCEED;
-}
-
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
 {
@@ -316,7 +252,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
 #ifndef NDEBUG
-	if (checkUTF8(v) != GDK_SUCCEED) {
+	if (!checkUTF8(v)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return 0;
 	}
@@ -825,7 +761,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (checkUTF8(a) != GDK_SUCCEED) {
+	if (!checkUTF8(a)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return GDK_FAIL;
 	}
