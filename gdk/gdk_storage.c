@@ -860,10 +860,17 @@ BATsave_locked(BAT *bd)
 			bd->tvheap->wasempty = vhs.wasempty;
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
-		MT_rwlock_rdlock(&bd->thashlock);
-		if (bd->thash && bd->thash != (Hash *) 1)
-			BAThashsave(bd, dosync);
-		MT_rwlock_rdunlock(&bd->thashlock);
+		if (MT_rwlock_rdtry(&bd->thashlock)) {
+			/* if we can't get the lock, don't bother saving
+			 * the hash (normally, the hash lock should not
+			 * be acquired when the heap lock has already
+			 * been acquired, and here we have the heap
+			 * lock, so we must be careful with the hash
+			 * lock) */
+			if (bd->thash && bd->thash != (Hash *) 1)
+				BAThashsave(bd, dosync);
+			MT_rwlock_rdunlock(&bd->thashlock);
+		}
 	}
 	return err;
 }
