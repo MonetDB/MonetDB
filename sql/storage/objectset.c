@@ -343,7 +343,7 @@ static objectset *
 os_append_node_id(objectset *os, versionhead  *n)
 {
 	lock_writer(os);
-	if (!os->id_map || (os->id_map->size*16 < os->id_based_cnt && os->id_based_cnt > HASH_MIN_SIZE))
+	if ((!os->id_map || os->id_map->size*16 < os->id_based_cnt) && os->id_based_cnt > HASH_MIN_SIZE)
 		os_append_id_map(os); /* on failure just fall back too slow method */
 
 	if (os->id_map) {
