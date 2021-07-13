@@ -1451,31 +1451,24 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 		if (lids[pos] == lng_nil || lids[pos] > lg->saved_tid)
 			continue;
 
-		if (lg->debug & 1) {
-			fprintf(stderr, "release %d\n", bids[pos]);
-			if (BBP_lrefs(bids[pos]) != 2)
-				fprintf(stderr, "release %d %d\n", bids[pos], BBP_lrefs(bids[pos]));
-		}
 		if (lids[pos] >= 0) {
+			if (lg->debug & 1) {
+				fprintf(stderr, "release %d\n", bids[pos]);
+				if (BBP_lrefs(bids[pos]) != 2)
+					fprintf(stderr, "release %d %d\n", bids[pos], BBP_lrefs(bids[pos]));
+			}
+
 			BAT *lb;
 
 			BBPrelease(bids[pos]);
 			if ((lb = BATdescriptor(bids[pos])) == NULL ||
 				BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
 				TRC_WARNING(GDK, "Failed to set bat(%d) transient\n", bids[pos]);
-				if (!lb)
-					err++;
 			}
 			lids[pos] = -1; /* mark as transient */
 			logbat_destroy(lb);
 		}
 	}
-	if (err)
-		return 0;
-	/* only project out the deleted with last id > lg->saved_tid
-	 * update dcatalog, ie only keep those deleted which
-	 * were not released ie last id <= lg->saved_tid */
-
 	BUN ocnt = BATcount(catalog_bid);
 	nbids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
 	noids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
@@ -1501,7 +1494,9 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 		lng cnt = cnts[p];
 		oid pos = p;
 
-		if (lid != lng_nil && lid <= lg->saved_tid)
+		/* only project out the deleted with lid == -1
+	         * update dcatalog */
+		if (lid == -1)
 			continue; /* remove */
 
 		if (BUNappend(nbids, &col, false) != GDK_SUCCEED ||
@@ -1514,8 +1509,14 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 			err=1;
 	}
 
-	if (err)
+	if (err) {
+		logbat_destroy(nbids);
+		logbat_destroy(noids);
+		logbat_destroy(ndels);
+		logbat_destroy(ncnts);
+		logbat_destroy(nlids);
 		return 0;
+	}
 	/* point of no return */
 	if (logger_switch_bat(catalog_bid, nbids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 	    logger_switch_bat(catalog_id, noids, lg->fn, "catalog_id") != GDK_SUCCEED ||
