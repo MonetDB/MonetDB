@@ -273,6 +273,25 @@ void VIEWdestroy(BAT *b)
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
+static inline bool
+imprintable(int tpe)
+{
+	switch (ATOMbasetype(tpe)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		return true;
+	default:		/* type not supported */
+		return false;
+	}
+}
+
 /* calculate the integer 2 logarithm (i.e. position of highest set
  * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
  * 0x8 to 0xF give 4, etc.) */
