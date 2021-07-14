@@ -25,16 +25,16 @@ name4
 4
 
 query TT rowsort
-select * from env() as env where 0 = 1 or name = 'sql_debug'
+select * from env() as env where 0 = 1 or name = 'gdk_dbname'
 ----
-sql_debug
-0
+gdk_dbname
+mTests_sql_test_bugs
 
 query TT rowsort
-select * from env() as env where name = 'sql_debug' or 0 = 1
+select * from env() as env where name = 'gdk_dbname' or 0 = 1
 ----
-sql_debug
-0
+gdk_dbname
+mTests_sql_test_bugs
 
 statement ok
 drop table p1409824
