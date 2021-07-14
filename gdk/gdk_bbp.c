@@ -3213,7 +3213,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				MT_lock_set(&GDKswapLock(i));
 			/* set flag that we're syncing, i.e. that we'll
 			 * be between moving heap to backup dir and
-			 * saving the new version */
+			 * saving the new version, in other words, the
+			 * heap may not exist in the usual location */
 			BBP_status_on(i, BBPSYNCING);
 			/* wait until unloading is finished before
 			 * attempting to make a backup */
@@ -3231,38 +3232,46 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				break;
 			}
 			if (BBP_status(i) & BBPEXISTING) {
-				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
+				if (b != NULL) {
+					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
+						BBP_status_off(i, BBPSYNCING);
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						break;
+					}
+				} else {
+					/* file has not been moved to
+					 * backup dir, so no need for
+					 * other threads to wait */
 					BBP_status_off(i, BBPSYNCING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					break;
 				}
-			} else if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
-				char o[10];
-				char *f;
-				snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
-				f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
-				if (f == NULL) {
-					BBP_status_off(i, BBPSYNCING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					ret = GDK_FAIL;
-					goto bailout;
+			} else {
+				BBP_status_off(i, BBPSYNCING);
+				if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
+					char o[10];
+					char *f;
+					snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
+					f = GDKfilepath(b->theap->farmid, BAKDIR, o, gettailname(b));
+					if (f == NULL) {
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						ret = GDK_FAIL;
+						goto bailout;
+					}
+					if (MT_access(f, F_OK) == 0)
+						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, gettailname(b));
+					GDKfree(f);
+					f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
+					if (f == NULL) {
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						ret = GDK_FAIL;
+						goto bailout;
+					}
+					if (MT_access(f, F_OK) == 0)
+						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
+					GDKfree(f);
 				}
-				if (MT_access(f, F_OK) == 0)
-					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, gettailname(b));
-				GDKfree(f);
-				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
-				if (f == NULL) {
-					BBP_status_off(i, BBPSYNCING);
-					if (lock)
-						MT_lock_unset(&GDKswapLock(i));
-					ret = GDK_FAIL;
-					goto bailout;
-				}
-				if (MT_access(f, F_OK) == 0)
-					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
-				GDKfree(f);
 			}
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
