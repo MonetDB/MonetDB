@@ -1064,7 +1064,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 	}
 
 	BAT* order = BATdense(0, 0, BATcount(b_0));
-	if (mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order)) {
+	if (mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order) < 0) {
 		BBPreclaim(order);
 		BBPunfix(b_0->batCacheid);
 		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
@@ -1148,6 +1148,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	BAT* bimpl = NULL;
 
 	size_t nparams = 0;
+	BATiter btype_iter = {0};
 	BATiter bcolumn_iter = {0};
 	BATiter btable_iter = {0};
 	BATiter bimpl_iter = {0};
@@ -1189,6 +1190,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		goto cleanup;
 	}
 
+	btype_iter		= bat_iterator(btype);
 	bcolumn_iter	= bat_iterator(bcolumn);
 	btable_iter		= bat_iterator(btable);
 	bimpl_iter		= bat_iterator(bimpl);
@@ -1248,15 +1250,18 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 		char* table	= BUNtvar(btable_iter, i);
 
+		sql_type *t = SA_ZNEW(sa, sql_type);
+		char* name = BUNtvar(btype_iter, i);
+		t->base.name = GDKstrdup(name);
+		char* impl = BUNtvar(bimpl_iter, i);
+		t->impl	= GDKstrdup(impl);
+		t->localtype = ATOMindex(t->impl);
+
+		sql_subtype *st = SA_ZNEW(sa, sql_subtype);
+		sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
+
 		if (strNil(table)) {
 			// input argument
-			sql_type *t = SA_ZNEW(sa, sql_type);
-			t->localtype = *(int*) Tloc(btype, i);
-			char* impl = BUNtvar(bimpl_iter, i);
-			t->impl	= GDKstrdup(impl);
-
-			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
-			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
 
 			sql_arg *a = SA_ZNEW(sa, sql_arg);
 			a->type = *st;
@@ -1274,14 +1279,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		}
 		else {
 			// output argument
-			sql_type *t = SA_ZNEW(sa, sql_type);
-			int type = *(int*) Tloc(btype, i);
-			t->localtype = type;
 
 			char* column = BUNtvar(bcolumn_iter, i);
-			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
-			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
-
 			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false);
 			append(rets, c);
 		}
