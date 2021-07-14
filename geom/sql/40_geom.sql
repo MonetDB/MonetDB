@@ -3970,6 +3970,8 @@ GRANT EXECUTE ON FUNCTION ST_Equals(mbr, mbr) TO PUBLIC;
 CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geom."mbrDistance";
 GRANT EXECUTE ON FUNCTION ST_Distance(mbr, mbr) TO PUBLIC;
 
+
+
 --CREATE FUNCTION mbrOverlapOrLeft(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrLeft";
 --CREATE FUNCTION mbrOverlapOrBelow(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrBelow";
 --CREATE FUNCTION mbrOverlapOrRight(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrRight";
@@ -4070,6 +4072,10 @@ GRANT EXECUTE ON FUNCTION ST_Relate(Geometry, Geometry, string) TO PUBLIC;
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
 GRANT EXECUTE ON FUNCTION ST_Distance(Geometry, Geometry) TO PUBLIC;
+
+CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
+GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
+
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
 GRANT EXECUTE ON FUNCTION ST_Intersection(Geometry, Geometry) TO PUBLIC;
