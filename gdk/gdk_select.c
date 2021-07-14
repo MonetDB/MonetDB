@@ -1899,14 +1899,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * iii) is not var-sized.
 		 */
 		tmp = NULL;
-		bool use_imprints = !equi &&
-			!b->tvarsized &&
-			(!b->batTransient ||
-			 (parent != 0 &&
-			  (tmp = BBP_cache(parent)) != NULL &&
-			  !tmp->batTransient));
 		Imprints *imprints = NULL;
-		if (use_imprints && BATimprints(b) == GDK_SUCCEED) {
+		if (!equi &&
+		    imprintable(b->ttype) &&
+		    (!b->batTransient ||
+		     (parent != 0 &&
+		      (tmp = BBP_cache(parent)) != NULL &&
+		      !tmp->batTransient)) &&
+		    BATimprints(b) == GDK_SUCCEED) {
 			if (tmp != NULL) {
 				MT_lock_set(&tmp->batIdxLock);
 				imprints = tmp->timprints;
@@ -2252,6 +2252,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if (!anti && !symmetric &&
+		   imprintable(l->ttype) &&
 		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&
