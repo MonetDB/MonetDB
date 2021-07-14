@@ -24,8 +24,6 @@ with SQLTestCase() as mdb1:
         mdb2.connect(username="monetdb", password="monetdb")
 
         mdb1.execute('create table child1(a int);').assertSucceeded()
-        mdb1.execute('create table child2(a int);').assertSucceeded()
-        mdb1.execute('create table child3(a int);').assertSucceeded()
 
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()

@@ -447,18 +447,7 @@ BATimprints(BAT *b)
 	lng t0 = GDKusec();
 
 	/* we only create imprints for types that look like types we know */
-	switch (ATOMbasetype(b->ttype)) {
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
-	case TYPE_flt:
-	case TYPE_dbl:
-		break;
-	default:		/* type not supported */
+	if (!imprintable(b->ttype)) {
 		/* doesn't look enough like base type: do nothing */
 		GDKerror("unsupported type\n");
 		return GDK_FAIL;
