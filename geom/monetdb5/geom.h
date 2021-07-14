@@ -32,6 +32,7 @@
 #define geom_export extern
 #endif
 
+str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b);
 
 /* general functions */
 geom_export str geoHasZ(int* res, int* info);
