@@ -383,9 +383,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'BITS32'               : "@BITS32_FALSE@",
-    'BITS64'               : "@BITS64_FALSE@",
-    'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
@@ -398,37 +395,36 @@ CONDITIONALS = {
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
-    'HAVE_PYMONETDB'       : "True",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
-    'KNOWNFAIL'            : "", # skip on release branch when not in testweb
-    'HAVE_MONETDBJDBC_JAR' : "",
-    'HAVE_JAVA'            : "",
-    'HAVE_JAVAJDBC'        : "",
-    'HAVE_JAVAMEROCONTROL' : "",
-    'HAVE_JDBCCLIENT_JAR'  : "",
-    'HAVE_JDBCTESTS_JAR'   : "",
-    'HAVE_JDBCTESTS_DIR'   : "",
-    'HAVE_JDBCTESTS'       : "",
-#    'HAVE_LIBPANDAS3'      : "",
-    'HAVE_LIBSCIPY3'       : "",
-    'HAVE_PERL'            : "",
-    'HAVE_PHP'             : "",
-    'HAVE_PYTHON_LZ4'      : "", # module lz4 is available
-    'HAVE_RUBY'            : "",
-    'HAVE_DATA_PATH'       : "",
-    'MERCURIAL'            : "",
-    'RELEASERUN'           : "",
-    'BAD_HOSTNAME'         : "",
-    'HAVE_IPV6'            : "",
-    'HAVE_MONETDBE'        : "",
+    'KNOWNFAIL'            : False, # skip on release branch when not in testweb
+    'HAVE_MONETDBJDBC_JAR' : False,
+    'HAVE_JAVA'            : False,
+    'HAVE_JAVAJDBC'        : False,
+    'HAVE_JAVAMEROCONTROL' : False,
+    'HAVE_JDBCCLIENT_JAR'  : False,
+    'HAVE_JDBCTESTS_JAR'   : False,
+    'HAVE_JDBCTESTS_DIR'   : False,
+    'HAVE_JDBCTESTS'       : False,
+#    'HAVE_LIBPANDAS3'      : False,
+    'HAVE_LIBSCIPY3'       : False,
+    'HAVE_PERL'            : False,
+    'HAVE_PHP'             : False,
+    'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
+    'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
+    'HAVE_RUBY'            : False,
+    'HAVE_DATA_PATH'       : False,
+    'MERCURIAL'            : False,
+    'RELEASERUN'           : False,
+    'BAD_HOSTNAME'         : False,
+    'HAVE_IPV6'            : False,
+    'NOWAL'                : False,
 }
 
 
@@ -437,16 +433,22 @@ class Timer:
     # timeout of 0 as no timeout
     def __init__(self, interval, function, args):
         self.timer = None
-        if interval > 0:
-            self.timer = threading.Timer(interval, function, args = args)
+        self.function = function
+        self.args = args
+        self.interval = interval
+
+    def settimeout(self, interval):
+        self.interval = interval
 
     def start(self):
-        if self.timer is not None:
+        if self.timer is None and self.interval > 0:
+            self.timer = threading.Timer(self.interval, self.function, args=self.args)
             self.timer.start()
 
     def cancel(self):
         if self.timer is not None:
             self.timer.cancel()
+            self.timer = None
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
@@ -572,6 +574,8 @@ def PerformDir(env, testdir) :
             if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
                 try:
                     shutil.rmtree(LogDBdir)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     return td, FdErr
@@ -590,6 +594,8 @@ def PerformDir(env, testdir) :
                     return td, FdErr
                 try:
                     z.extractall(LogDBdir)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     return td, FdErr
@@ -673,6 +679,8 @@ def PerformDir(env, testdir) :
         if testweb:
             try:
                 os.removedirs(TSTTRGDIR)
+            except KeyboardInterrupt:
+                raise
             except:
                 pass
         env['passed'] = int(env.get('passed', 0)) + len(oktests)
@@ -839,6 +847,7 @@ def GetBitsAndModsAndThreads(env) :
     except OSError:
         pass
     cmd.append('--dbpath=%s' % dbpath)
+    os.environ['TSTDB'] = TSTPREF
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -1450,6 +1459,8 @@ def killProc(proc, outfile = None, cmd = None):
                 out, err = p.communicate()
             if t is not None:
                 t.cancel()
+        except KeyboardInterrupt:
+            raise
         except:
             out = ''
     if outfile is not None and out:
@@ -1537,7 +1548,8 @@ class ServerClass:
         proc.killed = False
         proc.onechild = True
         t = Timer(self.timeout, killProc, args = [proc, self.errfile, self.cmd])
-        t.start()
+        if self.timeout > 0:
+            t.start()
         self.proc = proc
         self.timer = t
 
@@ -1757,6 +1769,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                     Srvr.append('--dbextra=in-memory')
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
+            else:
+                PSRVR.timer.settimeout(TIMEOUT)
+                PSRVR.timer.start()
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -1815,12 +1830,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                                     database=TSTDB,
                                     language=lang,
                                     timeout=TIMEOUT)
+                    except KeyboardInterrupt:
+                        raise
                     except:
                         returncode = 'error'
                     else:
                         if not os.path.exists(TST+'.reqtests'):
                             try:
                                 sql.drop()
+                            except KeyboardInterrupt:
+                                raise
                             except:
                                 pass
                         try:
@@ -2035,14 +2054,14 @@ def CheckClassPath() :
                     continue
                 for C in JARS:
                     if JARS[C].match(f):
-                        CONDITIONALS[C] = '#'
+                        CONDITIONALS[C] = True
                         cp = os.path.join(p, f) + os.pathsep + cp
                         break
         elif os.path.isfile(p):
             f = os.path.basename(p)
             for C in JARS:
                 if JARS[C].match(f):
-                    CONDITIONALS[C] = '#'
+                    CONDITIONALS[C] = True
                     break
     # check for known JARs in CLASSPATH directories
     # + fall-back using pkgdatadir/lib
@@ -2056,14 +2075,14 @@ def CheckClassPath() :
                         C = 'HAVE_JDBCTESTS_DIR'
                         if not CONDITIONALS.get(C):
                             cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = '#'
+                            CONDITIONALS[C] = True
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
                         if C not in JARS:
                             C = 'HAVE_MONETDBJDBC_JAR'
                         if not CONDITIONALS.get(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = '#'
+                            CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
     if verbose:
@@ -2077,7 +2096,7 @@ def CheckClassPath() :
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
        ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
          CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
-        CONDITIONALS['HAVE_JDBCTESTS'] = '#'
+        CONDITIONALS['HAVE_JDBCTESTS'] = True
 ### CheckClassPath() #
 
 def SetExecEnv(exe,verbose) :
@@ -2168,12 +2187,6 @@ else:
         MAJOR = RELEASE.split(".", 1)[0]
         if "A" <= MAJOR and MAJOR <= "Z":
             RELEASE = RELEASE.split(".", 1)[1]
-
-# this is for the wine/mingw setup
-if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    SYST = 'Windows'
-    HOST = "WINE"
-    RELEASE = "5.2"
 
 # see if we can use UNIX sockets
 try:
@@ -2277,6 +2290,17 @@ os.environ['VERSION'] = VERSION
 par = {}
 dft = {}
 
+class OrAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        super(OrAction, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        # if first time, override (default) value, otherwise bitwise OR values
+        if '__seen_option_' + self.dest in namespace:
+            setattr(namespace, self.dest, getattr(namespace, self.dest) | values)
+        else:
+            setattr(namespace, self.dest, values)
+        setattr(namespace, '__seen_option_' + self.dest, True)
+
 def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
@@ -2343,7 +2367,7 @@ def main(argv) :
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
-    parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
+    parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
     parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
     parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
@@ -2412,6 +2436,8 @@ def main(argv) :
     a = opts.mserver_set
     if a is not None:
         env['MSERVER_SET'] = "--set " + a
+        if a == 'sql_debug=128':
+            CONDITIONALS['NOWAL'] = True
     else:
         env['MSERVER_SET'] = ""
     a = opts.no_clean
@@ -2479,14 +2505,14 @@ def main(argv) :
         if proc.returncode == 0:
             CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
     if env.get('TSTDATAPATH'):
-        CONDITIONALS['HAVE_DATA_PATH'] = '#'
+        CONDITIONALS['HAVE_DATA_PATH'] = True
     if CheckExec('perl'):
         with process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                            stdout=process.PIPE, stderr=process.PIPE,
                            text=True) as proc:
             perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_PERL'] = '#'
+            CONDITIONALS['HAVE_PERL'] = True
         else:
             print('Perl available, but MonetDB driver or DBI module not available')
     if CheckExec('php'):
@@ -2499,7 +2525,7 @@ def main(argv) :
                            text=True) as proc:
             php_out, php_err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_PHP'] = '#'
+            CONDITIONALS['HAVE_PHP'] = True
         else:
             print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
@@ -2518,7 +2544,7 @@ def main(argv) :
                                text=True) as proc:
                 ruby_out, ruby_err = proc.communicate()
             if proc.returncode == 0:
-                CONDITIONALS['HAVE_RUBY'] = '#'
+                CONDITIONALS['HAVE_RUBY'] = True
             else:
                 print('Ruby available, but MonetDB gem not available')
     CheckClassPath()
@@ -2582,30 +2608,32 @@ def main(argv) :
                            text=True) as proc:
             out, err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['MERCURIAL'] = '#' # True
+            CONDITIONALS['MERCURIAL'] = True
         proc = None
+    except KeyboardInterrupt:
+        raise
     except:
         pass
     os.chdir(BACK)
 
     # check whether our hostname makes sense
     if os.environ['HOST'] == 'localhost':
-        CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+        CONDITIONALS['BAD_HOSTNAME'] = True
     else:
         try:
             socket.getaddrinfo(socket.gethostname(), None)
+        except KeyboardInterrupt:
+            raise
         except:
-            CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+            CONDITIONALS['BAD_HOSTNAME'] = True
 
-    s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     try:
-        s.bind(('::1', int(env['MAPIPORT'])))
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            s.bind(('::1', int(env['MAPIPORT'])))
     except socket.error as err:
-        CONDITIONALS['HAVE_IPV6'] = '' # False
+        CONDITIONALS['HAVE_IPV6'] = False
     else:
-        CONDITIONALS['HAVE_IPV6'] = '#' # True
-    s.close()
-
+        CONDITIONALS['HAVE_IPV6'] = True
 
     # some relative path's for relocatable HTML output
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
@@ -2657,6 +2685,8 @@ def main(argv) :
             if proc.returncode == 0:
                 REV = out.strip()
             proc = None
+        except KeyboardInterrupt:
+            raise
         except:
             pass
     if REV:
@@ -2676,6 +2706,8 @@ def main(argv) :
                         (sockdir, env['MAPIPORT'])
                 HOST = sockdir
                 os.environ['MAPIHOST'] = HOST
+            except KeyboardInterrupt:
+                raise
             except:
                 SOCK = ""
         else:
@@ -2705,6 +2737,8 @@ def main(argv) :
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(TSTTRGBASE, TSTPREF))
+            except KeyboardInterrupt:
+                raise
             except:
                 ErrXit("Failed to remove %s" % os.path.join(TSTTRGBASE, TSTPREF))
         if not os.path.exists(env['GDK_DBFARM']):
@@ -2714,6 +2748,8 @@ def main(argv) :
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF))
+            except KeyboardInterrupt:
+                raise
             except:
                 ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
         try:
@@ -2842,6 +2878,8 @@ def main(argv) :
         # cleanup the place where we put our UNIX sockets
         try:
             shutil.rmtree(sockdir)
+        except KeyboardInterrupt:
+            raise
         except:
             pass
 
