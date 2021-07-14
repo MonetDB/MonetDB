@@ -1925,6 +1925,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				MT_lock_unset(&b->batIdxLock);
 			}
 		}
+		GDKclrerr();
 		bn = scanselect(b, &bi, &ci, bn, tl, th, li, hi, equi, anti,
 				lval, hval, lnil, maximum, imprints, &algo);
 		if (imprints)
