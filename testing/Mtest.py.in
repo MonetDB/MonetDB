@@ -3507,7 +3507,6 @@ def main(argv) :
     parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
     parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
     parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
-    parser.add_argument('--jenkins', action='store_true', dest='jenkins', help='special handling for Jenkins')
     parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
     parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
     parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
@@ -3535,7 +3534,6 @@ def main(argv) :
     global approve
     approve = opts.approve
     nomito = False
-    jenkins = False
     addreqs = False
     all_tests = False
     testweb = opts.testweb
@@ -3582,7 +3580,6 @@ def main(argv) :
         env['TRANS_INMEM'] = 'True'
     if opts.multifarm and opts.inmemory:
         ErrXit("Cannot have both --multifarm and --transient-inmemory")
-    jenkins = opts.jenkins
     addreqs = opts.addreqs
     a = opts.global_timeout
     if a:
@@ -4306,8 +4303,6 @@ VALUES (%s, '%s', '%s', '%s',
 
  After that, re-run Mtest.
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
-            if jenkins:
-                sys.exit(0)
             sys.exit(1)
         else:
             if quiet:
