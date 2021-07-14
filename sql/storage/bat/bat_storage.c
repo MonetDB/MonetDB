@@ -303,6 +303,24 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 	return cnt;
 }
 
+static size_t
+segs_end_include_deleted( segments *segs, sql_trans *tr, sql_table *table)
+{
+	size_t cnt = 0;
+
+	lock_table(tr->store, table->base.id);
+	segment *s = segs->h, *l = NULL;
+
+	for(;s; s = s->next) {
+		if (s->ts == tr->tid || SEG_IS_VALID(s, tr))
+				l = s;
+	}
+	if (l)
+		cnt = l->end;
+	unlock_table(tr->store, table->base.id);
+	return cnt;
+}
+
 static int
 segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 {
@@ -313,9 +331,9 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 		return LOG_ERR;
 	segment *s = segs->h;
 
-	size_t nr = segs_end(segs, tr, t);
+	size_t nr = segs_end_include_deleted(segs, tr, t);
 	size_t rounded_nr = ((nr+31)&~31);
-	if (rounded_nr >= BATcapacity(b) && BATextend(b, rounded_nr) != GDK_SUCCEED) {
+	if (rounded_nr > BATcapacity(b) && BATextend(b, rounded_nr) != GDK_SUCCEED) {
 		bat_destroy(b);
 		return LOG_ERR;
 	}

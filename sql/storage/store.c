@@ -5710,10 +5710,12 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 			oid rid;
 			next->colnr--;
 
-			rid = store->table_api.column_find_row(tr, cid, &next->base.id, NULL);
-			assert(!is_oid_nil(rid));
-			if ((res = store->table_api.column_update_value(tr, cnr, rid, &next->colnr)))
-				return res;
+			if (!isDeclaredTable(t)) {
+				rid = store->table_api.column_find_row(tr, cid, &next->base.id, NULL);
+				assert(!is_oid_nil(rid));
+				if ((res = store->table_api.column_update_value(tr, cnr, rid, &next->colnr)))
+					return res;
+			}
 		}
 	}
 
