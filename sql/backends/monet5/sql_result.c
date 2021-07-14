@@ -861,7 +861,7 @@ static int
 create_prepare_result(backend *b, cq *q, int nrows) {
 	int error = -1;
 
-	BAT* btype		= COLnew(0, TYPE_int, nrows, TRANSIENT);
+	BAT* btype		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bimpl		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bdigits	= COLnew(0, TYPE_int, nrows, TRANSIENT);
 	BAT* bscale		= COLnew(0, TYPE_int, nrows, TRANSIENT);
@@ -927,7 +927,7 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 			if (!name)
 				name = "";
 
-			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
+			if (	BUNappend(btype,	t->type->base.name	, false) != GDK_SUCCEED ||
 					BUNappend(bimpl,	t->type->impl		, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
@@ -949,7 +949,7 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 			a = n->data;
 			t = &a->type;
 
-			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
+			if (	BUNappend(btype,	t->type->base.name	, false) != GDK_SUCCEED ||
 					BUNappend(bimpl,	t->type->impl		, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
@@ -962,7 +962,7 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 
 	// A little hack to inform the result receiver of the name of the compiled mal program.
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
-		if (	BUNappend(btype,	&int_nil	, false) != GDK_SUCCEED ||
+		if (	BUNappend(btype,	str_nil		, false) != GDK_SUCCEED ||
 				BUNappend(bimpl,	str_nil		, false) != GDK_SUCCEED ||
 				BUNappend(bdigits,	&int_nil	, false) != GDK_SUCCEED ||
 				BUNappend(bscale,	&int_nil	, false) != GDK_SUCCEED ||
@@ -982,11 +982,11 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 							b->results,
 							order);
 
-	if (	mvc_result_column(b, "prepare", "type"		, "varchar",	len1, 0, btype) ||
+	if (	mvc_result_column(b, "prepare", "type"		, "varchar",	len1, 0, btype	) ||
 			mvc_result_column(b, "prepare", "digits"	, "int",		len2, 0, bdigits) ||
-			mvc_result_column(b, "prepare", "scale"		, "int",		len3, 0, bscale) ||
+			mvc_result_column(b, "prepare", "scale"		, "int",		len3, 0, bscale	) ||
 			mvc_result_column(b, "prepare", "schema"	, "varchar",	len4, 0, bschema) ||
-			mvc_result_column(b, "prepare", "table"		, "varchar",	len5, 0, btable) ||
+			mvc_result_column(b, "prepare", "table"		, "varchar",	len5, 0, btable	) ||
 			mvc_result_column(b, "prepare", "column"	, "varchar",	len6, 0, bcolumn))
 		goto wrapup;
 
@@ -996,13 +996,13 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 	error = 0;
 
 	wrapup:
-		BBPreclaim(btype);
-		BBPreclaim(bdigits);
-		BBPreclaim(bscale);
-		BBPreclaim(bschema);
-		BBPreclaim(btable);
-		BBPreclaim(bcolumn);
-		BBPreclaim(order);
+		BBPunfix(btype	->batCacheid);
+		BBPunfix(bdigits->batCacheid);
+		BBPunfix(bscale	->batCacheid);
+		BBPunfix(bschema->batCacheid);
+		BBPunfix(btable	->batCacheid);
+		BBPunfix(bcolumn->batCacheid);
+		BBPunfix(order	->batCacheid);
 		return error;
 }
 
