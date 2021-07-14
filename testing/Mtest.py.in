@@ -379,27 +379,28 @@ CONDITIONALS = {
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
-    'KNOWNFAIL'            : "", # skip on release branch when not in testweb
-    'HAVE_MONETDBJDBC_JAR' : "",
-    'HAVE_JAVA'            : "",
-    'HAVE_JAVAJDBC'        : "",
-    'HAVE_JAVAMEROCONTROL' : "",
-    'HAVE_JDBCCLIENT_JAR'  : "",
-    'HAVE_JDBCTESTS_JAR'   : "",
-    'HAVE_JDBCTESTS_DIR'   : "",
-    'HAVE_JDBCTESTS'       : "",
-#    'HAVE_LIBPANDAS3'      : "",
-    'HAVE_LIBSCIPY3'       : "",
-    'HAVE_PERL'            : "",
-    'HAVE_PHP'             : "",
-    'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
-    'HAVE_PYTHON_LZ4'      : "", # module lz4 is available
-    'HAVE_RUBY'            : "",
-    'HAVE_DATA_PATH'       : "",
-    'MERCURIAL'            : "",
-    'RELEASERUN'           : "",
-    'BAD_HOSTNAME'         : "",
-    'HAVE_IPV6'            : "",
+    'KNOWNFAIL'            : False, # skip on release branch when not in testweb
+    'HAVE_MONETDBJDBC_JAR' : False,
+    'HAVE_JAVA'            : False,
+    'HAVE_JAVAJDBC'        : False,
+    'HAVE_JAVAMEROCONTROL' : False,
+    'HAVE_JDBCCLIENT_JAR'  : False,
+    'HAVE_JDBCTESTS_JAR'   : False,
+    'HAVE_JDBCTESTS_DIR'   : False,
+    'HAVE_JDBCTESTS'       : False,
+#    'HAVE_LIBPANDAS3'      : False,
+    'HAVE_LIBSCIPY3'       : False,
+    'HAVE_PERL'            : False,
+    'HAVE_PHP'             : False,
+    'HAVE_PYMONETDB'       : False, # default PYTHON can import pymonetdb
+    'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
+    'HAVE_RUBY'            : False,
+    'HAVE_DATA_PATH'       : False,
+    'MERCURIAL'            : False,
+    'RELEASERUN'           : False,
+    'BAD_HOSTNAME'         : False,
+    'HAVE_IPV6'            : False,
+    'NOWAL'                : False,
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -3167,14 +3168,14 @@ def CheckClassPath() :
                     continue
                 for C in JARS:
                     if JARS[C].match(f):
-                        CONDITIONALS[C] = '#'
+                        CONDITIONALS[C] = True
                         cp = os.path.join(p, f) + os.pathsep + cp
                         break
         elif os.path.isfile(p):
             f = os.path.basename(p)
             for C in JARS:
                 if JARS[C].match(f):
-                    CONDITIONALS[C] = '#'
+                    CONDITIONALS[C] = True
                     break
     # check for known JARs in CLASSPATH directories
     # + fall-back using pkgdatadir/lib
@@ -3188,14 +3189,14 @@ def CheckClassPath() :
                         C = 'HAVE_JDBCTESTS_DIR'
                         if not CONDITIONALS.get(C):
                             cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = '#'
+                            CONDITIONALS[C] = True
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
                         if C not in JARS:
                             C = 'HAVE_MONETDBJDBC_JAR'
                         if not CONDITIONALS.get(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = '#'
+                            CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
     if verbose:
@@ -3209,7 +3210,7 @@ def CheckClassPath() :
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
        ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
          CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
-        CONDITIONALS['HAVE_JDBCTESTS'] = '#'
+        CONDITIONALS['HAVE_JDBCTESTS'] = True
 ### CheckClassPath() #
 
 def SetExecEnv(exe,verbose) :
@@ -3566,6 +3567,8 @@ def main(argv) :
     a = opts.mserver_set
     if a is not None:
         env['MSERVER_SET'] = "--set " + a
+        if a == 'sql_debug=128':
+            CONDITIONALS['NOWAL'] = True
     else:
         env['MSERVER_SET'] = ""
     a = opts.no_clean
@@ -3625,7 +3628,7 @@ def main(argv) :
     except ImportError:
         print('Python available, but pymonetdb package not available')
     else:
-        CONDITIONALS['HAVE_PYMONETDB'] = '#'
+        CONDITIONALS['HAVE_PYMONETDB'] = True
     try:
         import lz4
     except ImportError:
@@ -3646,22 +3649,22 @@ def main(argv) :
                            text=True) as proc:
             pyout, pyerr = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
+            CONDITIONALS['HAVE_LIBSCIPY3'] = True
         # with process.Popen([os.environ['PYTHON3'], '-c', 'import pandas'],
         #                    stdout=process.PIPE, stderr=process.PIPE,
         #                    text=True) as proc:
         #     pyout, pyerr = proc.communicate()
         # if proc.returncode == 0:
-        #     CONDITIONALS['HAVE_LIBPANDAS3'] = '#'
+        #     CONDITIONALS['HAVE_LIBPANDAS3'] = True
     if env.get('TSTDATAPATH'):
-        CONDITIONALS['HAVE_DATA_PATH'] = '#'
+        CONDITIONALS['HAVE_DATA_PATH'] = True
     if CheckExec('perl'):
         with process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                            stdout=process.PIPE, stderr=process.PIPE,
                            text=True) as proc:
             perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_PERL'] = '#'
+            CONDITIONALS['HAVE_PERL'] = True
         else:
             print('Perl available, but MonetDB driver or DBI module not available')
     if CheckExec('php'):
@@ -3674,7 +3677,7 @@ def main(argv) :
                            text=True) as proc:
             php_out, php_err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_PHP'] = '#'
+            CONDITIONALS['HAVE_PHP'] = True
         else:
             print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
@@ -3693,7 +3696,7 @@ def main(argv) :
                                text=True) as proc:
                 ruby_out, ruby_err = proc.communicate()
             if proc.returncode == 0:
-                CONDITIONALS['HAVE_RUBY'] = '#'
+                CONDITIONALS['HAVE_RUBY'] = True
             else:
                 print('Ruby available, but MonetDB gem not available')
     CheckClassPath()
@@ -3758,7 +3761,7 @@ def main(argv) :
                            text=True) as proc:
             out, err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['MERCURIAL'] = '#' # True
+            CONDITIONALS['MERCURIAL'] = True
         proc = None
     except KeyboardInterrupt:
         raise
@@ -3768,22 +3771,22 @@ def main(argv) :
 
     # check whether our hostname makes sense
     if os.environ['HOST'] == 'localhost':
-        CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+        CONDITIONALS['BAD_HOSTNAME'] = True
     else:
         try:
             socket.getaddrinfo(socket.gethostname(), None)
         except KeyboardInterrupt:
             raise
         except:
-            CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+            CONDITIONALS['BAD_HOSTNAME'] = True
 
     try:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
             s.bind(('::1', int(env['MAPIPORT'])))
     except socket.error as err:
-        CONDITIONALS['HAVE_IPV6'] = '' # False
+        CONDITIONALS['HAVE_IPV6'] = False
     else:
-        CONDITIONALS['HAVE_IPV6'] = '#' # True
+        CONDITIONALS['HAVE_IPV6'] = True
 
     # some relative path's for relocatable HTML output
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
@@ -4323,7 +4326,7 @@ VALUES (%s, '%s', '%s', '%s',
     finally:
         # cleanup the place where we put our UNIX sockets
         try:
-            shutil.rmtree(sockdir);
+            shutil.rmtree(sockdir)
         except KeyboardInterrupt:
             raise
         except:
