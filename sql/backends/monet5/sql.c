@@ -2150,6 +2150,13 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			BAT *nres;
+			if ((nres = COLcopy(res, res->ttype, true, TRANSIENT)) == NULL) {
+				BBPunfix(res->batCacheid);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
+			}
+			BBPunfix(res->batCacheid);
+			res = nres;
 			ret = BATappend(res, u, cminu, true);
 			BBPunfix(u->batCacheid);
 			if (cminu)
