@@ -76,13 +76,13 @@ unlock_table(sqlstore *store, sqlid id)
 static void
 lock_column(sqlstore *store, sqlid id)
 {
-	MT_lock_set(&store->column_locks[id&(NR_TABLE_LOCKS-1)]);
+	MT_lock_set(&store->column_locks[id&(NR_COLUMN_LOCKS-1)]);
 }
 
 static void
 unlock_column(sqlstore *store, sqlid id)
 {
-	MT_lock_unset(&store->column_locks[id&(NR_TABLE_LOCKS-1)]);
+	MT_lock_unset(&store->column_locks[id&(NR_COLUMN_LOCKS-1)]);
 }
 
 
