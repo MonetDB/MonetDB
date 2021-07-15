@@ -439,6 +439,7 @@ extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx *
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
 
 #define NR_TABLE_LOCKS 64
+#define NR_COLUMN_LOCKS 512
 #define TRANSACTION_ID_BASE	(1ULL<<63)
 
 typedef struct sqlstore {
@@ -449,7 +450,7 @@ typedef struct sqlstore {
 	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too tables (storage) */
-	MT_Lock column_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too columns (storage) */
+	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes too columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
