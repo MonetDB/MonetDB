@@ -4796,6 +4796,8 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 		return res;
 	if ((res = sql_trans_add_dependency(tr, s->auth_id, ddl)))
 		return res;
+	if ((res = sql_trans_add_dependency(tr, s->owner, ddl)))
+		return res;
 	return res;
 }
 
