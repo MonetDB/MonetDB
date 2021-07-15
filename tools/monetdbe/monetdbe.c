@@ -1587,19 +1587,6 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 }
 
 char*
-monetdbe_get_type_info(monetdbe_statement *stmt, str* data, size_t i)
-{
-	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
-
-	if (i >= stmt->nparam)
-		return createException(MAL, "monetdbe.monetdbe_get_type_info", "Parameter %zu not bound to a value", i);
-	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
-	assert(a);
-	*data = a->type.type->impl;
-	return MAL_SUCCEED;
-}
-
-char*
 monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cnt *affected_rows)
 {
 	monetdbe_result_internal *res_internal = NULL;
