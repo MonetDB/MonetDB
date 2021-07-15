@@ -1049,14 +1049,11 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 	return sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-sql_schema *
+int
 mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
-	sql_schema *s = NULL;
-
 	TRC_DEBUG(SQL_TRANS, "Create schema: %s %d %d\n", name, auth_id, owner);
-	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner);
-	return s;
+	return sql_trans_create_schema(m->session->tr, name, auth_id, owner);
 }
 
 int
