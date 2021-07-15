@@ -48,24 +48,28 @@ priv2string(int priv)
 	return "UNKNOWN PRIV";
 }
 
-static void
+static int
 sql_insert_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
 	sql_table *pt = find_sql_table(sql->session->tr, ss, "privileges");
 	sqlstore *store = sql->session->tr->store;
 
-	store->table_api.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
+	return store->table_api.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
 }
 
-static void
+static int
 sql_insert_all_privs(mvc *sql, sqlid auth_id, sqlid obj_id, int grantor, int grantable)
 {
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable);
-	sql_insert_priv(sql, auth_id, obj_id, PRIV_TRUNCATE, grantor, grantable);
+	int log_res = 0;
+
+	if ((log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable)) ||
+		(log_res = sql_insert_priv(sql, auth_id, obj_id, PRIV_TRUNCATE, grantor, grantable)))
+		return log_res;
+	return 0;
 }
 
 static bool
@@ -106,6 +110,7 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 {
 	bool allowed;
 	sqlid grantee_id;
+	int log_res;
 
 	allowed = admin_privs(grantor);
 
@@ -121,7 +126,14 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 	/* first check if privilege isn't already given */
 	if ((sql_privilege(sql, grantee_id, GLOBAL_OBJID, privs) >= 0))
 		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
-	sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
+	if ((log_res = sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant)))
+		throw(SQL,"sql.grant_global",SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+
+	/* Add dependencies created */
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -132,7 +144,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
-	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE, log_res;
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
 		throw(SQL,"sql.grant_table", "%s", sql->errstr);
@@ -172,15 +184,32 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	     sql_privilege(sql, grantee_id, t->base.id, PRIV_TRUNCATE) >= 0)) ||
 	    (privs != all && !c && sql_privilege(sql, grantee_id, t->base.id, privs) >= 0) ||
 	    (privs != all && c && sql_privilege(sql, grantee_id, c->base.id, privs) >= 0)) {
-		throw(SQL, "sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
+		throw(SQL, "sql.grant_table", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	}
 	if (privs == all) {
-		sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant);
+		if ((log_res = sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant)))
+			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	} else if (!c) {
-		sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
+		if ((log_res = sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant)))
+			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	} else {
-		sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+		if ((log_res = sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant)))
+			throw(SQL, "sql.grant_table", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
+
+	/* Add dependencies created */
+	if (privs == all || !c) {
+		if (!isNew(t) && (log_res = sql_trans_add_dependency(sql->session->tr, t->base.id, ddl)) != LOG_OK)
+			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else {
+		if (!isNew(c) && (log_res = sql_trans_add_dependency(sql->session->tr, c->base.id, ddl)) != LOG_OK)
+			throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantee_id, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	return NULL;
 }
 
@@ -190,6 +219,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	sql_schema *s = NULL;
 	bool allowed;
 	sqlid grantee_id;
+	int log_res;
 
 	assert(sname);
 	if (!(s = mvc_bind_schema(sql, sname)))
@@ -210,8 +240,15 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: User/role '%s' unknown", grantee);
 	/* first check if privilege isn't already given */
 	if (sql_privilege(sql, grantee_id, f->base.id, privs) >= 0)
-		throw(SQL,"sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
-	sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
+		throw(SQL,"sql.grant_func", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
+	if ((log_res = sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant)))
+		throw(SQL,"sql.grant_func", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+
+	/* Add dependencies created */
+	if (!isNew(f) && (log_res = sql_trans_add_dependency(sql->session->tr, func_id, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(sql->session->tr, grantor, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
 
@@ -350,22 +387,35 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 	sqlstore *store = m->session->tr->store;
+	int log_res = LOG_OK;
 
 	if (!is_oid_nil(store->table_api.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		return false;
 
-	store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor);
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor)) != LOG_OK)
+		throw(SQL, "sql.create_auth_id", SQLSTATE(42000) "CREATE AUTH: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return true;
 }
 
 str
 sql_create_role(mvc *m, str auth, sqlid grantor)
 {
+	sqlid id;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = m->session->tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *auths = find_sql_table(tr, sys, "auths");
+	sql_column *auth_name = find_sql_column(auths, "name");
+	int log_res = LOG_OK;
+
 	if (!admin_privs(grantor))
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Insufficient privileges to create role '%s'", auth);
-
-	if (sql_trans_create_role(m->session->tr, auth, grantor) < 0)
+	if (!is_oid_nil(store->table_api.column_find_row(tr, auth_name, auth, NULL)))
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Role '%s' already exists", auth);
+
+	id = store_next_oid(tr->store);
+	if ((log_res = store->table_api.table_insert(tr, auths, &id, &auth, &grantor)) != LOG_OK)
+		throw(SQL, "sql.create_role", SQLSTATE(42000) "CREATE ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return NULL;
 }
 
@@ -396,6 +446,10 @@ sql_drop_role(mvc *m, str auth)
 	store->table_api.rids_destroy(A);
 	if (log_res != LOG_OK)
 		throw(SQL, "sql.drop_role", SQLSTATE(42000) "DROP ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+
+	/* Flag as removed */
+	if ((log_res = sql_trans_add_dependency_change(tr, role_id, ddl)) != LOG_OK)
+		throw(SQL, "sql.drop_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
 
@@ -519,6 +573,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	sql_column *auths_id = find_sql_column(auths, "id");
 	sqlid role_id, grantee_id;
 	sqlstore *store = m->session->tr->store;
+	int log_res = LOG_OK;
 
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (is_oid_nil(rid))
@@ -536,13 +591,23 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	if (!is_oid_nil(rid))
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: User '%s' already has ROLE '%s'", grantee, role);
 
-	store->table_api.table_insert(m->session->tr, roles, &grantee_id, &role_id);
+	if ((log_res = store->table_api.table_insert(m->session->tr, roles, &grantee_id, &role_id)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	if (admin) {
 		int priv = PRIV_ROLE_ADMIN, one = 1;
 		sql_table *privs = find_sql_table(m->session->tr, sys, "privileges");
 
-		store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one);
+		if ((log_res = store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one)) != LOG_OK)
+			throw(SQL, "sql.grant_role", SQLSTATE(42000) "GRANT: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
+
+	/* Add dependencies created */
+	if ((log_res = sql_trans_add_dependency(m->session->tr, grantee_id, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(m->session->tr, role_id, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((log_res = sql_trans_add_dependency(m->session->tr, grantor, ddl)) != LOG_OK)
+		throw(SQL, "sql.grant_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return NULL;
 }
 
@@ -611,28 +676,6 @@ sql_find_auth(mvc *m, str auth)
 			res = p;
 	}
 	return res;
-}
-
-sqlid
-sql_find_schema(mvc *m, str schema)
-{
-	sqlid schema_id = -1;
-	oid rid;
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *schemas = find_sql_table(m->session->tr, sys, "schemas");
-	sql_column *schemas_name = find_sql_column(schemas, "name");
-	sqlstore *store = m->session->tr->store;
-
-	rid = store->table_api.column_find_row(m->session->tr, schemas_name, schema, NULL);
-
-	if (!is_oid_nil(rid)) {
-		sql_column *schemas_id = find_sql_column(schemas, "id");
-		sqlid p = store->table_api.column_find_sqlid(m->session->tr, schemas_id, rid);
-
-		if (p > -1)
-			schema_id = p;
-	}
-	return schema_id;
 }
 
 int
@@ -735,15 +778,21 @@ char *
 sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path)
 {
 	char *err;
+	sql_schema *s = NULL;
 	sqlid schema_id = 0;
 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "Insufficient privileges to create user '%s'", user);
 
 	if (backend_find_user(sql, user) >= 0)
-		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
-	if ((schema_id = sql_find_schema(sql, schema)) < 0)
+		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);	
+
+	if (!(s = find_sql_schema(sql->session->tr, schema)))
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
+	schema_id = s->base.id;
+	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
+		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
 	{
 		/* strip off MAL exception decorations */
@@ -853,13 +902,19 @@ sql_drop_user(mvc *sql, char *user)
 		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = sql_drop_granted_users(sql, user_id, user, deleted);
 	list_destroy(deleted);
+
+	/* Flag as removed */
+	if (!msg && sql_trans_add_dependency_change(sql->session->tr, user_id, ddl) != LOG_OK)
+		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
 char *
 sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd)
 {
+	sql_schema *s = NULL;
 	sqlid schema_id = 0;
+
 	/* we may be called from MAL (nil) */
 	if (strNil(user))
 		user = NULL;
@@ -870,8 +925,13 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 
 	if (user != NULL && backend_find_user(sql, user) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
-	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0)
-		throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
+	if (schema) {
+		if (!(s = find_sql_schema(sql->session->tr, schema)))
+			throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
+		schema_id = s->base.id;
+		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
+			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;

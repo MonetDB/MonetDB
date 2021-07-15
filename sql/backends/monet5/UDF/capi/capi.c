@@ -1023,6 +1023,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					} else {
 						bat_data->data[j] = wrapped_GDK_malloc_nojump(strlen(t) + 1);
 						if (!bat_data->data[j]) {
+							bat_iterator_end(&li);
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 							goto wrapup;
 						}
@@ -1031,6 +1032,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				j++;
 			}
+			bat_iterator_end(&li);
 			if (can_mprotect_varheap) {
 				// mprotect the varheap of the BAT to prevent modification of input strings
 				mprotect_retval =
@@ -1126,6 +1128,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						bat_data->data[j].data = t->nitems == 0 ? NULL :
 							wrapped_GDK_malloc_nojump(t->nitems);
 						if (t->nitems > 0 && !bat_data->data[j].data) {
+							bat_iterator_end(&li);
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 							goto wrapup;
 						}
@@ -1134,6 +1137,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				j++;
 			}
+			bat_iterator_end(&li);
 			bat_data->null_value.size = ~(size_t) 0;
 			bat_data->null_value.data = NULL;
 			if (can_mprotect_varheap) {
@@ -1176,6 +1180,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					size_t length = 0;
 					if (BATatoms[bat_type].atomToStr(&result, &length, t, false) ==
 						0) {
+						bat_iterator_end(&li);
 						msg = createException(
 							MAL, "cudf.eval",
 							"Failed to convert element to string");
@@ -1185,6 +1190,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				j++;
 			}
+			bat_iterator_end(&li);
 		}
 		input_size = BATcount(input_bats[index]) > input_size
 						 ? BATcount(input_bats[index])
@@ -1505,6 +1511,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						BUNtail(li, 0)) == NULL) {
 				msg = createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			bat_iterator_end(&li);
 			BBPunfix(b->batCacheid);
 		}
 	}

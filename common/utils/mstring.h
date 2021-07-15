@@ -79,4 +79,80 @@ strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 	return i;
 }
 
+#ifndef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define __builtin_expect(expr, expect)	(expr)
+#endif
+
+/*
+ * UTF-8 encoding is as follows:
+ * U-00000000 - U-0000007F: 0xxxxxxx
+ * U-00000080 - U-000007FF: 110zzzzx 10xxxxxx
+ * U-00000800 - U-0000FFFF: 1110zzzz 10zxxxxx 10xxxxxx
+ * U-00010000 - U-0010FFFF: 11110zzz 10zzxxxx 10xxxxxx 10xxxxxx
+ *
+ * To be correctly coded UTF-8, the sequence should be the shortest
+ * possible encoding of the value being encoded.  This means that at
+ * least one of the z bits must be non-zero.  Also note that the four
+ * byte sequence can encode more than is allowed and that the values
+ * U+D800..U+DFFF are not allowed to be encoded.
+ */
+static inline bool
+checkUTF8(const char *v)
+{
+	/* It is unlikely that this functions returns false, because
+	 * it is likely that the string presented is a correctly coded
+	 * UTF-8 string.  So we annotate the tests that are very
+	 * unlikely to succeed, i.e. the ones that lead to a return of
+	 * false, as being expected to return 0 using the
+	 * __builtin_expect function. */
+	if (v != NULL) {
+		if (v[0] != '\200' || v[1] != '\0') {
+			/* check that string is correctly encoded UTF-8 */
+			for (size_t i = 0; v[i]; i++) {
+				/* we do not annotate all tests, only the ones
+				 * leading directly to an unlikely return
+				 * statement */
+				if ((v[i] & 0x80) == 0) {
+					;
+				} else if ((v[i] & 0xE0) == 0xC0) {
+					if (__builtin_expect(((v[i] & 0x1E) == 0), 0))
+						return false;
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+				} else if ((v[i] & 0xF0) == 0xE0) {
+					if ((v[i++] & 0x0F) == 0) {
+						if (__builtin_expect(((v[i] & 0xE0) != 0xA0), 0))
+							return false;
+					} else {
+						if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+							return false;
+					}
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+				} else if (__builtin_expect(((v[i] & 0xF8) == 0xF0), 1)) {
+					if ((v[i++] & 0x07) == 0) {
+						if (__builtin_expect(((v[i] & 0x30) == 0), 0))
+							return false;
+					}
+					if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+						return false;
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+				} else {
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+#ifndef __GNUC__
+#undef __builtin_expect
+#endif
+
 #endif

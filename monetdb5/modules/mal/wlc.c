@@ -723,8 +723,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define bulk(TPE1, TPE2)\
-{	TPE1 *p = (TPE1 *) Tloc(b,0);\
-	TPE1 *q = (TPE1 *) Tloc(b, BUNlast(b));\
+{	TPE1 *p = (TPE1 *) bi.base;\
+	TPE1 *q = (TPE1 *) bi.base + BUNlast(b);\
 	int k=0; \
 	for( ; p < q; p++, k++){\
 		if( k % 32 == 31){\
@@ -738,8 +738,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 } }
 
 #define updateBatch(TPE1,TPE2)\
-{	TPE1 *x = (TPE1 *) Tloc(bval,0);\
-	TPE1 *y = (TPE1 *) Tloc(bval, BUNlast(b));\
+{	TPE1 *x = (TPE1 *) bvali.base;\
+	TPE1 *y = (TPE1 *) bvali.base + BUNlast(b);\
 	int k=0; \
 	for( ; x < y; x++, k++){\
 		p = newStmt(cntxt->wlc, "wlr","update");\
@@ -753,6 +753,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
+	BATiter bi;
 	str sch, tbl, col;
 	str msg = MAL_SUCCEED;
 	(void) mb;
@@ -775,6 +776,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	}
 	if (cntxt->wlc_kind < WLC_UPDATE)
 		cntxt->wlc_kind = WLC_UPDATE;
+	bi = bat_iterator(b);
 	switch( ATOMstorage(b->ttype)){
 	case TYPE_bit: bulk(bit,Bit); break;
 	case TYPE_bte: bulk(bte,Bte); break;
@@ -787,10 +789,8 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	case TYPE_hge: bulk(hge,Hge); break;
 #endif
 	case TYPE_str:
-		{	BATiter bi;
-			BUN p,q;
+		{	BUN p,q;
 			int k=0;
-			bi= bat_iterator(b);
 			BATloop(b,p,q){
 				if( k % 32 == 31){
 					pci = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
@@ -800,12 +800,14 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 				}
 				k++;
 				pci = pushStr(cntxt->wlc, pci ,(str) BUNtvar(bi,p));
-		} }
+			}
+		}
 		break;
 	default:
 		TRC_ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
+	bat_iterator_end(&bi);
 finish:
 	BBPunfix(b->batCacheid);
 	if (sch)
@@ -897,7 +899,8 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushOid(cntxt->wlc,p, o);
 			}
 		} else {
-			ol = (oid*) Tloc(b,0);
+			BATiter bi = bat_iterator(b);
+			ol = (oid*) bi.base;
 			for( ; o < last; o++, k++, ol++){
 				if( k % 32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
@@ -906,6 +909,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				p = pushOid(cntxt->wlc,p, *ol);
 			}
+			bat_iterator_end(&bi);
 		}
 		BBPunfix(b->batCacheid);
 	} else
@@ -943,10 +947,12 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(bval->batCacheid);
 			throw(MAL, "wlr.update", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
+		BATiter bi = bat_iterator(b);
 		if( b->ttype == TYPE_void)
 			o = b->tseqbase;
 		else
-			ol = (oid*) Tloc(b,0);
+			ol = (oid*) bi.base;
+		BATiter bvali = bat_iterator(bval);
 		switch( ATOMstorage(bval->ttype)){
 		case TYPE_bit: updateBatch(bit,Bit); break;
 		case TYPE_bte: updateBatch(bte,Bte); break;
@@ -959,10 +965,8 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_hge: updateBatch(hge,Hge); break;
 #endif
 		case TYPE_str:
-		{	BATiter bi;
-			int k=0;
+		{	int k=0;
 			BUN x,y;
-			bi = bat_iterator(bval);
 			BATloop(bval,x,y){
 				p = newStmt(cntxt->wlc, "wlr","update");
 				p = pushStr(cntxt->wlc, p, sch);
@@ -971,11 +975,14 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushOid(cntxt->wlc, p, (ol? *ol++ : o++));
 				p = pushStr(cntxt->wlc, p , BUNtvar(bi,x));
 				k++;
-		} }
+			}
+		}
 		/* fall through */
 		default:
 			cntxt->wlc_kind = WLC_CATALOG;
 		}
+		bat_iterator_end(&bi);
+		bat_iterator_end(&bvali);
 		BBPunfix(b->batCacheid);
 	} else {
 		p = newStmt(cntxt->wlc, "wlr","update");

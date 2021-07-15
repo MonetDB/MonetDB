@@ -559,6 +559,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
+					GDKerror("short read from heap %s%s\n", nme, ext ? ext : "");
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -640,8 +641,10 @@ DESCload(int i)
 
 	b = BBP_desc(i);
 
-	if (b == NULL)
+	if (b == NULL) {
+		GDKerror("no descriptor for BAT %d\n", i);
 		return NULL;
+	}
 
 	tt = b->ttype;
 	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
@@ -756,7 +759,7 @@ BATmsync(BAT *b)
 }
 
 gdk_return
-BATsave(BAT *bd)
+BATsave_locked(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
@@ -769,7 +772,7 @@ BATsave(BAT *bd)
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(bd)) {
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBPname(VIEWtparent(bd)));
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBP_logical(VIEWtparent(bd)));
 		return GDK_FAIL;
 	}
 	if (!BATdirty(bd)) {
@@ -779,8 +782,6 @@ BATsave(BAT *bd)
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
-	MT_lock_set(&bd->theaplock);
-	MT_rwlock_rdlock(&bd->thashlock);
 	BAT bs = *bd;
 	BAT *b = &bs;
 	Heap hs = *bd->theap;
@@ -854,16 +855,38 @@ BATsave(BAT *bd)
 	if (b->tvheap)
 		HEAPdecref(b->tvheap, false);
 	if (err == GDK_SUCCEED) {
+		bd->theap->wasempty = hs.wasempty;
+		if (bd->tvheap)
+			bd->tvheap->wasempty = vhs.wasempty;
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
-		if (bd->thash && bd->thash != (Hash *) 1)
-			BAThashsave(bd, dosync);
+		if (MT_rwlock_rdtry(&bd->thashlock)) {
+			/* if we can't get the lock, don't bother saving
+			 * the hash (normally, the hash lock should not
+			 * be acquired when the heap lock has already
+			 * been acquired, and here we have the heap
+			 * lock, so we must be careful with the hash
+			 * lock) */
+			if (bd->thash && bd->thash != (Hash *) 1)
+				BAThashsave(bd, dosync);
+			MT_rwlock_rdunlock(&bd->thashlock);
+		}
 	}
-	MT_rwlock_rdunlock(&bd->thashlock);
-	MT_lock_unset(&bd->theaplock);
 	return err;
 }
 
+gdk_return
+BATsave(BAT *bd)
+{
+	gdk_return rc;
+
+	MT_rwlock_rdlock(&bd->thashlock);
+	MT_lock_set(&bd->theaplock);
+	rc = BATsave_locked(bd);
+	MT_rwlock_rdunlock(&bd->thashlock);
+	MT_lock_unset(&bd->theaplock);
+	return rc;
+}
 
 /*
  * TODO: move to gdk_bbp.c
@@ -997,6 +1020,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	char *buf;
 	size_t buflen = 0;
 	ssize_t len;
+	gdk_return rc = GDK_SUCCEED;
 
 	/* error checking */
 	for (i = 0; i < argc; i++) {
@@ -1045,9 +1069,8 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		for (i = 0; i < argc; i++) {
 			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n), true);
 			if (len < 0) {
-				GDKfree(buf);
-				GDKfree(colinfo);
-				return GDK_FAIL;
+				rc = GDK_FAIL;
+				goto bailout;
 			}
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
@@ -1056,10 +1079,14 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		mnstr_write(s, "  ]\n", 1, 4);
 	}
 
+  bailout:
+	for (i = 0; i < argc; i++) {
+		bat_iterator_end(&colinfo[i].i);
+	}
 	GDKfree(buf);
 	GDKfree(colinfo);
 
-	return GDK_SUCCEED;
+	return rc;
 }
 
 gdk_return

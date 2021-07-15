@@ -32,7 +32,6 @@ extern int execute_priv(mvc *m, sql_func *f);
 extern int sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int privs);
 extern int sql_grantable(mvc *m, sqlid grantorid, sqlid obj_id, int privs);
 extern sqlid sql_find_auth(mvc *m, str auth);
-extern sqlid sql_find_schema(mvc *m, str schema);
 
 extern char *sql_create_role(mvc *m, str auth, int grantor);
 extern char *sql_drop_role(mvc *m, str auth);

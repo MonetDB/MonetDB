@@ -145,13 +145,13 @@ CREATE FUNCTION sys.esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace
 
 CREATE FUNCTION sys.prepare_esc(s STRING, t STRING) RETURNS STRING
 BEGIN
-    RETURN
-        CASE
-            WHEN (t = 'varchar' OR t ='char' OR t = 'clob' OR t = 'json' OR t = 'geometry' OR t = 'url') THEN
-                'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'sys.esc(' || sys.DQ(s) || ')' || ' END'
-            ELSE
-                'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || sys.DQ(s) || ' AS STRING) END'
-        END;
+RETURN
+	CASE
+		WHEN (t = 'varchar' OR t ='char' OR t = 'clob' OR t = 'json' OR t = 'geometry' OR t = 'url') THEN
+			'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'sys.esc(' || sys.DQ(s) || ')' || ' END'
+		ELSE
+			'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || sys.DQ(s) || ' AS STRING) END'
+	END;
 END;
 
 --The dump statement should normally have an auto-incremented column representing the creation order.
@@ -163,8 +163,8 @@ CREATE TABLE sys.dump_statements(o INT, s STRING);
 
 CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
 
-    DECLARE k INT;
-    SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
+	DECLARE k INT;
+	SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
 	IF k IS NOT NULL THEN
 
 		DECLARE cname STRING;
@@ -206,7 +206,7 @@ END;
 CREATE PROCEDURE sys.dump_table_data() BEGIN
 
 	DECLARE i INT;
-    SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+	SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
 
 	IF i IS NOT NULL THEN
 		DECLARE M INT;

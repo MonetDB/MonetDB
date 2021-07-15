@@ -1,0 +1,105 @@
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c2
+
+query IT rowsort
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0
+----
+3
+A
+
+query TI rowsort
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0
+----
+A
+3
+
+query IT rowsort
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0, c2
+----
+1
+A
+2
+A
+
+query TI rowsort
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 union all select 'A', 'a', 2) T GROUP BY c0, c2
+----
+A
+1
+A
+2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c2
+
+query IT rowsort
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0
+----
+1
+A
+
+query TI rowsort
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0
+----
+A
+1
+
+query IT rowsort
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0, c2
+----
+1
+A
+
+query TI rowsort
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 except all select 'A', 'a', 2) T GROUP BY c0, c2
+----
+A
+1
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c2
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'c0' in query results without an aggregate function
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c2
+
+query IT rowsort
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0
+----
+
+query TI rowsort
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0
+----
+
+query IT rowsort
+select cast(sum(c2) as bigint), c0 from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0, c2
+----
+
+query TI rowsort
+select c0, cast(sum(c2) as bigint) from (select 'A' c0, 'a' c1, 1 c2 intersect all select 'A', 'a', 2) T GROUP BY c0, c2
+----
+
+

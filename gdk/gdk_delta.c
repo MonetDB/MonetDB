@@ -72,7 +72,7 @@ BATfakeCommit(BAT *b)
 void
 BATundo(BAT *b)
 {
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	BUN p, bunlast, bunfirst;
 
 	if (b == NULL)
@@ -93,8 +93,7 @@ BATundo(BAT *b)
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (b->thash)
-			HASHdestroy(b);
+		HASHdestroy(b);
 		if (tunfix || tatmdel) {
 			for (p = bunfirst; p <= bunlast; p++, i++) {
 				if (tunfix)

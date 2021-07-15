@@ -31,9 +31,8 @@ file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
-	if (elmsize && cnt && !feof(fp)) {
-		if (ferror(fp) ||
-		    ((rc = fread(buf, elmsize, cnt, fp)) == 0 && ferror(fp))) {
+	if (elmsize && cnt) {
+		if ((rc = fread(buf, elmsize, cnt, fp)) == 0 && ferror(fp)) {
 			mnstr_set_error_errno(s, MNSTR_READ_ERROR, "read error");
 			return -1;
 		}
@@ -55,7 +54,7 @@ file_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 	if (elmsize && cnt) {
 		size_t rc = fwrite(buf, elmsize, cnt, fp);
 
-		if (ferror(fp)) {
+		if (!rc && ferror(fp)) {
 			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "write error");
 			return -1;
 		}

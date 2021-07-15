@@ -183,7 +183,7 @@ gen_newline_strings(FILE *f, bool byteswap, long nrecs)
 {
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "rn\r\nr\r%ld", i);
+		fprintf(f, "RN\r\nR\r%ld", i);
 		fputc(0, f);
 	}
 }

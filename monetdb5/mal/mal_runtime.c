@@ -462,10 +462,12 @@ getBatSpace(BAT *b){
 	lng space=0;
 	if( b == NULL)
 		return 0;
-	space += BATcount(b) * b->twidth;
+	space += BATcount(b) << b->tshift;
 	if( space){
 		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid);
+		MT_rwlock_rdlock(&b->thashlock);
 		space += hashinfo(b->thash, b->batCacheid);
+		MT_rwlock_rdunlock(&b->thashlock);
 		space += IMPSimprintsize(b);
 	}
 	return space;
@@ -486,7 +488,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
 
-			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, true);
+			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, false);
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);

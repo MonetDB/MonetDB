@@ -245,6 +245,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	if (bn && !msg) {
@@ -452,19 +453,20 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
-	bi = bat_iterator(b);
 	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	bi = bat_iterator(b);
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			blob *v = (blob*) BUNtvar(bi, p);
 
-			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			nils |= is_blob_nil(v);
@@ -474,13 +476,15 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next(&ci) - off);
 			blob *v = (blob*) BUNtvar(bi, p);
 
-			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			nils |= is_blob_nil(v);
 		}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	if (b)

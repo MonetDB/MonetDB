@@ -495,3 +495,48 @@ nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *t
 	}
 	return 0;
 }
+
+static ValPtr /* TODO remove this duplicated code */
+SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
+{
+	if (sa == NULL)
+		return VALcopy(d, s);
+	if (!ATOMextern(s->vtype)) {
+		*d = *s;
+	} else if (s->val.pval == 0) {
+		d->val.pval = ATOMnil(s->vtype);
+		if (d->val.pval == NULL)
+			return NULL;
+		d->vtype = s->vtype;
+	} else if (s->vtype == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = sa_strdup(sa, s->val.sval);
+		if (d->val.sval == NULL)
+			return NULL;
+		d->len = strLen(d->val.sval);
+	} else {
+		ptr p = s->val.pval;
+
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
+		if (d->val.pval == NULL)
+			return NULL;
+		memcpy(d->val.pval, p, d->len);
+	}
+	return d;
+}
+
+atom *
+atom_dup(sql_allocator *sa, atom *a)
+{
+	atom *r = sa ?SA_NEW(sa, atom):MNEW(atom);
+	if (!r)
+		return NULL;
+
+	*r = *a;
+	r->tpe = a->tpe;
+	if (!a->isnull)
+		SA_VALcopy(sa, &r->data, &a->data);
+	return r;
+}

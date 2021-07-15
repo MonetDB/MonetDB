@@ -66,7 +66,7 @@ extern str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_append_column(sql_trans *t, sql_column *c, BAT *pos, BAT *ins);
+extern str mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins);
 
 extern str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
