@@ -1940,7 +1940,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* use imprints if
 		 *   i) bat is persistent, or parent is persistent
 		 *  ii) it is not an equi-select, and
-		 * iii) is not var-sized.
+		 * iii) imprints are supported.
 		 */
 		tmp = NULL;
 		Imprints *imprints = NULL;

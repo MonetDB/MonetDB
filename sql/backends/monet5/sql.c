@@ -2052,7 +2052,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((res = COLcopy(c, c->ttype, true, TRANSIENT)) == NULL) {
 		BBPunfix(c->batCacheid);
-		throw(MAL, "sql.delta", SQLSTATE(45002) "Cannot create copy of delta structure");
+		throw(MAL, "sql.delta", GDK_EXCEPTION);
 	}
 	BBPunfix(c->batCacheid);
 
@@ -2071,7 +2071,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
 		BBPunfix(u_id->batCacheid);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(res->batCacheid);
-		throw(MAL, "sql.delta", SQLSTATE(45002) "Cannot access delta structure");
+		throw(MAL, "sql.delta", GDK_EXCEPTION);
 	}
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
@@ -2109,7 +2109,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		if (!cminu) {
 			BBPunfix(c->batCacheid);
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL " intermediate");
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
 		}
 		res = BATproject(cminu, c);
 		BBPunfix(c->batCacheid);
@@ -2117,7 +2117,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		cminu = NULL;
 		if (!res) {
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL " intermediate" );
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
 		}
 		c = res;
 
@@ -2132,7 +2132,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(u_id->batCacheid);
 			if (!u) {
 				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 
 			/* check selected updated values against candidates */
@@ -2148,12 +2148,20 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
+			BAT *nres;
+			if ((nres = COLcopy(res, res->ttype, true, TRANSIENT)) == NULL) {
+				BBPunfix(res->batCacheid);
+				BBPunfix(u->batCacheid);
+				BBPunfix(cminu->batCacheid);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
+			}
+			BBPunfix(res->batCacheid);
+			res = nres;
 			ret = BATappend(res, u, cminu, true);
 			BBPunfix(u->batCacheid);
-			if (cminu)
-				BBPunfix(cminu->batCacheid);
+			BBPunfix(cminu->batCacheid);
 			cminu = NULL;
 			if (ret != GDK_SUCCEED) {
 				BBPunfix(res->batCacheid);
@@ -2197,7 +2205,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 
 	if (tres == NULL) {
 		BBPunfix(s->batCacheid);
-		throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "sql.projectdelta", GDK_EXCEPTION);
 	}
 	res = tres;
 
@@ -2228,7 +2236,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			BBPunfix(u_val->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
 		}
 		/* BATcount(ou) == BATcount(os) */
 		if (BATcount(ou) != 0) {
@@ -2239,7 +2247,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			/* os contains the corresponding positions in
 			 * res that need to be replaced with those new
 			 * values */
-			if ((res = setwritable(res)) == NULL ||
+			if (!nu_val || (res = setwritable(res)) == NULL ||
 			    BATreplace(res, os, nu_val, false) != GDK_SUCCEED) {
 				if (res)
 					BBPunfix(res->batCacheid);
@@ -2247,8 +2255,9 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 				BBPunfix(s->batCacheid);
 				BBPunfix(u_id->batCacheid);
 				BBPunfix(u_val->batCacheid);
-				BBPunfix(nu_val->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (nu_val)
+					BBPunfix(nu_val->batCacheid);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 			BBPunfix(nu_val->batCacheid);
 		} else {

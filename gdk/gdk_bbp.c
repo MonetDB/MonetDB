@@ -2258,11 +2258,12 @@ BBPcacheit(BAT *bn, bool lock)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING | BBPSWAPPED);
-	BBP_status_set(i, mode);
 	BBP_desc(i) = bn;
 
 	/* cache it! */
 	BBP_cache(i) = bn;
+
+	BBP_status_set(i, mode);
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
@@ -2289,10 +2290,10 @@ BBPuncacheit(bat i, bool unloaddesc)
 			if (BBP_cache(i)) {
 				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBP_logical(i));
 
-				BBP_cache(i) = NULL;
-
 				/* clearing bits can be done without the lock */
 				BBP_status_off(i, BBPLOADED);
+
+				BBP_cache(i) = NULL;
 			}
 			if (unloaddesc) {
 				BBP_desc(i) = NULL;
@@ -2527,7 +2528,7 @@ incref(bat i, bool logical, bool lock)
 				break;
 			/* the BATs is "unstable", try again */
 			MT_lock_unset(&GDKswapLock(i));
-			MT_sleep_ms(KITTENNAP);
+			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
 		}
 	}
 	/* we have the lock */
@@ -2843,7 +2844,7 @@ getBBPdescriptor(bat i, bool lock)
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
-			MT_sleep_ms(KITTENNAP);
+			BBPspin(i, __func__, BBPWAITING);
 			if (lock)
 				MT_lock_set(&GDKswapLock(i));
 		}
@@ -2907,7 +2908,7 @@ BBPsave(BAT *b)
 		/* wait until save in other thread completes */
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
-		BBPspin(bid, "BBPsave", BBPSAVING);
+		BBPspin(bid, __func__, BBPSAVING);
 	} else {
 		/* save it */
 		unsigned flags = BBPSAVING;
@@ -3060,7 +3061,7 @@ dirty_bat(bat *i, bool subcommit)
 {
 	if (BBPvalid(*i)) {
 		BAT *b;
-		BBPspin(*i, "dirty_bat", BBPSAVING);
+		BBPspin(*i, __func__, BBPSAVING);
 		b = BBP_cache(*i);
 		if (b != NULL) {
 			if ((BBP_status(*i) & BBPNEW) &&
