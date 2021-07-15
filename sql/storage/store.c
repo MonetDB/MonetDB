@@ -6551,7 +6551,7 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 		if ((res = store->table_api.column_update_value(tr, c, rid, &seq->cacheinc)))
 			return res;
 	}
-	if (!is_lng_nil(cycle) && seq->cycle != cycle) {
+	if (!is_bit_nil(cycle) && seq->cycle != cycle) {
 		seq->cycle = cycle != 0;
 		c = find_sql_column(seqs, "cycle");
 		if ((res = store->table_api.column_update_value(tr, c, rid, &seq->cycle)))
