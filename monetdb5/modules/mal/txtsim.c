@@ -822,6 +822,8 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 			msg = fstrcmp_impl_internal(&vals[i], &fdiag_buf, &fdiag_buflen, x, y, 0.0);
 		}
 	}
+	bat_iterator_end(&lefti);
+	bat_iterator_end(&righti);
 
 bailout:
 	GDKfree(fdiag_buf);
@@ -896,10 +898,6 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	}
 
 	n = BATcount(qgram);
-	qbuf = (oid *) Tloc(qgram, 0);
-	ibuf = (int *) Tloc(id, 0);
-	pbuf = (int *) Tloc(pos, 0);
-	lbuf = (int *) Tloc(len, 0);
 
 	/* if (BATcount(qgram)>1 && !BATtordered(qgram)) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
 
@@ -947,11 +945,23 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	BATiter qgrami = bat_iterator(qgram);
+	BATiter idi = bat_iterator(id);
+	BATiter posi = bat_iterator(pos);
+	BATiter leni = bat_iterator(len);
+	qbuf = (oid *) qgrami.base;
+	ibuf = (int *) idi.base;
+	pbuf = (int *) posi.base;
+	lbuf = (int *) leni.base;
 	for (i = 0; i < n - 1; i++) {
 		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
 				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
 					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
+					bat_iterator_end(&qgrami);
+					bat_iterator_end(&idi);
+					bat_iterator_end(&posi);
+					bat_iterator_end(&leni);
 					BBPunfix(qgram->batCacheid);
 					BBPunfix(id->batCacheid);
 					BBPunfix(pos->batCacheid);
@@ -963,6 +973,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 			}
 		}
 	}
+	bat_iterator_end(&qgrami);
+	bat_iterator_end(&idi);
+	bat_iterator_end(&posi);
+	bat_iterator_end(&leni);
 
 	BBPunfix(qgram->batCacheid);
 	BBPunfix(id->batCacheid);

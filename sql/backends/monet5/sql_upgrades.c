@@ -861,7 +861,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 					list *id_l = rel_dependencies(sql, r);
 
 					for (node *o = id_l->h ; o ; o = o->next) {
-						sqlid next = *(sqlid*) o->data;
+						sqlid next = ((sql_base*) o->data)->id;
 						if (next != f->base.id) {
 							pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
 											f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
@@ -897,7 +897,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						list *id_l = rel_dependencies(sql, r);
 
 						for (node *o = id_l->h ; o ; o = o->next) {
-							sqlid next = *(sqlid*) o->data;
+							sqlid next = ((sql_base*) o->data)->id;
 							if (next != t->base.id) {
 								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 												next, t->base.id, (int) VIEW_DEPENDENCY);
@@ -925,7 +925,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							list *id_l = rel_dependencies(sql, r);
 
 							for (node *o = id_l->h ; o ; o = o->next) {
-								sqlid next = *(sqlid*) o->data;
+								sqlid next = ((sql_base*) o->data)->id;
 								if (next != tr->base.id) {
 									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 													next, tr->base.id, (int) TRIGGER_DEPENDENCY);
@@ -2028,7 +2028,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 	}
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
-		BATiter bi = bat_iterator(b);
+		BATiter bi = bat_iterator_nolock(b);
 		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
 			if (!*systabfixed &&
 				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)

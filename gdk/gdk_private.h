@@ -81,6 +81,8 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
+gdk_return BATsave_locked(BAT *bd)
+	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
@@ -126,6 +128,8 @@ BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
+void doHASHdestroy(BAT *b, Hash *hs)
+	__attribute__((__visibility__("hidden")));
 void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKextend(const char *fn, size_t size)
@@ -168,13 +172,19 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	__attribute__((__visibility__("hidden")));
 void HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHappend_locked(BAT *b, BUN i, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHdelete(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHdelete_locked(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
 void HASHinsert(BAT *b, BUN p, const void *v)
+	__attribute__((__visibility__("hidden")));
+void HASHinsert_locked(BAT *b, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
 	__attribute__((__const__))
@@ -191,7 +201,7 @@ gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-Heap *HEAPgrow(const Heap *old, size_t size)
+gdk_return HEAPgrow(MT_Lock *lock, Heap **old, size_t size, bool mayshare)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
@@ -206,9 +216,13 @@ gdk_return HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
+void IMPSdecref(Imprints *imprints, bool remove)
+	__attribute__((__visibility__("hidden")));
 void IMPSfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
+	__attribute__((__visibility__("hidden")));
+void IMPSincref(Imprints *imprints)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)		/* never called: for debugging only */
@@ -256,11 +270,27 @@ gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-gdk_return VIEWreset(BAT *b)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
+
+static inline bool
+imprintable(int tpe)
+{
+	switch (ATOMbasetype(tpe)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		return true;
+	default:		/* type not supported */
+		return false;
+	}
+}
 
 /* calculate the integer 2 logarithm (i.e. position of highest set
  * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
@@ -350,7 +380,7 @@ ilog2(BUN x)
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
-	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
@@ -360,7 +390,7 @@ ilog2(BUN x)
 	b && b->torderidx ? "O" : "",					\
 	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
-#define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
+#define BBP_BATMASK	((1 << (SIZEOF_SIZE_T + 5)) - 1)
 #define BBP_THREADMASK	63
 
 struct PROPrec {
@@ -386,7 +416,6 @@ typedef struct {
 
 typedef struct {
 	MT_Lock cache;
-	MT_Lock trim;
 	bat free;
 } bbplock_t;
 
@@ -405,7 +434,6 @@ extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
@@ -430,7 +458,6 @@ extern MT_Lock GDKtmLock;
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
-#define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 

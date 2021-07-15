@@ -55,8 +55,6 @@ typedef struct storage {
 
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
-extern sql_delta * col_timestamp_delta( sql_trans *tr, sql_column *c);
-extern storage * tab_timestamp_dbat( sql_trans *tr, sql_table *t);
 
 #endif /*BATSTORAGE_H */
 

@@ -105,6 +105,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 			t->nr_rows = 1;
 			BBPkeepref(t->order);
 		}
+		cached = true; /* simply keep memory pointer for this small bat */
 	}
 	c->b = b->batCacheid;
 	c->cached = cached;
@@ -112,8 +113,6 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		c->p = (void*)b;
 	else
 		bat_incref(c->b);
-	if (mtype != TYPE_bat)
-		BBPunfix(c->b);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
 	return c;
@@ -141,7 +140,8 @@ res_table_destroy(res_table *t)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		res_col_destroy(c);
+		if (c)
+			res_col_destroy(c);
 	}
 	if (t->order)
 		bat_decref(t->order);

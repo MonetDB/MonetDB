@@ -327,7 +327,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					BAT *v;
 					cnt = BATcount(d);
 					if(isVIEW(d)){
-						v= BBPquickdesc(VIEWtparent(d), false);
+						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
 									",\"view\":\"true\""
 									",\"parent\":%d"
@@ -353,19 +353,21 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 								d->tnil,
 								d->tkey))
 						goto cleanup_and_exit;
-#define keepprop(NME, LNME)\
-{const void *valp = BATgetprop(d, NME); \
-if ( valp){\
-	cv = VALformat(valp);\
-	if(cv){\
-		char * cvquote = mal_quote(cv, strlen(cv));\
-		ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);\
-		GDKfree(cv);\
-		GDKfree(cvquote);\
-		if (!ok)\
-			goto cleanup_and_exit;\
-	}\
-}}
+#define keepprop(NME, LNME)												\
+	do {																\
+		const void *valp = BATgetprop(d, NME);							\
+		if ( valp){														\
+			cv = VALformat(valp);										\
+			if (cv) {													\
+				char *cvquote = mal_quote(cv, strlen(cv));				\
+				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
+				GDKfree(cv);											\
+				GDKfree(cvquote);										\
+				if (!ok)												\
+					goto cleanup_and_exit;								\
+			}															\
+		}																\
+	} while (0)
 					keepprop(GDK_MIN_VALUE,"min");
 					keepprop(GDK_MAX_VALUE,"max");
 					keepprop(GDK_MIN_POS,"minpos");
@@ -383,12 +385,16 @@ if ( valp){\
 					GDKfree(cv);
 					if (!ok)
 						goto cleanup_and_exit;
-					total += cnt * d->twidth;
+					total += cnt << d->tshift;
 					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
 						goto cleanup_and_exit;
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid)))
+					MT_rwlock_rdlock(&d->thashlock);
+					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
+						MT_rwlock_rdunlock(&d->thashlock);
 						goto cleanup_and_exit;
+					}
+					MT_rwlock_rdunlock(&d->thashlock);
 					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
 						goto cleanup_and_exit;
 					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))

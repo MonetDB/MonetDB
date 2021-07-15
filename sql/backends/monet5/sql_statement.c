@@ -714,6 +714,9 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = pushStr(mb, q, c->t->base.name);
 		q = pushStr(mb, q, c->base.name);
 		q = pushArgument(mb, q, offset->nr);
+		/* also the offsets */
+		assert(offset->q->retc == 2);
+		q = pushArgument(mb, q, getArg(offset->q, 1));
 		q = pushArgument(mb, q, b->nr);
 		if (q == NULL)
 			return NULL;
@@ -757,6 +760,9 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	q = pushStr(mb, q, i->t->base.name);
 	q = pushStr(mb, q, sa_strconcat(be->mvc->sa, "%", i->base.name));
 	q = pushArgument(mb, q, offset->nr);
+	/* also the offsets */
+	assert(offset->q->retc == 2);
+	q = pushArgument(mb, q, getArg(offset->q, 1));
 	q = pushArgument(mb, q, b->nr);
 	if (q == NULL)
 		return NULL;
@@ -1009,7 +1015,7 @@ stmt_result(backend *be, stmt *s, int nr)
 	} else if (nr) {
 		int v = getArg(s->q, nr);
 
-		assert(s->q->retc >= nr);
+		assert(s->q->retc > nr);
 		ns->nr = v;
 	} else {
 		ns->nr = s->nr;
@@ -2888,7 +2894,9 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 		return NULL;
 	if (!t->s) /* declared table */
 		assert(0);
-	q = newStmtArgs(mb, sqlRef, claimRef, 5);
+	q = newStmtArgs(mb, sqlRef, claimRef, 6);
+	/* returns offset or offsets */
+	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);

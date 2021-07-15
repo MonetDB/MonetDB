@@ -5378,7 +5378,7 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 			for (node *n=rel->exps->h; n && !ok; n = n->next) {
 				sql_exp *e = n->data;
 
-				ok |= e->type == e_cmp && e->flag != cmp_or && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e);
+				ok |= e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e);
 			}
 		}
 

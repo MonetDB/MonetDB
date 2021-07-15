@@ -413,6 +413,7 @@ bat_max_strlength(BAT *b)
 		if (l > max)
 			max = l;
 	}
+	bat_iterator_end(&bi);
 	return max;
 }
 
@@ -423,7 +424,8 @@ bat_max_##TPE##length(BAT *b) \
 	BUN p, q; \
 	HIGH max = 0, min = 0; \
 	size_t ret = 0; \
-	const TPE *restrict vals = (const TPE *) Tloc(b, 0); \
+	BATiter bi = bat_iterator(b); \
+	const TPE *restrict vals = (const TPE *) bi.base; \
  \
 	BATloop(b, p, q) { \
 		HIGH m = 0; \
@@ -436,6 +438,7 @@ bat_max_##TPE##length(BAT *b) \
 		if (m < min) \
 			min = m; \
 	} \
+	bat_iterator_end(&bi); \
 	if (-min > max / 10) { \
 		max = -min; \
 		ret++;		/* '-' */ \
@@ -846,14 +849,16 @@ mvc_export_binary_bat(stream *s, BAT* bn) {
 				bn->tnonil,
 				BATtdense(bn),
 				bn->batCount,
-				(size_t)bn->batCount * Tsize(bn),
+				(size_t)bn->batCount << bn->tshift,
 				sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0
 				);
 
 		if (bn->batCount > 0) {
-			mnstr_write(s, /* tail */ Tloc(bn, 0), bn->batCount * Tsize(bn), 1);
+			BATiter bni = bat_iterator(bn);
+			mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1);
 			if (sendtheap)
-				mnstr_write(s, /* theap */ Tbase(bn), bn->tvheap->free, 1);
+				mnstr_write(s, /* theap */ bni.vh->base, bni.vh->free, 1);
+			bat_iterator_end(&bni);
 		}
 }
 
@@ -982,12 +987,12 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 							b->results,
 							order);
 
-	if (	mvc_result_column(b, "prepare", "type"		, "varchar",	len1, 0, btype	) ||
-			mvc_result_column(b, "prepare", "digits"	, "int",		len2, 0, bdigits) ||
-			mvc_result_column(b, "prepare", "scale"		, "int",		len3, 0, bscale	) ||
-			mvc_result_column(b, "prepare", "schema"	, "varchar",	len4, 0, bschema) ||
-			mvc_result_column(b, "prepare", "table"		, "varchar",	len5, 0, btable	) ||
-			mvc_result_column(b, "prepare", "column"	, "varchar",	len6, 0, bcolumn))
+	if (	mvc_result_column(b, ".prepare", "type"		, "varchar",	len1, 0, btype	) ||
+			mvc_result_column(b, ".prepare", "digits"	, "int",		len2, 0, bdigits) ||
+			mvc_result_column(b, ".prepare", "scale"	, "int",		len3, 0, bscale	) ||
+			mvc_result_column(b, ".prepare", "schema"	, "varchar",	len4, 0, bschema) ||
+			mvc_result_column(b, ".prepare", "table"	, "varchar",	len5, 0, btable	) ||
+			mvc_result_column(b, ".prepare", "column"	, "varchar",	len6, 0, bcolumn))
 		goto wrapup;
 
 	if (b->client->protocol == PROTOCOL_COLUMNAR && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
@@ -1426,6 +1431,8 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].type = NULL;
 		fmt[i].nullstr = NULL;
 	}
+	for (i = 1; i <= t->nr_cols; i++)
+		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
 	GDKfree(tres);
 	if (mnstr_errnr(s))

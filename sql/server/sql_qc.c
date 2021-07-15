@@ -158,7 +158,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 		.ops = params,
 		.res = res,
 	};
-	base_init(sa, &f->base, 0, TR_NEW, NULL);
+	base_init(sa, &f->base, 0, true, NULL);
 	f->base.new = 1;
 	f->base.id = n->id;
 	f->base.name = f->imp = name;

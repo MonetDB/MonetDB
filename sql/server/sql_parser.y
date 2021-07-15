@@ -570,6 +570,7 @@ int yydebug=1;
 	time_precision
 	timestamp_precision
 	transaction_mode
+	iso_level
 	transaction_mode_list
 	trigger_action_time
 	window_frame_exclusion
@@ -633,7 +634,7 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
-%token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
+%token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
@@ -2684,8 +2685,8 @@ transaction_stmt:
  ;
 
 transaction_mode_list:
-	/* empty */		{ $$ = tr_none; }
- |	_transaction_mode_list
+	/* empty */		{ $$ = tr_serializable; }
+ |	_transaction_mode_list  { $$ = $1; }
  ;
 
 _transaction_mode_list:
@@ -2698,15 +2699,16 @@ _transaction_mode_list:
 transaction_mode:
 	READ ONLY			{ $$ = tr_readonly; }
  |	READ WRITE			{ $$ = tr_writable; }
- |	ISOLATION LEVEL iso_level	{ $$ = tr_serializable; }
+ |	ISOLATION LEVEL iso_level	{ $$ = $3; }
  |	DIAGNOSTICS sqlSIZE intval	{ $$ = tr_none; /* not supported */ }
  ;
 
 iso_level:
-	READ UNCOMMITTED
- |	READ COMMITTED
- |	sqlREPEATABLE READ
- |	SERIALIZABLE
+	READ UNCOMMITTED	{ $$ = tr_snapshot; }
+ |	READ COMMITTED		{ $$ = tr_snapshot; }
+ |	sqlREPEATABLE READ	{ $$ = tr_snapshot; }
+ |	SNAPSHOT		{ $$ = tr_snapshot; }
+ |	SERIALIZABLE		{ $$ = tr_serializable; }
  ;
 
 opt_work: /* pure syntax sugar */

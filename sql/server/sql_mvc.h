@@ -237,8 +237,8 @@ extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, 
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 /*dependency control*/
-extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type);
-extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type);
+extern int mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type);
+extern int mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type);
 extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */
