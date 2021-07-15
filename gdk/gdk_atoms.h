@@ -224,10 +224,14 @@ gdk_export const uuid uuid_nil;
 #define isfinite(x)	_finite(x)
 #endif
 
+#ifdef HAVE_HGE
+#define is_uuid_nil(x)	((x).h == 0)
+#else
 #ifdef HAVE_UUID
 #define is_uuid_nil(x)	uuid_is_null((x).u)
 #else
 #define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
+#endif
 #endif
 
 /*
