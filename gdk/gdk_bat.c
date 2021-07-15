@@ -2296,11 +2296,11 @@ BATmode(BAT *b, bool transient)
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (!transient) {
-			if (!(BBP_status(bid) & BBPDELETED))
-				BBP_status_on(bid, BBPNEW);
-			else
+			if (BBP_status(bid) & BBPDELETED) {
 				BBP_status_on(bid, BBPEXISTING);
-			BBP_status_off(bid, BBPDELETED);
+				BBP_status_off(bid, BBPDELETED);
+			} else
+				BBP_status_on(bid, BBPNEW);
 		} else if (!b->batTransient) {
 			if (!(BBP_status(bid) & BBPNEW))
 				BBP_status_on(bid, BBPDELETED);
