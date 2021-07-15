@@ -3149,8 +3149,10 @@ merge_cs( column_storage *cs)
 static int
 merge_delta( sql_delta *obat)
 {
-	if (obat && obat->next && !obat->cs.merged)
-		merge_delta(obat->next);
+	int ok = LOG_OK;
+
+	if (obat && obat->next && !obat->cs.merged && (ok = merge_delta(obat->next)) != LOG_OK)
+		return ok;
 	return merge_cs(&obat->cs);
 }
 
@@ -3301,7 +3303,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			delta = delta->next;
 		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
 			lock_column(tr->store, c->base.id); /* lock for concurrent updates (appends) */
-			merge_delta(delta);
+			ok = merge_delta(delta);
 			unlock_column(tr->store, c->base.id);
 		}
 	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
@@ -3379,7 +3381,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			delta = delta->next;
 		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
 			lock_column(tr->store, i->base.id); /* lock for concurrent updates (appends) */
-			merge_delta(delta);
+			ok = merge_delta(delta);
 			unlock_column(tr->store, i->base.id);
 		}
 	} else if (ok == LOG_OK && tr->parent) /* cleanup older save points */
@@ -3519,24 +3521,26 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
+		int ok = LOG_OK;
+
 		assert(!cleanup);
 		if (d->cs.ts > oldest)
-			return LOG_OK; /* cannot cleanup yet */
+			return ok; /* cannot cleanup yet */
 
 		sql_delta *n = d->next;
 		if (n->cs.ucnt && !n->cs.merged) {
 			lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
-			merge_delta(n);
+			ok = merge_delta(n);
 			unlock_column(store, c->base.id);
 		} else if (d && d->cs.ucnt && !d->cs.merged) {
 			lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
-			merge_delta(d);
+			ok = merge_delta(d);
 			unlock_column(store, c->base.id);
 		}
 		d->next = NULL;
 		change->cleanup = &gc_delta;
 		change->data = n;
-		return 0;
+		return ok;
 	}
 	if (cleanup)
 		column_destroy(store, c);
@@ -3571,24 +3575,26 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
+		int ok = LOG_OK;
+
 		assert(!cleanup);
 		if (d->cs.ts > oldest)
-			return LOG_OK; /* cannot cleanup yet */
+			return ok; /* cannot cleanup yet */
 
 		sql_delta *n = d->next;
 		if (n->cs.ucnt && !n->cs.merged) {
 			lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
-			merge_delta(n);
+			ok = merge_delta(n);
 			unlock_column(store, i->base.id);
 		} else if (d && d->cs.ucnt && !d->cs.merged) {
 			lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
-			merge_delta(d);
+			ok = merge_delta(d);
 			unlock_column(store, i->base.id);
 		}
 		d->next = NULL;
 		change->cleanup = &gc_delta;
 		change->data = n;
-		return 0;
+		return ok;
 	}
 	if (cleanup)
 		idx_destroy(store, i);
