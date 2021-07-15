@@ -4766,12 +4766,13 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 	return 0;
 }
 
-sql_schema *
+int
 sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner)
 {
 	sqlstore *store = tr->store;
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
 	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
+	int res = LOG_OK;
 
 	base_init(tr->sa, &s->base, next_oid(tr->store), true, name);
 	s->auth_id = auth_id;
@@ -4787,14 +4788,17 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
 	s->store = tr->store;
 
-	if (store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system)) {
+	if ((res = store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system))) {
 		schema_destroy(store, s);
-		return NULL;
+		return res;
 	}
-	if (os_add(tr->cat->schemas, tr, s->base.name, &s->base)) {
-		return NULL;
-	}
-	return s;
+	if ((res = os_add(tr->cat->schemas, tr, s->base.name, &s->base)))
+		return res;
+	if ((res = sql_trans_add_dependency(tr, s->auth_id, ddl)))
+		return res;
+	if ((res = sql_trans_add_dependency(tr, s->owner, ddl)))
+		return res;
+	return res;
 }
 
 int
@@ -6478,7 +6482,7 @@ create_sql_sequence(sqlstore *store, sql_allocator *sa, sql_schema *s, const cha
 	return create_sql_sequence_with_id(sa, next_oid(store), s, name, start, min, max, inc, cacheinc, cycle);
 }
 
-sql_sequence *
+int
 sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc,
 						  lng cacheinc, bit cycle, bit bedropped)
 {
@@ -6488,19 +6492,20 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	sql_sequence *seq = create_sql_sequence_with_id(tr->sa, next_oid(tr->store), s, name, start, min, max, inc, cacheinc, cycle);
 	int res = LOG_OK;
 
-	if (os_add(s->seqs, tr, seq->base.name, &seq->base))
-		return NULL;
-	if (store->table_api.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, &seq->base.name, &seq->start, &seq->minvalue,
-							 &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle))
-		return NULL;
+	if ((res = os_add(s->seqs, tr, seq->base.name, &seq->base)))
+		return res;
+	if ((res = store->table_api.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, &seq->base.name, &seq->start, &seq->minvalue,
+							 &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle)))
+		return res;
 
 	/*Create a BEDROPPED dependency for a SERIAL COLUMN*/
 	if (bedropped) {
-		sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY);
+		if ((res = sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY)))
+			return res;
 		if (!isNew(seq) && (res = sql_trans_add_dependency(tr, seq->base.id, ddl)))
-			return NULL;
+			return res;
 	}
-	return seq;
+	return res;
 }
 
 int
@@ -6551,7 +6556,7 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 		if ((res = store->table_api.column_update_value(tr, c, rid, &seq->cacheinc)))
 			return res;
 	}
-	if (!is_lng_nil(cycle) && seq->cycle != cycle) {
+	if (!is_bit_nil(cycle) && seq->cycle != cycle) {
 		seq->cycle = cycle != 0;
 		c = find_sql_column(seqs, "cycle");
 		if ((res = store->table_api.column_update_value(tr, c, rid, &seq->cycle)))

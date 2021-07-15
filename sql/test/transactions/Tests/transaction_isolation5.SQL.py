@@ -24,7 +24,6 @@ with SQLTestCase() as mdb1:
         mdb2.connect(username="monetdb", password="monetdb")
 
         mdb1.execute('create table child1(a int);').assertSucceeded()
-
         mdb1.execute('start transaction;').assertSucceeded()
         mdb2.execute('start transaction;').assertSucceeded()
         mdb1.execute('create merge table parent1(a int);').assertSucceeded()
@@ -33,8 +32,18 @@ with SQLTestCase() as mdb1:
         mdb1.execute('commit;').assertSucceeded()
         mdb2.execute('commit;').assertSucceeded()
 
+        mdb1.execute('CREATE ROLE myrole;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('CREATE schema mysch AUTHORIZATION myrole;').assertSucceeded()
+        mdb2.execute('DROP ROLE myrole;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('alter table parent1 drop table child1;').assertSucceeded()
         mdb1.execute('drop table parent1;').assertSucceeded()
         mdb1.execute('drop table child1;').assertSucceeded()
+        mdb1.execute('drop schema mysch;').assertSucceeded()
+        mdb1.execute('drop role myrole;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()

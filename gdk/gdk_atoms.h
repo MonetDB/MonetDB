@@ -202,15 +202,15 @@ gdk_export const uuid uuid_nil;
 
 #define void_nil	oid_nil
 
-#define is_bit_nil(v)	((v) == bit_nil)
-#define is_bte_nil(v)	((v) == bte_nil)
-#define is_sht_nil(v)	((v) == sht_nil)
-#define is_int_nil(v)	((v) == int_nil)
-#define is_lng_nil(v)	((v) == lng_nil)
+#define is_bit_nil(v)	((v) == GDK_bte_min-1)
+#define is_bte_nil(v)	((v) == GDK_bte_min-1)
+#define is_sht_nil(v)	((v) == GDK_sht_min-1)
+#define is_int_nil(v)	((v) == GDK_int_min-1)
+#define is_lng_nil(v)	((v) == GDK_lng_min-1)
 #ifdef HAVE_HGE
-#define is_hge_nil(v)	((v) == hge_nil)
+#define is_hge_nil(v)	((v) == GDK_hge_min-1)
 #endif
-#define is_oid_nil(v)	((v) == oid_nil)
+#define is_oid_nil(v)	((v) == ((oid) 1 << ((8 * SIZEOF_OID) - 1)))
 #define is_flt_nil(v)	isnan(v)
 #define is_dbl_nil(v)	isnan(v)
 #define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
@@ -224,10 +224,14 @@ gdk_export const uuid uuid_nil;
 #define isfinite(x)	_finite(x)
 #endif
 
+#ifdef HAVE_HGE
+#define is_uuid_nil(x)	((x).h == 0)
+#else
 #ifdef HAVE_UUID
 #define is_uuid_nil(x)	uuid_is_null((x).u)
 #else
 #define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
+#endif
 #endif
 
 /*
