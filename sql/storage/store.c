@@ -2020,10 +2020,10 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
-	for(int i = 0; i<NR_TABLE_LOCKS; i++) {
+	for(int i = 0; i<NR_TABLE_LOCKS; i++)
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
+	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
-	}
 
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
@@ -5707,11 +5707,10 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 			n = nn;
 			col = next;
 		} else if (col) { /* if the column to be dropped was found, decrease the column number for others after it */
-			oid rid;
 			next->colnr--;
 
 			if (!isDeclaredTable(t)) {
-				rid = store->table_api.column_find_row(tr, cid, &next->base.id, NULL);
+				oid rid = store->table_api.column_find_row(tr, cid, &next->base.id, NULL);
 				assert(!is_oid_nil(rid));
 				if ((res = store->table_api.column_update_value(tr, cnr, rid, &next->colnr)))
 					return res;

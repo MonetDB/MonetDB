@@ -76,13 +76,13 @@ unlock_table(sqlstore *store, sqlid id)
 static void
 lock_column(sqlstore *store, sqlid id)
 {
-	MT_lock_set(&store->column_locks[id&(NR_TABLE_LOCKS-1)]);
+	MT_lock_set(&store->column_locks[id&(NR_COLUMN_LOCKS-1)]);
 }
 
 static void
 unlock_column(sqlstore *store, sqlid id)
 {
-	MT_lock_unset(&store->column_locks[id&(NR_TABLE_LOCKS-1)]);
+	MT_lock_unset(&store->column_locks[id&(NR_COLUMN_LOCKS-1)]);
 }
 
 
@@ -841,13 +841,13 @@ older_delta( sql_delta *d, sql_trans *tr)
 {
 	sql_delta *o = d->next;
 
-	while (o) {
-	       	if (o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
+	while (o && !o->cs.merged) {
+		if (o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
 			break;
 		else
 			o = o->next;
 	}
-	if (o && o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
+	if (o && !o->cs.merged && o->cs.ucnt && VALID_4_READ(o->cs.ts, tr))
 		return o;
 	return NULL;
 }
@@ -1699,6 +1699,7 @@ append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, BUN offset, BAT *o
 {
 	int ok = LOG_OK;
 
+	delta->cs.merged = 0;
 	if (is_bat) {
 		BAT *bat = incoming_data;
 
@@ -2327,7 +2328,7 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 		delta->cs.ts = commit_ts;
 
 		assert(delta->next == NULL);
-		if (!delta->cs.alter)
+		if (!delta->cs.alter && !delta->cs.merged)
 			ok = merge_delta(delta);
 		delta->cs.alter = 0;
 		if (!tr->parent)
@@ -2433,7 +2434,8 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 		delta->cs.ts = commit_ts;
 
 		assert(delta->next == NULL);
-		ok = merge_delta(delta);
+		if (!delta->cs.alter && !delta->cs.merged)
+			ok = merge_delta(delta);
 		if (!tr->parent)
 			i->base.new = 0;
 	}
@@ -3139,6 +3141,7 @@ merge_cs( column_storage *cs)
 		bat_destroy(uv);
 	}
 	cs->cleared = 0;
+	cs->merged = 1;
 	bat_destroy(cur);
 	return ok;
 }
@@ -3146,6 +3149,10 @@ merge_cs( column_storage *cs)
 static int
 merge_delta( sql_delta *obat)
 {
+	int ok = LOG_OK;
+
+	if (obat && obat->next && !obat->cs.merged && (ok = merge_delta(obat->next)) != LOG_OK)
+		return ok;
 	return merge_cs(&obat->cs);
 }
 
@@ -3217,9 +3224,10 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 	(void)oldest;
 	if (isTempTable(c->t)) {
 		if (commit_ts) { /* commit */
-			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE)
-				ok = merge_delta(delta);
-			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE) {
+				if (!delta->cs.merged)
+					ok = merge_delta(delta);
+			} else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
 				clear_cs(tr, &delta->cs, true, isTempTable(c->t));
 		} else { /* rollback */
 			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/)
@@ -3290,19 +3298,11 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			o->next = d->next;
 		change->cleanup = &tc_gc_rollbacked;
 	} else if (ok == LOG_OK && !tr->parent) {
-		sql_delta *d = delta;
-		/* clean up and merge deltas */
-		while (delta && delta->cs.ts > oldest) {
+		/* merge deltas */
+		while (delta && delta->cs.ts > oldest)
 			delta = delta->next;
-		}
-		if (delta && delta != d) {
-			if (delta->next) {
-				ok = destroy_delta(delta->next, true);
-				delta->next = NULL;
-			}
-		}
-		if (ok == LOG_OK && delta == d && oldest == commit_ts) {
-			lock_column(tr->store, c->base.id);
+		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
+			lock_column(tr->store, c->base.id); /* lock for concurrent updates (appends) */
 			ok = merge_delta(delta);
 			unlock_column(tr->store, c->base.id);
 		}
@@ -3333,9 +3333,10 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 	(void)oldest;
 	if (isTempTable(i->t)) {
 		if (commit_ts) { /* commit */
-			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE)
-				ok = merge_delta(delta);
-			else /* CA_DELETE as CA_DROP's are gone already */
+			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE) {
+				if (!delta->cs.merged)
+					ok = merge_delta(delta);
+			} else /* CA_DELETE as CA_DROP's are gone already */
 				clear_cs(tr, &delta->cs, true, isTempTable(i->t));
 		} else { /* rollback */
 			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/)
@@ -3375,19 +3376,11 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			o->next = d->next;
 		change->cleanup = &tc_gc_rollbacked;
 	} else if (ok == LOG_OK && !tr->parent) {
-		sql_delta *d = delta;
-		/* clean up and merge deltas */
-		while (delta && delta->cs.ts > oldest) {
+		/* merge deltas */
+		while (delta && delta->cs.ts > oldest)
 			delta = delta->next;
-		}
-		if (delta && delta != d) {
-			if (delta->next) {
-				ok = destroy_delta(delta->next, true);
-				delta->next = NULL;
-			}
-		}
-		if (ok == LOG_OK && delta == d && oldest == commit_ts) {
-			lock_column(tr->store, i->base.id);
+		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
+			lock_column(tr->store, i->base.id); /* lock for concurrent updates (appends) */
 			ok = merge_delta(delta);
 			unlock_column(tr->store, i->base.id);
 		}
@@ -3500,6 +3493,18 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	return ok;
 }
 
+static int
+gc_delta( sql_store Store, sql_change *change, ulng oldest)
+{
+	sqlstore *store = Store;
+	sql_delta *n = change->data;
+	(void)store;
+	(void)oldest;
+
+	destroy_delta(n, true);
+	return 1;
+}
+
 /* only rollback (content version) case for now */
 static int
 gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
@@ -3516,11 +3521,26 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
-		if (d->cs.ts > oldest)
-			return LOG_OK; /* cannot cleanup yet */
+		int ok = LOG_OK;
 
-		destroy_delta(d->next, true);
+		assert(!cleanup);
+		if (d->cs.ts > oldest)
+			return ok; /* cannot cleanup yet */
+
+		sql_delta *n = d->next;
+		if (n->cs.ucnt && !n->cs.merged) {
+			lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
+			ok = merge_delta(n);
+			unlock_column(store, c->base.id);
+		} else if (d && d->cs.ucnt && !d->cs.merged) {
+			lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
+			ok = merge_delta(d);
+			unlock_column(store, c->base.id);
+		}
 		d->next = NULL;
+		change->cleanup = &gc_delta;
+		change->data = n;
+		return ok;
 	}
 	if (cleanup)
 		column_destroy(store, c);
@@ -3555,11 +3575,26 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
-		if (d->cs.ts > oldest)
-			return LOG_OK; /* cannot cleanup yet */
+		int ok = LOG_OK;
 
-		destroy_delta(d->next, true);
+		assert(!cleanup);
+		if (d->cs.ts > oldest)
+			return ok; /* cannot cleanup yet */
+
+		sql_delta *n = d->next;
+		if (n->cs.ucnt && !n->cs.merged) {
+			lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
+			ok = merge_delta(n);
+			unlock_column(store, i->base.id);
+		} else if (d && d->cs.ucnt && !d->cs.merged) {
+			lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
+			ok = merge_delta(d);
+			unlock_column(store, i->base.id);
+		}
 		d->next = NULL;
+		change->cleanup = &gc_delta;
+		change->data = n;
+		return ok;
 	}
 	if (cleanup)
 		idx_destroy(store, i);

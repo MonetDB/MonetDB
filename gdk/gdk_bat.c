@@ -1090,12 +1090,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				b->tsorted = true;
 				b->trevsorted = true;
 				b->tkey = true;
-				b->tseqbase = ((oid *) values)[0];
+				b->tseqbase = count == 1 ? ((oid *) values)[0] : oid_nil;
 				b->tnil = false;
 				b->tnonil = true;
 			} else {
 				if (!is_oid_nil(b->tseqbase) &&
-				    b->tseqbase + b->batCount + 1 != ((oid *) values)[0])
+				    (count > 1 ||
+				     b->tseqbase + b->batCount != ((oid *) values)[0]))
 					b->tseqbase = oid_nil;
 				if (b->tsorted && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
 					b->tsorted = false;
@@ -2295,11 +2296,11 @@ BATmode(BAT *b, bool transient)
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (!transient) {
-			if (!(BBP_status(bid) & BBPDELETED))
-				BBP_status_on(bid, BBPNEW);
-			else
+			if (BBP_status(bid) & BBPDELETED) {
 				BBP_status_on(bid, BBPEXISTING);
-			BBP_status_off(bid, BBPDELETED);
+				BBP_status_off(bid, BBPDELETED);
+			} else
+				BBP_status_on(bid, BBPNEW);
 		} else if (!b->batTransient) {
 			if (!(BBP_status(bid) & BBPNEW))
 				BBP_status_on(bid, BBPDELETED);

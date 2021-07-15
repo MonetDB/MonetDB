@@ -1127,7 +1127,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 
 	MT_thread_setalgorithm(__func__);
 	if (distinct) {
-		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
+		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7;
 		if (BATgroup(&bn1, &bn2, NULL, b, s, g, NULL, NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		bn3 = BATproject(bn2, b);
@@ -1155,13 +1155,12 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATleftjoin(&bn8, &bn7, bn1, bn6, NULL, NULL, false, BUN_NONE);
+		rc = BATleftjoin(&bn7, NULL, bn1, bn6, NULL, NULL, false, BUN_NONE);
 		BBPunfix(bn6->batCacheid);
 		if (rc != GDK_SUCCEED)
 			return GDK_FAIL;
+		bn = BATproject(bn7, s);
 		BBPunfix(bn7->batCacheid);
-		bn = BATproject(bn8, s);
-		BBPunfix(bn8->batCacheid);
 		if (bn == NULL)
 			return GDK_FAIL;
 	} else {
