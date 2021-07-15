@@ -754,8 +754,15 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
 	if (seq->minvalue && seq->maxvalue && seq->maxvalue < seq->minvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
-	if (!sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped))
-		throw(SQL,"sql.create_seq",SQLSTATE(42000) "CREATE SEQUENCE: transaction conflict detected");
+	switch (sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped)) {
+		case -1:
+			throw(SQL,"sql.create_seq",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_seq",SQLSTATE(42000) "CREATE SEQUENCE: transaction conflict detected");
+		default:
+			break;
+	}
 	return NULL;
 }
 
@@ -1282,8 +1289,15 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", get_string_global_var(sql, "current_user"));
 	if (mvc_bind_schema(sql, sname))
 		throw(SQL,"sql.create_schema", SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", sname);
-	if (!mvc_create_schema(sql, sname, auth_id, sql->user_id))
-		throw(SQL,"sql.create_schema",SQLSTATE(42000) "CREATE SCHEMA: transaction conflict detected");
+	switch (mvc_create_schema(sql, sname, auth_id, sql->user_id)) {
+		case -1:
+			throw(SQL,"sql.create_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_schema",SQLSTATE(42000) "CREATE SCHEMA: transaction conflict detected");
+		default:
+			break;
+	}
 	return msg;
 }
 
