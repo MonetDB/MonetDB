@@ -790,7 +790,9 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	if (!(s = find_sql_schema(sql->session->tr, schema)))
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
 	schema_id = s->base.id;
-	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
+	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
+		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (sql_trans_add_dependency(sql->session->tr, sql->user_id, ddl) != LOG_OK)
 		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
