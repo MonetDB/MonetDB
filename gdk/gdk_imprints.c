@@ -636,6 +636,10 @@ BATimprints(BAT *b)
 			bat_iterator_end(&bi);
 			HEAPfree(&imprints->imprints, true);
 			GDKfree(imprints);
+			BBPunfix(s1->batCacheid);
+			BBPunfix(s2->batCacheid);
+			BBPunfix(s3->batCacheid);
+			BBPunfix(s4->batCacheid);
 			GDKerror("Imprints creation aborted due to concurrent change to bat\n");
 			TRC_DEBUG(ACCELERATOR, "failed imprints construction: bat %s changed, " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 			return GDK_FAIL;
