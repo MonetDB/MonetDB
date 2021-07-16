@@ -49,6 +49,8 @@ command heap() address wkbaHEAP; #create heap
 module geom;
 
 command DistanceGeographic(a:wkb, b:wkb) :dbl address wkbDistanceGeographic
+command DWithinGeographic(a:wkb, b:wkb, d:dbl) :bit address wkbDWithinGeographic
+command IntersectsGeographic(a:wkb, b:wkb) :bit address wkbIntersectsGeographic
 
 command hasZ(flags:int) :int address geoHasZ
 comment "returns 1 if the geometry has z coordinate";
