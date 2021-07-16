@@ -18,6 +18,8 @@ LANGUAGE PYTHON {
 
 SELECT python_aggregate(x) FROM test;
 
+SELECT python_aggregate(x) FROM test group by x;
+
 CREATE FUNCTION myfunc(val INTEGER)
 RETURNS INTEGER 
 LANGUAGE PYTHON {

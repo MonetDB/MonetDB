@@ -584,6 +584,18 @@ stdout of test 'rapi18` in directory 'sql/backends/monet5` itself:
 [ 498,	42	]
 [ 499,	42	]
 [ 500,	42	]
+#create table empty_table(col1 int);
+#select rapi18(col1) from empty_table;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+#select rapi18(col1) from empty_table group by col1;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
 #ROLLBACK;
 
 # 17:22:21 >  

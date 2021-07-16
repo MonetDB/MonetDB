@@ -20,4 +20,8 @@ CREATE TABLE rapi18bad as select * from rapi18datagen() limit 200000 with data;
 select count(distinct g) from rapi18bad; 
 select g, rapi18(n) from rapi18bad group by g;
 
+create table empty_table(col1 int);
+select rapi18(col1) from empty_table;
+select rapi18(col1) from empty_table group by col1;
+
 ROLLBACK;

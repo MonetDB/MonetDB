@@ -1641,6 +1641,8 @@ static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				for (size_t j = 0; j < i; j++) {
 					if (isaBatType(getArgType(mb, pci, j)))
 						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
 				}
 				return createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -1649,7 +1651,15 @@ static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else { // single value return, only for non-grouped aggregations
 			// return NULL to conform to SQL aggregates
 			int tpe = getArgType(mb, pci, i);
-			VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe));
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	return MAL_SUCCEED;

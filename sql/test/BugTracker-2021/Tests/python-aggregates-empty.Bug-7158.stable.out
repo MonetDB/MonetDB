@@ -26,6 +26,11 @@ stdout of test 'python-aggregates-empty.Bug-7158` in directory 'sql/test/BugTrac
 % int # type
 % 1 # length
 [ NULL	]
+#SELECT python_aggregate(x) FROM test group by x;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
 #CREATE FUNCTION myfunc(val INTEGER)
 #RETURNS INTEGER 
 #LANGUAGE PYTHON {
