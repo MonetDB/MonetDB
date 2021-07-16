@@ -239,76 +239,12 @@ rollback_segments(segments *segs, sql_trans *tr, sql_change *change, ulng oldest
 	}
 }
 
-static void
-merge_segments(segments *segs, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
-{
-	segment *cur = segs->h, *seg = NULL;
-	for (; cur; cur = cur->next) {
-		if (cur->ts == tr->tid) {
-			if (!cur->deleted)
-				cur->oldts = 0;
-			cur->ts = commit_ts;
-		}
-		if (cur->ts <= oldest && cur->ts < TRANSACTION_ID_BASE) { /* possibly merge range */
-			if (!seg) { /* skip first */
-				seg = cur;
-			} else if (seg->end == cur->start && seg->deleted == cur->deleted) {
-				/* merge with previous */
-				seg->end = cur->end;
-				seg->next = cur->next;
-				if (cur == segs->t)
-					segs->t = seg;
-				if (commit_ts == oldest)
-					_DELETE(cur);
-				else
-					mark4destroy(cur, change, commit_ts);
-				cur = seg;
-			} else {
-				seg = cur; /* begin of new merge */
-			}
-		}
-	}
-}
-
-static int
-segments_in_transaction(sql_trans *tr, sql_table *t)
-{
-	storage *s = ATOMIC_PTR_GET(&t->data);
-	segment *seg = s->segs->h;
-
-	if (seg && s->segs->t->ts == tr->tid)
-		return 1;
-	for (; seg ; seg=seg->next) {
-		if (seg->ts == tr->tid)
-			return 1;
-	}
-	return 0;
-}
-
-static size_t
-segs_end( segments *segs, sql_trans *tr, sql_table *table)
-{
-	size_t cnt = 0;
-
-	lock_table(tr->store, table->base.id);
-	segment *s = segs->h, *l = NULL;
-
-	for(;s; s = s->next) {
-		if (SEG_IS_VALID(s, tr))
-				l = s;
-	}
-	if (l)
-		cnt = l->end;
-	unlock_table(tr->store, table->base.id);
-	return cnt;
-}
-
 static size_t
 segs_end_include_deleted( segments *segs, sql_trans *tr, sql_table *table)
 {
 	size_t cnt = 0;
-
-	lock_table(tr->store, table->base.id);
+(void)table;
+//	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
 	for(;s; s = s->next) {
@@ -317,7 +253,7 @@ segs_end_include_deleted( segments *segs, sql_trans *tr, sql_table *table)
 	}
 	if (l)
 		cnt = l->end;
-	unlock_table(tr->store, table->base.id);
+//	unlock_table(tr->store, table->base.id);
 	return cnt;
 }
 
@@ -406,6 +342,71 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs, sql_table *t)
 
 	bat_destroy(b);
 	return LOG_OK;
+}
+
+/* TODO return LOG_OK/ERR */
+static void
+merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	segment *cur = s->segs->h, *seg = NULL;
+	for (; cur; cur = cur->next) {
+		if (cur->ts == tr->tid) {
+			if (!cur->deleted)
+				cur->oldts = 0;
+			cur->ts = commit_ts;
+		}
+		if (cur->ts <= oldest && cur->ts < TRANSACTION_ID_BASE) { /* possibly merge range */
+			if (!seg) { /* skip first */
+				seg = cur;
+			} else if (seg->end == cur->start && seg->deleted == cur->deleted) {
+				/* merge with previous */
+				seg->end = cur->end;
+				seg->next = cur->next;
+				if (cur == s->segs->t)
+					s->segs->t = seg;
+				if (commit_ts == oldest)
+					_DELETE(cur);
+				else
+					mark4destroy(cur, change, commit_ts);
+				cur = seg;
+			} else {
+				seg = cur; /* begin of new merge */
+			}
+		}
+	}
+}
+
+static int
+segments_in_transaction(sql_trans *tr, sql_table *t)
+{
+	storage *s = ATOMIC_PTR_GET(&t->data);
+	segment *seg = s->segs->h;
+
+	if (seg && s->segs->t->ts == tr->tid)
+		return 1;
+	for (; seg ; seg=seg->next) {
+		if (seg->ts == tr->tid)
+			return 1;
+	}
+	return 0;
+}
+
+static size_t
+segs_end( segments *segs, sql_trans *tr, sql_table *table)
+{
+	size_t cnt = 0;
+
+	lock_table(tr->store, table->base.id);
+	segment *s = segs->h, *l = NULL;
+
+	for(;s; s = s->next) {
+		if (SEG_IS_VALID(s, tr))
+				l = s;
+	}
+	if (l)
+		cnt = l->end;
+	unlock_table(tr->store, table->base.id);
+	return cnt;
 }
 
 static segments *
@@ -2649,7 +2650,11 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		return ok;
 	if(!isTempTable(t)) {
 		storage *dbat = ATOMIC_PTR_GET(&t->data);
-		merge_segments(dbat->segs, tr, change, commit_ts, commit_ts/* create is we are alone */ /*oldest*/);
+		ok = segments2cs(tr, dbat->segs, &dbat->cs, t);
+		assert(ok == LOG_OK);
+		if (ok != LOG_OK)
+			return ok;
+		merge_segments(dbat, tr, change, commit_ts, commit_ts/* create is we are alone */ /*oldest*/);
 		assert(dbat->cs.ts == tr->tid);
 		dbat->cs.ts = commit_ts;
 		if (ok == LOG_OK) {
@@ -3087,13 +3092,13 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 {
-	int ok = segments2cs(tr, s->segs, &s->cs, t);
+	int ok = LOG_OK;
 	if (ok == LOG_OK && s->cs.cleared)
 		return tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
-		ok = log_table_append(tr, t, s->segs);
+		ok = log_segments(tr, s->segs, id);
 	if (ok == LOG_OK)
-		return log_segments(tr, s->segs, id);
+		ok = log_table_append(tr, t, s->segs);
 	return ok;
 }
 
@@ -3482,11 +3487,15 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		storage *d = dbat;
 		if (dbat->cs.ts == tr->tid) /* cleared table */
 			dbat->cs.ts = commit_ts;
-		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
+
+		ok = segments2cs(tr, dbat->segs, &dbat->cs, t);
+		assert(ok == LOG_OK);
+		if (ok == LOG_OK)
+			merge_segments(dbat, tr, change, commit_ts, oldest);
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
 			ok = merge_storage(dbat);
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
-		merge_segments(dbat->segs, tr, change, commit_ts, oldest);
+		merge_segments(dbat, tr, change, commit_ts, oldest);
 		ATOMIC_PTR_SET(&t->data, savepoint_commit_storage(dbat, commit_ts));
 	}
 	unlock_table(tr->store, t->base.id);
