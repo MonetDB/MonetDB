@@ -686,8 +686,8 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			}
 			if (BATcount(b) == 0) { /* empty input, generate trivial return */
 				/* I expect all inputs to have the same size, so this should be safe */
-				BBPunfix(b->batCacheid);
 				msg = empty_return(mb, stk, pci, pci->retc, b->hseqbase);
+				BBPunfix(b->batCacheid);
 				goto wrapup;
 			}
 		}

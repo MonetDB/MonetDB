@@ -40,6 +40,19 @@ stdout of test 'capi07` in directory 'sql/backends/monet5/UDF/capi` itself:
 % bigint # type
 % 2 # length
 [ 21	]
+#TRUNCATE integers;
+[ 6	]
+#SELECT capi07(i) FROM integers;
+% sys.%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#SELECT capi07(i) FROM integers GROUP BY i;
+% sys.%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
 #ROLLBACK;
 
 # 14:50:08 >  

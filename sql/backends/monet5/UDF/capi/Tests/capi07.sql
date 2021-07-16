@@ -17,4 +17,9 @@ INSERT INTO integers VALUES (3), (4), (1), (2), (5), (6);
 
 SELECT capi07(i) FROM integers;
 
+TRUNCATE integers;
+
+SELECT capi07(i) FROM integers;
+SELECT capi07(i) FROM integers GROUP BY i;
+
 ROLLBACK;
