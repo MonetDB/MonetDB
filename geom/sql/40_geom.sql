@@ -4073,8 +4073,6 @@ GRANT EXECUTE ON FUNCTION ST_Relate(Geometry, Geometry, string) TO PUBLIC;
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
 GRANT EXECUTE ON FUNCTION ST_Distance(Geometry, Geometry) TO PUBLIC;
 
-CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
-GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
 
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
@@ -4581,3 +4579,14 @@ GRANT EXECUTE ON FUNCTION ST_DumpPoints(Geometry) TO PUBLIC;
 -------------------------------------------------------------------------
 CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
 GRANT EXECUTE ON FUNCTION Contains(Geometry, double, double) TO PUBLIC;
+
+
+-------------------------------------------------------------------------
+------------------------- Geography functions ---------------------------
+-------------------------------------------------------------------------
+CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
+GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
+CREATE FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) RETURNS boolean EXTERNAL NAME geom."DWithinGeographic";
+GRANT EXECUTE ON FUNCTION ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
+CREATE FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."IntersectsGeographic";
+GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;

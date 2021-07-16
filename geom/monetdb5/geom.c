@@ -16,6 +16,46 @@
 #include "mal_exception.h"
 
 /**
+ * Auxilary Functions
+ * 
+ **/
+/* Destroy a Geos geometry */
+static void destroyGeom(GEOSGeom *g)
+{
+	if (*g)
+		GEOSGeom_destroy((*g));
+	(*g) = NULL;
+}
+
+/* Converts wkb into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
+static str wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
+{
+	str err = MAL_SUCCEED;
+
+	if (is_wkb_nil(*a) || is_wkb_nil(*b))
+	{
+		destroyGeom(ga);
+		destroyGeom(gb);
+		return MAL_SUCCEED;
+	}
+	(*ga) = wkb2geos(*a);
+	(*gb) = wkb2geos(*b);
+	if ((*ga) == NULL || (*gb) == NULL)
+	{
+		destroyGeom(ga);
+		destroyGeom(gb);
+		err = createException(MAL, "geom.GetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
+	}
+	else if (GEOSGetSRID((*ga)) != GEOSGetSRID((*gb)))
+	{
+		destroyGeom(ga);
+		destroyGeom(gb);
+		err = createException(MAL, "geom.GetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
+	}
+	return err;
+}
+
+/**
  *  Convertions 
  * 
  **/
@@ -87,11 +127,11 @@ static void geog2cart(double lon, double lat, double *x, double *y, double *z)
 * Convert cartesian coordinates on unit sphere to spherical coordinates
 * From PostGIS
 */
-static void cart2geog(double x, double y, double z, double *lon, double *lat)
+/*static void cart2geog(double x, double y, double z, double *lon, double *lat)
 {
 	(*lon) = atan2(y, x);
 	(*lat) = asin(z);
-}
+}*/
 
 /* Returns the latitude and longitude (in radians) from a geographic Geom point */
 static void pointToRadian(GEOSGeom geom, double *lat_r, double *lon_r)
@@ -144,7 +184,12 @@ static double geoDistancePointPoint(GEOSGeom a, GEOSGeom b)
 }
 
 //TODO -> First try in geom_todo.c
-static double calculatePerpendicular(GEOSGeom a, GEOSGeom b) { return INT_MAX; }
+static double calculatePerpendicular(GEOSGeom a, GEOSGeom b)
+{
+	a = NULL;
+	b = NULL;
+	return INT_MAX;
+}
 
 /* Distance between Point and a simple Line (only one Line segment) */
 static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
@@ -153,7 +198,7 @@ static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
 
 	/* Calculate perpendicular of point in Line */
 	//TODO Implement this correctly
-	distancePerpendicular = calculatePerpendicular(a, line);
+	distancePerpendicular = calculatePerpendicular(point, line);
 
 	/* Calculate distance of point to start and end points of line */
 	distanceStart = geoDistancePointPoint(point, GEOSGeomGetStartPoint(line));
@@ -271,13 +316,13 @@ static bool pointWithinPolygonRing(GEOSGeom point, GEOSGeom polygon)
 		//If there is an intersection, a point will be returned (line when there is none)
 		if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
 		{
-			double x_i, y_i, z_i, lat_i, lon_i;
+			/*double x_i, y_i, z_i, lat_i, lon_i;
 			GEOSGeomGetX(intersectionPoints, &x_i);
 			GEOSGeomGetY(intersectionPoints, &y_i);
 			GEOSGeomGetZ(intersectionPoints, &z_i);
 			cart2geog(x_i, y_i, z_i, &lon_i, &lat_i);
 			printf("\nPoint Intersection: (%f %f) (%f %f %f)\n\n", lon_i, lat_i, x_i, y_i, z_i);
-			fflush(stdout);
+			fflush(stdout);*/
 			intersectionNum++;
 		}
 
@@ -324,98 +369,155 @@ static double geoDistanceLinePolygon(GEOSGeom line, GEOSGeom polygon)
 }
 
 /* Distance between two Polygons. */
+//TODO Check if we can simply use the LinePolygon function (does it work with polygon with holes?)
 static double geoDistancePolygonPolygon(GEOSGeom polygon1, GEOSGeom polygon2)
 {
-	const GEOSGeometry *polygon_ring_1, *polygon_ring_2;
-	polygon_ring_1 = GEOSGetExteriorRing(polygon1);
-	polygon_ring_2 = GEOSGetExteriorRing(polygon2);
-	return geoDistanceLineLine((GEOSGeometry *)polygon_ring_1, (GEOSGeometry *)polygon_ring_2);
+	const GEOSGeometry *polygon_ring;
+	polygon_ring = GEOSGetExteriorRing(polygon1);
+	//If we use the LinePolygon function, we'll check for intersection points
+	return geoDistanceLinePolygon((GEOSGeometry *)polygon_ring, polygon2);
 }
 
-static str distanceGeographicInternal(dbl *out, GEOSGeom a, GEOSGeom b, int typeA, int typeB)
+static double geoDistanceSimple(GEOSGeom a, GEOSGeom b)
 {
-	/* TODO: Add distance for MultiGeometry */
-	/* TODO: Linear Ring -> Same as Linestring? */
-	if (typeA == wkbPoint_mdb && typeB == wkbPoint_mdb)
+	int dimA, dimB;
+	dimA = GEOSGeom_getDimensions(a);
+	dimB = GEOSGeom_getDimensions(b);
+	if (dimA == 0 && dimB == 0)
 	{
 		/* Point and Point */
-		(*out) = geoDistancePointPoint(a, b);
+		return geoDistancePointPoint(a, b);
 	}
-	else if ((typeA == wkbPoint_mdb && typeB == wkbLineString_mdb) || (typeA == wkbPoint_mdb && typeB == wkbLinearRing_mdb))
+	else if (dimA == 0 && dimB == 1)
 	{
 		/* Point and Line/LinearRing */
-		(*out) = geoDistancePointLine(a, b);
+		return geoDistancePointLine(a, b);
 	}
-	else if ((typeB == wkbPoint_mdb && typeA == wkbLineString_mdb) || (typeB == wkbPoint_mdb && typeA == wkbLinearRing_mdb))
+	else if (dimA == 1 && dimB == 0)
 	{
-		/* Line and Point/LinearRing */
-		(*out) = geoDistancePointLine(b, a);
+		/* Line/LinearRing and Point */
+		return geoDistancePointLine(b, a);
 	}
-	else if (typeA == wkbPoint_mdb && typeB == wkbPolygon_mdb)
-	{
-		/* Point and Polygon */
-		(*out) = geoDistancePointPolygon(a, b);
-	}
-	else if (typeB == wkbPoint_mdb && typeA == wkbPolygon_mdb)
-	{
-		/* Polygon and Point */
-		(*out) = geoDistancePointPolygon(b, a);
-	}
-	else if ((typeA == wkbLineString_mdb && typeB == wkbLineString_mdb) || (typeA == wkbLinearRing_mdb && typeB == wkbLinearRing_mdb))
+	else if (dimA == 1 && dimB == 1)
 	{
 		/* Line/LinearRing and Line/LinearRing */
-		(*out) = geoDistanceLineLine(a, b);
+		return geoDistanceLineLine(a, b);
 	}
-	else if ((typeA == wkbLineString_mdb && typeB == wkbPolygon_mdb) || (typeA == wkbLinearRing_mdb && typeB == wkbPolygon_mdb))
+	else if (dimA == 0 && dimB == 2)
+	{
+		/* Point and Polygon */
+		return geoDistancePointPolygon(a, b);
+	}
+	else if (dimA == 2 && dimB == 0)
+	{
+		/* Polygon and Point */
+		return geoDistancePointPolygon(b, a);
+	}
+	else if (dimA == 1 && dimB == 2)
 	{
 		/* Line/LinearRing and Polygon */
-		(*out) = geoDistanceLinePolygon(a, b);
+		return geoDistanceLinePolygon(a, b);
 	}
-	else if ((typeB == wkbLineString_mdb && typeA == wkbPolygon_mdb) || (typeB == wkbLinearRing_mdb && typeA == wkbPolygon_mdb))
+	else if (dimA == 2 && dimB == 1)
 	{
 		/* Polygon and Line/LinearRing */
-		(*out) = geoDistanceLinePolygon(b, a);
+		return geoDistanceLinePolygon(b, a);
 	}
-	else if (typeA == wkbPolygon_mdb && typeA == wkbPolygon_mdb)
+	else if (dimA == 2 && dimB == 2)
 	{
 		/* Polygon and Polygon */
-		(*out) = geoDistancePolygonPolygon(a, b);
+		return geoDistancePolygonPolygon(a, b);
 	}
-	return NULL;
+	return INT_MAX;
+}
+
+//TODO Check if the GetGeometryN works for a single Geometry (not on collections) for the case where one is a collection and the other is not
+static double geoDistanceMulti(GEOSGeom multi1, GEOSGeom multi2, int numGeoms1, int numGeoms2)
+{
+	double distance, min_distance = INT_MAX;
+	GEOSGeometry *geo1, *geo2;
+	for (int i = 0; i < numGeoms1; i++)
+	{
+		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)multi1, i);
+		for (int j = 0; j < numGeoms2; j++)
+		{
+			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)multi2, j);
+			distance = geoDistanceSimple(geo1, geo2);
+			if (distance < min_distance)
+				min_distance = distance;
+		}
+	}
+	return min_distance;
+}
+
+static void geoDistanceInternal(GEOSGeom a, GEOSGeom b, dbl *out)
+{
+	int numA = GEOSGetNumGeometries(a), numB = GEOSGetNumGeometries(b);
+	if (numA == 1 && numB == 1)
+	{
+		(*out) = geoDistanceSimple(a, b);
+	}
+	else
+	{
+		(*out) = geoDistanceMulti(a, b, numA, numB);
+	}
 }
 
 /* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
 str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 {
-	GEOSGeom ga, gb;
 	str err = MAL_SUCCEED;
-
-	if (is_wkb_nil(*a) || is_wkb_nil(*b))
+	GEOSGeom ga, gb;
+	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	if (ga && gb)
 	{
-		*out = dbl_nil;
-		return MAL_SUCCEED;
-	}
-	ga = wkb2geos(*a);
-	gb = wkb2geos(*b);
-	if (ga == NULL || gb == NULL)
-	{
-		if (ga)
-			GEOSGeom_destroy(ga);
-		if (gb)
-			GEOSGeom_destroy(gb);
-		*out = dbl_nil;
-		throw(MAL, "geom.DistanceGeographic", SQLSTATE(38000) "Geos operation wkb2geos failed");
+		geoDistanceInternal(ga, gb, out);
 	}
 
-	if (GEOSGetSRID(ga) != GEOSGetSRID(gb))
+	GEOSGeom_destroy(ga);
+	GEOSGeom_destroy(gb);
+
+	return err;
+}
+
+/**
+* Distance Within 
+* 
+**/
+/* Checks if two geographic geometries are within d meters of one another */
+str wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl d)
+{
+	str err = MAL_SUCCEED;
+	GEOSGeom ga, gb;
+	double distance;
+	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	if (ga && gb)
 	{
-		err = createException(MAL, "geom.DistanceGeographic", SQLSTATE(38000) "Geometries of different SRID");
+		geoDistanceInternal(ga, gb, &distance);
+		(*out) = (distance <= d);
 	}
-	else
+
+	GEOSGeom_destroy(ga);
+	GEOSGeom_destroy(gb);
+
+	return err;
+}
+
+/**
+* Intersects
+* 
+**/
+/* Checks if two geographic geometries intersect at any point */
+str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
+{
+	str err = MAL_SUCCEED;
+	GEOSGeom ga, gb;
+	double distance;
+	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	if (ga && gb)
 	{
-		int geoTypeA = GEOSGeomTypeId(ga) + 1;
-		int geoTypeB = GEOSGeomTypeId(gb) + 1;
-		distanceGeographicInternal(out, ga, gb, geoTypeA, geoTypeB);
+		geoDistanceInternal(ga, gb, &distance);
+		(*out) = (distance == 0);
 	}
 
 	GEOSGeom_destroy(ga);
@@ -7269,7 +7371,9 @@ static mel_atom geom_init_atoms[] = {
 	},
 	{.cmp = NULL}};
 static mel_func geom_init_funcs[] = {
-	command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "test", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
+	command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", dbl), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
+	command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
+	command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
 	command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1, 3, arg("", str), arg("flags", int), arg("format", int))),
