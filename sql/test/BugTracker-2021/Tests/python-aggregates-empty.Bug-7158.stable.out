@@ -1,0 +1,44 @@
+stdout of test 'python-aggregates-empty.Bug-7158` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 14:41:40 >  
+# 14:41:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-132706" "--port=38945"
+# 14:41:40 >  
+
+#START TRANSACTION;
+#CREATE AGGREGATE python_aggregate(val INTEGER)
+#RETURNS INTEGER
+#LANGUAGE PYTHON {
+#    try:
+#        unique = numpy.unique(aggr_group)
+#        x = numpy.zeros(shape=(unique.size))
+#        for i in range(0, unique.size):
+#            x[i] = numpy.sum(val[aggr_group==unique[i]])
+#    except NameError:
+#        # aggr_group does not exist. no groups, aggregate on all data
+#        x = numpy.sum(val)
+#    return(x)
+#};
+#CREATE TABLE test (x INTEGER);
+#SELECT python_aggregate(x) FROM test;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ NULL	]
+#CREATE FUNCTION myfunc(val INTEGER)
+#RETURNS INTEGER 
+#LANGUAGE PYTHON {
+#    return val
+#};
+#SELECT myfunc(x) FROM test;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+#ROLLBACK;
+
+# 14:41:40 >  
+# 14:41:40 >  "Done."
+# 14:41:40 >  
+

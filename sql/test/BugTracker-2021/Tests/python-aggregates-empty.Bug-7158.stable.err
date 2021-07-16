@@ -1,0 +1,12 @@
+stderr of test 'python-aggregates-empty.Bug-7158` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 14:41:40 >  
+# 14:41:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-132706" "--port=38945"
+# 14:41:40 >  
+
+
+# 14:41:40 >  
+# 14:41:40 >  "Done."
+# 14:41:40 >  
+
