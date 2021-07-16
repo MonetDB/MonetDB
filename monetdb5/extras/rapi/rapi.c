@@ -543,6 +543,40 @@ static char *RAPIinstalladdons(void) {
 	return NULL;
 }
 
+static str
+empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)
+{
+	for (size_t i = 0; i < retcols; i++) {
+		if (isaBatType(getArgType(mb, pci, i))) {
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			*getArgReference_bat(stk, pci, i) = b->batCacheid;
+			BBPkeepref(b->batCacheid);
+		} else { // single value return, only for non-grouped aggregations
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
@@ -654,6 +688,12 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			if (BATcount(b) == 0) { /* empty input, generate trivial return */
+				/* I expect all inputs to have the same size, so this should be safe */
+				msg = empty_return(mb, stk, pci, pci->retc, b->hseqbase);
+				BBPunfix(b->batCacheid);
 				goto wrapup;
 			}
 		}
@@ -780,9 +820,9 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		}
 		msg = MAL_SUCCEED;
 	}
+  wrapup:
 	/* unprotect environment, so it will be eaten by the GC. */
 	UNPROTECT(1);
-  wrapup:
 	MT_lock_unset(&rapiLock);
 	if (argnames)
 		free(argnames);
