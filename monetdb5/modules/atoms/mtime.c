@@ -156,7 +156,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	b1i = bat_iterator(b1);												\
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	off = b1->hseqbase;													\
@@ -256,12 +256,12 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	}																	\
 	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = canditer_init(&ci1, b1, s1);									\
@@ -351,7 +351,7 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	b2i = bat_iterator(b2);												\
 	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) {\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = canditer_init(&ci2, b2, s2);									\
@@ -428,7 +428,7 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	b1i = bat_iterator(b1);												\
 	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = canditer_init(&ci1, b1, s1);									\

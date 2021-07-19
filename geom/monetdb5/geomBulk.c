@@ -30,12 +30,12 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 
 	//get the descriptor of the BAT
 	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
-		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	bi = bat_iterator(b);
 	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
-		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -120,12 +120,12 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 
 	//get the descriptor of the BAT
 	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
-		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	bi = bat_iterator(b);
 	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
-		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
