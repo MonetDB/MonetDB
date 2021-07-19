@@ -237,7 +237,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
-	BATiter b1i, b2i;													\
+	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
