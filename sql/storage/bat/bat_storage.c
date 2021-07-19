@@ -2183,10 +2183,8 @@ new_persistent_delta( sql_delta *bat)
 {
 	BAT *b = temp_descriptor(bat->cs.bid);
 
-	if (b == NULL) {
-		bat_destroy(b);
+	if (b == NULL)
 		return LOG_ERR;
-	}
 	bat->cs.ucnt = 0;
 	bat_destroy(b);
 	return LOG_OK;
