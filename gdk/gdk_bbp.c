@@ -1043,7 +1043,7 @@ BBPmanager(void *dummy)
 			    (b = BBP_cache(bid)) != NULL &&
 			    b->batSharecnt == 0 &&
 			    !BATdirty(b) &&
-			    !(BBP_status(bid) & (BBPHOT | BBPUNLOADING)) &&
+			    !(BBP_status(bid) & (BBPHOT | BBPUNLOADING | BBPSYNCING)) &&
 			    (BBP_status(bid) & BBPPERSISTENT)) {
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
