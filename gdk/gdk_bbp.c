@@ -2034,12 +2034,12 @@ bbpclear(bat i, int idx, bool lock)
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
-	BBP_status_set(i, BBPUNLOADING);
-	BBP_refs(i) = 0;
-	BBP_lrefs(i) = 0;
 	if (lock)
 		MT_lock_set(&GDKcacheLock(idx));
 
+	BBP_status_set(i, BBPUNLOADING);
+	BBP_refs(i) = 0;
+	BBP_lrefs(i) = 0;
 	if (!BBPtmpcheck(BBP_logical(i))) {
 		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
@@ -2056,11 +2056,11 @@ bbpclear(bat i, int idx, bool lock)
 }
 
 void
-BBPclear(bat i)
+BBPclear(bat i, bool lock)
 {
 	MT_Id pid = MT_getpid();
-	bool lock = locked_by == 0 || locked_by != pid;
 
+	lock &= locked_by == 0 || locked_by != pid;
 	if (BBPcheck(i)) {
 		bbpclear(i, threadmask(pid), lock);
 	}
@@ -2686,7 +2686,7 @@ BBPdestroy(BAT *b)
 		}
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 	}
-	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
+	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
 
 	/* parent released when completely done with child */
 	if (tp)
@@ -3628,7 +3628,7 @@ getdesc(bat bid)
 	if (bid < (bat) ATOMIC_GET(&BBPsize) && BBP_logical(bid))
 		b = BBP_desc(bid);
 	if (b == NULL)
-		BBPclear(bid);
+		BBPclear(bid, true);
 	return b;
 }
 
