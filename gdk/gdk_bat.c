@@ -1326,6 +1326,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
 		const void *t = b->ttype && b->tvarsized ?
@@ -1393,7 +1394,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 
-		MT_rwlock_wrlock(&b->thashlock);
 		HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		if (b->tvarsized && b->ttype) {
 			var_t _d;
@@ -1484,7 +1484,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		}
 
 		HASHinsert_locked(b, p, t);	/* insert new value into hash */
-		MT_rwlock_wrunlock(&b->thashlock);
 
 		tt = b->ttype;
 		prv = p > 0 ? p - 1 : BUN_NONE;
@@ -1532,6 +1531,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
 			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
 	}
+	MT_rwlock_wrunlock(&b->thashlock);
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
