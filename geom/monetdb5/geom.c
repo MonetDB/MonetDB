@@ -123,6 +123,14 @@ static void geog2cart(double lon, double lat, double *x, double *y, double *z)
 	(*z) = sin(lat);
 }
 
+static void geog2cart_r(double lon, double lat, double *x, double *y, double *z)
+{
+	double r = 6371.009;
+	(*x) = r * cos(lat) * cos(lon);
+	(*y) = r * cos(lat) * sin(lon);
+	(*z) = r * sin(lat);
+}
+
 /**
 * Convert cartesian coordinates on unit sphere to spherical coordinates
 * From PostGIS
@@ -132,6 +140,13 @@ static void geog2cart(double lon, double lat, double *x, double *y, double *z)
 	(*lon) = atan2(y, x);
 	(*lat) = asin(z);
 }*/
+
+static void cart2geog_r(double x, double y, double z, double *lon, double *lat)
+{
+	double r = 6371.009;
+	(*lon) = atan2(y, x);
+	(*lat) = asin(z / r);
+}
 
 /* Returns the latitude and longitude (in radians) from a geographic Geom point */
 static void pointToRadian(GEOSGeom geom, double *lat_r, double *lon_r)
@@ -183,12 +198,45 @@ static double geoDistancePointPoint(GEOSGeom a, GEOSGeom b)
 	return haversine(lat1_r, lon1_r, lat2_r, lon2_r);
 }
 
-//TODO -> First try in geom_todo.c
-static double calculatePerpendicular(GEOSGeom a, GEOSGeom b)
+//TODO Improve this function, there may be a easier way (vector operations?)
+//TODO Check if changing the g2c_r function to g2c makes any difference
+static double calculatePerpendicular(GEOSGeom p, GEOSGeom l)
 {
-	a = NULL;
-	b = NULL;
-	return INT_MAX;
+	//p is the point, a is the start of the line and b is the end of the line
+	double a_lat, a_lon, a_x, a_y, a_z, b_lat, b_lon, b_x, b_y, b_z, p_lat, p_lon, p_x, p_y, p_z;
+	//First, we convert the points to 3D cartesian coordinates
+	pointToRadian(GEOSGeomGetStartPoint(l), &a_lat, &a_lon);
+	geog2cart_r(a_lon, a_lat, &a_x, &a_y, &a_z);
+	pointToRadian(GEOSGeomGetEndPoint(l), &b_lat, &b_lon);
+	geog2cart_r(b_lon, b_lat, &b_x, &b_y, &b_z);
+	pointToRadian(p, &p_lat, &p_lon);
+	geog2cart_r(p_lon, p_lat, &p_x, &p_y, &p_z);
+
+	//Calculate the projection of point into the line
+	double d_ab = (b_z - a_z) * (b_z - a_z) + (b_y - a_y) * (b_y - a_y) + (b_x - a_x) * (b_x - a_x);
+	double t = (((p_x - a_x) * (b_x - a_x)) + ((p_y - a_y) * (b_y - a_y)) + ((p_z - a_z) * (b_z - a_z))) / d_ab;
+
+	//TODO Check if this is correct
+	//If t is not between 0 and 1, the projected point is not in the line, so there is no perpendicular
+	if (t < 0 || t > 1)
+		return INT_MAX;
+
+	double proj_x, proj_y, proj_z, proj_lat, proj_lon;
+	proj_x = a_x + t * (b_x - a_x);
+	proj_y = a_y + t * (b_y - a_y);
+	proj_z = a_z + t * (b_z - a_z);
+
+	//Convert into geographic coordinates
+	cart2geog_r(proj_x, proj_y, proj_z, &proj_lon, &proj_lat);
+	proj_lon = proj_lon * 180.0 / M_PI;
+	proj_lat = proj_lat * 180.0 / M_PI;
+
+	/*printf("a = (%f %f %f)\nb = (%f %f %f)\np = (%f %f %f)\ndab = %f\nt = %f\n", a_x, a_y, a_z, b_x, b_y, b_z, p_x, p_y, p_z, d_ab, t);
+	printf("proj = (%f %f %f) -> (%f %f)\nDistance = %f\n\n", proj_x, proj_y, proj_z, proj_lon, proj_lat, distance);
+	fflush(stdout);*/
+
+	//Calculate distance from original point to the projection
+	return geoDistancePointPoint(p, GEOSGeom_createPointFromXY(proj_lon, proj_lat));
 }
 
 /* Distance between Point and a simple Line (only one Line segment) */
@@ -197,7 +245,6 @@ static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
 	double distancePerpendicular, distanceStart, distanceEnd;
 
 	/* Calculate perpendicular of point in Line */
-	//TODO Implement this correctly
 	distancePerpendicular = calculatePerpendicular(point, line);
 
 	/* Calculate distance of point to start and end points of line */
@@ -220,6 +267,7 @@ static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
 }
 
 /* Given a Line/LinearRing geometry with multiple segments and the index to fetch, returns a single Line segment */
+//TODO Is there a better way to do this?
 static GEOSGeometry *getLineSegment(GEOSCoordSequence *multiLineCoords, int segmentIndex)
 {
 	double x1, y1, x2, y2;
@@ -284,6 +332,21 @@ static double geoDistanceLineLine(GEOSGeom line1, GEOSGeom line2)
 	return min_distance;
 }
 
+/*static void pointOutsidePolygon(GEOSGeom polygon, double *lon_outside, double *lat_outside)
+{
+	mbr *bbox = mbrFromGeos((const GEOSGeom)polygon);
+	printf("X: (%f %f)\nY: (%f %f)\n", bbox->xmin, bbox->xmax, bbox->ymin, bbox->ymax);
+	double x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
+	geog2cart_r(bbox->xmin, bbox->ymin, &x1, &y1, &z1);
+	geog2cart_r(bbox->xmin, bbox->ymax, &x2, &y2, &z2);
+	geog2cart_r(bbox->xmax, bbox->ymin, &x3, &y3, &z3);
+	geog2cart_r(bbox->xmax, bbox->ymax, &x4, &y4, &z4);
+	printf("Points:\n(%f %f %f)\n(%f %f %f)\n(%f %f %f)\n(%f %f %f)\n\n", x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4);
+	fflush(stdout);
+	lon_outside = NULL;
+	lat_outside = NULL;
+}*/
+
 //TODO Check if this works always
 //For fast testing, we could use the polygon's minimum bounding box
 static bool pointWithinPolygonRing(GEOSGeom point, GEOSGeom polygon)
@@ -296,6 +359,8 @@ static bool pointWithinPolygonRing(GEOSGeom point, GEOSGeom polygon)
 	//Get an point that's outside the polygon
 	//TODO Get the outside point using the polygon's bounding box, instead of being static
 	double lat_o = 48.193, lon_o = -4.551;
+	/*double lat_out, lon_out;
+	pointOutsidePolygon(polygon, &lon_out, &lat_out);*/
 
 	//Construct a line between the outside point and the input point
 	GEOSGeomGetX(point, &lon_p);
@@ -369,7 +434,7 @@ static double geoDistanceLinePolygon(GEOSGeom line, GEOSGeom polygon)
 }
 
 /* Distance between two Polygons. */
-//TODO Check if we can simply use the LinePolygon function (does it work with polygon with holes?)
+//TODO Check if we can simply use the LinePolygon function
 static double geoDistancePolygonPolygon(GEOSGeom polygon1, GEOSGeom polygon2)
 {
 	const GEOSGeometry *polygon_ring;
@@ -525,6 +590,11 @@ str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 
 	return err;
 }
+
+/**
+* End of Geographic update code
+*
+**/
 
 int TYPE_mbr;
 
@@ -7371,9 +7441,9 @@ static mel_atom geom_init_atoms[] = {
 	},
 	{.cmp = NULL}};
 static mel_func geom_init_funcs[] = {
-	command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", dbl), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
-	command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
-	command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+	command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
+	command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+	command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
 	command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1, 3, arg("", str), arg("flags", int), arg("format", int))),
