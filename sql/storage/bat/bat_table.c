@@ -264,7 +264,7 @@ static res_table *
 table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_column *jl2, sql_column *jr2, sql_column *o, ...)
 {
 	/* jl/jr are columns on which we first join */
-	/* if also jl2,jr2, we need too do another join, where both tables differ from 't' */
+	/* if also jl2,jr2, we need to do another join, where both tables differ from 't' */
 
 	va_list va;
 	BAT *b = NULL, *r = NULL, *cl, *cr = NULL, *cr2 = NULL, *id = NULL, *grp = NULL;

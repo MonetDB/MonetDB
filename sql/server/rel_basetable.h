@@ -21,7 +21,7 @@ extern sql_table *rel_ddl_table_get(sql_rel *r);
 extern sql_rel *rel_ddl_basetable_get(sql_rel *r);
 
 extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
-extern void rel_base_disallow(sql_rel *r);		/* set flag too check per column access */
+extern void rel_base_disallow(sql_rel *r);		/* set flag to check per column access */
 extern int rel_base_use(mvc *ql, sql_rel *rt, int nr);	/* return error on (read) access violation */
 extern void rel_base_use_tid(mvc *sql, sql_rel *rt);
 extern void rel_base_use_all(mvc *sql, sql_rel *rel);
