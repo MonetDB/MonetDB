@@ -1333,68 +1333,102 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
 
-		val = BUNtail(bi, p);	/* old value */
-		if (ATOMcmp(b->ttype, val, t) == 0)
-			continue; /* nothing to do */
-		if (b->tnil &&
-		    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
-		    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
-			/* if old value is nil and new value isn't, we're not
-			 * sure anymore about the nil property, so we must
-			 * clear it */
-			b->tnil = false;
+		/* retrieve old value, but if this comes from the
+		 * logger, we need to deal with offsets that point
+		 * outside of the valid vheap */
+		if (b->tvarsized) {
+			if (b->ttype) {
+				size_t off = BUNtvaroff(bi, p);
+				if (off < bi.vhfree)
+					val = bi.vh->base + off;
+				else
+					val = NULL; /* bad offset */
+			} else {
+				val = BUNtpos(bi, p);
+			}
+		} else {
+			val = BUNtloc(bi, p);
 		}
-		if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
-			const ValRecord *prop;
 
-			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-				if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-				    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
-					/* new value is larger than previous
-					 * largest */
-					BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, t);
-					BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
-				} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-					   ATOMcmp(b->ttype, VALptr(prop), val) == 0) {
-					/* old value is equal to largest and
-					 * new value is smaller (see above),
-					 * so we don't know anymore which is
-					 * the largest */
-					BATrmprop_nolock(b, GDK_MAX_VALUE);
+		if (val) {
+			if (ATOMcmp(b->ttype, val, t) == 0)
+				continue; /* nothing to do */
+			if (b->tnil &&
+			    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
+			    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
+				/* if old value is nil and new value
+				 * isn't, we're not sure anymore about
+				 * the nil property, so we must clear
+				 * it */
+				b->tnil = false;
+			}
+			if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
+				const ValRecord *prop;
+
+				MT_lock_set(&b->theaplock);
+				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
+					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
+					    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
+						/* new value is larger
+						 * than previous
+						 * largest */
+						BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, t);
+						BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
+					} else if (ATOMcmp(b->ttype, t, val) != 0 &&
+						   ATOMcmp(b->ttype, VALptr(prop), val) == 0) {
+						/* old value is equal to
+						 * largest and new value
+						 * is smaller (see
+						 * above), so we don't
+						 * know anymore which is
+						 * the largest */
+						BATrmprop_nolock(b, GDK_MAX_VALUE);
+						BATrmprop_nolock(b, GDK_MAX_POS);
+					}
+				} else {
 					BATrmprop_nolock(b, GDK_MAX_POS);
 				}
-			} else {
-				BATrmprop_nolock(b, GDK_MAX_POS);
-			}
-			if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-				if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-				    ATOMcmp(b->ttype, VALptr(prop), t) > 0) {
-					/* new value is smaller than previous
-					 * smallest */
-					BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, t);
-					BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
-				} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-					   ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
-					/* old value is equal to smallest and
-					 * new value is larger (see above), so
-					 * we don't know anymore which is the
-					 * smallest */
-					BATrmprop_nolock(b, GDK_MIN_VALUE);
+				if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
+					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
+					    ATOMcmp(b->ttype, VALptr(prop), t) > 0) {
+						/* new value is smaller
+						 * than previous
+						 * smallest */
+						BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, t);
+						BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
+					} else if (ATOMcmp(b->ttype, t, val) != 0 &&
+						   ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
+						/* old value is equal to
+						 * smallest and new
+						 * value is larger (see
+						 * above), so we don't
+						 * know anymore which is
+						 * the smallest */
+						BATrmprop_nolock(b, GDK_MIN_VALUE);
+						BATrmprop_nolock(b, GDK_MIN_POS);
+					}
+				} else {
 					BATrmprop_nolock(b, GDK_MIN_POS);
 				}
+				BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
+				MT_lock_unset(&b->theaplock);
 			} else {
-				BATrmprop_nolock(b, GDK_MIN_POS);
+				PROPdestroy(b);
 			}
-			BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
-			MT_lock_unset(&b->theaplock);
+			HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		} else {
+			/* out of range old value, so the properties and
+			 * hash cannot be trusted */
 			PROPdestroy(b);
+			Hash *hs = b->thash;
+			if (hs) {
+				b->thash = NULL;
+				doHASHdestroy(b, hs);
+			}
 		}
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 
-		HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		if (b->tvarsized && b->ttype) {
 			var_t _d;
 			ptr _ptr;
