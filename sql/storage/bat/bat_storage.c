@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "bat_storage.h"
-#include "bat_Urals.h"
+#include "bat_utils.h"
 #include "sql_string.h"
 #include "gdk_atoms.h"
 #include "gdk_atoms.h"
