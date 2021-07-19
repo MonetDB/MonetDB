@@ -980,6 +980,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_iterator_end(&bi);
 		bat_iterator_end(&bvali);
 		BBPunfix(b->batCacheid);
+		BBPunfix(bval->batCacheid);
 	} else {
 		p = newStmt(cntxt->wlc, "wlr","update");
 		p = pushStr(cntxt->wlc, p, sch);
