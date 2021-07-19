@@ -738,24 +738,6 @@ BATdestroy(BAT *b)
  * which ensures that the original cannot be modified or destroyed
  * (which could affect the shared heaps).
  */
-static void
-heapmove(Heap *dst, Heap *src)
-{
-	HEAPfree(dst, strcmp(dst->filename, src->filename) != 0);
-	/* copy all fields of src except refs */
-	strcpy_len(dst->filename, src->filename, sizeof(dst->filename));
-	dst->free = src->free;
-	dst->size = src->size;
-	dst->base = src->base;
-	dst->farmid = src->farmid;
-	dst->hashash = src->hashash;
-	dst->cleanhash = src->cleanhash;
-	dst->storage = src->storage;
-	dst->newstorage = src->newstorage;
-	dst->parentid = src->parentid;
-	dst->dirty = true;
-}
-
 static bool
 wrongtype(int t1, int t2)
 {
@@ -849,48 +831,39 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			return NULL;
 		}
 
-		if (bn->tvarsized && bn->ttype && bunstocopy == BUN_NONE) {
-			bn->tshift = bi.shift;
-			bn->twidth = bi.width;
-			if (HEAPextend(bn->theap, BATcapacity(bn) << bn->tshift, true) != GDK_SUCCEED)
-				goto bunins_failed;
-		}
-
 		if (tt == TYPE_void) {
 			/* case (2): a void,void result => nothing to
 			 * copy! */
 			bn->theap->free = 0;
 		} else if (bunstocopy == BUN_NONE) {
-			/* case (3): just copy the heaps; if possible
-			 * with copy-on-write VM support */
-			Heap bthp, thp;
-
-			bthp = (Heap) {
-				.farmid = BBPselectfarm(role, bi.type, offheap),
-				.parentid = bn->batCacheid,
-			};
-			thp = (Heap) {
-				.farmid = BBPselectfarm(role, bi.type, varheap),
-				.parentid = bn->batCacheid,
-			};
-			settailname(&bthp, BBP_physical(bn->batCacheid),
-				    bn->ttype, bn->twidth);
-			strconcat_len(thp.filename, sizeof(thp.filename),
-				      BBP_physical(bn->batCacheid),
-				      ".theap", NULL);
-			if ((bi.type && HEAPcopy(&bthp, bi.h, (size_t) ((char *) bi.base - bi.h->base)) != GDK_SUCCEED) ||
-			    (bn->tvheap && HEAPcopy(&thp, bi.vh, 0) != GDK_SUCCEED)) {
-				HEAPfree(&thp, true);
-				HEAPfree(&bthp, true);
-				BBPreclaim(bn);
-				bat_iterator_end(&bi);
-				return NULL;
+			/* case (3): just copy the heaps */
+			if (bn->tvarsized && bn->ttype && bn->twidth != bi.width) {
+				/* widen the string offset heap */
+				bn->tshift = bi.shift;
+				bn->twidth = bi.width;
+				settailname(bn->theap,
+					    BBP_physical(bn->batCacheid),
+					    bn->ttype, bn->twidth);
+				/* file name change in mmapped file:
+				 * just free and create new */
+				if (bn->theap->storage != STORE_MEM) {
+					HEAPfree(bn->theap, true);
+					if (HEAPalloc(bn->theap, bi.hfree, 1, 1) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
-			/* succeeded; replace dummy small heaps by the
-			 * real ones */
-			heapmove(bn->theap, &bthp);
-			if (bn->tvheap)
-				heapmove(bn->tvheap, &thp);
+			if (HEAPextend(bn->theap, bi.hfree, true) != GDK_SUCCEED ||
+			    (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)) {
+ 				goto bunins_failed;
+ 			}
+			memcpy(bn->theap->base, bi.base, bi.hfree);
+			bn->theap->free = bi.hfree;
+			bn->theap->dirty = true;
+ 			if (bn->tvheap) {
+				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
+				bn->tvheap->free = bi.vhfree;
+				bn->tvheap->dirty = true;
+			}
 
 			/* make sure we use the correct capacity */
 			if (ATOMstorage(bn->ttype) == TYPE_msk)
