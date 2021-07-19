@@ -907,7 +907,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				const void *t = BUNtail(bi, p);
 
 				if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
-					bat_iterator_end(&bi);
 					goto bunins_failed;
 				}
 				r++;
