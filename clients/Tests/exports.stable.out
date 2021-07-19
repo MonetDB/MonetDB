@@ -215,7 +215,7 @@ bat BBPindex(const char *nme);
 void BBPkeepref(bat i);
 bat BBPlimit;
 void BBPlock(void);
-BAT *BBPquickdesc(bat b, bool delaccess);
+BAT *BBPquickdesc(bat b);
 int BBPreclaim(BAT *b);
 int BBPrelease(bat b);
 int BBPrename(bat bid, const char *nme);
