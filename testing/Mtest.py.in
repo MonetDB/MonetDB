@@ -2362,7 +2362,7 @@ def CheckPort(port) :
     except socket.error as err:
         Serrno = err.errno
         Serrstr = err.strerror
-        S1.close();
+        S1.close()
         host = 'localhost'
         try:
             S0.bind((host,port))
@@ -3886,7 +3886,7 @@ def main(argv) :
             # /var/tmp/mtest and try not to forget to clean that up
             sockdir = "/var/tmp/mtest-%d" % os.getpid()
             try:
-                os.mkdir(sockdir);
+                os.mkdir(sockdir)
                 SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
                         (sockdir, env['MAPIPORT'])
                 HOST = sockdir
