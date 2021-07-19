@@ -3293,25 +3293,22 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
-			BAT *d = BBP_desc(i);
+			/* BBP_desc(i) may be NULL */
+			BATiter bi = bat_iterator(BBP_desc(i));
 
-			if (d)
-				MT_lock_set(&d->theaplock);
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-					if (d)
-						MT_lock_unset(&d->theaplock);
+					bat_iterator_end(&bi);
 					break;
 				}
 				if (b)
-					ret = BATsave_locked(b);
+					ret = BATsave_locked(b, &bi);
 			}
 			if (ret == GDK_SUCCEED) {
 				n = BBPdir_step(i, sizes ? sizes[idx] : BUN_NONE, n, buf, sizeof(buf), &obbpf, nbbpf);
 			}
-			if (d)
-				MT_lock_unset(&d->theaplock);
+			bat_iterator_end(&bi);
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
