@@ -151,3 +151,23 @@ select sub0.c2 from t0 cross join (values (timestamp '1970-01-01 01:00:00', time
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c1" VARCHAR(44))
+
+statement ok
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"9史"
+"-1680198574"
+"|Yv\ne軒sX"
+"㧪 dg"
+"c}u"
+
+statement error 42000!Soundex function not available for non ASCII strings
+select length(soundex(t0.c1)) from t0
+
+statement ok
+ROLLBACK
