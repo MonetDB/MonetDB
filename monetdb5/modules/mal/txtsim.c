@@ -801,7 +801,7 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 		goto bailout;
 	}
 	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = BATcount(left);
