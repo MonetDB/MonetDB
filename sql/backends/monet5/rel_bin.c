@@ -696,7 +696,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 
 	/*
 	 * left - isel: calls down need id's from the range of left
-	 * res  - rsel: updates too res need id's in the range from res
+	 * res  - rsel: updates to res need id's in the range from res
 	 */
 	for (node *en = exps->h; en; en = en->next) {
 		sql_exp *e = en->data;
@@ -725,7 +725,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				ires = l;
 				if (res)
 					res->cand = isel;
-			} else if (res && !next_cond) { /* use result too update column */
+			} else if (res && !next_cond) { /* use result to update column */
 				stmt *val = es;
 				stmt *pos = rsel;
 
@@ -854,7 +854,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 
 	/*
 	 * left - isel: calls down need id's from the range of left
-	 * res  - rsel: updates too res need id's in the range from res
+	 * res  - rsel: updates to res need id's in the range from res
 	 */
 	for (en = en->next; en; en = en->next) {
 		sql_exp *e = en->data;
@@ -908,7 +908,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				ires = l;
 				if (res)
 					res->cand = isel;
-			} else if (res && !next_cond) { /* use result too update column */
+			} else if (res && !next_cond) { /* use result to update column */
 				stmt *val = es;
 				stmt *pos = rsel;
 

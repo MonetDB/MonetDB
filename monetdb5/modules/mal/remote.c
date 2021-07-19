@@ -1503,7 +1503,7 @@ static str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, false), *v = b;
+	BAT *b = BBPquickdesc(bid), *v = b;
 	char sendtheap = 0;
 
 	(void)mb;

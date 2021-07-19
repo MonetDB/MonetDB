@@ -39,7 +39,7 @@ struct logger {
 	postversionfix_fptr postfuncp;
 	void *funcdata;
 	stream *output_log;
-	stream *input_log;	/* current stream too flush */
+	stream *input_log;	/* current stream to flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
 	MT_Lock lock;

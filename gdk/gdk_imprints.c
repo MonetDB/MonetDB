@@ -389,7 +389,7 @@ BATimpsync(void *arg)
 	MT_lock_set(&b->batIdxLock);
 	if ((imprints = b->timprints) != NULL) {
 		Heap *hp = &imprints->imprints;
-		if (HEAPsave(hp, hp->filename, NULL, true) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true, hp->free) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					/* add version number */

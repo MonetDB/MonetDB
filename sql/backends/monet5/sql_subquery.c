@@ -1171,7 +1171,7 @@ SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BBPquickdesc(*bid, false)))
+		if (!(b = BBPquickdesc(*bid)))
 			throw(SQL, "aggr.exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		count = BATcount(b) != 0;
 	}
@@ -1242,7 +1242,7 @@ SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BBPquickdesc(*bid, false)))
+		if (!(b = BBPquickdesc(*bid)))
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		count = BATcount(b) == 0;
 	}

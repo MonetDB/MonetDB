@@ -207,7 +207,6 @@ gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force) __attribute__((__warn_u
 gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force) __attribute__((__warn_unused_result__));
 BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
-void BBPclear(bat bid);
 void BBPcold(bat i);
 BAT *BBPdescriptor(bat b);
 int BBPfix(bat b);
@@ -215,7 +214,7 @@ bat BBPindex(const char *nme);
 void BBPkeepref(bat i);
 bat BBPlimit;
 void BBPlock(void);
-BAT *BBPquickdesc(bat b, bool delaccess);
+BAT *BBPquickdesc(bat b);
 int BBPreclaim(BAT *b);
 int BBPrelease(bat b);
 int BBPrename(bat bid, const char *nme);

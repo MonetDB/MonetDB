@@ -95,7 +95,7 @@ UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
 
-	if ((b = BBPquickdesc(*bid, false)) == NULL)	{
+	if ((b = BBPquickdesc(*bid)) == NULL)	{
 		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -187,12 +187,12 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	} else {
@@ -272,11 +272,11 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -361,11 +361,11 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;

@@ -58,7 +58,7 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 			BAT *b = BBP_cache(bid);
 
 			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid, true);
+				b = BBPquickdesc(bid);
 				if (b == NULL)
 					return GDK_FAIL;
 			}
@@ -78,7 +78,7 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
  * destroyed.
  */
 static void
-epilogue(int cnt, bat *subcommit)
+epilogue(int cnt, bat *subcommit, bool locked)
 {
 	int i = 0;
 
@@ -105,23 +105,21 @@ epilogue(int cnt, bat *subcommit)
 					TRC_WARNING(GDK, "BATcheckmodes failed\n");
 			}
 		}
+		if (!locked)
+			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, false);
+			BAT *b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
 			if (b) {
 				BATdelete(b);
-				if (BBP_cache(bid)) {
-					/* those that quickdesc
-					 * decides to load => free
-					 * memory */
-					BATfree(b);
-				}
 			}
-			BBPclear(bid);	/* clear with locking */
+			BBPclear(bid, false);
 		}
 		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
+		if (!locked)
+			MT_lock_unset(&GDKswapLock(bid));
 	}
 	GDKclrerr();
 }
@@ -140,7 +138,7 @@ TMcommit(void)
 	BBPlock();
 	if (prelude(getBBPsize(), NULL, NULL) == GDK_SUCCEED &&
 	    BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
-		epilogue(getBBPsize(), NULL);
+		epilogue(getBBPsize(), NULL, true);
 		ret = GDK_SUCCEED;
 	}
 	BBPunlock();
@@ -208,7 +206,7 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		/* lock just prevents other global (sub-)commits */
 		MT_lock_set(&GDKtmLock);
 		if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
-			epilogue(cnt, subcommit);
+			epilogue(cnt, subcommit, false);
 			ret = GDK_SUCCEED;
 		}
 		MT_lock_unset(&GDKtmLock);
@@ -260,7 +258,7 @@ TMabort(void)
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i, false);
+			BAT *b = BBPquickdesc(i);
 
 			if (b) {
 				if (!b->batTransient)
@@ -272,7 +270,7 @@ TMabort(void)
 	}
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, true);
+			BAT *b = BBPquickdesc(i);
 
 			if (b == NULL)
 				continue;

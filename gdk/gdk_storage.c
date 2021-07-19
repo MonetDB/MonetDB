@@ -758,51 +758,56 @@ BATmsync(BAT *b)
 #endif	/* DISABLE_MSYNC */
 }
 
+static inline const char *
+gettailnamebi(const BATiter *bi)
+{
+	if (bi->type != TYPE_str)
+		return "tail";
+	switch (bi->width) {
+	case 1:
+		return "tail1";
+	case 2:
+		return "tail2";
+#if SIZEOF_VAR_T == 8
+	case 4:
+		return "tail4";
+#endif
+	default:
+		return "tail";
+	}
+}
+
 gdk_return
-BATsave_locked(BAT *bd)
+BATsave_locked(BAT *b, BATiter *bi)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
-	bool dosync = (BBP_status(bd->batCacheid) & BBPPERSISTENT) != 0;
+	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 
-	assert(!GDKinmemory(bd->theap->farmid));
-	BATcheck(bd, GDK_FAIL);
+	assert(!GDKinmemory(b->theap->farmid));
+	BATcheck(b, GDK_FAIL);
 
-	assert(bd->batCacheid > 0);
+	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
-	if (isVIEW(bd)) {
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(bd), BBP_logical(VIEWtparent(bd)));
+	if (isVIEW(b)) {
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
-	if (!BATdirty(bd)) {
+	if (!BATdirty(b)) {
 		return GDK_SUCCEED;
-	}
-
-	/* copy the descriptor to a local variable in order to let our
-	 * messing in the BAT descriptor not affect other threads that
-	 * only read it. */
-	BAT bs = *bd;
-	BAT *b = &bs;
-	Heap hs = *bd->theap;
-	HEAPincref(&hs);
-	b->theap = &hs;
-	Heap vhs;
-	if (b->tvheap) {
-		vhs = *bd->tvheap;
-		HEAPincref(&vhs);
-		b->tvheap = &vhs;
 	}
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->ttype != TYPE_void && b->theap->base == NULL) {
-		assert(BBP_status(bd->batCacheid) & BBPSWAPPED);
+	const char *tail = gettailnamebi(bi);
+	if (bi->type != TYPE_void && bi->h->base == NULL) {
+		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
-			int fd = GDKfdlocate(b->theap->farmid, nme, "rb+", gettailname(b));
+			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
 			if (fd < 0) {
-				GDKsyserror("cannot open file %s.%s for sync\n", nme,
-					    gettailname(b));
+				GDKsyserror("cannot open file %s.%s for sync\n",
+					    nme, tail);
 				err = GDK_FAIL;
 			} else {
 				if (
@@ -814,12 +819,12 @@ BATsave_locked(BAT *bd)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.%s\n", nme,
-						    gettailname(b));
+					GDKsyserror("sync failed for %s.%s\n",
+						    nme, tail);
 				close(fd);
 			}
-			if (b->tvheap) {
-				fd = GDKfdlocate(b->tvheap->farmid, nme, "rb+", "theap");
+			if (bi->vh) {
+				fd = GDKfdlocate(bi->vh->farmid, nme, "rb+", "theap");
 				if (fd < 0) {
 					GDKsyserror("cannot open file %s.theap for sync\n",
 						    nme);
@@ -840,51 +845,55 @@ BATsave_locked(BAT *bd)
 			}
 		}
 	} else {
-		if (!b->batCopiedtodisk || b->batDirtydesc || b->theap->dirty)
-			if (err == GDK_SUCCEED && b->ttype)
-				err = HEAPsave(b->theap, nme, gettailname(b), dosync);
-		if (b->tvheap
-		    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
-		    && b->ttype
-		    && b->tvarsized
+		if (!b->batCopiedtodisk || b->batDirtydesc || bi->h->dirty)
+			if (err == GDK_SUCCEED && bi->type)
+				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree);
+		if (bi->vh
+		    && (!b->batCopiedtodisk || b->batDirtydesc || bi->vh->dirty)
+		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(b->tvheap, nme, "theap", dosync);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree);
 	}
 
-	HEAPdecref(b->theap, false);
-	if (b->tvheap)
-		HEAPdecref(b->tvheap, false);
 	if (err == GDK_SUCCEED) {
-		bd->theap->wasempty = hs.wasempty;
-		if (bd->tvheap)
-			bd->tvheap->wasempty = vhs.wasempty;
-		bd->batCopiedtodisk = true;
-		DESCclean(bd);
-		if (MT_rwlock_rdtry(&bd->thashlock)) {
+		MT_lock_set(&b->theaplock);
+		b->batCopiedtodisk = true;
+		if (b->theap != bi->h) {
+			assert(b->theap->dirty);
+			b->theap->wasempty = bi->h->wasempty;
+		}
+		if (b->tvheap && b->tvheap != bi->vh) {
+			assert(b->tvheap->dirty);
+			b->tvheap->wasempty = bi->vh->wasempty;
+		}
+		b->batDirtyflushed = DELTAdirty(b);
+		b->batDirtydesc = false;
+		MT_lock_unset(&b->theaplock);
+		if (MT_rwlock_rdtry(&b->thashlock)) {
 			/* if we can't get the lock, don't bother saving
 			 * the hash (normally, the hash lock should not
 			 * be acquired when the heap lock has already
 			 * been acquired, and here we have the heap
 			 * lock, so we must be careful with the hash
 			 * lock) */
-			if (bd->thash && bd->thash != (Hash *) 1)
-				BAThashsave(bd, dosync);
-			MT_rwlock_rdunlock(&bd->thashlock);
+			if (b->thash && b->thash != (Hash *) 1)
+				BAThashsave(b, dosync);
+			MT_rwlock_rdunlock(&b->thashlock);
 		}
 	}
 	return err;
 }
 
 gdk_return
-BATsave(BAT *bd)
+BATsave(BAT *b)
 {
 	gdk_return rc;
 
-	MT_rwlock_rdlock(&bd->thashlock);
-	MT_lock_set(&bd->theaplock);
-	rc = BATsave_locked(bd);
-	MT_rwlock_rdunlock(&bd->thashlock);
-	MT_lock_unset(&bd->theaplock);
+	MT_rwlock_rdlock(&b->thashlock);
+	BATiter bi = bat_iterator(b);
+	rc = BATsave_locked(b, &bi);
+	bat_iterator_end(&bi);
+	MT_rwlock_rdunlock(&b->thashlock);
 	return rc;
 }
 

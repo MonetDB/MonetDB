@@ -3001,7 +3001,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			if (EC_NUMBER(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t1->type->eclass))
-					tp = *t1; /* for float and interval fall back too the same as left */
+					tp = *t1; /* for float and interval fall back to the same as left */
 				r = exp_check_type(sql, &tp, rel, r, type_equal);
 				if (!r)
 					return NULL;
@@ -3009,7 +3009,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t2->type->eclass))
-					tp = *t2; /* for float and interval fall back too the same as right */
+					tp = *t2; /* for float and interval fall back to the same as right */
 				l = exp_check_type(sql, &tp, rel, l, type_equal);
 				if (!l)
 					return NULL;
