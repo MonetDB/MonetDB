@@ -317,7 +317,7 @@ typedef struct sql_trans {
 	list *dependencies;	/* list of dependencies created (list of sqlids from the objects) */
 	list *depchanges;	/* list of dependencies changed (it would be tested for conflicts at the end of the transaction) */
 
-	int logchanges;		/* count number of changes to be applied too the wal */
+	int logchanges;		/* count number of changes to be applied to the wal */
 	int active;			/* is active transaction */
 	int status;			/* status of the last query */
 

@@ -426,7 +426,7 @@ exp_count(int *cnt, sql_exp *e)
 			if (e->l) {
 				sql_exp *l = e->l;
 				sql_subtype *t = exp_subtype(l);
-				if (EC_TEMP(t->type->eclass)) /* give preference too temporal ranges */
+				if (EC_TEMP(t->type->eclass)) /* give preference to temporal ranges */
 					*cnt += 90;
 			}
 			if (e->f){ /* range */

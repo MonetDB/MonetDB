@@ -449,8 +449,8 @@ typedef struct sqlstore {
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too tables (storage) */
-	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes too columns (storage) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
+	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
@@ -464,9 +464,9 @@ typedef struct sqlstore {
 	int initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;
-	list *changes;			/* pending changes too cleanup */
-	sql_hash *dependencies; /* pending dependencies created too cleanup */
-	sql_hash *depchanges;	/* pending dependencies changes too cleanup */
+	list *changes;			/* pending changes to cleanup */
+	sql_hash *dependencies; /* pending dependencies created to cleanup */
+	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;

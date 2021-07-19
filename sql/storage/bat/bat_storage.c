@@ -769,7 +769,7 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		ovi = bat_iterator(ov);
 	}
 
-	/* handle dense (void) cases together as we need too merge updates (which is slower anyway) */
+	/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 	BUN uip = 0, uie = BATcount(ui);
 	BUN oip = 0, oie = BATcount(oi);
 
@@ -1238,7 +1238,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 					} else {
 						BATiter ovi = bat_iterator(uv);
 
-						/* handle dense (void) cases together as we need too merge updates (which is slower anyway) */
+						/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 						BUN uip = 0, uie = BATcount(ui);
 						BUN nip = 0, nie = BATcount(otids);
 						oid uiseqb = ui->tseqbase;
@@ -3689,7 +3689,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 					cnt = 0;
 					break;
 				}
-				/* we claimed part of the old segment, the split off part needs too stay deleted */
+				/* we claimed part of the old segment, the split off part needs to stay deleted */
 				size_t rcnt = seg->end - seg->start;
 				if (rcnt > cnt)
 					rcnt = cnt;
@@ -3773,7 +3773,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 					reused = 1;
 					break;
 				}
-				/* we claimed part of the old segment, the split off part needs too stay deleted */
+				/* we claimed part of the old segment, the split off part needs to stay deleted */
 				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL)
 					ok = LOG_ERR;
 			}
@@ -4009,7 +4009,7 @@ bat_storage_init( store_functions *sf)
 	sf->idx_dup = &idx_dup;
 	sf->del_dup = &del_dup;
 
-	sf->create_col = &create_col;	/* create and add too change list */
+	sf->create_col = &create_col;	/* create and add to change list */
 	sf->create_idx = &create_idx;
 	sf->create_del = &create_del;
 
@@ -4017,7 +4017,7 @@ bat_storage_init( store_functions *sf)
 	sf->destroy_idx = &destroy_idx;
 	sf->destroy_del = &destroy_del;
 
-	sf->drop_col = &drop_col;		/* add drop too change list */
+	sf->drop_col = &drop_col;		/* add drop to change list */
 	sf->drop_idx = &drop_idx;
 	sf->drop_del = &drop_del;
 
