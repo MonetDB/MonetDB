@@ -1,6 +1,6 @@
 START TRANSACTION;
 
-CREATE TABLE test (x INTEGER);
+CREATE TABLE test2 (x INTEGER);
 
 CREATE AGGREGATE python_aggregate(val INTEGER)
 RETURNS INTEGER
@@ -16,9 +16,9 @@ LANGUAGE PYTHON {
     return(x)
 };
 
-SELECT python_aggregate(x) FROM test;
+SELECT python_aggregate(x) FROM test2;
 
-SELECT python_aggregate(x) FROM test group by x;
+SELECT python_aggregate(x) FROM test2 group by x;
 
 CREATE FUNCTION myfunc(val INTEGER)
 RETURNS INTEGER 
@@ -26,6 +26,6 @@ LANGUAGE PYTHON {
     return val
 };
 
-SELECT myfunc(x) FROM test;
+SELECT myfunc(x) FROM test2;
 
 ROLLBACK;

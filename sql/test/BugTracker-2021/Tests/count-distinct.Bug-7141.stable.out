@@ -19,8 +19,8 @@ stdout of test 'count-distinct.Bug-7141` in directory 'sql/test/BugTracker-2021`
 [ 1	]
 [ 1	]
 [ 1	]
-#SELECT "id", "version", COUNT(distinct "version") FROM test GROUP BY "id", "version";
-% sys.test,	sys.test,	sys.%1 # table_name
+#SELECT "id", "version", COUNT(distinct "version") FROM test1 GROUP BY "id", "version";
+% sys.test1,	sys.test1,	sys.%1 # table_name
 % id,	version,	%1 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
@@ -29,8 +29,8 @@ stdout of test 'count-distinct.Bug-7141` in directory 'sql/test/BugTracker-2021`
 [ 2,	1,	1	]
 [ 2,	2,	1	]
 [ 3,	4,	1	]
-#SELECT "id", "version", COUNT(distinct "version") FROM test GROUP BY "id", "version" HAVING COUNT(distinct "version") > 1;
-% sys.test,	sys.test,	sys.%1 # table_name
+#SELECT "id", "version", COUNT(distinct "version") FROM test1 GROUP BY "id", "version" HAVING COUNT(distinct "version") > 1;
+% sys.test1,	sys.test1,	sys.%1 # table_name
 % id,	version,	%1 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
