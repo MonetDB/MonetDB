@@ -918,6 +918,7 @@ typedef struct BATiter {
 	uint8_t shift;
 	int8_t type;
 	oid tseq;
+	BUN hfree, vhfree;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -944,6 +945,8 @@ bat_iterator(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
+			.hfree = b->theap->free,
+			.vhfree = b->tvheap ? b->tvheap->free : 0,
 #ifndef NDEBUG
 			.locked = true,
 #endif
