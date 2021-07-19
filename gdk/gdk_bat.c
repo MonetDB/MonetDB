@@ -148,7 +148,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	bn->batDirtydesc = true;
 	return bn;
       bailout:
-	BBPclear(bn->batCacheid);
+	BBPclear(bn->batCacheid, true);
 	if (bn->theap)
 		HEAPdecref(bn->theap, true);
 	if (bn->tvheap)
@@ -293,7 +293,7 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
-	BBPclear(bn->batCacheid);
+	BBPclear(bn->batCacheid, true);
 	if (bn->theap)
 		HEAPdecref(bn->theap, true);
 	if (bn->tvheap)
