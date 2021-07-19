@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "bat_storage.h"
-#include "bat_utils.h"
+#include "bat_Urals.h"
 #include "sql_string.h"
 #include "gdk_atoms.h"
 #include "gdk_atoms.h"
@@ -396,6 +396,9 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 
 	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
+
+	if (segs->t && SEG_IS_VALID(segs->t, tr))
+		l = s = segs->t;
 
 	for(;s; s = s->next) {
 		if (SEG_IS_VALID(s, tr))
@@ -3871,13 +3874,28 @@ tab_validate(sql_trans *tr, sql_table *t, int uncommitted)
 	return res ? LOG_CONFLICT : LOG_OK;
 }
 
+static size_t
+has_deletes_in_range( segment *s, sql_trans *tr, BUN start, BUN end)
+{
+	size_t cnt = 0;
+
+	for(;s && s->end <= start; s = s->next)
+		;
+
+	for(;s && s->start < end && !cnt; s = s->next) {
+		if (SEG_IS_DELETED(s, tr)) /* assume aligned s->end and end */
+			cnt += s->end - s->start;
+	}
+	return cnt;
+}
+
 static BAT *
 segments2cands(segment *s, sql_trans *tr, sql_table *t, size_t start, size_t end)
 {
 	lock_table(tr->store, t->base.id);
 	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
-	size_t dnr = count_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
+	size_t dnr = has_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
 	if (!dnr) {
 		unlock_table(tr->store, t->base.id);
 		return BATdense(start, start, end-start);
