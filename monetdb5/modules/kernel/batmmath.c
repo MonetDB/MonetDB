@@ -388,7 +388,7 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BBPquickdesc(*bid, false))) {
+	if (!(b = BBPquickdesc(*bid))) {
 		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}

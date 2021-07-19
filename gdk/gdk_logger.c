@@ -1408,7 +1408,7 @@ bm_get_counts(logger *lg)
 		lng lid = lng_nil;
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
-			BAT *b = BBPquickdesc(bids[p], true);
+			BAT *b = BBPquickdesc(bids[p]);
 			cnt = BATcount(b);
 		} else {
 			deleted++;
@@ -2529,7 +2529,7 @@ log_bat_transient(logger *lg, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
-	lg->end += BATcount(BBPquickdesc(bid, true));
+	lg->end += BATcount(BBPquickdesc(bid));
 	gdk_return r =  logger_del_bat(lg, bid);
 	logger_unlock(lg);
 	return r;

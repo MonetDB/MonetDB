@@ -109,7 +109,7 @@ BKCmirror(bat *ret, const bat *bid)
 	BAT *b, *bn;
 
 	*ret = 0;
-	if (!(b = BBPquickdesc(*bid, false)))
+	if (!(b = BBPquickdesc(*bid)))
 		throw(MAL, "bat.mirror", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (!(bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b))))
 		throw(MAL, "bat.mirror", GDK_EXCEPTION);
@@ -345,7 +345,7 @@ static str
 BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
-	BAT *b = BBPquickdesc(*bid, false);
+	BAT *b = BBPquickdesc(*bid);
 
 	if (b == NULL)
 		throw(MAL, "bat.getCapacity", ILLEGAL_ARGUMENT);
@@ -357,7 +357,7 @@ static str
 BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
-	BAT *b = BBPquickdesc(*bid, false);
+	BAT *b = BBPquickdesc(*bid);
 
 	if (b == NULL)
 		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);

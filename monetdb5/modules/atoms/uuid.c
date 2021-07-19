@@ -95,7 +95,7 @@ UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
 
-	if ((b = BBPquickdesc(*bid, false)) == NULL)	{
+	if ((b = BBPquickdesc(*bid)) == NULL)	{
 		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}

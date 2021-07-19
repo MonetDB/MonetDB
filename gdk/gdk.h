@@ -1577,7 +1577,7 @@ gdk_export void BBPlock(void);
 
 gdk_export void BBPunlock(void);
 
-gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
+gdk_export BAT *BBPquickdesc(bat b);
 
 /*
  * @- GDK error handling

@@ -793,9 +793,9 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 	BAT *sl = NULL, *sr = NULL;
 	gdk_return ret;
 
-	if ((L = BBPquickdesc(*left, false)) == NULL)
+	if ((L = BBPquickdesc(*left)) == NULL)
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((R = BBPquickdesc(*right, false)) == NULL)
+	if ((R = BBPquickdesc(*right)) == NULL)
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL)
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -975,7 +975,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 	BAT *b = NULL, *s = NULL;
 	bool heap_loaded = false;
 
-	if (!(b = BBPquickdesc(*bid, false))) {
+	if (!(b = BBPquickdesc(*bid))) {
 		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -1247,7 +1247,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if( isaBatType(getArgType(mb,pci,2)) )
 		throw(MAL,"algebra.project","Scalar value expected");
-	if ((b = BBPquickdesc(bid, false)) == NULL)
+	if ((b = BBPquickdesc(bid)) == NULL)
 		throw(MAL, "algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
 	if (bn == NULL) {

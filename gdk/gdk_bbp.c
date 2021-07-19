@@ -2737,24 +2737,10 @@ BBPfree(BAT *b)
  * this costs performance, and because getting into memory shortage
  * during a commit is extremely dangerous. Loading a BAT tends not to
  * be required, since the commit actions mostly involve moving some
- * pointers in the BAT descriptor. However, some column types do
- * require loading the full bat. This is tested by the complexatom()
- * routine. Such columns are those of which the type has a fix/unfix
- * method, or those that have HeapDelete methods. The HeapDelete
- * actions are not always required and therefore the BBPquickdesc is
- * parametrized.
+ * pointers in the BAT descriptor.
  */
-static bool
-complexatom(int t, bool delaccess)
-{
-	if (t >= 0 && (BATatoms[t].atomFix || (delaccess && BATatoms[t].atomDel))) {
-		return true;
-	}
-	return false;
-}
-
 BAT *
-BBPquickdesc(bat bid, bool delaccess)
+BBPquickdesc(bat bid)
 {
 	BAT *b;
 
@@ -2767,11 +2753,7 @@ BBPquickdesc(bat bid, bool delaccess)
 	}
 	if ((b = BBP_cache(bid)) != NULL)
 		return b;	/* already cached */
-	b = BBP_desc(bid);
-	if (complexatom(b->ttype, delaccess)) {
-		b = BATload_intern(bid, true);
-	}
-	return b;
+	return BBP_desc(bid);
 }
 
 /*
@@ -2792,7 +2774,7 @@ dirty_bat(bat *i, bool subcommit)
 			    (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
 		} else if (BBP_status(*i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(*i, true);
+			b = (BAT *) BBPquickdesc(*i);
 			if (b && (subcommit || b->batDirtydesc))
 				return b;	/* only the desc is loaded & dirty */
 		}

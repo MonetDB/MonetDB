@@ -58,7 +58,7 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 			BAT *b = BBP_cache(bid);
 
 			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid, true);
+				b = BBPquickdesc(bid);
 				if (b == NULL)
 					return GDK_FAIL;
 			}
@@ -106,18 +106,12 @@ epilogue(int cnt, bat *subcommit)
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, false);
+			BAT *b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
 			if (b) {
 				BATdelete(b);
-				if (BBP_cache(bid)) {
-					/* those that quickdesc
-					 * decides to load => free
-					 * memory */
-					BATfree(b);
-				}
 			}
 			BBPclear(bid);	/* clear with locking */
 		}
@@ -260,7 +254,7 @@ TMabort(void)
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i, false);
+			BAT *b = BBPquickdesc(i);
 
 			if (b) {
 				if (!b->batTransient)
@@ -272,7 +266,7 @@ TMabort(void)
 	}
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, true);
+			BAT *b = BBPquickdesc(i);
 
 			if (b == NULL)
 				continue;
