@@ -26,5 +26,17 @@ select g, rapi18(n) from rapi18bad group by g
 1000 values hashing to 11dbd9e3e1c8fd598a3eaf93a417a852
 
 statement ok
+create table empty_table(col1 int)
+
+query R rowsort
+select rapi18(col1) from empty_table
+----
+NULL
+
+query R rowsort
+select rapi18(col1) from empty_table group by col1
+----
+
+statement ok
 ROLLBACK
 

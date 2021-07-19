@@ -606,6 +606,15 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
 	assert(r2 == NULL || r1->hseqbase + r1i.count == r2->hseqbase);
 
+	if (r2 && r1i.count == 0) {
+		/* unlikely special case: r1 is empty, so we just have r2 */
+		r1 = r2;
+		r2 = NULL;
+		bat_iterator_end(&r1i);
+		r1i = r2i;
+		r2i = bat_iterator(r2);
+	}
+
 	if (BATtdense(l) && lcount > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
@@ -715,10 +724,12 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->tnonil = l->tnonil & r1->tnonil;
 		bn->tsorted = l->batCount <= 1
 			|| (l->tsorted & r1->tsorted)
-			|| (l->trevsorted & r1->trevsorted);
+			|| (l->trevsorted & r1->trevsorted)
+			|| r1->batCount <= 1;
 		bn->trevsorted = l->batCount <= 1
 			|| (l->tsorted & r1->trevsorted)
-			|| (l->trevsorted & r1->tsorted);
+			|| (l->trevsorted & r1->tsorted)
+			|| r1->batCount <= 1;
 		bn->tkey = l->batCount <= 1 || (l->tkey & r1->tkey);
 	}
 
