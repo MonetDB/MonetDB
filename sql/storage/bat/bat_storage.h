@@ -41,7 +41,7 @@ typedef struct segment {
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
-/* container structure too allow sharing this structure */
+/* container structure to allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
 	struct segment *h;
@@ -58,4 +58,3 @@ typedef struct storage {
 extern void bat_storage_init( store_functions *sf );
 
 #endif /*BATSTORAGE_H */
-

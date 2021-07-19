@@ -58,12 +58,12 @@ ol_add(objlist *ol, sql_base *data)
 		ol->h = hash_new(ol->l->sa, 4*sz, (fkeyvalue)&node_key);
 		for (node *n = ol->l->h; n; n = n->next) {
 			if (hash_add(ol->h, base_key(n->data), n) == NULL)
-				/* No need too clean, ie expect a full transaction rollback */
+				/* No need to clean, ie expect a full transaction rollback */
 				return -1;
 		}
 	} else {
 		if (hash_add(ol->h, base_key(data), n) == NULL)
-			/* No need too clean, ie expect a full transaction rollback */
+			/* No need to clean, ie expect a full transaction rollback */
 			return -1;
 	}
 	return 0;

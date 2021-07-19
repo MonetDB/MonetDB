@@ -397,6 +397,9 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
+	if (segs->t && SEG_IS_VALID(segs->t, tr))
+		l = s = segs->t;
+
 	for(;s; s = s->next) {
 		if (SEG_IS_VALID(s, tr))
 				l = s;
@@ -769,7 +772,7 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		ovi = bat_iterator(ov);
 	}
 
-	/* handle dense (void) cases together as we need too merge updates (which is slower anyway) */
+	/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 	BUN uip = 0, uie = BATcount(ui);
 	BUN oip = 0, oie = BATcount(oi);
 
@@ -1238,7 +1241,7 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 					} else {
 						BATiter ovi = bat_iterator(uv);
 
-						/* handle dense (void) cases together as we need too merge updates (which is slower anyway) */
+						/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 						BUN uip = 0, uie = BATcount(ui);
 						BUN nip = 0, nie = BATcount(otids);
 						oid uiseqb = ui->tseqbase;
@@ -2183,10 +2186,8 @@ new_persistent_delta( sql_delta *bat)
 {
 	BAT *b = temp_descriptor(bat->cs.bid);
 
-	if (b == NULL) {
-		bat_destroy(b);
+	if (b == NULL)
 		return LOG_ERR;
-	}
 	bat->cs.ucnt = 0;
 	bat_destroy(b);
 	return LOG_OK;
@@ -3443,6 +3444,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
 
 	if (isTempTable(t)) {
+		dbat = temp_tab_timestamp_storage(tr, t);
 		if (commit_ts) { /* commit */
 			if (t->commit_action == CA_COMMIT || t->commit_action == CA_PRESERVE)
 				commit_storage(tr, dbat);
@@ -3691,7 +3693,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 					cnt = 0;
 					break;
 				}
-				/* we claimed part of the old segment, the split off part needs too stay deleted */
+				/* we claimed part of the old segment, the split off part needs to stay deleted */
 				size_t rcnt = seg->end - seg->start;
 				if (rcnt > cnt)
 					rcnt = cnt;
@@ -3775,7 +3777,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 					reused = 1;
 					break;
 				}
-				/* we claimed part of the old segment, the split off part needs too stay deleted */
+				/* we claimed part of the old segment, the split off part needs to stay deleted */
 				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL)
 					ok = LOG_ERR;
 			}
@@ -3873,13 +3875,28 @@ tab_validate(sql_trans *tr, sql_table *t, int uncommitted)
 	return res ? LOG_CONFLICT : LOG_OK;
 }
 
+static size_t
+has_deletes_in_range( segment *s, sql_trans *tr, BUN start, BUN end)
+{
+	size_t cnt = 0;
+
+	for(;s && s->end <= start; s = s->next)
+		;
+
+	for(;s && s->start < end && !cnt; s = s->next) {
+		if (SEG_IS_DELETED(s, tr)) /* assume aligned s->end and end */
+			cnt += s->end - s->start;
+	}
+	return cnt;
+}
+
 static BAT *
 segments2cands(segment *s, sql_trans *tr, sql_table *t, size_t start, size_t end)
 {
 	lock_table(tr->store, t->base.id);
 	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
-	size_t dnr = count_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
+	size_t dnr = has_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
 	if (!dnr) {
 		unlock_table(tr->store, t->base.id);
 		return BATdense(start, start, end-start);
@@ -4011,7 +4028,7 @@ bat_storage_init( store_functions *sf)
 	sf->idx_dup = &idx_dup;
 	sf->del_dup = &del_dup;
 
-	sf->create_col = &create_col;	/* create and add too change list */
+	sf->create_col = &create_col;	/* create and add to change list */
 	sf->create_idx = &create_idx;
 	sf->create_del = &create_del;
 
@@ -4019,7 +4036,7 @@ bat_storage_init( store_functions *sf)
 	sf->destroy_idx = &destroy_idx;
 	sf->destroy_del = &destroy_del;
 
-	sf->drop_col = &drop_col;		/* add drop too change list */
+	sf->drop_col = &drop_col;		/* add drop to change list */
 	sf->drop_idx = &drop_idx;
 	sf->drop_del = &drop_del;
 

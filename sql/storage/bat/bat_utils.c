@@ -39,7 +39,7 @@ temp_descriptor(log_bid b)
 BAT *
 quick_descriptor(log_bid b)
 {
-	return BBPquickdesc((bat) b, false);
+	return BBPquickdesc((bat) b);
 }
 
 void

@@ -344,14 +344,14 @@ os_append_node_id(objectset *os, versionhead  *n)
 {
 	lock_writer(os);
 	if ((!os->id_map || os->id_map->size*16 < os->id_based_cnt) && os->id_based_cnt > HASH_MIN_SIZE)
-		os_append_id_map(os); /* on failure just fall back too slow method */
+		os_append_id_map(os); /* on failure just fall back to slow method */
 
 	if (os->id_map) {
 		int key = os->id_map->key(n);
 		if (hash_add(os->id_map, key, n) == NULL) {
 			hash_destroy(os->id_map);
 			os->id_map = NULL;
-			/* fall back too slow search */
+			/* fall back to slow search */
 		}
 	}
 

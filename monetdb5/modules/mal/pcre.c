@@ -1591,14 +1591,14 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const s
 	if (input_is_a_bat) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		if (!(b = BATdescriptor(*bid))) {
-			msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	}
 	if (pattern_is_a_bat) {
 		bat *pb = getArgReference_bat(stk, pci, 2);
 		if (!(pbn = BATdescriptor(*pb))) {
-			msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	}

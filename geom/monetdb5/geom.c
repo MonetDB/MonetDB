@@ -3315,8 +3315,8 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
-	BBPunfix(inBAT->batCacheid);
 	bat_iterator_end(&inBAT_iter);
+	BBPunfix(inBAT->batCacheid);
 
 	return err;
 }
@@ -4268,8 +4268,8 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
-	BBPunfix(inBAT->batCacheid);
 	bat_iterator_end(&inBAT_iter);
+	BBPunfix(inBAT->batCacheid);
 
 	return err;
 

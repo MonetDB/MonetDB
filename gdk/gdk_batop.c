@@ -502,6 +502,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		BUN p = canditer_next(ci) - hseq;
 		const void *t = BUNtvar(ni, p);
 		if (tfastins_nocheckVAR(b, r, t) != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&b->thashlock);
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
@@ -1178,6 +1179,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
 	bool anynil = false;
+	bool locked = false;
 
 	b->theap->dirty = true;
 	if (b->tvarsized) {
@@ -1193,20 +1195,22 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
 				GDKerror("updating committed value\n");
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
+				goto bailout;
 			}
 
 			const void *new = BUNtvar(ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
+				if (locked) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					locked = false;
+				}
 				if (BATcount(b) < updid &&
 				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
@@ -1280,7 +1284,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					minprop = NULL;
 				}
 			}
-			MT_rwlock_wrlock(&b->thashlock);
+			if (!locked) {
+				MT_rwlock_wrlock(&b->thashlock);
+				locked = true;
+			}
 			HASHdelete_locked(b, updid, old);
 
 			var_t d;
@@ -1301,23 +1308,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 #endif
 			}
 			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
-				Hash *h = b->thash;
-				b->thash = NULL;
-				MT_rwlock_wrunlock(&b->thashlock);
-				doHASHdestroy(b, h);
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
-					Hash *h = b->thash;
-					b->thash = NULL;
-					MT_rwlock_wrunlock(&b->thashlock);
-					doHASHdestroy(b, h);
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
+					goto bailout;
 				}
 			}
 			/* in case ATOMreplaceVAR and/or
@@ -1341,8 +1338,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 #endif
 			}
 			HASHinsert_locked(b, updid, new);
-			MT_rwlock_wrunlock(&b->thashlock);
 
+		}
+		if (locked) {
+			MT_rwlock_wrunlock(&b->thashlock);
+			locked = false;
 		}
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
@@ -1422,6 +1422,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		 * in the first iteration, after which there is no hash
 		 * and the loop ends */
 		MT_rwlock_wrlock(&b->thashlock);
+		locked = true;
 		for (BUN i = pos, j = pos + ni.count; i < j && b->thash; i++)
 			HASHdelete_locked(b, i, Tloc(b, i));
 		if (n->ttype == TYPE_void) {
@@ -1509,6 +1510,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				HASHinsert_locked(b, i, Tloc(b, i));
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
+		locked = false;
 		if (ni.count == BATcount(b)) {
 			/* if we replaced all values of b by values
 			 * from n, we can also copy the min/max
@@ -1547,26 +1549,28 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (updid < b->hseqbase ||
 			    (!mayappend && updid >= hseqend)) {
 				GDKerror("id out of range\n");
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
 				GDKerror("updating committed value\n");
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
+				goto bailout;
 			}
 
 			const void *new = BUNtail(ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
+				if (locked) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					locked = false;
+				}
 				if (BATcount(b) < updid &&
 				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
+					goto bailout;
 				}
 				if (BUNappend(b, new, force) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
@@ -1635,7 +1639,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				}
 			}
 
-			MT_rwlock_wrlock(&b->thashlock);
+			if (!locked) {
+				MT_rwlock_wrlock(&b->thashlock);
+				locked = true;
+			}
 			HASHdelete_locked(b, updid, old);
 			switch (b->twidth) {
 			case 1:
@@ -1662,7 +1669,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				break;
 			}
 			HASHinsert_locked(b, updid, new);
+		}
+		if (locked) {
 			MT_rwlock_wrunlock(&b->thashlock);
+			locked = false;
 		}
 	}
 	bat_iterator_end(&ni);
@@ -1671,6 +1681,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOBATPAR(n),
 		  GDKusec() - t0);
 	return GDK_SUCCEED;
+
+  bailout:
+	bat_iterator_end(&ni);
+	if (locked) {
+		Hash *h = b->thash;
+		b->thash = NULL;
+		MT_rwlock_wrunlock(&b->thashlock);
+		doHASHdestroy(b, h);
+	}
+	return GDK_FAIL;
 }
 
 /* replace values from b at locations specified in p with values in n */

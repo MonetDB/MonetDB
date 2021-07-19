@@ -2038,7 +2038,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
 {
 	BAT *c, *u_id, *u_val, *res;
 
-	if ((u_id = BBPquickdesc(*uid, false)) == NULL)
+	if ((u_id = BBPquickdesc(*uid)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* no updates */
@@ -2086,7 +2086,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 	BAT *c, *cminu = NULL, *u_id, *u_val, *u, *res;
 	gdk_return ret;
 
-	if ((u_id = BBPquickdesc(*uid, false)) == NULL)
+	if ((u_id = BBPquickdesc(*uid)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* no updates */
@@ -3216,7 +3216,7 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BBPquickdesc(bid, false)))
+	if (!(b = BBPquickdesc(bid)))
 		throw(MAL, "batcalc.identity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (!(bn = BATdense(b->hseqbase, s, BATcount(b))))
 		throw(MAL, "batcalc.identity", GDK_EXCEPTION);

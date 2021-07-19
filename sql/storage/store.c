@@ -2259,7 +2259,7 @@ store_manager(sqlstore *store)
 			}
 			store_unlock(store);
 			MT_lock_set(&store->flush);
-			store->logger_api.activate(store); /* rotate too new log file */
+			store->logger_api.activate(store); /* rotate to new log file */
 		}
 
 		if (GDKexiting())

@@ -226,11 +226,14 @@ SCode(unsigned char c)
 	return (Code[toupper(c) - 'A']);
 }
 
-static void
+static str
 soundex_code(char *Name, char *Key)
 {
 	char LastLetter;
 	int Index;
+
+	if ((*Name & 0x80) != 0)
+		throw(MAL,"soundex", SQLSTATE(42000) "Soundex function not available for non ASCII strings");
 
 	/* set default key */
 	strcpy(Key, SoundexKey);
@@ -242,7 +245,7 @@ soundex_code(char *Name, char *Key)
 
 	LastLetter = *Name;
 	if (!*Name)
-		return;
+		return MAL_SUCCEED;
 	Name++;
 
 	/* scan rest of string */
@@ -262,6 +265,7 @@ soundex_code(char *Name, char *Key)
 			}
 		}
 	}
+	return MAL_SUCCEED;
 }
 
 static str
@@ -274,9 +278,7 @@ soundex_impl(str *res, str *Name)
 		throw(MAL,"soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
-	soundex_code(*Name, *res);
-
-	return MAL_SUCCEED;
+	return soundex_code(*Name, *res);
 }
 
 static str
@@ -799,7 +801,7 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 		goto bailout;
 	}
 	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = BATcount(left);

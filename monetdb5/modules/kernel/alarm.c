@@ -88,8 +88,8 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bb = bi.base;
 
 		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
-			BBPunfix(b->batCacheid);
 			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		rb = Tloc(r, 0);
