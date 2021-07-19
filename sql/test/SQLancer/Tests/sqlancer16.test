@@ -157,8 +157,8 @@ START TRANSACTION
 statement ok
 CREATE TABLE "t0" ("c1" VARCHAR(44))
 
-statement ok
-COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+statement ok rowcount 5
+COPY 5 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 "9史"
 "-1680198574"
