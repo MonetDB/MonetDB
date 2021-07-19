@@ -15,13 +15,25 @@ CREATE AGGREGATE capi07(inp INTEGER) RETURNS BIGINT LANGUAGE C {
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 6
 INSERT INTO integers VALUES (3), (4), (1), (2), (5), (6)
 
 query I rowsort
 SELECT capi07(i) FROM integers
 ----
 21
+
+statement ok rowcount 6
+TRUNCATE integers
+
+query I rowsort
+SELECT capi07(i) FROM integers
+----
+NULL
+
+query I rowsort
+SELECT capi07(i) FROM integers GROUP BY i
+----
 
 statement ok
 ROLLBACK

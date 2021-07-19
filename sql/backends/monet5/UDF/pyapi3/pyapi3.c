@@ -53,7 +53,7 @@ typedef struct _AggrParams{
 } AggrParams;
 
 static void ComputeParallelAggregation(AggrParams *p);
-static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
 static const char *FunctionBasePath(void)
@@ -296,7 +296,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				// one of the input BATs is empty, don't execute the function at
 				// all
 				// just return empty BATs
-				CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
+				msg = CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
 				goto wrapup;
 			}
 		}
@@ -1635,22 +1635,38 @@ wrapup:
 	gstate = Python_ReleaseGIL(gstate);
 }
 
-static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase)
 {
-	size_t i;
-	for (i = 0; i < retcols; i++) {
-		int bat_type = getBatType(getArgType(mb, pci, i));
-		BAT *b = COLnew(seqbase, bat_type, 0, TRANSIENT);
+	for (size_t i = 0; i < retcols; i++) {
 		if (isaBatType(getArgType(mb, pci, i))) {
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
-			MT_lock_set(&b->theaplock);
-			VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
-			MT_lock_unset(&b->theaplock);
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
+	return MAL_SUCCEED;
 }
 
 #include "mel.h"

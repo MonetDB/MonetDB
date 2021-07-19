@@ -48,7 +48,7 @@ WHERE ctr1.ctr_total_return >
   AND ctr1.ctr_customer_sk = TotalSales
 ----
 
-statement error GDK reported error: mergejoin: more than one match
+statement error
 SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END)
 
 query T rowsort

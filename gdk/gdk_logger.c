@@ -1412,6 +1412,7 @@ bm_get_counts(logger *lg)
 			cnt = BATcount(b);
 		} else {
 			deleted++;
+			lid = 1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
