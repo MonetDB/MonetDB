@@ -772,7 +772,7 @@ wrongtype(int t1, int t2)
 BAT *
 COLcopy(BAT *b, int tt, bool writable, role_t role)
 {
-	BUN bunstocopy = BUN_NONE;
+	bool slowcopy = false;
 	BAT *bn = NULL;
 	BATiter bi;
 
@@ -810,50 +810,45 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		}
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
-		 * setting bunstocopy != BUN_NONE) */
+		 * setting slowcopy to false) */
 		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
-			bunstocopy = bi.count;
+			slowcopy = true;
 		} else if (BATatoms[tt].atomFix) {
 			/* oops, we need to fix/unfix atoms */
-			bunstocopy = bi.count;
+			slowcopy = true;
 		} else if (bi.h && bi.h->parentid != b->batCacheid) {
 			/* extra checks needed for views */
 			if (BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count)
 				/* reduced slice view: do not copy too
 				 * much garbage */
-				bunstocopy = bi.count;
+				slowcopy = true;
 		}
 
-		bn = COLnew(b->hseqbase, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
+		bn = COLnew_intern(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
 			bat_iterator_end(&bi);
 			return NULL;
+		}
+		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
+			/* this combination can happen since the last
+			 * argument of COLnew_intern not being zero
+			 * triggers a skip in the allocation of the
+			 * tvheap */
+			if (ATOMheap(bn->ttype, bn->tvheap, bn->batCapacity) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
+				BBPreclaim(bn);
+				return NULL;
+			}
 		}
 
 		if (tt == TYPE_void) {
 			/* case (2): a void,void result => nothing to
 			 * copy! */
 			bn->theap->free = 0;
-		} else if (bunstocopy == BUN_NONE) {
+		} else if (!slowcopy) {
 			/* case (3): just copy the heaps */
-			if (bn->tvarsized && bn->ttype && bn->twidth != bi.width) {
-				/* widen the string offset heap */
-				bn->tshift = bi.shift;
-				bn->twidth = bi.width;
-				settailname(bn->theap,
-					    BBP_physical(bn->batCacheid),
-					    bn->ttype, bn->twidth);
-				/* file name change in mmapped file:
-				 * just free and create new */
-				if (bn->theap->storage != STORE_MEM) {
-					HEAPfree(bn->theap, true);
-					if (HEAPalloc(bn->theap, bi.hfree, 1, 1) != GDK_SUCCEED)
-						goto bunins_failed;
-				}
-			}
-			if (HEAPextend(bn->theap, bi.hfree, true) != GDK_SUCCEED ||
-			    (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)) {
+			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
  				goto bunins_failed;
  			}
 			memcpy(bn->theap->base, bi.base, bi.hfree);
@@ -884,31 +879,31 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				}
 				r++;
 			}
-			bn->theap->dirty |= bunstocopy > 0;
+			bn->theap->dirty |= bi.count > 0;
 		} else if (tt != TYPE_void && bi.type == TYPE_void) {
 			/* case (4): optimized for unary void
 			 * materialization */
 			oid cur = bi.tseq, *dst = (oid *) Tloc(bn, 0);
-			oid inc = !is_oid_nil(cur);
+			const oid inc = !is_oid_nil(cur);
 
-			bn->theap->free = bunstocopy * sizeof(oid);
-			bn->theap->dirty |= bunstocopy > 0;
-			while (bunstocopy--) {
-				*dst++ = cur;
+			bn->theap->free = bi.count * sizeof(oid);
+			bn->theap->dirty |= bi.count > 0;
+			for (BUN p = 0; p < bi.count; p++) {
+				dst[p] = cur;
 				cur += inc;
 			}
 		} else if (ATOMstorage(bi.type) == TYPE_msk) {
 			/* convert number of bits to number of bytes,
 			 * and round the latter up to a multiple of
 			 * 4 (copy in units of 4 bytes) */
-			bn->theap->free = (bunstocopy + 7) / 8;
+			bn->theap->free = (bi.count + 7) / 8;
 			bn->theap->free = (bn->theap->free + 3) & ~(size_t)3;
-			bn->theap->dirty |= bunstocopy > 0;
+			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		} else {
 			/* case (4): optimized for simple array copy */
-			bn->theap->free = bunstocopy << bn->tshift;
-			bn->theap->dirty |= bunstocopy > 0;
+			bn->theap->free = bi.count << bn->tshift;
+			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		}
 		/* copy all properties (size+other) from the source bat */

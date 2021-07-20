@@ -390,7 +390,6 @@ SQLinit(Client c)
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
-	sql_allocator *sa = NULL;
 	const char *opt_pipe;
 
 	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
@@ -417,11 +416,7 @@ SQLinit(Client c)
 	if (readonly)
 		SQLdebug |= 32;
 
-	if (!(sa = sa_create(NULL))) {
-		MT_lock_unset(&sql_contextLock);
-		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if ((SQLstore = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
+	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -434,6 +429,8 @@ SQLinit(Client c)
 		bstream *fdin;
 
 		if ( b == NULL || cbuf == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			GDKfree(b);
 			GDKfree(cbuf);
@@ -443,6 +440,8 @@ SQLinit(Client c)
 		buffer_init(b, cbuf, len);
 		buf = buffer_rastream(b, "si");
 		if ( buf == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -450,6 +449,8 @@ SQLinit(Client c)
 
 		fdin = bstream_create(buf, b->len);
 		if ( fdin == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -460,6 +461,8 @@ SQLinit(Client c)
 			TRC_ERROR(SQL_PARSER, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
 		TRC_INFO(SQL_PARSER, "%s\n", msg);
 		return msg;
@@ -477,6 +480,11 @@ SQLinit(Client c)
 			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
 			if (t == NULL)
 				store->first = 1;
+			msg = mvc_rollback(m, 0, NULL, false);
+		}
+		if (msg) {
+			freeException(msg);
+			msg = MAL_SUCCEED;
 		}
 	}
 	if (store->first > 0) {
@@ -491,7 +499,6 @@ SQLinit(Client c)
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
-
 		}
 		/* 99_system.sql */
 		if (!msg) {
@@ -553,22 +560,36 @@ SQLinit(Client c)
 	}
 
 	other = SQLresetClient(c);
-	MT_lock_unset(&sql_contextLock);
 	if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
 		msg = other;
 	else if (other)
 		freeException(other);
-	if (msg != MAL_SUCCEED)
+	if (msg != MAL_SUCCEED) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
 		return msg;
+	}
 
-	if (GDKinmemory(0))
-		return MAL_SUCCEED;
+	if (GDKinmemory(0)) {
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
-	if ( wlc_state == WLC_STARTUP)
-		return WLCinit();
+	if (wlc_state == WLC_STARTUP && (msg = WLCinit()) != MAL_SUCCEED) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
+
+	MT_lock_unset(&sql_contextLock);
 	return MAL_SUCCEED;
 }
 

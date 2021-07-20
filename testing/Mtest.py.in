@@ -46,6 +46,7 @@ approve = False
 
 initdb = None
 single_in_memory = False
+restart = False
 
 global_timeout = 0
 start_time = time.time()
@@ -1218,15 +1219,19 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         cond,tst = None,tc
                     alltests.append((tst,cond))
             allf.close()
-        try:
-            f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
-        except IOError:
+        if restart:
             oneserver = False
-            options = []            # not used
+            options = []
         else:
-            oneserver = True
-            options = f.read().split()
-            f.close()
+            try:
+                f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
+            except IOError:
+                oneserver = False
+                options = []            # not used
+            else:
+                oneserver = True
+                options = f.read().split()
+                f.close()
 
         if testlist:
             tl = []
@@ -1516,9 +1521,12 @@ def coredumpctl(pid):
     fd, name = tempfile.mkstemp(suffix='.sh')
     fd2, name2 = tempfile.mkstemp()
     os.close(fd2)
-    os.write(fd, b'#!/bin/sh\ngdb -nx -batch -ex "thread apply all bt" "$@" > %s\n' % name2.encode('utf-8'))
+    os.write(fd, b'#!/bin/sh\ngdb -nx -batch -ex "thread apply all bt full" "$@" > %s\n' % name2.encode('utf-8'))
     os.close(fd)
     os.chmod(name, 0o700)
+    # with a more modern coredumpctl, we could use the
+    # -A/--debugger-arguments option:
+    # coredumpctl -q -A "-batch -ex 'thread apply all bt full'" gdb ...
     if procdebug:
         print('Starting: coredumpctl -q --debugger=%s gdb %d' % (name, pid))
     with process.Popen(['coredumpctl', '-q', '--debugger=%s' % name, 'gdb', str(pid)],
@@ -2557,11 +2565,11 @@ def killProc(proc, outfile = None, cmd = None):
             out = ''
     else:
         try:
-            with process.Popen(['pstack', str(proc.pid)], stdout=process.PIPE,
+            with process.Popen(['gdb', '-batch', '-ex', 'thread apply all bt full', '-p', str(proc.pid)], stdout=process.PIPE,
                                text=True) as p:
                 try:
-                    # pstack (gdb) sometimes hangs when trying to get the
-                    # stack trace: kill it mercilessly if it does
+                    # gdb sometimes hangs when trying to get the stack
+                    # trace: kill it mercilessly if it does
                     t = Timer(60, reallyKill, args = [p])
                     t.start()
                 except AttributeError:
@@ -3507,6 +3515,7 @@ def main(argv) :
     parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
     parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
     parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
+    parser.add_argument('--restart', action='store_true', dest='restart', help='Restart server after each test')
     parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
     parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
     parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
@@ -3533,12 +3542,13 @@ def main(argv) :
     procdebug = opts.procdebug
     global approve
     approve = opts.approve
-    nomito = False
     addreqs = False
     all_tests = False
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
+    global restart
+    restart = opts.restart
     par['IGNORE'] = opts.ignore
     par['CONTEXT'] = str(opts.context)
     a = opts.accuracy

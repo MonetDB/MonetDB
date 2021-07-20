@@ -1,3 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+
 @CMAKE_INSTALL_FULL_BINDIR@/monetdbd				--	gen_context(system_u:object_r:monetdbd_exec_t,s0)
 @CMAKE_INSTALL_FULL_BINDIR@/mserver5				--	gen_context(system_u:object_r:mserver5_exec_t,s0)
 @CMAKE_INSTALL_FULL_LIBDIR@/systemd/system/monetdbd.*			gen_context(system_u:object_r:monetdbd_unit_file_t,s0)

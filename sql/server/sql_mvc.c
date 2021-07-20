@@ -85,10 +85,11 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			sql_column *col = mvc_bind_column(m, t, VIEW[i].name); \
 			VIEW[i].oldid = col->base.id;			\
 		}							\
-		if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
+		if ((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
 			mvc_destroy(m);					\
+			mvc_exit(store);	\
 			TRC_CRITICAL(SQL_TRANS,				\
-				     "Initialization: %s\n", output);	\
+				     "Initialization error: %s\n", output);	\
 			freeException(output);				\
 			return NULL;					\
 		}							\
@@ -121,7 +122,7 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 sql_store
-mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
+mvc_init(int debug, store_type store_tpe, int ro, int su)
 {
 	sqlstore *store = NULL;
 	sql_schema *s;
@@ -131,18 +132,20 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 
 	TRC_DEBUG(SQL_TRANS, "Initialization\n");
 	keyword_init();
-	if(scanner_init_keywords() != 0) {
+	if (scanner_init_keywords() != 0) {
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return NULL;
 	}
 
-	if ((store = store_init(pa, debug, store_tpe, ro, su)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su)) == NULL) {
+		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
 
-	m = mvc_create((sql_store)store, pa, 0, 0, NULL, NULL);
+	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
 	if (!m) {
+		mvc_exit(store);
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return NULL;
 	}
@@ -151,6 +154,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 	m->sa = sa_create(m->pa);
 	if (!m->sa) {
 		mvc_destroy(m);
+		mvc_exit(store);
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return NULL;
 	}
@@ -263,6 +267,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		};
 		if (mvc_trans(m) < 0) {
 			mvc_destroy(m);
+			mvc_exit(store);
 			TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
 			return NULL;
 		}
@@ -270,13 +275,14 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		assert(m->session->schema != NULL);
 
 		if (!store->first) {
-			MVC_INIT_DROP_TABLE(tid,  "tables", tview, 9);
-			MVC_INIT_DROP_TABLE(cid,  "columns", cview, 10);
+			MVC_INIT_DROP_TABLE(tid, "tables", tview, 9);
+			MVC_INIT_DROP_TABLE(cid, "columns", cview, 10);
 		}
 
 		t = mvc_init_create_view(m, s, "tables", "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";");
 		if (!t) {
 			mvc_destroy(m);
+			mvc_exit(store);
 			TRC_CRITICAL(SQL_TRANS, "Failed to create 'tables' view\n");
 			return NULL;
 		}
@@ -288,6 +294,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 							     tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
+				mvc_exit(store);
 				TRC_CRITICAL(SQL_TRANS,
 					     "Initialization: creation of sys.tables column %s failed\n", tview[i].name);
 				return NULL;
@@ -312,6 +319,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		t = mvc_init_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;");
 		if (!t) {
 			mvc_destroy(m);
+			mvc_exit(store);
 			TRC_CRITICAL(SQL_TRANS, "Failed to create 'columns' view\n");
 			return NULL;
 		}
@@ -322,6 +330,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 							     cview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
+				mvc_exit(store);
 				TRC_CRITICAL(SQL_TRANS,
 					     "Initialization: creation of sys.tables column %s failed\n", cview[i].name);
 				return NULL;
@@ -350,12 +359,15 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 			TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
 			freeException(msg);
+			mvc_destroy(m);
+			mvc_exit(store);
 			return NULL;
 		}
 	}
 
 	if (mvc_trans(m) < 0) {
 		mvc_destroy(m);
+		mvc_exit(store);
 		TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
 		return NULL;
 	}
@@ -375,6 +387,8 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 				if ((err = initialize_sql_parts(m, tt)) != NULL) {
 					TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
 					freeException(err);
+					mvc_destroy(m);
+					mvc_exit(store);
 					return NULL;
 				}
 			}
@@ -384,6 +398,8 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
 		freeException(msg);
+		mvc_destroy(m);
+		mvc_exit(store);
 		return NULL;
 	}
 
