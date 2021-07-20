@@ -14,6 +14,7 @@
 #include "gdk_logger_internals.h"
 #include "mutils.h"
 
+#define CATALOG_NOV2019 52203	/* first in Apr2019 */
 #define CATALOG_JUN2020 52204	/* first in Jun2020 */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 
@@ -27,6 +28,14 @@ static gdk_return
 bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
+
+#ifdef CATALOG_NOV2019
+	if (oldversion == CATALOG_NOV2019) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
 
 #ifdef CATALOG_JUN2020
 	if (oldversion == CATALOG_JUN2020) {
@@ -1807,6 +1816,63 @@ bl_postversion(void *Store, old_logger *old_lg)
 		return GDK_FAIL;
 	logger *lg = old_lg->lg;
 	bool tabins_first = true;
+
+#ifdef CATALOG_NOV2019
+	if (store->catalog_version <= CATALOG_NOV2019) {
+		BAT *te, *tne;
+		const int *ocl;	/* old eclass */
+		int *ncl;	/* new eclass */
+
+		te = temp_descriptor(logger_find_bat(lg, 2014)); /* sys.types.eclass */
+		if (te == NULL)
+			return GDK_FAIL;
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
+		if (tne == NULL) {
+			bat_destroy(te);
+			return GDK_FAIL;
+		}
+		ocl = Tloc(te, 0);
+		ncl = Tloc(tne, 0);
+		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+			switch (ocl[p]) {
+			case EC_TIME_TZ:		/* old EC_DATE */
+				ncl[p] = EC_DATE;
+				break;
+			case EC_DATE:			/* old EC_TIMESTAMP */
+				ncl[p] = EC_TIMESTAMP;
+				break;
+			case EC_TIMESTAMP:		/* old EC_GEOM */
+				ncl[p] = EC_GEOM;
+				break;
+			case EC_TIMESTAMP_TZ:	/* old EC_EXTERNAL */
+				ncl[p] = EC_EXTERNAL;
+				break;
+			default:
+				/* others stay unchanged */
+				ncl[p] = ocl[p];
+				break;
+			}
+		}
+		BATsetcount(tne, BATcount(te));
+		tne->tnil = false;
+		tne->tnonil = true;
+		tne->tsorted = false;
+		tne->trevsorted = false;
+		tne->tkey = false;
+		if (BUNappend(old_lg->del, &te->batCacheid, false) != GDK_SUCCEED ||
+			BUNappend(old_lg->add, &tne->batCacheid, false) != GDK_SUCCEED ||
+			BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2014}), &tne->batCacheid, false) != GDK_SUCCEED) {
+			bat_destroy(te);
+			bat_destroy(tne);
+			return GDK_FAIL;
+		}
+		BBPretain(tne->batCacheid);
+		BBPretain(tne->batCacheid);
+		bat_destroy(te);
+		bat_destroy(tne);
+	}
+#endif
+
 #ifdef CATALOG_JUN2020
 	if (store->catalog_version <= CATALOG_JUN2020) {
 		BAT *b;								 /* temp variable */
