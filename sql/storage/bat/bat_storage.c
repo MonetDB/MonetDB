@@ -3444,15 +3444,16 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
 
 	if (isTempTable(t)) {
-		dbat = temp_tab_timestamp_storage(tr, t);
+		if (!(dbat = temp_tab_timestamp_storage(tr, t)))
+			return LOG_ERR;
 		if (commit_ts) { /* commit */
 			if (t->commit_action == CA_COMMIT || t->commit_action == CA_PRESERVE)
-				commit_storage(tr, dbat);
+				ok = commit_storage(tr, dbat);
 			else /* CA_DELETE as CA_DROP's are gone already */
 				ok = clear_storage(tr, t, dbat);
 		} else { /* rollback */
 			if (t->commit_action == CA_COMMIT/* || t->commit_action == CA_PRESERVE*/)
-				rollback_storage(tr, dbat);
+				ok = rollback_storage(tr, dbat);
 			else /* CA_DELETE as CA_DROP's are gone already */
 				ok = clear_storage(tr, t, dbat);
 		}

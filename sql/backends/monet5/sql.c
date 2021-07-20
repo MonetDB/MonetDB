@@ -3584,21 +3584,20 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.rowid", SQLSTATE(3F000) "Schema missing %s", sname);
+		throw(SQL, "calc.rowid", SQLSTATE(3F000) "Schema missing %s", sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.rowid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+		throw(SQL, "calc.rowid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	if (!s || !t || !ol_first_node(t->columns))
 		throw(SQL, "calc.rowid", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
 	c = ol_first_node(t->columns)->data;
 	/* HACK, get insert bat */
 	sqlstore *store = m->session->tr->store;
-	b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
+	b = store->storage_api.bind_col(m->session->tr, c, QUICK);
 	if( b == NULL)
-		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL,"calc.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
 	/* UGH (move into storage backends!!) */
 	*rid = BATcount(b);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -3932,33 +3931,164 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
 	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *) b;
-		if( sname && strcmp(b->name, sname) )
+		if ((sname && strcmp(b->name, sname) ) || b->name[0] == '%')
 			continue;
-		if (b->name[0] != '%')
-			if (s->tables) {
-				struct os_iter oi;
+		if (s->tables) {
+			struct os_iter oi;
 
-				os_iterator(&oi, s->tables, tr, NULL);
-				for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
-					sql_table *t = (sql_table *) bt;
-					if( tname && strcmp(bt->name, tname) )
-						continue;
-					if (isTable(t))
-						if (ol_first_node(t->columns))
-							for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-								sql_base *bc = ncol->data;
-								sql_column *c = (sql_column *) ncol->data;
+			os_iterator(&oi, s->tables, tr, NULL);
+			for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
+				sql_table *t = (sql_table *) bt;
+				if( tname && strcmp(bt->name, tname) )
+					continue;
+				if (isTable(t)) {
+					if (ol_first_node(t->columns)) {
+						for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+							sql_base *bc = ncol->data;
+							sql_column *c = (sql_column *) ncol->data;
+							lng sz;
+
+							if( cname && strcmp(bc->name, cname) )
+								continue;
+							bn = store->storage_api.bind_col(tr, c, RDONLY); /* is slice */
+							bs = store->storage_api.bind_col(tr, c, QUICK);
+							if (bn == NULL || bs == NULL) {
+								msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
+								goto bailout;
+							}
+
+							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
+							if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
+							    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
+							    BUNappend(col, bc->name, false) != GDK_SUCCEED)
+								goto bailout;
+							if (c->t->access == TABLE_WRITABLE) {
+								if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
+									goto bailout;
+							} else if (c->t->access == TABLE_APPENDONLY) {
+								if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
+									goto bailout;
+							} else if (c->t->access == TABLE_READONLY) {
+								if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
+									goto bailout;
+							} else {
+								if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
+									goto bailout;
+							}
+							if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
+								goto bailout;
+
+							/*printf(" cnt "BUNFMT, BATcount(bs)); */
+							sz = BATcount(bs);
+							if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
+								goto bailout;
+
+							/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
+							if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
+								goto bailout;
+							/*printf(" width %d", bn->twidth); */
+							w = bn->twidth;
+							if (bn->ttype == TYPE_str) {
+								double sum = 0;
+								BATiter bi = bat_iterator(bn);
+								lng cnt1, cnt2 = cnt1 = (lng) BATcount(bn);
+								BAT *cands = store->storage_api.bind_cands(tr, t, 1, 0);
+								oid hseq = bn->hseqbase;
+
+								if (cands) {
+									BUN lo, hi;
+									struct canditer ci = {0};
+									/* just take a sample */
+									if (cnt1 > 512)
+										cnt1 = cnt2 = 512;
+									canditer_init(&ci, NULL, cands);
+									for(lo = 0, hi = ci.ncand; lo < hi; lo++) {
+										oid o = canditer_next(&ci);
+										str s = BUNtail(bi, o - hseq);
+										if (!strNil(s))
+											sum += strlen(s);
+										if (--cnt1 <= 0)
+											break;
+									}
+									BBPunfix(cands->batCacheid);
+								}
+								bat_iterator_end(&bi);
+								if (cnt2)
+									w = (int) (sum / cnt2);
+							} else if (ATOMvarsized(bn->ttype)) {
+								sz = BATcount(bn);
+								if (sz > 0)
+									w = (int) ((bn->tvheap->free + sz / 2) / sz);
+								else
+									w = 0;
+							}
+							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
+								goto bailout;
+
+							sz = BATcount(bs) << bn->tshift;
+							if (BUNappend(size, &sz, false) != GDK_SUCCEED)
+								goto bailout;
+
+							sz = heapinfo(bs->tvheap, bs->batCacheid);
+							if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
+								goto bailout;
+
+							MT_rwlock_rdlock(&bs->thashlock);
+							sz = hashinfo(bs->thash, bs->batCacheid);
+							MT_rwlock_rdunlock(&bs->thashlock);
+							if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
+								goto bailout;
+
+							bitval = 0; /* HASHispersistent(bs); */
+							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
+								goto bailout;
+
+							sz = IMPSimprintsize(bs);
+							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
+								goto bailout;
+							/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
+							/*printf("\n"); */
+							bitval = BATtordered(bs);
+							if (!bitval && bs->tnosorted == 0)
+								bitval = bit_nil;
+							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
+								goto bailout;
+
+							bitval = BATtrevordered(bs);
+							if (!bitval && bs->tnorevsorted == 0)
+								bitval = bit_nil;
+							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
+								goto bailout;
+
+							bitval = BATtkey(bs);
+							if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
+								bitval = bit_nil;
+							if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
+								goto bailout;
+
+							sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
+							if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
+								goto bailout;
+							BBPunfix(bn->batCacheid);
+							bn = NULL;
+						}
+					}
+
+					if (t->idxs) {
+						for (ncol = ol_first_node((t)->idxs); ncol; ncol = ncol->next) {
+							sql_base *bc = ncol->data;
+							sql_idx *c = (sql_idx *) ncol->data;
+							if (idx_has_column(c->type)) {
+								bn = store->storage_api.bind_idx(tr, c, RDONLY);
+								bs = store->storage_api.bind_idx(tr, c, QUICK);
 								lng sz;
 
-								if( cname && strcmp(bc->name, cname) )
-									continue;
-								bn = store->storage_api.bind_col(tr, c, RDONLY); /* is slice */
-								bs = store->storage_api.bind_col(tr, c, QUICK);
 								if (bn == NULL || bs == NULL) {
 									msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
 									goto bailout;
 								}
-
+								if( cname && strcmp(bc->name, cname) )
+									continue;
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 								    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
@@ -3977,7 +4107,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
 										goto bailout;
 								}
-								if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
+								if (BUNappend(type, "oid", false) != GDK_SUCCEED)
 									goto bailout;
 
 								/*printf(" cnt "BUNFMT, BATcount(bs)); */
@@ -3994,7 +4124,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUN p, q;
 									double sum = 0;
 									BATiter bi = bat_iterator(bn);
-									lng cnt1, cnt2 = cnt1 = (lng) BATcount(bn);
+									lng cnt1, cnt2 = cnt1 = BATcount(bn);
 
 									/* just take a sample */
 									if (cnt1 > 512)
@@ -4009,30 +4139,23 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									bat_iterator_end(&bi);
 									if (cnt2)
 										w = (int) (sum / cnt2);
-								} else if (ATOMvarsized(bn->ttype)) {
-									sz = BATcount(bn);
-									if (sz > 0)
-										w = (int) ((bn->tvheap->free + sz / 2) / sz);
-									else
-										w = 0;
 								}
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
-
-								sz = BATcount(bs) << bn->tshift;
+								/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->tvheap? bn->tvheap->size:0)); */
+								sz = tailsize(bs, BATcount(bs));
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
-								sz = heapinfo(bs->tvheap, bs->batCacheid);
+								sz = bs->tvheap ? bs->tvheap->size : 0;
 								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								MT_rwlock_rdlock(&bs->thashlock);
-								sz = hashinfo(bs->thash, bs->batCacheid);
+								sz = bs->thash && bs->thash != (Hash *) 1 ? bs->thash->heaplink.size + bs->thash->heapbckt.size : 0; /* HASHsize() */
 								MT_rwlock_rdunlock(&bs->thashlock);
 								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 									goto bailout;
-
 								bitval = 0; /* HASHispersistent(bs); */
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
@@ -4040,151 +4163,34 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = IMPSimprintsize(bs);
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
+								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
-
 								bitval = BATtordered(bs);
 								if (!bitval && bs->tnosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
-
 								bitval = BATtrevordered(bs);
 								if (!bitval && bs->tnorevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
-
 								bitval = BATtkey(bs);
 								if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
 									bitval = bit_nil;
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
-
 								sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 								BBPunfix(bn->batCacheid);
 								bn = NULL;
 							}
-
-					if (isTable(t))
-						if (t->idxs)
-							for (ncol = ol_first_node((t)->idxs); ncol; ncol = ncol->next) {
-								sql_base *bc = ncol->data;
-								sql_idx *c = (sql_idx *) ncol->data;
-								if (idx_has_column(c->type)) {
-									bn = store->storage_api.bind_idx(tr, c, RDONLY);
-									bs = store->storage_api.bind_idx(tr, c, QUICK);
-									lng sz;
-
-									if (bn == NULL || bs == NULL) {
-										msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
-										goto bailout;
-									}
-									if( cname && strcmp(bc->name, cname) )
-										continue;
-									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-									if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
-									    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
-									    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-										goto bailout;
-									if (c->t->access == TABLE_WRITABLE) {
-										if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-											goto bailout;
-									} else if (c->t->access == TABLE_APPENDONLY) {
-										if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-											goto bailout;
-									} else if (c->t->access == TABLE_READONLY) {
-										if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-											goto bailout;
-									} else {
-										if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-											goto bailout;
-									}
-									if (BUNappend(type, "oid", false) != GDK_SUCCEED)
-										goto bailout;
-
-									/*printf(" cnt "BUNFMT, BATcount(bs)); */
-									sz = BATcount(bs);
-									if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-										goto bailout;
-
-									/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
-									if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-										goto bailout;
-									/*printf(" width %d", bn->twidth); */
-									w = bn->twidth;
-									if (bn->ttype == TYPE_str) {
-										BUN p, q;
-										double sum = 0;
-										BATiter bi = bat_iterator(bn);
-										lng cnt1, cnt2 = cnt1 = BATcount(bn);
-
-										/* just take a sample */
-										if (cnt1 > 512)
-											cnt1 = cnt2 = 512;
-										BATloop(bn, p, q) {
-											str s = BUNtvar(bi, p);
-											if (!strNil(s))
-												sum += strlen(s);
-											if (--cnt1 <= 0)
-												break;
-										}
-										bat_iterator_end(&bi);
-										if (cnt2)
-											w = (int) (sum / cnt2);
-									}
-									if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-										goto bailout;
-									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->tvheap? bn->tvheap->size:0)); */
-									sz = tailsize(bs, BATcount(bs));
-									if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-										goto bailout;
-
-									sz = bs->tvheap ? bs->tvheap->size : 0;
-									if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-										goto bailout;
-
-									MT_rwlock_rdlock(&bs->thashlock);
-									sz = bs->thash && bs->thash != (Hash *) 1 ? bs->thash->heaplink.size + bs->thash->heapbckt.size : 0; /* HASHsize() */
-									MT_rwlock_rdunlock(&bs->thashlock);
-									if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-										goto bailout;
-									bitval = 0; /* HASHispersistent(bs); */
-									if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-										goto bailout;
-
-									sz = IMPSimprintsize(bs);
-									if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-										goto bailout;
-									/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
-									/*printf("\n"); */
-									bitval = BATtordered(bs);
-									if (!bitval && bs->tnosorted == 0)
-										bitval = bit_nil;
-									if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-										goto bailout;
-									bitval = BATtrevordered(bs);
-									if (!bitval && bs->tnorevsorted == 0)
-										bitval = bit_nil;
-									if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-										goto bailout;
-									bitval = BATtkey(bs);
-									if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
-										bitval = bit_nil;
-									if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-										goto bailout;
-									sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
-									if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-										goto bailout;
-									BBPunfix(bn->batCacheid);
-									bn = NULL;
-								}
-							}
-
+						}
+					}
 				}
 			}
+		}
 	}
 
 	BBPkeepref(*rsch = sch->batCacheid);

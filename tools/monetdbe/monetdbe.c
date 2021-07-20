@@ -1584,20 +1584,22 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	backend *b = (backend *) stmt_internal->mdbe->c->sqlcontext;
 	mvc *m = b->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
+	MalStkPtr glb = NULL;
+	cq *q = stmt_internal->q;
+	Symbol s = NULL;
 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
 	/* check if all inputs are bound */
 	for(int i = 0; i< list_length(stmt_internal->q->f->ops); i++){
-		if (!stmt_internal->data[i].vtype)
-			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
+		if (!stmt_internal->data[i].vtype) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
+			goto cleanup;
+		}
 	}
-	cq* q = stmt_internal->q;
 
-	MalStkPtr glb = NULL;
-	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
-
+	s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
 	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
 		goto cleanup;
 

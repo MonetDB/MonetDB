@@ -1733,7 +1733,6 @@ store_load(sqlstore *store, sql_allocator *pa)
 	sql_trans *tr;
 	sql_table *t, *types, *functions, *arguments;
 	sql_schema *s;
-
 	lng lng_store_oid;
 
 	store->sa = pa;
@@ -1751,8 +1750,10 @@ store_load(sqlstore *store, sql_allocator *pa)
 	if (!sequences_init())
 		return NULL;
 	tr = sql_trans_create(store, NULL, NULL);
-	if (!tr)
+	if (!tr) {
+		TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 		return NULL;
+	}
 	tr->store = store;
 
 	/* for now use malloc and free */
@@ -1760,14 +1761,10 @@ store_load(sqlstore *store, sql_allocator *pa)
 	store->dependencies = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 
-	if (store->first) {
+	if (store->first && store->readonly) {
 		/* cannot initialize database in readonly mode */
-		if (store->readonly)
-			return NULL;
-		if (!tr) {
-			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
-			return NULL;
-		}
+		sql_trans_destroy(tr);
+		return NULL;
 	}
 	tr->active = 1;
 
@@ -1973,13 +1970,15 @@ store_load(sqlstore *store, sql_allocator *pa)
 		insert_types(tr, types);
 		insert_functions(tr, functions, funcs, arguments);
 		insert_schemas(tr);
-
 	} else {
 		tr->active = 0;
 	}
 
-	if (sql_trans_commit(tr) != SQL_OK)
+	if (sql_trans_commit(tr) != SQL_OK) {
 		TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
+		sql_trans_destroy(tr);
+		return NULL;
+	}
 	tr->ts = store_timestamp(store);
 
 	store->logger_api.get_sequence(store, OBJ_SID, &lng_store_oid);
@@ -1990,11 +1989,15 @@ store_load(sqlstore *store, sql_allocator *pa)
 	/* load remaining schemas, tables, columns etc */
 	tr->active = 1;
 	if (!store->first && !load_trans(tr)) {
+		TRC_CRITICAL(SQL_STORE, "Cannot load catalog tables\n");
 		sql_trans_destroy(tr);
 		return NULL;
 	}
-	if (sql_trans_commit(tr) != SQL_OK)
+	if (sql_trans_commit(tr) != SQL_OK) {
 		TRC_CRITICAL(SQL_STORE, "Cannot commit loaded objects transaction\n");
+		sql_trans_destroy(tr);
+		return NULL;
+	}
 	tr->active = 0;
 	sql_trans_destroy(tr);
 	store->initialized = 1;
@@ -2002,18 +2005,25 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int singleuser)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 {
-	sqlstore *store = ZNEW(sqlstore);
+	sql_allocator *pa;
+	sqlstore *store = MNEW(sqlstore);
 
 	if (!store)
 		return NULL;
+
+	if (!(pa = sa_create(NULL))) {
+		_DELETE(store);
+		return NULL;
+	}
 
 	*store = (sqlstore) {
 		.readonly = readonly,
 		.singleuser = singleuser,
 		.debug = debug,
 		.transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE),
+		.sa = pa,
 	};
 
 	(void)store_timestamp(store); /* increment once */
@@ -2035,6 +2045,7 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 		if (bat_utils_init() == -1) {
 			MT_lock_unset(&store->lock);
 			MT_lock_unset(&store->flush);
+			store_exit(store);
 			return NULL;
 		}
 		bat_storage_init(&store->storage_api);
@@ -2050,13 +2061,18 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	    store->logger_api.create(store, debug, "sql_logs", CATALOG_VERSION*v) != LOG_OK) {
 		MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
+		store_exit(store);
 		return NULL;
 	}
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&store->lock);
 	MT_lock_unset(&store->flush);
-	return store_load(store, pa);
+	if (!store_load(store, pa)) {
+		store_exit(store);
+		return NULL;
+	}
+	return store;
 }
 
 // All this must only be accessed while holding the store->flush.
