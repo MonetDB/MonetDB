@@ -271,6 +271,7 @@ soundex_code(char *Name, char *Key)
 static str
 soundex_impl(str *res, str *Name)
 {
+	GDKfree(*res);
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
@@ -319,6 +320,7 @@ CMDqgramnormalize(str *res, str *Input)
 	int i, j = 0;
 	char c, last = ' ';
 
+	GDKfree(*res);
 	RETURN_NIL_IF(strNil(input), TYPE_str);
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
