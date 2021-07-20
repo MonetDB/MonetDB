@@ -830,6 +830,17 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			bat_iterator_end(&bi);
 			return NULL;
 		}
+		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
+			/* this combination can happen since the last
+			 * argument of COLnew_intern not being zero
+			 * triggers a skip in the allocation of the
+			 * tvheap */
+			if (ATOMheap(bn->ttype, bn->tvheap, bn->batCapacity) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
+				BBPreclaim(bn);
+				return NULL;
+			}
+		}
 
 		if (tt == TYPE_void) {
 			/* case (2): a void,void result => nothing to
