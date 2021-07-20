@@ -480,6 +480,11 @@ SQLinit(Client c)
 			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
 			if (t == NULL)
 				store->first = 1;
+			msg = mvc_rollback(m, 0, NULL, false);
+		}
+		if (msg) {
+			freeException(msg);
+			msg = MAL_SUCCEED;
 		}
 	}
 	if (store->first > 0) {
