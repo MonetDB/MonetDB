@@ -2956,9 +2956,11 @@ BATcount_no_nil(BAT *b, BAT *s)
 	int t;
 	int (*cmp)(const void *, const void *);
 	struct canditer ci;
-	oid hseq = b->hseqbase;
+	oid hseq;
 
 	BATcheck(b, 0);
+
+	hseq = b->hseqbase;
 	n = canditer_init(&ci, b, s);
 	if (b->tnonil)
 		return n;

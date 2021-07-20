@@ -2140,12 +2140,12 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 gdk_return
 BATcheckmodes(BAT *b, bool existing)
 {
-	bool wr = (b->batRestricted == BAT_WRITE);
 	storage_t m1 = STORE_MEM, m3 = STORE_MEM;
-	bool dirty = false;
+	bool dirty = false, wr;
 
 	BATcheck(b, GDK_FAIL);
 
+	wr = (b->batRestricted == BAT_WRITE);
 	if (b->ttype) {
 		m1 = HEAPcommitpersistence(b->theap, wr, existing);
 		dirty |= (b->theap->newstorage != m1);
