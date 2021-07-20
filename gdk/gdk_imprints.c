@@ -445,14 +445,14 @@ BATimprints(BAT *b)
 	BATiter bi;
 	lng t0 = GDKusec();
 
+	BATcheck(b, GDK_FAIL);
+
 	/* we only create imprints for types that look like types we know */
 	if (!imprintable(b->ttype)) {
 		/* doesn't look enough like base type: do nothing */
 		GDKerror("unsupported type\n");
 		return GDK_FAIL;
 	}
-
-	BATcheck(b, GDK_FAIL);
 
 	if (BATcheckimprints(b))
 		return GDK_SUCCEED;
