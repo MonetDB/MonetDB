@@ -16,54 +16,22 @@
 #include "mal_exception.h"
 
 /**
- * Auxilary Functions
- * 
- **/
-/* Destroy a Geos geometry */
-static void destroyGeom(GEOSGeom *g)
-{
-	if (*g)
-		GEOSGeom_destroy((*g));
-	(*g) = NULL;
-}
-
-/* Converts wkb into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
-static str wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
-{
-	str err = MAL_SUCCEED;
-
-	if (is_wkb_nil(*a) || is_wkb_nil(*b))
-	{
-		destroyGeom(ga);
-		destroyGeom(gb);
-		return MAL_SUCCEED;
-	}
-	(*ga) = wkb2geos(*a);
-	(*gb) = wkb2geos(*b);
-	if ((*ga) == NULL || (*gb) == NULL)
-	{
-		destroyGeom(ga);
-		destroyGeom(gb);
-		err = createException(MAL, "geom.GetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
-	}
-	else if (GEOSGetSRID((*ga)) != GEOSGetSRID((*gb)))
-	{
-		destroyGeom(ga);
-		destroyGeom(gb);
-		err = createException(MAL, "geom.GetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
-	}
-	return err;
-}
-
-/**
  *  Convertions 
  * 
  **/
 
-/* Converts a latitude value in degrees to radians */
-static double longitudeDegreesToRadians(double lon_degrees)
+const double earth_radius = 6371.009;
+const double earth_radius_meters = 6371009;
+
+/**
+ *  Converts a longitude value in degrees to radians 
+ *  The normalization part was taken from PostGIS
+ */
+static double deg2RadLongitude(double lon_degrees)
 {
+	//Convert
 	double lon = M_PI * lon_degrees / 180.0;
+	//Normalize
 	if (lon == -1.0 * M_PI)
 		return M_PI;
 	if (lon == -2.0 * M_PI)
@@ -87,10 +55,15 @@ static double longitudeDegreesToRadians(double lon_degrees)
 	return lon;
 }
 
-/* Converts a latitude value in degrees to radians */
-static double latitudeDegreesToRadians(double lat_degrees)
+/**
+ *  Converts a latitude value in degrees to radians 
+ *  The normalization part was taken from PostGIS
+ */
+static double deg2RadLatitude(double lat_degrees)
 {
+	//Convert
 	double lat = M_PI * lat_degrees / 180.0;
+	//Normalize
 	if (lat > 2.0 * M_PI)
 		lat = remainder(lat, 2.0 * M_PI);
 
@@ -112,135 +85,264 @@ static double latitudeDegreesToRadians(double lat_degrees)
 	return lat;
 }
 
-/**
-* Convert spherical coordinates to cartesian coordinates on unit sphere
-* From PostGIS
-*/
-static void geog2cart(double lon, double lat, double *x, double *y, double *z)
+/* Converts the GeoPoint from degrees to radians latitude and longitude*/
+static GeoPoint deg2RadPoint(GeoPoint geo)
 {
-	(*x) = cos(lat) * cos(lon);
-	(*y) = cos(lat) * sin(lon);
-	(*z) = sin(lat);
+	geo.lon = deg2RadLongitude(geo.lon);
+	geo.lat = deg2RadLatitude(geo.lat);
+	return geo;
 }
 
-static void geog2cart_r(double lon, double lat, double *x, double *y, double *z)
+#if 0
+/**
+ *  Converts a longitude value in radians to degrees
+ *  The normalization part was taken from PostGIS
+ */
+static double rad2DegLongitude(double lon_radians)
 {
-	double r = 6371.009;
-	(*x) = r * cos(lat) * cos(lon);
-	(*y) = r * cos(lat) * sin(lon);
-	(*z) = r * sin(lat);
+	//Convert
+	double lon = lon_radians * 180.0 / M_PI;
+	//Normalize
+	if (lon > 360.0)
+		lon = remainder(lon, 360.0);
+
+	if (lon < -360.0)
+		lon = remainder(lon, -360.0);
+
+	if (lon > 180.0)
+		lon = -360.0 + lon;
+
+	if (lon < -180.0)
+		lon = 360 + lon;
+
+	if (lon == -180.0)
+		return 180.0;
+
+	if (lon == -360.0)
+		return 0.0;
+
+	return lon;
 }
 
 /**
-* Convert cartesian coordinates on unit sphere to spherical coordinates
-* From PostGIS
-*/
-/*static void cart2geog(double x, double y, double z, double *lon, double *lat)
+ *  Converts a latitude value in radians to degrees
+ *  The normalization part was taken from PostGIS
+ */
+static double rad2DegLatitude(double lat_radians)
 {
-	(*lon) = atan2(y, x);
-	(*lat) = asin(z);
+	//Convert
+	double lat = lat_radians * 180.0 / M_PI;
+	//Normalize
+	if (lat > 360.0)
+		lat = remainder(lat, 360.0);
+
+	if (lat < -360.0)
+		lat = remainder(lat, -360.0);
+
+	if (lat > 180.0)
+		lat = 180.0 - lat;
+
+	if (lat < -180.0)
+		lat = -180.0 - lat;
+
+	if (lat > 90.0)
+		lat = 180.0 - lat;
+
+	if (lat < -90.0)
+		lat = -180.0 - lat;
+
+	return lat;
+}
+
+/* Converts the GeoPoint from degrees to radians latitude and longitude*/
+static void rad2DegPoint(GeoPoint *geo)
+{
+	geo->lon = rad2DegLongitude(geo->lon);
+	geo->lat = rad2DegLatitude(geo->lat);
+}
+#endif
+
+static GeoPoint geoPointFromGeom(GEOSGeom geom)
+{
+	GeoPoint geo;
+	GEOSGeomGetX(geom, &(geo.lon));
+	GEOSGeomGetY(geom, &(geo.lat));
+	return geo;
+}
+
+/*static GeoLine geoLineFromGeom(GEOSGeom geom)
+{
+	GeoLine geo;
+	GEOSGeomGetX(GEOSGeomGetStartPoint(geom), &(geo.start.lon));
+	GEOSGeomGetY(GEOSGeomGetStartPoint(geom), &(geo.start.lat));
+	GEOSGeomGetX(GEOSGeomGetEndPoint(geom), &(geo.end.lon));
+	GEOSGeomGetY(GEOSGeomGetEndPoint(geom), &(geo.end.lat));
+	return geo;
 }*/
 
-static void cart2geog_r(double x, double y, double z, double *lon, double *lat)
+static GeoLines geoLinesFromGeom(GEOSGeom geom)
 {
-	double r = 6371.009;
-	(*lon) = atan2(y, x);
-	(*lat) = asin(z / r);
+	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
+	int segmentCount = GEOSGeomGetNumPoints(geom) - 1;
+	GeoLines geo;
+	geo.segmentCount = segmentCount;
+	//TODO Malloc fail exception?
+	geo.segments = GDKmalloc(sizeof(GeoLine) * segmentCount);
+	for (int i = 0; i < segmentCount; i++)
+	{
+		GEOSCoordSeq_getXY(gcs, i, &geo.segments[i].start.lon, &geo.segments[i].start.lat);
+		GEOSCoordSeq_getXY(gcs, i + 1, &geo.segments[i].end.lon, &geo.segments[i].end.lat);
+	}
+	return geo;
 }
 
-/* Returns the latitude and longitude (in radians) from a geographic Geom point */
-static void pointToRadian(GEOSGeom geom, double *lat_r, double *lon_r)
+static GeoPoint geoPointFromLatLon(double lon, double lat)
 {
-	double lat_d, lon_d;
-	GEOSGeomGetX(geom, &lon_d);
-	GEOSGeomGetY(geom, &lat_d);
-
-	(*lat_r) = latitudeDegreesToRadians(lat_d);
-	(*lon_r) = longitudeDegreesToRadians(lon_d);
+	GeoPoint geo;
+	geo.lon = lon;
+	geo.lat = lat;
+	return geo;
 }
 
-/* Converts two lat/lon points into cartesian coordinates and creates a Line geometry */
-static GEOSGeom geographicPointsToCartesianLine(double lat1, double lon1, double lat2, double lon2)
+static CartPoint cartPointFromXYZ(double x, double y, double z)
 {
-	double x1, y1, z1, x2, y2, z2;
-	geog2cart(lon1, lat1, &x1, &y1, &z1);
-	geog2cart(lon2, lat2, &x2, &y2, &z2);
-	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create(2, 3);
-	GEOSCoordSeq_setXYZ(lineSeq, 0, x1, y1, z1);
-	GEOSCoordSeq_setXYZ(lineSeq, 1, x2, y2, z2);
-	return GEOSGeom_createLineString(lineSeq);
+	CartPoint cart;
+	cart.x = x;
+	cart.y = y;
+	cart.z = z;
+	return cart;
 }
+
+/* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
+static str wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
+{
+	str err = MAL_SUCCEED;
+
+	if (is_wkb_nil(*a) || is_wkb_nil(*b))
+	{
+		(*ga) = NULL;
+		(*gb) = NULL;
+		return MAL_SUCCEED;
+	}
+	(*ga) = wkb2geos(*a);
+	(*gb) = wkb2geos(*b);
+	if ((*ga) == NULL || (*gb) == NULL)
+	{
+		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
+	}
+	else if (GEOSGetSRID((*ga)) != GEOSGetSRID((*gb)))
+	{
+		GEOSGeom_destroy(*ga);
+		GEOSGeom_destroy(*gb);
+		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
+	}
+	return err;
+}
+
+/**
+* Convert spherical coordinates to cartesian coordinates on unit sphere
+*/
+static CartPoint geo2cart(GeoPoint geo)
+{
+	CartPoint cart;
+	cart.x = cos(geo.lat) * cos(geo.lon);
+	cart.y = cos(geo.lat) * sin(geo.lon);
+	cart.z = sin(geo.lat);
+	return cart;
+}
+
+/**
+* Convert spherical coordinates to cartesian coordinates
+*/
+static CartPoint geo2cart_r(GeoPoint geo)
+{
+	CartPoint cart;
+	cart.x = earth_radius * cos(geo.lat) * cos(geo.lon);
+	cart.y = earth_radius * cos(geo.lat) * sin(geo.lon);
+	cart.z = earth_radius * sin(geo.lat);
+	return cart;
+}
+
+/**
+* Convert cartesian coordinates to spherical coordinates on unit sphere
+*/
+static GeoPoint cart2geo(CartPoint cart)
+{
+	GeoPoint geo;
+	geo.lon = atan2(cart.y, cart.x);
+	geo.lat = asin(cart.z);
+	return geo;
+}
+
+/**
+* Convert cartesian coordinates to spherical coordinates
+*/
+/*static GeoPoint cart2geo_r(CartPoint cart)
+{
+	GeoPoint geo;
+	geo.lon = atan2(cart.y, cart.x);
+	geo.lat = asin(cart.z / earth_radius);
+	return geo;
+}*/
 
 /** 
  * Distance functions 
  * 
  **/
 
-/* The haversine formula calculate the distance between two lat/lon points in meters.
-This formula assumes a spherical model of the earth, which can lead to an error of about 0.3% compared to a ellipsoidal model.*/
-static double haversine(double lat1, double lon1, double lat2, double lon2)
+/**
+ * The haversine formula calculate the distance in meters between two lat/lon points in radians.
+ * This formula assumes a spherical model of the earth, which can lead to an error of about 0.3% compared to a ellipsoidal model.
+*/
+static double haversine(GeoPoint a, GeoPoint b)
 {
-	double d_lon = lon2 - lon1;
-	double d_lat = lat2 - lat1;
-	double a = sin(d_lat / 2) * sin(d_lat / 2) + sin(d_lon / 2) * sin(d_lon / 2) * cos(lat2) * cos(lat1);
-	double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-	//TODO: Same as the previous line (which one is best?)
-	//double c = 2 * asin(sqrt(a));
-	double r = 6371009;
-	return r * c;
+	double d_lon = b.lon - a.lon;
+	double d_lat = b.lat - a.lat;
+	double d = sin(d_lat / 2) * sin(d_lat / 2) + sin(d_lon / 2) * sin(d_lon / 2) * cos(b.lat) * cos(a.lat);
+	double c = 2 * atan2(sqrt(d), sqrt(1 - d));
+	//TODO: Same as the previous line (which one is best?) -> 2 * asin(sqrt(d));
+	return earth_radius_meters * c;
 }
 
-static double geoDistancePointPoint(GEOSGeom a, GEOSGeom b)
+static double geoDistancePointPoint(GeoPoint a, GeoPoint b)
 {
-	double lat1_r = 0, lon1_r = 0, lat2_r = 0, lon2_r = 0;
-	pointToRadian(a, &lat1_r, &lon1_r);
-	pointToRadian(b, &lat2_r, &lon2_r);
-	return haversine(lat1_r, lon1_r, lat2_r, lon2_r);
+	return haversine(deg2RadPoint(a), deg2RadPoint(b));
 }
 
 //TODO Improve this function, there may be a easier way (vector operations?)
-//TODO Check if changing the g2c_r function to g2c makes any difference
-static double calculatePerpendicular(GEOSGeom p, GEOSGeom l)
+static double calculatePerpendicular(GeoPoint p_geo, GeoLine l_geo)
 {
-	//p is the point, a is the start of the line and b is the end of the line
-	double a_lat, a_lon, a_x, a_y, a_z, b_lat, b_lon, b_x, b_y, b_z, p_lat, p_lon, p_x, p_y, p_z;
-	//First, we convert the points to 3D cartesian coordinates
-	pointToRadian(GEOSGeomGetStartPoint(l), &a_lat, &a_lon);
-	geog2cart_r(a_lon, a_lat, &a_x, &a_y, &a_z);
-	pointToRadian(GEOSGeomGetEndPoint(l), &b_lat, &b_lon);
-	geog2cart_r(b_lon, b_lat, &b_x, &b_y, &b_z);
-	pointToRadian(p, &p_lat, &p_lon);
-	geog2cart_r(p_lon, p_lat, &p_x, &p_y, &p_z);
+	CartPoint l1, l2, p, projection;
+	GeoPoint projection_geo;
+
+	//First, convert the points to 3D cartesian coordinates
+	l1 = geo2cart(deg2RadPoint(l_geo.start));
+	l2 = geo2cart(deg2RadPoint(l_geo.end));
+	p = geo2cart(deg2RadPoint(p_geo));
 
 	//Calculate the projection of point into the line
-	double d_ab = (b_z - a_z) * (b_z - a_z) + (b_y - a_y) * (b_y - a_y) + (b_x - a_x) * (b_x - a_x);
-	double t = (((p_x - a_x) * (b_x - a_x)) + ((p_y - a_y) * (b_y - a_y)) + ((p_z - a_z) * (b_z - a_z))) / d_ab;
+	double d_ab = (l2.z - l1.z) * (l2.z - l1.z) + (l2.y - l1.y) * (l2.y - l1.y) + (l2.x - l1.x) * (l2.x - l1.x);
+	double t = (((p.x - l1.x) * (l2.x - l1.x)) + ((p.y - l1.y) * (l2.y - l1.y)) + ((p.z - l1.z) * (l2.z - l1.z))) / d_ab;
 
 	//TODO Check if this is correct
-	//If t is not between 0 and 1, the projected point is not in the line, so there is no perpendicular
+	//If t is not between 0 and 1, the projected point is not in the line, so there is no perpendicular, return huge number
 	if (t < 0 || t > 1)
 		return INT_MAX;
 
-	double proj_x, proj_y, proj_z, proj_lat, proj_lon;
-	proj_x = a_x + t * (b_x - a_x);
-	proj_y = a_y + t * (b_y - a_y);
-	proj_z = a_z + t * (b_z - a_z);
+	//If the projection is in the line segment, build the point -> projection = l1 + t * (l2-l1)
+	projection = cartPointFromXYZ(l1.x + t * (l2.x - l1.x), l1.y + t * (l2.y - l1.y), l1.z + t * (l2.z - l1.z));
 
 	//Convert into geographic coordinates
-	cart2geog_r(proj_x, proj_y, proj_z, &proj_lon, &proj_lat);
-	proj_lon = proj_lon * 180.0 / M_PI;
-	proj_lat = proj_lat * 180.0 / M_PI;
-
-	/*printf("a = (%f %f %f)\nb = (%f %f %f)\np = (%f %f %f)\ndab = %f\nt = %f\n", a_x, a_y, a_z, b_x, b_y, b_z, p_x, p_y, p_z, d_ab, t);
-	printf("proj = (%f %f %f) -> (%f %f)\nDistance = %f\n\n", proj_x, proj_y, proj_z, proj_lon, proj_lat, distance);
-	fflush(stdout);*/
+	projection_geo = cart2geo(projection);
 
 	//Calculate distance from original point to the projection
-	return geoDistancePointPoint(p, GEOSGeom_createPointFromXY(proj_lon, proj_lat));
+	return haversine(deg2RadPoint(p_geo), projection_geo);
 }
 
-/* Distance between Point and a simple Line (only one Line segment) */
-static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
+/* Distance between Point and a simple Line (only one Line segment). 
+   The returned distance is the minimum between the distance between the point and the line vertices 
+   and the perpendicular projection of the point in the line segment.  */
+static double geoDistancePointLineInternal(GeoPoint point, GeoLine line)
 {
 	double distancePerpendicular, distanceStart, distanceEnd;
 
@@ -248,8 +350,8 @@ static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
 	distancePerpendicular = calculatePerpendicular(point, line);
 
 	/* Calculate distance of point to start and end points of line */
-	distanceStart = geoDistancePointPoint(point, GEOSGeomGetStartPoint(line));
-	distanceEnd = geoDistancePointPoint(point, GEOSGeomGetEndPoint(line));
+	distanceStart = geoDistancePointPoint(point, line.start);
+	distanceEnd = geoDistancePointPoint(point, line.end);
 
 	/* Determine which of the distances is smaller */
 	if (distanceStart < distancePerpendicular && distanceStart < distanceEnd)
@@ -266,184 +368,143 @@ static double geoDistancePointLineSingle(GEOSGeom point, GEOSGeom line)
 	}
 }
 
-/* Given a Line/LinearRing geometry with multiple segments and the index to fetch, returns a single Line segment */
-//TODO Is there a better way to do this?
-static GEOSGeometry *getLineSegment(GEOSCoordSequence *multiLineCoords, int segmentIndex)
+/* Distance between Point and Line. The line may have multiple segments. */
+static double geoDistancePointLine(GeoPoint point, GeoLines lines)
 {
-	double x1, y1, x2, y2;
-	GEOSCoordSequence *segment;
-	GEOSCoordSeq_getXY(multiLineCoords, segmentIndex, &x1, &y1);
-	GEOSCoordSeq_getXY(multiLineCoords, segmentIndex + 1, &x2, &y2);
-	segment = GEOSCoordSeq_create(2, 2);
-	GEOSCoordSeq_setXY(segment, 0, x1, y1);
-	GEOSCoordSeq_setXY(segment, 1, x2, y2);
-	return GEOSGeom_createLineString(segment);
-}
-
-/* Distance between Point and Line (with multiple line segments) */
-static double geoDistancePointLineMulti(GEOSGeom point, GEOSGeom line, int lineSegments)
-{
-	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(line);
-	GEOSGeometry *geo_segment;
 	double distance, min_distance = INT_MAX;
-	for (int i = 0; i < lineSegments; i++)
+	for (int i = 0; i < lines.segmentCount; i++)
 	{
-		geo_segment = getLineSegment((GEOSCoordSequence *)gcs, i);
-		distance = geoDistancePointLineSingle(point, geo_segment);
+		distance = geoDistancePointLineInternal(point, lines.segments[i]);
 		if (distance < min_distance)
 			min_distance = distance;
-		if (geo_segment != NULL)
-			GEOSGeom_destroy(geo_segment);
 	}
 	return min_distance;
 }
 
-/* Distance between Point and Line */
-static double geoDistancePointLine(GEOSGeom point, GEOSGeom line)
+/* Distance between all vertices of the first GeoLines argument and the line segments of the second GeoLines argument.
+   Used by geoDistanceLineLine. */
+static double geoDistanceLineLineInternal(GeoLines line1, GeoLines line2)
 {
-	int numPoints = GEOSGeomGetNumPoints(line);
-	if (numPoints > 2)
+	double distance, min_distance = INT_MAX;
+	//Calculate the distance between start vertices of line1 and segments of line 2
+	for (int i = 0; i < line1.segmentCount; i++)
 	{
-		/* For lines with multiple segments, we use a different function */
-		return geoDistancePointLineMulti(point, line, numPoints - 1);
+		distance = geoDistancePointLine(line1.segments[i].start, line2);
+		if (distance < min_distance)
+			min_distance = distance;
 	}
-	else
-	{
-		/* For lines with only one segment, we calculate the distance directly */
-		return geoDistancePointLineSingle(point, line);
-	}
+	distance = geoDistancePointLine(line1.segments[line1.segmentCount - 1].end, line2);
+	if (distance < min_distance)
+		min_distance = distance;
+	return min_distance;
 }
 
 /* Distance between two Lines. */
-static double geoDistanceLineLine(GEOSGeom line1, GEOSGeom line2)
+static double geoDistanceLineLine(GeoLines line1, GeoLines line2)
 {
-	int numPoints = GEOSGeomGetNumPoints(line1);
-	GEOSGeometry *linePoint;
-	double distance, min_distance = INT_MAX;
-	for (int i = 0; i < numPoints; i++)
-	{
-		linePoint = GEOSGeomGetPointN(line1, i);
-		distance = geoDistancePointLine(linePoint, line2);
-		if (distance < min_distance)
-			min_distance = distance;
-		if (linePoint != NULL)
-			GEOSGeom_destroy(linePoint);
-	}
-	return min_distance;
+	double distance1, distance2;
+	//Calculate the distance between all vertices of line1 and segments of line 2
+	distance1 = geoDistanceLineLineInternal(line1, line2);
+	//Calculate the distance between all vertices of line2 and segments of line 1
+	distance2 = geoDistanceLineLineInternal(line2, line1);
+	//And return the minimum
+	return distance1 < distance2 ? distance1 : distance2;
 }
 
-/*static void pointOutsidePolygon(GEOSGeom polygon, double *lon_outside, double *lat_outside)
+/* Converts two lat/lon points into cartesian coordinates and creates a Line geometry */
+//TODO Change geo2cart_r to geo2cart?
+static GEOSGeom cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 {
-	mbr *bbox = mbrFromGeos((const GEOSGeom)polygon);
-	printf("X: (%f %f)\nY: (%f %f)\n", bbox->xmin, bbox->xmax, bbox->ymin, bbox->ymax);
-	double x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
-	geog2cart_r(bbox->xmin, bbox->ymin, &x1, &y1, &z1);
-	geog2cart_r(bbox->xmin, bbox->ymax, &x2, &y2, &z2);
-	geog2cart_r(bbox->xmax, bbox->ymin, &x3, &y3, &z3);
-	geog2cart_r(bbox->xmax, bbox->ymax, &x4, &y4, &z4);
-	printf("Points:\n(%f %f %f)\n(%f %f %f)\n(%f %f %f)\n(%f %f %f)\n\n", x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4);
-	fflush(stdout);
-	lon_outside = NULL;
-	lat_outside = NULL;
-}*/
+	CartPoint p1_cart, p2_cart;
+	p1_cart = geo2cart_r(p1);
+	p2_cart = geo2cart_r(p2);
+	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create(2, 3);
+	GEOSCoordSeq_setXYZ(lineSeq, 0, p1_cart.x, p1_cart.y, p1_cart.z);
+	GEOSCoordSeq_setXYZ(lineSeq, 1, p2_cart.x, p2_cart.y, p2_cart.z);
+	return GEOSGeom_createLineString(lineSeq);
+}
 
 //TODO Check if this works always
-//For fast testing, we could use the polygon's minimum bounding box
-static bool pointWithinPolygonRing(GEOSGeom point, GEOSGeom polygon)
+//TODO For fast testing, we could use the polygon's minimum bounding box
+//TODO Implement intersection ourselves so we don't use GEOS?
+static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 {
-	int intersectionNum = 0, pointsPolygon;
-	double lat_p, lon_p, lat_poly1, lon_poly1, lat_poly2, lon_poly2;
+	int intersectionNum = 0;
 	GEOSGeometry *segmentPolygon, *intersectionPoints;
-	const GEOSCoordSequence *polygonSeq;
 
 	//Get an point that's outside the polygon
 	//TODO Get the outside point using the polygon's bounding box, instead of being static
 	double lat_o = 48.193, lon_o = -4.551;
-	/*double lat_out, lon_out;
-	pointOutsidePolygon(polygon, &lon_out, &lat_out);*/
+	GeoPoint outsidePoint = geoPointFromLatLon(lon_o, lat_o);
 
 	//Construct a line between the outside point and the input point
-	GEOSGeomGetX(point, &lon_p);
-	GEOSGeomGetY(point, &lat_p);
-	GEOSGeometry *outInLine = geographicPointsToCartesianLine(lat_p, lon_p, lat_o, lon_o);
+	GEOSGeometry *outInLine = cartesianLineFromGeoPoints(point, outsidePoint);
 
 	//Count the number of intersections between the polygon and the constructed line
-	pointsPolygon = GEOSGeomGetNumPoints(polygon);
-	polygonSeq = GEOSGeom_getCoordSeq(polygon);
-	for (int i = 0; i < pointsPolygon; i++)
+	for (int i = 0; i < polygonRing.segmentCount; i++)
 	{
-		GEOSCoordSeq_getXY(polygonSeq, i, &lon_poly1, &lat_poly1);
-		GEOSCoordSeq_getXY(polygonSeq, (i + 1) % pointsPolygon, &lon_poly2, &lat_poly2);
-		segmentPolygon = geographicPointsToCartesianLine(lat_poly1, lon_poly1, lat_poly2, lon_poly2);
-
+		segmentPolygon = cartesianLineFromGeoPoints(polygonRing.segments[i].start, polygonRing.segments[i].end);
 		intersectionPoints = GEOSIntersection(segmentPolygon, outInLine);
 
 		//If there is an intersection, a point will be returned (line when there is none)
 		if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
-		{
-			/*double x_i, y_i, z_i, lat_i, lon_i;
-			GEOSGeomGetX(intersectionPoints, &x_i);
-			GEOSGeomGetY(intersectionPoints, &y_i);
-			GEOSGeomGetZ(intersectionPoints, &z_i);
-			cart2geog(x_i, y_i, z_i, &lon_i, &lat_i);
-			printf("\nPoint Intersection: (%f %f) (%f %f %f)\n\n", lon_i, lat_i, x_i, y_i, z_i);
-			fflush(stdout);*/
 			intersectionNum++;
-		}
 
 		if (intersectionPoints != NULL)
 			GEOSGeom_destroy(intersectionPoints);
 		if (segmentPolygon != NULL)
 			GEOSGeom_destroy(segmentPolygon);
 	}
+	if (outInLine != NULL)
+		GEOSGeom_destroy(outInLine);
 
 	//If even, the point is not within the polygon. If odd, it is within
 	return intersectionNum % 2 == 1;
 }
 
 /* Distance between Point and Polygon.*/
-static double geoDistancePointPolygon(GEOSGeom point, GEOSGeom polygon)
+static double geoDistancePointPolygon(GeoPoint point, GeoLines polygonRing)
 {
-	const GEOSGeometry *polygon_ring;
-	polygon_ring = GEOSGetExteriorRing(polygon);
-
 	//Check if point is in polygon
-	if (pointWithinPolygonRing(point, (GEOSGeometry *)polygon_ring))
+	if (pointWithinPolygon(point, polygonRing))
 		return 0;
 
 	//Compare Point to the various polygon segments
-	return geoDistancePointLine(point, (GEOSGeometry *)polygon_ring);
+	return geoDistancePointLine(point, polygonRing);
 }
 
 /* Distance between Line and Polygon. */
-static double geoDistanceLinePolygon(GEOSGeom line, GEOSGeom polygon)
+static double geoDistanceLinePolygon(GeoLines line, GeoLines polygon)
 {
-	int numPoints = GEOSGeomGetNumPoints(line);
-	GEOSGeometry *linePoint;
 	double distance, min_distance = INT_MAX;
-	for (int i = 0; i < numPoints; i++)
+	//Calculate distance to all start vertices of the line
+	for (int i = 0; i < line.segmentCount; i++)
 	{
-		linePoint = GEOSGeomGetPointN(line, i);
-		distance = geoDistancePointPolygon(linePoint, polygon);
+		distance = geoDistancePointPolygon(line.segments[i].start, polygon);
 		if (distance < min_distance)
 			min_distance = distance;
-		if (linePoint != NULL)
-			GEOSGeom_destroy(linePoint);
 	}
+	//Calculate distance to the last vertice (not covered by the previous loop)
+	distance = geoDistancePointPolygon(line.segments[line.segmentCount - 1].end, polygon);
+	if (distance < min_distance)
+		min_distance = distance;
 	return min_distance;
 }
 
 /* Distance between two Polygons. */
-//TODO Check if we can simply use the LinePolygon function
-static double geoDistancePolygonPolygon(GEOSGeom polygon1, GEOSGeom polygon2)
+static double geoDistancePolygonPolygon(GeoLines polygon1, GeoLines polygon2)
 {
-	const GEOSGeometry *polygon_ring;
-	polygon_ring = GEOSGetExteriorRing(polygon1);
-	//If we use the LinePolygon function, we'll check for intersection points
-	return geoDistanceLinePolygon((GEOSGeometry *)polygon_ring, polygon2);
+	double distance1, distance2;
+	//Calculate the distance between all vertices of polygon1 and segments of polygon2
+	distance1 = geoDistanceLinePolygon(polygon1, polygon2);
+	//Calculate the distance between all vertices of polygon2 and segments of polygon1
+	distance2 = geoDistanceLinePolygon(polygon2, polygon1);
+	//And return the minimum
+	return distance1 < distance2 ? distance1 : distance2;
 }
 
-static double geoDistanceSimple(GEOSGeom a, GEOSGeom b)
+/* Distance between two (non-collection) geometries. */
+static double geoDistanceSingle(GEOSGeom a, GEOSGeom b)
 {
 	int dimA, dimB;
 	dimA = GEOSGeom_getDimensions(a);
@@ -451,80 +512,77 @@ static double geoDistanceSimple(GEOSGeom a, GEOSGeom b)
 	if (dimA == 0 && dimB == 0)
 	{
 		/* Point and Point */
-		return geoDistancePointPoint(a, b);
+		return geoDistancePointPoint(geoPointFromGeom(a), geoPointFromGeom(b));
 	}
 	else if (dimA == 0 && dimB == 1)
 	{
 		/* Point and Line/LinearRing */
-		return geoDistancePointLine(a, b);
+		return geoDistancePointLine(geoPointFromGeom(a), geoLinesFromGeom(b));
 	}
 	else if (dimA == 1 && dimB == 0)
 	{
 		/* Line/LinearRing and Point */
-		return geoDistancePointLine(b, a);
+		return geoDistancePointLine(geoPointFromGeom(b), geoLinesFromGeom(a));
 	}
 	else if (dimA == 1 && dimB == 1)
 	{
 		/* Line/LinearRing and Line/LinearRing */
-		return geoDistanceLineLine(a, b);
+		return geoDistanceLineLine(geoLinesFromGeom(a), geoLinesFromGeom(b));
 	}
 	else if (dimA == 0 && dimB == 2)
 	{
 		/* Point and Polygon */
-		return geoDistancePointPolygon(a, b);
+		return geoDistancePointPolygon(geoPointFromGeom(a), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(b)));
 	}
 	else if (dimA == 2 && dimB == 0)
 	{
 		/* Polygon and Point */
-		return geoDistancePointPolygon(b, a);
+		return geoDistancePointPolygon(geoPointFromGeom(b), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(a)));
 	}
 	else if (dimA == 1 && dimB == 2)
 	{
 		/* Line/LinearRing and Polygon */
-		return geoDistanceLinePolygon(a, b);
+		return geoDistanceLinePolygon(geoLinesFromGeom(a), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(b)));
 	}
 	else if (dimA == 2 && dimB == 1)
 	{
 		/* Polygon and Line/LinearRing */
-		return geoDistanceLinePolygon(b, a);
+		return geoDistanceLinePolygon(geoLinesFromGeom(b), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(a)));
 	}
 	else if (dimA == 2 && dimB == 2)
 	{
 		/* Polygon and Polygon */
-		return geoDistancePolygonPolygon(a, b);
+		return geoDistancePolygonPolygon(geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(a)), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(b)));
 	}
 	return INT_MAX;
 }
 
 //TODO Check if the GetGeometryN works for a single Geometry (not on collections) for the case where one is a collection and the other is not
-static double geoDistanceMulti(GEOSGeom multi1, GEOSGeom multi2, int numGeoms1, int numGeoms2)
+static double geoDistanceInternal(GEOSGeom a, GEOSGeom b)
 {
-	double distance, min_distance = INT_MAX;
-	GEOSGeometry *geo1, *geo2;
-	for (int i = 0; i < numGeoms1; i++)
+	int numGeomsA = GEOSGetNumGeometries(a), numGeomsB = GEOSGetNumGeometries(b);
+	if (numGeomsA == 1 && numGeomsB == 1)
 	{
-		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)multi1, i);
-		for (int j = 0; j < numGeoms2; j++)
-		{
-			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)multi2, j);
-			distance = geoDistanceSimple(geo1, geo2);
-			if (distance < min_distance)
-				min_distance = distance;
-		}
-	}
-	return min_distance;
-}
-
-static void geoDistanceInternal(GEOSGeom a, GEOSGeom b, dbl *out)
-{
-	int numA = GEOSGetNumGeometries(a), numB = GEOSGetNumGeometries(b);
-	if (numA == 1 && numB == 1)
-	{
-		(*out) = geoDistanceSimple(a, b);
+		//Single geometry
+		return geoDistanceSingle(a, b);
 	}
 	else
 	{
-		(*out) = geoDistanceMulti(a, b, numA, numB);
+		//Geometry collection
+		double distance, min_distance = INT_MAX;
+		GEOSGeometry *geo1, *geo2;
+		for (int i = 0; i < numGeomsA; i++)
+		{
+			geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a64l, i);
+			for (int j = 0; j < numGeomsB; j++)
+			{
+				geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
+				distance = geoDistanceSingle(geo1, geo2);
+				if (distance < min_distance)
+					min_distance = distance;
+			}
+		}
+		return min_distance;
 	}
 }
 
@@ -536,7 +594,7 @@ str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb)
 	{
-		geoDistanceInternal(ga, gb, out);
+		(*out) = geoDistanceInternal(ga, gb);
 	}
 
 	GEOSGeom_destroy(ga);
@@ -558,7 +616,7 @@ str wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl d)
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb)
 	{
-		geoDistanceInternal(ga, gb, &distance);
+		distance = geoDistanceInternal(ga, gb);
 		(*out) = (distance <= d);
 	}
 
@@ -581,7 +639,7 @@ str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb)
 	{
-		geoDistanceInternal(ga, gb, &distance);
+		distance = geoDistanceInternal(ga, gb);
 		(*out) = (distance == 0);
 	}
 

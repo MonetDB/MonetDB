@@ -32,6 +32,33 @@
 #define geom_export extern
 #endif
 
+/* Geographic data types */
+typedef struct GeoPoint
+{
+    double lat;
+    double lon;
+} GeoPoint;
+
+typedef struct GeoLine
+{
+    GeoPoint start;
+    GeoPoint end;
+} GeoLine;
+
+typedef struct GeoLines
+{
+    GeoLine *segments;
+    int segmentCount;
+} GeoLines;
+
+typedef struct CartPoint
+{
+    double x;
+    double y;
+    double z;
+} CartPoint;
+
+/* Geographic functions */
 str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b);
 str wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl distance);
 str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b);
