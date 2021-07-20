@@ -3584,21 +3584,20 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.rowid", SQLSTATE(3F000) "Schema missing %s", sname);
+		throw(SQL, "calc.rowid", SQLSTATE(3F000) "Schema missing %s", sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.rowid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+		throw(SQL, "calc.rowid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	if (!s || !t || !ol_first_node(t->columns))
 		throw(SQL, "calc.rowid", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
 	c = ol_first_node(t->columns)->data;
 	/* HACK, get insert bat */
 	sqlstore *store = m->session->tr->store;
-	b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
+	b = store->storage_api.bind_col(m->session->tr, c, QUICK);
 	if( b == NULL)
-		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL,"calc.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
 	/* UGH (move into storage backends!!) */
 	*rid = BATcount(b);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
