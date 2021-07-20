@@ -1139,6 +1139,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				if (b == NULL)
+					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
@@ -1151,6 +1153,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				if (b == NULL)
+					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
 				if (r != GDK_SUCCEED)
