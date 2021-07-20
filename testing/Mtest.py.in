@@ -46,6 +46,7 @@ approve = False
 
 initdb = None
 single_in_memory = False
+restart = False
 
 global_timeout = 0
 start_time = time.time()
@@ -1218,15 +1219,19 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         cond,tst = None,tc
                     alltests.append((tst,cond))
             allf.close()
-        try:
-            f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
-        except IOError:
+        if restart:
             oneserver = False
-            options = []            # not used
+            options = []
         else:
-            oneserver = True
-            options = f.read().split()
-            f.close()
+            try:
+                f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
+            except IOError:
+                oneserver = False
+                options = []            # not used
+            else:
+                oneserver = True
+                options = f.read().split()
+                f.close()
 
         if testlist:
             tl = []
@@ -3507,6 +3512,7 @@ def main(argv) :
     parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
     parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
     parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
+    parser.add_argument('--restart', action='store_true', dest='restart', help='Restart server after each test')
     parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
     parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
     parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
@@ -3533,12 +3539,13 @@ def main(argv) :
     procdebug = opts.procdebug
     global approve
     approve = opts.approve
-    nomito = False
     addreqs = False
     all_tests = False
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
+    global restart
+    restart = opts.restart
     par['IGNORE'] = opts.ignore
     par['CONTEXT'] = str(opts.context)
     a = opts.accuracy
