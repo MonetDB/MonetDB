@@ -1521,9 +1521,12 @@ def coredumpctl(pid):
     fd, name = tempfile.mkstemp(suffix='.sh')
     fd2, name2 = tempfile.mkstemp()
     os.close(fd2)
-    os.write(fd, b'#!/bin/sh\ngdb -nx -batch -ex "thread apply all bt" "$@" > %s\n' % name2.encode('utf-8'))
+    os.write(fd, b'#!/bin/sh\ngdb -nx -batch -ex "thread apply all bt full" "$@" > %s\n' % name2.encode('utf-8'))
     os.close(fd)
     os.chmod(name, 0o700)
+    # with a more modern coredumpctl, we could use the
+    # -A/--debugger-arguments option:
+    # coredumpctl -q -A "-batch -ex 'thread apply all bt full'" gdb ...
     if procdebug:
         print('Starting: coredumpctl -q --debugger=%s gdb %d' % (name, pid))
     with process.Popen(['coredumpctl', '-q', '--debugger=%s' % name, 'gdb', str(pid)],
