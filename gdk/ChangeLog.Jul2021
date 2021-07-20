@@ -1,6 +1,18 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Jul 20 2021 Sjoerd Mullender <sjoerd@acm.org>
+- A new type, called msk, was introduced.  This is a bit mask type.
+  In a bat with type msk, each row occupies a single bit, so 8 rows are
+  stored in a single byte.  There is no NULL value for this type.
+- The function of the BAT iterator (type BATiter, function bat_iterator)
+  has been expanded.  The iterator now contains more information about
+  the BAT, and it contains a pointer to the heaps (theap and tvheap)
+  that are stable, at least in the sense that they will remain available
+  even when parallel threads update the BAT and cause those heaps to grow
+  (and therefore possibly move in memory).  A call to bat_iterator must
+  now be accompanied by a call to bat_iterator_end.
+
 * Mon Mar 29 2021 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented function BUNreplacemultiincr to replace multiple values
   in a BAT in one go, starting at a given position.
