@@ -309,7 +309,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern struct sqlstore *store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser);
+extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser);
 extern void store_exit(struct sqlstore *store);
 
 extern void store_suspend_log(struct sqlstore *store);
