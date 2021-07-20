@@ -2565,11 +2565,11 @@ def killProc(proc, outfile = None, cmd = None):
             out = ''
     else:
         try:
-            with process.Popen(['pstack', str(proc.pid)], stdout=process.PIPE,
+            with process.Popen(['gdb', '-batch', '-ex', 'thread apply all bt full', '-p', str(proc.pid)], stdout=process.PIPE,
                                text=True) as p:
                 try:
-                    # pstack (gdb) sometimes hangs when trying to get the
-                    # stack trace: kill it mercilessly if it does
+                    # gdb sometimes hangs when trying to get the stack
+                    # trace: kill it mercilessly if it does
                     t = Timer(60, reallyKill, args = [p])
                     t.start()
                 except AttributeError:
