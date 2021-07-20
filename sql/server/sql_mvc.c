@@ -85,10 +85,11 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			sql_column *col = mvc_bind_column(m, t, VIEW[i].name); \
 			VIEW[i].oldid = col->base.id;			\
 		}							\
-		if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
+		if ((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
 			mvc_destroy(m);					\
+			mvc_exit(store);	\
 			TRC_CRITICAL(SQL_TRANS,				\
-				     "Initialization: %s\n", output);	\
+				     "Initialization error: %s\n", output);	\
 			freeException(output);				\
 			return NULL;					\
 		}							\
@@ -274,8 +275,8 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		assert(m->session->schema != NULL);
 
 		if (!store->first) {
-			MVC_INIT_DROP_TABLE(tid,  "tables", tview, 9);
-			MVC_INIT_DROP_TABLE(cid,  "columns", cview, 10);
+			MVC_INIT_DROP_TABLE(tid, "tables", tview, 9);
+			MVC_INIT_DROP_TABLE(cid, "columns", cview, 10);
 		}
 
 		t = mvc_init_create_view(m, s, "tables", "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";");
