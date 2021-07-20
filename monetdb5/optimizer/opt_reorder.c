@@ -53,7 +53,7 @@
  * for a linear plan. Future extensions could consider
  * re-ordering basic blocks only.
  *
- * For this purpose this optimizer should be run before 
+ * For this purpose this optimizer should be run before
  * the dataflow optimizer, because it adds barriers.
  */
 typedef struct{
@@ -111,7 +111,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 			list[i]->stmt[j] = var[getArg(p,j)];
 			list[var[getArg(p,j)]]->used++;
 		}
-		/* keep the assignment order 
+		/* keep the assignment order
 		 * Duplicate assignment of a variable is not wanted
 		 * but can not be avoided when loops are involved
 		 * In this case we bail out*/
@@ -217,7 +217,7 @@ OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Nod
 }
 
 /* SQL appends are collected to create a better dataflow block */
-/* alternatively, we should postpone all mcv-chained actions */
+/* alternatively, we should postpone all mvc-chained actions */
 static int
 OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
