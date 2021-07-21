@@ -112,10 +112,6 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -126,6 +122,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -603,10 +603,6 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -617,6 +613,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -724,10 +724,6 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -738,6 +734,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1276,10 +1276,6 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -1290,6 +1286,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1405,10 +1405,6 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -1419,6 +1415,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1514,10 +1514,6 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -1528,6 +1524,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
