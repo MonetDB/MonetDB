@@ -4,4 +4,4 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 
-create procedure SHPload(fname string, tablename string) external name shp.load;
+create procedure shpload(fname string, tablename string) external name shp.load;

@@ -304,6 +304,9 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 	char *nameToLowerCase = NULL;
 	int i;
 
+	BAT *pos = NULL;
+	sqlstore *store;
+
 	/* SHP-level descriptor */
 	OGRFieldDefnH hFieldDefn;
 	OGRFeatureH feature;
@@ -468,8 +471,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 		if (rc != GDK_SUCCEED)
 			goto unfree;
 	}
-	sqlstore *store = m->session->tr->store;
-	BAT *pos = NULL;
+	store = m->session->tr->store;
 	/* finalise the BATs */
 	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
 	if (!pos)
@@ -484,7 +486,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 		}
 	}
 	bat_destroy(pos);
-
+	return msg;
 unfree:
 	for (i = 0; i < colsNum; i++)
 	{
