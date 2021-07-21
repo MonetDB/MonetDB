@@ -852,7 +852,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
  				goto bunins_failed;
  			}
 			memcpy(bn->theap->base, bi.base, bi.count << bi.shift);
-			bn->theap->free = bi.hfree;
+			bn->theap->free = bi.count << bi.shift;
 			bn->theap->dirty = true;
  			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
