@@ -147,6 +147,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	if (!rel)
 		return NULL;
 
+	rel->op = i->op;
 	switch(i->op) {
 	case op_basetable:
 		rel_base_copy(sql, i, rel);
@@ -206,12 +207,13 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 			rel->r = rel_copy(sql, i->r, deep);
 		break;
 	}
-	rel->op = i->op;
+
 	rel->card = i->card;
 	rel->flag = i->flag;
 	rel->nrcols = i->nrcols;
 	rel->grouped = i->grouped;
 	rel->used = i->used;
+
 	if (is_processed(i))
 		set_processed(rel);
 	if (is_dependent(i))
@@ -222,6 +224,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		set_single(rel);
 	if (need_distinct(i))
 		set_distinct(rel);
+
 	rel->p = prop_copy(sql->sa, i->p);
 	rel->exps = (!i->exps)?NULL:deep?exps_copy(sql, i->exps):list_dup(i->exps, (fdup)NULL);
 	return rel;
