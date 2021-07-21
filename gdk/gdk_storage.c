@@ -693,7 +693,7 @@ void
 BATmsync(BAT *b)
 {
 	/* we don't sync views or if we're told not to */
-	if (GDKinmemory(b->theap->farmid) || isVIEW(b) || (GDKdebug & NOSYNCMASK))
+	if (isVIEW(b) || GDKinmemory(b->theap->farmid) || (GDKdebug & NOSYNCMASK))
 		return;
 	/* we don't sync transients */
 	if (b->theap->farmid != 0 ||
