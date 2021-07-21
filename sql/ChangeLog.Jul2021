@@ -1,6 +1,22 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jul 21 2021 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Fix a warning emitted by some implementations of the tar(1) command
+  when unpacking hot snapshot files.
+- support reading the concatenation of compressed files as a single
+  compressed file.
+- COPY BINARY overhaul.  Allow control over binary endianness using
+  COPY [ (BIG | LITTLE | NATIVE) ENDIAN] BINARY syntax.  Defaults to
+  NATIVE.  Strings are now \0 terminated rather than \n.  Support for
+  BOOL, TINYINT, SMALLINT, INT, LARGEINT, HUGEINT, with their
+  respective "INTMIN" values as the NULL representation; 32 and 64 bit
+  FLOAT/REAL, with NaN as the NULL representation; VARCHAR/TEXT, JSON
+  and URL with \x80 as the NULL representation; UUID as fixed width 16
+  byte binary values, with (by default) all zeroes as the NULL
+  representation; temporal type structs as defined in copybinary.h
+  with any invalid value as the NULL representation.
+
 * Tue Jul 20 2021 Niels Nes <niels@cwi.nl>
 - In the Jul2021 release the storage and transaction layers have
   undergone major changes.  The goal of these changes is robust
