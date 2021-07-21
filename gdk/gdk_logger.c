@@ -2794,6 +2794,7 @@ bm_commit(logger *lg)
 
 		if ((lb = BATdescriptor(bid)) == NULL ||
 		    BATmode(lb, false) != GDK_SUCCEED) {
+			TRC_WARNING(GDK, "Failed to set bat (%d%s) persistent\n", bid, !lb?" gone":"");
 			logbat_destroy(lb);
 			return GDK_FAIL;
 		}
