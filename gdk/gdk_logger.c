@@ -335,26 +335,28 @@ string_reader(logger *lg, BAT *b, lng nr)
 	lng SZ = 0;
 	log_return res = LOG_OK;
 
-	if (mnstr_readLng(lg->input_log, &SZ) != 1)
-		return LOG_EOF;
-	sz = (size_t)SZ;
-	char *buf = GDKmalloc(sz);
+	for (; nr && res == LOG_OK; ) {
+		if (mnstr_readLng(lg->input_log, &SZ) != 1)
+			return LOG_EOF;
+		sz = (size_t)SZ;
+		char *buf = lg->buf;
+		if (lg->bufsize < sz) {
+			lg->buf = buf = GDKrealloc(buf, sz);
+			lg->bufsize = sz;
+		}
 
-	if (!buf || mnstr_read(lg->input_log, buf, sz, 1) != 1) {
-		GDKfree(buf);
-		return LOG_EOF;
-	}
-	/* handle strings */
-	if (b) {
+		if (!buf || mnstr_read(lg->input_log, buf, sz, 1) != 1)
+			return LOG_EOF;
+		/* handle strings */
 		char *t = buf;
 		/* chunked */
 #define CHUNK_SIZE 1024
 		char *strings[CHUNK_SIZE];
 		int cur = 0;
 
-		for(int i=0; i<nr && res == LOG_OK; i++) {
+		for(; nr>0 && res == LOG_OK && t < (buf+sz); nr--) {
 			strings[cur++] = t;
-			if (cur == CHUNK_SIZE && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
+			if (cur == CHUNK_SIZE && b && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
 				res = LOG_ERR;
 			if (cur == CHUNK_SIZE)
 				cur = 0;
@@ -363,10 +365,9 @@ string_reader(logger *lg, BAT *b, lng nr)
 				t++;
 			t++;
 		}
-		if (cur && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
+		if (cur && b && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
 			res = LOG_ERR;
 	}
-	GDKfree(buf);
 	return res;
 }
 
@@ -2357,27 +2358,43 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 static gdk_return
 string_writer(logger *lg, BAT *b, lng offset, lng nr)
 {
-	size_t sz = 0;
+	size_t bufsz = lg->bufsize, resize = 0;
 	BUN end = (BUN)(offset + nr);
+	char *buf = lg->buf;
+	gdk_return res = GDK_FAIL;
 
+	if (!buf)
+		return GDK_FAIL;
 	BATiter bi = bat_iterator(b);
-	for(BUN p = (BUN)offset; p < end; p++) {
-		char *s = BUNtail(bi, p);
-		sz += strlen(s)+1; /* we need a seperator */
-	}
-	char *buf = GDKmalloc(sz), *dst = buf;
-	if (buf) {
-		for(BUN p = (BUN)offset; p < end; p++) {
+	BUN p = (BUN)offset;
+	for ( ; p < end; ) {
+		size_t sz = 0;
+		if (resize) {
+			lg->buf = buf = GDKrealloc(buf, resize);
+			if (!buf) {
+				res = GDK_FAIL;
+				break;
+			}
+			lg->bufsize = bufsz = resize;
+			resize = 0;
+		}
+		char *dst = buf;
+		for(; p < end && sz < bufsz; p++) {
 			char *s = BUNtail(bi, p);
 			size_t len = strlen(s)+1;
-			memcpy(dst, s, len);
-			dst += len;
+			if ((sz+len) > bufsz) {
+				if (len > bufsz)
+					resize = len+bufsz;
+				break;
+			} else {
+				memcpy(dst, s, len);
+				dst += len;
+				sz += len;
+			}
 		}
+		if (sz && buf && mnstr_writeLng(lg->output_log, (lng) sz) && mnstr_write(lg->output_log, buf, sz, 1) == 1)
+			res = GDK_SUCCEED;
 	}
-	gdk_return res = GDK_FAIL;
-	if (buf && mnstr_writeLng(lg->output_log, (lng) sz) && mnstr_write(lg->output_log, buf, sz, 1) == 1)
-		res = GDK_SUCCEED;
-	GDKfree(buf);
 	bat_iterator_end(&bi);
 	return res;
 }
@@ -2777,6 +2794,7 @@ bm_commit(logger *lg)
 
 		if ((lb = BATdescriptor(bid)) == NULL ||
 		    BATmode(lb, false) != GDK_SUCCEED) {
+			TRC_WARNING(GDK, "Failed to set bat (%d%s) persistent\n", bid, !lb?" gone":"");
 			logbat_destroy(lb);
 			return GDK_FAIL;
 		}

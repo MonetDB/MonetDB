@@ -1452,6 +1452,7 @@ stream *lz4_stream(stream *inner, int preset);
 void mnstr_clearerr(stream *s);
 void mnstr_close(stream *s);
 void mnstr_destroy(stream *s);
+bool mnstr_eof(const stream *s);
 mnstr_error_kind mnstr_errnr(const stream *s);
 char *mnstr_error(const stream *s);
 const char *mnstr_error_kind_name(mnstr_error_kind k);

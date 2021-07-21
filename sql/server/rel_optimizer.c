@@ -51,7 +51,7 @@ find_member_pos(list *l, sql_table *t)
  */
 
 /* currently we only find simple column expressions */
-void *
+sql_column *
 name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
 {
 	sql_exp *alias = NULL;
@@ -74,30 +74,30 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 				rname = e->l;
 			name = e->r;
 		}
-		if (name && !t)
-			return rel_base_get_mergetable(rel);
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
-		node *cn;
 		sql_table *mt = rel_base_get_mergetable(rel);
-		for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
-			sql_column *c = cn->data;
-			if (strcmp(c->base.name, name) == 0) {
-				*bt = rel;
-				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members, c->t) == pnr))
-					return c;
+		if (ol_length(t->columns)) {
+			for (node *cn = ol_first_node(t->columns); cn; cn = cn->next) {
+				sql_column *c = cn->data;
+				if (strcmp(c->base.name, name) == 0) {
+					*bt = rel;
+					if (pnr < 0 || (mt &&
+						find_member_pos(mt->members, c->t) == pnr))
+						return c;
+				}
 			}
 		}
-		if (t->idxs)
-		for (cn = ol_first_node(t->idxs); cn; cn = cn->next) {
-			sql_idx *i = cn->data;
-			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
-				*bt = rel;
-				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members, i->t) == pnr)) {
-					sql_kc *c = i->columns->h->data;
-					return c->c;
+		if (ol_length(t->idxs) && name[0]) {
+			for (node *cn = ol_first_node(t->idxs); cn; cn = cn->next) {
+				sql_idx *i = cn->data;
+				if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
+					*bt = rel;
+					if (pnr < 0 || (mt &&
+						find_member_pos(mt->members, i->t) == pnr)) {
+						sql_kc *c = i->columns->h->data;
+						return c->c;
+					}
 				}
 			}
 		}
@@ -8728,130 +8728,6 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_exp *
-exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de, bit unique)
-{
-	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
-	sql_exp *u = exp_atom_bool(sql->sa, unique);
-	sql_subfunc *f = sql_bind_func_result(sql, "sys", "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
-
-	e = exp_binop(sql->sa, e, u, f);
-	exp_setname(sql->sa, e, tname, cname);
-	return e;
-}
-
-static sql_exp *
-exp_stringscol(mvc *sql, sql_exp *e, const char *tname, const char *cname)
-{
-	sql_subfunc *f = sql_bind_func(sql, "sys", "strings", exp_subtype(e), NULL, F_FUNC);
-
-	e = exp_unop(sql->sa, e, f);
-	exp_setname(sql->sa, e, tname, cname);
-	return e;
-}
-
-static sql_rel *
-rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
-{
-	sql_rel *rel = rel_create(sql->sa);
-	sql_exp *e, *ie;
-	int nr = 0;
-	char name[16], *nme;
-	if(!rel)
-		return NULL;
-
-	e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-	rel->l = NULL;
-	rel->r = c;
-	rel->op = op_basetable;
-	rel->exps = new_exp_list(sql->sa);
-
-	ie = exp_indexcol(sql, e, tname, c->base.name, de, 1);
-        nr = ++sql->label;
-	nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
-	exp_setname(sql->sa, ie, nme, nme);
-	append(rel->exps, ie);
-
-	ie = exp_stringscol(sql, e, tname, c->base.name);
-        nr = ++sql->label;
-	nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
-	exp_setname(sql->sa, ie, nme, nme);
-	append(rel->exps, ie);
-	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-
-	rel->card = CARD_MULTI;
-	rel->nrcols = 2;
-	return rel;
-}
-
-/* rewrite merge tables into union of base tables and call optimizer again */
-static sql_rel *
-rel_add_dicts(visitor *v, sql_rel *rel)
-{
-	if (is_basetable(rel->op) && rel->l) {
-		node *n;
-		sql_table *t = rel->l;
-		list *l = sa_list(v->sql->sa), *vcols = NULL, *pexps = sa_list(v->sql->sa);
-
-		for (n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data, *ne = NULL;
-			const char *rname = exp_relname(e)?exp_relname(e):e->l;
-			const char *oname = e->r;
-			int de;
-
-			if (!is_func(e->type) && oname[0] != '%') {
-				sql_column *c = find_sql_column(t, oname);
-
-				if ((de = mvc_is_duplicate_eliminated(v->sql, c)) != 0) {
-					int nr = ++v->sql->label;
-					char name[16], *nme;
-					sql_rel *vt = rel_dicttable(v->sql, c, rname, de);
-
-					nme = sa_strdup(v->sql->sa, number2name(name, sizeof(name), nr));
-					if (!vcols)
-						vcols = sa_list(v->sql->sa);
-					append(vcols, vt);
-					e = exp_indexcol(v->sql, e, nme, nme, de, 0);
-					ne = exp_ref(v->sql, e);
-					append(vcols, ne);
-					append(vcols, n->data);
-					v->changes++;
-				}
-			}
-			list_append(l, e);
-			if (!ne)
-				list_append(pexps, e);
-		}
-		rel_set_exps(rel, l);
-
-		/* add joins for double_eliminated (large) columns */
-		if (vcols) {
-			node *n;
-
-			for(n = vcols->h; n; n = n->next->next->next) {
-				sql_rel *vt = n->data;
-				sql_exp *ic = n->next->data, *vti = NULL, *vtv;
-				sql_exp *c = n->next->next->data, *cmp;
-
-				rel = rel_crossproduct(v->sql->sa, rel, vt, op_join);
-				vti = vt->exps->h->data;
-				vtv = vt->exps->h->next->data;
-				vti = exp_ref(v->sql, vti);
-				cmp = exp_compare(v->sql->sa, ic, vti, cmp_equal);
-				cmp->p = prop_create(v->sql->sa, PROP_FETCH, cmp->p);
-				rel_join_add_exp( v->sql->sa, rel, cmp);
-
-				vtv = exp_ref(v->sql, vtv);
-				if (exp_name(c))
-					exp_prop_alias(v->sql->sa, vtv, c);
-				append(pexps, vtv);
-			}
-			rel = rel_project(v->sql->sa, rel, pexps);
-		}
-	}
-	return rel;
-}
-
 static int
 exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusive, bool max_exclusive)
 {
@@ -9844,8 +9720,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 	if (gp.has_mergetable)
 		rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
-	if (level <= 0 && mvc_debug_on(sql,8))
-		rel = rel_visitor_topdown(&v, rel, &rel_add_dicts);
 
 	*g_changes = v.changes;
 	return rel;

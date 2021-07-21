@@ -34,6 +34,8 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
 			GDKfree(joins);
+			if (b)
+				BBPunfix(b->batCacheid);
 			throw(MAL, "algebra.projectionpath", "%s", b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
 		}
 		joins[i - pci->retc] = b;

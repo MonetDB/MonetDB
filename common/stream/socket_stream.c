@@ -186,8 +186,10 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 		break;
 	}
-	if (nr == 0)
+	if (nr == 0) {
+		s->eof = true;
 		return 0;	/* end of file */
+	}
 	if (elmsize > 1) {
 		while ((size_t) nr % elmsize != 0) {
 			/* if elmsize > 1, we really expect that "the

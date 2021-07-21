@@ -2436,7 +2436,7 @@ remote_cleanup:
 
 cleanup:
 	if (pos)
-		BBPunfix(pos->batCacheid);
+		BBPreclaim(pos);
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
 	return mdbe->msg;
 }

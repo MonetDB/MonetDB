@@ -199,12 +199,13 @@ pump_in(stream *s)
 				// Error. Return directly, discarding any data lingering
 				// in the internal state.
 				return PUMP_ERROR;
-			if (nread == 0)
+			if (nread == 0) {
 				// Set to NULL so we'll remember next time.
 				// Maybe there is some data in the internal state we don't
 				// return immediately.
 				src = (pump_buffer){.start=NULL, .count=0};
-			else
+				s->eof |= s->inner->eof;
+			} else
 				// All good
 				src = (pump_buffer) { .start = buffer.start, .count = nread};
 

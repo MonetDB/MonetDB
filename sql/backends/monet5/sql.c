@@ -1418,7 +1418,11 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
-				if(*bid == BID_NIL || *uvl == BID_NIL) {
+				if (*bid == BID_NIL || *uvl == BID_NIL) {
+					if (*bid)
+						BBPunfix(*bid);
+					if (*uvl)
+						BBPunfix(*uvl);
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -1751,6 +1755,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
 				if (*bid == BID_NIL || *uvl == BID_NIL) {
+					if (*bid)
+						BBPunfix(*bid);
+					if (*uvl)
+						BBPunfix(*uvl);
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.idxbind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -3850,7 +3858,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx, *bn = NULL, *bs = NULL;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx, *bs = NULL;
 	mvc *m = NULL;
 	str msg = MAL_SUCCEED;
 	sql_trans *tr;
@@ -3950,9 +3958,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 							if( cname && strcmp(bc->name, cname) )
 								continue;
-							bn = store->storage_api.bind_col(tr, c, RDONLY); /* is slice */
 							bs = store->storage_api.bind_col(tr, c, QUICK);
-							if (bn == NULL || bs == NULL) {
+							if (bs == NULL) {
 								msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
 								goto bailout;
 							}
@@ -3986,14 +3993,22 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 							if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
 								goto bailout;
-							/*printf(" width %d", bn->twidth); */
-							w = bn->twidth;
-							if (bn->ttype == TYPE_str) {
+							/*printf(" width %d", bs->twidth); */
+							w = bs->twidth;
+							if (bs->ttype == TYPE_str) {
 								double sum = 0;
-								BATiter bi = bat_iterator(bn);
-								lng cnt1, cnt2 = cnt1 = (lng) BATcount(bn);
-								BAT *cands = store->storage_api.bind_cands(tr, t, 1, 0);
-								oid hseq = bn->hseqbase;
+								BATiter bi;
+								lng cnt1, cnt2;
+								BAT *cands;
+								oid hseq;
+
+								BAT *bn = store->storage_api.bind_col(tr, c, RDONLY); /* is slice */
+								if (bn == NULL)
+									goto bailout;
+								bi = bat_iterator(bn);
+								cnt2 = cnt1 = (lng) BATcount(bn);
+								cands = store->storage_api.bind_cands(tr, t, 1, 0);
+								hseq = bn->hseqbase;
 
 								if (cands) {
 									BUN lo, hi;
@@ -4013,19 +4028,21 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BBPunfix(cands->batCacheid);
 								}
 								bat_iterator_end(&bi);
+								BBPunfix(bn->batCacheid);
+								bn = NULL;
 								if (cnt2)
 									w = (int) (sum / cnt2);
-							} else if (ATOMvarsized(bn->ttype)) {
-								sz = BATcount(bn);
-								if (sz > 0)
-									w = (int) ((bn->tvheap->free + sz / 2) / sz);
+							} else if (ATOMvarsized(bs->ttype)) {
+								sz = BATcount(bs);
+								if (sz > 0 && bs->tvheap)
+									w = (int) ((bs->tvheap->free + sz / 2) / sz);
 								else
 									w = 0;
 							}
 							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 								goto bailout;
 
-							sz = BATcount(bs) << bn->tshift;
+							sz = BATcount(bs) << bs->tshift;
 							if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 								goto bailout;
 
@@ -4046,7 +4063,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							sz = IMPSimprintsize(bs);
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 								goto bailout;
-							/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
+							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
 							bitval = BATtordered(bs);
 							if (!bitval && bs->tnosorted == 0)
@@ -4069,8 +4086,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 							if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 								goto bailout;
-							BBPunfix(bn->batCacheid);
-							bn = NULL;
 						}
 					}
 
@@ -4079,11 +4094,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							sql_base *bc = ncol->data;
 							sql_idx *c = (sql_idx *) ncol->data;
 							if (idx_has_column(c->type)) {
-								bn = store->storage_api.bind_idx(tr, c, RDONLY);
 								bs = store->storage_api.bind_idx(tr, c, QUICK);
 								lng sz;
 
-								if (bn == NULL || bs == NULL) {
+								if (bs == NULL) {
 									msg = createException(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
 									goto bailout;
 								}
@@ -4118,13 +4132,18 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 								if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" width %d", bn->twidth); */
-								w = bn->twidth;
-								if (bn->ttype == TYPE_str) {
+								/*printf(" width %d", bs->twidth); */
+								w = bs->twidth;
+								if (bs->ttype == TYPE_str) {
 									BUN p, q;
 									double sum = 0;
-									BATiter bi = bat_iterator(bn);
-									lng cnt1, cnt2 = cnt1 = BATcount(bn);
+									BATiter bi;
+									lng cnt1, cnt2;
+									BAT *bn = store->storage_api.bind_idx(tr, c, RDONLY);
+									if (bn == NULL)
+										goto bailout;
+									bi = bat_iterator(bn);
+									cnt2 = cnt1 = BATcount(bn);
 
 									/* just take a sample */
 									if (cnt1 > 512)
@@ -4137,12 +4156,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											break;
 									}
 									bat_iterator_end(&bi);
+									BBPunfix(bn->batCacheid);
 									if (cnt2)
 										w = (int) (sum / cnt2);
 								}
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->tvheap? bn->tvheap->size:0)); */
+								/*printf(" size "BUNFMT, tailsize(bs,BATcount(bs)) + (bs->tvheap? bs->tvheap->size:0)); */
 								sz = tailsize(bs, BATcount(bs));
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 									goto bailout;
@@ -4183,8 +4203,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 									goto bailout;
-								BBPunfix(bn->batCacheid);
-								bn = NULL;
 							}
 						}
 					}
@@ -4213,8 +4231,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-	if (bn)
-		BBPunfix(bn->batCacheid);
 	if (sch)
 		BBPunfix(sch->batCacheid);
 	if (tab)
@@ -4942,7 +4958,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 								BBPunfix(p->batCacheid);
 							} else {
-								ret = createException(MAL, "sql.unionfunc", OPERATION_FAILED);
+								ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 							}
 							BBPunfix(fres->batCacheid);
 						}

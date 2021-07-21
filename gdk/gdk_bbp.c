@@ -524,31 +524,31 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 	uint16_t storage;
 
 	if (b->tvarsized && b->ttype != TYPE_void) {
-		b->tvheap = GDKzalloc(sizeof(Heap));
-		if (b->tvheap == NULL) {
-			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
-			return -1;
-		}
 		if (sscanf(buf,
 			   " %" SCNu64 " %" SCNu64 " %" SCNu16
 			   "%n",
 			   &free, &size, &storage, &n) < 3) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			GDKfree(b->theap);
-			b->tvheap = NULL;
 			return -1;
 		}
-		b->tvheap->free = (size_t) free;
-		b->tvheap->size = (size_t) size;
-		b->tvheap->base = NULL;
+		b->tvheap = GDKmalloc(sizeof(Heap));
+		if (b->tvheap == NULL) {
+			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
+			return -1;
+		}
+		*b->tvheap = (Heap) {
+			.free = (size_t) free,
+			.size = (size_t) size,
+			.base = NULL,
+			.storage = (storage_t) storage,
+			.cleanhash = true,
+			.newstorage = (storage_t) storage,
+			.dirty = false,
+			.parentid = bid,
+			.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+		};
 		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
 			      filename, ".theap", NULL);
-		b->tvheap->storage = (storage_t) storage;
-		b->tvheap->cleanhash = true;
-		b->tvheap->newstorage = (storage_t) storage;
-		b->tvheap->dirty = false;
-		b->tvheap->parentid = bid;
-		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
 		ATOMIC_INIT(&b->tvheap->refs, 1);
 		if (b->tvheap->free > b->tvheap->size) {
 			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d on line %d\n", (int) bid, lineno);
