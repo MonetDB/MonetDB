@@ -2779,6 +2779,7 @@ bm_commit(logger *lg)
 		    BATmode(lb, false) != GDK_SUCCEED) {
 			TRC_WARNING(GDK, "Failed to set bat (%d%s) persistent\n", bid, !lb?" gone":"");
 			logbat_destroy(lb);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 
