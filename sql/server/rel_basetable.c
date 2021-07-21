@@ -118,6 +118,26 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	return rel;
 }
 
+void
+rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
+{
+	sql_allocator *sa = sql->sa;
+	sql_table *t = in->l;
+	rel_base_t *ba = in->r;
+
+	assert(is_basetable(in->op) && is_basetable(out->op));
+	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
+	size_t bsize = sizeof(rel_base_t) + sizeof(int)*USED_LEN(end);
+	rel_base_t *nba = (rel_base_t*)sa_alloc(sa, bsize);
+
+	memcpy(nba, ba, bsize);
+	if (ba->name)
+		nba->name = sa_strdup(sa, ba->name);
+
+	out->l = t;
+	out->r = nba;
+}
+
 sql_rel *
 rel_base_bind_column_( sql_rel *rel, const char *cname)
 {
