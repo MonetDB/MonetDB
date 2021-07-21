@@ -1418,7 +1418,11 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
-				if(*bid == BID_NIL || *uvl == BID_NIL) {
+				if (*bid == BID_NIL || *uvl == BID_NIL) {
+					if (*bid)
+						BBPunfix(*bid);
+					if (*uvl)
+						BBPunfix(*uvl);
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -1751,6 +1755,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
 				if (*bid == BID_NIL || *uvl == BID_NIL) {
+					if (*bid)
+						BBPunfix(*bid);
+					if (*uvl)
+						BBPunfix(*uvl);
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.idxbind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -4959,7 +4967,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 								BBPunfix(p->batCacheid);
 							} else {
-								ret = createException(MAL, "sql.unionfunc", OPERATION_FAILED);
+								ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 							}
 							BBPunfix(fres->batCacheid);
 						}
