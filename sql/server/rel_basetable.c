@@ -457,7 +457,8 @@ rel_base_set_mergetable(sql_rel *rel, sql_table *mt)
 {
 	rel_base_t *ba = rel->r;
 
-	ba->mt = mt;
+	if (ba)
+		ba->mt = mt;
 }
 
 sql_table *
@@ -465,5 +466,5 @@ rel_base_get_mergetable(sql_rel *rel)
 {
 	rel_base_t *ba = rel->r;
 
-	return ba->mt;
+	return ba ? ba->mt : NULL;
 }
