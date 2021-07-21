@@ -557,33 +557,23 @@ static double geoDistanceSingle(GEOSGeom a, GEOSGeom b)
 	return INT_MAX;
 }
 
-//TODO Check if the GetGeometryN works for a single Geometry (not on collections) for the case where one is a collection and the other is not
 static double geoDistanceInternal(GEOSGeom a, GEOSGeom b)
 {
 	int numGeomsA = GEOSGetNumGeometries(a), numGeomsB = GEOSGetNumGeometries(b);
-	if (numGeomsA == 1 && numGeomsB == 1)
+	double distance, min_distance = INT_MAX;
+	GEOSGeometry *geo1, *geo2;
+	for (int i = 0; i < numGeomsA; i++)
 	{
-		//Single geometry
-		return geoDistanceSingle(a, b);
-	}
-	else
-	{
-		//Geometry collection
-		double distance, min_distance = INT_MAX;
-		GEOSGeometry *geo1, *geo2;
-		for (int i = 0; i < numGeomsA; i++)
+		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a, i);
+		for (int j = 0; j < numGeomsB; j++)
 		{
-			geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a64l, i);
-			for (int j = 0; j < numGeomsB; j++)
-			{
-				geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
-				distance = geoDistanceSingle(geo1, geo2);
-				if (distance < min_distance)
-					min_distance = distance;
-			}
+			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
+			distance = geoDistanceSingle(geo1, geo2);
+			if (distance < min_distance)
+				min_distance = distance;
 		}
-		return min_distance;
 	}
+	return min_distance;
 }
 
 /* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
@@ -593,9 +583,7 @@ str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 	GEOSGeom ga, gb;
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb)
-	{
 		(*out) = geoDistanceInternal(ga, gb);
-	}
 
 	GEOSGeom_destroy(ga);
 	GEOSGeom_destroy(gb);
