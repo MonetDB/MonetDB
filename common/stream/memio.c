@@ -97,6 +97,7 @@ buffer_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		b->pos += size;
 		return (ssize_t) (size / elmsize);
 	}
+	s->eof |= b->pos == b->len;
 	return 0;
 }
 

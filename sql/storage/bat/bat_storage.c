@@ -973,11 +973,10 @@ cs_real_update_bats( column_storage *cs, BAT **Ui, BAT **Uv)
 			return LOG_ERR;
 	}
 	if (!cs->uvbid) {
-		BAT *cur = temp_descriptor(cs->bid);
+		BAT *cur = quick_descriptor(cs->bid);
 		if (!cur)
 			return LOG_ERR;
 		int type = cur->ttype;
-		bat_destroy(cur);
 		cs->uvbid = e_bat(type);
 		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
 			return LOG_ERR;
@@ -2184,12 +2183,7 @@ log_create_delta(sql_trans *tr, sql_delta *bat, sqlid id)
 static int
 new_persistent_delta( sql_delta *bat)
 {
-	BAT *b = temp_descriptor(bat->cs.bid);
-
-	if (b == NULL)
-		return LOG_ERR;
 	bat->cs.ucnt = 0;
-	bat_destroy(b);
 	return LOG_OK;
 }
 
@@ -2210,11 +2204,10 @@ copyBat (bat i, int type, oid seq)
 
 	if (!i)
 		return i;
-	tb = temp_descriptor(i);
+	tb = quick_descriptor(i);
 	if (tb == NULL)
 		return 0;
 	b = BATconstant(seq, type, ATOMnilptr(type), BATcount(tb), PERSISTENT);
-	bat_destroy(tb);
 	if (b == NULL)
 		return 0;
 
@@ -2849,13 +2842,12 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 
 	(void)tr;
 	if (cs->bid && renew) {
-		b = temp_descriptor(cs->bid);
+		b = quick_descriptor(cs->bid);
 		if (b) {
 			sz += BATcount(b);
 			bat bid = cs->bid;
 			cs->bid = temp_copy(bid, true, temp); /* create empty copy */
 			temp_destroy(bid);
-			bat_destroy(b);
 		}
 	}
 	if (cs->uibid) {

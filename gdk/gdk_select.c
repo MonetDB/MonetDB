@@ -1945,7 +1945,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		tmp = NULL;
 		Imprints *imprints = NULL;
 		if (!equi &&
-		    imprintable(b->ttype) &&
+		    /* DISABLES CODE */ (0) && imprintable(b->ttype) &&
 		    (!b->batTransient ||
 		     (parent != 0 &&
 		      (tmp = BBP_cache(parent)) != NULL &&
@@ -2303,7 +2303,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if (!anti && !symmetric &&
-		   imprintable(l->ttype) &&
+		   /* DISABLES CODE */ (0) && imprintable(l->ttype) &&
 		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&

@@ -3707,6 +3707,8 @@ read_line(Mapi mid)
 			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
 		if (len == 0) {	/* add prompt */
+			if (mnstr_eof(mid->from))
+				return NULL;
 			if (mid->blk.end > mid->blk.nxt) {
 				/* add fake newline since newline was
 				 * missing from server */
@@ -4379,8 +4381,15 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		result = hdl->result;	/* may also be NULL */
 	for (;;) {
 		line = read_line(mid);
-		if (line == NULL)
+		if (line == NULL) {
+			if (mnstr_eof(mid->from)) {
+				mapi_log_record(mid, "unexpected end of file");
+				mapi_log_record(mid, __func__);
+				close_connection(mid);
+				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
+			}
 			return mid->error;
+		}
 		switch (*line) {
 		case PROMPTBEG: /* \001 */
 			mid->active = NULL;

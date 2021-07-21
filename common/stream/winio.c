@@ -92,6 +92,7 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		c->rd = 0;
 		if (c->len > 0 && c->wbuf[0] == 26) {	/* control-Z */
 			c->len = 0;
+			s->eof = true;
 			return 0;
 		}
 		if (c->len > 0 && c->wbuf[0] == 0xFEFF)
@@ -302,8 +303,10 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	for (;;) {
 		DWORD ret = PeekNamedPipe(h, NULL, 0, NULL, &nread, NULL);
 		if (ret == 0) {
-			if (GetLastError() == ERROR_BROKEN_PIPE)
+			if (GetLastError() == ERROR_BROKEN_PIPE) {
+				s->eof = true;
 				return 0;
+			}
 			mnstr_set_error(s, MNSTR_READ_ERROR, "PeekNamedPipe failed");
 			return -1;
 		}

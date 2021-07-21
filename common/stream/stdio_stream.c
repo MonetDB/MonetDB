@@ -36,6 +36,7 @@ file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_set_error_errno(s, MNSTR_READ_ERROR, "read error");
 			return -1;
 		}
+		s->eof |= rc == 0 && feof(fp);
 	}
 	return (ssize_t) rc;
 }

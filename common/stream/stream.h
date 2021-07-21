@@ -158,6 +158,7 @@ stream_export bool mnstr_get_swapbytes(const stream *s); // sql_result.c/mapi10
 stream_export void mnstr_set_bigendian(stream *s, bool bigendian); // used in mapi.c and mal_session.c
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void *), void *data); // used in mapi.c and mal_session.c
 stream_export int mnstr_isalive(const stream *s); // used once in mal_interpreter.c
+stream_export bool mnstr_eof(const stream *s); // stream saw end-of-file
 
 stream_export stream *open_rstream(const char *filename); // used in mclient.c, gdk_logger.c, store.c, snapshot.c
 stream_export stream *open_wstream(const char *filename); // used in gdk_logger.c and store.c

@@ -123,8 +123,6 @@ rel_getcount(mvc *sql, sql_rel *rel)
 			sqlstore *store = sql->session->tr->store;
 			return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
 		}
-		if (!t && rel->r) /* dict */
-			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
 	}
 	case op_select:

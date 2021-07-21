@@ -55,13 +55,14 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 				if (actually_read < 0) {
 					return actually_read;	/* this is an error */
 				}
-				fsd->eof = true;
+				fsd->eof |= fsd->s->eof;
 				return (ssize_t) buf_written;	/* skip last line */
 			}
 			/* consume to next newline */
 			while (fsd->s->read(fsd->s, &nl_buf, 1, 1) == 1 &&
 			       nl_buf != '\n')
 				;
+			fsd->eof |= fsd->s->eof;
 
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
 				char *val_start, *val_end;

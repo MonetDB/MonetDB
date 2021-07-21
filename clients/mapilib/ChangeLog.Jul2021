@@ -1,3 +1,9 @@
 # ChangeLog file for mapilib
 # This file is updated with Maddlog
 
+* Wed Jul 21 2021 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add optional MAPI header field which can be used to immediately
+  set reply size, autocommit, time zone and some other options, see
+  mapi.h.  This makes client connection setup faster.  Support has been
+  added to mapilib, pymonetdb and the jdbc driver.
+

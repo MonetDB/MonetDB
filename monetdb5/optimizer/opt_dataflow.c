@@ -184,20 +184,21 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 		return false;
 
 	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,8, arg("",int),
-	//              arg("mvc",int
-	//              arg("sname",str
-	//              arg("tname",str
-	//              arg("cname",str
-	//              arg("offset",lng
+	//              arg("mvc",int),
+	//              arg("sname",str),
+	//              arg("tname",str),
+	//              arg("cname",str),
+	//              arg("offset",lng),
+	//              batarg("pos",oid),
 	//              argany("ins",0))),
 
- 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int
+ 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int),
 	//              arg("mvc",int),
-	//              arg("sname",str
-	//              arg("tname",str
-	//              arg("cname",str
-	//              argany("rids",0
-	//              argany("upd",0))
+	//              arg("sname",str),
+	//              arg("tname",str),
+	//              arg("cname",str),
+	//              argany("rids",0),
+	//              argany("upd",0)))
 
 	if ((p->fcnname == appendRef && p->argc != 8) || (p->fcnname == updateRef && p->argc != 7))
 		return false;
