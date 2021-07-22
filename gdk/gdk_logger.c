@@ -211,6 +211,7 @@ logbat_new(int tt, BUN size, role_t role)
 	BAT *nb = COLnew(0, tt, size, role);
 
 	if (nb) {
+		BBP_pid(nb->batCacheid) = 0;
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
