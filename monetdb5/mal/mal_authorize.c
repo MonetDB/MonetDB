@@ -1001,7 +1001,6 @@ AUTHcypherValue(str *ret, const char *value)
 static str
 AUTHverifyPassword(const char *passwd)
 {
-#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	const char *p = passwd;
 	size_t len = strlen(p);
 
@@ -1021,13 +1020,6 @@ AUTHverifyPassword(const char *passwd)
 	}
 
 	return(MAL_SUCCEED);
-#else
-	if (GDKembedded())
-		return(MAL_SUCCEED);
-	(void) passwd;
-	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
-		  MONETDB5_PASSWDHASH);
-#endif
 }
 
 static BUN
