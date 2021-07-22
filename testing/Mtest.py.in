@@ -1633,6 +1633,8 @@ def GetBitsAndModsAndThreads(env) :
     setpgrp = True
     proc = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
                          stderr=process.PIPE, text=True)
+    proc.stdout = process._BufferedPipe(proc.stdout)
+    proc.stderr = process._BufferedPipe(proc.stderr)
     proc.killed = False
     proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
