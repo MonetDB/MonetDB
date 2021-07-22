@@ -1528,7 +1528,7 @@ typedef struct {
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	ATOMIC_TYPE status;	/* status mask used for spin locking */
-	/* MT_Id pid;           non-zero thread-id if this BAT is private */
+	MT_Id pid;		/* creator of this bat while "private" */
 } BBPrec;
 
 gdk_export bat BBPlimit;
@@ -1919,6 +1919,7 @@ BBPcheck(bat x)
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
 		} else {
+			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
 		}
 	}

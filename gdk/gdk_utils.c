@@ -1055,6 +1055,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "BBPrename of environment BATs failed");
 		return GDK_FAIL;
 	}
+	BBP_pid(GDKkey->batCacheid) = 0;
+	BBP_pid(GDKval->batCacheid) = 0;
 
 	/* store options into environment BATs */
 	for (i = 0; i < nlen; i++)

@@ -2937,6 +2937,10 @@ STRprelude(void *ret)
 			BBPrename(UTF8_toLowerTo->batCacheid, "monet_unicode_lower_to") != 0) {
 			goto bailout;
 		}
+		BBP_pid(UTF8_toUpperFrom->batCacheid) = 0;
+		BBP_pid(UTF8_toUpperTo->batCacheid) = 0;
+		BBP_pid(UTF8_toLowerFrom->batCacheid) = 0;
+		BBP_pid(UTF8_toLowerTo->batCacheid) = 0;
 	}
 	return MAL_SUCCEED;
 
