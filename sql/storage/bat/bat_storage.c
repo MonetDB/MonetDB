@@ -946,7 +946,9 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	size_t cnt = count_col(tr, c, 0);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access, cnt);
-	return cs_bind_bat( &d->cs, access, cnt);
+	BAT *b = cs_bind_bat( &d->cs, access, cnt);
+	assert(!b || b->ttype == c->type.type->localtype || (access == QUICK && b->ttype < 0));
+	return b;
 }
 
 static void *					/* BAT * */

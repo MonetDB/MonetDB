@@ -124,13 +124,7 @@ BuildRequires: pkgconfig(openssl)
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
 BuildRequires: pkgconfig(zlib)
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
-# not on RHEL 7
 BuildRequires: pkgconfig(liblz4) >= 1.8
-%global LZ4 ON
-%else
-%global LZ4 OFF
-%endif
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
 BuildRequires: python3-numpy
@@ -350,6 +344,13 @@ Recommends: php-monetdb >= 1.0
 %endif
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: python3-pymonetdb >= 1.0.6
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
+Recommends: python3dist(lz4)
+Recommends: python3dist(scipy)
+%else
+Recommends: python36-lz4
+Recommends: python36-scipy
+%endif
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -796,7 +797,7 @@ fi
 	-DWITH_CMOCKA=OFF \
 	-DWITH_CRYPTO=ON \
 	-DWITH_CURL=ON \
-	-DWITH_LZ4=%{LZ4} \
+	-DWITH_LZ4=ON \
 	-DWITH_LZMA=ON \
 	-DWITH_PCRE=ON \
 	-DWITH_PROJ=OFF \

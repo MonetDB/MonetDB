@@ -1391,6 +1391,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	}
 	if (BBPrename(old->batCacheid, NULL) != 0 ||
 	    BBPrename(new->batCacheid, bak) != 0) {
+		GDKerror("rename (%s) failed\n", bak);
 		return GDK_FAIL;
 	}
 	BBPretain(new->batCacheid);
@@ -1799,18 +1800,6 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		GDKerror("cannot create type bats");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_type_id", NULL);
-	if (BBPrename(lg->type_id->batCacheid, bak) < 0) {
-		goto error;
-	}
-	strconcat_len(bak, sizeof(bak), fn, "_type_nme", NULL);
-	if (BBPrename(lg->type_nme->batCacheid, bak) < 0) {
-		goto error;
-	}
-	strconcat_len(bak, sizeof(bak), fn, "_type_nr", NULL);
-	if (BBPrename(lg->type_nr->batCacheid, bak) < 0) {
-		goto error;
-	}
 
 	/* this is intentional - if catalog_bid is 0, force it to find
 	 * the persistent catalog */
@@ -1945,17 +1934,9 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
-	if (BBPrename(lg->catalog_cnt->batCacheid, bak) < 0) {
-		goto error;
-	}
 	lg->catalog_lid = logbat_new(TYPE_lng, 1, TRANSIENT);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
-		goto error;
-	}
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_lid", NULL);
-	if (BBPrename(lg->catalog_lid->batCacheid, bak) < 0) {
 		goto error;
 	}
 	if (bm_get_counts(lg) != GDK_SUCCEED)
@@ -2784,6 +2765,7 @@ static gdk_return
 bm_commit(logger *lg)
 {
 	BUN p;
+	logger_lock(lg);
 	BAT *b = lg->catalog_bid;
 	const log_bid *bids;
 
@@ -2792,10 +2774,12 @@ bm_commit(logger *lg)
 		log_bid bid = bids[p];
 		BAT *lb;
 
+		assert(bid);
 		if ((lb = BATdescriptor(bid)) == NULL ||
 		    BATmode(lb, false) != GDK_SUCCEED) {
 			TRC_WARNING(GDK, "Failed to set bat (%d%s) persistent\n", bid, !lb?" gone":"");
 			logbat_destroy(lb);
+			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 
@@ -2806,6 +2790,7 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
+	logger_unlock(lg);
 	return bm_subcommit(lg);
 }
 
