@@ -1737,36 +1737,40 @@ store_load(sqlstore *store, sql_allocator *pa)
 
 	store->sa = pa;
 	sa = sa_create(pa);
-	if (!sa || !store->sa)
+	if (!sa || !store->sa) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
+	}
 
 	store->first = store->logger_api.log_isnew(store);
+
+	if (store->first && store->readonly) {
+		/* cannot initialize database in readonly mode */
+		TRC_CRITICAL(SQL_STORE, "Cannot initialize store in readonly mode\n");
+		return NULL;
+	}
 
 	types_init(store->sa); /* initialize global lists of types and functions, TODO: needs to move */
 
 	/* we store some spare oids */
 	store->obj_id = FUNC_OIDS;
 
-	if (!sequences_init())
+	if (!sequences_init()) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
+	}
 	tr = sql_trans_create(store, NULL, NULL);
 	if (!tr) {
 		TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 		return NULL;
 	}
 	tr->store = store;
+	tr->active = 1;
 
 	/* for now use malloc and free */
 	store->active = list_create(NULL);
 	store->dependencies = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
-
-	if (store->first && store->readonly) {
-		/* cannot initialize database in readonly mode */
-		sql_trans_destroy(tr);
-		return NULL;
-	}
-	tr->active = 1;
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
 	if (!store->first)
@@ -2010,10 +2014,13 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
 
-	if (!store)
+	if (!store) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
+	}
 
 	if (!(pa = sa_create(NULL))) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		_DELETE(store);
 		return NULL;
 	}
@@ -2043,6 +2050,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	case store_bat:
 	case store_mem:
 		if (bat_utils_init() == -1) {
+			TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 			MT_lock_unset(&store->lock);
 			MT_lock_unset(&store->flush);
 			store_exit(store);
