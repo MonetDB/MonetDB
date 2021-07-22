@@ -365,8 +365,10 @@ BBPextend(int idx, bool buildhash)
 			GDKerror("failed to extend BAT pool\n");
 			return GDK_FAIL;
 		}
-		for (BUN i = 0; i < BBPINIT; i++)
+		for (BUN i = 0; i < BBPINIT; i++) {
 			ATOMIC_INIT(&BBP[limit][i].status, 0);
+			BBP[limit][i].pid = ~(MT_Id)0;
+		}
 		BBPlimit += BBPINIT;
 	}
 
@@ -753,6 +755,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
+		BBP_pid(bid) = 0;
 		BBP_status_set(bid, BBPEXISTING);	/* do we need other status bits? */
 	}
 #ifdef GDKLIBRARY_HASHASH
@@ -1593,6 +1596,7 @@ BBPexit(void)
 						BATfree(b);
 					}
 				}
+				BBP_pid(i) = 0;
 				BBPuncacheit(i, true);
 				if (BBP_logical(i) != BBP_bak(i))
 					GDKfree(BBP_logical(i));
@@ -2200,6 +2204,7 @@ BBPinsert(BAT *bn)
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
+	BBP_pid(i) = MT_getpid();
 
 #ifdef HAVE_HGE
 	if (bn->ttype == TYPE_hge)
@@ -2330,6 +2335,7 @@ bbpclear(bat i, int idx, bool lock)
 	BBP_logical(i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
+	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (lock)
 		MT_lock_unset(&GDKcacheLock(idx));
 }
@@ -2547,6 +2553,7 @@ incref(bat i, bool logical, bool lock)
 		/* parent BATs are not relevant for logical refs */
 		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
+		BBP_pid(i) = 0;
 	} else {
 		tp = b->theap == NULL || b->theap->parentid == i ? 0 : b->theap->parentid;
 		assert(tp >= 0);
@@ -2632,7 +2639,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	bat tp = 0, tvp = 0;
 	BAT *b;
 
+	if (is_bat_nil(i))
+		return -1;
 	assert(i > 0);
+	if (BBPcheck(i) == 0)
+		return -1;
+
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
@@ -2741,18 +2753,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
-	if (BBPcheck(i) == 0) {
-		return -1;
-	}
 	return decref(i, false, false, true, "BBPunfix");
 }
 
 int
 BBPrelease(bat i)
 {
-	if (BBPcheck(i) == 0) {
-		return -1;
-	}
 	return decref(i, true, false, true, "BBPrelease");
 }
 

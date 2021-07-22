@@ -211,6 +211,7 @@ logbat_new(int tt, BUN size, role_t role)
 	BAT *nb = COLnew(0, tt, size, role);
 
 	if (nb) {
+		BBP_pid(nb->batCacheid) = 0;
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
@@ -1531,6 +1532,10 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 		logbat_destroy(nlids);
 		return -1;
 	}
+	BBPrelease(lg->catalog_bid->batCacheid);
+	BBPrelease(lg->catalog_id->batCacheid);
+	BBPrelease(lg->dcatalog->batCacheid);
+
 	logbat_destroy(lg->catalog_bid);
 	logbat_destroy(lg->catalog_id);
 	logbat_destroy(lg->dcatalog);

@@ -19,7 +19,10 @@ bat_destroy(BAT *b)
 BAT *
 bat_new(int tt, BUN size, role_t role)
 {
-	return COLnew(0, tt, size, role);
+	BAT *bn = COLnew(0, tt, size, role);
+	if (bn)
+		BBP_pid(bn->batCacheid) = 0;
+	return bn;
 }
 
 void
