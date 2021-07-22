@@ -4943,9 +4943,9 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 					if (!ret) {
 						/* insert into result */
-						if (!(fres = BATdescriptor(env->stk[q->argv[0]].val.bval)))
+						if (!(fres = BBPquickdesc(env->stk[q->argv[0]].val.bval))) {
 							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
-						else {
+						} else {
 							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), BATcount(fres), TRANSIENT);
 
 							if (p) {
@@ -4955,7 +4955,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							} else {
 								ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 							}
-							BBPunfix(fres->batCacheid);
 						}
 						i=1;
 						for (ii = 0; i < pci->retc && !ret; i++) {

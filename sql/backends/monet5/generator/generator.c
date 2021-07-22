@@ -1159,6 +1159,8 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	brn->trevsorted = !incr || c <= 1;
 	BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
 	BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
+	if(blow) BBPunfix(blow->batCacheid);
+	if(bhgh) BBPunfix(bhgh->batCacheid);
 	return msg;
 }
 
