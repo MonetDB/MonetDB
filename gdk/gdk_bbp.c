@@ -1317,6 +1317,7 @@ BBPexit(void)
 						BATfree(b);
 					}
 				}
+				BBP_pid(i) = 0;
 				BBPuncacheit(i, true);
 				if (BBP_logical(i) != BBP_bak(i))
 					GDKfree(BBP_logical(i));
