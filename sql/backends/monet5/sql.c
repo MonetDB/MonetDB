@@ -3588,7 +3588,10 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "calc.rowid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
-	if (!s || !t || !ol_first_node(t->columns))
+	if (!isTable(t))
+		throw(SQL, "calc.rowid", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (!ol_first_node(t->columns))
 		throw(SQL, "calc.rowid", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
 	c = ol_first_node(t->columns)->data;
 	/* HACK, get insert bat */
