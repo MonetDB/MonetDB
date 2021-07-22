@@ -385,13 +385,7 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 char *
 mcrypt_BackendSum(const char *string, size_t len)
 {
-#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	return mcryptsum(MONETDB5_PASSWDHASH_TOKEN)(string, len);
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 
 /**
