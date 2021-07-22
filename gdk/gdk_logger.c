@@ -1531,6 +1531,10 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 		logbat_destroy(nlids);
 		return -1;
 	}
+	BBPrelease(lg->catalog_bid->batCacheid);
+	BBPrelease(lg->catalog_id->batCacheid);
+	BBPrelease(lg->dcatalog->batCacheid);
+
 	logbat_destroy(lg->catalog_bid);
 	logbat_destroy(lg->catalog_id);
 	logbat_destroy(lg->dcatalog);
@@ -2639,7 +2643,7 @@ log_bat_clear(logger *lg, int id)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_MINI	(LL_CONSTANT(2)*1024)
+#define LOG_MINI	(LL_CONSTANT(2))
 #define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
 static gdk_return
