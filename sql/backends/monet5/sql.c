@@ -1342,13 +1342,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
-				BAT *s = mvc_bind(m, sname, tname, cname, 0);
-				if (s == NULL) {
-					BBPunfix(b->batCacheid);
-					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
-					      sname,tname,cname);
-				}
-				cnt = BATcount(s);
 				cnt = store->storage_api.count_col(m->session->tr, c, 0);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -1359,7 +1352,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				BBPunfix(s->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", GDK_EXCEPTION);
