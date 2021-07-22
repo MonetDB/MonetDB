@@ -317,8 +317,11 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				tname = getTypeName(getBatType(tpe));
 				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
 				GDKfree(tname);
-				if (!ok)
+				if (!ok) {
+					if (d)
+						BBPunfix(d->batCacheid);
 					return;
+				}
 				if(d) {
 					BAT *v;
 					cnt = BATcount(d);
@@ -331,11 +334,15 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 									",\"mode\":\"%s\"",
 									VIEWtparent(d),
 									d->hseqbase,
-									v && !v->batTransient ? "persistent" : "transient"))
-							return;
+									v && !v->batTransient ? "persistent" : "transient")) {
+										BBPunfix(d->batCacheid);
+										return;
+						}
 					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent")))
+						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
+							BBPunfix(d->batCacheid);
 							return;
+						}
 					}
 					if (!logadd(&logbuf,
 								",\"sorted\":%d"
@@ -347,8 +354,10 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 								d->trevsorted,
 								d->tnonil,
 								d->tnil,
-								d->tkey))
+								d->tkey)) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 #define keepprop(NME, LNME)												\
 	do {																\
 		const void *valp = BATgetprop(d, NME);							\
@@ -359,8 +368,10 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
 				GDKfree(cv);											\
 				GDKfree(cvquote);										\
-				if (!ok)												\
+				if (!ok) {												\
+					BBPunfix(d->batCacheid);							\
 					return;												\
+				}														\
 			}															\
 		}																\
 	} while (0)
@@ -379,22 +390,31 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 						*c = 0;
 					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
 					GDKfree(cv);
-					if (!ok)
+					if (!ok) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 					total += cnt << d->tshift;
-					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
+					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
 					MT_rwlock_rdlock(&d->thashlock);
 					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
 						MT_rwlock_rdunlock(&d->thashlock);
+						BBPunfix(d->batCacheid);
 						return;
 					}
 					MT_rwlock_rdunlock(&d->thashlock);
-					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
+					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
+						BBPunfix(d->batCacheid);
 						return;
-					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))
+					}
+					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
+						BBPunfix(d->batCacheid);
 						return;
+					}
 					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) return; */
 					BBPunfix(d->batCacheid);
 				}

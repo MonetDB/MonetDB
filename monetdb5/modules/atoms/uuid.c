@@ -186,18 +186,18 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bool nils = false;
 	BATiter bi;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
 			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	} else {
-		BBPkeepref(*res = b->batCacheid); /* nothing to convert, return */
+		BBPretain(*res = *bid); /* nothing to convert, return */
 		return MAL_SUCCEED;
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
