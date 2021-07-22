@@ -259,10 +259,9 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		daytime d = daytime_nil;
-		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1))))
 			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_daytime, &d, BATcount(b), TRANSIENT);
-		BBPunfix(b->batCacheid);
 		if (!res)
 			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
@@ -750,10 +749,9 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		timestamp d = timestamp_nil;
-		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1))))
 			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_timestamp, &d, BATcount(b), TRANSIENT);
-		BBPunfix(b->batCacheid);
 		if (!res)
 			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
@@ -1540,10 +1538,9 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		date d = date_nil;
-		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1))))
 			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_date, &d, BATcount(b), TRANSIENT);
-		BBPunfix(b->batCacheid);
 		if (!res)
 			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
