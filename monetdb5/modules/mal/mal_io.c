@@ -488,6 +488,9 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case 9: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8));
 		break;
 	case 10: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8),G(9));
+		break;
+	default:
+		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
 	if (msg== MAL_SUCCEED) {
 		mnstr_printf(cntxt->fdout,"%s",fmt2);
@@ -522,6 +525,9 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case 10: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9));
 		break;
 	case 11: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9),G(10));
+		break;
+	default:
+		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
 	if (msg== MAL_SUCCEED){
 		mnstr_printf(f,"%s",fmt2);

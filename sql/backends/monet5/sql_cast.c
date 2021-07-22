@@ -245,8 +245,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
 		}
-		BBPkeepref(*res = b->batCacheid);
 		bat_iterator_end(&bi);
+		BBPkeepref(*res = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 
