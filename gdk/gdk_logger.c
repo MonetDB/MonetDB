@@ -1442,11 +1442,11 @@ subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 }
 
 static int
-cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, int cleanup)
+cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, int cleanup)
 {
 	BAT *nbids, *noids, *ncnts, *nlids, *ndels;
 	BUN p, q;
-	int err = 0;
+	int err = 0, rcnt = 0;
 
 	oid *poss = Tloc(dcatalog, 0);
 	BATloop(dcatalog, p, q) {
@@ -1456,20 +1456,15 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 			continue;
 
 		if (lids[pos] >= 0) {
-			if (lg->debug & 1) {
-				fprintf(stderr, "release %d\n", bids[pos]);
-				if (BBP_lrefs(bids[pos]) != 2)
-					fprintf(stderr, "release %d %d\n", bids[pos], BBP_lrefs(bids[pos]));
-			}
+			lids[pos] = -1; /* mark as transient */
+			r[rcnt++] = bids[pos];
 
 			BAT *lb;
 
-			BBPrelease(bids[pos]);
 			if ((lb = BATdescriptor(bids[pos])) == NULL ||
 				BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
 				TRC_WARNING(GDK, "Failed to set bat(%d) transient\n", bids[pos]);
 			}
-			lids[pos] = -1; /* mark as transient */
 			logbat_destroy(lb);
 		}
 	}
@@ -1532,9 +1527,9 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 		logbat_destroy(nlids);
 		return -1;
 	}
-	BBPrelease(lg->catalog_bid->batCacheid);
-	BBPrelease(lg->catalog_id->batCacheid);
-	BBPrelease(lg->dcatalog->batCacheid);
+	r[rcnt++] = lg->catalog_bid->batCacheid;
+	r[rcnt++] = lg->catalog_id->batCacheid;
+	r[rcnt++] = lg->dcatalog->batCacheid;
 
 	logbat_destroy(lg->catalog_bid);
 	logbat_destroy(lg->catalog_id);
@@ -1552,7 +1547,7 @@ cleanup_and_swap(logger *lg, const log_bid *bids, lng *lids, lng *cnts, BAT *cat
 	lg->cnt = BATcount(lg->catalog_bid);
 	lg->deleted -= cleanup;
 	assert(lg->deleted == BATcount(lg->dcatalog));
-	return 0;
+	return rcnt;
 }
 
 static gdk_return
@@ -1565,16 +1560,18 @@ bm_subcommit(logger *lg)
 	BAT *dcatalog = lg->dcatalog;
 	BUN nn = 13 + BATcount(catalog_bid);
 	bat *n = GDKmalloc(sizeof(bat) * nn);
+	bat *r = GDKmalloc(sizeof(bat) * nn);
 	BUN *sizes = GDKmalloc(sizeof(BUN) * nn);
-	int i = 0;
+	int i = 0, rcnt = 0;
 	gdk_return res;
 	const log_bid *bids;
 	lng *cnts = NULL, *lids = NULL;
 	int cleanup = 0;
 	lng t0 = 0;
 
-	if (n == NULL || sizes == NULL) {
+	if (n == NULL || r == NULL || sizes == NULL) {
 		GDKfree(n);
+		GDKfree(r);
 		GDKfree(sizes);
 		logger_unlock(lg);
 		return GDK_FAIL;
@@ -1606,8 +1603,9 @@ bm_subcommit(logger *lg)
 	sizes[i] = BATcount(dcatalog);
 	n[i++] = dcatalog->batCacheid;
 
-	if (cleanup && cleanup_and_swap(lg, bids, lids, cnts, catalog_bid, catalog_id, dcatalog, cleanup)) {
+	if (cleanup && (rcnt=cleanup_and_swap(lg, r, bids, lids, cnts, catalog_bid, catalog_id, dcatalog, cleanup)) < 0) {
 		GDKfree(n);
+		GDKfree(r);
 		GDKfree(sizes);
 		logger_unlock(lg);
 		return GDK_FAIL;
@@ -1629,6 +1627,7 @@ bm_subcommit(logger *lg)
 		tids = bm_tids(lg->seqs_id, lg->dseqs);
 		if (tids == NULL) {
 			GDKfree(n);
+			GDKfree(r);
 			GDKfree(sizes);
 			logger_unlock(lg);
 			return GDK_FAIL;
@@ -1641,6 +1640,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(ids);
 			logbat_destroy(vals);
 			GDKfree(n);
+			GDKfree(r);
 			GDKfree(sizes);
 			logger_unlock(lg);
 			return GDK_FAIL;
@@ -1652,6 +1652,7 @@ bm_subcommit(logger *lg)
 			logbat_destroy(ids);
 			logbat_destroy(vals);
 			GDKfree(n);
+			GDKfree(r);
 			GDKfree(sizes);
 			logger_unlock(lg);
 			return GDK_FAIL;
@@ -1664,12 +1665,16 @@ bm_subcommit(logger *lg)
 			logbat_destroy(ids);
 			logbat_destroy(vals);
 			GDKfree(n);
+			GDKfree(r);
 			GDKfree(sizes);
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
 		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
 		i = subcommit_list_add(i, n, sizes, vals->batCacheid, BATcount(ids));
+
+		r[rcnt++] = lg->seqs_id->batCacheid;
+		r[rcnt++] = lg->seqs_val->batCacheid;
 
 		logbat_destroy(lg->seqs_id);
 		logbat_destroy(lg->seqs_val);
@@ -1689,7 +1694,18 @@ bm_subcommit(logger *lg)
 	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id, lg->saved_tid);
 	if (lg->debug & 1)
 		fprintf(stderr, "#subcommit " LLFMT "usec\n", GDKusec() - t0);
+	if (res == GDK_SUCCEED) { /* now cleanup */
+		for(i=0;i<rcnt; i++) {
+			if (lg->debug & 1) {
+				fprintf(stderr, "release %d\n", r[i]);
+				if (BBP_lrefs(r[i]) != 2)
+					fprintf(stderr, "release %d %d\n", r[i], BBP_lrefs(r[i]));
+			}
+			BBPrelease(r[i]);
+		}
+	}
 	GDKfree(n);
+	GDKfree(r);
 	GDKfree(sizes);
 	if (res != GDK_SUCCEED)
 		TRC_CRITICAL(GDK, "commit failed\n");
