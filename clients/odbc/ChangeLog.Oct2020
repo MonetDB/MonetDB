@@ -1,6 +1,0 @@
-# ChangeLog file for odbc
-# This file is updated with Maddlog
-
-* Fri May  7 2021 Sjoerd Mullender <sjoerd@acm.org>
-- A typo that made the SQLSpecialColumns function unusable was fixed.
-
