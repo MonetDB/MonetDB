@@ -1489,10 +1489,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		GDKerror("Logger_new: failed to create freed bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_freed", NULL);
-	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
-		goto error;
-	}
 	snapshots_bid = old_logger_find_bat(lg, "snapshots_bid", 0, 0);
 	if (snapshots_bid == 0) {
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, TRANSIENT);
