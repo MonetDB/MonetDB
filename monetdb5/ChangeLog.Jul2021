@@ -1,13 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Mon Jun  7 2021 Sjoerd Mullender <sjoerd@acm.org>
-- When using the --in-memory option, mserver5 will run completely in
-  memory, i.e. not create a database on disk.  The server can still be
-  connected to using the name of the in-memory database.  This name is
-  "in-memory".
-
-* Wed Sep  9 2020 Sjoerd Mullender <sjoerd@acm.org>
-- By using the option "--dbextra=in-memory", mserver5 can be instructed
-  to keep transient BATs completely in memory.
-
