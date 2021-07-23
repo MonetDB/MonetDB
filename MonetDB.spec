@@ -347,9 +347,6 @@ Requires: python3-pymonetdb >= 1.0.6
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
-%else
-Recommends: python36-lz4
-Recommends: python36-scipy
 %endif
 
 %description client-tests
