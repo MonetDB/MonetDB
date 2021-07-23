@@ -718,7 +718,7 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, str strin
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len, "txtsim.similarity");
+	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len * 2 * sizeof(int), "txtsim.similarity");
 	fdiag = *fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
