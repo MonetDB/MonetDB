@@ -365,8 +365,10 @@ BBPextend(int idx, bool buildhash)
 			GDKerror("failed to extend BAT pool\n");
 			return GDK_FAIL;
 		}
-		for (BUN i = 0; i < BBPINIT; i++)
+		for (BUN i = 0; i < BBPINIT; i++) {
 			ATOMIC_INIT(&BBP[limit][i].status, 0);
+			BBP[limit][i].pid = ~(MT_Id)0;
+		}
 		BBPlimit += BBPINIT;
 	}
 
@@ -721,6 +723,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
+		BBP_pid(bid) = 0;
 		BBP_status_set(bid, BBPEXISTING);	/* do we need other status bits? */
 	}
 	return GDK_SUCCEED;
@@ -1314,6 +1317,7 @@ BBPexit(void)
 						BATfree(b);
 					}
 				}
+				BBP_pid(i) = 0;
 				BBPuncacheit(i, true);
 				if (BBP_logical(i) != BBP_bak(i))
 					GDKfree(BBP_logical(i));
@@ -1921,6 +1925,7 @@ BBPinsert(BAT *bn)
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
+	BBP_pid(i) = MT_getpid();
 
 #ifdef HAVE_HGE
 	if (bn->ttype == TYPE_hge)
@@ -2051,6 +2056,7 @@ bbpclear(bat i, int idx, bool lock)
 	BBP_logical(i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
+	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (lock)
 		MT_lock_unset(&GDKcacheLock(idx));
 }
@@ -2213,7 +2219,7 @@ static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp, tvp;
+	bat tp = i, tvp = i;
 	BAT *b, *pb = NULL, *pvb = NULL;
 	bool load = false;
 
@@ -2227,13 +2233,17 @@ incref(bat i, bool logical, bool lock)
 	 * reference, getting the parent BAT descriptor is
 	 * superfluous, but not too expensive, so we do it anyway. */
 	if (!logical && (b = BBP_desc(i)) != NULL) {
-		if (b->theap && b->theap->parentid != i) {
-			pb = BATdescriptor(b->theap->parentid);
+		MT_lock_set(&b->theaplock);
+		tp = b->theap ? b->theap->parentid : i;
+		tvp = b->tvheap ? b->tvheap->parentid : i;
+		MT_lock_unset(&b->theaplock);
+		if (tp != i) {
+			pb = BATdescriptor(tp);
 			if (pb == NULL)
 				return 0;
 		}
-		if (b->tvheap && b->tvheap->parentid != i) {
-			pvb = BATdescriptor(b->tvheap->parentid);
+		if (tvp != i) {
+			pvb = BATdescriptor(tvp);
 			if (pvb == NULL) {
 				if (pb)
 					BBPunfix(pb->batCacheid);
@@ -2266,15 +2276,13 @@ incref(bat i, bool logical, bool lock)
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
 	if (logical) {
 		/* parent BATs are not relevant for logical refs */
-		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
+		BBP_pid(i) = 0;
 	} else {
-		tp = b->theap == NULL || b->theap->parentid == i ? 0 : b->theap->parentid;
 		assert(tp >= 0);
-		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
 		unsigned flag = BBPHOT;
-		if (refs == 1 && (tp || tvp)) {
+		if (refs == 1 && (tp != i || tvp != i)) {
 			/* If this is a view, we must load the parent
 			 * BATs, but we must do that outside of the
 			 * lock.  Set the BBPLOADING flag so that
@@ -2291,13 +2299,18 @@ incref(bat i, bool logical, bool lock)
 	if (load) {
 		/* load the parent BATs */
 		assert(!logical);
-		if (tp) {
+		if (tp != i) {
 			assert(pb != NULL);
+			/* load being set implies there is no other
+			 * thread that has access to this bat, but the
+			 * parent is a different matter */
+			MT_lock_set(&pb->theaplock);
 			if (b->theap != pb->theap) {
 				HEAPincref(pb->theap);
 				HEAPdecref(b->theap, false);
 				b->theap = pb->theap;
 			}
+			MT_lock_unset(&pb->theaplock);
 		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING);
@@ -2351,9 +2364,15 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	int refs = 0, lrefs;
 	bool swap = false;
 	bat tp = 0, tvp = 0;
+	int farmid = 0;
 	BAT *b;
 
+	if (is_bat_nil(i))
+		return -1;
 	assert(i > 0);
+	if (BBPcheck(i) == 0)
+		return -1;
+
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
@@ -2402,16 +2421,22 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			}
 		}
 	}
-	if (b && b->batCount > b->batInserted && !isVIEW(b)) {
-		/* if batCount is larger than batInserted and the dirty
-		 * bits are off, it may be that a (sub)commit happened
-		 * in parallel to an update; we must undo the turning
-		 * off of the dirty bits */
-		b->batDirtydesc = true;
-		if (b->theap)
-			b->theap->dirty = true;
-		if (b->tvheap)
-			b->tvheap->dirty = true;
+	if (b) {
+		MT_lock_set(&b->theaplock);
+		if (b->batCount > b->batInserted && !isVIEW(b)) {
+			/* if batCount is larger than batInserted and
+			 * the dirty bits are off, it may be that a
+			 * (sub)commit happened in parallel to an
+			 * update; we must undo the turning off of the
+			 * dirty bits */
+			b->batDirtydesc = true;
+			if (b->theap)
+				b->theap->dirty = true;
+			if (b->tvheap)
+				b->tvheap->dirty = true;
+		}
+		farmid = b->theap->farmid;
+		MT_lock_unset(&b->theaplock);
 	}
 
 	/* we destroy transients asap and unload persistent bats only
@@ -2422,7 +2447,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	      BATdirty(b) ||
 	      (BBP_status(i) & (BBPHOT | BBPSYNCING)) ||
 	      !(BBP_status(i) & BBPPERSISTENT) ||
-	      GDKinmemory(b->theap->farmid)))) {
+	      GDKinmemory(farmid)))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
@@ -2462,18 +2487,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
-	if (BBPcheck(i) == 0) {
-		return -1;
-	}
 	return decref(i, false, false, true, "BBPunfix");
 }
 
 int
 BBPrelease(bat i)
 {
-	if (BBPcheck(i) == 0) {
-		return -1;
-	}
 	return decref(i, true, false, true, "BBPrelease");
 }
 

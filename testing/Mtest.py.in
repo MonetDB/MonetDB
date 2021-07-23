@@ -2125,8 +2125,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     f.write(expandvars(l, env))
                 f.close()
 
-        ACCURACYout = par['ACCURACY']
-        ACCURACYerr = par['ACCURACY']
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
@@ -3250,7 +3248,6 @@ def SetExecEnv(exe,verbose) :
 
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
-dftIGNORE = r'^\(| \|\)#'
 TSTDBG = str(2+8)
 TSTTHREADS = "0"
 dftTSTPREF = "mTests"
@@ -3495,9 +3492,9 @@ def main(argv) :
     parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
-    parser.add_argument('-I', action='store', dest='ignore', default=dftIGNORE, metavar='<exp>', help="ignore lines matching <exp> during diff (default: '%s')" % dftIGNORE)
-    parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="use <num> lines of context during diff (default: -C1)")
-    parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)")
+    parser.add_argument('-I', action='store', dest='ignore', metavar='<exp>', help="ignored, backward compatibility option")
+    parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
+    parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="ignored, backward compatibility option")
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
@@ -3551,14 +3548,8 @@ def main(argv) :
     nomito = opts.nomito
     global restart
     restart = opts.restart
-    par['IGNORE'] = opts.ignore
-    par['CONTEXT'] = str(opts.context)
-    a = opts.accuracy
     if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
         CONDITIONALS['KNOWNFAIL'] = 'execute'
-    if a not in (-1,0,1,2):
-        ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
-    par['ACCURACY'] = a
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
