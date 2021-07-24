@@ -45,12 +45,15 @@ gdk_export gdk_return GDKanalytical_covariance_pop(BAT *r, BAT *p, BAT *o, BAT *
 gdk_export gdk_return GDKanalytical_covariance_samp(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type);
 gdk_export gdk_return GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type);
 
-#define SEGMENT_TREE_FANOUT 16
+#define SEGMENT_TREE_FANOUT 16 /* Segment tree fanout size. Later we could do experiments from it */
 #define NOTHING /* used for not used optional arguments for aggregate computation */
 
-/* segment_tree is the tree as an array, levels_offset contains the offsets in the tree where which level does start,
-   and nlevels contains the number of levels on the current segment tree */
-gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tree_capacity, oid **levels_offset, oid *nlevels);
+/* 'segment_tree' is the tree as an array, 'levels_offset' contains the offsets in the tree where each level does start,
+   and 'nlevels' is the number of levels on the current segment tree.
+   In order to run in out-of-memory situations they are allocated inside a BAT. The 'levels_offset' are allocated after
+   the segment tree. The beginning pointers for both are returned. */
+gdk_export BAT *GDKinitialize_segment_tree(void);
+gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 
 /* segment_tree, levels_offset and nlevels must be already defined. ARG1, ARG2 and ARG3 are to be used by the aggregate */
 #define populate_segment_tree(CAST, COUNT, INIT_AGGREGATE, COMPUTE_LEVEL0, COMPUTE_LEVELN, ARG1, ARG2, ARG3) \
