@@ -11,11 +11,25 @@
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
 
+BAT *
+GDKinitialize_segment_tree(void)
+{
+	/* The tree is allocated using raw bytes, so use a GDK type of size 1 */
+	BAT *st = COLnew(0, TYPE_bte, 0, TRANSIENT);
+
+	if (!st)
+		return NULL;
+	assert(st->tshift == 0);
+	BATsetcount(st, 0);
+	st->tsorted = st->trevsorted = st->tkey = st->tnonil = st->tnil = false;
+	st->tnosorted = st->tnorevsorted = 0;
+	return st;
+}
+
 gdk_return
-GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tree_capacity, oid **levels_offset, oid *nlevels)
+GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree, oid **levels_offset, oid *nlevels)
 {
 	oid total_size, next_tree_size = ncount, counter = ncount, next_levels = 1; /* there will be at least one level */
-	void *new_segment_tree;
 
 	assert(ncount > 0);
 	do { /* compute the next number of levels */
@@ -28,16 +42,15 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tre
 	next_tree_size *= data_size;
 	total_size = next_tree_size + next_levels * sizeof(oid);
 
-	if (total_size > *tree_capacity) {
+	if (total_size > BATcount(st)) {
 		total_size = (((total_size) + 1023) & ~1023); /* align to a multiple of 1024 bytes */
-		if (!(new_segment_tree = GDKmalloc(total_size)))
+		if (BATextend(st, total_size) != GDK_SUCCEED)
 			return GDK_FAIL;
-		GDKfree(*segment_tree);
-		*tree_capacity = total_size;
-		*segment_tree = new_segment_tree;
-		*levels_offset = (oid*)((uint8_t*)new_segment_tree + next_tree_size); /* levels offset will be next to the segment tree */
+		BATsetcount(st, total_size);
+		*segment_tree = (void*)Tloc(st, 0);
+		*levels_offset = (oid*)((bte*)Tloc(st, 0) + next_tree_size); /* levels offset will be next to the segment tree */
 	} else {
-		*levels_offset = (oid*)(*(uint8_t**)segment_tree + next_tree_size); /* no reallocation, just update location of levels offset */
+		*levels_offset = (oid*)(*(bte**)segment_tree + next_tree_size); /* no reallocation, just update location of levels offset */
 	}
 	return GDK_SUCCEED;
 }
@@ -973,7 +986,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define ANALYTICAL_MIN_MAX_CALC_FIXED_OTHERS(TPE, MIN_MAX)		\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, TPE, MIN_MAX, NOTHING); \
 		for (; k < i; k++)					\
@@ -1161,7 +1174,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define ANALYTICAL_MIN_MAX_CALC_OTHERS_OTHERS(GT_LT)			\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
@@ -1251,7 +1264,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
+		*levels_offset = NULL, nlevels = 0;	\
 	bit *np = pi.base, *op = oi.base;				\
 	const void *nil = ATOMnilptr(tpe);				\
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);	\
@@ -1259,6 +1272,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	gdk_return res = GDK_SUCCEED;					\
 	uint16_t width = r->twidth;					\
 	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);		\
+	BAT *st = NULL;	\
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
@@ -1275,6 +1289,10 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
 		} break;						\
 		default: {						\
+			if (!(st = GDKinitialize_segment_tree())) {	\
+				res = GDK_FAIL;	\
+				goto cleanup;	\
+			}	\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
 		}							\
 		}							\
@@ -1289,7 +1307,7 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	GDKfree(segment_tree);						\
+	BBPreclaim(st);						\
 	return res;							\
 }
 
@@ -1408,7 +1426,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {						\
 			oid ncount = i - k;				\
-			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup;				\
 			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
 			for (; k < i; k++)				\
@@ -1515,7 +1533,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {						\
 			oid ncount = i - k;				\
-			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup;				\
 			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING, NOTHING); \
 			for (; k < i; k++)				\
@@ -1605,7 +1623,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+		*levels_offset = NULL, nlevels = 0;
 	lng curval = 0, *rb = (lng *) Tloc(r, 0);
 	bit *np = pi.base, *op = oi.base;
 	const void *restrict nil = ATOMnilptr(tpe);
@@ -1614,6 +1632,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	bool count_all = !ignore_nils || b->tnonil, last = false;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	BAT *st = NULL;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -1630,6 +1649,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
+			if (!(st = GDKinitialize_segment_tree())) {
+				res = GDK_FAIL;
+				goto cleanup;
+			}
 			ANALYTICAL_COUNT_BRANCHES(OTHERS);
 		}
 		}
@@ -1644,7 +1667,7 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	return res;
 }
 
@@ -1751,7 +1774,7 @@ cleanup:
 #define ANALYTICAL_SUM_IMP_NUM_OTHERS(TPE1, TPE2)			\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, TPE1, TPE2, NOTHING); \
 		for (; k < i; k++)					\
@@ -1933,12 +1956,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+		*levels_offset = NULL, nlevels = 0;
 	bit *np = pi.base, *op = oi.base;
 	int abort_on_error = 1;
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	BAT *st = NULL;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -1955,6 +1979,10 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
+			if (!(st = GDKinitialize_segment_tree())) {
+				res = GDK_FAIL;
+				goto cleanup;
+			}
 			ANALYTICAL_SUM_BRANCHES(OTHERS);
 		}
 		}
@@ -1977,7 +2005,7 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	return res;
 nosupport:
 	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
@@ -2083,7 +2111,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_NUM_OTHERS(TPE1, TPE2, TPE3)		\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM, TPE1, TPE2, TPE3); \
 		for (; k < i; k++)					\
@@ -2175,7 +2203,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_OTHERS(TPE1, TPE2, REAL_IMP)	\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, TPE1, TPE2, REAL_IMP); \
 		for (; k < i; k++)					\
@@ -2279,7 +2307,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_FP_OTHERS(TPE1, TPE2, ARG3) /* ARG3 is ignored here */ \
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_FP, TPE1, TPE2, ARG3); \
 		for (; k < i; k++)					\
@@ -2455,12 +2483,13 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+		*levels_offset = NULL, nlevels = 0;
 	bit *np = pi.base, *op = oi.base;
 	int abort_on_error = 1;
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	BAT *st = NULL;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2477,6 +2506,10 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
+			if (!(st = GDKinitialize_segment_tree())) {
+				res = GDK_FAIL;
+				goto cleanup;
+			}
 			ANALYTICAL_PROD_BRANCHES(OTHERS);
 		}
 		}
@@ -2495,7 +2528,7 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	return res;
 nosupport:
 	GDKerror("42000!type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
@@ -2675,7 +2708,7 @@ avg_num_deltas(lng)
 #define ANALYTICAL_AVG_IMP_NUM_OTHERS(TPE, IMP)				\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_num_deltas##TPE), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_num_deltas##TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
@@ -2779,7 +2812,7 @@ avg_fp_deltas(dbl)
 #define ANALYTICAL_AVG_IMP_FP_OTHERS(TPE, IMP)				\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_fp_deltas_##TPE), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_fp_deltas_##TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(avg_fp_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVEL0_AVG_FP, COMPUTE_LEVELN_AVG_FP, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
@@ -2854,7 +2887,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+		*levels_offset = NULL, nlevels = 0;
 	lng n = 0, rr = 0;
 	dbl *rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
 	bit *np = pi.base, *op = oi.base;
@@ -2867,6 +2900,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 #else
 	lng sum = 0;
 #endif
+	BAT *st = NULL;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2883,6 +2917,10 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 			ANALYTICAL_AVG_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
+			if (!(st = GDKinitialize_segment_tree())) {
+				res = GDK_FAIL;
+				goto cleanup;
+			}
 			ANALYTICAL_AVG_BRANCHES(OTHERS);
 		}
 		}
@@ -2897,7 +2935,7 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	return res;
 nosupport:
 	GDKerror("42000!average of type %s to dbl unsupported.\n", ATOMname(tpe));
@@ -3048,7 +3086,7 @@ avg_int_deltas(lng)
 #define ANALYTICAL_AVG_INT_OTHERS(TPE)					\
 	do {								\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_int_deltas_##TPE), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_int_deltas_##TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
@@ -3117,11 +3155,12 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+		*levels_offset = NULL, nlevels = 0;
 	lng rem = 0, ncnt = 0;
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	BAT *st = NULL;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -3138,6 +3177,10 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 			ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
+			if (!(st = GDKinitialize_segment_tree())) {
+				res = GDK_FAIL;
+				goto cleanup;
+			}
 			ANALYTICAL_AVG_INT_BRANCHES(OTHERS);
 		}
 		}
@@ -3152,7 +3195,7 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	return res;
 nosupport:
 	GDKerror("42000!average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
@@ -3305,7 +3348,7 @@ typedef struct stdev_var_deltas {
 	do {								\
 		TPE *restrict bp = (TPE*)bi.base;			\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(stdev_var_deltas), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(stdev_var_deltas), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
@@ -3379,12 +3422,13 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
+		*levels_offset = NULL, nlevels = 0;	\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
 	dbl *rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;		\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
+	BAT *st = NULL;	\
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
@@ -3401,6 +3445,10 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
 		} break;						\
 		default: {						\
+			if (!(st = GDKinitialize_segment_tree())) {	\
+				res = GDK_FAIL;	\
+				goto cleanup;	\
+			}	\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP); \
 		}							\
 		}							\
@@ -3419,7 +3467,7 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	GDKfree(segment_tree);						\
+	BBPreclaim(st);	\
 	return res;							\
 nosupport:								\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
@@ -3577,7 +3625,7 @@ typedef struct covariance_deltas {
 	do {								\
 		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base;	\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(covariance_deltas), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
@@ -3597,12 +3645,13 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = si.base, *restrict end = ei.base,	\
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
+		*levels_offset = NULL, nlevels = 0;	\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
+	BAT *st = NULL;	\
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
@@ -3619,6 +3668,10 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP); \
 		} break;						\
 		default: {						\
+			if (!(st = GDKinitialize_segment_tree())) {	\
+				res = GDK_FAIL;	\
+				goto cleanup;	\
+			}	\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP); \
 		}							\
 		}							\
@@ -3638,7 +3691,7 @@ cleanup:								\
 	bat_iterator_end(&b2i);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	GDKfree(segment_tree);						\
+	BBPreclaim(st);	\
 	return res;							\
 nosupport:								\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
@@ -3829,7 +3882,7 @@ typedef struct correlation_deltas {
 	do {								\
 		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base;	\
 		oid ncount = i - k;					\
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(correlation_deltas), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(correlation_deltas), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
 		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
@@ -3848,13 +3901,14 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1),
-		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+		*levels_offset = NULL, nlevels = 0;
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	lng n = 0;
 	const bit *np = pi.base, *op = oi.base;
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	BAT *st = NULL;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -3871,6 +3925,10 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW, ;, ;);
 		} break;
 		default: {
+			if (!(st = GDKinitialize_segment_tree())) {
+				res = GDK_FAIL;
+				goto cleanup;
+			}
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_OTHERS, ;, ;);
 		}
 		}
@@ -3890,7 +3948,7 @@ cleanup:
 	bat_iterator_end(&b2i);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	return res;
   nosupport:
 	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));

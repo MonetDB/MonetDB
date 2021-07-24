@@ -1756,8 +1756,8 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do { \
 		TPE *restrict bp = (TPE*)di.base; \
 		oid ncount = i - k; \
-		if (GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &nlevels) != GDK_SUCCEED) { \
-			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		if (GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels) != GDK_SUCCEED) { \
+			msg = createException(SQL, op, GDK_EXCEPTION); \
 			goto bailout; \
 		} \
 		populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
@@ -1825,7 +1825,7 @@ static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv, dbl single_case)
 {
-	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL, *st = NULL;
 	int tp1, tp2, frame_type;
 	bool is_a_bat1, is_a_bat2;
 	str msg = MAL_SUCCEED;
@@ -1902,7 +1902,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			BATiter si = bat_iterator(s);
 			BATiter ei = bat_iterator(e);
 			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)si.base : NULL, *restrict end = e ? (oid*)ei.base : NULL,
-				tree_capacity = 0, nlevels = 0;
+				nlevels = 0;
 			lng n = 0;
 			BATiter pi = bat_iterator(p);
 			BATiter oi = bat_iterator(o);
@@ -1925,7 +1925,11 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW);
 				} break;
 				default: {
-					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+					if ((st = GDKinitialize_segment_tree())) {
+						COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+					} else {
+						msg = createException(SQL, op, GDK_EXCEPTION);
+					}
 				}
 				}
 			}
@@ -1962,7 +1966,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 bailout:
-	GDKfree(segment_tree);
+	BBPreclaim(st);
 	unfix_inputs(6, b, c, p, o, s, e);
 	finalize_output(res, r, msg);
 	return msg;
