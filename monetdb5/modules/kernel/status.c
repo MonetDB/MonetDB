@@ -292,10 +292,14 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		}
 		tot += (lng) sz;
 
+		if (c)
+			MT_lock_set(&c->theaplock);
 		if (c == NULL || isVIEW(c)) {
+			if (c)
+				MT_lock_unset(&c->theaplock);
 			continue;
 		}
-		MT_lock_set(&c->theaplock);
+
 		heap(1,c->theap,tbuns,"tbuns", MT_lock_unset(&c->theaplock));
 		heap(c->tvheap,c->tvheap,tail,"tail", MT_lock_unset(&c->theaplock));
 		MT_lock_unset(&c->theaplock);
@@ -396,9 +400,15 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 
 		s = BBP_logical(i);
  		c = BBP_cache(i);
+
+		if (c)
+			MT_lock_set(&c->theaplock);
 		if (c == NULL || isVIEW(c)) {
+			if (c)
+				MT_lock_unset(&c->theaplock);
 			continue;
 		}
+
 		MT_lock_set(&c->theaplock);
 		heapvm(1,c->theap,tbuns,"tcuns",MT_lock_unset(&c->theaplock));
 		heapvm(c->tvheap,c->tvheap,tail,"tail",MT_lock_unset(&c->theaplock));
