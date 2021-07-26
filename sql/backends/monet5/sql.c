@@ -1303,6 +1303,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *cname = *getArgReference_str(stk, pci, 4 + upd);
 	int access = *getArgReference_int(stk, pci, 5 + upd);
 
+	/* This doesn't work with quick access for now... */
+	assert(access != QUICK);
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -1318,8 +1320,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			sqlstore *store = m->session->tr->store;
-			BUN cnt = BATcount(b), psz;
-			cnt = store->storage_api.count_col(m->session->tr, c, 0);
+			BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz;
 			/* partitioned access */
 			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
@@ -1399,6 +1400,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				if ( BATcount(id) != BATcount(vl)){
 					BBPunfix(b->batCacheid);
+					bat_destroy(id);
+					bat_destroy(vl);
 					throw(SQL, "sql.bind", SQLSTATE(0000) "Inconsistent BAT count");
 				}
 				BBPkeepref(*bid = id->batCacheid);
