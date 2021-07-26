@@ -109,7 +109,7 @@ GDKgetenv(const char *name)
 	}
 	MT_lock_unset(&GDKenvlock);
 	if (GDKkey && GDKval) {
-		BUN b = BUNfnd(GDKkey, (ptr) name);
+		BUN b = BUNfnd(GDKkey, name);
 
 		if (b != BUN_NONE) {
 			BATiter GDKenvi = bat_iterator(GDKval);
@@ -250,9 +250,16 @@ GDKsetenv(const char *name, const char *value)
 		}
 		MT_lock_unset(&GDKenvlock);
 	}
-	gdk_return rc = BUNappend(GDKkey, name, false);
-	if (rc == GDK_SUCCEED)
-		rc = BUNappend(GDKval, conval ? conval : value, false);
+	BUN p = BUNfnd(GDKkey, name);
+	gdk_return rc;
+	if (p != BUN_NONE) {
+		rc = BUNreplace(GDKval, p + GDKval->hseqbase,
+				conval ? conval : value, false);
+	} else {
+		rc = BUNappend(GDKkey, name, false);
+		if (rc == GDK_SUCCEED)
+			rc = BUNappend(GDKval, conval ? conval : value, false);
+	}
 	GDKfree(conval);
 	return rc;
 }
