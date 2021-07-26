@@ -572,14 +572,20 @@ BKCgetSize(lng *tot, const bat *bid){
 	}
 
 	size = sizeof (bat);
+
+	MT_lock_set(&b->theaplock);
 	if ( !isVIEW(b)) {
 		BUN cnt = BATcapacity(b);
 		size += ROUND_UP(b->theap->free, blksize);
 		if (b->tvheap)
 			size += ROUND_UP(b->tvheap->free, blksize);
+		MT_lock_unset(&b->theaplock);
+
 		if (b->thash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		size += IMPSimprintsize(b);
+	} else {
+		MT_lock_unset(&b->theaplock);
 	}
 	*tot = size;
 	BBPunfix(*bid);

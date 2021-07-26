@@ -175,7 +175,6 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap->dirty = true;
 	} else if (bn) {
 		BBPreclaim(bn);
 		bn = NULL;

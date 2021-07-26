@@ -183,10 +183,9 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
 			/* early break when there are as many groups as entries */
-			b = BATdescriptor(*hist);
+			b = BBPquickdesc(*hist);
 			if (b) {
 				j = BATcount(b) == count;
-				BBPunfix(*hist);
 				if (j)
 					break;
 			}
