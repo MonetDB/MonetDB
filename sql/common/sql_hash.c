@@ -33,7 +33,8 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	ht->key = key;
 	ht->buckets = (ht->sa)?SA_ZNEW_ARRAY(sa, sql_hash_e*, ht->size):ZNEW_ARRAY(sql_hash_e*, ht->size);
 	if (ht->buckets == NULL) {
-		_DELETE(ht);
+		if (!ht->sa)
+			_DELETE(ht);
 		return NULL;
 	}
 	return ht;
