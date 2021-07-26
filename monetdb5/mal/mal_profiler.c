@@ -915,13 +915,17 @@ getDiskSpace(void)
 			b = BATdescriptor(i);
 			if (b) {
 				size += sizeof(BAT);
+
+				MT_lock_set(&b->theaplock);
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
-					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
 					if (b->tvheap)
 						size += HEAPvmsize(b->tvheap);
+					MT_lock_unset(&b->theaplock);
+
+					size += tailsize(b, cnt);
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
 					/* also add the size of an imprint, ordered index or mosaic */
@@ -929,6 +933,8 @@ getDiskSpace(void)
 						size += IMPSimprintsize(b);
 					if(b->torderidx)
 						size += HEAPvmsize(b->torderidx);
+				} else {
+					MT_lock_unset(&b->theaplock);
 				}
 				BBPunfix(i);
 			}
