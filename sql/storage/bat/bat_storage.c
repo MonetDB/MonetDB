@@ -485,8 +485,10 @@ temp_dup_storage(sql_trans *tr)
 		_DELETE(bat);
 		return NULL;
 	}
-	if (!(bat->segs = new_segments(tr, 0)))
+	if (!(bat->segs = new_segments(tr, 0))) {
+		_DELETE(bat);
 		return NULL;
+	}
 	return bat;
 }
 

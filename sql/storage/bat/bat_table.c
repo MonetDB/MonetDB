@@ -441,7 +441,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 {
 	va_list va;
 	BAT *b = NULL, *r = NULL, *s = NULL;
-	rids *rs = ZNEW(rids);
+	rids *rs = MNEW(rids);
 	const void *kvl = key_value_low, *kvh = key_value_high;
 	/* if pointers are equal, make it an inclusive select */
 	bool hi = key_value_low == key_value_high;
@@ -498,8 +498,9 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 		}
 		va_end(va);
 	}
-	rs->data = s;
-	rs->cur = 0;
+	*rs = (rids) {
+		.data = s,
+	};
 	return rs;
 }
 
@@ -661,14 +662,16 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	rids = o;
 
 	assert(ids->ttype == TYPE_int && ATOMtype(rids->ttype) == TYPE_oid);
-	r = ZNEW(subrids);
+	r = MNEW(subrids);
 	if (r == NULL) {
 		bat_destroy(ids);
 		bat_destroy(rids);
 		return NULL;
 	}
-	r->ids = ids;
-	r->rids = rids;
+	*r = (subrids) {
+		.ids = ids,
+		.rids = rids,
+	};
 	return r;
 }
 
