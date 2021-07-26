@@ -670,10 +670,9 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
 		bat *bid= getArgReference_bat(stk,pci,1);
 		BAT *b;
-		if ((b = BATdescriptor(*bid)) ) {
+		if ((b = BBPquickdesc(*bid)))
 			*hn = getTypeName(newBatType(b->ttype));
-			BBPunfix(b->batCacheid);
-		} else
+		else
 			*hn = getTypeName(getArgType(mb, pci, 1));
 	} else
 		*hn = getTypeName(getArgType(mb, pci, 1));
