@@ -49,7 +49,6 @@ finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap->dirty = true;
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);

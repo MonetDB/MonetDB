@@ -485,8 +485,10 @@ temp_dup_storage(sql_trans *tr)
 		_DELETE(bat);
 		return NULL;
 	}
-	if (!(bat->segs = new_segments(tr, 0)))
+	if (!(bat->segs = new_segments(tr, 0))) {
+		_DELETE(bat);
 		return NULL;
+	}
 	return bat;
 }
 
@@ -1626,7 +1628,7 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
 			err = 1;
 	} else if (!offsets) {
-		if (BATreplacepos(b, &offset, oi, true, true) != GDK_SUCCEED)
+		if (BATupdatepos(b, &offset, oi, true, true) != GDK_SUCCEED)
 			err = 1;
 	} else if ((BATtdense(offsets) && offsets->tseqbase == (b->hseqbase+BATcount(b)))) {
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)

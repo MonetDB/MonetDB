@@ -1099,7 +1099,7 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if (*start < 0 || *start > (lng) BUN_MAX ||
 		(*end < 0 && !is_lng_nil(*end)) || *end >= (lng) BUN_MAX)
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if ((b = BBPquickdesc(*bid)) == NULL)
 		throw(MAL, "algebra.subslice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	s = (BUN) *start;
 	if (s > BATcount(b))
@@ -1110,7 +1110,6 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if (e < s)
 		e = s;
 	bn = BATdense(0, b->hseqbase + s, e - s);
-	BBPunfix(*bid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;

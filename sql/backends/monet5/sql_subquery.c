@@ -1195,15 +1195,13 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 	(void)mb;
-	b = BATdescriptor(*bp);
+	b = BBPquickdesc(*bp);
 	g = BATdescriptor(*gp);
 	e = BATdescriptor(*gpe);
 	if (sp)
 		s = BATdescriptor(*sp);
 
 	if (!b || !g || !e || (sp && !s)) {
-		if (b)
-			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
@@ -1215,7 +1213,6 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res = BATsubexist(b, g, e, s);
 
-	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
 	if (s)
@@ -1266,15 +1263,13 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 	(void)mb;
-	b = BATdescriptor(*bp);
+	b = BBPquickdesc(*bp);
 	g = BATdescriptor(*gp);
 	e = BATdescriptor(*gpe);
 	if (sp)
 		s = BATdescriptor(*sp);
 
 	if (!b || !g || !e || (sp && !s)) {
-		if (b)
-			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
@@ -1286,7 +1281,6 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res = BATsubnot_exist(b, g, e, s);
 
-	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
 	if (s)

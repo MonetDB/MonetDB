@@ -37,7 +37,7 @@ if rev:
     revcomment = ' (hg id %s)' % rev
 else:
     revcomment = ''
-if hge == '16' and 'largest integer size 16' not in comment:
+if hge == '16' and b'largest integer size 16' not in comment:
     revcomment = ' with largest integer size 16' + revcomment
 z.comment = comment + ('Chained on host %s%s.\n' % (os.getenv('HOSTNAME', 'unknown'), revcomment)).encode('utf-8')
 

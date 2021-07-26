@@ -23,41 +23,24 @@ JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 	char *result;
 	size_t sz, len=0;
 
-	if ((bu = BATdescriptor(*uuid)) == NULL)
+	if ((bu = BBPquickdesc(*uuid)) == NULL)
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
-	if ((br = BATdescriptor(*rev)) == NULL) {
-		BBPunfix(bu->batCacheid);
+	if ((br = BBPquickdesc(*rev)) == NULL)
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
-	}
-	if ((bj = BATdescriptor(*js)) == NULL) {
-		BBPunfix(bu->batCacheid);
-		BBPunfix(br->batCacheid);
+	if ((bj = BBPquickdesc(*js)) == NULL)
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
-	}
-	if ( !(BATcount(bu) == BATcount(br) && BATcount(br) == BATcount(bj)) ){
-		BBPunfix(bu->batCacheid);
-		BBPunfix(br->batCacheid);
-		BBPunfix(bj->batCacheid);
+	if ( !(BATcount(bu) == BATcount(br) && BATcount(br) == BATcount(bj)) )
 		throw(MAL, "json.resultset", "Input not aligned");
-	}
 	sz= (22 + 12 + 20) * BATcount(bu);
 	result = (char*) GDKmalloc(sz);
-	if (result == NULL){
-		BBPunfix(bu->batCacheid);
-		BBPunfix(br->batCacheid);
-		BBPunfix(bj->batCacheid);
+	if (result == NULL)
 		throw(MAL, "json.resultset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 	len += snprintf(result,sz,"[");
 	/* here the dirty work follows */
 	/* loop over the triple store */
 	snprintf(result+len,sz-len,"]");
-	BBPunfix(bu->batCacheid);
-	BBPunfix(br->batCacheid);
-	BBPunfix(bj->batCacheid);
 	*res = result;
 	return MAL_SUCCEED;
-
 }
 
 #include "mel.h"

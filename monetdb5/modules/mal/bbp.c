@@ -432,6 +432,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 					mode = "transient";
 				len = snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
 				if (len == -1 || len >= FILENAME_MAX) {
+					BBPunfix(bn->batCacheid);
 					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY013) "Could not bpp filename path is too large");
 					goto bailout;
 				}

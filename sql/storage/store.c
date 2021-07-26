@@ -3525,8 +3525,10 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
-		if (!parent)
+		if (!parent) {
+			sql_trans_destroy(tr);
 			return NULL;
+		}
 		parent->name = SA_STRDUP(parent->sa, name);
 	}
 

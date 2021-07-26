@@ -271,6 +271,8 @@ soundex_code(char *Name, char *Key)
 static str
 soundex_impl(str *res, str *Name)
 {
+	str msg = MAL_SUCCEED;
+
 	GDKfree(*res);
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
@@ -279,7 +281,12 @@ soundex_impl(str *res, str *Name)
 		throw(MAL,"soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
-	return soundex_code(*Name, *res);
+	if ((msg = soundex_code(*Name, *res))) {
+		GDKfree(*res);
+		*res = NULL;
+		return msg;
+	}
+	return msg;
 }
 
 static str
@@ -722,7 +729,7 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, str strin
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len, "txtsim.similarity");
+	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len * 2 * sizeof(int), "txtsim.similarity");
 	fdiag = *fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
@@ -838,7 +845,6 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap->dirty = true;
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);
