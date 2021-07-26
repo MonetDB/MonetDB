@@ -54,6 +54,8 @@ start_time = time.time()
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
+mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
+
 # default is no color (these three functions may get redefined)
 def prred(str, write = sys.stdout.write):
     write(str)
@@ -1181,7 +1183,7 @@ def find_test_dirs(thisdir) :
     return testdirs
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
+def PerformDir(env, testdir, testlist, all_tests = False) :
     interrupted = False
     td = 0
     elem = None
@@ -1325,7 +1327,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     return td, elem, max(FdOut, FdErr), interrupted
                 z.close()
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
@@ -1366,10 +1368,11 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                                             openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
                                             openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                             0,
-                                            pollfile,
-                                            int(env['MAPIPORT']))
+                                            pollfile)
                         os.chdir(TSTTRGDIR)
                         pSrvr.LaunchIt()
+                        os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
+                        SetExecEnv(env['exe'],pSrvr.port,verbose)
                     if global_timeout and start_time + global_timeout < time.time():
                         if not testweb:
                             print('\nGlobal testing timeout reached\n')
@@ -1377,7 +1380,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                     else:
                         os.environ['TST'] = TST
-                        tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
+                        tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, all_tests, pSrvr)
                         alllinks.extend(links)
                     if tt:
                         t = "%7.3f" % tt
@@ -1470,7 +1473,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted
     finally:
         del sys.path[0]
-### PerformDir(env, testdir, testlist, BusyPorts) #
+### PerformDir(env, testdir, testlist) #
 
 # this function is a slightly modified copy of the posixpath version
 # the differences are the doubling of \'s in the replacement value
@@ -1649,7 +1652,9 @@ def GetBitsAndModsAndThreads(env) :
                 break
             time.sleep(0.001)
         if proc.returncode is None:
-            cmd = splitcommand(env['exe']['MAL_Client'][1])
+            connurl = open(os.path.join(dbpath, '.conn')).read()
+            res = mapiportre.search(connurl)
+            cmd = splitcommand(env['exe']['MAL_Client'][1].replace('${PORT}', res.group('port')))
             if procdebug:
                 print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
             with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -1855,7 +1860,7 @@ relcond = {
                              'previous hugeint chained empty'),
 }
 
-def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
+def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -2054,9 +2059,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     elif CALL == "sqlXp":
         reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
-        reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
-        elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in listdir(RELSRCDIR):
@@ -2072,16 +2074,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     if not env.get('NOCLEAN'):
                         raise
 
-        # Check for available sockets and block them until we're ready to run the actual test
-        if pSrvr is None:
-            MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
-            if MAPIsockets is None:
-                reason = 'as ' + reason
-                elem = SkipTest(env, TST, EXT, reason, length)
-                return TX,Failed,Failed,elem,reason,links
-        else:
-            MAPIsockets = None
-
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = openutf8(TST+EXT+".src","r")
             TSTSRC = expandvars(path(f.readline().strip()), env)
@@ -2096,10 +2088,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             else:
                 reason = "as source file '%s` is missing." % TSTSRC
                 elem = SkipTest(env, TST, EXT+".src", reason, length)
-                if MAPIsockets is not None:
-                    # Release reserved sockets before bailing out
-                    MAPIsockets[0].close()
-                    MAPIsockets[1].close()
                 return TX,Failed,Failed,elem,reason,links
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
@@ -2145,7 +2133,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -2168,18 +2156,19 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         else:
             errcode = F_OK
 
-        if pSrvr is None:
-            sockerr = CheckSocket3(env, "MAPI", TestErrFile)
-        elif pSrvr.poll() is None:
-            sockerr = F_OK
-        else:
-            sres = returnCode(pSrvr.proc, openutf8(TestErrFile, 'a'))
-            if sres == 'segfault':
-                sockerr = F_SEGV
-            elif sres == 'abort':
-                sockerr = F_ABRT
+        if pSrvr is not None:
+            if pSrvr.poll() is None:
+                sockerr = F_OK
             else:
-                sockerr = F_ERROR
+                sres = returnCode(pSrvr.proc, openutf8(TestErrFile, 'a'))
+                if sres == 'segfault':
+                    sockerr = F_SEGV
+                elif sres == 'abort':
+                    sockerr = F_ABRT
+                else:
+                    sockerr = F_ERROR
+        else:
+            sockerr = F_OK
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -2348,123 +2337,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem,reason,links
-### RunTest(env, TST, BusyPorts, COND, oktests) #
-
-def CheckPort(port) :
-    # Since 'localhost' and $HOST (i.e., `hostname`) are usually
-    # different interfaces, we check both, unless $HOST (`hostname`)
-    # appears to be merely an alias for 'localhost'.  That is, if the
-    # hostname works, we prefer it over localhost, but don't require it,
-    # such as e.g. on interwebless laptops.
-    busy = 0
-    Serrno = 0
-    Serrstr = ""
-    S0 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    S1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    S0.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    S1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    host = os.environ['HOST']
-    try:
-        S1.bind((host,port))
-    except socket.error as err:
-        Serrno = err.errno
-        Serrstr = err.strerror
-        S1.close()
-        host = 'localhost'
-        try:
-            S0.bind((host,port))
-        except socket.error as err:
-            Serrno = err.errno
-            Serrstr = err.strerror
-            S0.close()
-            busy = 1
-
-    return busy, host, Serrno, Serrstr, (S0, S1)
-### CheckPort(port) #
-
-def randomPort(l,h) :
-    repeat = randomPortRepeat
-    port = 0
-    rpt = 0
-    ports = []
-    while rpt < repeat:
-        port = random.randrange(l,h,1)
-        ports.append(port)
-        busy, host, Serrno, Serrstr, S = CheckPort(port)
-        S[0].close()
-        S[1].close()
-        if busy:
-            rpt = rpt + 1
-            port = 0
-        else:
-            break
-    return (port,host)
-### randomPort(l,h) #
-
-def CheckSocket2(env,SERVER) :  #,SrvrErr) :
-    port = int(env[SERVER+'PORT'])
-    newport = port
-    busy, host, Serrno, Serrstr, S = CheckPort(port)
-    if busy:
-        S[0].close()
-        S[1].close()
-        Smsg = """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-""" % (SERVER, host, port, Serrno, Serrstr)
-        newport = eval(dft[SERVER+'PORT'])
-        if newport == 0:
-            S[0].close()
-            S[1].close()
-            Smsg = Smsg + """
-! Socket-Check failed for %sserver on <%s> !
-! Giving up after %d attepts !
-""" % (SERVER, host, randomPortRepeat)
-            return None, Smsg
-
-        env[SERVER+'PORT'] = newport
-        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
-        op = 'port=%d' % port
-        np = 'port=%s' % env[SERVER+'PORT']
-        env['exe']['mserver5']      = env['exe']['mserver5'][0]      , env['exe']['mserver5'][1].replace(op, np)
-        env['exe']['MAL_Client']    = env['exe']['MAL_Client'][0]    , env['exe']['MAL_Client'][1].replace(op, np)
-        env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
-        env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
-        os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
-        os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
-        os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
-        os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
-        Smsg = Smsg + """
-! Using new %sPORT=%s !
-""" % (SERVER, env[SERVER+'PORT'])
-#        STDERR.write(Smsg)
-#        STDERR.flush()
-#        SrvrErr.write(Smsg)
-#        SrvrErr.flush()
-
-    return S, None
-### CheckSocket2(env,SERVER)    #,SrvrErr) #
-
-def CheckSocket3(env,SERVER,ErrFileName) :
-    res = F_OK
-    port = int(env[SERVER+'PORT'])
-    busy, host, Serrno, Serrstr, S = CheckPort(port)
-    S[0].close()
-    S[1].close()
-    if busy:
-        res = F_SOCK
-        Smsg = """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! %sPORT was not properly released by mserver5 !
-""" % (SERVER, host, port, Serrno, Serrstr, SERVER)
-        STDERR.write(Smsg)
-        STDERR.flush()
-        ErrFile = openutf8(ErrFileName, 'a')
-        ErrFile.write(Smsg)
-        ErrFile.flush()
-        ErrFile.close()
-    return res
-### CheckSocket3(env,SERVER,ErrFileName) #
+### RunTest(env, TST, COND, oktests) #
 
 def prompt() :
     return time.strftime('%H:%M:%S> ',time.localtime(time.time()))
@@ -2606,7 +2479,7 @@ def killProc(proc, outfile = None, cmd = None):
         killchildren(proc.pid)
 
 class ServerClass:
-    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, port):
+    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile):
         self.proc = None
         self.timer = None
         self.outfile = TestOut
@@ -2616,7 +2489,6 @@ class ServerClass:
         self.cmd = cmd
         self.timeout = TimeOut
         self.pollfile = pollfile
-        self.port = port
 
     def poll(self):
         return self.proc.poll()
@@ -2649,6 +2521,8 @@ class ServerClass:
                 os.unlink(self.pollfile)
             except OSError:
                 pass
+        else:
+            self.outfile = process.PIPE
         if os.name == "nt":
             proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
                                  stderr=self.errfile, text=True,
@@ -2669,7 +2543,7 @@ class ServerClass:
         self.proc = proc
         self.timer = t
 
-        port = self.port
+        port = None
         if self.pollfile:
             while True:
                 proc.poll()
@@ -2681,19 +2555,20 @@ class ServerClass:
                 if os.path.exists(self.pollfile):
                     break
                 time.sleep(0.001)
-        elif port is not None:
+            connurl = open(os.path.join(os.path.split(self.pollfile)[0], '.conn')).read()
+            res = mapiportre.search(connurl)
+            port = res.group('port')
+        else:
             while True:
-                proc.poll()
-                if proc.returncode is not None:
-                    # exited
-                    proc.wait()
-                    t.cancel()
-                    return
-                if mapi_ping(port):
+                line = proc.stdout.readline()
+                if not line:
                     break
-                time.sleep(0.1)
-            port = None         # don't try again
-        if port is not None and not mapi_ping(port):
+                if 'MonetDB/SQL module loaded' in line:
+                    break
+                res = mapiportre.search(line)
+                if res is not None:
+                    port = res.group('port')
+        if port is not None and not mapi_ping(int(port)):
             # check whether we can connect
             if os.name == "nt":
                 proc.send_signal(signal.CTRL_BREAK_EVENT)
@@ -2701,8 +2576,10 @@ class ServerClass:
                 proc.terminate()
             proc.wait()
             t.cancel()
+            self.port = None
             return
         self.started = True
+        self.port = port
 
 ### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, pollfile, port) #
 
@@ -2768,7 +2645,7 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2799,11 +2676,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
         Warn("Flushing STDOUT in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
     TSTDB = env['TSTDB']
     exe = env['exe']
-
-    if MAPIsockets is not None:
-        # Release reserved sockets and run the actual test
-        MAPIsockets[0].close()
-        MAPIsockets[1].close()
 
     returncode = None
     pSrvr = PSRVR
@@ -2888,8 +2760,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
                     Srvr.append('--dbextra=in-memory')
-                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
+                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
+                os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
+                SetExecEnv(exe,pSrvr.port,verbose)
             else:
                 PSRVR.timer.settimeout(TIMEOUT)
                 PSRVR.timer.start()
@@ -2986,7 +2860,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
                     if test.match(f):
                         TSTs.append(f)
 
-                Clnt = splitcommand(exe['SQL_Client'][1])
+                Clnt = splitcommand(exe['SQL_Client'][1].replace('${PORT}', env['MAPIPORT']))
                 if user:
                     Clnt.append('-u%s' % user)
                 if passwd:
@@ -2996,10 +2870,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
                     if returncode:
                         break
             elif CALL == "R":
-                Clnt = splitcommand(exe['R_Client'][1])
+                Clnt = splitcommand(exe['R_Client'][1].replace('${PORT}', env['MAPIPORT']))
                 RunIt(Clnt, False, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
             elif CALL == "ruby":
-                Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
+                Clnt = splitcommand(exe['ruby_client'][1].replace('${PORT}', env['MAPIPORT'])) + [TST + EXT]
 
                 Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
                 Clnt.append(env['TSTDB'])
@@ -3097,7 +2971,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAP
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, MAPIsockets, length, nomito) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito) #
 
 def Check(command, input) :
     global setpgrp
@@ -3221,7 +3095,7 @@ def CheckClassPath() :
         CONDITIONALS['HAVE_JDBCTESTS'] = True
 ### CheckClassPath() #
 
-def SetExecEnv(exe,verbose) :
+def SetExecEnv(exe,port,verbose) :
     if os.name == "nt":
         CALL = "call "
     else:
@@ -3234,14 +3108,14 @@ def SetExecEnv(exe,verbose) :
         else:
             V = v.upper()
         if exe[v][0]:
-            os.environ[V] = CALL+exe[v][1]
+            os.environ[V] = CALL+exe[v][1].replace('${PORT}', port)
         else:
             os.environ[V] = ""
         if verbose:
-            print("%s = %s : %s" % (V, exe[v][0], exe[v][1]))
+            print("%s = %s : %s" % (V, exe[v][0], exe[v][1].replace('${PORT}', port)))
     if verbose:
         STDOUT.flush()
-### SetExecEnv(exe,procdebug) #
+### SetExecEnv(exe,port,procdebug) #
 
 #############################################################################
 #       MAIN
@@ -3277,9 +3151,6 @@ if 'DOMAIN' in os.environ:
     HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
 else:
     HOST = HOST.split('.', 1)[0]
-os.environ['HOST'] = HOST
-# check the host port actually works
-_, HOST = randomPort(30000,39999)
 os.environ['HOST'] = HOST
 os.environ['MAPIHOST'] = HOST
 
@@ -3444,7 +3315,6 @@ def main(argv) :
     dft['GDK_NR_THREADS'] = "TSTTHREADS"
     dft['MONETDB_MOD_PATH'] = "''"
     dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
-    dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
     dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
     dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
     dft['SQLDUMP']        = "'msqldump -q'"
@@ -3702,14 +3572,12 @@ def main(argv) :
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
-    vars_ = VARS + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
+    vars_ = VARS + ['GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     for v in vars_:
         if v not in env:
             env[v] = eval(dft[v])
             #TODO:
             # make sure, that PATHs are absolute
-    if env['MAPIPORT'] == 0:
-        ErrXit('Cannot find a workable MAPIPORT')
     if env['MONETDB_MOD_PATH']:
         env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
     else:
@@ -3782,7 +3650,7 @@ def main(argv) :
 
     try:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
-            s.bind(('::1', int(env['MAPIPORT'])))
+            s.bind(('::1', 0))
     except socket.error as err:
         CONDITIONALS['HAVE_IPV6'] = False
     else:
@@ -3890,8 +3758,7 @@ def main(argv) :
             sockdir = "/var/tmp/mtest-%d" % os.getpid()
             try:
                 os.mkdir(sockdir)
-                SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
-                        (sockdir, env['MAPIPORT'])
+                SOCK = "--set mapi_usock=%s/.s.monetdb.${PORT}" % sockdir
                 HOST = sockdir
                 os.environ['MAPIHOST'] = HOST
             except KeyboardInterrupt:
@@ -3902,16 +3769,15 @@ def main(argv) :
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
-                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
+        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s %s' % \
+                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
         exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
-        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
-        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
+        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
+        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, '${PORT}')
+        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], '${PORT}')
         env['exe'] = exe
-        SetExecEnv(exe,verbose)
 
         #TODO:
         #exe['JAVA']       = 'java'
@@ -4045,8 +3911,6 @@ def main(argv) :
                                 # WARNING: tests in wrong order
                     i = i + 1
 
-        BusyPorts = []
-
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(TSTTRGBASE, TSTPREF))
@@ -4103,14 +3967,6 @@ def main(argv) :
             print("Modules: " + str(env['TST_MODS']))
         STDOUT.flush()
 
-        port = int(env['MAPIPORT'])
-        busy, host, Serrno, Serrstr, S = CheckPort(port)
-        S[0].close()
-        S[1].close()
-        if busy:
-            Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
-            BusyPorts.append('MAPI')
-
         env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']
@@ -4132,7 +3988,7 @@ def main(argv) :
                     all_tests = True
                 if verbose:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
+                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, all_tests)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
@@ -4142,7 +3998,7 @@ def main(argv) :
                 if verbose:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
-                    t, elem, diff, interrupted = PerformDir(env, d, [], BusyPorts, True)
+                    t, elem, diff, interrupted = PerformDir(env, d, [], True)
                     t_ = t_ + t
                     if elem is not None:
                         if diff <= F_OK:
