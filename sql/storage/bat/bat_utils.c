@@ -71,27 +71,27 @@ log_bid
 temp_copy(log_bid b, bool renew, bool temp)
 {
 	/* make a copy of b, if temp is set only create a empty bat */
-	BAT *o = temp_descriptor(b);
-	BAT *c;
+	BAT *o, *c = NULL;
 	log_bid r;
 
-	if (!o)
-		return BID_NIL;
 	if (!renew) {
-		if (!(c = COLcopy(o, o->ttype, true, PERSISTENT))) {
-			bat_destroy(o);
+		if (!(o = temp_descriptor(b)))
 			return BID_NIL;
-		}
-		BATcommit(c, BUN_NONE);
-	} else if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT))) {
+		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		bat_destroy(o);
-		return BID_NIL;
+		if (!c)
+			return BID_NIL;
+		BATcommit(c, BUN_NONE);
+	} else {
+		if (!(o = quick_descriptor(b)))
+			return BID_NIL;
+		if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT)))
+			return BID_NIL;
 	}
 	if (!temp)
 		bat_set_access(c, BAT_READ);
 	r = temp_create(c);
 	bat_destroy(c);
-	bat_destroy(o);
 	return r;
 }
 

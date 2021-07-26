@@ -7,11 +7,12 @@ except ImportError:
 
 
 with process.server(args=[],
+                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as s:
     with SQLTestCase() as tc:
-        tc.connect(username="monetdb", password="monetdb")
+        tc.connect(username="monetdb", password="monetdb", port=str(s.dbport))
         tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
         tc.execute("create view v1 as select * from t1;").assertSucceeded()
         tc.execute("create view v2 as select * from t1;").assertSucceeded()
@@ -22,11 +23,12 @@ with process.server(args=[],
     s.communicate()
 
 with process.server(args=["--readonly"],
+                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as s:
     with SQLTestCase() as tc:
-        tc.connect(username="monetdb", password="monetdb")
+        tc.connect(username="monetdb", password="monetdb", port=str(s.dbport))
         tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
         tc.execute("create view v2 as select * from t1;").assertFailed(err_message='Schema statements cannot be executed on a readonly database.')
         tc.execute("drop view v1;").assertFailed(err_message='Schema statements cannot be executed on a readonly database.')

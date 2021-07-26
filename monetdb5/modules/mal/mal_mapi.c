@@ -627,6 +627,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	SOCKET *psock;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
+	char *usockfilenew = NULL;
 #endif
 	SOCKLEN length = 0;
 	MT_Id pid;
@@ -664,6 +665,9 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		if (msg != MAL_SUCCEED) {
 			return msg;
 		}
+		char sport[10];
+		snprintf(sport, sizeof(sport), "%d", port);
+		GDKsetenv("mapi_port", sport);
 	}
 
 #ifdef HAVE_SYS_UN_H
@@ -705,11 +709,19 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 		userver.sun_family = AF_UNIX;
 		const char *p;
-		if ((p = strstr(usockfile, "${PORT}")) != NULL)
-			snprintf(userver.sun_path, sizeof(userver.sun_path),
-					 "%.*s%d%s", (int) (p - usockfile), usockfile, port<0?0:port, p + 7);
-		else
-			memcpy(userver.sun_path, usockfile, ulen + 1);
+		if ((p = strstr(usockfile, "${PORT}")) != NULL) {
+			usockfilenew = GDKmalloc(ulen + 1);
+			/* note, "${PORT}" is longer than the longest possible decimal
+			 * representation of a port number ("65535") */
+			if (usockfilenew) {
+				snprintf(usockfilenew, ulen + 1,
+						 "%.*s%d%s", (int) (p - usockfile), usockfile,
+						 port < 0 ? 0 : port, p + 7);
+				usockfile = usockfilenew;
+				ulen = strlen(usockfile);
+			}
+		}
+		memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
 		if (MT_remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",
@@ -719,6 +731,8 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
+			if (usockfilenew)
+				GDKfree(usockfilenew);
 			return e;
 		}
 		if (bind(socks[2], (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
@@ -733,10 +747,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
 			(void) MT_remove(usockfile);
-			throw(IO, "mal_mapi.listen",
+			buf = createException(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": binding to UNIX socket file %s failed: %s",
 				  usockfile, err);
+			if (usockfilenew)
+				GDKfree(usockfilenew);
+			return buf;
 		}
 		if (listen(socks[2], maxusers) == SOCKET_ERROR) {
 #ifdef _MSC_VER
@@ -750,11 +767,15 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
 			(void) MT_remove(usockfile);
-			throw(IO, "mal_mapi.listen",
+			buf = createException(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": setting UNIX socket file %s to listen failed: %s",
 				  usockfile, err);
+			if (usockfilenew)
+				GDKfree(usockfilenew);
+			return buf;
 		}
+		GDKsetenv("mapi_usock", usockfile);
 	}
 #endif
 
@@ -800,6 +821,8 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for UNIX domain connection requests on "
 				   "mapi:monetdb://%s\n", usockfile);
 	}
+	if (usockfilenew)
+		GDKfree(usockfilenew);
 #endif
 
 	return MAL_SUCCEED;
