@@ -409,7 +409,6 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 
-		MT_lock_set(&c->theaplock);
 		heapvm(1,c->theap,tbuns,"tcuns",MT_lock_unset(&c->theaplock));
 		heapvm(c->tvheap,c->tvheap,tail,"tail",MT_lock_unset(&c->theaplock));
 		MT_lock_unset(&c->theaplock);
