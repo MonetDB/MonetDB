@@ -781,16 +781,14 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		Type *p = (Type*)bi.base;					\
-		Type *q = p + bi.count;						\
-		Type *r = (Type*)Tloc(bn, 0);				\
-		cnt=0;										\
+		const Type *restrict in = (Type*)bi.base;	\
+		Type *restrict r = (Type*)Tloc(bn, 0);		\
 		for (;p<q; oidx++, p++) {					\
 			if ( o < ol && *o == oidx ){			\
 				o++;								\
 			} else {								\
+				*r++ = in[p];						\
 				cnt++;								\
-				*r++ = *p;							\
 			}										\
 		}											\
 	} while (0)
@@ -799,7 +797,7 @@ str
 BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
-	BUN cnt =0;
+	BUN cnt = 0, p = 0, q;
 	oid oidx = 0, *o, *ol;
 	gdk_return res;
 
@@ -825,54 +823,50 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	o = (oid*)Tloc(bs, 0);
-	ol= (oid*)Tloc(bs, BUNlast(bs));
+	ol = (oid*)Tloc(bs, BUNlast(bs));
 
 	BATiter bi = bat_iterator(b);
-	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: shrinkloop(bte); break;
-	case TYPE_sht: shrinkloop(sht); break;
-	case TYPE_int: shrinkloop(int); break;
-	case TYPE_lng: shrinkloop(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: shrinkloop(hge); break;
-#endif
-	case TYPE_flt: shrinkloop(flt); break;
-	case TYPE_dbl: shrinkloop(dbl); break;
-	case TYPE_oid: shrinkloop(oid); break;
-	default:
-		if (ATOMvarsized(bn->ttype)) {
-			BUN p = 0;
-			BUN q = BUNlast(b);
+	q = bi.count;
+	if (ATOMvarsized(bi.type)) {
+		for (;p<q; oidx++, p++) {
+			if ( o < ol && *o == oidx ){
+				o++;
+			} else {
+				if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
+					throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				}
+				cnt++;
+			}
+		}
+	} else {
+		uint16_t width = bi.width;
 
-			cnt=0;
+		switch (width) {
+		case 1:shrinkloop(bte); break;
+		case 2:shrinkloop(sht); break;
+		case 4:shrinkloop(int); break;
+		case 8:shrinkloop(lng); break;
+#ifdef HAVE_HGE
+		case 16:shrinkloop(hge); break;
+#endif
+		default: {
+			const int8_t *restrict src = (int8_t*) bi.base;
+			int8_t *restrict dst = (int8_t*) Tloc(bn, 0);
+
 			for (;p<q; oidx++, p++) {
-				if ( o < ol && *o == oidx ){
+				if (o < ol && *o == oidx) {
 					o++;
 				} else {
-					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
-						bat_iterator_end(&bi);
-						BBPunfix(b->batCacheid);
-						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", GDK_EXCEPTION);
-					}
+					memcpy(dst, src, width);
+					dst += width;
 					cnt++;
 				}
+				src += width;
 			}
-		} else {
-			switch( bi.width){
-			case 1:shrinkloop(bte); break;
-			case 2:shrinkloop(sht); break;
-			case 4:shrinkloop(int); break;
-			case 8:shrinkloop(lng); break;
-#ifdef HAVE_HGE
-			case 16:shrinkloop(hge); break;
-#endif
-			default:
-				bat_iterator_end(&bi);
-				BBPunfix(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				throw(MAL, "bat.shrink", "Illegal argument type");
-			}
+		}
 		}
 	}
 	bat_iterator_end(&bi);
