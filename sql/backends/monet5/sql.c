@@ -1520,7 +1520,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(t = mvc_bind_table(m, s, tname)))
 			throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
 		if (!isTable(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "%s don't have delta values", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			throw(SQL, "sql.delta", SQLSTATE(42000) "%s doesn't have delta values", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (cname) {
 			if (!(c = mvc_bind_column(m, t, cname)))
 				throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
