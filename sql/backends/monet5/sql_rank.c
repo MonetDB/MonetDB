@@ -1245,16 +1245,24 @@ SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tname = *getArgReference_str(stk, pci, 2);
 	mvc *m = NULL;
 	str msg;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = s?mvc_bind_table(m, s, tname):NULL;
-	if (!t || !isTable(t) || isMergeTable(t) || isReplicaTable(t))
-		return createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot find table %s.%s", sname, tname);
-	sql_column *c = ol_first_node(t->columns)->data;
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.count", SQLSTATE(3F000) "Schema missing %s", sname);
+	if (!(t = mvc_bind_table(m, s, tname)))
+		throw(SQL, "sql.count", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.count", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (!ol_first_node(t->columns))
+		throw(SQL, "sql.count", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
+	c = ol_first_node(t->columns)->data;
 	sqlstore *store = m->session->tr->store;
 
 	*res = store->storage_api.count_col(m->session->tr, c, 10);
