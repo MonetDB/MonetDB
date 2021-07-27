@@ -14,17 +14,31 @@
  */
 
 #include "monetdb_config.h"
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
+#endif
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_atom.h"			/* for malAtomSize */
-#ifndef HAVE_UUID
-#ifdef HAVE_OPENSSL
-# include <openssl/rand.h>
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonRandom.h>
-#endif
-#endif
+
+#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static inline bool
+generate_uuid(uuid *U)
+{
+	union {
+		unsigned int randbuf[4];
+		unsigned char uuid[16];
+	} u;
+	for (int i = 0; i < 4; i++)
+		if (rand_s(&u.randbuf[i]) != 0)
+			return false;
+	/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+	u.uuid[8] = (u.uuid[8] & 0x3F) | 0x80;
+	/* make sure this is version 4 (random UUID) */
+	u.uuid[6] = (u.uuid[6] & 0x0F) | 0x40;
+	memcpy(U->u, u->uuid, 16);
+	return true;
+}
 #endif
 
 /**
@@ -38,23 +52,30 @@ UUIDgenerateUuid_internal(uuid *u)
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 #else
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes(u->u, 16) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(u->u, 16) != kCCSuccess)
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(u->u, 16) == 0) {
+		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+		u->u[8] = (u->u[8] & 0x3F) | 0x80;
+		/* make sure this is version 4 (random UUID) */
+		u->u[6] = (u->u[6] & 0x0F) | 0x40;
+	} else
+#elif defined(HAVE_RAND_S)
+	if (!generate_uuid(u))
 #endif
-#endif
-		/* if it failed, use rand */
-		for (int i = 0; i < UUID_SIZE;) {
+	{
+		/* generate something like this:
+		 * cefa7a9c-1dd2-41b2-8350-880020adbeef
+		 * ("%08x-%04x-%04x-%04x-%012x") */
+		for (int i = 0; i < 16; i++) {
 			int r = rand();
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
-	/* make sure this is a variant 1 UUID */
-	u->u[8] = (u->u[8] & 0x3F) | 0x80;
-	/* make sure this is version 4 (random UUID) */
-	u->u[6] = (u->u[6] & 0x0F) | 0x40;
+		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+		u->u[8] = (u->u[8] & 0x3F) | 0x80;
+		/* make sure this is version 4 (random UUID) */
+		u->u[6] = (u->u[6] & 0x0F) | 0x40;
+	}
 #endif
 }
 

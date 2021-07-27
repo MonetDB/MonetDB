@@ -119,7 +119,6 @@ BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(uuid)
 BuildRequires: pkgconfig(libxml-2.0)
-BuildRequires: pkgconfig(openssl)
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
@@ -275,7 +274,6 @@ Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
-Requires: openssl-devel
 
 %description client-devel
 MonetDB is a database management system that is developed from a
@@ -792,7 +790,6 @@ fi
 	-DTESTING=ON \
 	-DWITH_BZ2=ON \
 	-DWITH_CMOCKA=OFF \
-	-DWITH_CRYPTO=ON \
 	-DWITH_CURL=ON \
 	-DWITH_LZ4=ON \
 	-DWITH_LZMA=ON \

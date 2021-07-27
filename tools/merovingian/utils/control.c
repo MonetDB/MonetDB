@@ -194,22 +194,12 @@ control_setup(
 				char *shash = NULL;
 				char *phash = NULL;
 				char *algsv[] = {
-#ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
-#endif
 					"SHA512",
-#ifdef HAVE_SHA384_UPDATE
 					"SHA384",
-#endif
-#ifdef HAVE_SHA256_UPDATE
 					"SHA256",
-#endif
-#ifdef HAVE_SHA224_UPDATE
 					"SHA224",
-#endif
-#ifdef HAVE_SHA1_UPDATE
 					"SHA1",
-#endif
 					NULL
 				};
 				(void)algsv;
@@ -276,35 +266,20 @@ control_setup(
 
 				/* we first need to hash our password in the form the
 				 * server stores it too */
-#ifdef HAVE_RIPEMD160_UPDATE
 				if (strcmp(shash, "RIPEMD160") == 0) {
 					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
-				} else
-#endif
-				if (strcmp(shash, "SHA512") == 0) {
+				} else if (strcmp(shash, "SHA512") == 0) {
 					phash = mcrypt_SHA512Sum(pass, strlen(pass));
 				} else
-#ifdef HAVE_SHA384_UPDATE
 				if (strcmp(shash, "SHA384") == 0) {
 					phash = mcrypt_SHA384Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA256_UPDATE
-				if (strcmp(shash, "SHA256") == 0) {
+				} else if (strcmp(shash, "SHA256") == 0) {
 					phash = mcrypt_SHA256Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA224_UPDATE
-				if (strcmp(shash, "SHA224") == 0) {
+				} else if (strcmp(shash, "SHA224") == 0) {
 					phash = mcrypt_SHA224Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_SHA1_UPDATE
-				if (strcmp(shash, "SHA1") == 0) {
+				} else if (strcmp(shash, "SHA1") == 0) {
 					phash = mcrypt_SHA1Sum(pass, strlen(pass));
-				} else
-#endif
-				{
+				} else {
 					(void)phash; (void)algos;
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);

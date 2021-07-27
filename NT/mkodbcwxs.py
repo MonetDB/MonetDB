@@ -34,12 +34,10 @@ def main():
     if sys.argv[2] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
-        libcrypto = '-x64'
         vcpkg = r'C:\vcpkg\installed\x64-windows\{}'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
-        libcrypto = ''
         vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
     vcdir = os.getenv('VCINSTALLDIR')
     if vcdir is None:
@@ -89,7 +87,6 @@ def main():
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
-               vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\lzma.dll'),
                vcpkg.format(r'bin\zlib1.dll')])

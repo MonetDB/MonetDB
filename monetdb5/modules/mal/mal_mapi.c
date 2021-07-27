@@ -44,14 +44,10 @@
 #include "mapi.h"
 #include "mutils.h"
 
-#ifdef HAVE_OPENSSL
-# include <openssl/rand.h>		/* RAND_bytes() */
-#else
-#ifdef HAVE_COMMONCRYPTO
-# include <CommonCrypto/CommonCrypto.h>
-# include <CommonCrypto/CommonRandom.h>
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
 #endif
-#endif
+
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/select.h>
 # include <sys/socket.h>
@@ -99,6 +95,23 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
 
+#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static inline bool
+gen_win_challenge(char *buf, size_t size)
+{
+	for (size_t i = 0; i < size; i++) {
+		unsigned int r;
+		if (rand_s(&r) != 0)
+			return false;
+		for (size_t j = 0; j < sizeof(size_t) && i < size; j++) {
+			buf[i++] = seedChars[(r & 0xFF) % 62];
+			r >>= 8;
+		}
+	}
+	return true;
+}
+#endif
+
 static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t i;
@@ -112,27 +125,23 @@ static void generateChallenge(str buf, int min, int max) {
 #else
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
-#endif
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(&size, sizeof(size)) < 0)
+#elif defined(HAVE_RAND_S)
+	unsigned int r;
+	if (rand_s(&r) == 0)
+		size = (size_t) r;
+	else
 #endif
 		size = rand();
 	size = (size % (max - min)) + min;
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0)
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(buf, size) == 0)
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
 	else
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(buf, size) == kCCSuccess)
-		for (i = 0; i < size; i++)
-			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
-	else
-#endif
+#elif defined(HAVE_RAND_S)
+	if (!gen_win_challenge(buf, size))
 #endif
 		for (i = 0; i < size; i++) {
 			buf[i] = seedChars[rand() % 62];

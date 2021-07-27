@@ -3,7 +3,7 @@
  *      FILE:     rmd160.h
  *
  *      CONTENTS: Header file for a sample C-implementation of the
- *                RIPEMD-160 hash-function. 
+ *                RIPEMD-160 hash-function.
  *      TARGET:   any computer with an ANSI C compiler
  *
  *      AUTHOR:   Antoon Bosselaers, ESAT-COSIC
@@ -20,14 +20,14 @@
  *      and to permit persons to whom the Software is furnished to do so,
  *      subject to the following conditions:
  *
- *      The above copyright notice and this permission notice shall be 
+ *      The above copyright notice and this permission notice shall be
  *      included in all copies or substantial portions of the Software.
  *
- *      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- *      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
- *      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
- *      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
- *      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ *      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ *      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ *      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ *      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
@@ -38,13 +38,15 @@
 
 /********************************************************************/
 
-/* typedef 8 and 32 bit types, resp.  */
-/* adapt these, if necessary, 
-   for your operating system and compiler */
-typedef    unsigned char        byte;
-typedef    unsigned long        dword;
+#include <stdint.h>
 
-/* if this line causes a compiler error, 
+/* typedef 8 and 32 bit types, resp.  */
+/* adapt these, if necessary,
+   for your operating system and compiler */
+typedef    uint8_t              byte;
+typedef    uint32_t             dword;
+
+/* if this line causes a compiler error,
    adapt the defintion of dword above */
 typedef int the_correct_size_was_chosen [sizeof (dword) == 4? 1: -1];
 
@@ -64,12 +66,12 @@ typedef int the_correct_size_was_chosen [sizeof (dword) == 4? 1: -1];
 #define ROL(x, n)        (((x) << (n)) | ((x) >> (32-(n))))
 
 /* the five basic functions F(), G() and H() */
-#define F(x, y, z)        ((x) ^ (y) ^ (z)) 
-#define G(x, y, z)        (((x) & (y)) | (~(x) & (z))) 
+#define F(x, y, z)        ((x) ^ (y) ^ (z))
+#define G(x, y, z)        (((x) & (y)) | (~(x) & (z)))
 #define H(x, y, z)        (((x) | ~(y)) ^ (z))
-#define I(x, y, z)        (((x) & (z)) | ((y) & ~(z))) 
+#define I(x, y, z)        (((x) & (z)) | ((y) & ~(z)))
 #define J(x, y, z)        ((x) ^ ((y) | ~(z)))
-  
+
 /* the ten basic operations FF() through III() */
 #define FF(a, b, c, d, e, x, s)        {\
       (a) += F((b), (c), (d)) + (x);\
@@ -139,7 +141,7 @@ void compress(dword *MDbuf, dword *X);
 
 void MDfinish(dword *MDbuf, byte *strptr, dword lswlen, dword mswlen);
 /*
- *  puts bytes from strptr into X and pad out; appends length 
+ *  puts bytes from strptr into X and pad out; appends length
  *  and finally, compresses the last block(s)
  *  note: length in bits == 8 * (lswlen + 2^32 mswlen).
  *  note: there are (lswlen mod 64) bytes left in strptr.
@@ -148,4 +150,3 @@ void MDfinish(dword *MDbuf, byte *strptr, dword lswlen, dword mswlen);
 #endif  /* RMD160H */
 
 /*********************** end of file rmd160.h ***********************/
-
