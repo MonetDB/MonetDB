@@ -1309,8 +1309,12 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sqlstore *store = m->store;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
+	if (t && !isTable(t))
+		throw(SQL, "sql.bind", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_column *c = mvc_bind_column(m, t, cname);
 	b = mvc_bind(m, sname, tname, cname, access);
 	if (b && b->ttype && b->ttype != coltype) {
@@ -1319,7 +1323,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
-			sqlstore *store = m->session->tr->store;
 			BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz;
 			/* partitioned access */
 			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
@@ -1407,10 +1410,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
-				sql_schema *s = mvc_bind_schema(m, sname);
-				sql_table *t = mvc_bind_table(m, s, tname);
-				sql_column *c = mvc_bind_column(m, t, cname);
-
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
 				if (*bid == BID_NIL || *uvl == BID_NIL) {
@@ -1520,7 +1519,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(t = mvc_bind_table(m, s, tname)))
 			throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
 		if (!isTable(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "%s don't have delta values", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			throw(SQL, "sql.delta", SQLSTATE(42000) "%s doesn't have delta values", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (cname) {
 			if (!(c = mvc_bind_column(m, t, cname)))
 				throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
@@ -1650,6 +1649,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	sqlstore *store = m->store;
 	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	if (t && !isTable(t))
+		throw(SQL, "sql.tid", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 	b = mvc_bind_idxbat(m, sname, tname, iname, access);
 	if (b && b->ttype && b->ttype != coltype) {
@@ -1658,8 +1661,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
-			BUN cnt = BATcount(b), psz;
-			cnt = store->storage_api.count_idx(m->session->tr, i, 0);
+			BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
 			/* partitioned access */
 			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
@@ -1682,12 +1684,6 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
-				BAT *s = mvc_bind_idxbat(m, sname, tname, iname, 0);
-				if ( s == NULL) {
-					BBPunfix(b->batCacheid);
-					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-				}
-				cnt = BATcount(s);
 				cnt = store->storage_api.count_idx(m->session->tr, i, 0);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -1698,7 +1694,6 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				BBPunfix(s->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
@@ -1738,15 +1733,17 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_destroy(id);
 					bat_destroy(vl);
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.idxbind", GDK_EXCEPTION);
+					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
 				}
-				assert(BATcount(id) == BATcount(vl));
+				if ( BATcount(id) != BATcount(vl)){
+					BBPunfix(b->batCacheid);
+					bat_destroy(id);
+					bat_destroy(vl);
+					throw(SQL, "sql.bindidx", SQLSTATE(0000) "Inconsistent BAT count");
+				}
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
-				sql_schema *s = mvc_bind_schema(m, sname);
-				sql_idx *i = mvc_bind_idx(m, s, iname);
-
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
 				if (*bid == BID_NIL || *uvl == BID_NIL) {
@@ -1755,7 +1752,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (*uvl)
 						BBPunfix(*uvl);
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.idxbind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 			BBPunfix(b->batCacheid);
@@ -1765,8 +1762,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if (sname)
-		throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
-	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
+		throw(SQL, "sql.bindidx", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
+	throw(SQL, "sql.bindidx", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
 }
 
 str
@@ -2371,6 +2368,9 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.tid", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	sqlstore *store = m->store;
 	/* we have full table count, nr of deleted (unused rows) */

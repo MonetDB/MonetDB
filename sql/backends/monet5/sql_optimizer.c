@@ -83,7 +83,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */
-			if (c && (!isRemote(c->t) && !isMergeTable(c->t)) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
+			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
 				size = SQLgetColumnSize(tr, c, access);
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
@@ -102,7 +102,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			if (getFunctionId(p) == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
-				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+				if (i && isTable(i->t)) {
 					size = SQLgetIdxSize(tr, i, access);
 
 					if( !prepare && size == 0 && ! i->t->system){

@@ -5648,7 +5648,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 							continue;
 						k = fk;
 						/* make sure it is not a self referencing key */
-						if (k->t != t && !cascade) {
+						if (k->t != t && !cascade && isTable(t)) {
 							node *n = ol_first_node(t->columns);
 							sql_column *c = n->data;
 							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 10);

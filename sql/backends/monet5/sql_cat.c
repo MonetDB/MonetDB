@@ -475,8 +475,8 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
-	if (isMergeTable(t))
-		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: read only MERGE TABLES are not supported");
+	if (!isTable(t))
+		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42000) "ALTER TABLE: access changes on %sS not supported", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 	if (t->access != access) {
 		if (access && table_has_updates(sql->session->tr, t))
 			throw(SQL,"sql.alter_table_set_access",SQLSTATE(40000) "ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
