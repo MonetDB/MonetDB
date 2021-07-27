@@ -858,10 +858,13 @@ static int /*ok, error (name existed) and conflict (added before) */
 os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	int res = 0;
-	objectversion *ov = SA_ZNEW(os->sa, objectversion);
-	ov->ts = tr->tid;
-	ov->b = b;
-	ov->os = os;
+	objectversion *ov = SA_NEW(os->sa, objectversion);
+
+	*ov = (objectversion) {
+		.ts = tr->tid,
+		.b = b,
+		.os = os,
+	};
 
 	if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */
 		if (os->destroy)
@@ -962,11 +965,14 @@ static int
 os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	int res = 0;
-	objectversion *ov = SA_ZNEW(os->sa, objectversion);
+	objectversion *ov = SA_NEW(os->sa, objectversion);
+
+	*ov = (objectversion) {
+		.ts = tr->tid,
+		.b = b,
+		.os = os,
+	};
 	os_atmc_set_state(ov, deleted);
-	ov->ts = tr->tid;
-	ov->b = b;
-	ov->os = os;
 
 	if ((res = os_del_id_based(os, tr, b->id, ov))) {
 		if (os->destroy)

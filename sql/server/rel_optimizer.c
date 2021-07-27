@@ -9130,7 +9130,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 			if (list_empty(mt->members)) /* in DDL statement cases skip if mergetable is empty */
 				return rel;
 			if (sel) { /* prepare prunning information once */
-				info = sa_alloc(v->sql->sa, sizeof(merge_table_prune_info));
+				info = SA_NEW(v->sql->sa, merge_table_prune_info);
 				*info = (merge_table_prune_info) {
 					.cols = sa_list(v->sql->sa),
 					.ranges = sa_list(v->sql->sa),
@@ -9149,13 +9149,15 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						atom *hval = h ? exp_flatten(v->sql, h) : lval;
 
 						if (lval && hval) {
-							range_limit *next = SA_ZNEW(v->sql->sa, range_limit);
-							next->lval = lval;
-							next->hval = hval;
-							next->flag = flag;
-							next->anti = is_anti(e);
-							next->semantics = is_semantics(e);
+							range_limit *next = SA_NEW(v->sql->sa, range_limit);
 
+							*next = (range_limit) {
+								.lval = lval,
+								.hval = hval,
+								.flag = flag,
+								.anti = is_anti(e),
+								.semantics = is_semantics(e),
+							};
 							list_append(info->cols, c);
 							list_append(info->ranges, next);
 						}
@@ -9173,12 +9175,14 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 							list_append(vlist, lval);
 						}
 						if (!m) {
-							range_limit *next = SA_ZNEW(v->sql->sa, range_limit);
-							next->values = vlist; /* mark high as value list */
-							next->flag = flag;
-							next->anti = is_anti(e);
-							next->semantics = is_semantics(e);
+							range_limit *next = SA_NEW(v->sql->sa, range_limit);
 
+							*next = (range_limit) {
+								.values = vlist, /* mark high as value list */
+								.flag = flag,
+								.anti = is_anti(e),
+								.semantics = is_semantics(e),
+							};
 							list_append(info->cols, c);
 							list_append(info->ranges, next);
 						}
