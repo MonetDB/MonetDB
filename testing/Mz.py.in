@@ -2342,15 +2342,6 @@ def main(argv) :
             print("%s = %s" % (v, str(par[v])))
     STDOUT.flush()
 
-    python_version = ''
-    if CheckExec('python'):
-        with process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            pyout, pyerr = proc.communicate()
-        if proc.returncode == 0 and pyout:
-            python_version = pyout.strip()
-            os.environ['PYTHON' + python_version] = 'python'
     try:
         import lz4
     except ImportError:
@@ -2365,13 +2356,13 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDBE'] = True
 
-    if 'PYTHON3' in os.environ:
-        with process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            pyout, pyerr = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
+    try:
+        import scipy
+    except ImportError:
+        CONDITIONALS['HAVE_LIBSCIPY3'] = False
+    else:
+        CONDITIONALS['HAVE_LIBSCIPY3'] = True
+
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = True
     if CheckExec('perl'):
@@ -2564,8 +2555,8 @@ def main(argv) :
         if SOCK:
             # we cannot put the UNIX socket in the mtest root, because that
             # makes the UNIX socket too long on most platforms, so use
-            # /var/tmp/mtest and try not to forget to clean that up
-            sockdir = "/var/tmp/mtest-%d" % os.getpid()
+            # /tmp/mtest and try not to forget to clean that up
+            sockdir = "/tmp/mtest-%d" % os.getpid()
             try:
                 os.mkdir(sockdir);
                 SOCK = "--set mapi_usock=%s/.s.monetdb.${PORT}" % sockdir
