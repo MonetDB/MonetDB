@@ -1634,63 +1634,63 @@ def GetBitsAndModsAndThreads(env) :
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                         stderr=process.PIPE, text=True)
-    proc.stdout = process._BufferedPipe(proc.stdout)
-    proc.stderr = process._BufferedPipe(proc.stderr)
-    proc.killed = False
-    proc.onechild = True
-    t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
-    qOut = qErr = None
-    try:
-        t.start()
-        while True:
-            proc.poll()
-            if proc.returncode is not None:
-                break
-            if os.path.exists(os.path.join(dbpath, '.started')):
-                break
-            time.sleep(0.001)
-        if proc.returncode is None:
-            connurl = open(os.path.join(dbpath, '.conn')).read()
-            res = mapiportre.search(connurl)
-            cmd = splitcommand(env['exe']['MAL_Client'][1].replace('${PORT}', res.group('port')))
+    with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                       stderr=process.PIPE, text=True) as proc:
+        proc.stdout = process._BufferedPipe(proc.stdout)
+        proc.stderr = process._BufferedPipe(proc.stderr)
+        proc.killed = False
+        proc.onechild = True
+        t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
+        qOut = qErr = None
+        try:
+            t.start()
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    break
+                if os.path.exists(os.path.join(dbpath, '.started')):
+                    break
+                time.sleep(0.001)
+            if proc.returncode is None:
+                connurl = open(os.path.join(dbpath, '.conn')).read()
+                res = mapiportre.search(connurl)
+                cmd = splitcommand(env['exe']['MAL_Client'][1].replace('${PORT}', res.group('port')))
+                if procdebug:
+                    print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+                with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                                   stderr=process.PIPE, text=True) as clnt:
+                    input = '''\
+                        c := mdb.modules();
+                        modsid := algebra.unique(c,nil:bat);
+                        mods := algebra.projection(modsid,c);
+                        s := "\\nModules: ";
+                        sep := "";
+                        barrier (h:oid,t:str) := iterator.new(mods);
+                                s := s + sep;
+                                s := s + "\'";
+                                s := s + t;
+                                s := s + "\'";
+                                sep := ",";
+                        redo (h:oid,t:str) := iterator.next(mods);
+                        exit h;
+                        s := s + "\\n";
+                        io.printf(s);
+                    '''
+                    ##module("NoModule");
+                    qOut, qErr = clnt.communicate(input=input)
+                proc.terminate()
+                sOut = proc.stdout.read()
+                sErr = proc.stderr.read()
+                proc.wait()
+                qOut = sOut + qOut
+                qErr = sErr + qErr
+        finally:
+            t.cancel()
+            if proc.returncode is None:
+                killProc(proc, proc.stderr, cmd)
+                proc.wait()
             if procdebug:
-                print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-            with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                               stderr=process.PIPE, text=True) as clnt:
-                input = '''\
-                    c := mdb.modules();
-                    modsid := algebra.unique(c,nil:bat);
-                    mods := algebra.projection(modsid,c);
-                    s := "\\nModules: ";
-                    sep := "";
-                    barrier (h:oid,t:str) := iterator.new(mods);
-                            s := s + sep;
-                            s := s + "\'";
-                            s := s + t;
-                            s := s + "\'";
-                            sep := ",";
-                    redo (h:oid,t:str) := iterator.next(mods);
-                    exit h;
-                    s := s + "\\n";
-                    io.printf(s);
-                '''
-                ##module("NoModule");
-                qOut, qErr = clnt.communicate(input=input)
-            proc.terminate()
-            sOut = proc.stdout.read()
-            sErr = proc.stderr.read()
-            proc.wait()
-            qOut = sOut + qOut
-            qErr = sErr + qErr
-    finally:
-        t.cancel()
-        if proc.returncode is None:
-            killProc(proc, proc.stderr, cmd)
-            proc.wait()
-        if procdebug:
-            print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
+                print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
@@ -3484,21 +3484,14 @@ def main(argv) :
     # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
-    python_version = ''
-    if CheckExec('python'):
-        with process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            pyout, pyerr = proc.communicate()
-        if proc.returncode == 0 and pyout:
-            python_version = pyout.strip()
-            os.environ['PYTHON' + python_version] = 'python'
     try:
         import pymonetdb
     except ImportError:
-        print('Python available, but pymonetdb package not available')
+        print('pymonetdb package not available')
+        CONDITIONALS['HAVE_PYMONETDB'] = False
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = True
+
     try:
         import lz4
     except ImportError:
@@ -3513,21 +3506,16 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDBE'] = True
 
-    if 'PYTHON3' in os.environ:
-        with process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            pyout, pyerr = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_LIBSCIPY3'] = True
-        # with process.Popen([os.environ['PYTHON3'], '-c', 'import pandas'],
-        #                    stdout=process.PIPE, stderr=process.PIPE,
-        #                    text=True) as proc:
-        #     pyout, pyerr = proc.communicate()
-        # if proc.returncode == 0:
-        #     CONDITIONALS['HAVE_LIBPANDAS3'] = True
+    try:
+        import scipy
+    except ImportError:
+        CONDITIONALS['HAVE_LIBSCIPY3'] = False
+    else:
+        CONDITIONALS['HAVE_LIBSCIPY3'] = True
+
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = True
+
     if CheckExec('perl'):
         with process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                            stdout=process.PIPE, stderr=process.PIPE,
@@ -3754,8 +3742,8 @@ def main(argv) :
         if SOCK:
             # we cannot put the UNIX socket in the mtest root, because that
             # makes the UNIX socket too long on most platforms, so use
-            # /var/tmp/mtest and try not to forget to clean that up
-            sockdir = "/var/tmp/mtest-%d" % os.getpid()
+            # /tmp/mtest and try not to forget to clean that up
+            sockdir = "/tmp/mtest-%d" % os.getpid()
             try:
                 os.mkdir(sockdir)
                 SOCK = "--set mapi_usock=%s/.s.monetdb.${PORT}" % sockdir
