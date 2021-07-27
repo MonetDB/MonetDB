@@ -15,6 +15,7 @@ typedef struct RIPEMD160Context {
 	uint32_t digest[5];
 	uint8_t overflow[64];
 	unsigned noverflow;
+	size_t length;
 } RIPEMD160Context;
 
 #define RIPEMD160_DIGEST_LENGTH 20
