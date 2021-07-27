@@ -525,7 +525,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
-			MT_thread_getname(), func, GDKERROR,
+			MT_thread_getname(), func, level == M_WARNING ? GDKWARNING : GDKERROR,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
 		if (active_tracer == NULL || active_tracer == stderr)
