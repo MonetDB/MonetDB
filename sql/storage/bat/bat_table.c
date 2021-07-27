@@ -279,13 +279,16 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 		gdk_return ret;
 
 		cr = delta_cands(tr, jr->t);
-		if (cr == NULL) {
+		lcb = full_column(tr, jl);
+		rcb = full_column(tr, jr);
+		if (!cr || !lcb || !rcb) {
 			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(lcb);
+			bat_destroy(rcb);
 			return NULL;
 		}
 
-		lcb = full_column(tr, jl);
-		rcb = full_column(tr, jr);
 		ret = BATjoin(&l, &r, lcb, rcb, cl, cr, false, BATcount(lcb));
 		bat_destroy(cl);
 		bat_destroy(cr);
@@ -296,21 +299,24 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 		cl = l;
 		cr = r;
 	}
-	/* we assume 1->n joins, therefor first join between jl2/jr2 */
+	/* we assume 1->n joins, therefore first join between jl2/jr2 */
 	if (jl2 && jr2) {
 		assert(jr->t == jl2->t);
 		BAT *lcb, *rcb, *r = NULL, *l = NULL;
 		gdk_return ret;
 
 		cr2 = delta_cands(tr, jr2->t);
-		if (cr2 == NULL) {
+		lcb = full_column(tr, jl2);
+		rcb = full_column(tr, jr2);
+		if (!cr2 || !lcb || !rcb) {
 			bat_destroy(cl);
 			bat_destroy(cr);
+			bat_destroy(cr2);
+			bat_destroy(lcb);
+			bat_destroy(rcb);
 			return NULL;
 		}
 
-		lcb = full_column(tr, jl2);
-		rcb = full_column(tr, jr2);
 		l = BATproject(cr, lcb); /* project because cr is join result */
 		bat_destroy(lcb);
 		lcb = l;
@@ -481,6 +487,12 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			kvh = va_arg(va, void *);
 
 			b = full_column(tr, key);
+			if (b == NULL) {
+				bat_destroy(s);
+				GDKfree(rs);
+				va_end(va);
+				return NULL;
+			}
 			if (!kvl)
 				kvl = ATOMnilptr(b->ttype);
 			if (!kvh && kvl != ATOMnilptr(b->ttype))
@@ -511,6 +523,8 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	BAT *b, *s, *o;
 
 	b = full_column(tr, orderby_col);
+	if (!b)
+		return NULL;
 	s = BATproject(r->data, b);
 	bat_destroy(b);
 	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
@@ -571,6 +585,13 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
+	if (!lcb || !rcb) {
+		bat_destroy(l->data);
+		l->data = NULL;
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		return NULL;
+	}
 	ret = BATjoin(&s, NULL, lcb, rcb, l->data, r->data, false, BATcount(lcb));
 	bat_destroy(l->data);
 	if (ret != GDK_SUCCEED) {
