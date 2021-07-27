@@ -1649,7 +1649,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
-			if (!(st = GDKinitialize_segment_tree())) {
+			if (!count_all && !(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
