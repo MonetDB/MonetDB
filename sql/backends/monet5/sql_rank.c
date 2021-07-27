@@ -1266,7 +1266,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	int tpe, frame_type;
-	bit ignore_nils;
+	bit ignore_nils, heap_loaded = false;
 	bat *res = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -1280,9 +1280,18 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
-	if (isaBatType(getArgType(mb, pci, 1)) && (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
-		goto bailout;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (ignore_nils && !b->tnonil) {
+			if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+				msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+			heap_loaded = true;
+		}
 	}
 	if (b && !(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
 		msg = createException(SQL, "sql.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1326,7 +1335,9 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	unfix_inputs(5, b, p, o, s, e);
+	if (b && heap_loaded)
+		BBPunfix(b->batCacheid);
+	unfix_inputs(4, p, o, s, e);
 	finalize_output(res, r, msg);
 	return msg;
 }
