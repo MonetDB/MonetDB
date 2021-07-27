@@ -15,6 +15,7 @@ RIPEMD160Reset(RIPEMD160Context *ctxt)
 {
 	MDinit(ctxt->digest);
 	ctxt->noverflow = 0;
+	ctxt->length = 0;
 }
 
 void
@@ -22,18 +23,18 @@ RIPEMD160Input(RIPEMD160Context *ctxt, const uint8_t *bytes, unsigned bytecount)
 {
 	dword X[16];
 
+	ctxt->length += bytecount;
 	if (ctxt->noverflow > 0) {
 		if (ctxt->noverflow + bytecount < 64) {
 			memcpy(ctxt->overflow + ctxt->noverflow, bytes, bytecount);
 			ctxt->noverflow += bytecount;
 			return;
 		}
-		memset(X, 0, sizeof(X));
-		for (unsigned i = 0; i < ctxt->noverflow; i++) {
-			X[i >> 2] |= ctxt->overflow[i] << (8 * (i & 3));
-		}
-		for (unsigned i = ctxt->noverflow; i < 64; i++) {
-			X[i >> 2] |= bytes[i - ctxt->noverflow] << (8 * (i & 3));
+		memcpy(ctxt->overflow + ctxt->noverflow, bytes, bytecount - ctxt->noverflow);
+		const uint8_t *x = ctxt->overflow;
+		for (int i = 0; i < 16; i++) {
+			X[i] = BYTES_TO_DWORD(x);
+			x += 4;
 		}
 		bytecount -= ctxt->noverflow;
 		bytes += ctxt->noverflow;
@@ -56,7 +57,7 @@ RIPEMD160Input(RIPEMD160Context *ctxt, const uint8_t *bytes, unsigned bytecount)
 void
 RIPEMD160Result(RIPEMD160Context *ctxt, uint8_t digest[RIPEMD160_DIGEST_LENGTH])
 {
-	MDfinish(ctxt->digest, ctxt->overflow, ctxt->noverflow, 0);
+	MDfinish(ctxt->digest, ctxt->overflow, (dword) ctxt->length, 0);
 	for (int i = 0; i < RIPEMD160_DIGEST_LENGTH; i += 4) {
 		digest[i] = (uint8_t) ctxt->digest[i >> 2];
 		digest[i + 1] = (uint8_t) (ctxt->digest[i >> 2] >> 8);
