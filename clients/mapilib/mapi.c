@@ -2645,22 +2645,12 @@ mapi_reconnect(Mapi mid)
 		return mid->error;
 	}
 	char *algsv[] = {
-#ifdef HAVE_RIPEMD160_UPDATE
 		"RIPEMD160",
-#endif
 		"SHA512",
-#ifdef HAVE_SHA384_UPDATE
 		"SHA384",
-#endif
-#ifdef HAVE_SHA256_UPDATE
 		"SHA256",
-#endif
-#ifdef HAVE_SHA224_UPDATE
 		"SHA224",
-#endif
-#ifdef HAVE_SHA1_UPDATE
 		"SHA1",
-#endif
 		NULL
 	};
 	char **algs = algsv;
@@ -2701,41 +2691,25 @@ mapi_reconnect(Mapi mid)
 	/* hash password, if not already */
 	if (mid->password[0] != '\1') {
 		char *pwdhash = NULL;
-#ifdef HAVE_RIPEMD160_UPDATE
 		if (strcmp(serverhash, "RIPEMD160") == 0) {
 			pwdhash = mcrypt_RIPEMD160Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-		if (strcmp(serverhash, "SHA512") == 0) {
+		} else if (strcmp(serverhash, "SHA512") == 0) {
 			pwdhash = mcrypt_SHA512Sum(mid->password,
 							strlen(mid->password));
-		} else
-#ifdef HAVE_SHA384_UPDATE
-		if (strcmp(serverhash, "SHA384") == 0) {
+		} else if (strcmp(serverhash, "SHA384") == 0) {
 			pwdhash = mcrypt_SHA384Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-#ifdef HAVE_SHA256_UPDATE
-		if (strcmp(serverhash, "SHA256") == 0) {
+		} else if (strcmp(serverhash, "SHA256") == 0) {
 			pwdhash = mcrypt_SHA256Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-#ifdef HAVE_SHA224_UPDATE
-		if (strcmp(serverhash, "SHA224") == 0) {
+		} else if (strcmp(serverhash, "SHA224") == 0) {
 			pwdhash = mcrypt_SHA224Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-#ifdef HAVE_SHA1_UPDATE
-		if (strcmp(serverhash, "SHA1") == 0) {
+		} else if (strcmp(serverhash, "SHA1") == 0) {
 			pwdhash = mcrypt_SHA1Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-		{
+		} else {
 			(void)pwdhash;
 			snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
 					serverhash);

@@ -15,11 +15,6 @@
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
 #endif
-#ifdef HAVE_OPENSSL
-#include <openssl/opensslconf.h>
-#include <openssl/opensslv.h>
-#include <openssl/crypto.h>
-#endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
 #endif
@@ -27,7 +22,7 @@
 #define STRING(a)  # a
 #define XSTRING(s) STRING(s)
 
-#if defined(HAVE_LIBPCRE) || defined(HAVE_OPENSSL)
+#if defined(HAVE_LIBPCRE)
 static void
 print_libversion(const char *lib, const char *rtvers, const char *cmvers)
 {
@@ -90,15 +85,6 @@ monet_version(void)
 			 ? XSTRING(PCRE_MAJOR.PCRE_MINOR PCRE_DATE)
 			 : XSTRING(PCRE_MAJOR.PCRE_MINOR)
 			   XSTRING(PCRE_PRERELEASE PCRE_DATE));
-#endif
-#ifdef HAVE_OPENSSL
-	print_libversion("openssl",
-#if OPENSSL_VERSION_NUMBER < 0x10100000
-			 OPENSSL_VERSION_TEXT,
-#else
-			 OpenSSL_version(OPENSSL_VERSION),
-#endif
-			 OPENSSL_VERSION_TEXT);
 #endif
 #ifdef HAVE_LIBXML
 	/* no run-time version available, so only compile time */
