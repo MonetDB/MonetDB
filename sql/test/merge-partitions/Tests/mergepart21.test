@@ -43,10 +43,10 @@ ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN (1, 2, 10)
 statement ok
 ALTER TABLE nexttest ADD TABLE subtable2 AS PARTITION IN (11, 12, 20)
 
-statement error 42000!ALTER TABLE: cannot drop column from MERGE TABLE 'nexttest' while it has partitions
+statement error 42000!ALTER TABLE: cannot drop column from LIST PARTITION TABLE 'nexttest' while it has partitions
 ALTER TABLE nexttest DROP COLUMN dd
 
-statement error 42000!ALTER TABLE: cannot add column to MERGE TABLE 'nexttest' while it has partitions
+statement error 42000!ALTER TABLE: cannot add column to LIST PARTITION TABLE 'nexttest' while it has partitions
 ALTER TABLE nexttest ADD COLUMN again int
 
 statement error 42000!ALTER TABLE: cannot drop column from a PARTITION of a MERGE or REPLICA TABLE 'subtable1'

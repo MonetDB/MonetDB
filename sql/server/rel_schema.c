@@ -700,12 +700,10 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	int res = SQL_OK;
 
 	(void) ss;
-	if (alter && !(isTable(t) || (isMergeTable(t) && list_length(t->members)==0))) {
+	if (alter && !(isTable(t) || ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0))) {
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
-				  isMergeTable(t)?"MERGE TABLE":
-				  isRemote(t)?"REMOTE TABLE":
-				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				  t->base.name, (isMergeTable(t) && list_length(t->members)) ? " while it has partitions" : "");
+				  TABLE_TYPE_DESCRIPTION(t->type, t->properties),
+				  t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -782,10 +780,8 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				action,
 				msg,
 				partition_find_part(sql->session->tr, t, NULL)?"a PARTITION of a MERGE or REPLICA TABLE":
-				isMergeTable(t)?"MERGE TABLE":
-				isRemote(t)?"REMOTE TABLE":
-				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name, (isMergeTable(t) && list_length(t->members)) ? " while it has partitions" : "");
+				TABLE_TYPE_DESCRIPTION(t->type, t->properties),
+				t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -1930,8 +1926,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
-	if (isView(t) || isMergeTable(t) || isRemote(t))
-		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":isMergeTable(t)?"merge table":"remote table", tname);
+	if (!isTable(t))
+		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", TABLE_TYPE_DESCRIPTION(t->type, t->properties), tname);
 	nt = dup_sql_table(sql->sa, t);
 
 	if (t->persistence != SQL_DECLARED_TABLE)
