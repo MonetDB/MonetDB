@@ -1691,12 +1691,14 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (!s || !t)
 		return 0;
 
-	/* query type: Q_TABLE */
-	if (!(mnstr_write(s, "&1 ", 3, 1) == 1))
+	/* query type: Q_TABLE || Q_PREPARE */
+	assert(t->query_type == Q_TABLE || t->query_type == Q_PREPARE);
+	if ( (mnstr_write(s, "&", 1, 1) != 1) || !mvc_send_int(s, (int) t->query_type) || (mnstr_write(s, " ", 1, 1) != 1))
 		return -1;
 
 	/* id */
-	if (!mvc_send_int(s, t->id) || mnstr_write(s, " ", 1, 1) != 1)
+	int result_id = t->query_type == Q_PREPARE?b->q->id:t->id;
+	if (!mvc_send_int(s, result_id) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 
 	/* tuple count */
@@ -1861,7 +1863,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (t->tsep) {
 		if (header) {
 			/* need header */
-			if (mvc_export_head(b, s, t->id, TRUE, TRUE, starttime, maloptimizer) < 0)
+			if (mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer) < 0)
 				return -1;
 		}
 		return mvc_export_file(b, s, t);
