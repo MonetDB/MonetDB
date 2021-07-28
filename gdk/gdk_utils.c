@@ -59,13 +59,13 @@ static void GDKunlockHome(int farmid);
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the GDK_UNIQUE_ESTIMATE property */
-BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
-BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+BUN HASH_DESTROY_UNIQUES_FRACTION = 1000;     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
-dbl NO_HASH_SELECT_FRACTION;           /* same here */
+dbl NO_HASH_SELECT_FRACTION = 1000;           /* same here */
 
 /*
  * @+ Monet configuration file
