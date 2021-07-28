@@ -85,6 +85,8 @@ BATunique(BAT *b, BAT *s)
 			MT_lock_set(&b->theaplock);
 			if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
 				initsize = prop->val.oval;
+			else if ((prop = BATgetprop_nolock(b, GDK_UNIQUE_ESTIMATE)) != NULL)
+				initsize = (BUN) prop->val.dval;
 			MT_lock_unset(&b->theaplock);
 		}
 	}
