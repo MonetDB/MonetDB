@@ -1612,7 +1612,7 @@ select 'duplicates in functions', count(*), id from sys.functions group by id ha
 select 'duplicates in systemfunctions', count(*), function_id from sys.systemfunctions group by function_id having count(*) > 1;
 select 'duplicates in args', count(*), id from sys.args group by id having count(*) > 1;
 select 'duplicates in types', count(*), id from sys.types group by id having count(*) > 1;
-select 'duplicates in objects', count(*), id, nr from sys.objects group by id, nr having count(*) > 1;
+select 'duplicates in objects', count(*), id from sys.objects group by id having count(*) > 1;
 select 'duplicates in keys', count(*), id from sys.keys group by id having count(*) > 1;
 select 'duplicates in idxs', count(*), id from sys.idxs group by id having count(*) > 1;
 select 'duplicates in triggers', count(*), id from sys.triggers group by id having count(*) > 1;
@@ -1660,7 +1660,6 @@ select 'duplicates in (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys.t
 select 'duplicates in functions f join sys.args a on f.id=a.func_id', count(*), schema_id, f.name, func, mod, language, f.type, side_effect, varres, vararg, a.id from sys.functions f join sys.args a on f.id=a.func_id group by schema_id, f.name, func, mod, language, f.type, side_effect, varres, vararg, a.id having count(*) > 1;
 select 'duplicates in args', count(*), func_id, name, inout from sys.args group by func_id, name, inout having count(*) > 1;
 select 'duplicates in types', count(*), schema_id, systemname, sqlname from sys.types group by schema_id, systemname, sqlname having count(*) > 1;
-select 'duplicates in objects', count(*), id, name from sys.objects group by id, name having count(*) > 1;
 select 'duplicates in keys', count(*), table_id, name from sys.keys group by table_id, name having count(*) > 1;
 select 'duplicates in idxs', count(*), table_id, name from sys.idxs group by table_id, name having count(*) > 1;
 select 'duplicates in triggers', count(*), table_id, name from sys.triggers group by table_id, name having count(*) > 1;
@@ -6662,10 +6661,10 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 19,	1,	1 # length
-% .%2,	sys.%1,	sys.objects,	sys.objects # table_name
-% %2,	%1,	id,	nr # name
-% char,	bigint,	int,	int # type
-% 21,	1,	1,	1 # length
+% .%2,	sys.%1,	sys.objects # table_name
+% %2,	%1,	id # name
+% char,	bigint,	int # type
+% 21,	1,	1 # length
 % .%2,	sys.%1,	sys.keys # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type
@@ -6854,10 +6853,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	schema_id,	systemname,	sqlname # name
 % char,	bigint,	int,	varchar,	varchar # type
 % 19,	1,	1,	0,	0 # length
-% .%2,	sys.%1,	sys.objects,	sys.objects # table_name
-% %2,	%1,	id,	name # name
-% char,	bigint,	int,	varchar # type
-% 21,	1,	1,	0 # length
 % .%2,	sys.%1,	sys.keys,	sys.keys # table_name
 % %2,	%1,	table_id,	name # name
 % char,	bigint,	int,	varchar # type
