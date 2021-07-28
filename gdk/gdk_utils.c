@@ -57,6 +57,16 @@ static void GDKunlockHome(int farmid);
 #undef realloc
 #undef free
 
+/* when the number of updates to a BAT is less than 1 in this number, we
+ * keep the GDK_UNIQUE_ESTIMATE property */
+BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
+/* if the number of unique values is less than 1 in this number, we
+ * destroy the hash rather than update it in HASH{append,insert,delete} */
+BUN HASH_DESTROY_UNIQUES_FRACTION = 1000;     /* likewise */
+/* if the estimated number of unique values is less than 1 in this
+ * number, don't build a hash table to do a hashselect */
+dbl NO_HASH_SELECT_FRACTION = 1000;           /* same here */
+
 /*
  * @+ Monet configuration file
  * Parse a possible MonetDB config file (if specified by command line
@@ -1146,6 +1156,21 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "GDKsetenv revision failed");
 		return GDK_FAIL;
 	}
+	GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 0;
+	if ((p = GDKgetenv("gdk_unique_estimate_keep_fraction")) != NULL)
+		GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = (BUN) strtoll(p, NULL, 10);
+	if (GDK_UNIQUE_ESTIMATE_KEEP_FRACTION == 0)
+		GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000;
+	HASH_DESTROY_UNIQUES_FRACTION = 0;
+	if ((p = GDKgetenv("hash_destroy_uniques_fraction")) != NULL)
+		HASH_DESTROY_UNIQUES_FRACTION = (BUN) strtoll(p, NULL, 10);
+	if (HASH_DESTROY_UNIQUES_FRACTION == 0)
+		HASH_DESTROY_UNIQUES_FRACTION = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
+	NO_HASH_SELECT_FRACTION = 0;
+	if ((p = GDKgetenv("no_hash_select_fraction")) != NULL)
+		NO_HASH_SELECT_FRACTION = (dbl) strtoll(p, NULL, 10);
+	if (NO_HASH_SELECT_FRACTION == 0)
+		NO_HASH_SELECT_FRACTION = (dbl) GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
 
 	return GDK_SUCCEED;
 }

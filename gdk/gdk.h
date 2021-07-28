@@ -2243,13 +2243,14 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  */
 enum prop_t {
 	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
-	GDK_MIN_POS,		/* BUN position of smallest value  */
+	GDK_MIN_POS,		/* BUN position of smallest value (oid) */
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
-	GDK_MAX_POS,		/* BUN position of largest value  */
-	GDK_HASH_BUCKETS,	/* last used hash bucket size */
-	GDK_NUNIQUE,		/* number of unique values */
-	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values */
+	GDK_MAX_POS,		/* BUN position of largest value (oid) */
+	GDK_HASH_BUCKETS,	/* last used hash bucket size (oid) */
+	GDK_NUNIQUE,		/* number of unique values (oid) */
+	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values (dbl) */
 };
+
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
 
 /*

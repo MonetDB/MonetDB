@@ -787,7 +787,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			BATrmprop(b, GDK_MIN_POS);
 		}
 	}
-	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	if (cnt > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
@@ -1163,7 +1164,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 	OIDXdestroy(b);
 	IMPSdestroy(b);
-	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
