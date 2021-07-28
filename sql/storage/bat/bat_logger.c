@@ -2175,8 +2175,8 @@ bl_postversion(void *Store, old_logger *old_lg)
 			}
 			BBPretain(objs_nr->batCacheid);
 			b = BATproject2(cands, objs_id, NULL);
-			bat_destroy(objs_id);
 			if (b == NULL) {
+				bat_destroy(objs_id);
 				bat_destroy(objs_nr);
 				bat_destroy(objs_sub);
 				bat_destroy(cands);
@@ -2184,30 +2184,87 @@ bl_postversion(void *Store, old_logger *old_lg)
 			}
 			rc = BATreplace(objs_nr, cands, b, false);
 			bat_destroy(b);
-			bat_destroy(cands);
 			if (rc != GDK_SUCCEED) {
+				bat_destroy(objs_id);
+				bat_destroy(objs_nr);
+				bat_destroy(objs_sub);
+				bat_destroy(cands);
+				return GDK_FAIL;
+			}
+
+			b = COLcopy(objs_id, objs_id->ttype, true, PERSISTENT);
+			rc = BUNappend(old_lg->del, &objs_id->batCacheid, false);
+			bat_destroy(objs_id);
+			if (b == NULL || rc != GDK_SUCCEED) {
+				bat_destroy(objs_nr);
+				bat_destroy(objs_sub);
+				bat_destroy(cands);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			objs_id = b;
+			if (BUNappend(old_lg->add, &objs_id->batCacheid, false) != GDK_SUCCEED) {
+				bat_destroy(objs_id);
+				bat_destroy(objs_nr);
+				bat_destroy(objs_sub);
+				bat_destroy(cands);
+				return GDK_FAIL;
+			}
+			BBPretain(objs_id->batCacheid);
+
+			BUN cnt = BATcount(cands), p;
+
+			if (!(b = COLnew(objs_id->hseqbase, TYPE_int, cnt, TRANSIENT)) ||
+				(p = BUNfnd(old_lg->seqs_id, &(int){OBJ_SID})) == BUN_NONE) {
+				bat_destroy(objs_id);
+				bat_destroy(objs_nr);
+				bat_destroy(objs_sub);
+				bat_destroy(cands);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+
+			int *bp = (int*)Tloc(b, 0), id = (int) *(lng *) Tloc(old_lg->seqs_val, p);
+			for (BUN i = 0; i < cnt; i++)
+				bp[i] = id++;
+			BATsetcount(b, cnt);
+			b->tsorted = b->trevsorted = b->tkey = b->tnonil = b->tnil = false;
+			b->tnosorted = b->tnorevsorted = 0;
+			lng lid = (lng) id;
+
+			rc = BATreplace(objs_id, cands, b, false);
+			bat_destroy(cands);
+			bat_destroy(b);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(objs_id);
 				bat_destroy(objs_nr);
 				bat_destroy(objs_sub);
 				return GDK_FAIL;
 			}
 
-			/* 2113 is sys.objects.nr */
-			if (BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2113}), &objs_nr->batCacheid, false) != GDK_SUCCEED ||
+			/* 2111 is sys.objects.id and 2113 is sys.objects.nr */
+			if (BUNreplace(old_lg->seqs_val, BUNfnd(old_lg->seqs_id, &(int){OBJ_SID}), &lid, false) != GDK_SUCCEED ||
+				BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2111}), &objs_id->batCacheid, false) != GDK_SUCCEED ||
+				BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2113}), &objs_nr->batCacheid, false) != GDK_SUCCEED ||
 				(objs_sub = BATsetaccess(objs_sub, BAT_READ)) == NULL ||
+				(objs_id = BATsetaccess(objs_id, BAT_READ)) == NULL ||
 				(objs_nr = BATsetaccess(objs_nr, BAT_READ)) == NULL ||
 				/* 2163 is sys.objects.sub */
 				BUNappend(lg->catalog_id, &(int) {2163}, false) != GDK_SUCCEED ||
 				BUNappend(old_lg->add, &objs_sub->batCacheid, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
-				bat_destroy(objs_sub);
+				bat_destroy(objs_id);
 				bat_destroy(objs_nr);
+				bat_destroy(objs_sub);
 				return GDK_FAIL;
 			}
 			BBPretain(objs_sub->batCacheid);
 			BBPretain(objs_sub->batCacheid);
 			BBPretain(objs_nr->batCacheid);
-			bat_destroy(objs_sub);
+			BBPretain(objs_id->batCacheid);
+			bat_destroy(objs_id);
 			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
 
 			/* alter table tmp.objects add column sub integer; */
 			objs_sub = BATconstant(0, TYPE_int, &int_nil, 0, PERSISTENT);
