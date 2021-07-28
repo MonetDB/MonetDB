@@ -1267,10 +1267,13 @@ movestrbats(void)
 		struct stat st;
 		int ret = -1;
 		if (oldpath != NULL && newpath != NULL) {
-			if (MT_stat(oldpath, &st) == -1 && MT_stat(newpath, &st) == 0)
-				ret = 0; /* new exists, old doesn't: that's ok */
-			else
+			if (MT_stat(oldpath, &st) != 0 && (b->batCount == 0 || MT_stat(newpath, &st) == 0))
+				ret = 0; /* old doesn't exist, but new does or bat is empty: that's ok */
+			else {
 				ret = MT_rename(oldpath, newpath);
+				if (ret < 0)
+					GDKsyserror("rename %s %s\n", oldpath, newpath);
+			}
 		}
 		GDKfree(oldpath);
 		GDKfree(newpath);
