@@ -265,61 +265,24 @@ AGGRvariancep3_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 }
 
 static str
-AGGRcountgrouped(bat *retval1, const bat *bid, const bat *gid, const bat *eid, const bat *sid,
-				 bool skip_nils, bool abort_on_error, const char *malfunc)
-{
-	BAT *b, *g, *e, *s, *bn;
-	bool heap_loaded = false;
-
-	/* Use quick descriptor when possible */
-	if ((b = BBPquickdesc(*bid)) && skip_nils && !b->tnonil) {
-		b = BATdescriptor(*bid);
-		heap_loaded = true;
-	}
-	g = gid ? BATdescriptor(*gid) : NULL;
-	e = eid ? BBPquickdesc(*eid) : NULL;
-	s = sid ? BATdescriptor(*sid) : NULL;
-
-	if (!b || (gid && !g) || (eid && !e) || (sid && !s)) {
-		if (b && heap_loaded)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATgroupcount(b, g, e, s, TYPE_lng, skip_nils, abort_on_error);
-
-	if (b && heap_loaded)
-		BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (!bn)
-		throw(MAL, malfunc, GDK_EXCEPTION);
-	BBPkeepref(*retval1 = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
 AGGRcount3(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *ignorenils)
 {
-	return AGGRcountgrouped(retval, bid, gid, eid, NULL, *ignorenils, 1, "aggr.count");
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *ignorenils, 1, 0, TYPE_lng,
+					   BATgroupcount, NULL, NULL, NULL, "aggr.count");
 }
 
 static str
 AGGRcount3nonils(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	return AGGRcountgrouped(retval, bid, gid, eid, NULL, 1, 1, "aggr.count");
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, 1, 1, 0, TYPE_lng,
+					   BATgroupcount, NULL, NULL, NULL, "aggr.count");
 }
 
 static str
 AGGRcount3nils(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	return AGGRcountgrouped(retval, bid, gid, eid, NULL, 0, 1, "aggr.count");
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, 0, 1, 0, TYPE_lng,
+					   BATgroupcount, NULL, NULL, NULL, "aggr.count");
 }
 
 #include "algebra.h"			/* for ALGprojection */
@@ -803,13 +766,17 @@ AGGRsubvariancepcand_dbl(bat *retval, const bat *bid, const bat *gid, const bat 
 static str
 AGGRsubcount(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
-	return AGGRcountgrouped(retval, bid, gid, eid, NULL, *skip_nils, 0, "aggr.subcount");
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+					   0, 0, TYPE_lng, BATgroupcount, NULL, NULL,
+					   NULL, "aggr.subcount");
 }
 
 static str
 AGGRsubcountcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	return AGGRcountgrouped(retval, bid, gid, eid, sid, *skip_nils, 0, "aggr.subcount");
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+					   0, 0, TYPE_lng, BATgroupcount, NULL,
+					   NULL, NULL, "aggr.subcount");
 }
 
 static str
