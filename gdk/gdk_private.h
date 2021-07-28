@@ -463,6 +463,16 @@ extern MT_Lock GDKtmLock;
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 
+/* when the number of updates to a BAT is less than 1 in this number, we
+ * keep the GDK_UNIQUE_ESTIMATE property */
+extern BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+/* if the number of unique values is less than 1 in this number, we
+ * destroy the hash rather than update it in HASH{append,insert,delete} */
+extern BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+/* if the estimated number of unique values is less than 1 in this
+ * number, don't build a hash table to do a hashselect */
+extern dbl NO_HASH_SELECT_FRACTION;           /* same here */
+
 /* extra space in front of strings in string heaps when hashash is set
  * if at least (2*SIZEOF_BUN), also store length (heaps are then
  * incompatible) */

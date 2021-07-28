@@ -2250,9 +2250,6 @@ enum prop_t {
 	GDK_NUNIQUE,		/* number of unique values (oid) */
 	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values (dbl) */
 };
-/* when the number of updates to a BAT is less than 1 in this number, we
- * keep the GDK_UNIQUE_ESTIMATE property */
-#define GDK_UNIQUE_ESTIMATE_KEEP_FRACTION 1000
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
 

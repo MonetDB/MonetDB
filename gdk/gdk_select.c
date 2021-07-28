@@ -13,10 +13,6 @@
 /* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 
-/* if the estimated number of unique values is less than 1 in this
- * number, don't build a hash table to do a hashselect */
-#define NO_HASH_SELECT_FRACTION	GDK_UNIQUE_ESTIMATE_KEEP_FRACTION
-
 static inline oid *
 buninsfix(BAT *bn, oid *a, BUN i, oid v, BUN g, BUN m)
 {

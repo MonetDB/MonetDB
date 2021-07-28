@@ -35,10 +35,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-/* if the number of unique values is less than 1 in this number, we
- * destroy the hash rather than update it in HASH{append,insert,delete} */
-#define HASH_DESTROY_UNIQUES_FRACTION GDK_UNIQUE_ESTIMATE_KEEP_FRACTION
-
 static inline uint8_t __attribute__((__const__))
 HASHwidth(BUN hashsize)
 {
