@@ -342,11 +342,13 @@ string_reader(logger *lg, BAT *b, lng nr)
 		sz = (size_t)SZ;
 		char *buf = lg->buf;
 		if (lg->bufsize < sz) {
-			lg->buf = buf = GDKrealloc(buf, sz);
+			if (!(buf = GDKrealloc(lg->buf, sz)))
+				return LOG_ERR;
+			lg->buf = buf;
 			lg->bufsize = sz;
 		}
 
-		if (!buf || mnstr_read(lg->input_log, buf, sz, 1) != 1)
+		if (mnstr_read(lg->input_log, buf, sz, 1) != 1)
 			return LOG_EOF;
 		/* handle strings */
 		char *t = buf;
@@ -2363,7 +2365,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 	size_t bufsz = lg->bufsize, resize = 0;
 	BUN end = (BUN)(offset + nr);
 	char *buf = lg->buf;
-	gdk_return res = GDK_FAIL;
+	gdk_return res = GDK_SUCCEED;
 
 	if (!buf)
 		return GDK_FAIL;
@@ -2372,11 +2374,11 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 	for ( ; p < end; ) {
 		size_t sz = 0;
 		if (resize) {
-			lg->buf = buf = GDKrealloc(buf, resize);
-			if (!buf) {
+			if (!(buf = GDKrealloc(lg->buf, resize))) {
 				res = GDK_FAIL;
 				break;
 			}
+			lg->buf = buf;
 			lg->bufsize = bufsz = resize;
 			resize = 0;
 		}
@@ -2394,8 +2396,10 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 				sz += len;
 			}
 		}
-		if (sz && buf && mnstr_writeLng(lg->output_log, (lng) sz) && mnstr_write(lg->output_log, buf, sz, 1) == 1)
-			res = GDK_SUCCEED;
+		if (sz && (!mnstr_writeLng(lg->output_log, (lng) sz) || mnstr_write(lg->output_log, buf, sz, 1) != 1)) {
+			res = GDK_FAIL;
+			break;
+		}
 	}
 	bat_iterator_end(&bi);
 	return res;
