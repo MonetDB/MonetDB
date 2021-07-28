@@ -13,6 +13,10 @@
 /* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 
+/* if the estimated number of unique values is less than 1 in this
+ * number, don't build a hash table to do a hashselect */
+#define NO_HASH_SELECT_FRACTION	GDK_UNIQUE_ESTIMATE_KEEP_FRACTION
+
 static inline oid *
 buninsfix(BAT *bn, oid *a, BUN i, oid v, BUN g, BUN m)
 {
@@ -1532,6 +1536,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			(!b->batTransient &&
 			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
+		if (wanthash && !havehash) {
+			const ValRecord *prop;
+			if ((prop = BATgetprop(b, GDK_UNIQUE_ESTIMATE)) != NULL &&
+			    prop->val.dval < BATcount(b) / NO_HASH_SELECT_FRACTION) {
+				/* too many duplicates: not worth it */
+				wanthash = false;
+			}
+		}
 	}
 
 	if (equi && !havehash && parent != 0) {

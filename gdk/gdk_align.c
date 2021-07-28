@@ -255,6 +255,7 @@ BATmaterialize(BAT *b)
 	b->tbaseoff = 0;
 	b->theap->dirty = true;
 	BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
+	BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){is_oid_nil(t) ? 1 : b->batCount});
 	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;
 	BATsetdims(b);
