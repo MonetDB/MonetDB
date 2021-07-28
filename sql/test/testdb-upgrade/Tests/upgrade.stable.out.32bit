@@ -2738,7 +2738,7 @@ insert into sys.functions values (737, 'week', 'weekofyear', 'mtime', 0, 1, fals
 insert into sys.args values (9875, 737, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (9876, 737, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.functions values (738, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9877, 738, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9877, 738, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9878, 738, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.functions values (739, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9879, 739, 'res_0', 'int', 32, 0, 0, 0);
@@ -2750,7 +2750,7 @@ insert into sys.functions values (741, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (9883, 741, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (9884, 741, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (742, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9885, 742, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9885, 742, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9886, 742, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (743, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9887, 743, 'res_0', 'int', 32, 0, 0, 0);
@@ -2762,7 +2762,7 @@ insert into sys.functions values (745, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (9891, 745, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (9892, 745, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (746, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9893, 746, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9893, 746, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9894, 746, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (747, 'century', 'century', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9895, 747, 'res_0', 'int', 32, 0, 0, 0);
@@ -2792,7 +2792,7 @@ insert into sys.functions values (755, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (9911, 755, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (9912, 755, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (756, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9913, 756, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9913, 756, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9914, 756, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (757, 'century', 'century', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9915, 757, 'res_0', 'int', 32, 0, 0, 0);
@@ -2822,7 +2822,7 @@ insert into sys.functions values (765, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (9931, 765, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (9932, 765, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (766, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9933, 766, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9933, 766, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9934, 766, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (767, 'year', 'year', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9935, 767, 'res_0', 'int', 32, 0, 0, 0);
@@ -2843,7 +2843,7 @@ insert into sys.functions values (772, 'second', 'seconds', 'mtime', 0, 1, false
 insert into sys.args values (9945, 772, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (9946, 772, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (773, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9947, 773, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9947, 773, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9948, 773, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (774, 'day', 'day', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (9949, 774, 'res_0', 'bigint', 64, 0, 0, 0);
@@ -2858,7 +2858,7 @@ insert into sys.functions values (777, 'second', 'seconds', 'mtime', 0, 1, false
 insert into sys.args values (9955, 777, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (9956, 777, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (778, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (9957, 778, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (9957, 778, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (9958, 778, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (779, 'next_value_for', 'next_value', 'sql', 0, 1, true, false, false, 2000, true, true);
 insert into sys.args values (9959, 779, 'res_0', 'bigint', 64, 0, 0, 0);
