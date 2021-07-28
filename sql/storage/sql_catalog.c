@@ -73,12 +73,15 @@ _list_find_name(list *l, const char *name)
 void
 trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
-	sql_change *change = SA_ZNEW(tr->sa, sql_change);
-	change->obj = b;
-	change->data = data;
-	change->cleanup = cleanup;
-	change->commit = commit;
-	change->log = log;
+	sql_change *change = SA_NEW(tr->sa, sql_change);
+
+	*change = (sql_change) {
+		.obj = b,
+		.data = data,
+		.cleanup = cleanup,
+		.commit = commit,
+		.log = log,
+	};
 	MT_lock_set(&tr->lock);
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	if (log)
