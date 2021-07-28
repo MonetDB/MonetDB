@@ -674,7 +674,7 @@ BATfree(BAT *b)
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){nunique});
-		BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){nunique});
+		BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){(dbl)nunique});
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){nbucket});
 	}
 	if (b->theap) {
