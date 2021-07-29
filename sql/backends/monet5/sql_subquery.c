@@ -88,33 +88,27 @@ str
 SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit *no_nil)
 {
 	gdk_return r;
-	BAT *ng = NULL, *h = NULL, *g, *b;
+	BAT *ng = NULL, *h = NULL, *g = NULL;
+	lng max = 0;
 
 	(void)no_nil;
 	(void)eid;
 
-	g = gid ? BATdescriptor(*gid) : NULL;
-	if (g == NULL) {
-		if (g)
-			BBPunfix(g->batCacheid);
+	if (!(g = BATdescriptor(*gid)))
 		throw(MAL, "sql.subzero_or_one", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	if ((r = BATgroup(&ng, NULL, &h, g, NULL, NULL, NULL, NULL)) == GDK_SUCCEED) {
-		lng max = 0;
-
-		if (ng)
-			BBPunfix(ng->batCacheid);
-		BATmax(h, &max);
-		BBPunfix(h->batCacheid);
-		if (max != lng_nil && max > 1)
-			throw(SQL, "sql.subzero_or_one", SQLSTATE(M0M29) "zero_or_one: cardinality violation, scalar expression expected");
-	}
+	r = BATgroup(&ng, NULL, &h, g, NULL, NULL, NULL, NULL);
 	BBPunfix(g->batCacheid);
-	if (r == GDK_SUCCEED) {
-		b = bid ? BATdescriptor(*bid) : NULL;
-		BBPkeepref(*ret = b->batCacheid);
-	}
+	if (r != GDK_SUCCEED)
+		throw(MAL, "sql.subzero_or_one", GDK_EXCEPTION);
+
+	if (ng)
+		BBPunfix(ng->batCacheid);
+	BATmax(h, &max);
+	BBPunfix(h->batCacheid);
+
+	if (max != lng_nil && max > 1)
+		throw(SQL, "sql.subzero_or_one", SQLSTATE(M0M29) "zero_or_one: cardinality violation, scalar expression expected");
+	BBPretain(*ret = *bid);
 	return MAL_SUCCEED;
 }
 
@@ -1171,7 +1165,7 @@ SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BBPquickdesc(*bid, false)))
+		if (!(b = BBPquickdesc(*bid)))
 			throw(SQL, "aggr.exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		count = BATcount(b) != 0;
 	}
@@ -1201,15 +1195,13 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 	(void)mb;
-	b = BATdescriptor(*bp);
+	b = BBPquickdesc(*bp);
 	g = BATdescriptor(*gp);
 	e = BATdescriptor(*gpe);
 	if (sp)
 		s = BATdescriptor(*sp);
 
 	if (!b || !g || !e || (sp && !s)) {
-		if (b)
-			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
@@ -1221,7 +1213,6 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res = BATsubexist(b, g, e, s);
 
-	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
 	if (s)
@@ -1242,7 +1233,7 @@ SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BBPquickdesc(*bid, false)))
+		if (!(b = BBPquickdesc(*bid)))
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		count = BATcount(b) == 0;
 	}
@@ -1272,15 +1263,13 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 	(void)mb;
-	b = BATdescriptor(*bp);
+	b = BBPquickdesc(*bp);
 	g = BATdescriptor(*gp);
 	e = BATdescriptor(*gpe);
 	if (sp)
 		s = BATdescriptor(*sp);
 
 	if (!b || !g || !e || (sp && !s)) {
-		if (b)
-			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
@@ -1292,7 +1281,6 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res = BATsubnot_exist(b, g, e, s);
 
-	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
 	if (s)

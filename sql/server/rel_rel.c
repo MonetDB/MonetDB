@@ -147,14 +147,10 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	if (!rel)
 		return NULL;
 
-	rel->l = NULL;
-	rel->r = NULL;
-	rel->card = i->card;
-	rel->flag = i->flag;
-
+	rel->op = i->op;
 	switch(i->op) {
 	case op_basetable:
-		rel->l = i->l;
+		rel_base_copy(sql, i, rel);
 		break;
 	case op_table:
 		rel->l = i->l;
@@ -211,7 +207,25 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 			rel->r = rel_copy(sql, i->r, deep);
 		break;
 	}
-	rel->op = i->op;
+
+	rel->card = i->card;
+	rel->flag = i->flag;
+	rel->nrcols = i->nrcols;
+	rel->grouped = i->grouped;
+	rel->used = i->used;
+
+	if (is_processed(i))
+		set_processed(rel);
+	if (is_dependent(i))
+		set_dependent(rel);
+	if (is_outer(i))
+		set_outer(rel);
+	if (is_single(i))
+		set_single(rel);
+	if (need_distinct(i))
+		set_distinct(rel);
+
+	rel->p = prop_copy(sql->sa, i->p);
 	rel->exps = (!i->exps)?NULL:deep?exps_copy(sql, i->exps):list_dup(i->exps, (fdup)NULL);
 	return rel;
 }
@@ -1709,10 +1723,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	switch (r->op) {
 	case op_basetable: {
 		sql_table *t = r->l;
-		sql_column *c = r->r;
-
-		if (!t && c)
-			t = c->t;
 
 		cond_append(l, &t->base);
 		/* find all used columns */

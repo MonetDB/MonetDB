@@ -226,11 +226,14 @@ SCode(unsigned char c)
 	return (Code[toupper(c) - 'A']);
 }
 
-static void
+static str
 soundex_code(char *Name, char *Key)
 {
 	char LastLetter;
 	int Index;
+
+	if ((*Name & 0x80) != 0)
+		throw(MAL,"soundex", SQLSTATE(42000) "Soundex function not available for non ASCII strings");
 
 	/* set default key */
 	strcpy(Key, SoundexKey);
@@ -242,7 +245,7 @@ soundex_code(char *Name, char *Key)
 
 	LastLetter = *Name;
 	if (!*Name)
-		return;
+		return MAL_SUCCEED;
 	Name++;
 
 	/* scan rest of string */
@@ -262,11 +265,15 @@ soundex_code(char *Name, char *Key)
 			}
 		}
 	}
+	return MAL_SUCCEED;
 }
 
 static str
 soundex_impl(str *res, str *Name)
 {
+	str msg = MAL_SUCCEED;
+
+	GDKfree(*res);
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
@@ -274,9 +281,12 @@ soundex_impl(str *res, str *Name)
 		throw(MAL,"soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
-	soundex_code(*Name, *res);
-
-	return MAL_SUCCEED;
+	if ((msg = soundex_code(*Name, *res))) {
+		GDKfree(*res);
+		*res = NULL;
+		return msg;
+	}
+	return msg;
 }
 
 static str
@@ -317,6 +327,7 @@ CMDqgramnormalize(str *res, str *Input)
 	int i, j = 0;
 	char c, last = ' ';
 
+	GDKfree(*res);
 	RETURN_NIL_IF(strNil(input), TYPE_str);
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
@@ -718,7 +729,7 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, str strin
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len, "txtsim.similarity");
+	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len * 2 * sizeof(int), "txtsim.similarity");
 	fdiag = *fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
@@ -799,7 +810,7 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 		goto bailout;
 	}
 	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = BATcount(left);
@@ -834,7 +845,6 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap->dirty = true;
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);

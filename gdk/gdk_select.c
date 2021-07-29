@@ -1940,12 +1940,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* use imprints if
 		 *   i) bat is persistent, or parent is persistent
 		 *  ii) it is not an equi-select, and
-		 * iii) is not var-sized.
+		 * iii) imprints are supported.
 		 */
 		tmp = NULL;
 		Imprints *imprints = NULL;
 		if (!equi &&
-		    imprintable(b->ttype) &&
+		    /* DISABLES CODE */ (0) && imprintable(b->ttype) &&
 		    (!b->batTransient ||
 		     (parent != 0 &&
 		      (tmp = BBP_cache(parent)) != NULL &&
@@ -2303,7 +2303,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if (!anti && !symmetric &&
-		   imprintable(l->ttype) &&
+		   /* DISABLES CODE */ (0) && imprintable(l->ttype) &&
 		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&

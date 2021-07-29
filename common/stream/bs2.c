@@ -341,6 +341,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_copy_error(ss, s->s);
 			return -1;
 		case 0:
+			ss->eof |= s->s->eof;
 			return 0;
 		case 1:
 			break;
@@ -370,6 +371,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				ssize_t bytes_read = 0;
 				bytes_read = s->s->read(s->s, buf + m, 1, s->itotal - m);
 				if (bytes_read <= 0) {
+					ss->eof |= s->s->eof;
 					mnstr_copy_error(ss, s->s);
 					return -1;
 				}
@@ -419,6 +421,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				mnstr_copy_error(ss, s->s);
 				return -1;
 			case 0:
+				ss->eof |= s->s->eof;
 				return 0;
 			case 1:
 				break;
@@ -450,6 +453,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 					ssize_t bytes_read = 0;
 					bytes_read = s->s->read(s->s, buf + m, 1, s->itotal - m);
 					if (bytes_read <= 0) {
+						ss->eof |= s->s->eof;
 						mnstr_copy_error(ss, s->s);
 						return -1;
 					}

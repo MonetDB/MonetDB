@@ -1263,7 +1263,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE ",
 			    type == 3 ? "MERGE " :
-			    /*type == 4 ? "STREAM " : */
+			    type == 4 ? "STREAM " :
 			    type == 5 ? "REMOTE " :
 			    type == 6 ? "REPLICA " :
 			    "");

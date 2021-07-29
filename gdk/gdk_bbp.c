@@ -365,8 +365,10 @@ BBPextend(int idx, bool buildhash)
 			GDKerror("failed to extend BAT pool\n");
 			return GDK_FAIL;
 		}
-		for (BUN i = 0; i < BBPINIT; i++)
+		for (BUN i = 0; i < BBPINIT; i++) {
 			ATOMIC_INIT(&BBP[limit][i].status, 0);
+			BBP[limit][i].pid = ~(MT_Id)0;
+		}
 		BBPlimit += BBPINIT;
 	}
 
@@ -524,31 +526,31 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 	uint16_t storage;
 
 	if (b->tvarsized && b->ttype != TYPE_void) {
-		b->tvheap = GDKzalloc(sizeof(Heap));
-		if (b->tvheap == NULL) {
-			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
-			return -1;
-		}
 		if (sscanf(buf,
 			   " %" SCNu64 " %" SCNu64 " %" SCNu16
 			   "%n",
 			   &free, &size, &storage, &n) < 3) {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
-			GDKfree(b->theap);
-			b->tvheap = NULL;
 			return -1;
 		}
-		b->tvheap->free = (size_t) free;
-		b->tvheap->size = (size_t) size;
-		b->tvheap->base = NULL;
+		b->tvheap = GDKmalloc(sizeof(Heap));
+		if (b->tvheap == NULL) {
+			TRC_CRITICAL(GDK, "cannot allocate memory for heap.");
+			return -1;
+		}
+		*b->tvheap = (Heap) {
+			.free = (size_t) free,
+			.size = (size_t) size,
+			.base = NULL,
+			.storage = (storage_t) storage,
+			.cleanhash = true,
+			.newstorage = (storage_t) storage,
+			.dirty = false,
+			.parentid = bid,
+			.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+		};
 		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
 			      filename, ".theap", NULL);
-		b->tvheap->storage = (storage_t) storage;
-		b->tvheap->cleanhash = true;
-		b->tvheap->newstorage = (storage_t) storage;
-		b->tvheap->dirty = false;
-		b->tvheap->parentid = bid;
-		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
 		ATOMIC_INIT(&b->tvheap->refs, 1);
 		if (b->tvheap->free > b->tvheap->size) {
 			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d on line %d\n", (int) bid, lineno);
@@ -753,6 +755,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
+		BBP_pid(bid) = 0;
 		BBP_status_set(bid, BBPEXISTING);	/* do we need other status bits? */
 	}
 #ifdef GDKLIBRARY_HASHASH
@@ -1206,7 +1209,7 @@ fixhashashbat(BAT *b)
 	/* cleanup */
 	HEAPfree(&h1, false);
 	HEAPfree(&vh1, false);
-	if (HEAPsave(h2, nme, gettailname(b), true) != GDK_SUCCEED) {
+	if (HEAPsave(h2, nme, gettailname(b), true, h2->free) != GDK_SUCCEED) {
 		HEAPdecref(h2, false);
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = ovh;
@@ -1214,7 +1217,7 @@ fixhashashbat(BAT *b)
 		TRC_CRITICAL(GDK, "saving heap failed\n");
 		return GDK_FAIL;
 	}
-	if (HEAPsave(b->tvheap, nme, "theap", true) != GDK_SUCCEED) {
+	if (HEAPsave(b->tvheap, nme, "theap", true, b->tvheap->free) != GDK_SUCCEED) {
 		HEAPfree(b->tvheap, false);
 		b->tvheap = ovh;
 		GDKfree(srcdir);
@@ -1309,7 +1312,7 @@ BBPmanager(void *dummy)
 			    (b = BBP_cache(bid)) != NULL &&
 			    b->batSharecnt == 0 &&
 			    !BATdirty(b) &&
-			    !(BBP_status(bid) & (BBPHOT | BBPUNLOADING)) &&
+			    !(BBP_status(bid) & (BBPHOT | BBPUNLOADING | BBPSYNCING)) &&
 			    (BBP_status(bid) & BBPPERSISTENT)) {
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
@@ -1593,6 +1596,7 @@ BBPexit(void)
 						BATfree(b);
 					}
 				}
+				BBP_pid(i) = 0;
 				BBPuncacheit(i, true);
 				if (BBP_logical(i) != BBP_bak(i))
 					GDKfree(BBP_logical(i));
@@ -2200,6 +2204,7 @@ BBPinsert(BAT *bn)
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
+	BBP_pid(i) = MT_getpid();
 
 #ifdef HAVE_HGE
 	if (bn->ttype == TYPE_hge)
@@ -2258,11 +2263,12 @@ BBPcacheit(BAT *bn, bool lock)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING | BBPSWAPPED);
-	BBP_status_set(i, mode);
 	BBP_desc(i) = bn;
 
 	/* cache it! */
 	BBP_cache(i) = bn;
+
+	BBP_status_set(i, mode);
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
@@ -2289,10 +2295,10 @@ BBPuncacheit(bat i, bool unloaddesc)
 			if (BBP_cache(i)) {
 				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBP_logical(i));
 
-				BBP_cache(i) = NULL;
-
 				/* clearing bits can be done without the lock */
 				BBP_status_off(i, BBPLOADED);
+
+				BBP_cache(i) = NULL;
 			}
 			if (unloaddesc) {
 				BBP_desc(i) = NULL;
@@ -2312,12 +2318,12 @@ bbpclear(bat i, int idx, bool lock)
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
-	BBP_status_set(i, BBPUNLOADING);
-	BBP_refs(i) = 0;
-	BBP_lrefs(i) = 0;
 	if (lock)
 		MT_lock_set(&GDKcacheLock(idx));
 
+	BBP_status_set(i, BBPUNLOADING);
+	BBP_refs(i) = 0;
+	BBP_lrefs(i) = 0;
 	if (!BBPtmpcheck(BBP_logical(i))) {
 		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
@@ -2329,16 +2335,17 @@ bbpclear(bat i, int idx, bool lock)
 	BBP_logical(i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
+	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (lock)
 		MT_lock_unset(&GDKcacheLock(idx));
 }
 
 void
-BBPclear(bat i)
+BBPclear(bat i, bool lock)
 {
 	MT_Id pid = MT_getpid();
-	bool lock = locked_by == 0 || locked_by != pid;
 
+	lock &= locked_by == 0 || locked_by != pid;
 	if (BBPcheck(i)) {
 		bbpclear(i, threadmask(pid), lock);
 	}
@@ -2491,7 +2498,7 @@ static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp, tvp;
+	bat tp = i, tvp = i;
 	BAT *b, *pb = NULL, *pvb = NULL;
 	bool load = false;
 
@@ -2505,13 +2512,17 @@ incref(bat i, bool logical, bool lock)
 	 * reference, getting the parent BAT descriptor is
 	 * superfluous, but not too expensive, so we do it anyway. */
 	if (!logical && (b = BBP_desc(i)) != NULL) {
-		if (b->theap && b->theap->parentid != i) {
-			pb = BATdescriptor(b->theap->parentid);
+		MT_lock_set(&b->theaplock);
+		tp = b->theap ? b->theap->parentid : i;
+		tvp = b->tvheap ? b->tvheap->parentid : i;
+		MT_lock_unset(&b->theaplock);
+		if (tp != i) {
+			pb = BATdescriptor(tp);
 			if (pb == NULL)
 				return 0;
 		}
-		if (b->tvheap && b->tvheap->parentid != i) {
-			pvb = BATdescriptor(b->tvheap->parentid);
+		if (tvp != i) {
+			pvb = BATdescriptor(tvp);
 			if (pvb == NULL) {
 				if (pb)
 					BBPunfix(pb->batCacheid);
@@ -2527,7 +2538,7 @@ incref(bat i, bool logical, bool lock)
 				break;
 			/* the BATs is "unstable", try again */
 			MT_lock_unset(&GDKswapLock(i));
-			MT_sleep_ms(KITTENNAP);
+			BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
 		}
 	}
 	/* we have the lock */
@@ -2544,15 +2555,13 @@ incref(bat i, bool logical, bool lock)
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
 	if (logical) {
 		/* parent BATs are not relevant for logical refs */
-		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
+		BBP_pid(i) = 0;
 	} else {
-		tp = b->theap == NULL || b->theap->parentid == i ? 0 : b->theap->parentid;
 		assert(tp >= 0);
-		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
 		unsigned flag = BBPHOT;
-		if (refs == 1 && (tp || tvp)) {
+		if (refs == 1 && (tp != i || tvp != i)) {
 			/* If this is a view, we must load the parent
 			 * BATs, but we must do that outside of the
 			 * lock.  Set the BBPLOADING flag so that
@@ -2569,13 +2578,18 @@ incref(bat i, bool logical, bool lock)
 	if (load) {
 		/* load the parent BATs */
 		assert(!logical);
-		if (tp) {
+		if (tp != i) {
 			assert(pb != NULL);
+			/* load being set implies there is no other
+			 * thread that has access to this bat, but the
+			 * parent is a different matter */
+			MT_lock_set(&pb->theaplock);
 			if (b->theap != pb->theap) {
 				HEAPincref(pb->theap);
 				HEAPdecref(b->theap, false);
 				b->theap = pb->theap;
 			}
+			MT_lock_unset(&pb->theaplock);
 		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING);
@@ -2629,9 +2643,15 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	int refs = 0, lrefs;
 	bool swap = false;
 	bat tp = 0, tvp = 0;
+	int farmid = 0;
 	BAT *b;
 
+	if (is_bat_nil(i))
+		return -1;
 	assert(i > 0);
+	if (BBPcheck(i) == 0)
+		return -1;
+
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
@@ -2680,16 +2700,22 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			}
 		}
 	}
-	if (b && b->batCount > b->batInserted && !isVIEW(b)) {
-		/* if batCount is larger than batInserted and the dirty
-		 * bits are off, it may be that a (sub)commit happened
-		 * in parallel to an update; we must undo the turning
-		 * off of the dirty bits */
-		b->batDirtydesc = true;
-		if (b->theap)
-			b->theap->dirty = true;
-		if (b->tvheap)
-			b->tvheap->dirty = true;
+	if (b) {
+		MT_lock_set(&b->theaplock);
+		if (b->batCount > b->batInserted && !isVIEW(b)) {
+			/* if batCount is larger than batInserted and
+			 * the dirty bits are off, it may be that a
+			 * (sub)commit happened in parallel to an
+			 * update; we must undo the turning off of the
+			 * dirty bits */
+			b->batDirtydesc = true;
+			if (b->theap)
+				b->theap->dirty = true;
+			if (b->tvheap)
+				b->tvheap->dirty = true;
+		}
+		farmid = b->theap->farmid;
+		MT_lock_unset(&b->theaplock);
 	}
 
 	/* we destroy transients asap and unload persistent bats only
@@ -2700,7 +2726,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	      BATdirty(b) ||
 	      (BBP_status(i) & (BBPHOT | BBPSYNCING)) ||
 	      !(BBP_status(i) & BBPPERSISTENT) ||
-	      GDKinmemory(b->theap->farmid)))) {
+	      GDKinmemory(farmid)))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
@@ -2740,18 +2766,12 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
-	if (BBPcheck(i) == 0) {
-		return -1;
-	}
 	return decref(i, false, false, true, "BBPunfix");
 }
 
 int
 BBPrelease(bat i)
 {
-	if (BBPcheck(i) == 0) {
-		return -1;
-	}
 	return decref(i, true, false, true, "BBPrelease");
 }
 
@@ -2843,7 +2863,7 @@ getBBPdescriptor(bat i, bool lock)
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
-			MT_sleep_ms(KITTENNAP);
+			BBPspin(i, __func__, BBPWAITING);
 			if (lock)
 				MT_lock_set(&GDKswapLock(i));
 		}
@@ -2907,7 +2927,7 @@ BBPsave(BAT *b)
 		/* wait until save in other thread completes */
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
-		BBPspin(bid, "BBPsave", BBPSAVING);
+		BBPspin(bid, __func__, BBPSAVING);
 	} else {
 		/* save it */
 		unsigned flags = BBPSAVING;
@@ -2964,7 +2984,7 @@ BBPdestroy(BAT *b)
 		}
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 	}
-	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
+	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
 
 	/* parent released when completely done with child */
 	if (tp)
@@ -3015,24 +3035,10 @@ BBPfree(BAT *b)
  * this costs performance, and because getting into memory shortage
  * during a commit is extremely dangerous. Loading a BAT tends not to
  * be required, since the commit actions mostly involve moving some
- * pointers in the BAT descriptor. However, some column types do
- * require loading the full bat. This is tested by the complexatom()
- * routine. Such columns are those of which the type has a fix/unfix
- * method, or those that have HeapDelete methods. The HeapDelete
- * actions are not always required and therefore the BBPquickdesc is
- * parametrized.
+ * pointers in the BAT descriptor.
  */
-static bool
-complexatom(int t, bool delaccess)
-{
-	if (t >= 0 && (BATatoms[t].atomFix || (delaccess && BATatoms[t].atomDel))) {
-		return true;
-	}
-	return false;
-}
-
 BAT *
-BBPquickdesc(bat bid, bool delaccess)
+BBPquickdesc(bat bid)
 {
 	BAT *b;
 
@@ -3045,11 +3051,7 @@ BBPquickdesc(bat bid, bool delaccess)
 	}
 	if ((b = BBP_cache(bid)) != NULL)
 		return b;	/* already cached */
-	b = BBP_desc(bid);
-	if (complexatom(b->ttype, delaccess)) {
-		b = BATload_intern(bid, true);
-	}
-	return b;
+	return BBP_desc(bid);
 }
 
 /*
@@ -3060,7 +3062,7 @@ dirty_bat(bat *i, bool subcommit)
 {
 	if (BBPvalid(*i)) {
 		BAT *b;
-		BBPspin(*i, "dirty_bat", BBPSAVING);
+		BBPspin(*i, __func__, BBPSAVING);
 		b = BBP_cache(*i);
 		if (b != NULL) {
 			if ((BBP_status(*i) & BBPNEW) &&
@@ -3070,7 +3072,7 @@ dirty_bat(bat *i, bool subcommit)
 			    (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
 		} else if (BBP_status(*i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(*i, true);
+			b = (BAT *) BBPquickdesc(*i);
 			if (b && (subcommit || b->batDirtydesc))
 				return b;	/* only the desc is loaded & dirty */
 		}
@@ -3571,25 +3573,22 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
-			BAT *d = BBP_desc(i);
+			/* BBP_desc(i) may be NULL */
+			BATiter bi = bat_iterator(BBP_desc(i));
 
-			if (d)
-				MT_lock_set(&d->theaplock);
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-					if (d)
-						MT_lock_unset(&d->theaplock);
+					bat_iterator_end(&bi);
 					break;
 				}
 				if (b)
-					ret = BATsave_locked(b);
+					ret = BATsave_locked(b, &bi);
 			}
 			if (ret == GDK_SUCCEED) {
 				n = BBPdir_step(i, sizes ? sizes[idx] : BUN_NONE, n, buf, sizeof(buf), &obbpf, nbbpf);
 			}
-			if (d)
-				MT_lock_unset(&d->theaplock);
+			bat_iterator_end(&bi);
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
@@ -3927,7 +3926,7 @@ getdesc(bat bid)
 	if (bid < (bat) ATOMIC_GET(&BBPsize) && BBP_logical(bid))
 		b = BBP_desc(bid);
 	if (b == NULL)
-		BBPclear(bid);
+		BBPclear(bid, true);
 	return b;
 }
 

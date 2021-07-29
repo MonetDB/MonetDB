@@ -1157,7 +1157,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 						rel_destroy(l);
 					}
 					if (is_groupby(l->op)) { /* TODO: check if group by exps and distinct list are equal */
-						/* add aggr exps of r too l, replace r by l */
+						/* add aggr exps of r to l, replace r by l */
 						node *n;
 						for(n = r->exps->h; n; n = n->next) {
 							sql_exp *e = n->data;
@@ -2323,7 +2323,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						set_ascending(ne);
 					if (nulls_last(oe))
 						set_nulls_last(ne);
-					/* disable sorting info (ie back too defaults) */
+					/* disable sorting info (ie back to defaults) */
 					set_descending(oe);
 					set_nulls_first(oe);
 					n->data = ne;

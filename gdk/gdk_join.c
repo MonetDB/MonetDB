@@ -3323,9 +3323,11 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			 * non-persistent bats */
 			MT_lock_set(&r->theaplock);
 			if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
-#endif
 				rcost += cnt * 2.0;
 			MT_lock_unset(&r->theaplock);
+#else
+			rcost += cnt * 2.0;
+#endif
 		}
 	}
 	if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {

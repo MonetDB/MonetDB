@@ -27,7 +27,7 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	3,	1,	0,	3,	3 # length
+% 7,	2,	1,	0,	3,	3 # length
 [ "decimal",	2,	1,	"",	"%22",	"%13"	]
 [ "int",	32,	0,	"",	"%22",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
@@ -76,7 +76,7 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	3,	1,	0,	3,	2 # length
+% 7,	2,	1,	0,	3,	2 # length
 [ "bigint",	64,	0,	"",	"%10",	"%2"	]
 [ "char",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
@@ -117,7 +117,7 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	3,	1,	0,	2,	2 # length
+% 3,	2,	1,	0,	2,	2 # length
 [ "int",	32,	0,	"",	"%2",	"%2"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #EXEC  0(1);

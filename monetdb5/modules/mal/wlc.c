@@ -869,14 +869,11 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) mb;
-	b= BBPquickdesc(bid, false);
+	b= BBPquickdesc(bid);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
-	msg = WLCstart(cntxt, "wlr.delete");
-	if(msg) {
-		BBPunfix(b->batCacheid);
+	if ((msg = WLCstart(cntxt, "wlr.delete")))
 		return msg;
-	}
 	cntxt->wlc_kind = WLC_UPDATE;
 	p = newStmt(cntxt->wlc, "wlr","delete");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
@@ -984,6 +981,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_iterator_end(&bi);
 		bat_iterator_end(&bvali);
 		BBPunfix(b->batCacheid);
+		BBPunfix(bval->batCacheid);
 	} else {
 		p = newStmt(cntxt->wlc, "wlr","update");
 		p = pushStr(cntxt->wlc, p, sch);

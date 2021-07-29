@@ -202,11 +202,11 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, b, bs);
@@ -438,18 +438,18 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 	oid off;
 	bool nils = false;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	} else {
-		BBPkeepref(*res = b->batCacheid); /* nothing to convert, return */
+		BBPretain(*res = *bid); /* nothing to convert, return */
 		return MAL_SUCCEED;
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);

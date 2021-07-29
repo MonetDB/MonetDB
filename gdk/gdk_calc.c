@@ -372,7 +372,7 @@ BATcalcnot(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -384,6 +384,8 @@ BATcalcnot(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
@@ -567,7 +569,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -580,6 +582,8 @@ BATcalcnegate(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
@@ -706,9 +710,9 @@ BATcalcabsolute(BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils= 0;
+	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -721,6 +725,8 @@ BATcalcabsolute(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
@@ -853,7 +859,7 @@ BATcalciszero(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -865,6 +871,8 @@ BATcalciszero(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, TYPE_bit,
@@ -995,7 +1003,7 @@ BATcalcsign(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -1007,6 +1015,8 @@ BATcalcsign(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, TYPE_bte,
@@ -1151,7 +1161,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	struct canditer ci;
 	bit *restrict dst;
 	BUN nils = 0;
-	oid bhseqbase = b->hseqbase;
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1163,6 +1173,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 
 	BATcheck(b, NULL);
 
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 
 	if (b->tnonil || BATtdense(b)) {
@@ -1321,7 +1332,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1334,6 +1345,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1541,7 +1554,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1554,6 +1567,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1753,9 +1768,9 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1766,6 +1781,10 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1914,9 +1933,9 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1927,6 +1946,10 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2065,7 +2088,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2078,6 +2101,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2243,7 +2268,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2256,6 +2281,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2442,9 +2469,9 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2455,6 +2482,10 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2576,9 +2607,9 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2589,6 +2620,10 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;

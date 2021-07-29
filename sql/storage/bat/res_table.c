@@ -27,34 +27,30 @@ res_table *
 res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t type, res_table *next, void *O)
 {
 	BAT *order = (BAT*)O;
-	res_table *t = ZNEW(res_table);
-	if(!t)
-		return NULL;
+	res_table *t = MNEW(res_table);
+	res_col *tcols = ZNEW_ARRAY(res_col, nr_cols);
 
 	(void) tr;
-	t->id = res_id;
-	t->query_id = query_id;
-	t->query_type = type;
-	t->nr_cols = nr_cols;
-	t->nr_rows = 0;
-	t->cur_col = 0;
-	t->cur_row = 0;
-	t->cols = NEW_ARRAY(res_col, nr_cols);
-	if(!t->cols) {
+	if (!t || !tcols) {
 		_DELETE(t);
+		_DELETE(tcols);
 		return NULL;
 	}
 
-	memset((char*) t->cols, 0, nr_cols * sizeof(res_col));
-	t->tsep = t->rsep = t->ssep = t->ns = NULL;
+	*t = (res_table) {
+		.id = res_id,
+		.query_id = query_id,
+		.query_type = type,
+		.cols = tcols,
+		.nr_cols = nr_cols,
+		.next = next,
+	};
 
-	t->order = 0;
 	if (order) {
 		t->order = order->batCacheid;
 		bat_incref(t->order);
 		t->nr_rows = BATcount(order);
 	}
-	t->next = next;
 	return t;
 }
 

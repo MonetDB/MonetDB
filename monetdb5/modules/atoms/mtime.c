@@ -153,9 +153,10 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
+	b1i = bat_iterator(b1);												\
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	off = b1->hseqbase;													\
@@ -165,7 +166,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
 	}																	\
-	b1i = bat_iterator(b1);												\
 	INIT_SRC(1);														\
 	INIT_OUTPUT(n);														\
 	if (ci.tpe == cand_dense) {											\
@@ -187,12 +187,13 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	SETFLAGS;															\
 	bn->tkey = false;													\
 bailout: 																\
-	if (b1)																\
+	if (b1) {															\
+		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
+	}																	\
 	if (s)																\
 		BBPunfix(s->batCacheid);										\
 	if (bn) {															\
-		bat_iterator_end(&b1i);											\
 		if (msg)														\
 			BBPreclaim(bn);												\
 		else															\
@@ -236,7 +237,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
-	BATiter b1i, b2i;													\
+	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
@@ -246,6 +247,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	(void) mb;															\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
+	b1i = bat_iterator(b1);												\
+	b2i = bat_iterator(b2);												\
 	if (b1 == NULL || b2 == NULL) {										\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
@@ -253,12 +256,12 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	}																	\
 	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = canditer_init(&ci1, b1, s1);									\
@@ -272,8 +275,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
 	}																	\
-	b1i = bat_iterator(b1);												\
-	b2i = bat_iterator(b2);												\
 	off1 = b1->hseqbase;												\
 	off2 = b2->hseqbase;												\
 	INIT_SRC1(1);														\
@@ -304,6 +305,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
+	bat_iterator_end(&b1i);												\
+	bat_iterator_end(&b2i);												\
 	if (b1)																\
 		BBPunfix(b1->batCacheid);										\
 	if (b2) 															\
@@ -313,8 +316,6 @@ bailout: 																\
 	if (s2) 															\
 		BBPunfix(s2->batCacheid);										\
 	if (bn) {															\
-		bat_iterator_end(&b1i);											\
-		bat_iterator_end(&b2i);											\
 		if (msg)														\
 			BBPreclaim(bn);												\
 		else															\
@@ -347,9 +348,10 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
+	b2i = bat_iterator(b2);												\
 	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) {\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = canditer_init(&ci2, b2, s2);									\
@@ -358,7 +360,6 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
 	}																	\
-	b2i = bat_iterator(b2);												\
 	off2 = b2->hseqbase;												\
 	INIT_SRC2(2);														\
 	INIT_OUTPUT(n);														\
@@ -385,12 +386,13 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
-	if (b2) 															\
+	if (b2) { 															\
+		bat_iterator_end(&b2i);											\
 		BBPunfix(b2->batCacheid);										\
+	}																	\
 	if (s2) 															\
 		BBPunfix(s2->batCacheid);										\
 	if (bn) {															\
-		bat_iterator_end(&b2i);											\
 		if (msg)														\
 			BBPreclaim(bn);												\
 		else															\
@@ -423,9 +425,10 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
+	b1i = bat_iterator(b1);												\
 	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = canditer_init(&ci1, b1, s1);									\
@@ -434,7 +437,6 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
 	}																	\
-	b1i = bat_iterator(b1);												\
 	off1 = b1->hseqbase;												\
 	INIT_SRC1(1);														\
 	INIT_OUTPUT(n);														\
@@ -461,12 +463,13 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tkey = false;													\
 bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
-	if (b1) 															\
+	if (b1) { 															\
+		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
+	}																	\
 	if (s1) 															\
 		BBPunfix(s1->batCacheid);										\
 	if (bn) {															\
-		bat_iterator_end(&b1i);											\
 		if (msg)														\
 			BBPreclaim(bn);												\
 		else															\
