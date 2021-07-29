@@ -3993,50 +3993,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							/*printf(" width %d", bs->twidth); */
 							w = bs->twidth;
-							if (bs->ttype == TYPE_str) {
-								double sum = 0;
-								BATiter bi;
-								lng cnt1, cnt2;
-								BAT *cands;
-								oid hseq;
-
-								BAT *bn = store->storage_api.bind_col(tr, c, RDONLY); /* is slice */
-								if (bn == NULL)
-									goto bailout;
-								bi = bat_iterator(bn);
-								cnt2 = cnt1 = (lng) BATcount(bn);
-								cands = store->storage_api.bind_cands(tr, t, 1, 0);
-								hseq = bn->hseqbase;
-
-								if (cands) {
-									BUN lo, hi;
-									struct canditer ci = {0};
-									/* just take a sample */
-									if (cnt1 > 512)
-										cnt1 = cnt2 = 512;
-									canditer_init(&ci, NULL, cands);
-									for(lo = 0, hi = ci.ncand; lo < hi; lo++) {
-										oid o = canditer_next(&ci);
-										str s = BUNtail(bi, o - hseq);
-										if (!strNil(s))
-											sum += strlen(s);
-										if (--cnt1 <= 0)
-											break;
-									}
-									BBPunfix(cands->batCacheid);
-								}
-								bat_iterator_end(&bi);
-								BBPunfix(bn->batCacheid);
-								bn = NULL;
-								if (cnt2)
-									w = (int) (sum / cnt2);
-							} else if (ATOMvarsized(bs->ttype)) {
-								sz = BATcount(bs);
-								if (sz > 0 && bs->tvheap)
-									w = (int) ((bs->tvheap->free + sz / 2) / sz);
-								else
-									w = 0;
-							}
 							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 								goto bailout;
 
@@ -4132,32 +4088,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									goto bailout;
 								/*printf(" width %d", bs->twidth); */
 								w = bs->twidth;
-								if (bs->ttype == TYPE_str) {
-									BUN p, q;
-									double sum = 0;
-									BATiter bi;
-									lng cnt1, cnt2;
-									BAT *bn = store->storage_api.bind_idx(tr, c, RDONLY);
-									if (bn == NULL)
-										goto bailout;
-									bi = bat_iterator(bn);
-									cnt2 = cnt1 = BATcount(bn);
-
-									/* just take a sample */
-									if (cnt1 > 512)
-										cnt1 = cnt2 = 512;
-									BATloop(bn, p, q) {
-										str s = BUNtvar(bi, p);
-										if (!strNil(s))
-											sum += strlen(s);
-										if (--cnt1 <= 0)
-											break;
-									}
-									bat_iterator_end(&bi);
-									BBPunfix(bn->batCacheid);
-									if (cnt2)
-										w = (int) (sum / cnt2);
-								}
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
 								/*printf(" size "BUNFMT, tailsize(bs,BATcount(bs)) + (bs->tvheap? bs->tvheap->size:0)); */
