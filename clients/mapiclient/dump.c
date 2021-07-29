@@ -1688,8 +1688,25 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		goto bailout;
 	}
 	while ((mapi_fetch_row(hdl)) != 0) {
-		if (strcmp(mapi_fetch_field(hdl, 2), "1") == 0) {
+		const char *ttype = mapi_fetch_field(hdl, 2);
+		if (strcmp(ttype, "1") == 0) {
 			/* the table is actually a view */
+			goto doreturn;
+		}
+		if (strcmp(ttype, "3") == 0) {
+			/* merge table */
+			goto doreturn;
+		}
+		if (strcmp(ttype, "4") == 0) {
+			/* stream table */
+			goto doreturn;
+		}
+		if (strcmp(ttype, "5") == 0) {
+			/* remote table */
+			goto doreturn;
+		}
+		if (strcmp(ttype, "6") == 0) {
+			/* replica table */
 			goto doreturn;
 		}
 	}
