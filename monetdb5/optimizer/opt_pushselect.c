@@ -325,7 +325,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
 				if (isLikeOp(q) &&
-					isVarConstant(mb, getArg(q, 2)) && /* pattern is a value */
+					!isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) && /* pattern is a value */
 					isVarConstant(mb, getArg(q, 3)) && /* escape is a value */
 					isVarConstant(mb, getArg(q, 4)) && /* isensitive flag is a value */
 					strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
