@@ -1542,7 +1542,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
 	return update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat);
 }
@@ -1599,7 +1599,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 
 	return update_col_execute(tr, delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
 }
@@ -1727,7 +1727,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN 
 	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(c->t))
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
 	return append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe == TYPE_bat);
 }
@@ -1743,7 +1743,7 @@ append_idx(sql_trans *tr, sql_idx * i, BUN offset, BAT *offsets, void *data, BUN
 	assert(delta && (!isTempTable(i->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(i->t))
 	if ((!inTransaction(tr, i->t) && (odelta != delta || !segments_in_transaction(tr, i->t) || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 
 	return append_col_execute(tr, delta, i->base.id, offset, offsets, data, cnt, tpe == TYPE_bat);
 }
@@ -1792,7 +1792,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 	}
 	unlock_table(tr->store, t->base.id);
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 	return LOG_OK;
 }
 
@@ -1910,7 +1910,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	if (i != oi)
 		bat_destroy(i);
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 	return ok;
 }
 
@@ -2884,7 +2884,7 @@ clear_col(sql_trans *tr, sql_column *c, bool renew)
 	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 	if (delta)
 		return clear_cs(tr, &delta->cs, renew, isTempTable(c->t));
 	return 0;
@@ -2901,7 +2901,7 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 	if (delta)
 		return clear_cs(tr, &delta->cs, renew, isTempTable(i->t));
 	return 0;
@@ -2942,7 +2942,7 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 		unlock_table(tr->store, t->base.id);
 	}
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
-		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
+		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
 	if (clear && ok == LOG_OK)
 		return clear_storage(tr, t, bat);
 	if (ok == LOG_ERR)
@@ -3729,10 +3729,11 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
-		if (!isLocalTemp(t))
-			tr->logchanges += (int) total;
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		in_transaction = true;
 	}
+	if (in_transaction && !isTempTable(t))
+		tr->logchanges += (int) total;
 	if (*offsets) {
 		BAT *pos = *offsets;
 		assert(BATcount(pos) == total);
@@ -3804,10 +3805,11 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
-		if (!isLocalTemp(t))
-			tr->logchanges += (int) cnt;
+		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
+		in_transaction = true;
 	}
+	if (in_transaction && !isTempTable(t))
+		tr->logchanges += (int) cnt;
 	if (ok == LOG_OK) {
 		*offset = slot;
 		return LOG_OK;
