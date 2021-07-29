@@ -1404,15 +1404,14 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			BBPkeepref(results[i].id);
 		}
 
-		if (tmp != MAL_SUCCEED) {
-			for (int j = 0; j < i; j++) {
-				BBPrelease(results[j].id);
-			}
-		}
-		else {
+		if (tmp == MAL_SUCCEED) {
 			assert(rcb->context);
 			tmp = rcb->call(rcb->context, tblname, results, fields);
 		}
+
+		for (int j = 0; j < i; j++)
+			BBPrelease(results[j].id);
+
 		GDKfree(results);
 	}
 
