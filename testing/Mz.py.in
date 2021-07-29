@@ -1121,8 +1121,6 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
-    elif CALL == "python"  and  not env['exe']['python'][0]:
-        reason = "as python is not available."
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
     elif MissingMods:
@@ -1666,7 +1664,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, nomito,
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
-                cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST]
+                cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 TSTs = []
@@ -2342,6 +2340,7 @@ def main(argv) :
             print("%s = %s" % (v, str(par[v])))
     STDOUT.flush()
 
+    os.environ['PYTHON'] = sys.executable
     try:
         import lz4
     except ImportError:
@@ -2572,7 +2571,6 @@ def main(argv) :
         exe = {}
         exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s %s' % \
                                                                (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
-        exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
