@@ -4937,7 +4937,7 @@ sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt, bool chi
 		if (child_of_partitioned && isTable(pt) && (res = sql_trans_add_dependency(tr, pt->base.id, dml))) /* disallow concurrent updates on pt */
 			return res;
 	}
-	if (isMergeTable(pt) && !list_empty(pt->members)) {
+	if ((isMergeTable(pt) || isReplicaTable(pt)) && !list_empty(pt->members)) {
 		for (node *nt = pt->members->h; nt; nt = nt->next) {
 			sql_part *pd = nt->data;
 			sql_table *t = find_sql_table_id(tr, pt->s, pd->member);

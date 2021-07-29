@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jul 28 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Since STREAM tables support is removed, left over STREAM tables are
+  dropped from the catalog.
+

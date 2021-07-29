@@ -818,6 +818,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		maxmask = HASHmask(ci->ncand);
 		if (mask > maxmask)
 			mask = maxmask;
+ 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_UNIQUE_ESTIMATE)) != NULL) {
+		assert(prop->vtype == TYPE_dbl);
+		mask = (BUN) (prop->val.dval * 8 / 7);
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
@@ -981,6 +984,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	}
 	bat_iterator_end(&bi);
 	if (!hascand) {
+		/* don't keep these properties while we have a hash
+		 * structure: they get added again when the hash is
+		 * freed */
 		MT_lock_set(&b->theaplock);
 		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
 		BATrmprop_nolock(b, GDK_NUNIQUE);
@@ -1120,9 +1126,14 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
-	if (HASHfix(h, false, true) != GDK_SUCCEED) {
-		doHASHdestroy(b, h);
+	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
 		return;
 	}
 	if (HASHwidth(i + 1) > h->width &&
@@ -1184,9 +1195,14 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (HASHfix(h, false, true) != GDK_SUCCEED) {
-		doHASHdestroy(b, h);
+	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
 		return;
 	}
 	BUN c = HASHprobe(h, v);
@@ -1260,9 +1276,14 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (HASHfix(h, false, true) != GDK_SUCCEED) {
-		doHASHdestroy(b, h);
+	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return;
+	}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
 		return;
 	}
 	BUN c = HASHprobe(h, v);
