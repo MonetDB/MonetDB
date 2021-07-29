@@ -86,7 +86,7 @@ target_link_libraries(example_proxy
     monetdb_config_header
     monetdbe)
 
-if(WITH_CMOCKA AND CMOCKA_FOUND)
+if(WITH_CMOCKA)
   add_executable(cmocka_test cmocka_test.c test_helper.c)
   target_include_directories(cmocka_test PRIVATE "${CMOCKA_INCLUDE_DIR}")
   target_link_libraries(cmocka_test
