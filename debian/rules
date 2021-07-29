@@ -30,7 +30,6 @@ override_dh_auto_configure:
 	-DTESTING=ON \
 	-DWITH_BZ2=ON \
 	-DWITH_CMOCKA=OFF \
-	-DWITH_CRYPTO=ON \
 	-DWITH_CURL=ON \
 	-DWITH_LZ4=ON \
 	-DWITH_LZMA=ON \

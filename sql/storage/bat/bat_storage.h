@@ -19,6 +19,7 @@ typedef struct column_storage {
 	int uvbid;		/* bat with values of updates */
 	bool cleared;
 	bool alter;		/* set when the delta is created for an alter statement */
+	bool merged;	/* only merge changes once */
 	size_t ucnt;	/* number of updates */
 	ulng ts;		/* version timestamp */
 } column_storage;
@@ -40,7 +41,7 @@ typedef struct segment {
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
-/* container structure too allow sharing this structure */
+/* container structure to allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
 	struct segment *h;
@@ -57,4 +58,3 @@ typedef struct storage {
 extern void bat_storage_init( store_functions *sf );
 
 #endif /*BATSTORAGE_H */
-

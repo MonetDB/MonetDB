@@ -918,6 +918,7 @@ typedef struct BATiter {
 	uint8_t shift;
 	int8_t type;
 	oid tseq;
+	BUN hfree, vhfree;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -944,6 +945,8 @@ bat_iterator(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
+			.hfree = b->theap->free,
+			.vhfree = b->tvheap ? b->tvheap->free : 0,
 #ifndef NDEBUG
 			.locked = true,
 #endif
@@ -991,6 +994,8 @@ bat_iterator_nolock(BAT *b)
 			.shift = b->tshift,
 			.type = b->ttype,
 			.tseq = b->tseqbase,
+			.hfree = b->theap->free,
+			.vhfree = b->tvheap ? b->tvheap->free : 0,
 #ifndef NDEBUG
 			.locked = false,
 #endif
@@ -1523,7 +1528,7 @@ typedef struct {
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	ATOMIC_TYPE status;	/* status mask used for spin locking */
-	/* MT_Id pid;           non-zero thread-id if this BAT is private */
+	MT_Id pid;		/* creator of this bat while "private" */
 } BBPrec;
 
 gdk_export bat BBPlimit;
@@ -1574,7 +1579,7 @@ gdk_export void BBPlock(void);
 
 gdk_export void BBPunlock(void);
 
-gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
+gdk_export BAT *BBPquickdesc(bat b);
 
 /*
  * @- GDK error handling
@@ -1914,6 +1919,7 @@ BBPcheck(bat x)
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
 		} else {
+			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
 		}
 	}

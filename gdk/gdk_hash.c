@@ -605,8 +605,8 @@ BAThashsave_intern(BAT *b, bool dosync)
 		 * mean time */
 		if (!b->theap->dirty &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
-		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
-		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
+		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free) == GDK_SUCCEED &&
+		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
 			hp->dirty = false;
 			rc = HASHfix(h, true, dosync);

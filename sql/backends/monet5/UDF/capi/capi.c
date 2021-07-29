@@ -379,6 +379,40 @@ static timestamp timestamp_from_data(cudf_data_timestamp *ptr);
 
 static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
 
+static str
+empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)
+{
+	for (size_t i = 0; i < retcols; i++) {
+		if (isaBatType(getArgType(mb, pci, i))) {
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			*getArgReference_bat(stk, pci, i) = b->batCacheid;
+			BBPkeepref(b->batCacheid);
+		} else { // single value return, only for non-grouped aggregations
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				for (size_t j = 0; j < i; j++) {
+					if (isaBatType(getArgType(mb, pci, j)))
+						BBPunfix(*getArgReference_bat(stk, pci, j));
+					else
+						VALclear(&stk->stk[pci->argv[j]]);
+				}
+				return createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bool grouped)
 {
@@ -971,8 +1005,19 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else {
 			// deal with BAT input
 			bat_type = getBatType(getArgType(mb, pci, i));
-			input_bats[index] =
-				BATdescriptor(*getArgReference_bat(stk, pci, i));
+			if (!(input_bats[index] =
+				  BATdescriptor(*getArgReference_bat(stk, pci, i)))) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			if (BATcount(input_bats[index]) == 0) {
+				/* empty input, generate trivial return */
+				/* I expect all inputs to have the same size,
+				   so this should be safe */
+				msg = empty_return(mb, stk, pci, output_count,
+								   input_bats[index]->hseqbase);
+				goto wrapup;
+			}
 		}
 
 		if (bat_type == TYPE_bit) {

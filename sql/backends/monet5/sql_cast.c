@@ -52,11 +52,11 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 	bool nils = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -227,11 +227,11 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -245,8 +245,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
 		}
-		BBPkeepref(*res = b->batCacheid);
 		bat_iterator_end(&bi);
+		BBPkeepref(*res = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 

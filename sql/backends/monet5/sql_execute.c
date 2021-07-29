@@ -213,10 +213,12 @@ SQLrun(Client c, mvc *m)
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	msg = SQLoptimizeQuery(c, mb);
-	if( msg != MAL_SUCCEED){
-		MT_thread_setworking(NULL);
-		return msg;
+	if ((m->emod & mod_exec) == 0) {
+		msg = SQLoptimizeQuery(c, mb);
+		if( msg != MAL_SUCCEED){
+			MT_thread_setworking(NULL);
+			return msg;
+		}
 	}
 	mb->keephistory = FALSE;
 

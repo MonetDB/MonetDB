@@ -1733,43 +1733,44 @@ store_load(sqlstore *store, sql_allocator *pa)
 	sql_trans *tr;
 	sql_table *t, *types, *functions, *arguments;
 	sql_schema *s;
-
 	lng lng_store_oid;
 
 	store->sa = pa;
 	sa = sa_create(pa);
-	if (!sa || !store->sa)
+	if (!sa || !store->sa) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
+	}
 
 	store->first = store->logger_api.log_isnew(store);
+
+	if (store->first && store->readonly) {
+		/* cannot initialize database in readonly mode */
+		TRC_CRITICAL(SQL_STORE, "Cannot initialize store in readonly mode\n");
+		return NULL;
+	}
 
 	types_init(store->sa); /* initialize global lists of types and functions, TODO: needs to move */
 
 	/* we store some spare oids */
 	store->obj_id = FUNC_OIDS;
 
-	if (!sequences_init())
+	if (!sequences_init()) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
+	}
 	tr = sql_trans_create(store, NULL, NULL);
-	if (!tr)
+	if (!tr) {
+		TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 		return NULL;
+	}
 	tr->store = store;
+	tr->active = 1;
 
 	/* for now use malloc and free */
 	store->active = list_create(NULL);
 	store->dependencies = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
 	store->depchanges = hash_new(NULL, 32, (fkeyvalue)&dep_hash);
-
-	if (store->first) {
-		/* cannot initialize database in readonly mode */
-		if (store->readonly)
-			return NULL;
-		if (!tr) {
-			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
-			return NULL;
-		}
-	}
-	tr->active = 1;
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
 	if (!store->first)
@@ -1973,13 +1974,15 @@ store_load(sqlstore *store, sql_allocator *pa)
 		insert_types(tr, types);
 		insert_functions(tr, functions, funcs, arguments);
 		insert_schemas(tr);
-
 	} else {
 		tr->active = 0;
 	}
 
-	if (sql_trans_commit(tr) != SQL_OK)
+	if (sql_trans_commit(tr) != SQL_OK) {
 		TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
+		sql_trans_destroy(tr);
+		return NULL;
+	}
 	tr->ts = store_timestamp(store);
 
 	store->logger_api.get_sequence(store, OBJ_SID, &lng_store_oid);
@@ -1990,11 +1993,15 @@ store_load(sqlstore *store, sql_allocator *pa)
 	/* load remaining schemas, tables, columns etc */
 	tr->active = 1;
 	if (!store->first && !load_trans(tr)) {
+		TRC_CRITICAL(SQL_STORE, "Cannot load catalog tables\n");
 		sql_trans_destroy(tr);
 		return NULL;
 	}
-	if (sql_trans_commit(tr) != SQL_OK)
+	if (sql_trans_commit(tr) != SQL_OK) {
 		TRC_CRITICAL(SQL_STORE, "Cannot commit loaded objects transaction\n");
+		sql_trans_destroy(tr);
+		return NULL;
+	}
 	tr->active = 0;
 	sql_trans_destroy(tr);
 	store->initialized = 1;
@@ -2002,28 +2009,38 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int singleuser)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 {
-	sqlstore *store = ZNEW(sqlstore);
+	sql_allocator *pa;
+	sqlstore *store = MNEW(sqlstore);
 
-	if (!store)
+	if (!store) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		return NULL;
+	}
+
+	if (!(pa = sa_create(NULL))) {
+		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
+		_DELETE(store);
+		return NULL;
+	}
 
 	*store = (sqlstore) {
 		.readonly = readonly,
 		.singleuser = singleuser,
 		.debug = debug,
 		.transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE),
+		.sa = pa,
 	};
 
 	(void)store_timestamp(store); /* increment once */
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
-	for(int i = 0; i<NR_TABLE_LOCKS; i++) {
+	for(int i = 0; i<NR_TABLE_LOCKS; i++)
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
+	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
 		MT_lock_init(&store->column_locks[i], "sqlstore_column");
-	}
 
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
@@ -2033,8 +2050,10 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	case store_bat:
 	case store_mem:
 		if (bat_utils_init() == -1) {
+			TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 			MT_lock_unset(&store->lock);
 			MT_lock_unset(&store->flush);
+			store_exit(store);
 			return NULL;
 		}
 		bat_storage_init(&store->storage_api);
@@ -2050,13 +2069,18 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	    store->logger_api.create(store, debug, "sql_logs", CATALOG_VERSION*v) != LOG_OK) {
 		MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
+		store_exit(store);
 		return NULL;
 	}
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&store->lock);
 	MT_lock_unset(&store->flush);
-	return store_load(store, pa);
+	if (!store_load(store, pa)) {
+		store_exit(store);
+		return NULL;
+	}
+	return store;
 }
 
 // All this must only be accessed while holding the store->flush.
@@ -2259,7 +2283,7 @@ store_manager(sqlstore *store)
 			}
 			store_unlock(store);
 			MT_lock_set(&store->flush);
-			store->logger_api.activate(store); /* rotate too new log file */
+			store->logger_api.activate(store); /* rotate to new log file */
 		}
 
 		if (GDKexiting())
@@ -3501,8 +3525,10 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
-		if (!parent)
+		if (!parent) {
+			sql_trans_destroy(tr);
 			return NULL;
+		}
 		parent->name = SA_STRDUP(parent->sa, name);
 	}
 
@@ -4766,12 +4792,13 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 	return 0;
 }
 
-sql_schema *
+int
 sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner)
 {
 	sqlstore *store = tr->store;
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
 	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
+	int res = LOG_OK;
 
 	base_init(tr->sa, &s->base, next_oid(tr->store), true, name);
 	s->auth_id = auth_id;
@@ -4787,14 +4814,17 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
 	s->store = tr->store;
 
-	if (store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system)) {
+	if ((res = store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system))) {
 		schema_destroy(store, s);
-		return NULL;
+		return res;
 	}
-	if (os_add(tr->cat->schemas, tr, s->base.name, &s->base)) {
-		return NULL;
-	}
-	return s;
+	if ((res = os_add(tr->cat->schemas, tr, s->base.name, &s->base)))
+		return res;
+	if ((res = sql_trans_add_dependency(tr, s->auth_id, ddl)))
+		return res;
+	if ((res = sql_trans_add_dependency(tr, s->owner, ddl)))
+		return res;
+	return res;
 }
 
 int
@@ -5707,11 +5737,10 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 			n = nn;
 			col = next;
 		} else if (col) { /* if the column to be dropped was found, decrease the column number for others after it */
-			oid rid;
 			next->colnr--;
 
 			if (!isDeclaredTable(t)) {
-				rid = store->table_api.column_find_row(tr, cid, &next->base.id, NULL);
+				oid rid = store->table_api.column_find_row(tr, cid, &next->base.id, NULL);
 				assert(!is_oid_nil(rid));
 				if ((res = store->table_api.column_update_value(tr, cnr, rid, &next->colnr)))
 					return res;
@@ -6479,7 +6508,7 @@ create_sql_sequence(sqlstore *store, sql_allocator *sa, sql_schema *s, const cha
 	return create_sql_sequence_with_id(sa, next_oid(store), s, name, start, min, max, inc, cacheinc, cycle);
 }
 
-sql_sequence *
+int
 sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc,
 						  lng cacheinc, bit cycle, bit bedropped)
 {
@@ -6489,19 +6518,20 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	sql_sequence *seq = create_sql_sequence_with_id(tr->sa, next_oid(tr->store), s, name, start, min, max, inc, cacheinc, cycle);
 	int res = LOG_OK;
 
-	if (os_add(s->seqs, tr, seq->base.name, &seq->base))
-		return NULL;
-	if (store->table_api.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, &seq->base.name, &seq->start, &seq->minvalue,
-							 &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle))
-		return NULL;
+	if ((res = os_add(s->seqs, tr, seq->base.name, &seq->base)))
+		return res;
+	if ((res = store->table_api.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, &seq->base.name, &seq->start, &seq->minvalue,
+							 &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle)))
+		return res;
 
 	/*Create a BEDROPPED dependency for a SERIAL COLUMN*/
 	if (bedropped) {
-		sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY);
+		if ((res = sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY)))
+			return res;
 		if (!isNew(seq) && (res = sql_trans_add_dependency(tr, seq->base.id, ddl)))
-			return NULL;
+			return res;
 	}
-	return seq;
+	return res;
 }
 
 int
@@ -6552,7 +6582,7 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 		if ((res = store->table_api.column_update_value(tr, c, rid, &seq->cacheinc)))
 			return res;
 	}
-	if (!is_lng_nil(cycle) && seq->cycle != cycle) {
+	if (!is_bit_nil(cycle) && seq->cycle != cycle) {
 		seq->cycle = cycle != 0;
 		c = find_sql_column(seqs, "cycle");
 		if ((res = store->table_api.column_update_value(tr, c, rid, &seq->cycle)))

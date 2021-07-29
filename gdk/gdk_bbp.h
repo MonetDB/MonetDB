@@ -64,7 +64,6 @@ gdk_export lng getBBPtransid(void);
 gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 
 /* update interface */
-gdk_export void BBPclear(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export gdk_return BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, const char *nme);

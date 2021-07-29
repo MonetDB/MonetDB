@@ -14,17 +14,31 @@
  */
 
 #include "monetdb_config.h"
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
+#endif
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_atom.h"			/* for malAtomSize */
-#ifndef HAVE_UUID
-#ifdef HAVE_OPENSSL
-# include <openssl/rand.h>
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonRandom.h>
-#endif
-#endif
+
+#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static inline bool
+generate_uuid(uuid *U)
+{
+	union {
+		unsigned int randbuf[4];
+		unsigned char uuid[16];
+	} u;
+	for (int i = 0; i < 4; i++)
+		if (rand_s(&u.randbuf[i]) != 0)
+			return false;
+	/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+	u.uuid[8] = (u.uuid[8] & 0x3F) | 0x80;
+	/* make sure this is version 4 (random UUID) */
+	u.uuid[6] = (u.uuid[6] & 0x0F) | 0x40;
+	memcpy(U->u, u->uuid, 16);
+	return true;
+}
 #endif
 
 /**
@@ -38,23 +52,30 @@ UUIDgenerateUuid_internal(uuid *u)
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 #else
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes(u->u, 16) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(u->u, 16) != kCCSuccess)
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(u->u, 16) == 0) {
+		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+		u->u[8] = (u->u[8] & 0x3F) | 0x80;
+		/* make sure this is version 4 (random UUID) */
+		u->u[6] = (u->u[6] & 0x0F) | 0x40;
+	} else
+#elif defined(HAVE_RAND_S)
+	if (!generate_uuid(u))
 #endif
-#endif
-		/* if it failed, use rand */
-		for (int i = 0; i < UUID_SIZE;) {
+	{
+		/* generate something like this:
+		 * cefa7a9c-1dd2-41b2-8350-880020adbeef
+		 * ("%08x-%04x-%04x-%04x-%012x") */
+		for (int i = 0; i < 16; i++) {
 			int r = rand();
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
-	/* make sure this is a variant 1 UUID */
-	u->u[8] = (u->u[8] & 0x3F) | 0x80;
-	/* make sure this is version 4 (random UUID) */
-	u->u[6] = (u->u[6] & 0x0F) | 0x40;
+		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+		u->u[8] = (u->u[8] & 0x3F) | 0x80;
+		/* make sure this is version 4 (random UUID) */
+		u->u[6] = (u->u[6] & 0x0F) | 0x40;
+	}
 #endif
 }
 
@@ -95,7 +116,7 @@ UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
 
-	if ((b = BBPquickdesc(*bid, false)) == NULL)	{
+	if ((b = BBPquickdesc(*bid)) == NULL)	{
 		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -186,18 +207,18 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bool nils = false;
 	BATiter bi;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	} else {
-		BBPkeepref(*res = b->batCacheid); /* nothing to convert, return */
+		BBPretain(*res = *bid); /* nothing to convert, return */
 		return MAL_SUCCEED;
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.uuid2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
@@ -272,11 +293,11 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -361,11 +382,11 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;

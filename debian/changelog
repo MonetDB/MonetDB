@@ -1,3 +1,285 @@
+monetdb (11.41.1) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#2030: Temporary table is semi-persistent when transaction fails
+  * GH#7031: I cannot start MoentDb, because the installation path has
+    Chinese.
+  * GH#7055: Table count returning function used inside other function gives
+    wrong results.
+  * GH#7075: Inconsistent Results using CTEs in Large Queries
+  * GH#7079: WITH table AS... UPDATE ignores the WHERE conditions on table
+  * GH#7081: Attempt to allocate too much space in UPDATE query
+  * GH#7093: `current_schema` not in sys.keywords
+  * GH#7096: DEBUG SQL statement broken
+  * GH#7115: Jul2021: ParseException while upgrading Oct2020 database
+  * GH#7116: Jul2021: Cannot create filter functions
+  * GH#7125: MonetDB Round Function issues in the latest release
+  * GH#7126: The "lower" and "upper" functions doesn't work for Cyrillic
+    alphabet
+  * GH#7127: Bug report: "write error on stream" that results in mclient
+    crash
+  * GH#7128: Bug report: strange error message "Subquery result missing"
+  * GH#7129: Bug report: TypeException:user.main[19]:'batcalc.between'
+    undefined
+  * GH#7130: Bug report: TypeException:user.main[396]:'algebra.join'
+    undefined
+  * GH#7131: Bug report: TypeException:user.main[273]:'bat.append' undefined
+  * GH#7133: WITH <alias> ( SELECT x ) DELETE FROM ... deletes wrong tuples
+  * GH#7136: MERGE statement is deleting rows if the column is set as NOT
+    NULL even though it should not
+  * GH#7137: Segmentation fault while loading data
+  * GH#7138: Monetdb Python UDF crashes because of null aggr_group_arr
+  * GH#7141: COUNT(DISTINCT col) does not calculate correctly distinct values
+  * GH#7142: Aggregates returning tables should not be allowed
+  * GH#7144: Type up-casting (INT to BIGINT) doesn't always happen
+    automatically
+  * GH#7146: Query produces this error: !ERROR: Could not find %102.%102
+  * GH#7147: Internal error occurs and is not shown on the screen
+  * GH#7148: Select distinct is not working correctly
+  * GH#7151: Insertion is too slow
+  * GH#7153: System UDFs lose their indentation - Python functions broken
+  * GH#7158: Python aggregate UDF returns garbage when run on empty table
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 23 Jul 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * mapilib: Add optional MAPI header field which can be used to immediately
+    set reply size, autocommit, time zone and some other options, see
+    mapi.h.  This makes client connection setup faster.  Support has been
+    added to mapilib, pymonetdb and the jdbc driver.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Wed, 21 Jul 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: Fix a warning emitted by some implementations of the tar(1) command
+    when unpacking hot snapshot files.
+  * sql: support reading the concatenation of compressed files as a single
+    compressed file.
+  * sql: COPY BINARY overhaul.  Allow control over binary endianness using
+    COPY [ (BIG | LITTLE | NATIVE) ENDIAN] BINARY syntax.  Defaults to
+    NATIVE.  Strings are now \0 terminated rather than \n.  Support for
+    BOOL, TINYINT, SMALLINT, INT, LARGEINT, HUGEINT, with their
+    respective "INTMIN" values as the NULL representation; 32 and 64 bit
+    FLOAT/REAL, with NaN as the NULL representation; VARCHAR/TEXT, JSON
+    and URL with \x80 as the NULL representation; UUID as fixed width 16
+    byte binary values, with (by default) all zeroes as the NULL
+    representation; temporal type structs as defined in copybinary.h
+    with any invalid value as the NULL representation.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Wed, 21 Jul 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: In the Jul2021 release the storage and transaction layers have
+    undergone major changes.  The goal of these changes is robust
+    performance under inserts/updates and deletes and lowering the
+    transaction startup costs, allowing faster (small) queries.  Where
+    the old transaction layer duplicated a lot of data structures during
+    startup, the new layer shares the same tree.  Using object
+    timestamps the isolation of object is guaranteed.  On the storage
+    side the timestamps indicate whether a row is visible (deleted or
+    valid), to a transaction as well.  The changes also give some slight
+    changes on the perceived transactional behavior.  The new
+    implementation uses shared structures among all transactions, which
+    do not allow multiple changes of the same object.  And we then
+    follow the principle of the first writer wins, i.e., if a
+    transaction creates a table with name 'table_name', and concurrently
+    one other transaction does the same the later of the two will fail
+    with a concurrency conflict error message (even if the first writer
+    never commits).  We expect most users not to notice this change, as
+    such schema changes aren't usually done concurrently.
+
+ -- Niels Nes <niels@cwi.nl>  Tue, 20 Jul 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * clients: The MonetDB stethoscope has been removed.  There is now a separate
+    package available with PIP (monetdb_stethoscope) or as an RPM or DEB
+    package (stethoscope) from the monetdb.org repository.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Jul 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * gdk: A new type, called msk, was introduced.  This is a bit mask type.
+    In a bat with type msk, each row occupies a single bit, so 8 rows are
+    stored in a single byte.  There is no NULL value for this type.
+  * gdk: The function of the BAT iterator (type BATiter, function bat_iterator)
+    has been expanded.  The iterator now contains more information about
+    the BAT, and it contains a pointer to the heaps (theap and tvheap)
+    that are stable, at least in the sense that they will remain available
+    even when parallel threads update the BAT and cause those heaps to grow
+    (and therefore possibly move in memory).  A call to bat_iterator must
+    now be accompanied by a call to bat_iterator_end.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Jul 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * monetdb5: When using the --in-memory option, mserver5 will run completely in
+    memory, i.e. not create a database on disk.  The server can still be
+    connected to using the name of the in-memory database.  This name is
+    "in-memory".
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 7 Jun 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: There is now a function sys.current_sessionid() to return the session
+    ID of the current session.  This ID corresponds with the sessionid in
+    the sys.queue() result.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * merovingian: Deprecate `profilerstart` and `profilerstop` commands. Since
+    stethoscope is a separate project (https://github.com/MonetDBSolutions/monetdb-pystethoscope)
+    the installation directory is not standard anymore. `profilerstart` and
+    `profilerstop` commands assume that the stethoscope executable is in the
+    same directory as `mserver5`. This is no longer necessarily true since
+    stethoscope can now be installed in a python virtual environment. The
+    commands still work if stethoscope is installed using the official
+    MonetDB installers, or if a symbolic link is created in the directory
+    where `mserver5` is located.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 10 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * odbc: A typo that made the SQLSpecialColumns function unusable was fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: Merge statements could not produce correct results on complex join
+    conditions, so a renovation was made. As a consequence, subqueries
+    now have to be disabled on merge join conditions.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: preserve in-query comments
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * merovingian: The exittimeout value can now be set to a negative value (e.g. -1) to
+    indicate that when stopping the dbfarm (using monetdbd stop dbfarm),
+    any mserver5 processes are to be sent a termination signal and then
+    waited for until they terminate.  In addition, if exittimeout is greater
+    than zero, the mserver5 processes are sent a SIGKILL signal after the
+    specified timeout and the managing monetdbd is sent a SIGKILL signal
+    after another five seconds (if it didn't terminate already).  The old
+    situation was that the managing monetdbd process was sent a SIGKILL
+    after 30 seconds, and the mserver5 processes that hadn't terminated
+    yet would be allowed to continue their termination sequence.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * gdk: Implemented function BUNreplacemultiincr to replace multiple values
+    in a BAT in one go, starting at a given position.
+  * gdk: Implemented new function BUNreplacemulti to replace multiple values
+    in a BAT in one go, at the given positions.
+  * gdk: Removed function BUNinplace, just use BUNreplace, and check whether
+    the BAT argument is of type TYPE_void before calling if you don't
+    want to materialize.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: Use of CTEs inside UPDATE and DELETE statements are now more
+    restrict. Previously they could be used without any extra specification
+    in the query (eg. with "v1"("c1") as (...) delete from "t"
+    where "t"."c1" = "v1"."c1"), however this was not conformant with the
+    SQL standard. In order to use them, they must be specified in the FROM
+    clause in UPDATE statements or inside a subquery.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * gdk: Implemented a function BUNappendmulti which appends an array of values
+    to a BAT.  It is a generalization of the function BUNappend.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * gdk: Changed the interface of the atom read function.  It now requires an
+    extra pointer to a size_t value that gives the current size of the
+    destination buffer, and when that buffer is too small, it receives the
+    size of the reallocated buffer that is large enough.  In any case,
+    and as before, the return value is a pointer to the destination buffer.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * gdk: Environment variables (sys.env()) must be UTF-8, but since they can
+    contain file names which may not be UTF-8, there is now a mechanism
+    to store the original values outside of sys.env() and store
+    %-escaped (similar to URL escaping) values in the environment.  The
+    key must still be UTF-8.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * gdk: We now save the location of the min and max values when known.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: Added 'schema path' property to user, specifying a list of schemas
+    to be searched on to find SQL objects such as tables and
+    functions. The scoping rules have been updated to support this feature
+    and it now finds SQL objects in the following order:
+     1. On occasions with multiple tables (e.g. add foreign key constraint,
+        add table to a merge table), the child will be searched on the
+        parent's schema.
+     2. For tables only, declared tables on the stack.
+     3. 'tmp' schema if not listed on the 'schema path'.
+     4. Session's current schema.
+     5. Each schema from the 'schema path' in order.
+     6. 'sys' schema if not listed on the 'schema path'.
+    Whenever the full path is specified, ie "schema"."object", no search will
+    be made besides on the explicit schema.
+  * sql: To update the schema path ALTER USER x SCHEMA PATH y; statement was added.
+    [SCHEMA PATH string] syntax was added to the CREATE USER statement.
+    The schema path must be a single string where each schema must be between
+    double quotes and separated with a single comma, e.g. '"sch1","sch2"'
+    For every created user, if the schema path is not given, '"sys"' will be
+    the default schema path.
+  * sql: Changes in the schema path won't be reflected on currently connected users,
+    therefore they have to re-connect to see the change. Non existent schemas
+    on the path will be ignored.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * sql: Leftover STREAM table definition from Datacell extension was removed
+    from the parser. They had no effect anymore.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Mon, 3 May 2021 13:57:15 +0200
+
+monetdb (11.41.1) unstable; urgency=low
+
+  * monetdb5: By using the option "--dbextra=in-memory", mserver5 can be instructed
+    to keep transient BATs completely in memory.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 3 May 2021 13:57:15 +0200
+
 monetdb (11.39.17) unstable; urgency=low
 
   * Rebuilt.
