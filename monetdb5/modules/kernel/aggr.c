@@ -35,7 +35,7 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
-	e = eid ? BATdescriptor(*eid) : NULL;
+	e = eid ? BBPquickdesc(*eid) : NULL;
 	s = sid ? BATdescriptor(*sid) : NULL;
 	q = quantile ? BATdescriptor(*quantile) : NULL;
 
@@ -48,8 +48,6 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		if (q)
@@ -78,8 +76,6 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 				BBPunfix(b->batCacheid);
 				if (g)
 					BBPunfix(g->batCacheid);
-				if (e)
-					BBPunfix(e->batCacheid);
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPunfix(q->batCacheid);
@@ -97,8 +93,6 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 	BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
@@ -626,7 +620,7 @@ AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gi
 
 	b = BATdescriptor(*bid);
 	g = gid != NULL && !is_bat_nil(*gid) ? BATdescriptor(*gid) : NULL;
-	e = eid != NULL && !is_bat_nil(*eid) ? BATdescriptor(*eid) : NULL;
+	e = eid != NULL && !is_bat_nil(*eid) ? BBPquickdesc(*eid) : NULL;
 	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
 
 	if (b == NULL ||
@@ -637,8 +631,6 @@ AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gi
 			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -649,8 +641,6 @@ AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gi
 	BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (rc != GDK_SUCCEED)
@@ -673,7 +663,7 @@ AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const
 	r = BATdescriptor(*rid);
 	c = BATdescriptor(*cid);
 	g = gid != NULL && !is_bat_nil(*gid) ? BATdescriptor(*gid) : NULL;
-	e = eid != NULL && !is_bat_nil(*eid) ? BATdescriptor(*eid) : NULL;
+	e = eid != NULL && !is_bat_nil(*eid) ? BBPquickdesc(*eid) : NULL;
 
 	if (b == NULL ||
 		r == NULL ||
@@ -688,8 +678,6 @@ AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const
 			BBPunfix(c->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -700,8 +688,6 @@ AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const
 	BBPunfix(c->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
@@ -1001,7 +987,7 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
-	e = eid ? BATdescriptor(*eid) : NULL;
+	e = eid ? BBPquickdesc(*eid) : NULL;
 	s = sid ? BATdescriptor(*sid) : NULL;
 	sep = sepid ? BATdescriptor(*sepid) : NULL;
 
@@ -1011,8 +997,6 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		if (sep)
@@ -1025,8 +1009,6 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 	BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (sep)
@@ -1088,7 +1070,7 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 	b1 = BATdescriptor(*bid1);
 	b2 = BATdescriptor(*bid2);
 	g = gid ? BATdescriptor(*gid) : NULL;
-	e = eid ? BATdescriptor(*eid) : NULL;
+	e = eid ? BBPquickdesc(*eid) : NULL;
 	s = sid ? BATdescriptor(*sid) : NULL;
 
 	if (b1 == NULL || b2 == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
@@ -1099,8 +1081,6 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 			BBPunfix(b2->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1111,8 +1091,6 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 		BBPunfix(b2->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		throw(MAL, malfunc, SQLSTATE(42000) "%s requires both arguments of the same type", malfunc);
@@ -1124,8 +1102,6 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 	BBPunfix(b2->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)

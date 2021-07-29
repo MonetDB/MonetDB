@@ -17,7 +17,7 @@
 qc *
 qc_create(sql_allocator *sa, int clientid, int seqnr)
 {
-	qc *r = SA_ZNEW(sa, qc);
+	qc *r = SA_NEW(sa, qc);
 	if (!r)
 		return NULL;
 	*r = (qc) {
@@ -109,7 +109,7 @@ cq *
 qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
 {
 	int namelen;
-	sql_func *f = SA_ZNEW(sa, sql_func);
+	sql_func *f = SA_NEW(sa, sql_func);
 	cq *n = SA_ZNEW(sa, cq);
 	list *res = NULL;
 

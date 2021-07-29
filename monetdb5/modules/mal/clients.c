@@ -770,7 +770,6 @@ static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-#ifdef HAVE_SHA1_UPDATE
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
 	str ch = "";
@@ -785,13 +784,6 @@ static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
-#else
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL, "mal.checkPermission", "Required digest algorithm SHA-1 missing");
-#endif
 }
 
 static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {

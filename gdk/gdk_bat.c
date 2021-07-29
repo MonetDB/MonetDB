@@ -674,6 +674,7 @@ BATfree(BAT *b)
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){nunique});
+		BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){(dbl)nunique});
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){nbucket});
 	}
 	if (b->theap) {
@@ -1041,7 +1042,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
@@ -1277,7 +1279,8 @@ BUNdelete(BAT *b, oid o)
 		b->tnorevsorted = 0;
 	MT_lock_set(&b->theaplock);
 	b->batCount--;
-	BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
+	if (BATcount(b) < GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+		BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
 	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
 		/* some trivial properties */
@@ -1405,7 +1408,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				} else {
 					BATrmprop_nolock(b, GDK_MIN_POS);
 				}
-				BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
+				if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+					BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
 				MT_lock_unset(&b->theaplock);
 			} else {
 				PROPdestroy(b);
