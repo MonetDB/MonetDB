@@ -227,13 +227,14 @@ SCode(unsigned char c)
 }
 
 static str
-soundex_code(char *Name, char *Key)
+soundex_code(const char *Name, char *Key)
 {
 	char LastLetter;
 	int Index;
 
-	if ((*Name & 0x80) != 0)
-		throw(MAL,"soundex", SQLSTATE(42000) "Soundex function not available for non ASCII strings");
+	for (const char *p = Name; *p; p++)
+		if ((*p & 0x80) != 0)
+			throw(MAL,"soundex", SQLSTATE(42000) "Soundex function not available for non ASCII strings");
 
 	/* set default key */
 	strcpy(Key, SoundexKey);
