@@ -534,7 +534,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				}
 
 				if (!err)
-					err = mvc_export_prepare(be, c->fdout, "");
+					err = mvc_export_prepare(be, c->fdout);
 			}
 		}
 
