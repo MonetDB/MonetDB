@@ -36,7 +36,7 @@ generate_uuid(uuid *U)
 	u.uuid[8] = (u.uuid[8] & 0x3F) | 0x80;
 	/* make sure this is version 4 (random UUID) */
 	u.uuid[6] = (u.uuid[6] & 0x0F) | 0x40;
-	memcpy(U->u, u->uuid, 16);
+	memcpy(U->u, u.uuid, 16);
 	return true;
 }
 #endif
