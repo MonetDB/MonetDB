@@ -121,7 +121,7 @@ static void generateChallenge(str buf, int min, int max) {
 	size = (min + max) / 2;
 	for (i = 0; i < size; i++)
 		buf[i] = seedChars[i % 62];
-	buf[size] = 0;
+	buf[size] = '\0';
 #else
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
@@ -143,10 +143,9 @@ static void generateChallenge(str buf, int min, int max) {
 #elif defined(HAVE_RAND_S)
 	if (!gen_win_challenge(buf, size))
 #endif
-		for (i = 0; i < size; i++) {
+		for (i = 0; i < size; i++)
 			buf[i] = seedChars[rand() % 62];
-		}
-	buf[i] = '\0';
+	buf[size] = '\0';
 #endif
 }
 
