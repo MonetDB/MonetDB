@@ -60,7 +60,7 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #prepare select "system" or ? from _tables WHERE false;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -119,7 +119,7 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #prepare select "system" or ? from _tables WHERE false;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
