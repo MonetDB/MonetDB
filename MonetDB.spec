@@ -846,6 +846,22 @@ else
 fi
 
 %changelog
+* Fri Jul 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.3-20210730
+- Rebuilt.
+
+* Fri Jul 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.3-20210730
+- gdk: Hash indexes are no longer maintained at all cost: if the number of
+  distinct values is too small compared to the total number of values,
+  the index is dropped instead of being maintained during updates.
+
+* Fri Jul 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.3-20210730
+- sql: The sys.storage() function now only returns meta data, i.e. data that
+  can be calculated without access to the column contents.
+
+* Wed Jul 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.3-20210730
+- sql: Since STREAM tables support is removed, left over STREAM tables are
+  dropped from the catalog.
+
 * Fri Jul 23 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.1-20210723
 - Rebuilt.
 - GH#2030: Temporary table is semi-persistent when transaction fails
