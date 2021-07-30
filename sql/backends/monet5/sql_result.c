@@ -896,7 +896,7 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 			int slen;
 
 			t = exp_subtype(e);
-			slen = strlen(t->type->base.name);
+			slen = (int) strlen(t->type->base.name);
 			if (slen > len1)
 				len1 = slen;
 			while (t->digits >= max2) {
@@ -910,16 +910,16 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 			rname = exp_relname(e);
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
-			slen = name ? strlen(name) : 0;
+			slen = name ? (int) strlen(name) : 0;
 			if (slen > len5)
 				len5 = slen;
 			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
-			slen = name ? strlen(name) : 0;
+			slen = name ? (int) strlen(name) : 0;
 			if (slen > len6)
 				len6 = slen;
-			slen = strlen(t->type->impl);
+			slen = (int) strlen(t->type->impl);
 			if (slen > len7)
 				len7 = slen;
 
