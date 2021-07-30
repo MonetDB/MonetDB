@@ -1100,7 +1100,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 	BBPunfix(order->batCacheid);
 
 	if (error) {
-		res_table_destroy(be->results);
+		res_tables_destroy(be->results);
 		return error;
 	}
 
