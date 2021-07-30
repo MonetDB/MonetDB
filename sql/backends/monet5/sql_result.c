@@ -876,9 +876,9 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 	BAT* order		= NULL;
 	node *n;
 
-	const size_t nr_columns = b->client->protocol == PROTOCOL_COLUMNAR? 7 : 6;
+	const int nr_columns = b->client->protocol == PROTOCOL_COLUMNAR? 7 : 6;
 
-	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
+	int len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
 	int len2 = 1, len3 = 1;
 	sql_arg *a;
 	sql_subtype *t;
@@ -893,7 +893,7 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 		for (n = r->exps->h; n; n = n->next) {
 			const char *name = NULL, *rname = NULL, *schema = NULL;
 			sql_exp *e = n->data;
-			size_t slen;
+			int slen;
 
 			t = exp_subtype(e);
 			slen = strlen(t->type->base.name);
