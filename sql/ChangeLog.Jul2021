@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jul 30 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The sys.storage() function now only returns meta data, i.e. data that
+  can be calculated without access to the column contents.
+
 * Wed Jul 28 2021 Sjoerd Mullender <sjoerd@acm.org>
 - Since STREAM tables support is removed, left over STREAM tables are
   dropped from the catalog.
