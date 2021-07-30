@@ -1,3 +1,31 @@
+monetdb (11.41.3) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 30 Jul 2021 10:02:48 +0200
+
+monetdb (11.41.3) unstable; urgency=low
+
+  * gdk: Hash indexes are no longer maintained at all cost: if the number of
+    distinct values is too small compared to the total number of values,
+    the index is dropped instead of being maintained during updates.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 30 Jul 2021 10:02:48 +0200
+
+monetdb (11.41.3) unstable; urgency=low
+
+  * sql: The sys.storage() function now only returns meta data, i.e. data that
+    can be calculated without access to the column contents.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 30 Jul 2021 10:02:48 +0200
+
+monetdb (11.41.3) unstable; urgency=low
+
+  * sql: Since STREAM tables support is removed, left over STREAM tables are
+    dropped from the catalog.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 28 Jul 2021 10:02:48 +0200
+
 monetdb (11.41.1) unstable; urgency=low
 
   * Rebuilt.
