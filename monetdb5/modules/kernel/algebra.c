@@ -793,8 +793,9 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 	BAT *sl = NULL, *sr = NULL;
 	gdk_return ret;
 
-	if ((L = BATdescriptor(*left)) == NULL ||
-		(R = BATdescriptor(*right)) == NULL) {
+	L = BATdescriptor(*left);
+	R = BATdescriptor(*right);
+	if (L == NULL || R == NULL) {
 		if (L)
 			BBPunfix(L->batCacheid);
 		if (R)
