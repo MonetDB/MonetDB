@@ -4205,9 +4205,9 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
 	 * the result is also sorted */
-	bn->tsorted = (abort_on_error && b1->tsorted & b2->tsorted && nils == 0)
+	bn->tsorted = (abort_on_error && b1->tsorted && b2->tsorted && nils == 0)
 		|| ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b1->trevsorted & b2->trevsorted && nils == 0)
+	bn->trevsorted = (abort_on_error && b1->trevsorted && b2->trevsorted && nils == 0)
 		|| ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
