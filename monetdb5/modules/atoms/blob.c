@@ -152,10 +152,10 @@ BLOBlength(const void *P)
 	return (size_t) l;
 }
 
-static void
+static gdk_return
 BLOBheap(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
 static var_t
@@ -166,7 +166,7 @@ BLOBput(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, blobsize(val->nitems));
  	base = b->tvheap->base;
-	if (*bun) {
+	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
 		b->tvheap->dirty = true;
 	}
