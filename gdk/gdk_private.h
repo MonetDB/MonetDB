@@ -255,7 +255,7 @@ void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int 
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
-void strHeap(Heap *d, size_t cap)
+gdk_return strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));

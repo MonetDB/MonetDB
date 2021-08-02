@@ -772,9 +772,13 @@ fullscan_str(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		return fullscan_any(b, bi, ci, bn, tl, th, li, hi, equi, anti,
 				    lval, hval, lnil, cnt, hseq, dst,
 				    maximum, imprints, algo);
-	if ((pos = strLocate(b->tvheap, tl)) == 0) {
+	if ((pos = strLocate(b->tvheap, tl)) == (var_t) -2) {
 		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
+	}
+	if (pos == (var_t) -1) {
+		BBPreclaim(bn);
+		return BUN_NONE;
 	}
 	*algo = "select: fullscan equi strelim";
 	assert(pos >= GDK_VAROFFSET);
