@@ -7634,14 +7634,14 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %12,	temporary,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	tinyint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 24,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%2,	.tracelog,	.tracelog,	.tracelog # table_name
-% %2,	ticks,	ticks,	stmt # name
-% char,	bigint,	bigint,	clob # type
-% 22,	1,	1,	0 # length
-% .%2,	.tracelog,	.tracelog,	.tracelog # table_name
-% %2,	stmt,	ticks,	stmt # name
-% char,	clob,	bigint,	clob # type
-% 21,	0,	1,	0 # length
+% .%2,	.tracelog,	.tracelog,	.tracelog,	.tracelog # table_name
+% %2,	ticks,	ticks,	stmt,	event # name
+% char,	bigint,	bigint,	clob,	clob # type
+% 22,	1,	1,	0,	0 # length
+% .%2,	.tracelog,	.tracelog,	.tracelog,	.tracelog # table_name
+% %2,	stmt,	ticks,	stmt,	event # name
+% char,	clob,	bigint,	clob,	clob # type
+% 21,	0,	1,	0,	0 # length
 % .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
 % %1,	id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % char,	int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type

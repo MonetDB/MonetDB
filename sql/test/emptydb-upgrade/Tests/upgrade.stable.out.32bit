@@ -4519,3 +4519,24 @@ GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 UPDATE sys._tables SET system = true WHERE name in ('ids', 'dependencies_vw') AND schema_id = 2000;
 set schema "sys";
 
+Running database upgrade commands:
+set schema "sys";
+drop function sys.epoch(bigint);
+create function sys.epoch(sec DECIMAL(18,3)) returns TIMESTAMP WITH TIME ZONE
+external name mtime.epoch;
+grant execute on function sys.epoch (DECIMAL(18,3)) to public;
+update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
+set schema "sys";
+drop view sys.tracelog;
+drop function sys.tracelog();
+create function sys.tracelog()
+ returns table (
+  ticks bigint, -- time in microseconds
+  stmt string,  -- actual statement executed
+  event string  -- profiler event executed
+ )
+ external name sql.dump_trace;
+create view sys.tracelog as select * from sys.tracelog();
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'tracelog';
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'tracelog' and type = 5;
+
