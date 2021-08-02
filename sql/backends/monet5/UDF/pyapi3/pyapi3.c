@@ -1636,37 +1636,56 @@ wrapup:
 }
 
 static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-							  size_t retcols, oid seqbase)
+							 size_t retcols, oid seqbase)
 {
+	str msg = MAL_SUCCEED;
+	void **res = GDKzalloc(retcols * sizeof(void*));
+
+	if (!res) {
+		msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
 	for (size_t i = 0; i < retcols; i++) {
 		if (isaBatType(getArgType(mb, pci, i))) {
 			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
 			if (!b) {
-				for (size_t j = 0; j < i; j++) {
-					if (isaBatType(getArgType(mb, pci, j)))
-						BBPunfix(*getArgReference_bat(stk, pci, j));
-					else
-						VALclear(&stk->stk[pci->argv[j]]);
-				}
-				return createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto bailout;
 			}
-			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			((BAT**)res)[i] = b;
 		} else { // single value return, only for non-grouped aggregations
 			// return NULL to conform to SQL aggregates
 			int tpe = getArgType(mb, pci, i);
 			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
-				for (size_t j = 0; j < i; j++) {
-					if (isaBatType(getArgType(mb, pci, j)))
-						BBPunfix(*getArgReference_bat(stk, pci, j));
-					else
-						VALclear(&stk->stk[pci->argv[j]]);
-				}
-				return createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
 			}
+			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
 		}
 	}
-	return MAL_SUCCEED;
+
+bailout:
+	if (res) {
+		for (size_t i = 0; i < retcols; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				BAT *b = ((BAT**)res)[i];
+
+				if (b && msg) {
+					BBPreclaim(b);
+				} else if (b) {
+					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+				}
+			} else if (msg) {
+				ValPtr pt = ((ValPtr*)res)[i];
+
+				if (pt)
+					VALclear(pt);
+			}
+		}
+		GDKfree(res);
+	}
+	return msg;
 }
 
 #include "mel.h"
