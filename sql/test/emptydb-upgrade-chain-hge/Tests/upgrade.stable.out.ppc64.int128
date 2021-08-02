@@ -5113,6 +5113,7 @@ SELECT d.id, i1.obj_type, i1.name,
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 UPDATE sys._tables SET system = true WHERE name in ('ids', 'dependencies_vw') AND schema_id = 2000;
 set schema "sys";
+
 Running database upgrade commands:
 set schema "sys";
 drop function sys.epoch(bigint);
