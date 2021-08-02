@@ -1953,7 +1953,7 @@ true	7
 false	NULL
 true	-1947062065
 
-statement error
+statement error 40002!UPDATE: UNIQUE constraint 't2.con3' violated
 ALTER TABLE t2 ADD CONSTRAINT con3 UNIQUE(c0, c1)
 
 statement ok
