@@ -99,7 +99,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 static inline bool
 gen_win_challenge(char *buf, size_t size)
 {
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; ) {
 		unsigned int r;
 		if (rand_s(&r) != 0)
 			return false;
