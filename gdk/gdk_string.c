@@ -70,17 +70,20 @@ struct hash {
 	BUN nbucket;
 	BUN nentries;
 	BUN growlim;
-	var_t *buckets;
+	uint64_t *buckets;
 	Heap heap;
 };
 
-#define EMPTY ((var_t) -1)
+#define EMPTY ((uint64_t) -1)
 #define OFFSET 0
+#define PSLSHIFT 40
+#define PSLMASK ((UINT64_C(1) << PSLSHIFT) - 1)
 
 static inline BUN
 hash_str(struct hash *h, const char *value)
 {
-	BUN hsh = strHash(value) & h->mask2;
+	BUN hsh = strHash(value);
+	hsh &= h->mask2;
 	if (hsh >= h->nbucket)
 		hsh &= h->mask1;
 	return hsh;
@@ -97,38 +100,37 @@ enter(BAT *b, const char *value)
 			newsize += 64 * 1024;
 		} while (pos + len > newsize);
 		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED)
-			return EMPTY;
+			return (var_t) -1;
 	}
 	memcpy(b->tvheap->base + pos, value, len);
 	b->tvheap->free += len;
+	b->tvheap->dirty = true;
 	return pos;
 }
 
 static inline void
-reinsert(BAT *b, struct hash *h, BUN hsh, var_t pos)
+reinsert(struct hash *h, BUN hsh, var_t pos)
 {
-	BUN psl = 0;
-	var_t swp = EMPTY;
+	uint64_t psl = 0;
+	uint64_t swp = EMPTY;
 
 	for (;;) {
-		var_t bkt = h->buckets[hsh];
+		uint64_t bkt = h->buckets[hsh];
 		if (bkt == EMPTY) {
 			/* found an empty slot */
 			if (swp == EMPTY) {
-				swp = pos;
+				swp = (uint64_t) pos;
 			}
-			h->buckets[hsh] = swp;
+			h->buckets[hsh] = swp | psl << PSLSHIFT;
 			return;
 		}
-		const char *v = b->tvheap->base + bkt;
-		BUN hsh2 = hash_str(h, v);
-		BUN psl2 = hsh < hsh2 ? hsh + h->nbucket - hsh2 : hsh - hsh2;
+		uint64_t psl2 = bkt >> PSLSHIFT;
 		if (psl > psl2) {
 			if (swp == EMPTY) {
-				swp = pos;
+				swp = (uint64_t) pos;
 			}
-			h->buckets[hsh] = swp;
-			swp = bkt;
+			h->buckets[hsh] = swp | psl << PSLSHIFT;
+			swp = bkt & PSLMASK;
 			psl = psl2;
 		}
 		if (++hsh == h->nbucket)
@@ -138,60 +140,89 @@ reinsert(BAT *b, struct hash *h, BUN hsh, var_t pos)
 }
 
 static inline void
-rmstring(BAT *b, struct hash *h, BUN pos)
+rmstring(struct hash *h, BUN pos)
 {
 	h->buckets[pos] = EMPTY;
 	for (;;) {
 		BUN hsh = pos + 1;
 		if (hsh >= h->nbucket)
 			hsh = 0;
-		var_t p = h->buckets[hsh];
-		if (p == EMPTY || hash_str(h, b->tvheap->base + p) == hsh)
+		uint64_t p = h->buckets[hsh];
+		if (p == EMPTY)
 			break;
-		h->buckets[pos] = p;
+		uint64_t psl = p >> PSLSHIFT;
+		if (psl == 0)
+			break;
+		h->buckets[pos] = (p & PSLMASK) | (psl - 1) << PSLSHIFT;
 		h->buckets[hsh] = EMPTY;
 		pos = hsh;
+	}
+}
+
+static inline void
+incpsl(struct hash *h)
+{
+	uint64_t hsh = 0;
+	for (;;) {
+		uint64_t bkt = h->buckets[hsh];
+		if (bkt == EMPTY)
+			break;
+		uint64_t psl = bkt >> PSLSHIFT;
+		if (psl <= hsh)
+			break;
+		h->buckets[hsh] = (bkt & PSLMASK) | (psl + 1) << PSLSHIFT;
+		if (++hsh == h->nbucket)
+			break;
 	}
 }
 
 static inline gdk_return
 grow1(BAT *b, struct hash *h)
 {
-	struct hash oh = *h;
 	BUN oldmask1 = h->mask1;
 	BUN oldnbucket = h->nbucket;
 
-	if ((h->nbucket + OFFSET) * sizeof(var_t) >= h->heap.size) {
+	if ((h->nbucket + OFFSET) * sizeof(uint64_t) >= h->heap.size) {
 		if (HEAPextend(&h->heap, h->heap.size + 64 * 1024, true) != GDK_SUCCEED)
 			return GDK_FAIL;
-		h->buckets = (var_t *) h->heap.base + OFFSET;
+		h->buckets = (uint64_t *) h->heap.base + OFFSET;
 	}
-	/* before increment so that we use old hash */
-	rmstring(b, h, h->nbucket);
 	if (h->nbucket == h->mask2) {
 		h->mask1 = h->mask2;
 		h->mask2 |= h->mask2 << 1; /* extend with one bit */
 	}
 	h->nbucket++;
-	h->heap.free = h->nbucket * sizeof(var_t);
-	h->growlim = (h->nbucket * 3) / 4;
+	h->heap.free = (h->nbucket + OFFSET) * sizeof(uint64_t);
+	h->growlim = (BUN) (h->nbucket * (0.75 - (h->nbucket & h->mask1) / (2.0 * h->mask2)));
 	assert(h->mask1 < h->nbucket && h->nbucket <= h->mask2);
 
+	incpsl(h);
+	rmstring(h, h->nbucket - 1);
+
 	BUN hsh = oldnbucket & oldmask1;
+	uint64_t psl = 0;
 
 	for (;;) {
-		BUN bkt = h->buckets[hsh];
+		uint64_t bkt = h->buckets[hsh];
 		if (bkt == EMPTY)
 			break;
-		const char *v = b->tvheap->base + bkt;
-		BUN c = strHash(v);
-		if ((c & h->mask2) == oldnbucket) {
-			/* this one should be moved */
-			rmstring(b, &oh, hsh);
-			reinsert(b, h, oldnbucket, bkt);
+		uint64_t psl2 = bkt >> PSLSHIFT;
+		if (psl2 < psl)
+			break;
+		if (psl2 == psl) {
+			bkt &= PSLMASK;
+			const char *v = b->tvheap->base + bkt;
+			BUN c = strHash(v);
+			if ((c & h->mask2) == oldnbucket) {
+				/* this one should be moved */
+				rmstring(h, hsh);
+				reinsert(h, oldnbucket, (var_t) bkt);
+				continue;
+			}
 		}
 		if (++hsh == oldnbucket)
 			hsh = 0;
+		psl++;
 	}
 	return GDK_SUCCEED;
 }
@@ -200,56 +231,51 @@ static var_t
 insert(BAT *b, struct hash *h, const char *value)
 {
 	BUN hsh = hash_str(h, value);
-	BUN psl = 0;	/* probe sequence length */
-	var_t swp = EMPTY;	/* swapped entry */
-	var_t new = EMPTY;	/* new entry */
+	uint64_t psl = 0;	/* probe sequence length */
+	uint64_t swp = EMPTY;	/* swapped entry */
+	var_t new = (var_t) -1;	/* new entry */
 
 	for (;;) {
-		var_t bkt = h->buckets[hsh];
+		uint64_t bkt = h->buckets[hsh];
 		if (bkt == EMPTY) {
 			/* found an empty slot */
 			if (swp == EMPTY) {
-				assert(new == EMPTY);
+				assert(new == (var_t) -1);
 				/* didn't enter value yet, so do it now */
-				new = swp = enter(b, value);
-				if (new == EMPTY)
+				new = enter(b, value);
+				if (new == (var_t) -1)
 					return (var_t) -1;
+				swp = (uint64_t) new;
 				h->nentries++;
-				/* XXX maybe grow hash table (but first
-				 * write h->buckets[hsh]) */
-				h->buckets[hsh] = swp;
-				while (h->nentries == h->growlim)
-					if (grow1(b, h) != GDK_SUCCEED)
-						return (var_t) -1;
-			} else {
-				h->buckets[hsh] = swp;
 			}
+			assert(new != (var_t) -1);
+			h->buckets[hsh] = swp | psl << PSLSHIFT;
+			while (h->nentries >= h->growlim)
+				if (grow1(b, h) != GDK_SUCCEED)
+					return (var_t) -1;
 			return new;
 		}
-		const char *v = b->tvheap->base + bkt;
-		if (strcmp(value, v) == 0) {
-			/* found the value */
-			assert(swp == EMPTY);
-			assert(new == EMPTY);
-			return bkt;
-		}
-		BUN hsh2 = hash_str(h, v);
-		BUN psl2 = hsh < hsh2 ? hsh + h->nbucket - hsh2 : hsh - hsh2;
+		uint64_t psl2 = bkt >> PSLSHIFT;
+		bkt &= PSLMASK;
+		if (psl == psl2) {
+			const char *v = b->tvheap->base + bkt;
+			if (strcmp(value, v) == 0) {
+				/* found the value */
+				assert(swp == EMPTY);
+				assert(new == (var_t) -1);
+				return bkt;
+			}
+		} else
 		if (psl > psl2) {
 			if (swp == EMPTY) {
-				assert(new == EMPTY);
-				new = swp = enter(b, value);
-				if (new == EMPTY)
+				assert(new == (var_t) -1);
+				new = enter(b, value);
+				if (new == (var_t) -1)
 					return (var_t) -1;
+				swp = (uint64_t) new;
 				h->nentries++;
-				/* vheap may have been relocated */
-				h->buckets[hsh] = swp;
-				while (h->nentries == h->growlim)
-					if (grow1(b, h) != GDK_SUCCEED)
-						return (var_t) -1;
-			} else {
-				h->buckets[hsh] = swp;
 			}
+			h->buckets[hsh] = swp | psl << PSLSHIFT;
 			swp = bkt;
 			psl = psl2;
 		}
@@ -265,33 +291,52 @@ init(BAT *b)
 	struct hash *hs = GDKmalloc(sizeof(struct hash));
 	if (hs == NULL)
 		return NULL;
+	BUN minimum = b->tvheap->free / 8;
+	if (minimum < 256)
+		minimum = 256;
+	BUN mask = minimum | minimum >> 1;
+	mask |= mask >> 2;
+	mask |= mask >> 4;
+	mask |= mask >> 8;
+	mask |= mask >> 16;
+#if SIZEOF_BUN == 8
+	mask |= mask >> 32;
+#endif
 	*hs = (struct hash) {
-		.mask1 = 255,
-		.mask2 = 511,
-		.nbucket = 256,
+		.mask1 = mask >> 1,
+		.mask2 = mask,
+		.nbucket = minimum,
 		.nentries = 0,
-		.growlim = (256 * 3) / 4,
+		.growlim = (minimum * 3) / 4,
+		.heap.farmid = BBPselectfarm(b->batRole, TYPE_str, strhashheap),
+		.heap.parentid = b->batCacheid,
+		.heap.dirty = true,
 	};
+	strconcat_len(hs->heap.filename, sizeof(hs->heap.filename),
+		      BBP_physical(b->batCacheid), ".tstrhash", NULL);
 
-	if (HEAPalloc(&hs->heap, 512, sizeof(var_t), 0) != GDK_SUCCEED) {
+	if (HEAPalloc(&hs->heap, hs->nbucket + OFFSET, sizeof(uint64_t), 0) != GDK_SUCCEED) {
 		GDKfree(hs);
 		return NULL;
 	}
-	hs->buckets = (var_t *) hs->heap.base + OFFSET;
-	for (BUN i = 0; i < 256; i++)
+	hs->heap.free = (hs->nbucket + OFFSET) * sizeof(uint64_t);
+	hs->buckets = (uint64_t *) hs->heap.base + OFFSET;
+	for (BUN i = 0; i < minimum; i++)
 		hs->buckets[i] = EMPTY;
 	Heap *hp = b->tvheap;
 	for (var_t pos = 0, free = (var_t) hp->free; pos < free;) {
 		const char *v = hp->base + pos;
 		size_t len = strlen(v) + 1;
 		BUN hsh = hash_str(hs, v);
-		reinsert(b, hs, hsh, pos);
-		while (hs->nentries == hs->growlim)
+		reinsert(hs, hsh, pos);
+		hs->nentries++;
+		while (hs->nentries >= hs->growlim) {
 			if (grow1(b, hs) != GDK_SUCCEED) {
 				HEAPfree(hp, true);
 				GDKfree(hs);
 				return NULL;
 			}
+		}
 		pos += len;
 	}
 	return hs;
@@ -326,14 +371,15 @@ strPut(BAT *b, var_t *dst, const void *v)
 var_t
 strLocate(BAT *b, const char *value)
 {
+	if (b->tvheap->parentid != b->batCacheid)
+		return strLocate(BBP_cache(b->tvheap->parentid), value);
+
 	if (b->strhash == NULL && (b->strhash = init(b)) == NULL)
 		return (var_t) -1;
 
 	struct hash *h = b->strhash;
 	BUN hsh = hash_str(h, value);
-	BUN psl = 0;	/* probe sequence length */
-	var_t swp = EMPTY;	/* swapped entry */
-	var_t new = EMPTY;	/* new entry */
+	uint64_t psl = 0;	/* probe sequence length */
 
 	for (;;) {
 		var_t bkt = h->buckets[hsh];
@@ -341,15 +387,15 @@ strLocate(BAT *b, const char *value)
 			/* found an empty slot */
 			return (var_t) -2;
 		}
-		const char *v = b->tvheap->base + bkt;
-		if (strcmp(value, v) == 0) {
-			/* found the value */
-			assert(swp == EMPTY);
-			assert(new == EMPTY);
-			return bkt;
+		uint64_t psl2 = bkt >> PSLSHIFT;
+		bkt &= PSLMASK;
+		if (psl == psl2) {
+			const char *v = b->tvheap->base + bkt;
+			if (strcmp(value, v) == 0) {
+				/* found the value */
+				return (var_t) bkt;
+			}
 		}
-		BUN hsh2 = hash_str(h, v);
-		BUN psl2 = hsh < hsh2 ? hsh + h->nbucket - hsh2 : hsh - hsh2;
 		if (psl > psl2) {
 			/* found an entry with a lower PSL */
 			return (var_t) -2;
@@ -358,6 +404,14 @@ strLocate(BAT *b, const char *value)
 			hsh = 0;
 		psl++;
 	}
+}
+
+void
+strDestroy(BAT *b)
+{
+	HEAPfree(&b->strhash->heap, true);
+	GDKfree(b->strhash);
+	b->strhash = NULL;
 }
 
 /*

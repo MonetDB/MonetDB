@@ -25,7 +25,8 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
-	orderidxheap
+	orderidxheap,
+	strhashheap
 };
 
 gdk_return ATOMheap(int id, Heap *hp, size_t cap)
@@ -254,6 +255,8 @@ const char *gettailname(const BAT *b)
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
+	__attribute__((__visibility__("hidden")));
+void strDestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 gdk_return strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));

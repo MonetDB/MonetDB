@@ -2321,7 +2321,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		bn = BATproject(o, b);
 		if (bn == NULL)
 			goto error;
-		if (bn->ttype == TYPE_void || isVIEW(bn)) {
+		if (bn->ttype == TYPE_void || bn->theap->parentid != bn->batCacheid) {
 			BAT *b2 = COLcopy(bn, ATOMtype(bn->ttype), true, TRANSIENT);
 			BBPunfix(bn->batCacheid);
 			bn = b2;
@@ -2423,7 +2423,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		assert(g->ttype == TYPE_oid);
 		grps = (oid *) Tloc(g, 0);
 		prev = grps[0];
-		if (BATmaterialize(bn) != GDK_SUCCEED)
+		if (bn->ttype == TYPE_void && BATmaterialize(bn) != GDK_SUCCEED)
 			goto error;
 		for (r = 0, p = 1, q = BATcount(g); p < q; p++) {
 			if (grps[p] != prev) {
