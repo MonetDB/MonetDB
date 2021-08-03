@@ -1010,6 +1010,8 @@ BATdelete(BAT *b)
 		} else {
 			HEAPfree(b->tvheap, true);
 		}
+		if (b->strhash)
+			strDestroy(b);
 	}
 	b->batCopiedtodisk = false;
 }

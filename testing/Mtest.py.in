@@ -2549,6 +2549,7 @@ class ServerClass:
                     # exited
                     proc.wait()
                     t.cancel()
+                    self.port = None
                     return
                 if os.path.exists(self.pollfile):
                     break

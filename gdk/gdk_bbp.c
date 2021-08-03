@@ -339,6 +339,8 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	if (hptype == orderidxheap)
 		role = TRANSIENT;
 #endif
+	if (hptype == strhashheap)
+		role = TRANSIENT; /* for now */
 	for (i = 0; i < MAXFARMS; i++)
 		if (BBPfarms[i].roles & (1U << (int) role))
 			return i;
@@ -4035,6 +4037,9 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
+			} else if (strncmp(p + 1, "tstrhash", 8) == 0) {
+				/* string hash, we rebuild */
+				delete = true;
 			} else if (strncmp(p + 1, "new", 3) != 0) {
 				ok = false;
 			}
