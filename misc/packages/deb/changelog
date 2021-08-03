@@ -1,3 +1,23 @@
+monetdb (11.41.5) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7161: fix priority
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 03 Aug 2021 11:13:26 +0200
+
+monetdb (11.41.5) unstable; urgency=low
+
+  * gdk: A bug in the grouping code has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 3 Aug 2021 11:13:26 +0200
+
+monetdb (11.41.5) unstable; urgency=low
+
+  * sql: The system view sys.ids has been updated to include some more system
+    IDs.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 3 Aug 2021 11:13:26 +0200
+
 monetdb (11.41.3) unstable; urgency=low
 
   * Rebuilt.
