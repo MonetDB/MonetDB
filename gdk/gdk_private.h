@@ -257,7 +257,7 @@ void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 gdk_return strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
-var_t strLocate(Heap *h, const char *v)
+var_t strLocate(BAT *b, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -363,7 +363,7 @@ ilog2(BUN x)
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
 	!b->batTransient ? "P" : b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
-	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
+	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
 	b->tkey ? "K" : b->tnokey[1] ? "!k" : "",			\
@@ -383,7 +383,7 @@ ilog2(BUN x)
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
-	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
+	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
 	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\

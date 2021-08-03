@@ -775,6 +775,7 @@ typedef struct BAT {
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
+	struct hash *strhash;	/* hash structure for strings */
 } BAT;
 
 /* macros to hide complexity of the BAT structure */
@@ -1676,7 +1677,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
-	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
+	    d >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
 		if (rc != GDK_SUCCEED)
@@ -1684,10 +1685,10 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	}
 	switch (b->twidth) {
 	case 1:
-		((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		((uint8_t *) b->theap->base)[p] = (uint8_t) d;
 		break;
 	case 2:
-		((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		((uint16_t *) b->theap->base)[p] = (uint16_t) d;
 		break;
 	case 4:
 		((uint32_t *) b->theap->base)[p] = (uint32_t) d;

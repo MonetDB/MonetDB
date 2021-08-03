@@ -443,10 +443,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 			switch (ri->width) {
 			case 1:
-				v = (var_t) ((uint8_t *) ri->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) ri->base)[o - seq];
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) ri->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) ri->base)[o - seq];
 				break;
 			case 4:
 				v = (var_t) ((uint32_t *) ri->base)[o - seq];
@@ -458,10 +458,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap->base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				((uint8_t *) bn->theap->base)[lo] = (uint8_t) v;
 				break;
 			case 2:
-				((uint16_t *) bn->theap->base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				((uint16_t *) bn->theap->base)[lo] = (uint16_t) v;
 				break;
 			case 4:
 				((uint32_t *) bn->theap->base)[lo] = (uint32_t) v;
@@ -490,10 +490,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 			switch (ri->width) {
 			case 1:
-				v = (var_t) ((uint8_t *) ri->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) ri->base)[o - seq];
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) ri->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) ri->base)[o - seq];
 				break;
 			case 4:
 				v = (var_t) ((uint32_t *) ri->base)[o - seq];
@@ -505,10 +505,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap->base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				((uint8_t *) bn->theap->base)[lo] = (uint8_t) v;
 				break;
 			case 2:
-				((uint16_t *) bn->theap->base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				((uint16_t *) bn->theap->base)[lo] = (uint16_t) v;
 				break;
 			case 4:
 				((uint32_t *) bn->theap->base)[lo] = (uint32_t) v;
@@ -540,10 +540,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			}
 			switch (ri->width) {
 			case 1:
-				v = (var_t) ((uint8_t *) ri->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint8_t *) ri->base)[o - seq];
 				break;
 			case 2:
-				v = (var_t) ((uint16_t *) ri->base)[o - seq] + GDK_VAROFFSET;
+				v = (var_t) ((uint16_t *) ri->base)[o - seq];
 				break;
 			case 4:
 				v = (var_t) ((uint32_t *) ri->base)[o - seq];
@@ -555,10 +555,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap->base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				((uint8_t *) bn->theap->base)[lo] = (uint8_t) v;
 				break;
 			case 2:
-				((uint16_t *) bn->theap->base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				((uint16_t *) bn->theap->base)[lo] = (uint16_t) v;
 				break;
 			case 4:
 				((uint32_t *) bn->theap->base)[lo] = (uint32_t) v;
@@ -683,13 +683,10 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			stringtrick = true;
 		} else if (l->tnonil &&
 			   r2 != NULL &&
-			   (r1i.vh == r2i.vh ||
-			    (!GDK_ELIMDOUBLES(r1i.vh) /* && size tests */))) {
+			   r1i.vh == r2i.vh) {
 			/* r1 and r2 may explicitly share their vheap,
 			 * if they do, the result will also share the
-			 * vheap; this also means that for this case we
-			 * don't care about duplicate elimination: it
-			 * will remain the same */
+			 * vheap */
 			bn = project_str(l, lci, r1, r2, &r1i, &r2i, t0);
 			bat_iterator_end(&r1i);
 			bat_iterator_end(&r2i);

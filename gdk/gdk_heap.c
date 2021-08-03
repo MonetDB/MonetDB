@@ -426,9 +426,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	assert(old->parentid == b->batCacheid);
 	assert(b->tbaseoff == 0);
 	assert(width != 0);
-	assert(v >= GDK_VAROFFSET);
 
-	while (width < SIZEOF_VAR_T && (width <= 2 ? v - GDK_VAROFFSET : v) >= ((var_t) 1 << (8 * width))) {
+	while (width < SIZEOF_VAR_T && v >= ((var_t) 1 << (8 * width))) {
 		width <<= 1;
 		shift++;
 	}
@@ -590,12 +589,12 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		case 1:
 			pc = (uint8_t *) old->base;
 			for (i = 0; i < n; i++)
-				pi[i] = pc[i] + GDK_VAROFFSET;
+				pi[i] = pc[i];
 			break;
 		case 2:
 			ps = (uint16_t *) old->base;
 			for (i = 0; i < n; i++)
-				pi[i] = ps[i] + GDK_VAROFFSET;
+				pi[i] = ps[i];
 			break;
 		case 4:
 			memcpy(pi, old->base, n * 4);
@@ -613,12 +612,12 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		case 1:
 			pc = (uint8_t *) old->base;
 			for (i = 0; i < n; i++)
-				pl[i] = pc[i] + GDK_VAROFFSET;
+				pl[i] = pc[i];
 			break;
 		case 2:
 			ps = (uint16_t *) old->base;
 			for (i = 0; i < n; i++)
-				pl[i] = ps[i] + GDK_VAROFFSET;
+				pl[i] = ps[i];
 			break;
 		case 4:
 			pi = (uint32_t *) old->base;

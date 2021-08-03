@@ -64,241 +64,300 @@
 
 const char str_nil[2] = { '\200', 0 };
 
+struct hash {
+	BUN mask1;
+	BUN mask2;
+	BUN nbucket;
+	BUN nentries;
+	BUN growlim;
+	var_t *buckets;
+	Heap heap;
+};
+
+#define EMPTY ((var_t) -1)
+#define OFFSET 0
+
+static inline BUN
+hash_str(struct hash *h, const char *value)
+{
+	BUN hsh = strHash(value) & h->mask2;
+	if (hsh >= h->nbucket)
+		hsh &= h->mask1;
+	return hsh;
+}
+
+static inline var_t
+enter(BAT *b, const char *value)
+{
+	size_t len = strlen(value) + 1;
+	var_t pos = b->tvheap->free;
+	if (pos + len > b->tvheap->size) {
+		size_t newsize = b->tvheap->size & ~(size_t)(64 * 1024 - 1);
+		do {
+			newsize += 64 * 1024;
+		} while (pos + len > newsize);
+		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED)
+			return EMPTY;
+	}
+	memcpy(b->tvheap->base + pos, value, len);
+	b->tvheap->free += len;
+	return pos;
+}
+
+static inline void
+reinsert(BAT *b, struct hash *h, BUN hsh, var_t pos)
+{
+	BUN psl = 0;
+	var_t swp = EMPTY;
+
+	for (;;) {
+		var_t bkt = h->buckets[hsh];
+		if (bkt == EMPTY) {
+			/* found an empty slot */
+			if (swp == EMPTY) {
+				swp = pos;
+			}
+			h->buckets[hsh] = swp;
+			return;
+		}
+		const char *v = b->tvheap->base + bkt;
+		BUN hsh2 = hash_str(h, v);
+		BUN psl2 = hsh < hsh2 ? hsh + h->nbucket - hsh2 : hsh - hsh2;
+		if (psl > psl2) {
+			if (swp == EMPTY) {
+				swp = pos;
+			}
+			h->buckets[hsh] = swp;
+			swp = bkt;
+			psl = psl2;
+		}
+		if (++hsh == h->nbucket)
+			hsh = 0;
+		psl++;
+	}
+}
+
+static inline void
+rmstring(BAT *b, struct hash *h, BUN pos)
+{
+	h->buckets[pos] = EMPTY;
+	for (;;) {
+		BUN hsh = pos + 1;
+		if (hsh >= h->nbucket)
+			hsh = 0;
+		var_t p = h->buckets[hsh];
+		if (p == EMPTY || hash_str(h, b->tvheap->base + p) == hsh)
+			break;
+		h->buckets[pos] = p;
+		h->buckets[hsh] = EMPTY;
+		pos = hsh;
+	}
+}
+
+static inline gdk_return
+grow1(BAT *b, struct hash *h)
+{
+	struct hash oh = *h;
+	BUN oldmask1 = h->mask1;
+	BUN oldnbucket = h->nbucket;
+
+	if ((h->nbucket + OFFSET) * sizeof(var_t) >= h->heap.size) {
+		if (HEAPextend(&h->heap, h->heap.size + 64 * 1024, true) != GDK_SUCCEED)
+			return GDK_FAIL;
+		h->buckets = (var_t *) h->heap.base + OFFSET;
+	}
+	/* before increment so that we use old hash */
+	rmstring(b, h, h->nbucket);
+	if (h->nbucket == h->mask2) {
+		h->mask1 = h->mask2;
+		h->mask2 |= h->mask2 << 1; /* extend with one bit */
+	}
+	h->nbucket++;
+	h->heap.free = h->nbucket * sizeof(var_t);
+	h->growlim = (h->nbucket * 3) / 4;
+	assert(h->mask1 < h->nbucket && h->nbucket <= h->mask2);
+
+	BUN hsh = oldnbucket & oldmask1;
+
+	for (;;) {
+		BUN bkt = h->buckets[hsh];
+		if (bkt == EMPTY)
+			break;
+		const char *v = b->tvheap->base + bkt;
+		BUN c = strHash(v);
+		if ((c & h->mask2) == oldnbucket) {
+			/* this one should be moved */
+			rmstring(b, &oh, hsh);
+			reinsert(b, h, oldnbucket, bkt);
+		}
+		if (++hsh == oldnbucket)
+			hsh = 0;
+	}
+	return GDK_SUCCEED;
+}
+
+static var_t
+insert(BAT *b, struct hash *h, const char *value)
+{
+	BUN hsh = hash_str(h, value);
+	BUN psl = 0;	/* probe sequence length */
+	var_t swp = EMPTY;	/* swapped entry */
+	var_t new = EMPTY;	/* new entry */
+
+	for (;;) {
+		var_t bkt = h->buckets[hsh];
+		if (bkt == EMPTY) {
+			/* found an empty slot */
+			if (swp == EMPTY) {
+				assert(new == EMPTY);
+				/* didn't enter value yet, so do it now */
+				new = swp = enter(b, value);
+				if (new == EMPTY)
+					return (var_t) -1;
+				h->nentries++;
+				/* XXX maybe grow hash table (but first
+				 * write h->buckets[hsh]) */
+				h->buckets[hsh] = swp;
+				while (h->nentries == h->growlim)
+					if (grow1(b, h) != GDK_SUCCEED)
+						return (var_t) -1;
+			} else {
+				h->buckets[hsh] = swp;
+			}
+			return new;
+		}
+		const char *v = b->tvheap->base + bkt;
+		if (strcmp(value, v) == 0) {
+			/* found the value */
+			assert(swp == EMPTY);
+			assert(new == EMPTY);
+			return bkt;
+		}
+		BUN hsh2 = hash_str(h, v);
+		BUN psl2 = hsh < hsh2 ? hsh + h->nbucket - hsh2 : hsh - hsh2;
+		if (psl > psl2) {
+			if (swp == EMPTY) {
+				assert(new == EMPTY);
+				new = swp = enter(b, value);
+				if (new == EMPTY)
+					return (var_t) -1;
+				h->nentries++;
+				/* vheap may have been relocated */
+				h->buckets[hsh] = swp;
+				while (h->nentries == h->growlim)
+					if (grow1(b, h) != GDK_SUCCEED)
+						return (var_t) -1;
+			} else {
+				h->buckets[hsh] = swp;
+			}
+			swp = bkt;
+			psl = psl2;
+		}
+		if (++hsh == h->nbucket)
+			hsh = 0;
+		psl++;
+	}
+}
+
+static struct hash *
+init(BAT *b)
+{
+	struct hash *hs = GDKmalloc(sizeof(struct hash));
+	if (hs == NULL)
+		return NULL;
+	*hs = (struct hash) {
+		.mask1 = 255,
+		.mask2 = 511,
+		.nbucket = 256,
+		.nentries = 0,
+		.growlim = (256 * 3) / 4,
+	};
+
+	if (HEAPalloc(&hs->heap, 512, sizeof(var_t), 0) != GDK_SUCCEED) {
+		GDKfree(hs);
+		return NULL;
+	}
+	hs->buckets = (var_t *) hs->heap.base + OFFSET;
+	for (BUN i = 0; i < 256; i++)
+		hs->buckets[i] = EMPTY;
+	Heap *hp = b->tvheap;
+	for (var_t pos = 0, free = (var_t) hp->free; pos < free;) {
+		const char *v = hp->base + pos;
+		size_t len = strlen(v) + 1;
+		BUN hsh = hash_str(hs, v);
+		reinsert(b, hs, hsh, pos);
+		while (hs->nentries == hs->growlim)
+			if (grow1(b, hs) != GDK_SUCCEED) {
+				HEAPfree(hp, true);
+				GDKfree(hs);
+				return NULL;
+			}
+		pos += len;
+	}
+	return hs;
+}
+
 gdk_return
 strHeap(Heap *d, size_t cap)
 {
-	size_t size;
-
 	cap = MAX(cap, BATTINY);
-	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	return HEAPalloc(d, size, 1, 1);
+	return HEAPalloc(d, cap, 8, 1);
 }
-
 
 void
 strCleanHash(Heap *h, bool rebuild)
 {
-	stridx_t newhash[GDK_STRHASHTABLE];
-	size_t pad, pos;
-	BUN off, strhash;
-	const char *s;
-
+	(void) h;
 	(void) rebuild;
-	if (!h->cleanhash)
-		return;
-	/* rebuild hash table for double elimination
-	 *
-	 * If appending strings to the BAT was aborted, if the heap
-	 * was memory mapped, the hash in the string heap may well be
-	 * incorrect.  Therefore we don't trust it when we read in a
-	 * string heap and we rebuild the complete table (it is small,
-	 * so this won't take any time at all).
-	 * Note that we will only do this the first time the heap is
-	 * loaded, and only for heaps that existed when the server was
-	 * started. */
-	memset(newhash, 0, sizeof(newhash));
-	pos = GDK_STRHASHSIZE;
-	while (pos < h->free) {
-		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-		if (pad < sizeof(stridx_t))
-			pad += GDK_VARALIGN;
-		pos += pad;
-		if (pos >= GDK_ELIMLIMIT)
-			break;
-		s = h->base + pos;
-		strhash = strHash(s);
-		off = strhash & GDK_STRHASHMASK;
-		newhash[off] = (stridx_t) (pos - sizeof(stridx_t));
-		pos += strlen(s) + 1;
-	}
-	/* only set dirty flag if the hash table actually changed */
-	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
-		memcpy(h->base, newhash, sizeof(newhash));
-		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
-				(void) MT_msync(h->base, GDK_STRHASHSIZE);
-		} else
-			h->dirty = true;
-	}
-#ifndef NDEBUG
-	if (GDK_ELIMDOUBLES(h)) {
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad;
-			s = h->base + pos;
-			assert(strLocate(h, s) != 0);
-			pos += strlen(s) + 1;
-		}
-	}
-#endif
-	h->cleanhash = false;
-}
-
-/*
- * The strPut routine. The routine strLocate can be used to identify
- * the location of a string in the heap if it exists. Otherwise it
- * returns (var_t) -2 (-1 is reserved for error).
- */
-var_t
-strLocate(Heap *h, const char *v)
-{
-	stridx_t *ref, *next;
-
-	/* search hash-table, if double-elimination is still in place */
-	BUN off;
-	if (h->free == 0) {
-		/* empty, so there are no strings */
-		return (var_t) -2;
-	}
-
-	off = strHash(v);
-	off &= GDK_STRHASHMASK;
-
-	/* should only use strLocate iff fully double eliminated */
-	assert(GDK_ELIMBASE(h->free) == 0);
-
-	/* search the linked list */
-	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
-		next = (stridx_t *) (h->base + *ref);
-		if (strcmp(v, (str) (next + 1)) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
-	}
-	return (var_t) -2;
 }
 
 var_t
-strPut(BAT *b, var_t *dst, const void *V)
+strPut(BAT *b, var_t *dst, const void *v)
 {
-	const char *v = V;
-	Heap *h = b->tvheap;
-	size_t pad;
-	size_t pos, len = strlen(v) + 1;
-	stridx_t *bucket;
-	BUN off;
-
-	if (h->free == 0) {
-		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				return (var_t) -1;
-			}
-			h = b->tvheap;
-		}
-		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		h->dirty = true;
-#ifdef NDEBUG
-		memset(h->base, 0, h->free);
-#else
-		/* fill should solve initialization problems within valgrind */
-		memset(h->base, 0, h->size);
-#endif
-	}
-
-	off = strHash(v);
-	off &= GDK_STRHASHMASK;
-	bucket = ((stridx_t *) h->base) + off;
-
-	if (*bucket) {
-		/* the hash list is not empty */
-		if (*bucket < GDK_ELIMLIMIT) {
-			/* small string heap (<64KiB) -- fully double
-			 * eliminated: search the linked list */
-			const stridx_t *ref = bucket;
-
-			do {
-				pos = *ref + sizeof(stridx_t);
-				if (strcmp(v, h->base + pos) == 0) {
-					/* found */
-					return *dst = (var_t) pos;
-				}
-				ref = (stridx_t *) (h->base + *ref);
-			} while (*ref);
-		} else {
-			/* large string heap (>=64KiB) -- there is no
-			 * linked list, so only look at single
-			 * entry */
-			pos = *bucket;
-			if (strcmp(v, h->base + pos) == 0) {
-				/* already in heap: reuse */
-				return *dst = (var_t) pos;
-			}
-		}
-	}
-	/* the string was not found in the heap, we need to enter it */
-
-	/* check that string is correctly encoded UTF-8; there was no
-	 * need to do this earlier: if the string was found above, it
-	 * must have gone through here in the past */
-#ifndef NDEBUG
-	if (!checkUTF8(v)) {
-		GDKerror("incorrectly encoded UTF-8\n");
+	if (b->strhash == NULL && (b->strhash = init(b)) == NULL)
 		return (var_t) -1;
-	}
-#endif
+	var_t pos = insert(b, b->strhash, v);
+	if (pos == (var_t) -1)
+		return (var_t) -1;
+	*dst = pos;
+	return pos;
+}
 
-	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
-	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
-		if (pad < sizeof(stridx_t)) {
-			/* make room for hash link */
-			pad += GDK_VARALIGN;
+var_t
+strLocate(BAT *b, const char *value)
+{
+	if (b->strhash == NULL && (b->strhash = init(b)) == NULL)
+		return (var_t) -1;
+
+	struct hash *h = b->strhash;
+	BUN hsh = hash_str(h, value);
+	BUN psl = 0;	/* probe sequence length */
+	var_t swp = EMPTY;	/* swapped entry */
+	var_t new = EMPTY;	/* new entry */
+
+	for (;;) {
+		var_t bkt = h->buckets[hsh];
+		if (bkt == EMPTY) {
+			/* found an empty slot */
+			return (var_t) -2;
 		}
-	} else if (GDK_ELIMBASE(h->free) != 0) {
-		/* no extra padding needed when no hash links needed
-		 * (but only when padding doesn't cross duplicate
-		 * elimination boundary) */
-		pad = 0;
-	}
-
-	/* check heap for space (limited to a certain maximum after
-	 * which nils are inserted) */
-	if (h->free + pad + len >= h->size) {
-		size_t newsize = MAX(h->size, 4096);
-
-		/* double the heap size until we have enough space */
-		do {
-			if (newsize < 4 * 1024 * 1024)
-				newsize <<= 1;
-			else
-				newsize += 4 * 1024 * 1024;
-		} while (newsize <= h->free + pad + len);
-
-		assert(newsize);
-
-		if (h->free + pad + len >= (size_t) VAR_MAX) {
-			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
-			return (var_t) -1;
+		const char *v = b->tvheap->base + bkt;
+		if (strcmp(value, v) == 0) {
+			/* found the value */
+			assert(swp == EMPTY);
+			assert(new == EMPTY);
+			return bkt;
 		}
-		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED) {
-			return (var_t) -1;
+		BUN hsh2 = hash_str(h, v);
+		BUN psl2 = hsh < hsh2 ? hsh + h->nbucket - hsh2 : hsh - hsh2;
+		if (psl > psl2) {
+			/* found an entry with a lower PSL */
+			return (var_t) -2;
 		}
-		h = b->tvheap;
-
-		/* make bucket point into the new heap */
-		bucket = ((stridx_t *) h->base) + off;
+		if (++hsh == h->nbucket)
+			hsh = 0;
+		psl++;
 	}
-
-	/* insert string */
-	pos = h->free + pad;
-	*dst = (var_t) pos;
-	if (pad > 0)
-		memset(h->base + h->free, 0, pad);
-	memcpy(h->base + pos, v, len);
-	h->free += pad + len;
-	h->dirty = true;
-
-	/* maintain hash table */
-	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
-		/* the stridx_t next pointer directly precedes the
-		 * string */
-		pos -= sizeof(stridx_t);
-		*(stridx_t *) (h->base + pos) = *bucket;
-	}
-	*bucket = (stridx_t) pos;	/* set bucket to the new string */
-
-	return *dst;
 }
 
 /*
