@@ -704,10 +704,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if (prop)
 				maxgrp = prop->val.oval;
 			MT_lock_unset(&b->theaplock);
-			if (is_oid_nil(maxgrp) &&
-			    BATordered(g) &&
-			    BATordered_rev(g))
-				maxgrp = 0;
+			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
+				BATmax(g, &maxgrp);
+			}
 		}
 		if (maxgrp == 0)
 			g = NULL; /* single group */
@@ -1150,9 +1149,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			nbucket |= nbucket >> 32;
 #endif
 			nbucket++;
-			/* nbucket is a power of two, so ctz(nbucket)
-			 * tells us which power of two */
-			bits = 8 * SIZEOF_OID - ctz(nbucket);
 		} else {
 			nbucket = MAX(HASHmask(cnt), 1 << 16);
 		}
@@ -1172,6 +1168,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				break;
 			}
 		}
+		/* nbucket is a power of two, so ctz(nbucket)
+		 * tells us which power of two */
+		bits = 8 * SIZEOF_OID - ctz(nbucket);
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
 		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
