@@ -217,44 +217,24 @@ bat_to_sexp(BAT* b, int type)
 			return NULL;
 		}
 		/* special case where we exploit the duplicate-eliminated string heap */
-		if (GDK_ELIMDOUBLES(b->tvheap)) {
-			SEXP* sexp_ptrs = GDKzalloc(b->tvheap->free * sizeof(SEXP));
-			if (!sexp_ptrs) {
-				bat_iterator_end(&bi);
-				return NULL;
-			}
-			BATloop(b, p, q) {
-				const char *t = (const char *) BUNtvar(bi, p);
-				ptrdiff_t offset = t - b->tvheap->base;
-				if (!sexp_ptrs[offset]) {
-					if (strNil(t)) {
-						sexp_ptrs[offset] = NA_STRING;
-					} else {
-						sexp_ptrs[offset] = RSTR(t);
-					}
-				}
-				SET_STRING_ELT(varvalue, j++, sexp_ptrs[offset]);
-			}
-			GDKfree(sexp_ptrs);
+		SEXP* sexp_ptrs = GDKzalloc(b->tvheap->free * sizeof(SEXP));
+		if (!sexp_ptrs) {
+			bat_iterator_end(&bi);
+			return NULL;
 		}
-		else {
-			if (b->tnonil) {
-				BATloop(b, p, q) {
-					SET_STRING_ELT(varvalue, j++, RSTR(
-									   (const char *) BUNtvar(bi, p)));
+		BATloop(b, p, q) {
+			const char *t = (const char *) BUNtvar(bi, p);
+			ptrdiff_t offset = t - b->tvheap->base;
+			if (!sexp_ptrs[offset]) {
+				if (strNil(t)) {
+					sexp_ptrs[offset] = NA_STRING;
+				} else {
+					sexp_ptrs[offset] = RSTR(t);
 				}
 			}
-			else {
-				BATloop(b, p, q) {
-					const char *t = (const char *) BUNtvar(bi, p);
-					if (strNil(t)) {
-						SET_STRING_ELT(varvalue, j++, NA_STRING);
-					} else {
-						SET_STRING_ELT(varvalue, j++, RSTR(t));
-					}
-				}
-			}
+			SET_STRING_ELT(varvalue, j++, sexp_ptrs[offset]);
 		}
+		GDKfree(sexp_ptrs);
 	} 	break;
 	}
 	bat_iterator_end(&bi);

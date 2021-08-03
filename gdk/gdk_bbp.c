@@ -1155,10 +1155,10 @@ fixhashashbat(BAT *b)
 		var_t o;
 		switch (b->twidth) {
 		case 1:
-			o = (var_t) ((uint8_t *) h1.base)[i] + GDK_VAROFFSET;
+			o = (var_t) ((uint8_t *) h1.base)[i];
 			break;
 		case 2:
-			o = (var_t) ((uint16_t *) h1.base)[i] + GDK_VAROFFSET;
+			o = (var_t) ((uint16_t *) h1.base)[i];
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
@@ -1182,15 +1182,12 @@ fixhashashbat(BAT *b)
 				     "for BAT %d failed\n", b->batCacheid);
 			return GDK_FAIL;
 		}
-		assert(no >= GDK_VAROFFSET);
 		switch (b->twidth) {
 		case 1:
-			no -= GDK_VAROFFSET;
 			assert(no <= 0xFF);
 			((uint8_t *) h2->base)[i] = (uint8_t) no;
 			break;
 		case 2:
-			no -= GDK_VAROFFSET;
 			assert(no <= 0xFFFF);
 			((uint16_t *) h2->base)[i] = (uint16_t) no;
 			break;

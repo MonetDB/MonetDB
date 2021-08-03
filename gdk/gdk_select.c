@@ -768,11 +768,11 @@ fullscan_str(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 	}
 
-	if (!equi || !GDK_ELIMDOUBLES(b->tvheap))
+	if (!equi)
 		return fullscan_any(b, bi, ci, bn, tl, th, li, hi, equi, anti,
 				    lval, hval, lnil, cnt, hseq, dst,
 				    maximum, imprints, algo);
-	if ((pos = strLocate(b->tvheap, tl)) == (var_t) -2) {
+	if ((pos = strLocate(b, tl)) == (var_t) -2) {
 		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
 	}
@@ -781,11 +781,9 @@ fullscan_str(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		return BUN_NONE;
 	}
 	*algo = "select: fullscan equi strelim";
-	assert(pos >= GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
 		const unsigned char *ptr = (const unsigned char *) bi->base;
-		pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);
@@ -821,7 +819,6 @@ fullscan_str(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	}
 	case 2: {
 		const unsigned short *ptr = (const unsigned short *) bi->base;
-		pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				o = canditer_next_dense(ci);

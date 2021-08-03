@@ -849,7 +849,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
-	if (t == TYPE_str && GDK_ELIMDOUBLES(bi.vh)) {
+	if (t == TYPE_str) {
 		switch (bi.width) {
 		case 1:
 			t = TYPE_bte;

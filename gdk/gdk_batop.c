@@ -68,7 +68,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	unsigned int tiv;	/* tail value-as-int */
 #endif
 	var_t v;		/* value */
-	size_t off;		/* offset within n's string heap */
 	BUN cnt = ci->ncand;
 	BUN oldcnt = BATcount(b);
 
@@ -109,8 +108,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
-		if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
-				    !GDK_ELIMDOUBLES(ni.vh))) {
+		if (oldcnt == 0) {
 			/* we'll consider copying the string heap completely
 			 *
 			 * we first estimate how much space the string heap
@@ -125,13 +123,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				len += strlen(BUNtvar(ni, p)) + 1;
 			}
 			len = (len + 512) / 1024; /* rounded average length */
-			r = (GDK_ELIMLIMIT - GDK_STRHASHSIZE) / (len + 12);
-			/* r is estimate of number of strings in
-			 * double-eliminated area */
-			if (r < ci->ncand)
-				len = GDK_ELIMLIMIT + (ci->ncand - r) * len;
-			else
-				len = GDK_STRHASHSIZE + ci->ncand * (len + 12);
+			len = ci->ncand * len;
 			/* len is total estimated expected size of vheap */
 
 			if (len > ni.vh->free / 2) {
@@ -156,7 +148,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	/* if toff has the initial value of ~0, we insert strings
 	 * individually, otherwise we only copy (insert) offsets */
 	if (toff == ~(size_t) 0)
-		v = GDK_VAROFFSET;
+		v = 1;
 	else
 		v = b->tvheap->free - 1;
 
@@ -172,12 +164,11 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 		 * values, so we can use fast memcpy */
 		MT_thread_setalgorithm("memcpy offsets");
 		memcpy(Tloc(b, BUNlast(b)), (const char *) ni.base + ((ci->seq - n->hseqbase) << ni.shift), cnt << ni.shift);
-	} else if (toff != ~(size_t) 0) {
+	} else if (toff == 0) {
 		/* we don't need to insert any actual strings since we
 		 * have already made sure that they are all in b's
-		 * string heap at known locations (namely the offset
-		 * in n added to toff), so insert offsets from n after
-		 * adding toff into b */
+		 * string heap at known locations, so insert offsets
+		 * from n into b */
 		/* note the use of the "restrict" qualifier here: all
 		 * four pointers below point to the same value, but
 		 * only one of them will actually be used, hence we
@@ -219,10 +210,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			p = canditer_next(ci) - n->hseqbase;
 			switch (ni.width) {
 			case 1:
-				v = (var_t) tbp[p] + GDK_VAROFFSET;
+				v = (var_t) tbp[p];
 				break;
 			case 2:
-				v = (var_t) tsp[p] + GDK_VAROFFSET;
+				v = (var_t) tsp[p];
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
@@ -233,17 +224,15 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				v = tvp[p];
 				break;
 			}
-			v = (var_t) ((size_t) v + toff);
-			assert(v >= GDK_VAROFFSET);
 			assert((size_t) v < b->tvheap->free);
 			switch (b->twidth) {
 			case 1:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				((uint8_t *) b->theap->base)[r++] = (uint8_t) (v - GDK_VAROFFSET);
+				assert(v < ((var_t) 1 << 8));
+				((uint8_t *) b->theap->base)[r++] = (uint8_t) v;
 				break;
 			case 2:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				((uint16_t *) b->theap->base)[r++] = (uint16_t) (v - GDK_VAROFFSET);
+				assert(v < ((var_t) 1 << 16));
+				((uint16_t *) b->theap->base)[r++] = (uint16_t) v;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
@@ -256,13 +245,9 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				break;
 			}
 		}
-	} else if (b->tvheap->free < ni.vh->free / 2 ||
-		   GDK_ELIMDOUBLES(b->tvheap)) {
-		/* if b's string heap is much smaller than n's string
-		 * heap, don't bother checking whether n's string
-		 * values occur in b's string heap; also, if b is
-		 * (still) fully double eliminated, we must continue
-		 * to use the double elimination mechanism */
+	} else {
+		/* we must continue to use the double elimination
+		 * mechanism by inserting individual strings */
 		r = b->batCount;
 		oid hseq = n->hseqbase;
 		MT_thread_setalgorithm("insert string values");
@@ -273,55 +258,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
 				bat_iterator_end(&ni);
 				return GDK_FAIL;
-			}
-			r++;
-		}
-	} else {
-		/* Insert values from n individually into b; however,
-		 * we check whether there is a string in b's string
-		 * heap at the same offset as the string is in n's
-		 * string heap (in case b's string heap is a copy of
-		 * n's).  If this is the case, we just copy the
-		 * offset, otherwise we insert normally.  */
-		r = b->batCount;
-		MT_thread_setalgorithm("insert string values with check");
-		while (cnt > 0) {
-			cnt--;
-			p = canditer_next(ci) - n->hseqbase;
-			off = BUNtvaroff(ni, p); /* the offset */
-			tp = ni.vh->base + off; /* the string */
-			if (off < b->tvheap->free &&
-			    strcmp(b->tvheap->base + off, tp) == 0) {
-				/* we found the string at the same
-				 * offset in b's string heap as it was
-				 * in n's string heap, so we don't
-				 * have to insert a new string into b:
-				 * we can just copy the offset */
-				v = (var_t) off;
-				switch (b->twidth) {
-				case 1:
-					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-					((uint8_t *) b->theap->base)[r] = (unsigned char) (v - GDK_VAROFFSET);
-					break;
-				case 2:
-					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-					((uint16_t *) b->theap->base)[r] = (unsigned short) (v - GDK_VAROFFSET);
-					break;
-#if SIZEOF_VAR_T == 8
-				case 4:
-					assert(v < ((var_t) 1 << 32));
-					((uint32_t *) b->theap->base)[r] = (unsigned int) v;
-					break;
-#endif
-				default:
-					((var_t *) b->theap->base)[r] = v;
-					break;
-				}
-			} else {
-				if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
-				}
 			}
 			r++;
 		}
@@ -1241,10 +1177,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			var_t d;
 			switch (b->twidth) {
 			default: /* only three or four cases possible */
-				d = (var_t) ((uint8_t *) b->theap->base)[updid] + GDK_VAROFFSET;
+				d = (var_t) ((uint8_t *) b->theap->base)[updid];
 				break;
 			case 2:
-				d = (var_t) ((uint16_t *) b->theap->base)[updid] + GDK_VAROFFSET;
+				d = (var_t) ((uint16_t *) b->theap->base)[updid];
 				break;
 			case 4:
 				d = (var_t) ((uint32_t *) b->theap->base)[updid];
@@ -1259,7 +1195,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
-			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
+			    d >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
@@ -1271,10 +1207,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			bi = bat_iterator_nolock(b);
 			switch (b->twidth) {
 			case 1:
-				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
+				((uint8_t *) b->theap->base)[updid] = (uint8_t) d;
 				break;
 			case 2:
-				((uint16_t *) b->theap->base)[updid] = (uint16_t) (d - GDK_VAROFFSET);
+				((uint16_t *) b->theap->base)[updid] = (uint16_t) d;
 				break;
 			case 4:
 				((uint32_t *) b->theap->base)[updid] = (uint32_t) d;
@@ -2961,11 +2897,11 @@ BATcount_no_nil(BAT *b, BAT *s)
 		switch (bi.width) {
 		case 1:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 		case 2:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned short *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+				cnt += base[(var_t) ((const unsigned short *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 #if SIZEOF_VAR_T != SIZEOF_INT
 		case 4:
