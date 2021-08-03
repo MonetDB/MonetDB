@@ -846,6 +846,17 @@ else
 fi
 
 %changelog
+* Tue Aug 03 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.5-20210803
+- Rebuilt.
+- GH#7161: fix priority
+
+* Tue Aug  3 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.5-20210803
+- gdk: A bug in the grouping code has been fixed.
+
+* Tue Aug  3 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.5-20210803
+- sql: The system view sys.ids has been updated to include some more system
+  IDs.
+
 * Fri Jul 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.3-20210730
 - Rebuilt.
 
