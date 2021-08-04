@@ -2541,6 +2541,7 @@ class ServerClass:
         self.timer = t
 
         port = None
+        self.port = None
         if self.pollfile:
             while True:
                 proc.poll()
@@ -2573,7 +2574,6 @@ class ServerClass:
                 proc.terminate()
             proc.wait()
             t.cancel()
-            self.port = None
             return
         self.started = True
         self.port = port
