@@ -351,7 +351,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
-		fprintf(stderr, "R1 '%s' length: %lld, final: %s\n", ss->name, blksize >> 1, blksize & 1 ? "true" : "false");
+		fprintf(stderr, "R1 '%s' length: %" PRId64 ", final: %s\n", ss->name, blksize >> 1, blksize & 1 ? "true" : "false");
 #endif
 		s->itotal = (size_t) (blksize >> 1);	/* amount readable */
 		/* store whether this was the last block or not */
@@ -431,7 +431,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
-			fprintf(stderr, "R3 '%s' length: %lld, final: %s\n", ss->name, blksize >> 1, blksize & 1 ? "true" : "false");
+			fprintf(stderr, "R3 '%s' length: %" PRId64 ", final: %s\n", ss->name, blksize >> 1, blksize & 1 ? "true" : "false");
 #endif
 
 
