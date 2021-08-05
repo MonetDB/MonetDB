@@ -1404,28 +1404,28 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
-                o = openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out.html'), 'w')
-                o.write('<html><head><title>{} standard output</title></head>'
-                        '<body><pre>\n'.format(TSTDIR))
-                e = F_OK
-                for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
-                    if line != '\n' and not line.startswith('#'):
-                        e = F_ERROR
-                        ssout = F_ERROR
-                    o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
-                o.write('</pre></body></html>\n')
-                o.close()
-                o = openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err.html'), 'w')
-                o.write('<html><head><title>{} standard error</title></head>'
-                        '<body><pre>\n'.format(TSTDIR))
-                e = F_OK
-                for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
-                    if line != '\n' and not line.startswith('#'):
-                        e = F_ERROR
-                        sserr = F_ERROR
-                    o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
-                o.write('</pre></body></html>\n')
-                o.close()
+                for ext in ['out', 'err']:
+                    o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
+                    o.write('<html>\n')
+                    o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
+                    o.write('<body>\n')
+                    empty = True
+                    for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
+                        if empty:
+                            o.write('<pre>\n')
+                        empty = False
+                        span1 = span2 = ''
+                        if line != '\n' and not line.startswith('#'):
+                            if ext == 'out':
+                                ssout = F_ERROR
+                            else:
+                                sserr = F_ERROR
+                            span1 = '<span style="background-color: rgb(100%,0%,0%);">'
+                            span2 = '</span>\n'
+                            line = line.rstrip('\n')
+                        o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                    o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
+                    o.close()
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
