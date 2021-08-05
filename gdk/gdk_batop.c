@@ -61,13 +61,13 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	BATiter ni;		/* iterator */
 	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, r;		/* loop variables */
-	const void *tp;		/* tail value pointer */
+	const void *tp = NULL;	/* tail value pointer */
 	unsigned char tbv;	/* tail value-as-bte */
 	unsigned short tsv;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
 	unsigned int tiv;	/* tail value-as-int */
 #endif
-	var_t v = GDK_VAROFFSET; /* value */
+	var_t v;		/* value */
 	size_t off;		/* offset within n's string heap */
 	BUN cnt = ci->ncand;
 	BUN oldcnt = BATcount(b);
@@ -80,146 +80,89 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	if (cnt == 0)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
-	tp = NULL;
-	if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
-			    !GDK_ELIMDOUBLES(ni.vh) &&
-			    b->tvheap->hashash == ni.vh->hashash)) {
-		if (b->batRole == TRANSIENT || b->tvheap == ni.vh) {
-			/* If b is in the transient farm (i.e. b will
-			 * never become persistent), we try some
-			 * clever tricks to avoid copying:
-			 * - if b is empty, we just let it share the
-                         *   string heap with n;
-			 * - otherwise, if b's string heap and n's
-                         *   string heap are the same (i.e. shared),
-                         *   we leave it that way (this includes the
-                         *   case that b is persistent and n shares
-                         *   its string heap with b);
-			 * - otherwise, if b shares its string heap
-                         *   with some other bat, we materialize it
-                         *   and we will have to copy strings.
-			 */
-			bat bid = b->batCacheid;
 
-			/* if candidates are not dense, there is no
-			 * wholesale copying of n's offset heap, but
-			 * we may still be able to share the string
-			 * heap */
-			if (mayshare &&
-			    oldcnt == 0 &&
-			    b->tvheap != ni.vh &&
-			    ci->tpe == cand_dense) {
-				/* make sure locking happens in a
-				 * predictable order: lowest id
-				 * first */
-				MT_thread_setalgorithm("share vheap, copy heap");
-				MT_lock_set(&b->theaplock);
-				if (b->tvheap->parentid != bid)
-					BBPunshare(b->tvheap->parentid);
-				HEAPdecref(b->tvheap, true);
-				HEAPincref(ni.vh);
-				b->tvheap = ni.vh;
-				BBPshare(ni.vh->parentid);
-				b->batDirtydesc = true;
-				MT_lock_unset(&b->theaplock);
-				toff = 0;
-				v = ni.width == 1 ? GDK_VAROFFSET + 1 :
-					ni.width == 2 ? GDK_VAROFFSET + (1 << 9) :
-#if SIZEOF_VAR_T == 8
-					ni.width != 4 ? (var_t) 1 << 33 :
-#endif
-					(var_t) 1 << 17;
-			} else if (b->tvheap->parentid == ni.vh->parentid &&
-				   ci->tpe == cand_dense) {
-				MT_thread_setalgorithm("copy heap");
-				toff = 0;
-			} else if (b->tvheap->parentid != bid &&
-				   unshare_varsized_heap(b) != GDK_SUCCEED) {
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
-			}
-		} else if (oldcnt == 0) {
-			v = ni.width == 1 ? GDK_VAROFFSET + 1 :
-				ni.width == 2 ? GDK_VAROFFSET + (1 << 9) :
-#if SIZEOF_VAR_T == 8
-				ni.width != 4 ? (var_t) 1 << 33 :
-#endif
-				(var_t) 1 << 17;
-			MT_thread_setalgorithm("copy vheap, copy heap");
-			if (b->tvheap->size < ni.vh->free) {
-				if (HEAPgrow(&b->theaplock, &b->tvheap, ni.vh->free, force) != GDK_SUCCEED) {
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
-				}
-			}
-			memcpy(b->tvheap->base, ni.vh->base, ni.vh->free);
-			b->tvheap->free = ni.vh->free;
-			toff = 0;
+	if (b->tvheap == ni.vh) {
+		/* vheaps are already shared, continue doing so: we just
+		 * need to append the offsets */
+		toff = 0;
+		MT_thread_setalgorithm("shared vheap");
+	} else if (mayshare && b->batRole == TRANSIENT && oldcnt == 0) {
+		/* we can share the vheaps, so we then only need to
+		 * append the offsets */
+		MT_lock_set(&b->theaplock);
+		if (b->tvheap->parentid != b->batCacheid)
+			BBPunshare(b->tvheap->parentid);
+		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
+		HEAPincref(ni.vh);
+		b->tvheap = ni.vh;
+		BBPshare(ni.vh->parentid);
+		b->batDirtydesc = true;
+		MT_lock_unset(&b->theaplock);
+		toff = 0;
+		MT_thread_setalgorithm("share vheap");
+	} else {
+		/* no heap sharing, so also make sure the heap isn't
+		 * shared currently (we're not allowed to write in
+		 * another bat's heap) */
+		if (b->tvheap->parentid != b->batCacheid &&
+		    unshare_varsized_heap(b) != GDK_SUCCEED) {
+			bat_iterator_end(&ni);
+			return GDK_FAIL;
 		}
-		if (toff == ~(size_t) 0 && cnt > 1024 && b->tvheap->free >= ni.vh->free) {
-			/* If b and n aren't sharing their string
-			 * heaps, we try to determine whether to copy
-			 * n's whole string heap to the end of b's, or
-			 * whether we will insert each string from n
-			 * individually.  We do this by testing a
-			 * sample of n's strings and extrapolating
-			 * from that sample whether n uses a
-			 * significant part of its string heap for its
-			 * strings (i.e. whether there are many unused
-			 * strings in n's string heap).  If n doesn't
-			 * have many strings in the first place, we
-			 * skip this and just insert them all
-			 * individually.  We also check whether a
-			 * significant number of n's strings happen to
-			 * have the same offset in b.  In the latter
-			 * case we also want to insert strings
-			 * individually, but reusing the string in b's
-			 * string heap. */
-			int match = 0, i;
-			size_t len = b->tvheap->hashash ? 1024 * EXTRALEN : 0;
-			for (i = 0; i < 1024; i++) {
+		if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
+				    !GDK_ELIMDOUBLES(ni.vh) &&
+				    b->tvheap->hashash == ni.vh->hashash)) {
+			/* we'll consider copying the string heap completely
+			 *
+			 * we first estimate how much space the string heap
+			 * should occupy, given the number of rows we need to
+			 * insert, then, if that is way smaller than the actual
+			 * space occupied, we will skip the copy and just insert
+			 * one by one */
+			size_t len = 0;
+			for (int i = 0; i < 1024; i++) {
 				p = (BUN) (((double) rand() / RAND_MAX) * (cnt - 1));
 				p = canditer_idx(ci, p) - n->hseqbase;
-				off = BUNtvaroff(ni, p);
-				if (off < b->tvheap->free &&
-				    strcmp(b->tvheap->base + off, ni.vh->base + off) == 0 &&
-				    (!b->tvheap->hashash ||
-				     ((BUN *) (b->tvheap->base + off))[-1] == (ni.vh->hashash ? ((BUN *) (ni.vh->base + off))[-1] : strHash(ni.vh->base + off))))
-					match++;
-				len += (strlen(ni.vh->base + off) + 8) & ~7;
+				len += strlen(BUNtvar(ni, p)) + 1;
 			}
-			if (match < 768 && (size_t) (ni.count * (double) len / 1024) >= ni.vh->free / 2) {
-				/* append string heaps */
-				toff = oldcnt == 0 ? 0 : b->tvheap->free;
-				/* make sure we get alignment right */
-				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
-				/* if in "force" mode, the heap may be
-				 * shared when memory mapped */
+			len = (len + 512) / 1024; /* rounded average length */
+			r = (GDK_ELIMLIMIT - GDK_STRHASHSIZE) / (len + 12);
+			/* r is estimate of number of strings in
+			 * double-eliminated area */
+			if (r < ci->ncand)
+				len = GDK_ELIMLIMIT + (ci->ncand - r) * len;
+			else
+				len = GDK_STRHASHSIZE + ci->ncand * (len + 12);
+			/* len is total estimated expected size of vheap */
+
+			if (len > ni.vh->free / 2) {
+				/* we copy the string heap, perhaps appending */
+				if (oldcnt == 0) {
+					toff = 0;
+					MT_thread_setalgorithm("copy vheap");
+				} else {
+					toff = (b->tvheap->free + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+					MT_thread_setalgorithm("append vheap");
+				}
+
 				if (HEAPgrow(&b->theaplock, &b->tvheap, toff + ni.vh->size, force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				MT_thread_setalgorithm("append vheap");
 				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vh->free);
 				b->tvheap->free = toff + ni.vh->free;
-				if (toff > 0) {
-					/* flush double-elimination
-					 * hash table */
-					memset(b->tvheap->base, 0,
-					       GDK_STRHASHSIZE);
-				}
-				/* make sure b is wide enough */
-				v = b->tvheap->free;
 			}
 		}
-	} else if (b->tvheap != ni.vh &&
-		   unshare_varsized_heap(b) != GDK_SUCCEED) {
-		bat_iterator_end(&ni);
-		return GDK_FAIL;
 	}
+	/* if toff has the initial value of ~0, we insert strings
+	 * individually, otherwise we only copy (insert) offsets */
+	if (toff == ~(size_t) 0)
+		v = GDK_VAROFFSET;
+	else
+		v = b->tvheap->free - 1;
 
 	/* make sure there is (vertical) space in the offset heap, we
-	 * may also widen if v was set to some limit above */
+	 * may also widen thanks to v, set above */
 	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, b->batCount) != GDK_SUCCEED) {
 		bat_iterator_end(&ni);
 		return GDK_FAIL;
@@ -228,6 +171,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	if (toff == 0 && ni.width == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
+		MT_thread_setalgorithm("memcpy offsets");
 		memcpy(Tloc(b, BUNlast(b)), (const char *) ni.base + ((ci->seq - n->hseqbase) << ni.shift), cnt << ni.shift);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
