@@ -20,9 +20,6 @@ call setquerytimeout(123)
 statement ok
 call setworkerlimit(12)
 
-statement ok
-call setmemorylimit(8000)
-
 query ITTIIII rowsort
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
@@ -32,8 +29,7 @@ minimal_pipe
 5000
 123
 12
-8000
-
+0
 
 statement error
 call setoptimizer('')
@@ -47,9 +43,6 @@ call setquerytimeout(-1)
 statement error
 call setworkerlimit( -1)
 
-statement ok
-call setmemorylimit(10)
-
 query ITTIIII rowsort
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
@@ -59,7 +52,7 @@ minimal_pipe
 5000
 123
 12
-10
+0
 
 statement ok
 call setoptimizer(0, 'sequential_pipe')
@@ -73,9 +66,6 @@ call setquerytimeout(0, 60)
 statement ok
 call setworkerlimit(0,8)
 
-statement ok
-call setmemorylimit(2000)
-
 query ITTIIII rowsort
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 ----
@@ -85,7 +75,7 @@ sequential_pipe
 1000
 60
 8
-2000
+0
 
 statement ok
 call setoptimizer(0, 'default_pipe')

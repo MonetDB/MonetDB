@@ -151,6 +151,7 @@ struct stream {
 	bool readonly;		/* only reading or only writing */
 	bool isutf8;		/* known to be UTF-8 due to BOM */
 	bool binary;		/* text/binary */
+	bool eof;			/* we've seen end-of-file (i.e. not block end) */
 	unsigned int timeout;	/* timeout in ms */
 	bool (*timeout_func)(void *); /* callback function: NULL/true -> return */
 	void *timeout_data;	/* data for the above */

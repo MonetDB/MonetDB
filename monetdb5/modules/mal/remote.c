@@ -1050,6 +1050,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			BATloop(b, p, q) {
 				tailv = ATOMformat(getBatType(type), BUNtail(bi, p));
 				if (tailv == NULL) {
+					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.put", GDK_EXCEPTION);
@@ -1060,6 +1061,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					mnstr_printf(sout, "%s\n", tailv);
 				GDKfree(tailv);
 			}
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 		}
 
@@ -1402,15 +1404,14 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			BBPkeepref(results[i].id);
 		}
 
-		if (tmp != MAL_SUCCEED) {
-			for (int j = 0; j < i; j++) {
-				BBPrelease(results[j].id);
-			}
-		}
-		else {
+		if (tmp == MAL_SUCCEED) {
 			assert(rcb->context);
 			tmp = rcb->call(rcb->context, tblname, results, fields);
 		}
+
+		for (int j = 0; j < i; j++)
+			BBPrelease(results[j].id);
+
 		GDKfree(results);
 	}
 
@@ -1501,7 +1502,7 @@ static str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, false), *v = b;
+	BAT *b = BBPquickdesc(bid), *v = b;
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1515,8 +1516,12 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
-	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBPquickdesc(VIEWvtparent(b), false)))
+	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
+		if ((b = BATdescriptor(bid)) == NULL)
+			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
 		v = COLcopy(b, b->ttype, true, TRANSIENT);
+		BBPunfix(b->batCacheid);
+	}
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
@@ -1539,16 +1544,18 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->tnonil,
 			BATtdense(v),
 			v->batCount,
-			(size_t)v->batCount * Tsize(v),
+			(size_t)v->batCount << v->tshift,
 			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
 	if (v->batCount > 0) {
+		BATiter vi = bat_iterator(v);
 		mnstr_write(cntxt->fdout, /* tail */
-		Tloc(v, 0), v->batCount * Tsize(v), 1);
+					vi.base, vi.count * vi.width, 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-					Tbase(v), v->tvheap->free, 1);
+						vi.vh->base, vi.vh->free, 1);
+		bat_iterator_end(&vi);
 	}
 	/* flush is done by the calling environment (MAL) */
 
@@ -1658,10 +1665,39 @@ RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 	return MAL_SUCCEED;
 }
 
+/* this is needed in remote plans */
+static str
+RMTassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bool flg = (bool) *getArgReference_bit(stk, pci, 1);
+	str msg = *getArgReference_str(stk, pci, 2);
+
+	(void) cntxt;
+	(void) mb;
+	if (flg) {
+		if (strlen(msg) > 6 &&
+		    msg[5] == '!' &&
+		    (isdigit((unsigned char) msg[0]) ||
+		     isupper((unsigned char) msg[0])) &&
+		    (isdigit((unsigned char) msg[1]) ||
+		     isupper((unsigned char) msg[1])) &&
+		    (isdigit((unsigned char) msg[2]) ||
+		     isupper((unsigned char) msg[2])) &&
+		    (isdigit((unsigned char) msg[3]) ||
+		     isupper((unsigned char) msg[3])) &&
+		    (isdigit((unsigned char) msg[4]) ||
+		     isupper((unsigned char) msg[4])))
+			throw(REMOTE, "assert", "%s", msg); /* includes state */
+		throw(REMOTE, "assert", SQLSTATE(M0M29) "%s", msg);
+	}
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func remote_init_funcs[] = {
  command("remote", "prelude", RMTprelude, false, "initialise the remote module", args(1,1, arg("",void))),
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
+ pattern("remote", "assert", RMTassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
  command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,6, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str),arg("columnar",bit))),

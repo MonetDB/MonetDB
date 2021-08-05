@@ -118,7 +118,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  getFunctionId(p) == claimRef  ||
 			  getFunctionId(p) == deleteRef  ||
 			  getFunctionId(p) == clear_tableRef ) &&
-			  strcmp( getVarConstant(mb,getArg(p,2)).val.sval, "tmp") != 0 ){
+			strcmp( getVarConstant(mb,getArg(p,2+(getFunctionId(p) == claimRef))).val.sval, "tmp") != 0 ){
 				assert( def);// should always be there, temporary tables are always ignored
 				setFunctionId(def,actionRef);
 				if((q= copyInstruction(p)) == NULL) {

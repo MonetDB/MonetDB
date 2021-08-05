@@ -33,7 +33,7 @@ def exec_query(pid):
 
         cur.execute('drop table concurrent_mt.cncrnt_mrg_tbl{};'.format(pid))
     except pymonetdb.exceptions.Error as e:
-        if "transaction is aborted because of concurrency conflicts" not in str(e):
+        if "transaction is aborted because of concurrency conflicts" not in str(e) and "transaction conflict detected" not in str(e):
             print(e)
     finally:
         if dbh is not None:
