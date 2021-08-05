@@ -2937,6 +2937,10 @@ STRprelude(void *ret)
 			BBPrename(UTF8_toLowerTo->batCacheid, "monet_unicode_lower_to") != 0) {
 			goto bailout;
 		}
+		BBP_pid(UTF8_toUpperFrom->batCacheid) = 0;
+		BBP_pid(UTF8_toUpperTo->batCacheid) = 0;
+		BBP_pid(UTF8_toLowerFrom->batCacheid) = 0;
+		BBP_pid(UTF8_toLowerTo->batCacheid) = 0;
 	}
 	return MAL_SUCCEED;
 
@@ -3176,6 +3180,7 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 	assert(to->tbaseoff == 0);
 	if (BAThash(from) != GDK_SUCCEED)
 		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	MT_rwlock_rdlock(&from->thashlock);
 	h = from->thash;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
 	dst = *buf;
@@ -3216,6 +3221,7 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 		UTF8_PUTCHAR(c, dst);
 	}
 	*dst = 0;
+	MT_rwlock_rdunlock(&from->thashlock);
 	return MAL_SUCCEED;
 illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");

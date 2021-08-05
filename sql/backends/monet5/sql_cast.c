@@ -52,31 +52,31 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 	bool nils = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
-	bi = bat_iterator(b);
 	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	bi = bat_iterator(b);
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
 			str v = (str) BUNtvar(bi, p);
 
 			if ((msg = str_2_blob_imp(&r, &rlen, v)))
-				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+				goto bailout1;
+			if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= strNil(v);
 		}
@@ -86,14 +86,16 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 			str v = (str) BUNtvar(bi, p);
 
 			if ((msg = str_2_blob_imp(&r, &rlen, v)))
-				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+				goto bailout1;
+			if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= strNil(v);
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
 	GDKfree(r);
@@ -225,11 +227,11 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -243,19 +245,20 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
 		}
+		bat_iterator_end(&bi);
 		BBPkeepref(*res = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 
 	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto bailout1;
 	}
 
 	assert(rlen > 0);
 	if (!from_str && !(r = GDKmalloc(rlen))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto bailout1;
 	}
 
 	if (ci.tpe == cand_dense) {
@@ -265,16 +268,16 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				str v = (str) BUNtvar(bi, p);
 
 				if (strNil(v)) {
-					if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
 						msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
+						goto bailout1;
 					}
 					nils = true;
 				} else {
 					SQLstr_cast_str(v, digits);
-					if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
+						goto bailout1;
 					}
 				}
 			}
@@ -284,10 +287,10 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ptr v = BUNtail(bi, p);
 
 				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
-					goto bailout;
-				if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					goto bailout1;
+				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils |= strNil(r);
 			}
@@ -299,16 +302,16 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				str v = (str) BUNtvar(bi, p);
 
 				if (strNil(v)) {
-					if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
 						msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
+						goto bailout1;
 					}
 					nils = true;
 				} else {
 					SQLstr_cast_str(v, digits);
-					if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
+						goto bailout1;
 					}
 				}
 			}
@@ -318,15 +321,17 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ptr v = BUNtail(bi, p);
 
 				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
-					goto bailout;
-				if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					goto bailout1;
+				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils |= strNil(r);
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
 	GDKfree(r);

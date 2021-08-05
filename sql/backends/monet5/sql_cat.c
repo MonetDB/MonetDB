@@ -146,14 +146,13 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	if (!mvc_schema_privs(sql, ps))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ps->base.name);
 	if (!(rmt = mvc_bind_table(sql, ms, mtname)))
-		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ms->base.name, mtname);
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", mtname, ms->base.name);
 	if (!(rpt = mvc_bind_table(sql, ps, ptname)))
-		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ps->base.name, ptname);
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, ps->base.name);
 
 	const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 	if (!update && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	node *n = members_find_child_id(rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
 	if (isDeclaredTable(rpt))
@@ -162,6 +161,9 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s", errtable);
 	if (ms->base.id != ps->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
+	if (strcmp(rmt->base.name, rpt->base.name) == 0)
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: a %s can't be a child of itself", errtable);
+	node *n = members_find_child_id(rmt->members, rpt->base.id);
 	if (n && !update)
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 	if (!n && update)
@@ -243,7 +245,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -2:
 		case -3:
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) 
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: failed due to conflict with another transaction");
 			break;
 		case -10:
@@ -406,7 +408,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 				break;
 			case -2:
 			case -3:
-				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) 
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 										  "ALTER TABLE: failed due to conflict with another transaction");
 				break;
 			case -4:
@@ -439,9 +441,9 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (!mvc_schema_privs(sql, ps))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ps->base.name);
 	if (!(mt = mvc_bind_table(sql, ms, mtname)))
-		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ms->base.name, mtname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", mtname, ms->base.name);
 	if (!(pt = mvc_bind_table(sql, ps, ptname)))
-		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ps->base.name, ptname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, ps->base.name);
 	const char *errtable = TABLE_TYPE_DESCRIPTION(mt->type, mt->properties);
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
@@ -473,8 +475,8 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
-	if (isMergeTable(t))
-		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: read only MERGE TABLES are not supported");
+	if (!isTable(t))
+		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42000) "ALTER TABLE: access changes on %sS not supported", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 	if (t->access != access) {
 		if (access && table_has_updates(sql->session->tr, t))
 			throw(SQL,"sql.alter_table_set_access",SQLSTATE(40000) "ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
@@ -517,18 +519,25 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
-		sql->sa = sa_create(sql->pa);
-		if (!sql->sa)
-			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		buf = sa_strdup(sql->sa, query);
-		if (!buf)
-			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (!(sql->sa = sa_create(sql->pa))) {
+			sql->sa = sa;
+			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!(buf = sa_strdup(sql->sa, query))) {
+			sa_destroy(sql->sa);
+			sql->sa = sa;
+			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, tri->base.id, TRIGGER_DEPENDENCY);
+			list *blist = rel_dependencies(sql, r);
+			if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+				sa_destroy(sql->sa);
+				sql->sa = sa;
+				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
@@ -747,8 +756,15 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
 	if (seq->minvalue && seq->maxvalue && seq->maxvalue < seq->minvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
-	if (!sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped))
-		throw(SQL,"sql.create_seq",SQLSTATE(42000) "CREATE SEQUENCE: transaction conflict detected");
+	switch (sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped)) {
+		case -1:
+			throw(SQL,"sql.create_seq",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_seq",SQLSTATE(42000) "CREATE SEQUENCE: transaction conflict detected");
+		default:
+			break;
+	}
 	return NULL;
 }
 
@@ -915,34 +931,49 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		sql_allocator *sa = sql->sa;
 
 		assert(nf->query);
-		if (!(sql->sa = sa_create(sql->pa)))
+		if (!(sql->sa = sa_create(sql->pa))) {
+			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (!(buf = sa_strdup(sql->sa, nf->query)))
+		}
+		if (!(buf = sa_strdup(sql->sa, nf->query))) {
+			sa_destroy(sql->sa);
+			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n;
-			list *id_l = rel_dependencies(sql, r);
+			list *blist = rel_dependencies(sql, r);
 
 			if (!f->vararg && f->ops) {
 				for (n = f->ops->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s)
-						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
+						sa_destroy(sql->sa);
+						sql->sa = sa;
+						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 				}
 			}
 			if (!f->varres && f->res) {
 				for (n = f->res->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s)
-						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
+						sa_destroy(sql->sa);
+						sql->sa = sa;
+						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 				}
 			}
-			mvc_create_dependencies(sql, id_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+			if (mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)) {
+				sa_destroy(sql->sa);
+				sql->sa = sa;
+				throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
@@ -1110,6 +1141,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				if (b == NULL)
+					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
@@ -1122,6 +1155,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				if (b == NULL)
+					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
 				if (r != GDK_SUCCEED)
@@ -1200,6 +1235,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 	lng *val = NULL;
 	BAT *b = NULL;
+	BATiter bi = {0};
 
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
@@ -1213,8 +1249,10 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");
 		}
-		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng)
-			val = (lng*)Tloc(b, 0);
+		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng) {
+			bi = bat_iterator(b);
+			val = (lng*)bi.base;
+		}
 	}
 
 	if (val == NULL || is_lng_nil(*val))
@@ -1222,8 +1260,10 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);
 
-	if (b)
+	if (b) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
+	}
 	return msg;
 }
 
@@ -1255,8 +1295,15 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", get_string_global_var(sql, "current_user"));
 	if (mvc_bind_schema(sql, sname))
 		throw(SQL,"sql.create_schema", SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", sname);
-	if (!mvc_create_schema(sql, sname, auth_id, sql->user_id))
-		throw(SQL,"sql.create_schema",SQLSTATE(42000) "CREATE SCHEMA: transaction conflict detected");
+	switch (mvc_create_schema(sql, sname, auth_id, sql->user_id)) {
+		case -1:
+			throw(SQL,"sql.create_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_schema",SQLSTATE(42000) "CREATE SCHEMA: transaction conflict detected");
+		default:
+			break;
+	}
 	return msg;
 }
 
@@ -1278,9 +1325,11 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	sql_trans *tr = sql->session->tr;
+	sql_schema *cur = cur_schema(sql);
+
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (s == cur_schema(sql))
+	if (cur && s->base.id == cur->base.id)
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: cannot drop current schema");
 	if (s->system)
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for '%s'", sname);
@@ -1823,15 +1872,18 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
 			ok = store->table_api.table_insert(tx, comments, &objid, &remark);
 		}
+		if (ok != LOG_OK)
+			throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		if ((ok = sql_trans_add_dependency(tx, objid, ddl)) != LOG_OK) /* At the moment this adds dependencies for old objects :( */
+			throw(SQL, "sql.comment_on", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			/* DELETE FROM sys.comments WHERE id = %d */
-			ok = store->table_api.table_delete(tx, comments, rid);
+			if ((ok = store->table_api.table_delete(tx, comments, rid)) != LOG_OK)
+				throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		}
 	}
-	if (ok != LOG_OK)
-		throw(SQL, "sql.comment_on", SQLSTATE(42000) "Comment on failed%s", ok == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
@@ -1846,6 +1898,8 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	sql_trans *tr = sql->session->tr;
+	sql_schema *cur = cur_schema(sql);
+
 	if (!(s = mvc_bind_schema(sql, old_name)))
 		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
 	if (!mvc_schema_privs(sql, s))
@@ -1868,7 +1922,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			break;
 	}
-	if (s == cur_schema(sql)) /* change current session schema name */
+	if (cur && s->base.id == cur->base.id) /* change current session schema name */
 		if (!mvc_set_schema(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;

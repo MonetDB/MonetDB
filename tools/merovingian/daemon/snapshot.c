@@ -89,11 +89,7 @@ snapshot_database_stream(char *dbname, stream *s)
 	}
 
 	if (stats->secret == NULL) {
-#if !defined(HAVE_OPENSSL) && !defined(HAVE_COMMONCRYPTO)
-		e = newErr("snapshotting only works when MonetDB has been compiled with secure crypto support");
-#else
 		e = newErr("Cannot find secret for database '%s'", dbname);
-#endif
 		goto bailout;
 	}
 
@@ -160,11 +156,7 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 
 	if (stats->secret == NULL) {
-#if !defined(HAVE_OPENSSL) && !defined(HAVE_COMMONCRYPTO)
-		e = newErr("snapshotting only works when MonetDB has been compiled with secure crypto support");
-#else
 		e = newErr("Cannot find secret for database '%s'", dbname);
-#endif
 		goto bailout;
 	}
 

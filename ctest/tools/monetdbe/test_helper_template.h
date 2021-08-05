@@ -22,7 +22,7 @@ bool CHECK_COLUMN_FUNC (
     char* err = monetdbe_result_fetch(result, &rcol, column_index);
     if (err != NULL) {
 
-        printf("Error while fetching column result values from column %ld: %s\n", column_index, err);
+        printf("Error while fetching column result values from column %zu: %s\n", column_index, err);
 
         return false;
     }
@@ -48,7 +48,7 @@ bool CHECK_COLUMN_FUNC (
 
     for (size_t i = 0; i < expected_nr_column_entries; i++) {
         if (! ((col_x->is_null(&col_x->data[i]) && expected_column[i]._is_null) || EQUALS(col_x->data[i], expected_column[i].data))) {
-            printf("Mismatch between expected and actual column values: values differ at index %ld\n", i);
+            printf("Mismatch between expected and actual column values: values differ at index %zu\n", i);
             return false;
         }
     }

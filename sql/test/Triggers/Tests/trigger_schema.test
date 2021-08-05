@@ -70,6 +70,9 @@ select * from foo.t2
 ----
 
 statement ok
+set schema sys
+
+statement ok
 ROLLBACK
 
 statement ok

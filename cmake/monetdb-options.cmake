@@ -132,7 +132,3 @@ option(CMAKE_SUMMARY
 option(CMAKE_UNITTESTS
   "Build and run the unittest for the build system"
   OFF)
-
-option(WITH_CRYPTO
-  "Only in very some special cases we build without crypto dependencies"
-  ON)

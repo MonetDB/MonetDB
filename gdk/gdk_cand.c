@@ -1319,14 +1319,16 @@ BATnegcands(BUN nr, BAT *odels)
     	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	dels->dirty = true;
+	BATiter bi = bat_iterator(odels);
 	if (odels->ttype == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
 			r[x - lo] = x + odels->tseqbase;
 	} else {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
-		memcpy(r, Tloc(odels, lo), sizeof(oid) * (hi - lo));
+		memcpy(r, (const oid *) bi.base + lo, sizeof(oid) * (hi - lo));
 	}
+	bat_iterator_end(&bi);
 	bn->batDirtydesc = true;
 	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
@@ -1386,25 +1388,27 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
+	BATiter bi = bat_iterator(masked);
 	if (selected) {
-		if (nr <= BATcount(masked))
-			memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+		if (nr <= bi.count)
+			memcpy(r, bi.base, nmask * sizeof(uint32_t));
 		else
-			memcpy(r, Tloc(masked, 0), (BATcount(masked) + 31) / 32 * sizeof(uint32_t));
+			memcpy(r, bi.base, (bi.count + 31) / 32 * sizeof(uint32_t));
 	} else {
-		const uint32_t *s = (const uint32_t *) Tloc(masked, 0);
-		BUN nmask_ = (BATcount(masked) + 31) / 32;
+		const uint32_t *s = (const uint32_t *) bi.base;
+		BUN nmask_ = (bi.count + 31) / 32;
 		for (BUN i = 0; i < nmask_; i++)
 			r[i] = ~s[i];
 	}
-	if (nr > BATcount(masked)) {
-		BUN rest = BATcount(masked) & 31;
-		BUN nmask_ = (BATcount(masked) + 31) / 32;
+	if (nr > bi.count) {
+		BUN rest = bi.count & 31;
+		BUN nmask_ = (bi.count + 31) / 32;
 		if (rest > 0)
 			r[nmask_ -1] |= ((1U << (32 - rest)) - 1) << rest;
 		for (BUN j = nmask_; j < nmask; j++)
 			r[j] = ~0;
 	}
+	bat_iterator_end(&bi);
 	/* make sure last word doesn't have any spurious bits set */
 	BUN cnt = nr % 32;
 	if (cnt > 0)
@@ -1450,6 +1454,7 @@ BATunmask(BAT *b)
 	oid tseq = b->hseqbase;
 	bool negcand = false;
 
+	BATiter bi = bat_iterator(b);
 	if (mask_cand(b)) {
 		cnt = ccand_free(b) / sizeof(uint32_t);
 		rem = 0;
@@ -1460,16 +1465,18 @@ BATunmask(BAT *b)
 		 * bits are set */
 		negcand = BATcount(b) > cnt * 16;
 	} else {
-		cnt = BATcount(b) / 32;
-		rem = BATcount(b) % 32;
-		src = (const uint32_t *) Tloc(b, 0);
+		cnt = bi.count / 32;
+		rem = bi.count % 32;
+		src = (const uint32_t *) bi.base;
 	}
 	BAT *bn;
 
 	if (negcand) {
 		bn = COLnew(b->hseqbase, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL)
+		if (bn == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
+		}
 		Heap *dels;
 		if ((dels = GDKzalloc(sizeof(Heap))) == NULL ||
 		    strconcat_len(dels->filename, sizeof(dels->filename),
@@ -1478,11 +1485,12 @@ BATunmask(BAT *b)
 		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
 						  varheap)) == -1 ||
 		    HEAPalloc(dels,
-			      cnt * 32 - BATcount(b)
+			      cnt * 32 - bi.count
 			      + sizeof(ccand_t) / sizeof(oid),
 			      sizeof(oid), 0) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 		dels->parentid = bn->batCacheid;
@@ -1512,12 +1520,14 @@ BATunmask(BAT *b)
 			assert(bn->tvheap == NULL);
 			bn->tvheap = dels;
 		}
-		BATsetcount(bn, n=BATcount(b));
+		BATsetcount(bn, n=bi.count);
 		bn->tseqbase = tseq;
 	} else {
-		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
-		if (bn == NULL)
+		bn = COLnew(b->hseqbase, TYPE_oid, mask_cand(b) ? bi.count : 1024, TRANSIENT);
+		if (bn == NULL) {
+			bat_iterator_end(&bi);
 			return NULL;
+		}
 		dst = (oid *) Tloc(bn, 0);
 		for (BUN p = 0; p < cnt; p++) {
 			if ((val = src[p]) == 0)
@@ -1528,6 +1538,7 @@ BATunmask(BAT *b)
 						BATsetcount(bn, n);
 						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 							BBPreclaim(bn);
+							bat_iterator_end(&bi);
 							return NULL;
 						}
 						dst = (oid *) Tloc(bn, 0);
@@ -1544,6 +1555,7 @@ BATunmask(BAT *b)
 						BATsetcount(bn, n);
 						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 							BBPreclaim(bn);
+							bat_iterator_end(&bi);
 							return NULL;
 						}
 						dst = (oid *) Tloc(bn, 0);
@@ -1554,6 +1566,7 @@ BATunmask(BAT *b)
 		}
 		BATsetcount(bn, n);
 	}
+	bat_iterator_end(&bi);
 	bn->tkey = true;
 	bn->tsorted = true;
 	bn->trevsorted = n <= 1;

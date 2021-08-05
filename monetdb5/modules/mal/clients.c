@@ -612,7 +612,6 @@ CLTsetPrintTimeout(void *ret, int *secs)
 }
 
 static str CLTmd5sum(str *ret, str *pw) {
-#ifdef HAVE_MD5_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -626,15 +625,9 @@ static str CLTmd5sum(str *ret, str *pw) {
 	if (*ret == NULL)
 		throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) pw;
-	throw(MAL, "clients.md5sum", SQLSTATE(0A000) PROGRAM_NYI);
-#endif
 }
 
 static str CLTsha1sum(str *ret, str *pw) {
-#ifdef HAVE_SHA1_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -648,15 +641,9 @@ static str CLTsha1sum(str *ret, str *pw) {
 	if (*ret == NULL)
 		throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) pw;
-	throw(MAL, "clients.sha1sum", SQLSTATE(0A000) PROGRAM_NYI);
-#endif
 }
 
 static str CLTripemd160sum(str *ret, str *pw) {
-#ifdef HAVE_RIPEMD160_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -670,11 +657,6 @@ static str CLTripemd160sum(str *ret, str *pw) {
 	if (*ret == NULL)
 		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) pw;
-	throw(MAL, "clients.ripemd160sum", SQLSTATE(0A000) PROGRAM_NYI);
-#endif
 }
 
 static str CLTsha2sum(str *ret, str *pw, int *bits) {
@@ -686,21 +668,15 @@ static str CLTsha2sum(str *ret, str *pw, int *bits) {
 			case 512:
 				mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
 				break;
-#ifdef HAVE_SHA384_UPDATE
 			case 384:
 				mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
 				break;
-#endif
-#ifdef HAVE_SHA256_UPDATE
 			case 256:
 				mret = mcrypt_SHA256Sum(*pw, strlen(*pw));
 				break;
-#endif
-#ifdef HAVE_SHA224_UPDATE
 			case 224:
 				mret = mcrypt_SHA224Sum(*pw, strlen(*pw));
 				break;
-#endif
 			default:
 				(void)mret;
 				throw(ILLARG, "clients.sha2sum", "wrong number of bits "
@@ -794,7 +770,6 @@ static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-#ifdef HAVE_SHA1_UPDATE
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
 	str ch = "";
@@ -809,13 +784,6 @@ static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
-#else
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL, "mal.checkPermission", "Required digest algorithm SHA-1 missing");
-#endif
 }
 
 static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
