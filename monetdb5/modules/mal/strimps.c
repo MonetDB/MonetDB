@@ -124,6 +124,8 @@ PATstrimpFilterSelect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(s->ttype == TYPE_void);
 
+	if(STRMPcreate(b) != GDK_SUCCEED)
+		throw(MAL, "strimps.strimpfilter", SQLSTATE(HY002) "strimp creation failed");
 
 	pat = *getArgReference_str(stk, pci, 3);
 	if ((ob = STRMPfilter(b, pat)) == NULL) {
