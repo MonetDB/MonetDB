@@ -306,6 +306,7 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 
 	// Choose the header pairs
 	STRMPchoosePairs(hist, hlen, hpairs);
@@ -496,6 +497,7 @@ STRMPfilter(BAT *b, char *q)
 	return NULL;
 }
 
+#if 0
 static void
 BATstrimpsync(void *arg)
 {
@@ -552,7 +554,6 @@ BATstrimpsync(void *arg)
 static void
 persistStrimp(BAT *b)
 {
-	TRC_DEBUG(ACCELERATOR, "zoo: %d\n", (BBP_status(b->batCacheid) & BBPEXISTING));
 	if((BBP_status(b->batCacheid) & BBPEXISTING)
 	   && b->batInserted == b->batCount
 	   && !b->theap->dirty
@@ -567,6 +568,7 @@ persistStrimp(BAT *b)
 	} else
 		TRC_DEBUG(ACCELERATOR, "persistStrimp(" ALGOBATFMT "): NOT persisting strimp\n", ALGOBATPAR(b));
 }
+#endif
 
 /* Create */
 gdk_return
@@ -587,9 +589,9 @@ STRMPcreate(BAT *b)
 		return GDK_SUCCEED;
 
 	/* Disable this before merging to default */
-	if (isVIEW(b)) {
+	if (VIEWtparent(b)) {
 		assert(b->tstrimps == NULL);
-		b = BBPdescriptor(VIEWtparent(b));
+		b = BBP_cache(VIEWtparent(b));
 	}
 
 	if ((h = STRMPcreateStrimpHeap(b)) == NULL) {
@@ -605,6 +607,7 @@ STRMPcreate(BAT *b)
 		else
 			*dh++ = 0; /* no pairs in nil values */
 	}
+	bat_iterator_end(&bi);
 	h->strimps.free += b->batCount*sizeof(uint64_t);
 
 
@@ -621,9 +624,9 @@ STRMPcreate(BAT *b)
 	/* After we have computed the strimp, attempt to write it back
 	 * to the BAT.
 	 */
-	MT_lock_set(&b->batIdxLock);
-	persistStrimp(b);
-	MT_lock_unset(&b->batIdxLock);
+	/* MT_lock_set(&b->batIdxLock); */
+	/* persistStrimp(b); */
+	/* MT_lock_unset(&b->batIdxLock); */
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
