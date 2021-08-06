@@ -1328,7 +1328,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 static BUN
 UUIDhash(const void *v)
 {
-	return mix_uuid(*(const uuid *) v);
+	return mix_uuid((const uuid *) v);
 }
 
 static void *
