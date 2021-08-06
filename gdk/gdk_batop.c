@@ -39,12 +39,12 @@ unshare_varsized_heap(BAT *b)
 		}
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
-		Heap *oldheap = b->tvheap;
+		int parent = b->tvheap->parentid;
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
-		BBPunshare(oldheap->parentid);
-		BBPunfix(oldheap->parentid);
+		BBPunshare(parent);
+		BBPunfix(parent);
 	}
 	return GDK_SUCCEED;
 }
