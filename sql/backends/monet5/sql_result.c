@@ -884,6 +884,9 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
+	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn)
+		goto wrapup;
+
 	if (r && (is_topn(r->op) || is_sample(r->op)))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
@@ -943,10 +946,6 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 		}
 	}
 
-
-	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn)
-		goto wrapup;
-
 	if (q->f->ops) {
 		int i;
 
@@ -977,7 +976,8 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 			goto wrapup;
 	}
 
-	order = BATdense(0, 0, BATcount(btype));
+	if (!(order = BATdense(0, 0, BATcount(btype))))
+		goto wrapup;
 	b->results = res_table_create(
 							b->mvc->session->tr,
 							b->result_id++,
@@ -986,6 +986,8 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 							Q_PREPARE,
 							b->results,
 							order);
+	if (!b->results)
+		goto wrapup;
 
 	if (	mvc_result_column(b, ".prepare", "type"		, "varchar",	len1, 0, btype	) ||
 			mvc_result_column(b, ".prepare", "digits"	, "int",		len2, 0, bdigits) ||
@@ -1001,13 +1003,23 @@ create_prepare_result(backend *b, cq *q, int nrows) {
 	error = 0;
 
 	wrapup:
-		BBPunfix(btype	->batCacheid);
-		BBPunfix(bdigits->batCacheid);
-		BBPunfix(bscale	->batCacheid);
-		BBPunfix(bschema->batCacheid);
-		BBPunfix(btable	->batCacheid);
-		BBPunfix(bcolumn->batCacheid);
-		BBPunfix(order	->batCacheid);
+		if (btype)
+			BBPunfix(btype->batCacheid);
+		if (bdigits)
+			BBPunfix(bdigits->batCacheid);
+		if (bscale)
+			BBPunfix(bscale->batCacheid);
+		if (bschema)
+			BBPunfix(bschema->batCacheid);
+		if (btable)
+			BBPunfix(btable->batCacheid);
+		if (bcolumn)
+			BBPunfix(bcolumn->batCacheid);
+		if (error < 0 && b->results) {
+			res_table_destroy(b->results);
+			b->results = NULL;
+		} else if (order)
+			BBPunfix(order->batCacheid);
 		return error;
 }
 
