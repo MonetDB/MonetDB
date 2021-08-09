@@ -9523,7 +9523,7 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_basecount(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && rel->l && !rel->r && list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
@@ -9549,6 +9549,54 @@ rel_basecount(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static inline sql_rel *
+rel_simplify_count(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && !list_empty(rel->exps)) {
+		mvc *sql = v->sql;
+		int ncountstar = 0;
+
+		/* Convert count(no null) into count(*) */
+		for (node *n = rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_aggr_is_count(e) && !need_distinct(e)) {
+				if (list_length(e->l) == 0) {
+					ncountstar++;
+				} else if (list_length(e->l) == 1 && exp_is_not_null((sql_exp*)((list*)e->l)->h->data)) {
+					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, ne, e);
+					n->data = ne;
+					ncountstar++;
+					v->changes++;
+				}
+			}
+		}
+		/* With multiple count(*), use exp_ref to reduce the number of calls to this aggregate */
+		if (ncountstar > 1) {
+			sql_exp *count_star = NULL;
+			for (node *n = rel->exps->h; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_aggr_is_count(e) && !need_distinct(e) && list_length(e->l) == 0) {
+					if (!count_star) {
+						count_star = e;
+					} else {
+						sql_exp *ne = exp_ref(sql, count_star);
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
+						n->data = ne;
+						v->changes++;
+					}
+				}
+			}
+		}
+	}
+	return rel;
+}
+
 static sql_rel *
 rel_optimize_projections(visitor *v, sql_rel *rel)
 {
@@ -9563,8 +9611,11 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
-	if (v->value_based_opt) /* only when value_based_opt is on, ie not for dependency resolution */
+	/* only when value_based_opt is on, ie not for dependency resolution */
+	if (v->value_based_opt) {
 		rel = rel_basecount(v, rel);
+		rel = rel_simplify_count(v, rel);
+	}
 	return rel;
 }
 
