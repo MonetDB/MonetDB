@@ -9303,6 +9303,9 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 static sql_rel *
 out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, operator_type new_type) {
 
+	/* handle inner_join relations with a simple select */
+	if (is_select(inner_join_side->op) && inner_join_side->l)
+		inner_join_side = inner_join_side->l;
     if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
         // Nothing to do here.
         return sel;

@@ -39,6 +39,10 @@ option(FITS
   "Enable support for FITS (default=ON)"
   ON)
 
+option(FORCE_COLORED_OUTPUT
+  "Force colored compiler output (GCC and Clang only; default=OFF)"
+  OFF)
+
 option(GEOM
   "Enable support for geom module (default=ON)"
   ON)
