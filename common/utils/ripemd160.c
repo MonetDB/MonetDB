@@ -39,7 +39,7 @@ RIPEMD160Input(RIPEMD160Context *ctxt, const uint8_t *bytes, unsigned bytecount)
 		bytecount -= ctxt->noverflow;
 		bytes += ctxt->noverflow;
 		ctxt->noverflow = 0;
-		compress(ctxt->digest, X);
+		MDcompress(ctxt->digest, X);
 	}
 	while (bytecount >= 64) {
 		for (int i = 0; i < 16; i++) {
@@ -47,7 +47,7 @@ RIPEMD160Input(RIPEMD160Context *ctxt, const uint8_t *bytes, unsigned bytecount)
 			bytes += 4;
 		}
 		bytecount -= 64;
-		compress(ctxt->digest, X);
+		MDcompress(ctxt->digest, X);
 	}
 	if (bytecount > 0)
 		memcpy(ctxt->overflow, bytes, bytecount);
