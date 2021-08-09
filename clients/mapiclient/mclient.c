@@ -95,6 +95,7 @@ enum formatters {
 static enum formatters formatter = NOformatter;
 char *separator = NULL;		/* column separator for CSV/TAB format */
 bool csvheader = false;		/* include header line in CSV format */
+bool noquote = false;		/* don't use quotes in CSV format */
 
 #define DEFWIDTH 80
 
@@ -942,7 +943,7 @@ CSVrenderer(MapiHdl hdl)
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s != NULL && s[strcspn(s, specials)] != '\0') {
+			if (!noquote && s != NULL && s[strcspn(s, specials)] != '\0') {
 				mnstr_printf(toConsole, "%s\"",
 					     i == 0 ? "" : separator);
 				while (*s) {
@@ -1647,6 +1648,7 @@ setFormatter(const char *s)
 		free(separator);
 	separator = NULL;
 	csvheader = false;
+	noquote = false;
 #ifdef _TWO_DIGIT_EXPONENT
 	if (formatter == TESTformatter)
 		_set_output_format(0);
@@ -1665,6 +1667,29 @@ setFormatter(const char *s)
 		} else
 			separator = strdup(s + 4);
 	} else if (strncmp(s, "csv+", 4) == 0) {
+		formatter = CSVformatter;
+		if (s[4] == '"') {
+			separator = strdup(s + 5);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 4);
+		csvheader = true;
+	} else if (strcmp(s, "csv-noquote") == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		separator = strdup(",");
+	} else if (strncmp(s, "csv-noquote=", 4) == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		if (s[4] == '"') {
+			separator = strdup(s + 5);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 4);
+	} else if (strncmp(s, "csv-noquote+", 4) == 0) {
+		noquote = true;
 		formatter = CSVformatter;
 		if (s[4] == '"') {
 			separator = strdup(s + 5);
