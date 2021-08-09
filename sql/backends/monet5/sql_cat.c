@@ -161,7 +161,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s", errtable);
 	if (ms->base.id != ps->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
-	if (strcmp(rmt->base.name, rpt->base.name) == 0)
+	if (rmt->base.id == rpt->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: a %s can't be a child of itself", errtable);
 	node *n = members_find_child_id(rmt->members, rpt->base.id);
 	if (n && !update)
