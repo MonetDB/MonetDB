@@ -526,7 +526,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 	pcre *r;
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_MULTILINE;
+	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE;
 	if (insensitive)
 		options |= PCRE_CASELESS;
 
@@ -701,7 +701,8 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	char *tmpres;
 	int max_result;
 	int i, errpos = 0;
-	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
+	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
+	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
 	int *ovector, ovecsize;
 	int len_origin_str = (int) strlen(origin_str);
 	int len_replacement = (int) strlen(replacement);
@@ -806,7 +807,8 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	const char *err_p = NULL;
 	char *tmpres;
 	int i, errpos = 0;
-	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
+	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
+	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	BAT *tmpbat;
@@ -940,7 +942,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8;
+	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
 	pcre *re;
 #else
 	int options = REG_NOSUB;
@@ -1004,7 +1006,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 					);
 			}
 #ifdef HAVE_LIBPCRE
-	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
+	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, PCRE_NO_UTF8_CHECK, NULL, 0);
 	pcre_free(re);
 #else
 	retval = regexec(&re, val, (size_t) 0, NULL, 0);
@@ -1225,7 +1227,7 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, 0, v, 3) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -1458,7 +1460,7 @@ pcre_like_build(
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
+	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE | PCRE_DOTALL;
 	int pcrestopt = count > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0;
 
 	*res = NULL;
@@ -1531,7 +1533,7 @@ pcre_like_apply(bit *ret, str s,
 
 #ifdef HAVE_LIBPCRE
 #define LOOP_BODY	\
-	pos = pcre_exec(re, ex, s, (int) strlen(s), 0, 0, NULL, 0);
+	pos = pcre_exec(re, ex, s, (int) strlen(s), 0, PCRE_NO_UTF8_CHECK, NULL, 0);
 #else
 #define LOOP_BODY	\
 	int retval = regexec(&re, s, (size_t) 0, NULL, 0); \
@@ -1770,7 +1772,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 #ifdef HAVE_LIBPCRE
-#define PCRE_LIKESELECT_BODY (pcre_exec(re, ex, v, (int) strlen(v), 0, 0, NULL, 0) >= 0)
+#define PCRE_LIKESELECT_BODY (pcre_exec(re, ex, v, (int) strlen(v), 0, PCRE_NO_UTF8_CHECK, NULL, 0) >= 0)
 #else
 #define PCRE_LIKESELECT_BODY (regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH)
 #endif
@@ -1949,7 +1951,7 @@ bailout:
 #ifdef HAVE_LIBPCRE
 #define PCRE_EXEC \
 	do { \
-		retval = pcre_exec(pcrere, pcreex, vl, (int) strlen(vl), 0, 0, NULL, 0); \
+		retval = pcre_exec(pcrere, pcreex, vl, (int) strlen(vl), 0, PCRE_NO_UTF8_CHECK, NULL, 0); \
 	} while (0)
 #define PCRE_EXEC_COND (retval < 0)
 #else
