@@ -7,6 +7,14 @@
 #]]
 
 function(monetdb_default_toolchain)
+  if (${FORCE_COLORED_OUTPUT})
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+      MT_addCompilerFlag("-fdiagnostics-color=always" "-fdiagnostics-color=always" "${CMAKE_C_FLAGS}" "all" CMAKE_C_FLAGS)
+    elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang)$")
+      MT_addCompilerFlag("-fcolor-diagnostics" "-fcolor-diagnostics" "${CMAKE_C_FLAGS}" "all" CMAKE_C_FLAGS)
+    endif ()
+  endif ()
+
   if(SANITIZER)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
       MT_addCompilerFlag("-fsanitize=address" "-fsanitize=address" "${CMAKE_C_FLAGS}" "all" CMAKE_C_FLAGS)
@@ -18,7 +26,7 @@ function(monetdb_default_toolchain)
   endif()
 
   if(STRICT)
-    if(${CMAKE_C_COMPILER_ID} MATCHES "^GNU|Clang|AppleClang$")
+    if(${CMAKE_C_COMPILER_ID} MATCHES "^(GNU|Clang|AppleClang)$")
       MT_addCompilerFlag("-Werror" "-Werror" "${CMAKE_C_FLAGS}" "all" CMAKE_C_FLAGS)
       MT_addCompilerFlag("-Wall" "-Wall" "${CMAKE_C_FLAGS}" "all" CMAKE_C_FLAGS)
       MT_addCompilerFlag("-Wextra" "-Wextra" "${CMAKE_C_FLAGS}" "all" CMAKE_C_FLAGS)
@@ -101,6 +109,14 @@ function(monetdb_default_toolchain)
 endfunction()
 
 function(monetdb_default_compiler_options)
+  if (${FORCE_COLORED_OUTPUT})
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+      add_compile_options("-fdiagnostics-color=always")
+    elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang)$")
+      add_compile_options("-fcolor-diagnostics")
+    endif ()
+  endif ()
+
   if(SANITIZER)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
       add_compile_options("-fsanitize=address")
@@ -112,7 +128,7 @@ function(monetdb_default_compiler_options)
   endif()
 
   if(STRICT)
-    if(${CMAKE_C_COMPILER_ID} MATCHES "^GNU|Clang|AppleClang$")
+    if(${CMAKE_C_COMPILER_ID} MATCHES "^(GNU|Clang|AppleClang)$")
       add_compile_options("-Werror")
       add_compile_options("-Wall")
       add_compile_options("-Wextra")
@@ -149,10 +165,14 @@ function(monetdb_default_compiler_options)
       add_option_if_available("-Wduplicated-branches")
       add_option_if_available("-Wrestrict")
       add_option_if_available("-Wnested-externs")
+      add_option_if_available("-Wmissing-noreturn")
+      add_option_if_available("-Wuninitialized")
+
       # since we use values of type "int8_t" as subscript,
       # and int8_t may be defined as plain "char", we cannot
       # allow this warning (part of -Wall)
       add_option_if_available("-Wno-char-subscripts")
+
       add_option_if_available("-Wunreachable-code")
     elseif(${CMAKE_C_COMPILER_ID} STREQUAL "Intel")
       if(WIN32)
