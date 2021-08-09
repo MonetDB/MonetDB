@@ -1341,7 +1341,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	mvc *m = b->mvc;
 	Tablet as;
 	Column *fmt;
-	int i, ok;
+	int i, ok = 0;
 	struct time_res *tres;
 	int csv = (b->output_format == OFMT_CSV);
 	int json = (b->output_format == OFMT_JSON);
