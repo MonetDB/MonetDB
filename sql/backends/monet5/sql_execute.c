@@ -529,12 +529,14 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			if (be->q) {
 				be->q->name = putName(be->q->name);
 				if (!be->q->name) {
-					err = 1;
 					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					err = 1;
 				}
 
-				if (!err)
-					err = mvc_export_prepare(be, c->fdout);
+				if (!err && (err = mvc_export_prepare(be, c->fdout)) < 0) {
+					msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+					err = 1;
+				}
 			}
 		}
 
