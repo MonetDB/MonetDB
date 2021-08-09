@@ -1833,7 +1833,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter) {
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
-			} else if (formatter != TRASHformatter) {
+			} else if (formatter != TRASHformatter && formatter != CSVformatter) {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
