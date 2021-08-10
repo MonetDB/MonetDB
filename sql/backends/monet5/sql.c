@@ -2601,7 +2601,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, mb->starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
-		if (!tostdout)
+		if (!onclient && !tostdout)
 			close_stream(s);
 		goto wrapup_result_set1;
 	}
@@ -2832,7 +2832,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
-		if (!tostdout)
+		if (!onclient && !tostdout)
 			close_stream(s);
 		goto wrapup_result_set;
 	}
