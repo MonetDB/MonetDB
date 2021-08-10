@@ -1027,6 +1027,8 @@ create_prepare_result(backend *b, cq *q, int nrows)
 			BBPunfix(btype->batCacheid);
 		if (bdigits)
 			BBPunfix(bdigits->batCacheid);
+		if (bimpl)
+			BBPunfix(bimpl->batCacheid);
 		if (bscale)
 			BBPunfix(bscale->batCacheid);
 		if (bschema)
