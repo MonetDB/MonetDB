@@ -537,11 +537,11 @@ END;
 CREATE FUNCTION sys.describe_function(schemaName string, functionName string)
 	RETURNS TABLE(id integer, name string, type string, language string, remark string)
 BEGIN
-    RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark
-        FROM sys.functions f
-        JOIN sys.schemas s ON f.schema_id = s.id
-        JOIN sys.function_types ft ON f.type = ft.function_type_id
-        LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
-        LEFT OUTER JOIN sys.comments c ON f.id = c.id
-        WHERE f.name=functionName AND s.name = schemaName;
+	RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark
+		FROM sys.functions f
+		JOIN sys.schemas s ON f.schema_id = s.id
+		JOIN sys.function_types ft ON f.type = ft.function_type_id
+		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
+		LEFT OUTER JOIN sys.comments c ON f.id = c.id
+		WHERE f.name=functionName AND s.name = schemaName;
 END;

@@ -44,7 +44,7 @@ order by count(col1), col1
 project (
 | group by (
 | | table("sys"."test02") [ "test02"."col1" NOT NULL ] COUNT 
-| ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, "sys"."count" no nil ("test02"."col1" NOT NULL) NOT NULL as "%1"."%1" ]
+| ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "test02"."col1" NOT NULL ] [ "%1"."%1" ASC NOT NULL, "test02"."col1" ASC NOT NULL ]
 
 query T rowsort

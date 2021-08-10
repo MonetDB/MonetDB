@@ -73,12 +73,15 @@ _list_find_name(list *l, const char *name)
 void
 trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
-	sql_change *change = SA_ZNEW(tr->sa, sql_change);
-	change->obj = b;
-	change->data = data;
-	change->cleanup = cleanup;
-	change->commit = commit;
-	change->log = log;
+	sql_change *change = SA_NEW(tr->sa, sql_change);
+
+	*change = (sql_change) {
+		.obj = b,
+		.data = data,
+		.cleanup = cleanup,
+		.commit = commit,
+		.log = log,
+	};
 	MT_lock_set(&tr->lock);
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	if (log)
@@ -494,4 +497,49 @@ nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *t
 			return 1;
 	}
 	return 0;
+}
+
+static ValPtr /* TODO remove this duplicated code */
+SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
+{
+	if (sa == NULL)
+		return VALcopy(d, s);
+	if (!ATOMextern(s->vtype)) {
+		*d = *s;
+	} else if (s->val.pval == 0) {
+		d->val.pval = ATOMnil(s->vtype);
+		if (d->val.pval == NULL)
+			return NULL;
+		d->vtype = s->vtype;
+	} else if (s->vtype == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = sa_strdup(sa, s->val.sval);
+		if (d->val.sval == NULL)
+			return NULL;
+		d->len = strLen(d->val.sval);
+	} else {
+		ptr p = s->val.pval;
+
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
+		if (d->val.pval == NULL)
+			return NULL;
+		memcpy(d->val.pval, p, d->len);
+	}
+	return d;
+}
+
+atom *
+atom_dup(sql_allocator *sa, atom *a)
+{
+	atom *r = sa ?SA_NEW(sa, atom):MNEW(atom);
+	if (!r)
+		return NULL;
+
+	*r = *a;
+	r->tpe = a->tpe;
+	if (!a->isnull)
+		SA_VALcopy(sa, &r->data, &a->data);
+	return r;
 }

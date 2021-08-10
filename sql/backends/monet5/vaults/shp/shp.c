@@ -305,8 +305,8 @@ finish:
 
 
 static str
-SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool partial) {
-	size_t pos = 0;
+SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool partial)
+{
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
 	char *sch_name = "sys";
@@ -319,7 +319,8 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	sql_column *col;
 
 	sql_column **cols;
-	BAT **colsBAT;
+	BAT **colsBAT, *pos = NULL;
+	BUN offset;
 	int colsNum = 2; //we will have at least the gid column and a geometry column
 	int rowsNum = 0; //the number of rows in the shape file that will be imported
 	//GIntBig rowsNum = 0;
@@ -539,13 +540,23 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	}
 
 	/* finalise the BATs */
-	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
+	if (store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]), &offset, &pos) != LOG_OK) {
+		msg = createException(MAL, "shp.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto unfree4;
+	}
+	if (!isNew(data_table) && sql_trans_add_dependency_change(m->session->tr, data_table->base.id, dml) != LOG_OK) {
+		bat_destroy(pos);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto unfree4;
+	}
 	for(i = 0; i < colsNum; i++) {
-		if (store->storage_api.append_col(m->session->tr, cols[i], pos, colsBAT[i], TYPE_bat, 1) != LOG_OK) {
+		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[0]), TYPE_bat) != LOG_OK) {
+			bat_destroy(pos);
 			msg = createException(MAL, "shp.import", SQLSTATE(38000) "Geos append column failed");
 			goto unfree4;
 		}
 	}
+	bat_destroy(pos);
 
 	/* free the memory */
 unfree4:
@@ -768,9 +779,16 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 
 	/* finalise the BATs */
-	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
+	if (store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]), &offset, &pos) != LOG_OK) {
+		msg = createException(MAL, "shp.import", SQLSTATE(38000) "append_col failed");
+		goto bailout;
+	}
+	if (!isNew(data_table) && sql_trans_add_dependency_change(m->session->tr, data_table->base.id, dml) != LOG_OK) {
+		msg = createException((MAL, "shp.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	for(i = 0; i < colsNum; i++) {
-		if (store->storage_api.append_col(m->session->tr, cols[i], pos, colsBAT[i], TYPE_bat, 1) != LOG_OK) {
+		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[0]), TYPE_bat) != LOG_OK) {
 			msg = createException(MAL, "shp.import", SQLSTATE(38000) "append_col failed");
 			goto bailout;
 		}

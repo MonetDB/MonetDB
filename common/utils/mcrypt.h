@@ -21,27 +21,20 @@
 
 mcrypt_export const char *mcrypt_getHashAlgorithms(void)
 	__attribute__((__const__));
-#ifdef HAVE_MD5_UPDATE
 mcrypt_export char *mcrypt_MD5Sum(const char *string, size_t len);
-#endif
-#ifdef HAVE_SHA1_UPDATE
 mcrypt_export char *mcrypt_SHA1Sum(const char *string, size_t len);
-#endif
-#ifdef HAVE_SHA224_UPDATE
 mcrypt_export char *mcrypt_SHA224Sum(const char *string, size_t len);
-#endif
-#ifdef HAVE_SHA256_UPDATE
 mcrypt_export char *mcrypt_SHA256Sum(const char *string, size_t len);
-#endif
-#ifdef HAVE_SHA384_UPDATE
 mcrypt_export char *mcrypt_SHA384Sum(const char *string, size_t len);
-#endif
-#ifdef HAVE_SHA512_UPDATE
 mcrypt_export char *mcrypt_SHA512Sum(const char *string, size_t len);
-#endif
-#ifdef HAVE_RIPEMD160_UPDATE
 mcrypt_export char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
-#endif
 mcrypt_export char *mcrypt_BackendSum(const char *string, size_t len);
 mcrypt_export char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
+
+#define SHA_DIGEST_LENGTH    20
+#define SHA224_DIGEST_LENGTH 28
+#define SHA256_DIGEST_LENGTH 32
+#define SHA384_DIGEST_LENGTH 48
+#define SHA512_DIGEST_LENGTH 64
+
 #endif

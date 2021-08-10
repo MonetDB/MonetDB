@@ -170,7 +170,7 @@ static gdk_return tr_grow(trans *tr);
 static BUN
 log_find(BAT *b, BAT *d, int val)
 {
-	BATiter cni = bat_iterator(b);
+	BATiter cni = bat_iterator_nolock(b);
 	BUN p;
 
 	assert(b->ttype == TYPE_int);
@@ -192,8 +192,9 @@ log_find(BAT *b, BAT *d, int val)
 		for (p = 0, q = BUNlast(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
-				if (BUNfnd(d, &pos) == BUN_NONE)
+				if (BUNfnd(d, &pos) == BUN_NONE) {
 					return p;
+				}
 			}
 		}
 	}
@@ -296,7 +297,7 @@ log_bid
 old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 {
 	if (!tpe || !lg->with_ids) {
-		BATiter cni = bat_iterator(lg->catalog_nme);
+		BATiter cni = bat_iterator_nolock(lg->catalog_nme);
 		BUN p;
 
 		if (BAThash(lg->catalog_nme) == GDK_SUCCEED) {
@@ -314,7 +315,7 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
 	} else {
-		BATiter cni = bat_iterator(lg->catalog_oid);
+		BATiter cni = bat_iterator_nolock(lg->catalog_oid);
 		BUN p;
 
 		if (BAThash(lg->catalog_oid) == GDK_SUCCEED) {
@@ -659,21 +660,25 @@ la_bat_updates(old_logger *lg, logaction *la)
 					while (b->hseqbase + b->batCount < h) {
 						if (BUNappend(b, tv, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
+							bat_iterator_end(&vi);
 							return GDK_FAIL;
 						}
 					}
 				}
 				if (BUNappend(b, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
+					bat_iterator_end(&vi);
 					return GDK_FAIL;
 				}
 			} else {
 				if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
+					bat_iterator_end(&vi);
 					return GDK_FAIL;
 				}
 			}
 		}
+		bat_iterator_end(&vi);
 	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
@@ -784,9 +789,11 @@ la_bat_create(old_logger *lg, logaction *la)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
-	if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
-	    logger_add_bat(lg, b, la->name, la->tpe, la->cid) != GDK_SUCCEED)
+	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
+	    logger_add_bat(lg, b, la->name, la->tpe, la->cid) != GDK_SUCCEED) {
+		logbat_destroy(b);
 		return GDK_FAIL;
+	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
 }
@@ -1482,10 +1489,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		GDKerror("Logger_new: failed to create freed bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_freed", NULL);
-	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
-		goto error;
-	}
 	snapshots_bid = old_logger_find_bat(lg, "snapshots_bid", 0, 0);
 	if (snapshots_bid == 0) {
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1651,16 +1654,19 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 	assert(lg != NULL);
 	if (GDKinmemory(0)) {
 		TRC_CRITICAL(GDK, "old logger can only be used with a disk-based database\n");
+		fclose(fp);
 		return NULL;
 	}
 	if (MT_path_absolute(logdir)) {
 		TRC_CRITICAL(GDK, "logdir must be relative path\n");
+		fclose(fp);
 		return NULL;
 	}
 
 	old_lg = GDKmalloc(sizeof(struct old_logger));
 	if (old_lg == NULL) {
 		TRC_CRITICAL(GDK, "allocating logger structure failed\n");
+		fclose(fp);
 		return NULL;
 	}
 
@@ -1695,6 +1701,7 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 	logbat_destroy(old_lg->add);
 	logbat_destroy(old_lg->del);
 	GDKfree(old_lg);
+	fclose(fp);
 	return NULL;
 }
 
@@ -1704,6 +1711,7 @@ old_logger_destroy(old_logger *lg)
 	BUN p, q;
 	BAT *b = NULL;
 	const log_bid *bids;
+	gdk_return rc;
 
 	bat *subcommit = GDKmalloc(sizeof(log_bid) * (BATcount(lg->add) + BATcount(lg->del) + 1));
 	if (subcommit == NULL) {
@@ -1748,26 +1756,31 @@ old_logger_destroy(old_logger *lg)
 	    BBPrename(lg->lg->catalog_id->batCacheid, bak) < 0 ||
 	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_dcatalog", NULL) >= sizeof(bak) ||
 	    BBPrename(lg->lg->dcatalog->batCacheid, bak) < 0) {
+		GDKfree(subcommit);
 		return GDK_FAIL;
 	}
-	if (GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
+	if ((rc = GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak", true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		GDKfree(subcommit);
+		return rc;
 	}
-	if (logger_create_types_file(lg->lg, lg->filename) != GDK_SUCCEED) {
+	if ((rc = logger_create_types_file(lg->lg, lg->filename)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		GDKfree(subcommit);
+		return rc;
 	}
 	lg->lg->id = (ulng) lg->id;
 	lg->lg->saved_id = lg->lg->id;
-	if (TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid) != GDK_SUCCEED) {
+	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid);
+	GDKfree(subcommit);
+	if (rc != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		return rc;
 	}
 	snprintf(bak, sizeof(bak), "bak-" LLFMT, lg->id);
-	if (GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak) != GDK_SUCCEED) {
+	if ((rc = GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak, true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
-		return GDK_FAIL;
+		return rc;
 	}
 
 	if (logger_cleanup(lg) != GDK_SUCCEED)

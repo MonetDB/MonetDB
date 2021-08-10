@@ -1,0 +1,35 @@
+statement ok
+CREATE MERGE TABLE mysensor(
+sensor VARCHAR(64) NOT NULL,
+val INTEGER NOT NULL,
+exponent INTEGER NOT NULL,
+CONSTRAINT mysensor_pk PRIMARY KEY(sensor)
+) PARTITION BY RANGE ON (sensor)
+
+statement ok
+CREATE TABLE mysensor_ac(
+sensor VARCHAR(64) NOT NULL,
+val INTEGER NOT NULL,
+exponent INTEGER NOT NULL,
+CONSTRAINT mysensor_ac_pk PRIMARY KEY(sensor)
+)
+
+statement ok
+ALTER TABLE mysensor ADD TABLE mysensor_ac AS PARTITION FROM 'a' TO 'c'
+
+statement error 42000!INSERT INTO: not possible to insert into a partitioned table with complex indexes at the moment
+INSERT INTO mysensor(sensor, val, exponent) VALUES('a', 123, -1)
+
+statement error 42000!INSERT INTO: not possible to insert into a partitioned table with complex indexes at the moment
+INSERT INTO mysensor_ac(sensor, val, exponent) VALUES('a', 123, -1)
+
+statement ok
+ALTER TABLE mysensor DROP TABLE mysensor_ac
+
+statement ok
+DROP TABLE mysensor
+
+statement ok
+DROP TABLE mysensor_ac
+
+

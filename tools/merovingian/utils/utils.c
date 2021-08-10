@@ -26,13 +26,8 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef HAVE_OPENSSL
-#include <openssl/rand.h>		/* RAND_bytes */
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonCrypto.h>
-#include <CommonCrypto/CommonRandom.h>
-#endif
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
@@ -421,29 +416,18 @@ generateSalt(char *buf, unsigned int len)
 	unsigned int fill;
 	unsigned int min;
 
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
-#endif
+#ifdef HAVE_GETENTROPY
+	if (getentropy(&size, sizeof(size)) < 0)
 #endif
 		size = (unsigned int)rand();
 	fill = len * 0.75;
 	min = len * 0.42;
 	size = (size % (fill - min)) + min;
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+#ifdef HAVE_GETENTROPY
+	if (getentropy(buf, size) == 0) {
 		for (c = 0; c < size; c++)
 			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
 	} else
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(buf, size) >= 0) {
-		for (c = 0; c < size; c++)
-			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
-	} else
-#endif
 #endif
 		for (c = 0; c < size; c++) {
 			buf[c] = seedChars[rand() % 62];

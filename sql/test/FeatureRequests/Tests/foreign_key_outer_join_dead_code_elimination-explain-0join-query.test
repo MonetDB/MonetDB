@@ -4,39 +4,35 @@ set optimizer = 'sequential_pipe'
 query T python .explain.function_histogram
 explain select count(*) from fk
 ----
-user.main
-1
 querylog.define
 1
-sql.mvc
-1
-sql.tid
-1
-aggr.count
+sql.count
 1
 sql.resultSet
+1
+user.main
 1
 
 query T python .explain.function_histogram
 explain select id       from fk order by id
 ----
-user.main
-1
-querylog.define
-1
-sql.mvc
-1
-sql.tid
-1
-sql.bind
-1
 algebra.projection
 2
 algebra.sort
 1
 bat.pack
 5
+querylog.define
+1
+sql.bind
+1
+sql.mvc
+1
 sql.resultSet
+1
+sql.tid
+1
+user.main
 1
 
 statement ok

@@ -861,7 +861,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 					list *id_l = rel_dependencies(sql, r);
 
 					for (node *o = id_l->h ; o ; o = o->next) {
-						sqlid next = *(sqlid*) o->data;
+						sqlid next = ((sql_base*) o->data)->id;
 						if (next != f->base.id) {
 							pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
 											f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
@@ -897,7 +897,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						list *id_l = rel_dependencies(sql, r);
 
 						for (node *o = id_l->h ; o ; o = o->next) {
-							sqlid next = *(sqlid*) o->data;
+							sqlid next = ((sql_base*) o->data)->id;
 							if (next != t->base.id) {
 								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 												next, t->base.id, (int) VIEW_DEPENDENCY);
@@ -925,7 +925,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							list *id_l = rel_dependencies(sql, r);
 
 							for (node *o = id_l->h ; o ; o = o->next) {
-								sqlid next = *(sqlid*) o->data;
+								sqlid next = ((sql_base*) o->data)->id;
 								if (next != tr->base.id) {
 									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 													next, tr->base.id, (int) TRIGGER_DEPENDENCY);
@@ -1311,8 +1311,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create function sys.tracelog()\n"
 			" returns table (\n"
 			"  ticks bigint, -- time in microseconds\n"
-			"  stmt string,  -- actual statement executed\n"
-			"  event string  -- profiler event executed\n"
+			"  stmt string  -- actual statement executed\n"
 			" )\n"
 			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n"
@@ -1476,8 +1475,8 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"\"status\" string,\n"
 			"\"query\" string,\n"
 			"\"progress\" int,\n"
-			"\"workers\" int,\n"
-			"\"memory\" int)\n"
+			"\"maxworkers\" int,\n"
+			"\"footprint\" int)\n"
 			" external name sysmon.queue;\n"
 			"grant execute on function sys.queue to public;\n"
 			"create view sys.queue as select * from sys.queue();\n"
@@ -2029,7 +2028,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 	}
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
-		BATiter bi = bat_iterator(b);
+		BATiter bi = bat_iterator_nolock(b);
 		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
 			if (!*systabfixed &&
 				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
@@ -2405,6 +2404,36 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"external name \"sql\".\"deltas\";\n"
 							"update sys.functions set system = true"
 							" where schema_id = 2000 and name = 'deltas';\n");
+
+			/* 26_sysmon */
+			t = mvc_bind_table(sql, s, "queue");
+			t->system = 0; /* make it non-system else the drop view will fail */
+
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop view sys.queue;\n"
+							"drop function sys.queue;\n"
+							"create function sys.queue()\n"
+							"returns table(\n"
+							"\"tag\" bigint,\n"
+							"\"sessionid\" int,\n"
+							"\"username\" string,\n"
+							"\"started\" timestamp,\n"
+							"\"status\" string,\n"
+							"\"query\" string,\n"
+							"\"finished\" timestamp,\n"
+							"\"maxworkers\" int,\n"
+							"\"footprint\" int\n"
+							")\n"
+							"external name sysmon.queue;\n"
+							"grant execute on function sys.queue to public;\n"
+							"create view sys.queue as select * from sys.queue();\n"
+							"grant select on sys.queue to public;\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+							"update sys.functions set system = true where system <> true and schema_id = 2000"
+							" and name = 'queue' and type = %d;\n", (int) F_UNION);
+			pos += snprintf(buf + pos, bufsize - pos,
+							"update sys._tables set system = true where schema_id = 2000"
+							" and name = 'queue';\n");
 
 			/* fix up dependencies for function getproj4 (if it exists) */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -3361,6 +3390,151 @@ bailout:
 	return err;		/* usually MAL_SUCCEED */
 }
 
+/* upgrades after Jul2021_3 build */
+static str
+sql_update_jul2021_5(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 65536, pos = 0;
+	char *buf = NULL, *err = NULL;
+	res_table *output = NULL;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
+
+	(void) systabfixed;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if the string 'partition of merge table' is not in the sys.ids
+	 * query, upgrade */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"select query from sys._tables where name = 'ids' and schema_id = 2000 and query like '%%partition of merge table%%';\n");
+	assert(pos < bufsize);
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
+		BAT *b;
+		if ((b = BATdescriptor(output->cols[0].b))) {
+			if (BATcount(b) == 0) {
+				pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
+
+				/* 21_dependency_views.sql */
+				t = mvc_bind_table(sql, s, "ids");
+				t->system = 0;	/* make it non-system else the drop view will fail */
+				t = mvc_bind_table(sql, s, "dependencies_vw");
+				t->system = 0;	/* make it non-system else the drop view will fail */
+				pos += snprintf(buf + pos, bufsize - pos,
+								"drop view sys.dependencies_vw;\n"
+								"drop view sys.ids;\n");
+				pos += snprintf(buf + pos, bufsize - pos,
+								"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) AS\n"
+								"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table FROM sys.auths UNION ALL\n"
+								"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' FROM sys.schemas UNION ALL\n"
+								"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' FROM sys._tables UNION ALL\n"
+								"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' FROM tmp._tables UNION ALL\n"
+								"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+								"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+								"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+								"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL\n"
+								"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+								"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
+								"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+								"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
+								"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL\n"
+								"SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' FROM sys.args a JOIN sys.functions f ON a.func_id = f.id UNION ALL\n"
+								"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL\n"
+								"SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects' FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL\n"
+								"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' FROM sys.types WHERE id > 2000\n"
+								" ORDER BY id;\n"
+								"GRANT SELECT ON sys.ids TO PUBLIC;\n");
+				pos += snprintf(buf + pos, bufsize - pos,
+								"CREATE VIEW sys.dependencies_vw AS\n"
+								"SELECT d.id, i1.obj_type, i1.name,\n"
+								"       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+								"       d.depend_type, dt.dependency_type_name\n"
+								"  FROM sys.dependencies d\n"
+								"  JOIN sys.ids i1 ON d.id = i1.id\n"
+								"  JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+								"  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+								" ORDER BY id, depend_id;\n"
+								"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n");
+				pos += snprintf(buf + pos, bufsize - pos,
+								"UPDATE sys._tables SET system = true WHERE name in ('ids', 'dependencies_vw') AND schema_id = 2000;\n");
+
+				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+				assert(pos < bufsize);
+				printf("Running database upgrade commands:\n%s\n", buf);
+				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			}
+			BBPunfix(b->batCacheid);
+		}
+		res_table_destroy(output);
+	}
+
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	sql_subtype tp;
+	size_t bufsize = 65536, pos = 0;
+	char *buf = NULL, *err = NULL;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
+
+	(void) systabfixed;
+	sql_find_subtype(&tp, "bigint", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		/* nothing to do */
+		return NULL;
+	}
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"drop function sys.epoch(bigint);\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create function sys.epoch(sec DECIMAL(18,3)) "
+					"returns TIMESTAMP WITH TIME ZONE\n"
+					"external name mtime.epoch;\n"
+					"grant execute on function sys.epoch (DECIMAL(18,3)) to public;\n"
+					"update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = %d;\n", F_FUNC);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+	/* 16_tracelog */
+	t = mvc_bind_table(sql, s, "tracelog");
+	t->system = 0; /* make it non-system else the drop view will fail */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.tracelog;\n"
+			"drop function sys.tracelog();\n"
+			"create function sys.tracelog()\n"
+			" returns table (\n"
+			"  ticks bigint, -- time in microseconds\n"
+			"  stmt string,  -- actual statement executed\n"
+			"  event string  -- profiler event executed\n"
+			" )\n"
+			" external name sql.dump_trace;\n"
+			"create view sys.tracelog as select * from sys.tracelog();\n"
+			"update sys._tables set system = true where system <> true and schema_id = 2000"
+			" and name = 'tracelog';\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000"
+			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -3599,6 +3773,20 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jul2021(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_jul2021_5(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

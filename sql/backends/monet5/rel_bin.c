@@ -18,6 +18,7 @@
 #include "rel_updates.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "rel_predicates.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -56,9 +57,7 @@ static stmt *
 stmt_selectnil( backend *be, stmt *col)
 {
 	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0, 1);
-	return nn;
+	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)), cmp_equal, NULL, 0, 1);
 }
 
 static stmt *
@@ -378,9 +377,7 @@ static stmt *
 stmt_selectnonil( backend *be, stmt *col, stmt *s )
 {
 	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1, 1);
-	return nn;
+	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)), cmp_equal, s, 1, 1);
 }
 
 static int
@@ -699,7 +696,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 
 	/*
 	 * left - isel: calls down need id's from the range of left
-	 * res  - rsel: updates too res need id's in the range from res
+	 * res  - rsel: updates to res need id's in the range from res
 	 */
 	for (node *en = exps->h; en; en = en->next) {
 		sql_exp *e = en->data;
@@ -728,7 +725,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				ires = l;
 				if (res)
 					res->cand = isel;
-			} else if (res && !next_cond) { /* use result too update column */
+			} else if (res && !next_cond) { /* use result to update column */
 				stmt *val = es;
 				stmt *pos = rsel;
 
@@ -857,7 +854,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 
 	/*
 	 * left - isel: calls down need id's from the range of left
-	 * res  - rsel: updates too res need id's in the range from res
+	 * res  - rsel: updates to res need id's in the range from res
 	 */
 	for (en = en->next; en; en = en->next) {
 		sql_exp *e = en->data;
@@ -911,7 +908,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				ires = l;
 				if (res)
 					res->cand = isel;
-			} else if (res && !next_cond) { /* use result too update column */
+			} else if (res && !next_cond) { /* use result to update column */
 				stmt *val = es;
 				stmt *pos = rsel;
 
@@ -1510,7 +1507,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r2 && r2->nrcols == 0)
 				r2 = stmt_const(be, bin_find_smallest_column(be, swapped?left:right), r2);
 			if (r2) {
-				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), swapped);
+				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), is_symmetric(e), swapped);
 			} else if (swapped) {
 				s = stmt_join(be, r, l, is_anti(e), swap_compare((comp_type)e->flag), 0, is_semantics(e), false);
 			} else {
@@ -1520,7 +1517,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r2) { /* handle all cases in stmt_uselect, reducing, non reducing, scalar etc */
 				if (l->nrcols == 0 && ((sel && sel->nrcols > 0) || r->nrcols > 0 || r2->nrcols > 0 || reduce))
 					l = left ? stmt_const(be, bin_find_smallest_column(be, left), l) : column(be, l);
-				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
+				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), is_symmetric(e), reduce);
 			} else {
 				/* value compare or select */
 				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
@@ -2414,7 +2411,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
 			/* ToDo how about atom expressions? */
 			if (e->type == e_cmp) {
-				int flag = e->flag & ~CMP_BETWEEN;
+				int flag = e->flag;
 				/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
 				if (flag < cmp_filter || flag == mark_in || flag == mark_notin) { /* theta and range joins */
 					/* join or select ? */
@@ -3943,6 +3940,10 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
+				/* foreach column add predicate */
+				if (add_column_predicate(be, c->c) != LOG_OK)
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
 					stmt *nn = stmt_selectnonil(be, col, s);
@@ -3961,6 +3962,10 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
+
+				/* foreach column add predicate */
+				if (add_column_predicate(be, c->c) != LOG_OK)
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
@@ -4021,6 +4026,10 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 	} else {		/* single column key */
 		sql_kc *c = k->columns->h->data;
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
+
+		/* add predicate for this column */
+		if (add_column_predicate(be, c->c) != LOG_OK)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
@@ -4086,6 +4095,14 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+
+	for (node *m = k->columns->h; m; m = m->next) {
+		sql_kc *c = m->data;
+
+		/* foreach column add predicate */
+		if (add_column_predicate(be, c->c) != LOG_OK)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	if (pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
@@ -4186,7 +4203,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	return res;
 }
 
-static void
+static sql_table *
 sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
 	mvc *sql = be->mvc;
@@ -4202,6 +4219,10 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			stmt *s = i;
 			char *msg = NULL;
 
+			/* foreach column add predicate */
+			if (add_column_predicate(be, c) != LOG_OK)
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
@@ -4214,6 +4235,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			(void)stmt_exception(be, s, msg, 00001);
 		}
 	}
+	return t; /* return something to say it succeeded */
 }
 
 static stmt **
@@ -4263,8 +4285,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint)
-		sql_insert_check_null(be, t, inserts->op4.lval);
+	if (constraint && !sql_insert_check_null(be, t, inserts->op4.lval))
+		return NULL;
 
 	l = sa_list(sql->sa);
 
@@ -4342,6 +4364,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+	/* update predicate list */
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	if (ddl) {
 		ret = ddl;
 		list_prepend(l, ddl);
@@ -5331,6 +5359,10 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return cnt;
 }
 
@@ -5570,6 +5602,11 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		/* if there are multiple update statements, update total count, otherwise use the the current count */
 		be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, stdelete->nr) : stdelete->nr;
 	}
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	return stdelete;
 }
 
@@ -5614,13 +5651,11 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 							continue;
 						k = fk;
 						/* make sure it is not a self referencing key */
-						if (k->t != t && !cascade) {
+						if (k->t != t && !cascade && isTable(t)) {
 							node *n = ol_first_node(t->columns);
 							sql_column *c = n->data;
-							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 0);
-							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t, 0);
-							assert (n_rows >= n_deletes);
-							if (n_rows - n_deletes > 0) {
+							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 10);
+							if (n_rows > 0) {
 								list_destroy(keys);
 								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
 								*error = 1;
@@ -5796,6 +5831,9 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
 	cascade = E_ATOM_INT(n->next->data);
+
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	if (sql->cascade_action)

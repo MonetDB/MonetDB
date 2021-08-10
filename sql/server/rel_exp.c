@@ -173,7 +173,7 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 }
 
 sql_exp *
-exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
+exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int symmetric)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 	if (e == NULL)
@@ -184,6 +184,8 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (symmetric)
+		set_symmetric(e);
 	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
 		set_has_no_nil(e);
 	return e;
@@ -673,6 +675,8 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_anti(ne);
 	if (is_semantics(oe))
 		set_semantics(ne);
+	if (is_symmetric(oe))
+		set_symmetric(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))
@@ -1252,8 +1256,13 @@ exp_match_list( list *l, list *r)
 		return l == r;
 	if (list_length(l) != list_length(r) || list_length(l) == 0 || list_length(r) == 0)
 		return 0;
-	lu = GDKzalloc(list_length(l) * sizeof(char));
-	ru = GDKzalloc(list_length(r) * sizeof(char));
+	lu = ZNEW_ARRAY(char, list_length(l));
+	ru = ZNEW_ARRAY(char, list_length(r));
+	if (!lu || !ru) {
+		_DELETE(lu);
+		_DELETE(ru);
+		return 0;
+	}
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -1273,8 +1282,8 @@ exp_match_list( list *l, list *r)
 	for (n = r->h, rc = 0; n && match; n = n->next, rc++)
 		if (!ru[rc])
 			match = 0;
-	GDKfree(lu);
-	GDKfree(ru);
+	_DELETE(lu);
+	_DELETE(ru);
 	return match;
 }
 
@@ -1303,7 +1312,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		return 1;
 	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
 		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || is_semantics(e1) != is_semantics(e2) ||
-		need_distinct(e1) != need_distinct(e2))
+		is_symmetric(e1) != is_symmetric(e2) || need_distinct(e1) != need_distinct(e2))
 		return 0;
 	if (e1->type == e2->type) {
 		switch(e1->type) {
@@ -1311,7 +1320,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 		            exp_match_exp(e1->l, e2->l) &&
 			    exp_match_exp(e1->r, e2->r) &&
-			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
+			    ((!e1->f && !e2->f) || (e1->f && e2->f && exp_match_exp(e1->f, e2->f))))
 				return 1;
 			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
 		            exp_match_list(e1->l, e2->l) &&
@@ -1781,7 +1790,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     sql_exp* h = e->f;
     assert (v && l && h);
 
-    return exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
+    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
 }
 
 static inline bool
@@ -2730,7 +2739,7 @@ exp_copy(mvc *sql, sql_exp * e)
 
 			if (e->f) {
 				r2 = exp_copy(sql, e->f);
-				ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+				ne = exp_compare2(sql->sa, l, r, r2, e->flag, is_symmetric(e));
 			} else {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
@@ -2890,6 +2899,38 @@ exp_aggr_is_count(sql_exp *e)
 	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
 	return 0;
+}
+
+list *
+check_distinct_exp_names(mvc *sql, list *exps)
+{
+	list *distinct_exps = NULL;
+	bool duplicates = false;
+
+	if (list_length(exps) < 2) {
+		return exps; /* always true */
+	} else if (list_length(exps) < 5) {
+		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
+	} else { /* for longer lists, use hashing */
+		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
+
+		for (node *n = exps->h; n && !duplicates; n = n->next) {
+			sql_exp *e = n->data;
+			int key = ht->key(e);
+			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+
+			for (; he && !duplicates; he = he->chain) {
+				sql_exp *f = he->value;
+
+				if (!exp_equal(e, f))
+					duplicates = true;
+			}
+			hash_add(ht, key, e);
+		}
+	}
+	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
+		return NULL;
+	return exps;
 }
 
 void
@@ -3167,7 +3208,7 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 		case e_column: {
 			/* if the column pretended is found, set its type */
 			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
-			if (next_rel && !strcmp(next_rel, *relname)) {
+			if (next_rel && *relname && !strcmp(next_rel, *relname)) {
 				*relname = (e->type == e_column && e->l) ? (const char*) e->l : next_rel;
 				if (next_exp && !strcmp(next_exp, *expname)) {
 					*expname = (e->type == e_column && e->r) ? (const char*) e->r : next_exp;

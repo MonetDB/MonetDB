@@ -44,14 +44,10 @@
 #include "mapi.h"
 #include "mutils.h"
 
-#ifdef HAVE_OPENSSL
-# include <openssl/rand.h>		/* RAND_bytes() */
-#else
-#ifdef HAVE_COMMONCRYPTO
-# include <CommonCrypto/CommonCrypto.h>
-# include <CommonCrypto/CommonRandom.h>
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
 #endif
-#endif
+
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/select.h>
 # include <sys/socket.h>
@@ -99,6 +95,23 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
 
+#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static inline bool
+gen_win_challenge(char *buf, size_t size)
+{
+	for (size_t i = 0; i < size; ) {
+		unsigned int r;
+		if (rand_s(&r) != 0)
+			return false;
+		for (size_t j = 0; j < sizeof(size_t) && i < size; j++) {
+			buf[i++] = seedChars[(r & 0xFF) % 62];
+			r >>= 8;
+		}
+	}
+	return true;
+}
+#endif
+
 static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t i;
@@ -108,36 +121,31 @@ static void generateChallenge(str buf, int min, int max) {
 	size = (min + max) / 2;
 	for (i = 0; i < size; i++)
 		buf[i] = seedChars[i % 62];
-	buf[size] = 0;
+	buf[size] = '\0';
 #else
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
-#endif
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(&size, sizeof(size)) < 0)
+#elif defined(HAVE_RAND_S)
+	unsigned int r;
+	if (rand_s(&r) == 0)
+		size = (size_t) r;
+	else
 #endif
 		size = rand();
 	size = (size % (max - min)) + min;
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0)
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(buf, size) == 0)
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
 	else
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(buf, size) == kCCSuccess)
+#elif defined(HAVE_RAND_S)
+	if (!gen_win_challenge(buf, size))
+#endif
 		for (i = 0; i < size; i++)
-			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
-	else
-#endif
-#endif
-		for (i = 0; i < size; i++) {
 			buf[i] = seedChars[rand() % 62];
-		}
-	buf[i] = '\0';
+	buf[size] = '\0';
 #endif
 }
 
@@ -627,6 +635,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	SOCKET *psock;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
+	char *usockfilenew = NULL;
 #endif
 	SOCKLEN length = 0;
 	MT_Id pid;
@@ -664,6 +673,9 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		if (msg != MAL_SUCCEED) {
 			return msg;
 		}
+		char sport[10];
+		snprintf(sport, sizeof(sport), "%d", port);
+		GDKsetenv("mapi_port", sport);
 	}
 
 #ifdef HAVE_SYS_UN_H
@@ -705,11 +717,19 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 		userver.sun_family = AF_UNIX;
 		const char *p;
-		if ((p = strstr(usockfile, "${PORT}")) != NULL)
-			snprintf(userver.sun_path, sizeof(userver.sun_path),
-					 "%.*s%d%s", (int) (p - usockfile), usockfile, port<0?0:port, p + 7);
-		else
-			memcpy(userver.sun_path, usockfile, ulen + 1);
+		if ((p = strstr(usockfile, "${PORT}")) != NULL) {
+			usockfilenew = GDKmalloc(ulen + 1);
+			/* note, "${PORT}" is longer than the longest possible decimal
+			 * representation of a port number ("65535") */
+			if (usockfilenew) {
+				snprintf(usockfilenew, ulen + 1,
+						 "%.*s%d%s", (int) (p - usockfile), usockfile,
+						 port < 0 ? 0 : port, p + 7);
+				usockfile = usockfilenew;
+				ulen = strlen(usockfile);
+			}
+		}
+		memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
 		if (MT_remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",
@@ -719,6 +739,8 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
+			if (usockfilenew)
+				GDKfree(usockfilenew);
 			return e;
 		}
 		if (bind(socks[2], (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
@@ -733,10 +755,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
 			(void) MT_remove(usockfile);
-			throw(IO, "mal_mapi.listen",
+			buf = createException(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": binding to UNIX socket file %s failed: %s",
 				  usockfile, err);
+			if (usockfilenew)
+				GDKfree(usockfilenew);
+			return buf;
 		}
 		if (listen(socks[2], maxusers) == SOCKET_ERROR) {
 #ifdef _MSC_VER
@@ -750,11 +775,15 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
 			(void) MT_remove(usockfile);
-			throw(IO, "mal_mapi.listen",
+			buf = createException(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": setting UNIX socket file %s to listen failed: %s",
 				  usockfile, err);
+			if (usockfilenew)
+				GDKfree(usockfilenew);
+			return buf;
 		}
+		GDKsetenv("mapi_usock", usockfile);
 	}
 #endif
 
@@ -800,6 +829,8 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for UNIX domain connection requests on "
 				   "mapi:monetdb://%s\n", usockfile);
 	}
+	if (usockfilenew)
+		GDKfree(usockfilenew);
 #endif
 
 	return MAL_SUCCEED;

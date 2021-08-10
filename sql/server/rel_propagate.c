@@ -644,6 +644,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
+		sql_rel *bt = rel_basetable(sql, sub, sub->base.name);
 
 		if (!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
 			return NULL;
@@ -657,6 +658,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 				if (!c)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
+				rel_base_use(sql, bt, c->colnr);
 				if (!(e = update_check_column(sql, sub, c, e, rel, c->base.name, "UPDATE")))
 					return NULL;
 			}
@@ -671,7 +673,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
 			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
 
-		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, checked_updates);
+		s1 = rel_update(sql, bt, dup, NULL, checked_updates);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
@@ -733,20 +735,9 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			int tpe = tp.type->localtype;
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 			const void *nil = ATOMnilptr(tpe);
+			bool is_min_nil = atomcmp(pt->part.range.minvalue, nil) == 0, is_max_nil = atomcmp(pt->part.range.maxvalue, nil) == 0;
 
-			if (atomcmp(pt->part.range.minvalue, nil) != 0 || atomcmp(pt->part.range.maxvalue, nil) != 0) {
-				sql_exp *e1, *e2;
-				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
-
-				e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue));
-				if (!max_equal_min) {
-					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue));
-					range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
-				} else {
-					range = exp_compare(sql->sa, le, e1, cmp_equal);
-				}
-				full_range = range;
-			} else {
+			if (is_min_nil && is_max_nil) {
 				found_all_range_values |= (pt->with_nills != 1);
 				found_nils |= is_bit_nil(pt->with_nills);
 				if (pt->with_nills == false) { /* full range without nils */
@@ -756,6 +747,17 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 					nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 					full_range = range = nils; /* ugh */
 				}
+			} else if (is_min_nil) {
+				full_range = range = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue)), cmp_lt);
+			} else if (is_max_nil) {
+				full_range = range = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)), cmp_gte);
+			} else {
+				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+
+				full_range = range = max_equal_min ? 
+					exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)), cmp_equal) :
+					exp_compare2(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)),
+											  exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue)), 1, 0);
 			}
 			if (pt->with_nills == true) { /* handle the nulls case */
 				sql_exp *nils = rel_unop_(sql, dup, le, "sys", "isnull", card_value);
@@ -812,6 +814,8 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 
 		new_table = rel_basetable(sql, sub, sub->base.name);
+		rel_base_use_all(query->sql, new_table);
+		new_table = rewrite_basetable(query->sql, new_table);
 		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
 
 		if (isPartitionedByExpressionTable(t)) {

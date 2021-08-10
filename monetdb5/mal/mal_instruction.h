@@ -93,9 +93,6 @@ mal_export char* getVarName(MalBlkPtr mb, int idx);
 #define setVarEolife(M,I,X)	((M)->var[I].eolife = X )
 #define getVarEolife(M,I)	((M)->var[I].eolife)
 
-#define setVarWorker(M,I,S)	((M)->var[I].worker = S)
-#define getVarWorker(M,I)	((M)->var[I].worker)
-
 #define setVarScope(M,I,S)	((M)->var[I].depth = S)
 #define getVarScope(M,I)	((M)->var[I].depth)
 

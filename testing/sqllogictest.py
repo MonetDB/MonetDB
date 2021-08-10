@@ -262,7 +262,7 @@ class SQLLogic:
         else:
             result = ['statement', 'ok']
             if expectok:
-                if expected_rowcount:
+                if expected_rowcount is not None:
                     result.append('rowcount')
                     result.append('{}'.format(affected_rowcount))
                     if expected_rowcount != affected_rowcount:
@@ -611,7 +611,9 @@ class SQLLogic:
             if not line:
                 break
             if line[0] == '#': # skip mal comments
-                break
+                if self.approve:
+                    self.approve.write(line)
+                continue
             conn = None
             # look for connection string
             if line.startswith('@connection'):

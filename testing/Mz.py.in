@@ -13,6 +13,7 @@
 #   which OUT/ERR differ or not and which tests were skipped.
 #   dump HTML-stuff only at end
 #   print an ascii summary at end, too
+# - use sorting in .explain.functions_histogram
 # - if no diffs, but warnings, say so at end
 # - produce, keep & reference LOG
 # - add a "grep-like" function and replace "inlined" grep
@@ -54,6 +55,8 @@ start_time = time.time()
 
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
+
+mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
 
 # default is no color (these three functions may get redefined)
 def prred(str, write = sys.stdout.write):
@@ -383,9 +386,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'BITS32'               : "@BITS32_FALSE@",
-    'BITS64'               : "@BITS64_FALSE@",
-    'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
@@ -398,37 +398,36 @@ CONDITIONALS = {
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
-    'HAVE_PYMONETDB'       : "True",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
-    'KNOWNFAIL'            : "", # skip on release branch when not in testweb
-    'HAVE_MONETDBJDBC_JAR' : "",
-    'HAVE_JAVA'            : "",
-    'HAVE_JAVAJDBC'        : "",
-    'HAVE_JAVAMEROCONTROL' : "",
-    'HAVE_JDBCCLIENT_JAR'  : "",
-    'HAVE_JDBCTESTS_JAR'   : "",
-    'HAVE_JDBCTESTS_DIR'   : "",
-    'HAVE_JDBCTESTS'       : "",
-#    'HAVE_LIBPANDAS3'      : "",
-    'HAVE_LIBSCIPY3'       : "",
-    'HAVE_PERL'            : "",
-    'HAVE_PHP'             : "",
-    'HAVE_PYTHON_LZ4'      : "", # module lz4 is available
-    'HAVE_RUBY'            : "",
-    'HAVE_DATA_PATH'       : "",
-    'MERCURIAL'            : "",
-    'RELEASERUN'           : "",
-    'BAD_HOSTNAME'         : "",
-    'HAVE_IPV6'            : "",
-    'HAVE_MONETDBE'        : "",
+    'KNOWNFAIL'            : False, # skip on release branch when not in testweb
+    'HAVE_MONETDBJDBC_JAR' : False,
+    'HAVE_JAVA'            : False,
+    'HAVE_JAVAJDBC'        : False,
+    'HAVE_JAVAMEROCONTROL' : False,
+    'HAVE_JDBCCLIENT_JAR'  : False,
+    'HAVE_JDBCTESTS_JAR'   : False,
+    'HAVE_JDBCTESTS_DIR'   : False,
+    'HAVE_JDBCTESTS'       : False,
+#    'HAVE_LIBPANDAS3'      : False,
+    'HAVE_LIBSCIPY3'       : False,
+    'HAVE_PERL'            : False,
+    'HAVE_PHP'             : False,
+    'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
+    'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
+    'HAVE_RUBY'            : False,
+    'HAVE_DATA_PATH'       : False,
+    'MERCURIAL'            : False,
+    'RELEASERUN'           : False,
+    'BAD_HOSTNAME'         : False,
+    'HAVE_IPV6'            : False,
+    'NOWAL'                : False,
 }
 
 
@@ -437,16 +436,22 @@ class Timer:
     # timeout of 0 as no timeout
     def __init__(self, interval, function, args):
         self.timer = None
-        if interval > 0:
-            self.timer = threading.Timer(interval, function, args = args)
+        self.function = function
+        self.args = args
+        self.interval = interval
+
+    def settimeout(self, interval):
+        self.interval = interval
 
     def start(self):
-        if self.timer is not None:
+        if self.timer is None and self.interval > 0:
+            self.timer = threading.Timer(self.interval, self.function, args=self.args)
             self.timer.start()
 
     def cancel(self):
         if self.timer is not None:
             self.timer.cancel()
+            self.timer = None
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
@@ -572,6 +577,8 @@ def PerformDir(env, testdir) :
             if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
                 try:
                     shutil.rmtree(LogDBdir)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     return td, FdErr
@@ -590,12 +597,14 @@ def PerformDir(env, testdir) :
                     return td, FdErr
                 try:
                     z.extractall(LogDBdir)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     return td, FdErr
                 z.close()
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
@@ -623,6 +632,8 @@ def PerformDir(env, testdir) :
                             options=options)
                     os.chdir(TSTTRGDIR)
                     pSrvr.LaunchIt()
+                    os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
+                    SetExecEnv(env['exe'],pSrvr.port,verbose)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
@@ -673,6 +684,8 @@ def PerformDir(env, testdir) :
         if testweb:
             try:
                 os.removedirs(TSTTRGDIR)
+            except KeyboardInterrupt:
+                raise
             except:
                 pass
         env['passed'] = int(env.get('passed', 0)) + len(oktests)
@@ -839,13 +852,14 @@ def GetBitsAndModsAndThreads(env) :
     except OSError:
         pass
     cmd.append('--dbpath=%s' % dbpath)
+    os.environ['TSTDB'] = TSTPREF
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:memory:')
+        cmd.append('--dbextra=in-memory')
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
@@ -865,7 +879,9 @@ def GetBitsAndModsAndThreads(env) :
                     break
                 time.sleep(0.001)
             if proc.returncode is None:
-                cmd = splitcommand(env['exe']['MAL_Client'][1])
+                connurl = open(os.path.join(dbpath, '.conn')).read()
+                res = mapiportre.search(connurl)
+                cmd = splitcommand(env['exe']['MAL_Client'][1].replace('${PORT}', res.group('port')))
                 if procdebug:
                     print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
                 with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -1033,7 +1049,6 @@ def RunTest(env, test, oktests, pSrvr):
     nomito = test.get('nomito', False)
     user = None
     passwd = None
-    BUSY_PORTS = env.get('BUSY_PORTS', [])
     test_counter = env.get('test_counter', 1)
 
     # print progress
@@ -1106,8 +1121,6 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
-    elif CALL == "python"  and  not env['exe']['python'][0]:
-        reason = "as python is not available."
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
     elif MissingMods:
@@ -1116,8 +1129,6 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
     elif CALL == "sqlXp":
         reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
-    elif SERVER in ["MAL", "SQL"] and "MAPI" in BUSY_PORTS:
-        reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
         #test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
@@ -1144,15 +1155,6 @@ def RunTest(env, test, oktests, pSrvr):
                         except IOError as err:
                             ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
                                    % (os.path.join(dir_, f), f, os.getcwd(), err.errno, err.strerror))
-        # Check for available sockets and block them until we're ready to run the actual test
-        if pSrvr is None:
-            MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
-            if MAPIsockets is None:
-                reason = 'as ' + reason
-                return TX,F_SKIP,reason,links
-        else:
-            MAPIsockets = None
-
         if test.get('is_input', False) and not os.path.isfile(TST+EXT):
             with openutf8(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
                 with openutf8(test.get('test_path') + test.get('tail'), 'r') as f:
@@ -1169,7 +1171,7 @@ def RunTest(env, test, oktests, pSrvr):
         TestErrFile = TST+".test.err"
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, nomito, threads, user, passwd, COND, pSrvr)
         exit_code = transform_str_return_code(tres)
 
         if CALL == 'other':
@@ -1205,123 +1207,7 @@ def RunTest(env, test, oktests, pSrvr):
 
     env['test_counter'] = test_counter + 1
     return TX, exit_code, reason, links
-### RunTest(env, TST, BUSY_PORTS, COND, oktests) #
-
-def CheckPort(port) :
-    # Since 'localhost' and $HOST (i.e., `hostname`) are usually
-    # different interfaces, we check both, unless $HOST (`hostname`)
-    # appears to be merely an alias for 'localhost'.  That is, if the
-    # hostname works, we prefer it over localhost, but don't require it,
-    # such as e.g. on interwebless laptops.
-    busy = 0
-    Serrno = 0
-    Serrstr = ""
-    S0 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    S1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    S0.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    S1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    host = os.environ['HOST']
-    try:
-        S1.bind((host,port))
-    except socket.error as err:
-        Serrno = err.errno
-        Serrstr = err.strerror
-        S1.close();
-        host = 'localhost'
-        try:
-            S0.bind((host,port))
-        except socket.error as err:
-            Serrno = err.errno
-            Serrstr = err.strerror
-            S0.close()
-            busy = 1
-
-    return busy, host, Serrno, Serrstr, (S0, S1)
-### CheckPort(port) #
-
-def randomPort(l,h) :
-    repeat = randomPortRepeat
-    port = 0
-    rpt = 0
-    ports = []
-    while rpt < repeat:
-        port = random.randrange(l,h,1)
-        ports.append(port)
-        busy, host, Serrno, Serrstr, S = CheckPort(port)
-        S[0].close()
-        S[1].close()
-        if busy:
-            rpt = rpt + 1
-            port = 0
-        else:
-            break
-    return (port,host)
-### randomPort(l,h) #
-
-def CheckSocket2(env,SERVER) :  #,SrvrErr) :
-    port = int(env[SERVER+'PORT'])
-    newport = port
-    busy, host, Serrno, Serrstr, S = CheckPort(port)
-    if busy:
-        S[0].close()
-        S[1].close()
-        Smsg = """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-""" % (SERVER, host, port, Serrno, Serrstr)
-        newport = eval(dft[SERVER+'PORT'])
-        if newport == 0:
-            S[0].close()
-            S[1].close()
-            Smsg = Smsg + """
-! Socket-Check failed for %sserver on <%s> !
-! Giving up after %d attepts !
-""" % (SERVER, host, randomPortRepeat)
-            return None, Smsg
-
-        env[SERVER+'PORT'] = newport
-        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
-        op = 'port=%d' % port
-        np = 'port=%s' % env[SERVER+'PORT']
-        env['exe']['mserver5']      = env['exe']['mserver5'][0]      , env['exe']['mserver5'][1].replace(op, np)
-        env['exe']['MAL_Client']    = env['exe']['MAL_Client'][0]    , env['exe']['MAL_Client'][1].replace(op, np)
-        env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
-        env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
-        os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
-        os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
-        os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
-        os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
-        Smsg = Smsg + """
-! Using new %sPORT=%s !
-""" % (SERVER, env[SERVER+'PORT'])
-#        STDERR.write(Smsg)
-#        STDERR.flush()
-#        SrvrErr.write(Smsg)
-#        SrvrErr.flush()
-
-    return S, None
-### CheckSocket2(env,SERVER)    #,SrvrErr) #
-
-def CheckSocket3(env,SERVER,ErrFileName) :
-    res = F_OK
-    port = int(env[SERVER+'PORT'])
-    busy, host, Serrno, Serrstr, S = CheckPort(port)
-    S[0].close()
-    S[1].close()
-    if busy:
-        res = F_SOCK
-        Smsg = """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! %sPORT was not properly released by mserver5 !
-""" % (SERVER, host, port, Serrno, Serrstr, SERVER)
-        STDERR.write(Smsg)
-        STDERR.flush()
-        ErrFile = openutf8(ErrFileName, 'a')
-        ErrFile.write(Smsg)
-        ErrFile.flush()
-        ErrFile.close()
-    return res
-### CheckSocket3(env,SERVER,ErrFileName) #
+### RunTest(env, TST, COND, oktests) #
 
 def prompt() :
     return time.strftime('%H:%M:%S> ',time.localtime(time.time()))
@@ -1450,6 +1336,8 @@ def killProc(proc, outfile = None, cmd = None):
                 out, err = p.communicate()
             if t is not None:
                 t.cancel()
+        except KeyboardInterrupt:
+            raise
         except:
             out = ''
     if outfile is not None and out:
@@ -1477,7 +1365,7 @@ def killProc(proc, outfile = None, cmd = None):
         killchildren(proc.pid)
 
 class ServerClass:
-    def __init__(self, cmd, outfile, errfile, timeout, pollfile, port):
+    def __init__(self, cmd, outfile, errfile, timeout, pollfile):
         self.proc = None
         self.timer = None
         self.outfile = outfile
@@ -1487,7 +1375,6 @@ class ServerClass:
         self.cmd = cmd
         self.timeout = timeout
         self.pollfile = pollfile
-        self.port = port
 
     def poll(self):
         return self.proc.poll()
@@ -1509,9 +1396,7 @@ class ServerClass:
     def LaunchIt(self):
         global setpgrp
 
-        self.outfile.write(Prompt(self.cmd))
         self.outfile.flush()
-        self.errfile.write(Prompt(self.cmd))
         self.errfile.flush()
 
         if procdebug:
@@ -1522,6 +1407,8 @@ class ServerClass:
                 os.unlink(self.pollfile)
             except OSError:
                 pass
+        else:
+            self.outfile = process.PIPE
         if os.name == "nt":
             proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
                                  stderr=self.errfile, text=True,
@@ -1537,11 +1424,12 @@ class ServerClass:
         proc.killed = False
         proc.onechild = True
         t = Timer(self.timeout, killProc, args = [proc, self.errfile, self.cmd])
-        t.start()
+        if self.timeout > 0:
+            t.start()
         self.proc = proc
         self.timer = t
 
-        port = self.port
+        port = None
         if self.pollfile:
             while True:
                 proc.poll()
@@ -1553,19 +1441,20 @@ class ServerClass:
                 if os.path.exists(self.pollfile):
                     break
                 time.sleep(0.001)
-        elif port is not None:
-            while True:
-                proc.poll()
-                if proc.returncode is not None:
-                    # exited
-                    proc.wait()
-                    t.cancel()
-                    return
-                if mapi_ping(port):
+            connurl = open(os.path.join(os.path.split(self.pollfile)[0], '.conn')).read()
+            res = mapiportre.search(connurl)
+            port = res.group('port')
+        else:
+             while True:
+                line = proc.stdout.readline()
+                if not line:
                     break
-                time.sleep(0.1)
-            port = None         # don't try again
-        if port is not None and not mapi_ping(port):
+                if 'MonetDB/SQL module loaded' in line:
+                    break
+                res = mapiportre.search(line)
+                if res is not None:
+                    port = res.group('port')
+        if port is not None and not mapi_ping(int(port)):
             # check whether we can connect
             if os.name == "nt":
                 proc.send_signal(signal.CTRL_BREAK_EVENT)
@@ -1575,11 +1464,11 @@ class ServerClass:
             t.cancel()
             return
         self.started = True
-#ServerClass(cmd, outfile, errfile, timeout, pollfile, port)
+        self.port = port
+#ServerClass(cmd, outfile, errfile, timeout, pollfile)
 
 
 def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, options=[]):
-    port = int(env.get('MAPIPORT', randomPort(30000, 39999)))
     pollfile = os.path.join(dbpath, '.started')
     outfile = openutf8(outfile, 'a') if outfile else sys.stdout
     errfile = openutf8(errfile, 'a') if errfile else sys.stderr
@@ -1591,13 +1480,12 @@ def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, optio
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:memory:')
+        cmd.append('--dbextra=in-memory')
     return ServerClass(cmd,
                 outfile,
                 errfile,
                 timeout,
-                pollfile,
-                port)
+                pollfile)
 
 
 def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
@@ -1660,15 +1548,10 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, PSRVR) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, nomito, threads, user, passwd, COND, PSRVR) :
 
     TSTDB = env['TSTDB']
     exe = env['exe']
-
-    if MAPIsockets is not None:
-        # Release reserved sockets and run the actual test
-        MAPIsockets[0].close()
-        MAPIsockets[1].close()
 
     SrvrOutFile = TST+".server.out"
     SrvrErrFile = TST+".server.err"
@@ -1704,7 +1587,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             elif env.get('TRANS_INMEM'):
-                Srvr.append('--dbextra=:memory:')
+                Srvr.append('--dbextra=in-memory')
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -1754,9 +1637,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                                   ignore_errors = True)
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
-                    Srvr.append('--dbextra=:memory:')
-                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
+                    Srvr.append('--dbextra=in-memory')
+                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
+                os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
+                SetExecEnv(exe,pSrvr.port,verbose)
+            else:
+                PSRVR.timer.settimeout(TIMEOUT)
+                PSRVR.timer.start()
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -1776,7 +1664,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
-                cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST]
+                cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 TSTs = []
@@ -1792,7 +1680,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                         TSTs.append(f)
 
                 if CALL.startswith("mal"):
-                    Clnt = splitcommand(exe['MAL_Client'][1])
+                    Clnt = splitcommand(exe['MAL_Client'][1].replace('${PORT}', env['MAPIPORT']))
                 else:
                     Clnt = []   # cannot happen
                 for f in TSTs:
@@ -1815,12 +1703,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                                     database=TSTDB,
                                     language=lang,
                                     timeout=TIMEOUT)
+                    except KeyboardInterrupt:
+                        raise
                     except:
                         returncode = 'error'
                     else:
                         if not os.path.exists(TST+'.reqtests'):
                             try:
                                 sql.drop()
+                            except KeyboardInterrupt:
+                                raise
                             except:
                                 pass
                         try:
@@ -1843,7 +1735,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                     if test.match(f):
                         TSTs.append(f)
 
-                Clnt = splitcommand(exe['SQL_Client'][1])
+                Clnt = splitcommand(exe['SQL_Client'][1].replace('${PORT}', env['MAPIPORT']))
                 if user:
                     Clnt.append('-u%s' % user)
                 if passwd:
@@ -1853,10 +1745,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
                     if returncode:
                         break
             elif CALL == "R":
-                Clnt = splitcommand(exe['R_Client'][1])
+                Clnt = splitcommand(exe['R_Client'][1].replace('${PORT}', env['MAPIPORT']))
                 RunIt(Clnt, False, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
             elif CALL == "ruby":
-                Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
+                Clnt = splitcommand(exe['ruby_client'][1].replace('${PORT}', env['MAPIPORT'])) + [TST + EXT]
 
                 Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
                 Clnt.append(env['TSTDB'])
@@ -1956,7 +1848,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsoc
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, MAPIsockets, length, nomito) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, length, nomito) #
 
 def Check(command, input) :
     global setpgrp
@@ -2035,14 +1927,14 @@ def CheckClassPath() :
                     continue
                 for C in JARS:
                     if JARS[C].match(f):
-                        CONDITIONALS[C] = '#'
+                        CONDITIONALS[C] = True
                         cp = os.path.join(p, f) + os.pathsep + cp
                         break
         elif os.path.isfile(p):
             f = os.path.basename(p)
             for C in JARS:
                 if JARS[C].match(f):
-                    CONDITIONALS[C] = '#'
+                    CONDITIONALS[C] = True
                     break
     # check for known JARs in CLASSPATH directories
     # + fall-back using pkgdatadir/lib
@@ -2056,14 +1948,14 @@ def CheckClassPath() :
                         C = 'HAVE_JDBCTESTS_DIR'
                         if not CONDITIONALS.get(C):
                             cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = '#'
+                            CONDITIONALS[C] = True
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
                         if C not in JARS:
                             C = 'HAVE_MONETDBJDBC_JAR'
                         if not CONDITIONALS.get(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = '#'
+                            CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
     if verbose:
@@ -2077,10 +1969,10 @@ def CheckClassPath() :
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
        ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
          CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
-        CONDITIONALS['HAVE_JDBCTESTS'] = '#'
+        CONDITIONALS['HAVE_JDBCTESTS'] = True
 ### CheckClassPath() #
 
-def SetExecEnv(exe,verbose) :
+def SetExecEnv(exe,port,verbose) :
     if os.name == "nt":
         CALL = "call "
     else:
@@ -2093,14 +1985,14 @@ def SetExecEnv(exe,verbose) :
         else:
             V = v.upper()
         if exe[v][0]:
-            os.environ[V] = CALL+exe[v][1]
+            os.environ[V] = CALL+exe[v][1].replace('${PORT}', port)
         else:
             os.environ[V] = ""
         if verbose:
-            print("%s = %s : %s" % (V, exe[v][0], exe[v][1]))
+            print("%s = %s : %s" % (V, exe[v][0], exe[v][1].replace('${PORT}', port)))
     if verbose:
         STDOUT.flush()
-### SetExecEnv(exe,procdebug) #
+### SetExecEnv(exe,port,procdebug) #
 
 
 #############################################################################
@@ -2138,9 +2030,6 @@ if 'DOMAIN' in os.environ:
 else:
     HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
-# check the host port actually works
-_, HOST = randomPort(30000,39999)
-os.environ['HOST'] = HOST
 os.environ['MAPIHOST'] = HOST
 
 if os.name == "nt":
@@ -2168,12 +2057,6 @@ else:
         MAJOR = RELEASE.split(".", 1)[0]
         if "A" <= MAJOR and MAJOR <= "Z":
             RELEASE = RELEASE.split(".", 1)[1]
-
-# this is for the wine/mingw setup
-if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    SYST = 'Windows'
-    HOST = "WINE"
-    RELEASE = "5.2"
 
 # see if we can use UNIX sockets
 try:
@@ -2277,6 +2160,17 @@ os.environ['VERSION'] = VERSION
 par = {}
 dft = {}
 
+class OrAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        super(OrAction, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        # if first time, override (default) value, otherwise bitwise OR values
+        if '__seen_option_' + self.dest in namespace:
+            setattr(namespace, self.dest, getattr(namespace, self.dest) | values)
+        else:
+            setattr(namespace, self.dest, values)
+        setattr(namespace, '__seen_option_' + self.dest, True)
+
 def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
@@ -2294,7 +2188,6 @@ def main(argv) :
     dft['GDK_NR_THREADS'] = "TSTTHREADS"
     dft['MONETDB_MOD_PATH'] = "''"
     dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
-    dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
     dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
     dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
     dft['SQLDUMP']        = "'msqldump -q'"
@@ -2343,7 +2236,7 @@ def main(argv) :
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
-    parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
+    parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
     parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
     parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
@@ -2361,7 +2254,6 @@ def main(argv) :
     parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
     parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
     parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
-    parser.add_argument('--jenkins', action='store_true', dest='jenkins', help='special handling for Jenkins')
     parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
     parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
     parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
@@ -2387,7 +2279,6 @@ def main(argv) :
     global approve
     approve = opts.approve
     nomito = False
-    jenkins = False
     addreqs = False
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
@@ -2412,6 +2303,8 @@ def main(argv) :
     a = opts.mserver_set
     if a is not None:
         env['MSERVER_SET'] = "--set " + a
+        if a == 'sql_debug=128':
+            CONDITIONALS['NOWAL'] = True
     else:
         env['MSERVER_SET'] = ""
     a = opts.no_clean
@@ -2425,7 +2318,6 @@ def main(argv) :
         env['TRANS_INMEM'] = 'True'
     if opts.multifarm and opts.inmemory:
         ErrXit("Cannot have both --multifarm and --transient-inmemory")
-    jenkins = opts.jenkins
     addreqs = opts.addreqs
     a = opts.global_timeout
     if a:
@@ -2448,15 +2340,7 @@ def main(argv) :
             print("%s = %s" % (v, str(par[v])))
     STDOUT.flush()
 
-    python_version = ''
-    if CheckExec('python'):
-        with process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            pyout, pyerr = proc.communicate()
-        if proc.returncode == 0 and pyout:
-            python_version = pyout.strip()
-            os.environ['PYTHON' + python_version] = 'python'
+    os.environ['PYTHON'] = sys.executable
     try:
         import lz4
     except ImportError:
@@ -2471,22 +2355,22 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDBE'] = True
 
-    if 'PYTHON3' in os.environ:
-        with process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            pyout, pyerr = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
+    try:
+        import scipy
+    except ImportError:
+        CONDITIONALS['HAVE_LIBSCIPY3'] = False
+    else:
+        CONDITIONALS['HAVE_LIBSCIPY3'] = True
+
     if env.get('TSTDATAPATH'):
-        CONDITIONALS['HAVE_DATA_PATH'] = '#'
+        CONDITIONALS['HAVE_DATA_PATH'] = True
     if CheckExec('perl'):
         with process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                            stdout=process.PIPE, stderr=process.PIPE,
                            text=True) as proc:
             perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_PERL'] = '#'
+            CONDITIONALS['HAVE_PERL'] = True
         else:
             print('Perl available, but MonetDB driver or DBI module not available')
     if CheckExec('php'):
@@ -2499,7 +2383,7 @@ def main(argv) :
                            text=True) as proc:
             php_out, php_err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['HAVE_PHP'] = '#'
+            CONDITIONALS['HAVE_PHP'] = True
         else:
             print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
@@ -2518,19 +2402,17 @@ def main(argv) :
                                text=True) as proc:
                 ruby_out, ruby_err = proc.communicate()
             if proc.returncode == 0:
-                CONDITIONALS['HAVE_RUBY'] = '#'
+                CONDITIONALS['HAVE_RUBY'] = True
             else:
                 print('Ruby available, but MonetDB gem not available')
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
-    vars_ = VARS + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
+    vars_ = VARS + ['GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     for v in vars_:
         if v not in env:
             env[v] = eval(dft[v])
 
-    if env['MAPIPORT'] == 0:
-        ErrXit('Cannot find a workable MAPIPORT')
     if env['MONETDB_MOD_PATH']:
         env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
     else:
@@ -2582,30 +2464,32 @@ def main(argv) :
                            text=True) as proc:
             out, err = proc.communicate()
         if proc.returncode == 0:
-            CONDITIONALS['MERCURIAL'] = '#' # True
+            CONDITIONALS['MERCURIAL'] = True
         proc = None
+    except KeyboardInterrupt:
+        raise
     except:
         pass
     os.chdir(BACK)
 
     # check whether our hostname makes sense
     if os.environ['HOST'] == 'localhost':
-        CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+        CONDITIONALS['BAD_HOSTNAME'] = True
     else:
         try:
             socket.getaddrinfo(socket.gethostname(), None)
+        except KeyboardInterrupt:
+            raise
         except:
-            CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+            CONDITIONALS['BAD_HOSTNAME'] = True
 
-    s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     try:
-        s.bind(('::1', int(env['MAPIPORT'])))
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            s.bind(('::1', 0))
     except socket.error as err:
-        CONDITIONALS['HAVE_IPV6'] = '' # False
+        CONDITIONALS['HAVE_IPV6'] = False
     else:
-        CONDITIONALS['HAVE_IPV6'] = '#' # True
-    s.close()
-
+        CONDITIONALS['HAVE_IPV6'] = True
 
     # some relative path's for relocatable HTML output
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
@@ -2657,6 +2541,8 @@ def main(argv) :
             if proc.returncode == 0:
                 REV = out.strip()
             proc = None
+        except KeyboardInterrupt:
+            raise
         except:
             pass
     if REV:
@@ -2668,30 +2554,29 @@ def main(argv) :
         if SOCK:
             # we cannot put the UNIX socket in the mtest root, because that
             # makes the UNIX socket too long on most platforms, so use
-            # /var/tmp/mtest and try not to forget to clean that up
-            sockdir = "/var/tmp/mtest-%d" % os.getpid()
+            # /tmp/mtest and try not to forget to clean that up
+            sockdir = "/tmp/mtest-%d" % os.getpid()
             try:
                 os.mkdir(sockdir);
-                SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
-                        (sockdir, env['MAPIPORT'])
+                SOCK = "--set mapi_usock=%s/.s.monetdb.${PORT}" % sockdir
                 HOST = sockdir
                 os.environ['MAPIHOST'] = HOST
+            except KeyboardInterrupt:
+                raise
             except:
                 SOCK = ""
         else:
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
-                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
-        exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
-        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
-        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
+        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s %s' % \
+                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
+        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
+        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, '${PORT}')
+        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], '${PORT}')
         env['exe'] = exe
-        SetExecEnv(exe,verbose)
 
         #TODO:
         #exe['JAVA']       = 'java'
@@ -2700,11 +2585,11 @@ def main(argv) :
 
         # parse commandline arguments
 
-        BUSY_PORTS = []
-
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(TSTTRGBASE, TSTPREF))
+            except KeyboardInterrupt:
+                raise
             except:
                 ErrXit("Failed to remove %s" % os.path.join(TSTTRGBASE, TSTPREF))
         if not os.path.exists(env['GDK_DBFARM']):
@@ -2714,6 +2599,8 @@ def main(argv) :
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF))
+            except KeyboardInterrupt:
+                raise
             except:
                 ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
         try:
@@ -2754,15 +2641,6 @@ def main(argv) :
             print("Modules: " + str(env['TST_MODS']))
         STDOUT.flush()
 
-        port = int(env['MAPIPORT'])
-        busy, host, Serrno, Serrstr, S = CheckPort(port)
-        S[0].close()
-        S[1].close()
-        if busy:
-            Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
-            BUSY_PORTS.append('MAPI')
-
-        env['BUSY_PORTS'] = BUSY_PORTS
         env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']
@@ -2842,6 +2720,8 @@ def main(argv) :
         # cleanup the place where we put our UNIX sockets
         try:
             shutil.rmtree(sockdir)
+        except KeyboardInterrupt:
+            raise
         except:
             pass
 

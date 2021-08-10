@@ -586,11 +586,12 @@ class SQLTestCase():
             hostname='localhost', database=TSTDB, language='sql'):
         if self._conn_ctx:
             self.close()
-        if database == ':memory:':
+        if database == 'in-memory' \
+           or database == ':memory:': # backward compatibility
             import monetdbe
             self.in_memory = True
             # TODO add username, password, port when supported from monetdbe
-            self._conn_ctx = monetdbe.connect(':memory:', autocommit=True)
+            self._conn_ctx = monetdbe.connect('in-memory', autocommit=True)
         else:
             self.in_memory = False
             self._conn_ctx = PyMonetDBConnectionContext(
@@ -598,13 +599,13 @@ class SQLTestCase():
                                  password=password,
                                  hostname=hostname,
                                  port=port,
-                                 database=database,
+                                 database=database or 'in-memory',
                                  language=language)
         return self._conn_ctx
 
     def default_conn_ctx(self):
         if self.in_memory:
-            return  monetdbe.connect(':memory:', autocommit=True)
+            return  monetdbe.connect('in-memory', autocommit=True)
         ctx = PyMonetDBConnectionContext()
         return ctx
 
