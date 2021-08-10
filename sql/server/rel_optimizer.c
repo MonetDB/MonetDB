@@ -9613,8 +9613,8 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 	rel = rel_push_count_down(v, rel);
 	/* only when value_based_opt is on, ie not for dependency resolution */
 	if (v->value_based_opt) {
-		rel = rel_basecount(v, rel);
 		rel = rel_simplify_count(v, rel);
+		rel = rel_basecount(v, rel);
 	}
 	return rel;
 }
