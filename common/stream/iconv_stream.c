@@ -191,7 +191,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	if (inbuf > ic->buffer)
 		memmove(ic->buffer, inbuf, inbytesleft);
 	ic->buflen = inbytesleft;
-	if (outbytesleft == elmsize * cnt) {
+	if (outbytesleft == elmsize * cnt && !s->inner->eof) {
 		/* if we're returning data, we must pass on EOF on the
 		 * next call (i.e. keep ic->eof set), otherwise we
 		 * must clear it so that the next call will cause the

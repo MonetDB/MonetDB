@@ -10,107 +10,107 @@ INSERT INTO mytest VALUES (1234567890987654321, 10000000000, NULL, NULL, NULL)
 query T python .explain.function_histogram
 explain UPDATE mytest SET a = 1234567890987654321
 ----
-user.main
+aggr.count
+1
+algebra.project
 1
 querylog.define
+1
+sql.affectedRows
 1
 sql.mvc
 1
 sql.tid
 1
-algebra.project
-1
 sql.update
 1
-aggr.count
-1
-sql.affectedRows
+user.main
 1
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET b = 10000000000
 ----
-user.main
+aggr.count
+1
+algebra.project
 1
 querylog.define
+1
+sql.affectedRows
 1
 sql.mvc
 1
 sql.tid
 1
-algebra.project
-1
 sql.update
 1
-aggr.count
-1
-sql.affectedRows
+user.main
 1
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET c = a * b
 ----
-user.main
+aggr.count
 1
+algebra.projection
+2
 querylog.define
 1
+sql.affectedRows
+1
+sql.bind
+2
 sql.mvc
 1
 sql.tid
 1
-sql.bind
-2
-algebra.projection
-2
 sql.update
 1
-aggr.count
-1
-sql.affectedRows
+user.main
 1
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET d = c * b
 ----
-user.main
+aggr.count
 1
+algebra.projection
+2
 querylog.define
 1
+sql.affectedRows
+1
+sql.bind
+2
 sql.mvc
 1
 sql.tid
 1
-sql.bind
-2
-algebra.projection
-2
 sql.update
 1
-aggr.count
-1
-sql.affectedRows
+user.main
 1
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET e = d + a
 ----
-user.main
+aggr.count
 1
+algebra.projection
+2
 querylog.define
 1
+sql.affectedRows
+1
+sql.bind
+2
 sql.mvc
 1
 sql.tid
 1
-sql.bind
-2
-algebra.projection
-2
 sql.update
 1
-aggr.count
-1
-sql.affectedRows
+user.main
 1
 
 statement ok
@@ -154,17 +154,17 @@ CREATE TABLE sql_int128 (i HUGEINT)
 query T python .explain.function_histogram
 explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
 ----
-user.main
-1
 querylog.define
 1
-sql.mvc
-1
-sql.claim
+sql.affectedRows
 1
 sql.append
 1
-sql.affectedRows
+sql.claim
+1
+sql.mvc
+1
+user.main
 1
 
 statement ok

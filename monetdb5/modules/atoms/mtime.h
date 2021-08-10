@@ -86,6 +86,7 @@ timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
 		throw(MAL, "mtime.timestamp_sub_month_interval", SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
+
 static inline str
 timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
 {
@@ -138,7 +139,7 @@ date_addmonths(date *ret, date d, int m)
 #define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
 
 static inline lng
-tsdiff(timestamp t1, timestamp t2)
+TSDIFF(timestamp t1, timestamp t2)
 {
 	lng diff = timestamp_diff(t1, t2);
 	if (!is_lng_nil(diff)) {

@@ -114,7 +114,7 @@ Run as Administrator::
   vcpkg integrate install
   # needed for 64 bits (with the available python being 64 bit this is needed)
   set VCPKG_DEFAULT_TRIPLET=x64-windows
-  vcpkg install libiconv openssl bzip2 geos libxml2 pcre pcre2 zlib getopt
+  vcpkg install libiconv bzip2 geos libxml2 pcre pcre2 zlib getopt
 
 To compile MonetDB (as normal user)::
 
@@ -144,7 +144,6 @@ Using homebrew install at least current ::
   cmake
   pkg-config
   pcre
-  openssl
   bison
 
 optional::
@@ -162,7 +161,7 @@ To compile MonetDB (as normal user)::
   cd MonetDB
   mkdir build
   cd build
-  PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig/ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/install -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ..
+  PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig/ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/install ..
   cmake --build .
   cmake --build . --target install
   cmake --build . --target test

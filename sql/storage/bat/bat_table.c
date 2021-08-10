@@ -32,36 +32,37 @@ full_column(sql_trans *tr, sql_column *c)
 	 * 	b := b.copy()
 		b := b.replace(u);
 	*/
-	BAT *b, *ui, *uv;
-	sql_delta *bat = col_timestamp_delta(tr, c);
+	sqlstore *store = tr->store;
+	BAT *b = store->storage_api.bind_col(tr, c, RDONLY);
+	BAT *ui = store->storage_api.bind_col(tr, c, RD_UPD_ID);
 
-	b = temp_descriptor(bat->cs.bid);
-	if (b && bat->cs.uibid && bat->cs.ucnt) {
-		ui = temp_descriptor(bat->cs.uibid);
-		uv = temp_descriptor(bat->cs.uvbid);
-		if (ui && BATcount(ui)) {
-			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT);
-
-			bat_destroy(b);
-			b = r;
-	    	if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
-				if (b) BBPunfix(b->batCacheid);
-				if (ui) BBPunfix(ui->batCacheid);
-				if (uv) BBPunfix(uv->batCacheid);
-				return NULL;
-			}
-		}
+	if (!b || !ui) {
+		bat_destroy(b);
 		bat_destroy(ui);
+		return NULL;
+	}
+	if (BATcount(ui)) {
+		BAT *uv = store->storage_api.bind_col(tr, c, RD_UPD_VAL), *r;
+
+		if (!uv) {
+			bat_destroy(b);
+			bat_destroy(ui);
+			return NULL;
+		}
+
+		r = COLcopy(b, b->ttype, true, TRANSIENT);
+		bat_destroy(b);
+		b = r;
+		if (!b || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
+			bat_destroy(b);
+			bat_destroy(ui);
+			bat_destroy(uv);
+			return NULL;
+		}
 		bat_destroy(uv);
 	}
+	bat_destroy(ui);
 	return b;
-}
-
-static void
-full_destroy(sql_column *c, BAT *b)
-{
-	(void)c;
-	bat_destroy(b);
 }
 
 static oid
@@ -83,7 +84,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	}
 	r = BATselect(b, s, value, NULL, true, false, false);
 	bat_destroy(s);
-	full_destroy(c, b);
+	bat_destroy(b);
 	if (!r)
 		goto return_nil;
 	s = r;
@@ -98,7 +99,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		}
 		r = BATselect(b, s, value, NULL, true, false, false);
 		bat_destroy(s);
-		full_destroy(c, b);
+		bat_destroy(b);
 		if (!r)
 			goto return_nil;
 		s = r;
@@ -138,8 +139,9 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 		res = GDKmalloc(sz);
 		if (res)
 			memcpy(res, r, sz);
+		bat_iterator_end(&bi);
 	}
-	full_destroy(c, b);
+	bat_destroy(b);
 	return res;
 }
 
@@ -161,14 +163,14 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 	if (q != BUN_NONE) { \
 		BATiter bi = bat_iterator(b); \
 		res = *(TPE*)BUNtail(bi, q); \
+		bat_iterator_end(&bi); \
 	} \
-	full_destroy(c, b); \
+	bat_destroy(b); \
 	return res; \
 }
 
 column_find_tpe(sqlid)
 column_find_tpe(bte)
-column_find_tpe(sht)
 column_find_tpe(int)
 column_find_tpe(lng)
 
@@ -189,6 +191,7 @@ column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(*b);
 		res = (str) BUNtvar(bi, q);
+		bat_iterator_end(&bi);
 	}
 	return res;
 }
@@ -197,7 +200,7 @@ static void
 column_find_string_end(ptr cbat)
 {
 	BAT *b = (BAT*) cbat;
-	full_destroy(NULL, b);
+	bat_destroy(b);
 }
 
 static int
@@ -218,15 +221,20 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	void *val = NULL;
 	int cnt = 0;
 	int ok = LOG_OK;
+	BUN offset = 0;
 
 	va_start(va, t);
-	size_t offset = store->storage_api.claim_tab(tr, t, 1);
+	ok = t->bootstrap?
+		store->storage_api.claim_tab(tr, t, 1, &offset, NULL):
+		store->storage_api.key_claim_tab(tr, t, 1, &offset, NULL);
+	if (ok != LOG_OK)
+		return ok;
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype, 1);
+		ok = store->storage_api.append_col(tr, c, offset, NULL, val, 1, c->type.type->localtype);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -252,13 +260,194 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
 }
 
+static res_table *
+table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_column *jl2, sql_column *jr2, sql_column *o, ...)
+{
+	/* jl/jr are columns on which we first join */
+	/* if also jl2,jr2, we need to do another join, where both tables differ from 't' */
+
+	va_list va;
+	BAT *b = NULL, *r = NULL, *cl, *cr = NULL, *cr2 = NULL, *id = NULL, *grp = NULL;
+	/* if pointers are equal, make it an inclusive select */
+
+	cl = delta_cands(tr, t);
+	if (cl == NULL)
+		return NULL;
+
+	if (jl && jr) {
+		BAT *lcb, *rcb, *r = NULL, *l = NULL;
+		gdk_return ret;
+
+		cr = delta_cands(tr, jr->t);
+		lcb = full_column(tr, jl);
+		rcb = full_column(tr, jr);
+		if (!cr || !lcb || !rcb) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(lcb);
+			bat_destroy(rcb);
+			return NULL;
+		}
+
+		ret = BATjoin(&l, &r, lcb, rcb, cl, cr, false, BATcount(lcb));
+		bat_destroy(cl);
+		bat_destroy(cr);
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		if (ret != GDK_SUCCEED)
+			return NULL;
+		cl = l;
+		cr = r;
+	}
+	/* we assume 1->n joins, therefore first join between jl2/jr2 */
+	if (jl2 && jr2) {
+		assert(jr->t == jl2->t);
+		BAT *lcb, *rcb, *r = NULL, *l = NULL;
+		gdk_return ret;
+
+		cr2 = delta_cands(tr, jr2->t);
+		lcb = full_column(tr, jl2);
+		rcb = full_column(tr, jr2);
+		if (!cr2 || !lcb || !rcb) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			bat_destroy(lcb);
+			bat_destroy(rcb);
+			return NULL;
+		}
+
+		l = BATproject(cr, lcb); /* project because cr is join result */
+		bat_destroy(lcb);
+		lcb = l;
+		ret = BATjoin(&l, &r, lcb, rcb, NULL, cr2, false, BATcount(lcb));
+		bat_destroy(cr2);
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		if (ret != GDK_SUCCEED) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			return NULL;
+		}
+		lcb = BATproject(l, cl);
+		rcb = BATproject(l, cr);
+		bat_destroy(l);
+		bat_destroy(cl);
+		bat_destroy(cr);
+		if (!lcb || !rcb) {
+			bat_destroy(lcb);
+			bat_destroy(rcb);
+			bat_destroy(r);
+			return NULL;
+		}
+		cl = lcb;
+		cr = rcb;
+		cr2 = r;
+	}
+
+	va_start(va, o);
+	do {
+		BAT *nid = NULL, *ngrp = NULL;
+		sql_column *next = va_arg(va, sql_column *);
+
+		b = full_column(tr, o);
+		if (b)
+			r = BATproject( (o->t==t) ? cl : (cr2 && o->t==jr2->t) ? cr2 : cr, b);
+		bat_destroy(b);
+		if (!b || !r) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			va_end(va);
+			return NULL;
+		}
+		/* (sub)order b */
+		if (BATsort(NULL, &nid, next?&ngrp:NULL, r, id, grp, false, false, false) != GDK_SUCCEED) {
+			bat_destroy(r);
+			bat_destroy(id);
+			bat_destroy(grp);
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			va_end(va);
+			return NULL;
+		}
+		bat_destroy(r);
+		bat_destroy(id);
+		bat_destroy(grp);
+		id = nid;
+		grp = ngrp;
+		o = next;
+	} while (o);
+	bat_destroy(grp);
+	va_end(va);
+
+	r = BATproject(id, cl);
+	bat_destroy(id);
+	bat_destroy(cl);
+	bat_destroy(cr);
+	bat_destroy(cr2);
+	cl = r;
+	/* project all in the new order */
+	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL, NULL);
+	if (!rt) {
+		bat_destroy(cl);
+		return NULL;
+	}
+	rt->nr_rows = BATcount(cl);
+	for (node *n = ol_first_node(t->columns); n; n = n->next) {
+		BAT *rc = NULL;
+
+		o = n->data;
+		b = full_column(tr, o);
+		if (b)
+			rc = BATproject(cl, b);
+		bat_destroy(b);
+		if (!b || !rc) {
+			bat_destroy(cl);
+			bat_destroy(b);
+			res_table_destroy(rt);
+			return NULL;
+		}
+		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, rc, true)) {
+			bat_destroy(cl);
+			res_table_destroy(rt);
+			return NULL;
+		}
+	}
+	bat_destroy(cl);
+	return rt;
+}
+
+static void *
+table_fetch_value(res_table *rt, sql_column *c)
+{
+	/* this function is only ever called during startup, and therefore
+	 * there are no other threads that may be modifying the BAT under
+	 * our hands, so returning a pointer into the heap is fine */
+	BAT *b = (BAT*)rt->cols[c->colnr].p;
+	BATiter bi = bat_iterator_nolock(b);
+	assert(b->ttype && b->ttype != TYPE_msk);
+	if (b->tvarsized)
+		return BUNtvar(bi, rt->cur_row);
+	return Tloc(b, rt->cur_row);
+	//return (void*)BUNtail(bi, rt->cur_row);
+}
+
+static void
+table_result_destroy(res_table *rt)
+{
+	if (rt)
+		res_table_destroy(rt);
+}
+
 /* returns table rids, for the given select ranges */
 static rids *
 rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...)
 {
 	va_list va;
 	BAT *b = NULL, *r = NULL, *s = NULL;
-	rids *rs = ZNEW(rids);
+	rids *rs = MNEW(rids);
 	const void *kvl = key_value_low, *kvh = key_value_high;
 	/* if pointers are equal, make it an inclusive select */
 	bool hi = key_value_low == key_value_high;
@@ -286,7 +475,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 		bat_destroy(s);
 		s = r;
 	}
-	full_destroy(key, b);
+	bat_destroy(b);
 	if (s == NULL) {
 		GDKfree(rs);
 		return NULL;
@@ -298,6 +487,12 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			kvh = va_arg(va, void *);
 
 			b = full_column(tr, key);
+			if (b == NULL) {
+				bat_destroy(s);
+				GDKfree(rs);
+				va_end(va);
+				return NULL;
+			}
 			if (!kvl)
 				kvl = ATOMnilptr(b->ttype);
 			if (!kvh && kvl != ATOMnilptr(b->ttype))
@@ -306,7 +501,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			r = BATselect(b, s, kvl, kvh, true, hi, false);
 			bat_destroy(s);
 			s = r;
-			full_destroy(key, b);
+			bat_destroy(b);
 			if (s == NULL) {
 				GDKfree(rs);
 				va_end(va);
@@ -315,8 +510,9 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 		}
 		va_end(va);
 	}
-	rs->data = s;
-	rs->cur = 0;
+	*rs = (rids) {
+		.data = s,
+	};
 	return rs;
 }
 
@@ -327,8 +523,10 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	BAT *b, *s, *o;
 
 	b = full_column(tr, orderby_col);
+	if (!b)
+		return NULL;
 	s = BATproject(r->data, b);
-	full_destroy(orderby_col, b);
+	bat_destroy(b);
 	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;
@@ -382,21 +580,27 @@ rids_empty(rids *r )
 static rids *
 rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 {
-	BAT *lcb, *rcb, *s = NULL, *d = NULL;
+	BAT *lcb, *rcb, *s = NULL;
 	gdk_return ret;
 
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
-	ret = BATjoin(&s, &d, lcb, rcb, l->data, r->data, false, BATcount(lcb));
+	if (!lcb || !rcb) {
+		bat_destroy(l->data);
+		l->data = NULL;
+		bat_destroy(lcb);
+		bat_destroy(rcb);
+		return NULL;
+	}
+	ret = BATjoin(&s, NULL, lcb, rcb, l->data, r->data, false, BATcount(lcb));
 	bat_destroy(l->data);
-	bat_destroy(d);
 	if (ret != GDK_SUCCEED) {
 		l->data = NULL;
 	} else {
 		l->data = s;
 	}
-	full_destroy(lc, lcb);
-	full_destroy(rc, rcb);
+	bat_destroy(lcb);
+	bat_destroy(rcb);
 	return l;
 }
 
@@ -405,32 +609,29 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 {
 	/* join t1.rc with lc order by obc */
 	subrids *r;
-	BAT *lcb, *rcb, *s, *obb, *d = NULL, *o, *g, *ids, *rids = NULL;
+	BAT *lcb, *rcb, *s, *obb, *o, *g, *ids, *rids = NULL;
 	gdk_return ret;
 
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
 	s = delta_cands(tr, lc->t);
 	if (lcb == NULL || rcb == NULL || s == NULL) {
-		if (lcb)
-			full_destroy(rc, lcb);
-		if (rcb)
-			full_destroy(rc, rcb);
+		bat_destroy(lcb);
+		bat_destroy(rcb);
 		bat_destroy(s);
 		return NULL;
 	}
 
-	ret = BATjoin(&rids, &d, lcb, rcb, s, t1->data, false, BATcount(lcb));
+	ret = BATjoin(&rids, NULL, lcb, rcb, s, t1->data, false, BATcount(lcb));
 	bat_destroy(s);
-	full_destroy(rc, rcb);
+	bat_destroy(rcb);
 	if (ret != GDK_SUCCEED) {
-		full_destroy(rc, lcb);
+		bat_destroy(lcb);
 		return NULL;
 	}
-	bat_destroy(d);
 
 	s = BATproject(rids, lcb);
-	full_destroy(lc, lcb);
+	bat_destroy(lcb);
 	if (s == NULL) {
 		bat_destroy(rids);
 		return NULL;
@@ -443,7 +644,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 		return NULL;
 	}
 	s = BATproject(rids, obb);
-	full_destroy(obc, obb);
+	bat_destroy(obb);
 	if (s == NULL) {
 		bat_destroy(lcb);
 		bat_destroy(rids);
@@ -482,16 +683,16 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	rids = o;
 
 	assert(ids->ttype == TYPE_int && ATOMtype(rids->ttype) == TYPE_oid);
-	r = ZNEW(subrids);
+	r = MNEW(subrids);
 	if (r == NULL) {
 		bat_destroy(ids);
 		bat_destroy(rids);
 		return NULL;
 	}
-	r->id = 0;
-	r->pos = 0;
-	r->ids = ids;
-	r->rids = rids;
+	*r = (subrids) {
+		.ids = ids,
+		.rids = rids,
+	};
 	return r;
 }
 
@@ -501,6 +702,7 @@ subrids_next(subrids *r)
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
 		sqlid id = *(sqlid*)BUNtloc(ii, r->pos);
+		bat_iterator_end(&ii);
 		if (id == r->id)
 			return BUNtoid((BAT *) r->rids, r->pos++);
 	}
@@ -513,6 +715,7 @@ subrids_nextid(subrids *r)
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
 		r->id = *(sqlid*)BUNtloc(ii, r->pos);
+		bat_iterator_end(&ii);
 		return r->id;
 	}
 	return -1;
@@ -521,10 +724,8 @@ subrids_nextid(subrids *r)
 static void
 subrids_destroy(subrids *r )
 {
-	if (r->ids)
-		bat_destroy(r->ids);
-	if (r->rids)
-		bat_destroy(r->rids);
+	bat_destroy(r->ids);
+	bat_destroy(r->rids);
 	_DELETE(r);
 }
 
@@ -532,28 +733,26 @@ subrids_destroy(subrids *r )
 static rids *
 rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 {
-	BAT *lcb = full_column(tr, lc), *s, *d, *rids, *diff;
+	BAT *lcb = full_column(tr, lc), *s, *rids, *diff;
 	BAT *rcb = full_column(tr, rc);
 	gdk_return ret;
 
 	if (lcb == NULL || rcb == NULL) {
-		if (lcb)
-			full_destroy(rc, lcb);
-		if (rcb)
-			full_destroy(rc, rcb);
+		bat_destroy(lcb);
+		bat_destroy(rcb);
 		return NULL;
 	}
 	s = BATproject(r->rids, rcb);
-	full_destroy(rc, rcb);
+	bat_destroy(rcb);
 	if (s == NULL) {
-		full_destroy(rc, lcb);
+		bat_destroy(lcb);
 		return NULL;
 	}
 	rcb = s;
 
 	s = BATproject(l->data, lcb);
 	if (s == NULL) {
-		full_destroy(rc, lcb);
+		bat_destroy(lcb);
 		bat_destroy(rcb);
 		return NULL;
 	}
@@ -561,19 +760,18 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	diff = BATdiff(s, rcb, NULL, NULL, false, false, BUN_NONE);
 	bat_destroy(rcb);
 	if (diff == NULL) {
-		full_destroy(rc, lcb);
+		bat_destroy(lcb);
 		bat_destroy(s);
 		return NULL;
 	}
 
-	ret = BATjoin(&rids, &d, lcb, s, NULL, diff, false, BATcount(s));
+	ret = BATjoin(&rids, NULL, lcb, s, NULL, diff, false, BATcount(s));
 	bat_destroy(diff);
-	full_destroy(lc, lcb);
+	bat_destroy(lcb);
 	bat_destroy(s);
 	if (ret != GDK_SUCCEED)
 		return NULL;
 
-	bat_destroy(d);
 	bat_destroy(l->data);
 	l->data = rids;
 	return l;
@@ -586,7 +784,6 @@ bat_table_init( table_functions *tf )
 	tf->column_find_value = column_find_value;
 	tf->column_find_sqlid = column_find_sqlid;
 	tf->column_find_bte = column_find_bte;
-	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
 	tf->column_find_lng = column_find_lng;
 	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
@@ -594,6 +791,9 @@ bat_table_init( table_functions *tf )
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
+	tf->table_orderby = table_orderby;
+	tf->table_fetch_value = table_fetch_value;
+	tf->table_result_destroy = table_result_destroy;
 
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;

@@ -19,8 +19,9 @@
 #define tr_none		0
 #define tr_readonly	1
 #define tr_writable	2
-#define tr_serializable 4
-#define tr_append 	8
+#define tr_snapshot 4
+#define tr_serializable 8
+#define tr_append 	16
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -85,9 +86,6 @@ typedef enum sql_dependency {
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
 #define SCALE_EQ	7	/* user defined functions need equal scales */
-
-/* Warning TR flags is a bitmask */
-#define TR_NEW 1
 
 #define RDONLY 0
 #define RD_INS 1
@@ -176,10 +174,6 @@ typedef enum comp_type {
 	cmp_left_project = 15	/* last step of outer join */
 } comp_type;
 
-/* for ranges we keep the requirment for symmetric */
-#define CMP_SYMMETRIC 8
-#define CMP_BETWEEN 16
-
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
@@ -199,20 +193,17 @@ typedef int sqlid;
 typedef void *sql_store;
 
 typedef struct sql_base {
-	int flags;			/* todo change into bool new */
-	unsigned char
+	unsigned int
 		new:1,
-		deleted:1;
-	int refcnt;
+		deleted:1,
+		refcnt:30;
 	sqlid id;
 	char *name;
 } sql_base;
 
-#define newFlagSet(x)     (((x) & TR_NEW) == TR_NEW)
-#define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
-#define isNew(x)          (newFlagSet((x)->base.flags))
+#define isNew(x)          ((x)->base.new)
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
 typedef struct changeset {
 	sql_allocator *sa;
@@ -241,13 +232,14 @@ struct os_iter {
 };
 
 /* transaction changes */
-typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_valid_fptr) (struct sql_trans *tr, struct sql_change *c/*, ulng commit_ts, ulng oldest*/);
 typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								/* write changes to the log */
 typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
+typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -261,6 +253,7 @@ extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id
 extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
+extern bool os_has_changes(struct objectset *os, struct sql_trans *tr);
 
 extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store);
 extern void ol_destroy(objlist *ol, sql_store store);
@@ -276,8 +269,8 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs, void *data);
-extern void cs_add(changeset * cs, void *elm, int flag);
-extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
+extern void cs_add(changeset * cs, void *elm, bool isnew);
+extern void cs_del(changeset * cs, void *gdata, node *elm, bool isnew);
 extern int cs_size(changeset * cs);
 extern node *cs_find_id(changeset * cs, sqlid id);
 
@@ -318,12 +311,15 @@ typedef struct sql_trans {
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	list *changes;		/* list of changes */
-	int logchanges;		/* count number of changes to be applied too the wal */
-
-	int active;			/* is active transaction */
-	int status;			/* status of the last query */
 
 	list *dropped;  	/* protection against recursive cascade action*/
+	list *predicates;	/* list of read predicates logged during update transactions */
+	list *dependencies;	/* list of dependencies created (list of sqlids from the objects) */
+	list *depchanges;	/* list of dependencies changed (it would be tested for conflicts at the end of the transaction) */
+
+	int logchanges;		/* count number of changes to be applied to the wal */
+	int active;			/* is active transaction */
+	int status;			/* status of the last query */
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
@@ -723,7 +719,8 @@ typedef struct res_col {
 	char *name;
 	sql_subtype type;
 	bat b;
-	int mtype;
+	char mtype;
+	bool cached;
 	ptr *p;
 } res_col;
 
@@ -733,6 +730,7 @@ typedef struct res_table {
 	mapi_query_t query_type;
 	int nr_cols;
 	BUN nr_rows;
+	BUN cur_row;
 	int cur_col;
 	const char *tsep;
 	const char *rsep;
@@ -800,7 +798,7 @@ typedef struct {
 } sql_emit_col;
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
-extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
+sql_export sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 extern node *members_find_child_id(list *l, sqlid id);
 
 #define outside_str 1
@@ -857,5 +855,23 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 extern void arg_destroy(sql_store store, sql_arg *a);
 extern void part_value_destroy(sql_store store, sql_part_value *pv);
 
+typedef struct atom {
+	int isnull;
+	sql_subtype tpe;
+	ValRecord data;
+} atom;
+
+/* duplicate atom */
+extern atom *atom_dup(sql_allocator *sa, atom *a);
+
+typedef struct pl {
+	sql_column *c;
+	unsigned int cmp;
+	atom *r; /* if r is NULL then a full match is required */
+	atom *f; /* make it match range expressions */
+	uint8_t
+	 anti:1,
+	 semantics:1;
+} pl;
 
 #endif /* SQL_CATALOG_H */

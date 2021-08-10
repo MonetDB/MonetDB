@@ -307,15 +307,14 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		limit = *getArgReference_int(stk,pci,1);
 	}
 
-	if( limit > (int)(GDK_mem_maxsize / LL_CONSTANT(1048576)) )
-		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory ");
-
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setmemorylimit","Illegal session id");
 	if( is_int_nil(limit))
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
+	if( (size_t) limit > GDK_mem_maxsize / 1048576)
+		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
@@ -613,7 +612,6 @@ CLTsetPrintTimeout(void *ret, int *secs)
 }
 
 static str CLTmd5sum(str *ret, str *pw) {
-#ifdef HAVE_MD5_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -627,15 +625,9 @@ static str CLTmd5sum(str *ret, str *pw) {
 	if (*ret == NULL)
 		throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) pw;
-	throw(MAL, "clients.md5sum", SQLSTATE(0A000) PROGRAM_NYI);
-#endif
 }
 
 static str CLTsha1sum(str *ret, str *pw) {
-#ifdef HAVE_SHA1_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -649,15 +641,9 @@ static str CLTsha1sum(str *ret, str *pw) {
 	if (*ret == NULL)
 		throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) pw;
-	throw(MAL, "clients.sha1sum", SQLSTATE(0A000) PROGRAM_NYI);
-#endif
 }
 
 static str CLTripemd160sum(str *ret, str *pw) {
-#ifdef HAVE_RIPEMD160_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -671,11 +657,6 @@ static str CLTripemd160sum(str *ret, str *pw) {
 	if (*ret == NULL)
 		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-#else
-	(void) ret;
-	(void) pw;
-	throw(MAL, "clients.ripemd160sum", SQLSTATE(0A000) PROGRAM_NYI);
-#endif
 }
 
 static str CLTsha2sum(str *ret, str *pw, int *bits) {
@@ -684,37 +665,27 @@ static str CLTsha2sum(str *ret, str *pw, int *bits) {
 	} else {
 		char *mret = 0;
 		switch (*bits) {
-#ifdef HAVE_SHA512_UPDATE
 			case 512:
 				mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
 				break;
-#endif
-#ifdef HAVE_SHA384_UPDATE
 			case 384:
 				mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
 				break;
-#endif
-#ifdef HAVE_SHA256_UPDATE
 			case 256:
 				mret = mcrypt_SHA256Sum(*pw, strlen(*pw));
 				break;
-#endif
-#ifdef HAVE_SHA224_UPDATE
 			case 224:
 				mret = mcrypt_SHA224Sum(*pw, strlen(*pw));
 				break;
-#endif
 			default:
 				(void)mret;
 				throw(ILLARG, "clients.sha2sum", "wrong number of bits "
 						"for SHA2 sum: %d", *bits);
 		}
-#if defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE)
 		if (!mret)
 			throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*ret = GDKstrdup(mret);
 		free(mret);
-#endif
 	}
 	if (*ret == NULL)
 		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -799,7 +770,6 @@ static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-#ifdef HAVE_SHA1_UPDATE
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
 	str ch = "";
@@ -814,13 +784,6 @@ static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
-#else
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL, "mal.checkPermission", "Required digest algorithm SHA-1 missing");
-#endif
 }
 
 static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {

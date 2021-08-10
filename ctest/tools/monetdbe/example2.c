@@ -157,7 +157,7 @@ main(void)
 		error(err)
 
 	monetdbe_statement *stmt = NULL;
-	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt)) != NULL)
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt, NULL)) != NULL)
 		error(err)
 	char s = 42;
 	if ((err = monetdbe_bind(stmt, &s, 0)) != NULL)
@@ -170,7 +170,7 @@ main(void)
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
 		error(err)
 
-	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt)) != NULL)
+	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
 		error(err)
 	char *y = "Hello";
 	if ((err = monetdbe_bind(stmt, y, 0)) != NULL)

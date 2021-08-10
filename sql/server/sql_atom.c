@@ -691,20 +691,6 @@ atom_set_type(atom *a, sql_subtype *t)
 	a->tpe = *t;
 }
 
-atom *
-atom_dup(sql_allocator *sa, atom *a)
-{
-	atom *r = atom_create(sa);
-	if(!r)
-		return NULL;
-
-	*r = *a;
-	r->tpe = a->tpe;
-	if (!a->isnull)
-		SA_VALcopy(sa, &r->data, &a->data);
-	return r;
-}
-
 unsigned int
 atom_num_digits( atom *a )
 {

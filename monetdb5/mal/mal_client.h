@@ -145,13 +145,6 @@ typedef struct CLIENT {
 	Symbol      curprg;     /* container for the malparser */
 	Symbol      backup;     /* saving the parser context for functions,commands/patterns */
 	MalStkPtr   glb;        /* global variable stack */
-	/*
-	 * Some statistics on client behavior becomes relevant for server
-	 * maintenance. The scenario loop is used as a frame of reference.
-	 * We measure the elapsed time after a request has been received and
-	 * we have to wait for the next one.
-	 */
-	int		actions;
 
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time

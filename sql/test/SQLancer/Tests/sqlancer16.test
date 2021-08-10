@@ -1,0 +1,1960 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" BIGINT,"c1" DOUBLE PRECISION,"c3" TIME,"c4" INTERVAL DAY)
+
+statement ok rowcount 5
+INSERT INTO "t0" VALUES (6, NULL, NULL, NULL), (8, NULL, NULL, NULL), (44, 0.011253359357251025, NULL, INTERVAL '345600' SECOND), (45, 2099043029, NULL, NULL), (-6, NULL, NULL, INTERVAL '86400' SECOND)
+
+statement ok
+CREATE TABLE "t1" ("c0" BIGINT)
+
+statement ok rowcount 7
+INSERT INTO "t1" VALUES (-482276492),(2),(0),(-1048351158),(1849849110),(6),(3)
+
+query I rowsort
+SELECT 1 FROM t0 FULL OUTER JOIN (SELECT DISTINCT NULLIF(t0.c0, 1) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t1) AS sub0 ON FALSE) AS sub0 ON FALSE
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" UUID)
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf'), ('f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf')
+
+query T rowsort
+SELECT t1.c0 FROM t1 WHERE ((((FALSE)OR(CAST(greatest(5, 1) AS BOOLEAN))))OR((((t1.c0) BETWEEN SYMMETRIC (t1.c0) AND (t1.c0))OR(((t1.c0)<(t1.c0))))))
+----
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+f4ecc4d5-5f7c-ce6a-199e-dd98c59f7bbf
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" TIMESTAMP,"c1" BINARY LARGE OBJECT,"c2" INTERVAL MONTH NOT NULL,CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"))
+
+statement ok rowcount 1
+INSERT INTO "t0" VALUES (TIMESTAMP '1970-01-01 00:00:00.000000', BINARY LARGE OBJECT 'D0', INTERVAL '0' MONTH)
+
+statement ok rowcount 1
+MERGE INTO t0 USING (VALUES (1)) AS mergejoined(c0) ON TRUE WHEN MATCHED THEN UPDATE SET c0 = TIMESTAMP '1970-01-01 01:00:00' WHEN NOT MATCHED THEN INSERT (c0) VALUES (TIMESTAMP '1970-01-01 01:00:00')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" INTEGER)
+
+statement ok rowcount 4
+INSERT INTO "t1" VALUES (1), (2), (3), (4)
+
+query I rowsort
+SELECT 1 FROM t1 FULL OUTER JOIN (SELECT 2 FROM t1 JOIN (SELECT sql_min(TIME '01:00:00', TIME '12:05:37') FROM t1) AS sub0(c0) ON TRUE WHERE true) AS sub0(c0) 
+ON CAST(6 AS DOUBLE)/(CASE 3 WHEN sub0.c0 THEN 0.2 END) > 2
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL DAY PRIMARY KEY, c1 BIGINT)
+
+statement ok
+CREATE TABLE t1(c0 INTERVAL DAY, c1 BIGINT)
+
+statement ok rowcount 2
+INSERT INTO t1(c1) VALUES(3), (5)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
+
+statement ok rowcount 3
+TRUNCATE t0
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(INTERVAL '8' DAY)
+
+query T rowsort
+SELECT t0.c0 FROM t0 WHERE (SELECT INTERVAL '2' DAY FROM t1 GROUP BY t1.c0) NOT IN (t0.c0)
+----
+8
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INTERVAL DAY)
+
+statement ok rowcount 3
+INSERT INTO t0(c0) VALUES(INTERVAL '9' DAY), (INTERVAL '7' DAY), (INTERVAL '8' DAY)
+
+query T rowsort
+select sub0.c2 from t0 cross join (values (timestamp '1970-01-01 01:00:00', timestamp '1970-01-01 01:00:00')) as sub0(c1,c2)
+----
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+1970-01-01 01:00:00
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c1" VARCHAR(44))
+
+statement ok rowcount 5
+COPY 5 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"9史"
+"-1680198574"
+"|Yv\ne軒sX"
+"㧪 dg"
+"c}u"
+
+statement error 42000!Soundex function not available for non ASCII strings
+select length(soundex(t0.c1)) from t0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "con2" PRIMARY KEY ("c2"))
+
+statement ok rowcount 40
+COPY 40 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+2
+0
+-1765753
+-671746563
+6
+1921029267
+-825025708
+-2104297243
+8
+-129210606
+-1726103676
+1060807335
+5
+-1998039746
+-773178777
+9
+-1
+-9
+1978301412
+3
+4
+8077286484
+2091469291
+-132835704
+2042020815
+243455873
+-1382358507
+-1764685245
+7
+1
+-1819128901
+1992817175
+7885662936
+1052088495
+-358447186
+487372521
+904364548
+446252969
+-477681301
+-51400690
+
+query I rowsort
+SELECT t1.c2 FROM t1 WHERE (((CAST(t1.c2 AS STRING(268)))NOT ILIKE('%6I/2'''))) IN
+((((('-')LIKE('0.2118767221584169')))OR(((((TRUE)AND(TRUE)))OR(FALSE)))))
+----
+-1
+-129210606
+-132835704
+-1382358507
+-1726103676
+-1764685245
+-1765753
+-1819128901
+-1998039746
+-2104297243
+-358447186
+-477681301
+-51400690
+-671746563
+-773178777
+-825025708
+-9
+0
+1
+1052088495
+1060807335
+1921029267
+1978301412
+1992817175
+2
+2042020815
+2091469291
+243455873
+3
+4
+446252969
+487372521
+5
+6
+7
+7885662936
+8
+8077286484
+9
+904364548
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((CAST(t1.c2 AS STRING(268)))NOT ILIKE('%6I/2'))) IN
+((((('-')LIKE('0.2118767221584169')))OR(((((TRUE)AND(TRUE)))OR(FALSE))))) AS INT) as count FROM t1) as res
+----
+40
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2"("c0" BOOLEAN,"c1" INTERVAL MONTH)
+
+statement ok rowcount 1667
+COPY 1667 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	4
+NULL	9
+true	8
+false	3
+true	1
+true	2
+true	5
+false	NULL
+false	6
+NULL	2
+NULL	-6
+NULL	9
+false	NULL
+false	8
+true	9
+NULL	2
+NULL	2
+NULL	4
+NULL	3
+false	1
+true	5
+NULL	3
+false	NULL
+false	NULL
+true	NULL
+NULL	2
+NULL	-3
+NULL	1
+NULL	6
+NULL	5
+false	2
+NULL	1
+NULL	1
+false	5
+false	9
+true	3
+NULL	3
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+NULL	800744337
+NULL	1654938552
+true	0
+false	7
+NULL	0
+false	NULL
+NULL	1
+NULL	-1677738130
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+false	5
+NULL	5
+NULL	5
+true	NULL
+NULL	4
+true	-7
+false	8
+NULL	7
+NULL	2
+true	453586260
+true	-1
+true	4
+true	NULL
+true	NULL
+false	6
+false	-988496729
+false	0
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	1691392886
+false	613459341
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	4
+false	NULL
+false	NULL
+false	5
+false	148074740
+false	NULL
+NULL	9
+NULL	4
+true	-988496729
+false	NULL
+true	NULL
+true	NULL
+false	-1619861971
+true	8
+true	7
+true	-1004662197
+true	15
+true	3
+true	-1294390707
+NULL	8
+false	5
+false	NULL
+true	NULL
+false	NULL
+true	9
+false	7
+NULL	NULL
+false	NULL
+true	NULL
+NULL	1656546916
+NULL	392995436
+NULL	3
+NULL	8
+NULL	-919661697
+false	-1733663855
+true	-1473223402
+true	1
+false	2
+true	7
+false	NULL
+false	NULL
+NULL	1
+NULL	9
+NULL	-6
+true	-55427963
+true	1611700361
+false	8
+false	6
+true	NULL
+NULL	4
+NULL	-120767692
+NULL	3
+NULL	1
+NULL	21
+false	-1593408214
+false	476950309
+true	NULL
+true	NULL
+NULL	6
+false	NULL
+NULL	0
+false	1
+NULL	4
+NULL	1
+false	7
+false	NULL
+false	NULL
+false	NULL
+NULL	6
+NULL	6
+NULL	1294390707
+true	1294390707
+false	1294390707
+false	NULL
+true	NULL
+true	2133765221
+true	4
+true	1691392886
+true	5
+NULL	1654938552
+NULL	0
+NULL	2
+true	453586268
+NULL	6
+NULL	2
+NULL	1766239771
+false	3
+true	2
+NULL	-9
+false	-1294390707
+false	8
+true	2
+false	8
+NULL	2
+NULL	3
+NULL	4
+true	1448357523
+NULL	NULL
+false	NULL
+true	NULL
+NULL	5
+false	4
+false	NULL
+true	NULL
+false	8
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+NULL	0
+false	6
+true	6
+NULL	5
+false	5
+false	9
+false	7
+false	-352483684
+false	NULL
+NULL	8
+true	NULL
+false	5
+true	-2
+NULL	0
+NULL	4
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+NULL	5
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	4
+false	9
+false	5
+false	3
+true	NULL
+false	7
+true	2
+false	941492197
+true	5
+true	2008724686
+NULL	NULL
+NULL	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	4
+NULL	5
+true	4
+NULL	NULL
+true	8
+true	NULL
+true	NULL
+false	NULL
+true	5
+true	3
+true	NULL
+false	NULL
+true	2
+true	607642120
+NULL	-779516709
+false	NULL
+false	NULL
+false	638282893
+true	-610059863
+true	NULL
+false	NULL
+true	NULL
+true	-1089360715
+true	-1732859145
+false	1
+true	9
+false	6
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	931831274
+false	0
+false	4
+NULL	-9
+NULL	1672279374
+NULL	7
+true	NULL
+false	-1968500518
+false	NULL
+false	NULL
+true	9
+true	4
+NULL	-14841309
+false	8
+true	-495984817
+false	9
+true	849712237
+NULL	3
+false	NULL
+NULL	1
+NULL	7
+false	1
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+NULL	9
+false	1231095905
+NULL	5
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	4
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+true	-1677738130
+true	NULL
+NULL	9
+NULL	0
+NULL	9
+false	NULL
+false	NULL
+false	176241037
+true	5
+true	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+NULL	NULL
+true	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+NULL	NULL
+false	NULL
+NULL	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+NULL	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+NULL	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+NULL	NULL
+true	NULL
+NULL	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	NULL
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	5
+true	0
+false	3
+false	1
+NULL	9
+false	NULL
+false	NULL
+true	NULL
+true	1963409942
+true	7
+false	6
+true	2
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	4
+true	0
+false	NULL
+NULL	-335098041
+NULL	0
+true	9
+NULL	5
+NULL	2
+NULL	1260847547
+true	7
+true	5
+true	NULL
+false	NULL
+false	NULL
+false	6
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+true	1
+true	2
+true	2
+false	-335098041
+true	5
+false	2004130315
+NULL	0
+NULL	2
+NULL	8
+NULL	-919661699
+NULL	7
+NULL	2
+NULL	4
+NULL	1793047066
+NULL	-1294390707
+false	10
+true	-335098041
+true	931831274
+false	3
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	4
+NULL	7
+true	NULL
+false	NULL
+true	1
+NULL	9
+false	5
+true	1
+NULL	3
+NULL	2
+NULL	7
+false	NULL
+NULL	-1089360724
+NULL	9
+true	799177804
+false	-864186092
+true	3
+false	-335098041
+false	-577834626
+false	1448357523
+true	2
+false	8
+false	8
+false	0
+false	4
+false	3
+true	1
+true	7
+NULL	-1473223402
+NULL	8
+false	6
+false	1170110067
+false	6
+true	0
+false	7
+false	-9
+false	2
+false	7
+false	6
+NULL	5
+NULL	0
+NULL	-1294390707
+false	NULL
+false	NULL
+false	-1252834992
+false	1634938174
+true	NULL
+true	5
+true	5
+NULL	-531440570
+NULL	2
+NULL	148074742
+true	1
+true	7
+false	1656546916
+false	NULL
+true	NULL
+NULL	-9
+NULL	-1595288725
+NULL	0
+false	4
+true	NULL
+NULL	1656546916
+NULL	0
+NULL	6
+false	1170110066
+true	8
+false	-531440570
+NULL	-1
+NULL	9
+NULL	-476950303
+false	NULL
+NULL	0
+NULL	7
+false	NULL
+NULL	0
+NULL	5
+NULL	2004130315
+NULL	21
+true	-1219851884
+true	4
+false	476950309
+NULL	1170110066
+NULL	800744337
+false	-577834626
+false	-1963409947
+false	NULL
+NULL	3
+NULL	844737956
+NULL	9
+NULL	5
+true	1654938552
+NULL	212070514
+true	1595288722
+true	NULL
+true	NULL
+true	0
+false	9
+NULL	NULL
+false	1
+NULL	9
+NULL	8
+false	5
+true	1
+NULL	7
+false	8
+true	8
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+NULL	0
+NULL	0
+NULL	3
+false	NULL
+false	1691392886
+false	2
+false	8
+false	10
+NULL	7
+NULL	8
+false	844737956
+true	NULL
+true	NULL
+NULL	-3
+true	7
+false	-1252834992
+true	6
+true	NULL
+false	3
+true	4
+true	7
+NULL	1
+false	NULL
+false	9
+false	3
+true	0
+true	NULL
+true	NULL
+NULL	4
+NULL	6
+false	7
+true	NULL
+NULL	-1952135663
+NULL	1
+true	NULL
+true	1
+true	NULL
+NULL	NULL
+NULL	1656368849
+NULL	8
+true	7
+true	2
+false	1
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+NULL	8
+true	6
+false	6
+false	1
+NULL	17
+NULL	-909554799
+NULL	7
+false	8
+false	9
+false	NULL
+true	NULL
+true	NULL
+false	4
+true	7
+NULL	0
+false	3
+false	NULL
+false	NULL
+false	3
+false	NULL
+false	8
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+true	7
+false	-919661699
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+false	1656546916
+true	6
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	-1
+NULL	804613757
+false	6
+NULL	7
+NULL	2048571357
+false	-6
+true	NULL
+true	3
+true	5
+false	1947062065
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+true	5
+false	NULL
+false	NULL
+true	NULL
+true	-1671626974
+true	0
+true	14
+true	8
+true	7
+false	6
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	-1004662197
+false	1074974393
+true	2
+true	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	1
+NULL	0
+false	4
+true	1231095905
+true	3
+NULL	6
+true	-398166369
+false	9
+false	0
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	-1515661308
+true	NULL
+false	5
+true	8
+false	8
+true	7
+true	3
+false	1
+false	800744337
+false	NULL
+true	NULL
+NULL	-352483684
+true	NULL
+true	NULL
+false	NULL
+NULL	4
+NULL	9
+NULL	9
+NULL	9
+NULL	9
+true	NULL
+false	NULL
+true	7
+NULL	9
+NULL	8
+false	1595288722
+true	3
+true	6
+NULL	5
+NULL	7
+NULL	NULL
+NULL	7
+true	NULL
+true	NULL
+false	NULL
+true	9
+true	4
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	9
+NULL	6
+NULL	8
+NULL	3
+true	9
+false	6
+false	613459341
+NULL	2
+false	6
+false	4
+false	NULL
+false	607642120
+false	4
+false	NULL
+true	NULL
+NULL	-5
+NULL	NULL
+NULL	799177804
+NULL	-919661699
+false	638550148
+true	NULL
+false	NULL
+true	5
+NULL	9
+NULL	-1552981728
+NULL	NULL
+NULL	9
+false	5
+true	5
+true	NULL
+true	849712237
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+true	0
+false	0
+true	-1733663855
+NULL	1
+NULL	6
+false	2
+false	-1473223402
+NULL	1009901659
+NULL	1
+false	NULL
+true	NULL
+true	1170110066
+false	-909554799
+true	6
+NULL	5
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+true	5
+true	6
+false	-398166361
+false	4
+false	3
+false	2008724686
+true	-941492197
+false	7
+NULL	8
+NULL	9
+true	1
+true	8
+true	8
+true	NULL
+true	NULL
+NULL	NULL
+NULL	9
+NULL	7
+false	6
+false	NULL
+NULL	3
+true	NULL
+false	1656368849
+true	1538987523
+NULL	1
+NULL	7
+false	NULL
+NULL	9
+NULL	1074974387
+NULL	2
+false	NULL
+NULL	0
+NULL	-1515661308
+false	5
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	0
+true	1
+false	2
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+true	613459341
+true	NULL
+NULL	2
+NULL	3
+true	-919661699
+false	6
+NULL	4
+true	5
+false	9
+NULL	9
+false	NULL
+true	NULL
+NULL	6
+NULL	1
+true	5
+NULL	1
+false	NULL
+true	NULL
+NULL	2
+NULL	2
+NULL	1691392886
+NULL	3
+NULL	8
+NULL	3
+NULL	-120767692
+false	4
+true	1
+false	3
+false	1333225469
+false	NULL
+true	862188025
+true	-973904682
+true	7
+NULL	NULL
+NULL	2
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	-610059863
+NULL	3
+NULL	2
+false	0
+false	2
+false	NULL
+true	NULL
+true	NULL
+NULL	4
+false	NULL
+false	NULL
+false	NULL
+NULL	7
+NULL	-1552981728
+NULL	1
+NULL	1448357523
+false	NULL
+false	NULL
+false	8
+NULL	7
+false	NULL
+NULL	0
+NULL	-6
+true	453586260
+NULL	NULL
+NULL	0
+NULL	4
+true	-1552981728
+false	800744337
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+false	NULL
+false	5
+true	3
+true	6
+NULL	830745983
+false	0
+true	7
+true	NULL
+false	NULL
+false	7
+true	NULL
+false	NULL
+NULL	9
+NULL	7
+NULL	2
+NULL	0
+false	NULL
+NULL	1595288722
+NULL	7
+NULL	-610059855
+NULL	-864186092
+NULL	6
+false	NULL
+NULL	0
+NULL	-1671626974
+true	3
+NULL	-2046271115
+true	-5
+false	0
+NULL	7
+NULL	5
+NULL	176241045
+NULL	6
+NULL	5
+NULL	2
+NULL	9
+false	NULL
+false	NULL
+true	2
+false	8
+false	NULL
+false	55427972
+false	8
+false	1
+NULL	5
+NULL	1656368849
+NULL	7
+false	7
+NULL	4
+true	8
+false	NULL
+false	9
+false	NULL
+NULL	1
+true	3
+NULL	2
+true	NULL
+false	3
+true	NULL
+false	NULL
+NULL	1947062065
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	7
+NULL	1766239771
+NULL	-7
+NULL	-9
+NULL	3
+true	4
+true	4
+NULL	-120767692
+false	NULL
+true	NULL
+true	3
+NULL	176241045
+NULL	1
+NULL	-577834626
+NULL	4
+NULL	7
+NULL	2004130315
+NULL	-1732859145
+NULL	7
+NULL	-1593408214
+NULL	5
+false	NULL
+false	7
+NULL	5
+NULL	-909554799
+NULL	4
+false	-1219851884
+NULL	-55427963
+NULL	8
+NULL	-1952135667
+NULL	0
+false	NULL
+false	NULL
+true	NULL
+false	8
+true	NULL
+false	NULL
+true	6
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+NULL	6
+NULL	7
+NULL	1548104952
+NULL	9
+true	0
+NULL	2
+true	NULL
+true	NULL
+false	NULL
+NULL	-1
+false	NULL
+false	NULL
+false	NULL
+NULL	1595288722
+false	6
+false	-919661699
+false	1296729154
+true	1872970045
+false	1074974387
+false	-988496729
+false	NULL
+false	4
+true	8
+true	NULL
+NULL	3
+NULL	3
+NULL	1
+NULL	5
+NULL	2
+false	5
+NULL	1089360719
+true	5
+NULL	2004130315
+NULL	1
+true	4
+NULL	8
+true	NULL
+true	NULL
+NULL	1
+NULL	5
+NULL	8
+NULL	4
+false	NULL
+false	NULL
+NULL	1
+NULL	6
+true	NULL
+true	NULL
+NULL	2
+NULL	NULL
+NULL	NULL
+NULL	3
+NULL	5
+true	NULL
+false	NULL
+true	NULL
+false	4
+true	176241045
+NULL	9
+NULL	9
+NULL	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+false	0
+false	NULL
+NULL	2
+NULL	9
+NULL	4
+true	7
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+true	NULL
+NULL	-55427963
+NULL	1
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+true	8
+true	NULL
+false	NULL
+false	NULL
+false	9
+false	5
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+false	1
+false	-941492197
+true	6
+false	NULL
+NULL	-5
+NULL	4
+NULL	5
+NULL	-3
+NULL	4
+true	931831274
+false	2
+false	-783566125
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	3
+NULL	7
+NULL	2
+true	9
+NULL	2
+true	NULL
+NULL	NULL
+NULL	-148074740
+NULL	3
+false	NULL
+true	NULL
+false	NULL
+true	1
+true	740754104
+true	-531440570
+false	5
+false	1538987523
+true	3
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+false	4
+false	-1952135663
+false	-1952135663
+NULL	NULL
+NULL	NULL
+NULL	-1260847547
+NULL	-804613748
+false	NULL
+false	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	-1671626974
+NULL	-941492197
+NULL	NULL
+false	0
+false	1
+true	6
+false	1
+NULL	-577834626
+NULL	1548104952
+true	6
+true	799177804
+false	2
+true	-1968500518
+NULL	NULL
+true	9
+true	NULL
+NULL	8
+NULL	-2
+NULL	9
+NULL	0
+false	NULL
+false	NULL
+false	NULL
+false	9
+false	9
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	NULL
+false	NULL
+NULL	392995436
+NULL	NULL
+false	6
+true	9
+false	1480984651
+NULL	NULL
+true	NULL
+false	NULL
+NULL	5
+NULL	3
+NULL	4
+false	NULL
+NULL	NULL
+NULL	-1575946199
+false	NULL
+true	NULL
+false	NULL
+false	476950309
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	17662397
+NULL	NULL
+true	NULL
+true	3
+NULL	2
+NULL	NULL
+NULL	1
+NULL	NULL
+NULL	NULL
+true	-909554799
+false	0
+false	1
+false	7
+true	NULL
+false	NULL
+true	800744337
+true	-2
+false	-9
+false	9
+true	NULL
+NULL	-941492197
+false	NULL
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+NULL	1548104952
+true	7
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+false	8
+true	844737956
+NULL	1656546916
+NULL	NULL
+false	5
+true	-14841307
+false	NULL
+NULL	6
+false	NULL
+false	NULL
+NULL	1170110066
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+false	1183908673
+true	NULL
+true	NULL
+true	NULL
+true	NULL
+NULL	0
+NULL	1480984651
+false	NULL
+NULL	-1947062065
+NULL	3
+false	-8
+false	5
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	2
+NULL	-1473223402
+NULL	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+NULL	NULL
+NULL	6
+true	NULL
+true	NULL
+true	NULL
+NULL	9
+false	1
+true	1
+NULL	2
+NULL	14841307
+false	NULL
+false	NULL
+false	NULL
+NULL	7
+NULL	3
+true	NULL
+NULL	NULL
+NULL	1260847547
+NULL	2144741564
+NULL	2046271115
+false	3
+false	-1219851884
+true	6
+true	-7
+false	1656368849
+false	148074740
+NULL	NULL
+NULL	NULL
+true	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+true	NULL
+false	NULL
+NULL	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+NULL	5
+NULL	9
+NULL	NULL
+NULL	0
+NULL	NULL
+NULL	NULL
+NULL	NULL
+NULL	NULL
+false	2
+false	NULL
+NULL	6
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	NULL
+true	6
+false	NULL
+false	NULL
+false	NULL
+true	NULL
+false	3
+true	-864186092
+true	1
+true	NULL
+NULL	453586260
+NULL	-919661699
+false	-1294390707
+true	4
+NULL	1
+true	NULL
+NULL	3
+NULL	9
+NULL	2004130315
+true	-1952135663
+true	610059861
+false	2
+NULL	5
+NULL	4
+false	3
+false	8
+false	0
+true	8
+false	NULL
+false	NULL
+true	7
+false	NULL
+true	-1947062065
+
+statement error 40002!UPDATE: UNIQUE constraint 't2.con3' violated
+ALTER TABLE t2 ADD CONSTRAINT con3 UNIQUE(c0, c1)
+
+statement ok
+ROLLBACK

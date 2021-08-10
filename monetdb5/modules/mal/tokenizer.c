@@ -75,6 +75,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		HASHloop_str(bi, b->thash, p, part) {
 			if (BUNtoid(bidx, p) == *prv) {
 				MT_rwlock_rdunlock(&b->thashlock);
+				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
 			}
@@ -87,11 +88,13 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		BATloop(b, p, q) {
 			if (BUNtoid(bidx, p) == *prv &&
 				strcmp(BUNtail(bi, p), part) == 0) {
+				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
 			}
 		}
 	}
+	bat_iterator_end(&bi);
 	return FALSE;
 }
 
@@ -517,6 +520,7 @@ takeOid(oid id, str *val)
 	for (i = depth - 1; i >= 0; i--) {
 		BATiter bi = bat_iterator(tokenBAT[i].val);
 		parts[i] = (str) BUNtvar(bi, id);
+		bat_iterator_end(&bi);
 		id = BUNtoid(tokenBAT[i].idx, id);
 		lngth += strlen(parts[i]);
 	}

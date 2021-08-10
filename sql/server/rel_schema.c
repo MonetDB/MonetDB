@@ -319,7 +319,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
 			return res;
 		}
-		k->base.new = 1;
 
 		mvc_create_kc(sql, k, cs);
 		if (!mvc_create_ukey_done(sql, k)) {
@@ -383,7 +382,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
 			return res;
 		}
-		fk->k.base.new = 1;
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
 	} 	break;
@@ -582,7 +580,6 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
 			return SQL_ERR;
 		}
-		fk->k.base.new = 1;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
@@ -635,7 +632,6 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
 			return SQL_ERR;
 		}
-		k->base.new = 1;
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, nm);
@@ -705,12 +701,10 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	int res = SQL_OK;
 
 	(void) ss;
-	if (alter && !(isTable(t) || (isMergeTable(t) && list_length(t->members)==0))) {
+	if (alter && !(isTable(t) || ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0))) {
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
-				  isMergeTable(t)?"MERGE TABLE":
-				  isRemote(t)?"REMOTE TABLE":
-				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				  t->base.name, (isMergeTable(t) && list_length(t->members)) ? " while it has partitions" : "");
+				  TABLE_TYPE_DESCRIPTION(t->type, t->properties),
+				  t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -729,7 +723,6 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		cs = mvc_create_column(sql, t, cname, ctype);
 		if (!cs || column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
-		cs->base.new = 1;
 	}
 	return res;
 }
@@ -788,10 +781,8 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				action,
 				msg,
 				partition_find_part(sql->session->tr, t, NULL)?"a PARTITION of a MERGE or REPLICA TABLE":
-				isMergeTable(t)?"MERGE TABLE":
-				isRemote(t)?"REMOTE TABLE":
-				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name, (isMergeTable(t) && list_length(t->members)) ? " while it has partitions" : "");
+				TABLE_TYPE_DESCRIPTION(t->type, t->properties),
+				t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -1001,7 +992,6 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			default:
 				break;
 		}
-		col->base.deleted = 1;
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;
@@ -1937,8 +1927,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
-	if (isView(t) || isMergeTable(t) || isRemote(t))
-		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":isMergeTable(t)?"merge table":"remote table", tname);
+	if (!isTable(t))
+		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", TABLE_TYPE_DESCRIPTION(t->type, t->properties), tname);
 	nt = dup_sql_table(sql->sa, t);
 
 	if (t->persistence != SQL_DECLARED_TABLE)
@@ -1946,7 +1936,6 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* add index here */
 	i = mvc_create_idx(sql, nt, iname, itype);
-	i->base.new = 1;
 	for (n = column_list->h; n; n = n->next) {
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 

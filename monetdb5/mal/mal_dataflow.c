@@ -7,23 +7,21 @@
  */
 
 /*
- * (author) M Kersten
- * Out of order execution
- * The alternative is to execute the instructions out of order
- * using dataflow dependencies and as an independent process.
+ * (author) M Kersten, S Mullender
  * Dataflow processing only works on a code
  * sequence that does not include additional (implicit) flow of control
  * statements and, ideally, consist of expensive BAT operations.
- * The dataflow interpreter selects cheap instructions
- * using a simple costfunction based on the size of the BATs involved.
- *
  * The dataflow portion is identified as a guarded block,
  * whose entry is controlled by the function language.dataflow();
- * This way the function can inform the caller to skip the block
- * when dataflow execution was performed.
  *
- * The flow graphs should be organized such that parallel threads can
- * access it mostly without expensive locking.
+ * The dataflow worker tries to follow the sequence of actions
+ * as layed out in the plan, but abandon this track when it hits
+ * a blocking operator, or an instruction for which not all arguments
+ * are available or resources become scarce.
+ *
+ * The flow graphs is organized such that parallel threads can
+ * access it mostly without expensive locking and dependent 
+ * variables are easy to find..
  */
 #include "monetdb_config.h"
 #include "mal_dataflow.h"
@@ -231,26 +229,26 @@ q_dequeue(Queue *q, Client cntxt)
 	if (ATOMIC_GET(&exiting))
 		return NULL;
 	MT_lock_set(&q->l);
-	if (cntxt) {
-		int i, minpc = -1;
+	if( cntxt == NULL && q->exitcount > 0){
+		q->exitcount--;
+		MT_lock_unset(&q->l);
+		return NULL;
+	}
+	{
+		int i, minpc;
 
-		for (i = q->last - 1; i >= 0; i--) {
-			if (q->data[i]->flow->cntxt == cntxt) {
-				if (q->last > 1024) {
-					/* for long "queues", just grab the first eligible
-					 * entry we encounter */
-					minpc = i;
-					break;
-				}
-				/* for shorter "queues", find the oldest eligible entry */
-				if (minpc < 0) {
-					minpc = i;
-					s = q->data[i];
-				}
-				r = q->data[i];
-				if (s && r && s->pc > r->pc) {
-					minpc = i;
-					s = r;
+		minpc = q->last -1;
+		s = q->data[minpc];
+		/* for long "queues", just grab the first eligible entry we encounter */
+		if (q->last < 1024) {
+			for (i = q->last - 1; i >= 0; i--) {
+				if ( cntxt ==  NULL || q->data[i]->flow->cntxt == cntxt) {
+					/* for shorter "queues", find the oldest eligible entry */
+					r = q->data[i];
+					if (s && r && s->pc > r->pc) {
+						minpc = i;
+						s = r;
+					}
 				}
 			}
 		}
@@ -260,46 +258,8 @@ q_dequeue(Queue *q, Client cntxt)
 			q->last--;
 			memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
 		}
-
-		MT_lock_unset(&q->l);
-		return r;
 	}
-	if (q->exitcount > 0) {
-		q->exitcount--;
-		MT_lock_unset(&q->l);
-		return NULL;
-	}
-	assert(q->last > 0);
-	if (q->last > 0) {
-		/* LIFO favors garbage collection */
-		r = q->data[--q->last];
-/*  Line coverage test shows it is an expensive loop that is hardly ever leads to adjustment
-		for(i= q->last-1; r &&  i>=0; i--){
-			s= q->data[i];
-			if( s && s->flow && s->flow->stk &&
-			    r && r->flow && r->flow->stk &&
-			    s->flow->stk->tag < r->flow->stk->tag){
-				q->data[i]= r;
-				r = s;
-			}
-		}
-*/
-		q->data[q->last] = 0;
-	}
-	/* else: terminating */
-	/* try out random draw *
-	{
-		int i;
-		i = rand() % q->last;
-		r = q->data[i];
-		for (i++; i < q->last; i++)
-			q->data[i - 1] = q->data[i];
-		q->last--; i
-	}
-	 */
-
 	MT_lock_unset(&q->l);
-	assert(r);
 	return r;
 }
 
@@ -327,9 +287,8 @@ DFLOWworker(void *T)
 	struct worker *t = (struct worker *) T;
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
-	int tid = THRgettid();
 	str error = 0;
-	int i,last;
+	int i;
 	lng claim;
 	Client cntxt;
 	InstrPtr p;
@@ -400,10 +359,6 @@ DFLOWworker(void *T)
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
 		/* release the memory claim */
 		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
-		/* update the numa information. keep the thread-id producing the value */
-		p= getInstrPtr(flow->mb,fe->pc);
-		for( i = 0; i < p->argc; i++)
-			setVarWorker(flow->mb,getArg(p,i),tid);
 
 		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;
@@ -438,30 +393,44 @@ DFLOWworker(void *T)
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 	}
-		MT_lock_set(&flow->flowlock);
+/* Try to get rid of the hot potatoe or locate an alternative to proceed.
+ */
+#define HOTPOTATOE
+#ifdef HOTPOTATOE
+	/* HOT potatoe choice */
+	int last = 0, nxt = -1;
+	lng nxtclaim = -1;
 
-		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
-			if (flow->status[i].state == DFLOWpending &&
-				flow->status[i].blocks == 1) {
-				flow->status[i].state = DFLOWrunning;
-				flow->status[i].blocks = 0;
-				flow->status[i].hotclaim = fe->hotclaim;
-				flow->status[i].argclaim += fe->hotclaim;
-				if( flow->status[i].maxclaim < fe->maxclaim)
-					flow->status[i].maxclaim = fe->maxclaim;
-				fnxt = flow->status + i;
-				break;
+	MT_lock_set(&flow->flowlock);
+	for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last]){
+		if (flow->status[i].state == DFLOWpending && flow->status[i].blocks == 1) {
+			/* find the one with the largest footprint */
+			if( nxt == -1){
+				nxt = i;
+				nxtclaim = flow->status[i].argclaim;
 			}
-		MT_lock_unset(&flow->flowlock);
+			if( flow->status[i].argclaim > nxtclaim){
+				nxt = i;
+				nxtclaim =  flow->status[i].argclaim;
+			}
+		}
+	}
+	/* hot potatoe can not be removed, use alternative to proceed */
+	if( nxt >= 0){
+		flow->status[nxt].state = DFLOWrunning;
+		flow->status[nxt].blocks = 0;
+		flow->status[nxt].hotclaim = fe->hotclaim;
+		flow->status[nxt].argclaim += fe->hotclaim;
+		if( flow->status[nxt].maxclaim < fe->maxclaim)
+			flow->status[nxt].maxclaim = fe->maxclaim;
+		fnxt = flow->status + nxt;
+	}
+	MT_lock_unset(&flow->flowlock);
+#endif
 
 		q_enqueue(flow->done, fe);
         if ( fnxt == 0 && malProfileMode) {
-            int last;
-            MT_lock_set(&todo->l);
-            last = todo->last;
-            MT_lock_unset(&todo->l);
-            if (last == 0)
-                profilerHeartbeatEvent("wait");
+			profilerHeartbeatEvent("wait");
         }
 	}
 	GDKfree(GDKerrbuf);
@@ -703,8 +672,9 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 				MT_lock_unset(&flow->flowlock);
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
+			fe[i].argclaim = 0;
 			for (j = p->retc; j < p->argc; j++)
-				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
+				fe[i].argclaim += getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
 		}

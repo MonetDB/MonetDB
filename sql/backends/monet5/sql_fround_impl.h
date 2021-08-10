@@ -55,6 +55,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -67,7 +68,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (b->ttype != TPE(TYPE)) {
@@ -75,7 +76,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, b, bs);
@@ -85,7 +86,8 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (TYPE *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -99,7 +101,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = dec_round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -115,11 +117,13 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = dec_round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
@@ -138,11 +142,12 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (b->ttype != TPE(TYPE)) {
@@ -150,7 +155,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, b, bs);
@@ -160,7 +165,8 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (TYPE *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -169,10 +175,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (ISNIL(TYPE)(r)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -180,7 +186,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = dec_round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -191,10 +197,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (ISNIL(TYPE)(r)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -202,11 +208,13 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = dec_round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
@@ -228,11 +236,12 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		*r = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter lefti, righti;
 
 	(void) cntxt;
 	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (left->ttype != TPE(TYPE) || right->ttype != TPE(TYPE)) {
@@ -240,7 +249,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		goto bailout;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, left, lefts);
@@ -255,8 +264,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	src1 = (TYPE *) Tloc(left, 0);
-	src2 = (TYPE *) Tloc(right, 0);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	src1 = (TYPE *) lefti.base;
+	src2 = (TYPE *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -266,10 +277,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 			if (ISNIL(TYPE)(rr)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -277,7 +288,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				dst[i] = dec_round_body(x, rr);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -289,10 +300,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 			if (ISNIL(TYPE)(rr)) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
-				goto bailout;
+				goto bailout1;
 			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -300,11 +311,14 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				dst[i] = dec_round_body(x, rr);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&lefti);
+	bat_iterator_end(&righti);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
@@ -362,6 +376,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
@@ -370,7 +385,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (b->ttype != TPE(TYPE)) {
@@ -378,7 +393,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, b, bs);
@@ -388,7 +403,8 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (TYPE *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -402,7 +418,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -418,11 +434,13 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
@@ -442,11 +460,12 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	BATiter bi;
 
 	(void) cntxt;
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (b->ttype != TYPE_bte) {
@@ -454,7 +473,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, b, bs);
@@ -464,7 +483,8 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	off1 = b->hseqbase;
-	src = (bte *) Tloc(b, 0);
+	bi = bat_iterator(b);
+	src = (bte *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -473,7 +493,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_bte_nil(r) || (size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -481,7 +501,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -492,7 +512,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_bte_nil(r) || (size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -500,11 +520,13 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = round_body(x, r);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
@@ -527,11 +549,12 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*r = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+	BATiter lefti, righti;
 
 	(void) cntxt;
 	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (left->ttype != TPE(TYPE)) {
@@ -543,7 +566,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
-		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, left, lefts);
@@ -558,8 +581,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	src1 = (TYPE *) Tloc(left, 0);
-	src2 = (bte *) Tloc(right, 0);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	src1 = (TYPE *) lefti.base;
+	src2 = (bte *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
@@ -569,7 +594,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -577,7 +602,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = round_body(x, rr);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -589,7 +614,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
-				goto bailout;
+				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
 				dst[i] = NIL(TYPE);
 				nils = true;
@@ -597,11 +622,14 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = round_body(x, rr);
 				if (isinf(dst[i])) {
 					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+bailout1:
+	bat_iterator_end(&lefti);
+	bat_iterator_end(&righti);
 
 bailout:
 	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);

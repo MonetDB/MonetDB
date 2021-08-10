@@ -368,7 +368,7 @@ find_member_pos(list *l, sql_table *t)
  */
 
 /* currently we only find simple column expressions */
-void *
+sql_column *
 name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
 {
 	sql_exp *alias = NULL;
@@ -391,32 +391,32 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 				rname = e->l;
 			name = e->r;
 		}
-		if (name && !t)
-			return rel_base_get_mergetable(rel);
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
-		node *cn;
 		sql_table *mt = rel_base_get_mergetable(rel);
-		for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
-			sql_column *c = cn->data;
-			if (strcmp(c->base.name, name) == 0) {
-				if (bt)
-					*bt = rel;
-				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members, c->t) == pnr))
-					return c;
+		if (ol_length(t->columns)) {
+			for (node *cn = ol_first_node(t->columns); cn; cn = cn->next) {
+				sql_column *c = cn->data;
+				if (strcmp(c->base.name, name) == 0) {
+					if (bt)
+						*bt = rel;
+					if (pnr < 0 || (mt &&
+						find_member_pos(mt->members, c->t) == pnr))
+						return c;
+				}
 			}
 		}
-		if (t->idxs)
-		for (cn = ol_first_node(t->idxs); cn; cn = cn->next) {
-			sql_idx *i = cn->data;
-			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
-				if (bt)
-					*bt = rel;
-				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members, i->t) == pnr)) {
-					sql_kc *c = i->columns->h->data;
-					return c->c;
+		if (ol_length(t->idxs) && name[0]) {
+			for (node *cn = ol_first_node(t->idxs); cn; cn = cn->next) {
+				sql_idx *i = cn->data;
+				if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
+					if (bt)
+						*bt = rel;
+					if (pnr < 0 || (mt &&
+						find_member_pos(mt->members, i->t) == pnr)) {
+						sql_kc *c = i->columns->h->data;
+						return c->c;
+					}
 				}
 			}
 		}

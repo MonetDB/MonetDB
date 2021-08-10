@@ -530,7 +530,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	q = pushStr(mb, q, t->base.name);
 	if (q == NULL)
 		return NULL;
-	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
+	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, QUICK);
@@ -599,7 +599,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 
-		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+		if (c && isTable(c->t)) {
 			BUN rows = (BUN) store->storage_api.count_col(tr, c, QUICK);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
@@ -653,7 +653,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 
-		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+		if (i && isTable(i->t)) {
 			BUN rows = (BUN) store->storage_api.count_idx(tr, i, QUICK);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
@@ -714,6 +714,9 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = pushStr(mb, q, c->t->base.name);
 		q = pushStr(mb, q, c->base.name);
 		q = pushArgument(mb, q, offset->nr);
+		/* also the offsets */
+		assert(offset->q->retc == 2);
+		q = pushArgument(mb, q, getArg(offset->q, 1));
 		q = pushArgument(mb, q, b->nr);
 		if (q == NULL)
 			return NULL;
@@ -757,6 +760,9 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	q = pushStr(mb, q, i->t->base.name);
 	q = pushStr(mb, q, sa_strconcat(be->mvc->sa, "%", i->base.name));
 	q = pushArgument(mb, q, offset->nr);
+	/* also the offsets */
+	assert(offset->q->retc == 2);
+	q = pushArgument(mb, q, getArg(offset->q, 1));
 	q = pushArgument(mb, q, b->nr);
 	if (q == NULL)
 		return NULL;
@@ -1009,7 +1015,7 @@ stmt_result(backend *be, stmt *s, int nr)
 	} else if (nr) {
 		int v = getArg(s->q, nr);
 
-		assert(s->q->retc >= nr);
+		assert(s->q->retc > nr);
 		ns->nr = v;
 	} else {
 		ns->nr = s->nr;
@@ -1618,8 +1624,7 @@ argumentZero(MalBlkPtr mb, int tpe)
 */
 
 static InstrPtr
-select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub, int anti, int swapped, int type, int
-		reduce)
+select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub, int anti, int symmetric, int swapped, int type, int reduce)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr p, q;
@@ -1630,7 +1635,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	if (op1->nr < 0 || (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
+	if ((symmetric || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
 		int k;
 		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 
@@ -1666,7 +1671,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 			sub = NULL;
 		}
 
-		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
+		p = pushBit(mb, p, (symmetric)?TRUE:FALSE); /* symmetric */
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
 		p = pushBit(mb, p, FALSE);		    /* nils_false */
@@ -1767,10 +1772,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		}
 		q = pushBit(mb, q, anti);
 		if (type == st_uselect2) {
-			if (cmp & CMP_BETWEEN)
-				q = pushBit(mb, q, TRUE); /* all nil's are != */
+			q = pushBit(mb, q, TRUE); /* all nil's are != */
 		} else {
-			q = pushBit(mb, q, (cmp & CMP_SYMMETRIC)?TRUE:FALSE);
+			q = pushBit(mb, q, (symmetric)?TRUE:FALSE);
 		}
 		if (type == st_join2)
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -1794,10 +1798,10 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 }
 
 stmt *
-stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce)
+stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce)
 {
 	stmt *sel = sub;
-	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, &sub, anti, 0, st_uselect2, reduce);
+	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, &sub, anti, symmetric, 0, st_uselect2, reduce);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect2);
@@ -2253,9 +2257,9 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 }
 
 stmt *
-stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped)
+stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int symmetric, int swapped)
 {
-	InstrPtr q = select2_join2(be, l, ra, rb, cmp, NULL, anti, swapped, st_join2, 1/*reduce semantics*/);
+	InstrPtr q = select2_join2(be, l, ra, rb, cmp, NULL, anti, symmetric, swapped, st_join2, 1/*reduce semantics*/);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join2);
 		if (s == NULL) {
@@ -2890,7 +2894,9 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 		return NULL;
 	if (!t->s) /* declared table */
 		assert(0);
-	q = newStmtArgs(mb, sqlRef, claimRef, 5);
+	q = newStmtArgs(mb, sqlRef, claimRef, 6);
+	/* returns offset or offsets */
+	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);

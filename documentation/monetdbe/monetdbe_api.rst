@@ -9,10 +9,10 @@ If all went well they return a NULL. Otherwise it the exception message thrown b
 General considerations
 ----------------------
 
-There can be a single :memory: database or local persistent database open at a time.
+There can be a single in-memory database or local persistent database open at a time.
 The database location should be passed as a full path. Relative paths are currently not supported.
 
-As soon as you create a connection with another database, the content of the :memory: data store is lost.
+As soon as you create a connection with another database, the content of the in-memory data store is lost.
 MonetDB/e can also be used as a proxy to a remote database.
 It is possible to have multiple such connections open.
 
@@ -21,31 +21,33 @@ Data Types
 
 The API wraps the internal data types to those more convenient for programming directly in C.
 
-| MonetDBe type           | MonetDB internal type |
-| ----------------------- | --------------------- |
-| int8_t  |  bool|
-| int8_t  |  int8_t|
-| int16_t  |  int16_t|
-| int32_t  |  int32_t|
-| int64_t  |  int64_t|
-| __int128  |  int128_t|
-| float  |  float|
-| double  |  double|
-| char *  |  str|
-| monetdbe_data_blob  |  blob|
-| monetdbe_data_date  |  date|
-| monetdbe_data_time  |  time|
-| monetdbe_data_timestamp  |  timestamp|
-| ----------------------- | --------------------- |
+=======================   =====================
+MonetDBe type             MonetDB internal type
+=======================   =====================
+int8_t                    bool
+int8_t                    int8_t
+int16_t                   int16_t
+int32_t                   int32_t
+int64_t                   int64_t
+__int128                  int128_t
+float                     float
+double                    double
+char *                    str
+monetdbe_data_blob        blob
+monetdbe_data_date        date
+monetdbe_data_time        time
+monetdbe_data_timestamp   timestamp
+=======================   =====================
 
 Connection and server options
 -----------------------------
 
 .. c:function:: int monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *options)
 
-    Initialize a monetdbe_database structure. The database of interest is denoted by an url and denote either ':memory:', /fullpath/directory,
-    mapi:monetdb://company.nl:50000/database. The latter refers to a MonetDB server location.
-    The :memory: and local path options lead to an exclusive lock on the database storage..
+    Initialize a monetdbe_database structure. The database of interest is denoted by an url and denote either ``NULL``, /fullpath/directory,
+    mapi:monetdb://company.nl:50000/database. The latter refers to a
+    MonetDB server location.  The value ``NULL`` denotes an in-memory database.
+    The ``NULL`` and local path options lead to an exclusive lock on the database storage.
     Opening the same database multiple times concurrently is allowed, but opening another one concurrently will throw an error for now.
     There may be multiple connections to multiple MonetDB servers.
 
@@ -53,7 +55,7 @@ Connection and server options
 
     Close the database handler and release the resources for another database connection.
     From here on the connection can not be used anymore to pass queries and any pending result set is cleaned up.
-    Be aware that the content of an ':memory:' database is discarded.
+    Be aware that the content of an 'in-memory' database is discarded.
 
 Transaction management
 ----------------------
@@ -120,7 +122,7 @@ Backup and restore
 ------------------
 .. c:function:: char* monetdbe_dump_database(monetdbe_database db, char *backupfile);
 
-    Dump a :memory: database as a collection of SQL statements on a local file
+    Dump a in-memory database as a collection of SQL statements on a local file
 
 .. c:function:: char* monetdbe_dump_table(monetdbe_database db, const char *schema_name, const char *table_name, const char *backupfile);
 
@@ -128,7 +130,7 @@ Backup and restore
 
 .. c:function:: char* monetdbe_restore(monetdbe_database db, char *localfile);
 
-    [TODO] Restore a SQL dump to initialize the ':memory:' case. This is similar  to loading a SQL script.
+    [TODO] Restore a SQL dump to initialize the 'in-memory' case. This is similar  to loading a SQL script.
 
 Miscellaneous
 -------------

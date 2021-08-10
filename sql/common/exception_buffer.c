@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -21,8 +21,8 @@ eb_init(exception_buffer *eb)
 	return eb;
 }
 
-void 
-eb_error( exception_buffer *eb, char *msg, int val ) 
+void
+eb_error( exception_buffer *eb, char *msg, int val )
 {
 	eb->code = val;
 	eb->msg = msg;

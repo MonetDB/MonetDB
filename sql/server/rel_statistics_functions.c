@@ -125,8 +125,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmin->data.val.lval, (daytime)rmax->data.val.lval));
 				} break;
 				case EC_TIMESTAMP: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmax->data.val.lval, (timestamp)rmin->data.val.lval));
-					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmin->data.val.lval, (timestamp)rmax->data.val.lval));
+					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), TSDIFF((timestamp)lmax->data.val.lval, (timestamp)rmin->data.val.lval));
+					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), TSDIFF((timestamp)lmin->data.val.lval, (timestamp)rmax->data.val.lval));
 				} break;
 				default:
 					break;

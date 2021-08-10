@@ -28,22 +28,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_OPENSSL
-#ifdef HAVE_MD5_UPDATE
-#include <openssl/md5.h>
-#endif
-#if defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE)
-#include <openssl/sha.h>
-#endif
-#ifdef HAVE_RIPEMD160_UPDATE
-#include <openssl/ripemd.h>
-#endif
-#else
-#ifdef HAVE_COMMONCRYPTO
-#define COMMON_DIGEST_FOR_OPENSSL
-#include <CommonCrypto/CommonDigest.h>
-#endif
-#endif
 
 static str AUTHdecypherValue(str *ret, const char *value);
 static str AUTHcypherValue(str *ret, const char *value);
@@ -85,15 +69,17 @@ AUTHfindUser(const char *username)
 
 	if (BAThash(user) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&user->thashlock);
-		HASHloop_str(cni, cni.b->thash, p, username) {
+		HASHloop_str(cni, user->thash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&user->thashlock);
+				bat_iterator_end(&cni);
 				return p;
 			}
 		}
 		MT_rwlock_rdunlock(&user->thashlock);
 	}
+	bat_iterator_end(&cni);
 	return BUN_NONE;
 }
 
@@ -470,6 +456,7 @@ AUTHcheckCredentials(
 	/* find the corresponding password to the user */
 	passi = bat_iterator(pass);
 	tmp = (str)BUNtvar(passi, p);
+	bat_iterator_end(&passi);
 	assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, tmp));
@@ -663,6 +650,7 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 	assert(p != BUN_NONE);
 	passi = bat_iterator(pass);
 	tmp = BUNtvar(passi, p);
+	bat_iterator_end(&passi);
 	assert (tmp != NULL);
 	/* decypher the password */
 	msg = AUTHdecypherValue(&hash, tmp);
@@ -721,6 +709,7 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	assert (p != BUN_NONE);
 	useri = bat_iterator(user);
 	tmp = BUNtvar(useri, p);
+	bat_iterator_end(&useri);
 	assert (tmp != NULL);
 	if (strcmp(tmp, username) == 0)
 		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
@@ -764,7 +753,9 @@ AUTHresolveUser(str *username, oid uid)
 
 	assert(username != NULL);
 	useri = bat_iterator(user);
-	if ((*username = GDKstrdup((str)(BUNtvar(useri, p)))) == NULL)
+	*username = GDKstrdup((str)(BUNtvar(useri, p)));
+	bat_iterator_end(&useri);
+	if (*username == NULL)
 		throw(MAL, "resolveUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -788,7 +779,9 @@ AUTHgetUsername(str *username, Client cntxt)
 	assert(p < BATcount(user));
 
 	useri = bat_iterator(user);
-	if ((*username = GDKstrdup( BUNtvar(useri, p))) == NULL)
+	*username = GDKstrdup( BUNtvar(useri, p));
+	bat_iterator_end(&useri);
+	if (*username == NULL)
 		throw(MAL, "getUsername", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -845,10 +838,9 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	p = AUTHfindUser(username);
 	if (p == BUN_NONE)
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
-	i = bat_iterator(user);
-	assert(p != BUN_NONE);
 	i = bat_iterator(pass);
 	tmp = BUNtvar(i, p);
+	bat_iterator_end(&i);
 	assert (tmp != NULL);
 	/* decypher the password */
 	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, tmp));
@@ -993,7 +985,6 @@ AUTHcypherValue(str *ret, const char *value)
 static str
 AUTHverifyPassword(const char *passwd)
 {
-#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	const char *p = passwd;
 	size_t len = strlen(p);
 
@@ -1013,13 +1004,6 @@ AUTHverifyPassword(const char *passwd)
 	}
 
 	return(MAL_SUCCEED);
-#else
-	if (GDKembedded())
-		return(MAL_SUCCEED);
-	(void) passwd;
-	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
-		  MONETDB5_PASSWDHASH);
-#endif
 }
 
 static BUN
@@ -1037,11 +1021,13 @@ lookupRemoteTableKey(const char *key)
 			oid pos = p;
 			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&cni.b->thashlock);
+				bat_iterator_end(&cni);
 				return p;
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
+	bat_iterator_end(&cni);
 
 	return BUN_NONE;
 
@@ -1073,12 +1059,15 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 	assert(p != BUN_NONE);
 	i = bat_iterator(rt_uri);
 	*uri = BUNtvar(i, p);
+	bat_iterator_end(&i);
 
 	i = bat_iterator(rt_remoteuser);
 	*username = BUNtvar(i, p);
+	bat_iterator_end(&i);
 
 	i = bat_iterator(rt_hashedpwd);
 	tmp = BUNtvar(i, p);
+	bat_iterator_end(&i);
 	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
 
 	*password = pwhash;

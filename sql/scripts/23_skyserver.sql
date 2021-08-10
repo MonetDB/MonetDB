@@ -10,15 +10,15 @@ BEGIN
 	DECLARE res varchar(32), aux varchar(32);
 	DECLARE ofset int;
 
-    IF ( st < 0 or st > LENGTH(s1))
-        THEN RETURN '';
-    END IF;
+	IF ( st < 0 or st > LENGTH(s1))
+		THEN RETURN '';
+	END IF;
 
-    SET ofset = 1;
-    SET res = SUBSTRING(s1,ofset,st-1);
-    SET res = res || s3;
-    SET ofset = st + len;
-    SET aux = SUBSTRING(s1,ofset,LENGTH(s1)-ofset+1);
+	SET ofset = 1;
+	SET res = SUBSTRING(s1,ofset,st-1);
+	SET res = res || s3;
+	SET ofset = st + len;
+	SET aux = SUBSTRING(s1,ofset,LENGTH(s1)-ofset+1);
 	SET res = res || aux;
 	RETURN res;
 END;
@@ -45,7 +45,7 @@ grant execute on function MS_ROUND to public;
 CREATE FUNCTION MS_STR(num float, prc int, truncat int)
 RETURNS string
 BEGIN
-        RETURN CAST(num as string);
+	RETURN CAST(num as string);
 END;
 
 grant execute on function MS_STR to public;
