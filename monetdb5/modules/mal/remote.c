@@ -1518,10 +1518,16 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
 	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
-		if ((b = BATdescriptor(bid)) == NULL)
+		if ((b = BATdescriptor(bid)) == NULL) {
+			BBPunfix(bid);
 			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
+		}
 		v = COLcopy(b, b->ttype, true, TRANSIENT);
 		BBPunfix(b->batCacheid);
+		if (v == NULL) {
+			BBPunfix(bid);
+			throw(MAL, "remote.bincopyto", GDK_EXCEPTION);
+		}
 	}
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
