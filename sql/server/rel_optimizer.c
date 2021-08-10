@@ -9523,7 +9523,7 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_basecount(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && rel->l && !rel->r && list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
@@ -9532,7 +9532,8 @@ rel_basecount(visitor *v, sql_rel *rel)
 		if (is_basetable(bt->op) && !e->l) { /* count(*) */
 			/* change into select cnt('schema','table') */;
 			sql_table *t = bt->l;
-			if (!isTable(t))
+			/* I need to get the declared table's frame number to make this work correctly for those */
+			if (!isTable(t) || isDeclaredTable(t))
 				return rel;
 			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC);
 			list *exps = sa_list(v->sql->sa);
