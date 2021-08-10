@@ -596,7 +596,6 @@ typedef struct _binbat_v1 {
 		Tnonil:1,
 		Tdense:1;
 	BUN size;
-	size_t headsize;
 	size_t tailsize;
 	size_t theapsize;
 } binbat;
@@ -604,7 +603,7 @@ typedef struct _binbat_v1 {
 static str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 {
-	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
+	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
@@ -750,7 +749,6 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 	if (bb.Ttype == TYPE_str && bb.size)
 		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
 	BATsetcount(b, bb.size);
-	b->batDirtydesc = true;
 
 	// read blockmode flush
 	while (must_flush && mnstr_read(in, &tmp, 1, 1) > 0) {
@@ -1551,7 +1549,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->tnonil,
 			BATtdense(v),
 			v->batCount,
-			(size_t)v->batCount << v->tshift,
+			BATtvoid(v) ? 0 : (size_t)v->batCount << v->tshift,
 			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
