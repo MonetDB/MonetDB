@@ -514,51 +514,6 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 	return rel->exps;
 }
 
-static list*
-rel_simplify_count(visitor *v, sql_rel *rel)
-{
-	mvc *sql = v->sql;
-	int ncountstar = 0;
-
-	/* Convert count(no null) into count(*) */
-	for (node *n = rel->exps->h; n ; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_aggr_is_count(e) && !need_distinct(e)) {
-			if (list_length(e->l) == 0) {
-				ncountstar++;
-			} else if (list_length(e->l) == 1 && !has_nil((sql_exp*)((list*)e->l)->h->data)) {
-				sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-				sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, ne, e);
-				n->data = ne;
-				ncountstar++;
-				v->changes++;
-			}
-		}
-	}
-	/* With multiple count(*), use exp_ref to reduce the number of calls to this aggregate */
-	if (ncountstar > 1) {
-		sql_exp *count_star = NULL;
-		for (node *n = rel->exps->h; n ; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (exp_aggr_is_count(e) && !need_distinct(e) && list_length(e->l) == 0) {
-				if (!count_star) {
-					count_star = e;
-				} else {
-					sql_exp *ne = exp_ref(sql, count_star);
-					if (exp_name(e))
-						exp_prop_alias(sql->sa, ne, e);
-					n->data = ne;
-				}
-			}
-		}
-	}
-	return rel->exps;
-}
-
 sql_rel *
 rel_get_statistics(visitor *v, sql_rel *rel)
 {
@@ -620,8 +575,6 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 		if (is_simple_project(rel->op) && !list_empty(rel->r))
 			rel->r = exps_exp_visitor_bottomup(v, rel, rel->r, 0, &rel_propagate_statistics, false);
 		/* The following optimizations can only be applied after propagating the statistics to rel->exps */
-		if (is_groupby(rel->op) && rel->exps)
-			rel->exps = rel_simplify_count(v, rel);
 		if ((is_join(rel->op) || is_select(rel->op)) && rel->exps) {
 			int changes = v->changes;
 			rel->exps = rel_prune_predicates(v, rel);
