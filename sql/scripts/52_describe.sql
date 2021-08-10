@@ -145,7 +145,7 @@ BEGIN
     END;
 END;
 
-CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || sys.replace(s,'''','''''') || ''' '; END;
+CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
 CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN sys.DQ(s) || '.' || sys.DQ(t); END;
 CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t) || ' '; END;
@@ -514,12 +514,54 @@ CREATE VIEW sys.describe_sequences AS
 	ORDER BY s.name, seq.name;
 
 CREATE VIEW sys.describe_functions AS
+	WITH func_args_all(func_id, number, max_number, func_arg) AS
+	(
+		SELECT
+			func_id,
+			number,
+			max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
+			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+		FROM sys.args
+		WHERE inout = 1
+	),
+	func_args(func_id, func_arg) AS
+	(
+		SELECT func_id, func_arg
+		FROM func_args_all
+		WHERE number = max_number
+	),
+	func_rets_all(func_id, number, max_number, func_ret, func_ret_type) AS
+	(
+		SELECT
+			func_id,
+			number,
+			max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
+			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number),
+			group_concat(sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+		FROM sys.args
+		WHERE inout = 0
+	),
+	func_rets(func_id, func_ret, func_ret_type) AS
+	(
+		SELECT
+			func_id,
+			func_ret,
+			func_ret_type
+		FROM func_rets_all
+		WHERE number = max_number
+	)
 	SELECT
 		f.id o,
 		s.name sch,
 		f.name fun,
-		f.func def
-	FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;
+		CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def
+	FROM sys.functions f
+		LEFT OUTER JOIN func_args fa ON fa.func_id = f.id
+		LEFT OUTER JOIN func_rets fr ON fr.func_id = f.id
+		JOIN sys.schemas s ON f.schema_id = s.id
+		JOIN sys.function_types ft ON f.type = ft.function_type_id
+		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
+	WHERE s.name <> 'tmp' AND NOT f.system;
 
 CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
 	RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
