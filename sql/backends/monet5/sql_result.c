@@ -1632,7 +1632,7 @@ export_length(stream *s, int mtype, sql_class eclass, int digits, int scale, int
 		return -2;
 	if (mvc_send_lng(s, length) != 1)
 		return -4;
-	return length;
+	return 0;
 }
 
 int
