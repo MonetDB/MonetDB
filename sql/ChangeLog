@@ -1,6 +1,13 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The built-in SQL functions to produce a dump that were added as a
+  proof-of-concept in the previous release have been improved and are
+  now usable.  Use the query ``SELECT stmt FROM sys.dump_database(FALSE)
+  ORDER BY o'' to produce a dump.  The dump code built into mclient and
+  msqldump is probably still more efficient, though.
+
 * Thu Jun  3 2021 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.epoch function has always been confusing.  There are two
   versions, one with an INTEGER argument, and one with a BIGINT
