@@ -354,6 +354,11 @@ BEGIN
 				      SELECT t.o, t.stmt FROM sys.dump_tables t
 				    ) AS stmts(o, s);
 
+  -- dump table data before adding constraints and fixing sequences
+  IF NOT DESCRIBE THEN
+    CALL sys.dump_table_data();
+  END IF;
+
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
@@ -366,9 +371,6 @@ BEGIN
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
 
-  IF NOT DESCRIBE THEN
-    CALL sys.dump_table_data();
-  END IF;
   --TODO Improve performance of dump_table_data.
   --TODO loaders ,procedures, window and filter sys.functions.
   --TODO look into order dependent group_concat
