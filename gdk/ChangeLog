@@ -1,6 +1,16 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Many (most) low level functions that could take a long time (such as
+  BATjoin) can now be aborted with a timeout.  When the function takes too
+  long, the function will fail, and hence the whole SQL query will fail.
+- At some point in the past, string heaps were created where the
+  hash value of the string was stored in the heap before the string.
+  This hasn't been used in a long time.  Now the code that could still
+  read those old heaps has been removed.  Bats that used the old format
+  are converted automatically.
+
 * Mon Aug  2 2021 Sjoerd Mullender <sjoerd@acm.org>
 - Some small interface changes to the atom functions: the atomPut function
   now returns (var_t) -1 on error instead of 0; the atomHeap function
