@@ -1,0 +1,12 @@
+stdout of test 'remote-join-idxs.Bug-7165` in directory 'sql/test/BugTracker-2021` itself:
+
+
+# 09:47:36 >  
+# 09:47:36 >  "/usr/bin/python3.9" "remote-join-idxs.Bug-7165.py" "remote-join-idxs.Bug-7165"
+# 09:47:36 >  
+
+
+# 09:47:39 >  
+# 09:47:39 >  "Done."
+# 09:47:39 >  
+

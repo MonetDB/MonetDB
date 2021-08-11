@@ -807,12 +807,14 @@ read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
 		(*pos)++;
 		if (r[*pos] != '.')
 			return sql_error(sql, -1, SQLSTATE(42000) "JOINIDX: missing '.'\n");
+		(*pos)++;
 		tname = r+*pos + 1;
 		skipIdent(r,pos);
 		convertIdent(tname);
 		(*pos)++;
 		if (r[*pos] != '.')
 			return sql_error(sql, -1, SQLSTATE(42000) "JOINIDX: missing '.'\n");
+		(*pos)++;
 		iname = r+*pos + 1;
 		skipIdent(r,pos);
 		convertIdent(iname);
