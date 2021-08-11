@@ -84,44 +84,71 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column type doesn't match %s definition", errtable, errtable);
+		if (nc->null != mc->null)
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
 		if (isRangePartitionTable(nt) || isListPartitionTable(nt)) {
-			if (nc->null != mc->null)
-				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
 			if ((!nc->def && mc->def) || (nc->def && !mc->def) || (nc->def && mc->def && strcmp(nc->def, mc->def) != 0))
 				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column DEFAULT value doesn't match %s definition", errtable, errtable);
 		}
 	}
-	if (isNonPartitionedTable(nt)) {
-		if (ol_length(nt->idxs) != ol_length(nnt->idxs))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index doesn't match %s definition", errtable, errtable);
-		if (ol_length(nt->idxs))
-			for (n = ol_first_node(nt->idxs), m = ol_first_node(nnt->idxs); n && m; n = n->next, m = m->next) {
-				sql_idx *ni = n->data;
-				sql_idx *mi = m->data;
+	if (ol_length(nt->keys) != ol_length(nnt->keys))
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key doesn't match %s definition", errtable, errtable);
+	if (ol_length(nt->keys))
+		for (n = ol_first_node(nt->keys), m = ol_first_node(nnt->keys); n && m; n = n->next, m = m->next) {
+			sql_key *ni = n->data;
+			sql_key *mi = m->data;
 
-				if (ni->type != mi->type)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
+			if (ni->type != mi->type)
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
+			if (list_length(ni->columns) != list_length(mi->columns))
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
+			for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
+				sql_kc *nni = nn->data;
+				sql_kc *mmi = mm->data;
+
+				if (nni->c->colnr != mmi->c->colnr)
+					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key's columns doesn't match %s definition", errtable, errtable);
 			}
-	} else { //for partitioned tables we allow indexes but the key set must be exactly the same
-		if (ol_length(nt->keys) != ol_length(nnt->keys))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key doesn't match %s definition", errtable, errtable);
-		if (ol_length(nt->keys))
-			for (n = ol_first_node(nt->keys), m = ol_first_node(nnt->keys); n && m; n = n->next, m = m->next) {
-				sql_key *ni = n->data;
-				sql_key *mi = m->data;
+		}
 
-				if (ni->type != mi->type)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
-				if (list_length(ni->columns) != list_length(mi->columns))
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
-				for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
-					sql_kc *nni = nn->data;
-					sql_kc *mmi = mm->data;
+	/* For indexes, empty ones can be ignored, which makes validation trickier */
+	n = ol_length(nt->idxs) ? ol_first_node(nt->idxs) : NULL;
+	m = ol_length(nnt->idxs) ? ol_first_node(nnt->idxs) : NULL;
+	for (; n || m; n = n->next, m = m->next) {
+		sql_idx *ni, *mi;
 
-					if (nni->c->colnr != mmi->c->colnr)
-						throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key's columns doesn't match %s definition", errtable, errtable);
-				}
-			}
+		while (n) {
+			ni = n->data;
+			if ((!hash_index(ni->type) || list_length(ni->columns) > 1) && idx_has_column(ni->type))
+				break;
+			n = n->next;
+		}
+		while (m) {
+			mi = m->data;
+			if ((!hash_index(mi->type) || list_length(mi->columns) > 1) && idx_has_column(mi->type))
+				break;
+			m = m->next;
+		}
+
+		if (!n && !m) /* no more idxs to check, done */
+			break;
+		if ((m && !n) || (!m && n))
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
+
+		assert(m && n);
+		ni = n->data;
+		mi = m->data;
+		if (ni->type != mi->type)
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
+		if (list_length(ni->columns) != list_length(mi->columns))
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
+		for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
+			sql_kc *nni = nn->data;
+			sql_kc *mmi = mm->data;
+
+			if (nni->c->colnr != mmi->c->colnr)
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index's columns doesn't match %s definition", errtable, errtable);
+		}
 	}
 
 	if (nested_mergetable(sql->session->tr, nt/*mergetable*/, nnt->s->base.name, nnt->base.name/*parts*/))

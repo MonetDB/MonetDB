@@ -8759,7 +8759,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 		if (strcmp(nname, TID) == 0) {
 			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 			rel_base_use_tid(sql, p);
-		} else if ((cn = ol_find_name(mt->columns, nname))) {
+		} else if (nname[0] != '%' && (cn = ol_find_name(mt->columns, nname))) {
 			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
 
 			/* with name find column in merge table, with colnr find column in member */
@@ -8774,9 +8774,8 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			set_basecol(e);
 			rel_base_use(sql, p, rc->colnr);
 			list_append(p->exps, e);
-		} else if (nname[0] && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
+		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
 			sql_idx *i = ci->data, *ri = NULL;
-			int has_nils = 0;
 
 			/* indexes don't have a number field like 'colnr', so get the index the old way */
 			for (node *nn = mt->idxs->l->h, *mm = t->idxs->l->h; nn && mm ; nn = nn->next, mm = mm->next) {
@@ -8789,16 +8788,10 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			}
 
 			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
-			for (node *nn = ri->columns->h ; nn && !has_nils; nn = nn->next) { /* check for NULL values */
-				sql_kc *kc = nn->data;
-
-				if (kc->c->null)
-					has_nils = 1;
-			}
 			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
 			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
 
-			sql_exp *e = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nils, 1);
+			sql_exp *e = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(ri->type)) {
 				prop *p = e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
