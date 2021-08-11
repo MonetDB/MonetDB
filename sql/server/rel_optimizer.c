@@ -8763,17 +8763,17 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
 
 			/* with name find column in merge table, with colnr find column in member */
-			sql_exp *e = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
+			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
-				prop *p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value = rc->t->pkey;
 			} else if (rc->unique == 1) {
-				prop *p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value = NULL;
 			}
-			set_basecol(e);
+			set_basecol(ne);
 			rel_base_use(sql, p, rc->colnr);
-			list_append(p->exps, e);
+			list_append(p->exps, ne);
 		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
 			sql_idx *i = ci->data, *ri = NULL;
 
@@ -8791,16 +8791,16 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
 			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
 
-			sql_exp *e = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), 1);
+			sql_exp *ne = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(ri->type)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
 				p->value = ri;
 			} else if (ri->type == join_idx) {
-				prop *p = e->p = prop_create(sql->sa, PROP_JOINIDX, e->p);
+				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
 				p->value = ri;
 			}
-			list_append(p->exps, e);
+			list_append(p->exps, ne);
 		}
 	}
 	rel_base_set_mergetable(p, mt);
