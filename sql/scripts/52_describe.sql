@@ -169,8 +169,7 @@ CREATE VIEW sys.describe_constraints AS
 		AND k.table_id = t.id
 		AND s.id = t.schema_id
 		AND t.system = FALSE
-		AND k.type in (0, 1)
-		AND t.type IN (0, 6);
+		AND k.type in (0, 1);
 
 CREATE VIEW sys.describe_indices AS
 	WITH it (id, idx) AS (VALUES (0, 'INDEX'), (4, 'IMPRINTS INDEX'), (5, 'ORDERED INDEX')) --UNIQUE INDEX wraps to INDEX.
@@ -333,7 +332,7 @@ CREATE VIEW sys.describe_comments AS
 
 			SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, sys.FQN(s.name, t.name)
 			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
-			WHERE NOT s.name <> 'tmp'
+			WHERE s.name <> 'tmp'
 
 			UNION ALL
 
