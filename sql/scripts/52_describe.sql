@@ -148,7 +148,7 @@ END;
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
 CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN sys.DQ(s) || '.' || sys.DQ(t); END;
-CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t) || ' '; END;
+CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t); END;
 
 --We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
 CREATE FUNCTION sys.replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
@@ -163,7 +163,7 @@ CREATE VIEW sys.describe_constraints AS
 		t.name tbl,
 		kc.name col,
 		k.name con,
-		CASE WHEN k.type = 0 THEN 'PRIMARY KEY' WHEN k.type = 1 THEN 'UNIQUE' END tpe
+		CASE k.type WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' END tpe
 	FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
 	WHERE kc.id = k.id
 		AND k.table_id = t.id
@@ -257,11 +257,7 @@ BEGIN
 		SELECT
 			CASE WHEN tp.table_id IS NOT NULL THEN	--updatable merge table
 				' PARTITION BY ' ||
-				CASE
-					WHEN bit_and(tp.type, 2) = 2
-					THEN 'VALUES '
-					ELSE 'RANGE '
-				END ||
+				ifthenelse(bit_and(tp.type, 2) = 2, 'VALUES ', 'RANGE ') ||
 				CASE
 					WHEN bit_and(tp.type, 4) = 4 --column expression
 					THEN 'ON ' || '(' || (SELECT sys.DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
@@ -293,12 +289,12 @@ CREATE VIEW sys.describe_tables AS
 			, ', ') || ')'
 		FROM sys._columns c
 		WHERE c.table_id = t.id) col,
-		CASE
-			WHEN ts.table_type_name = 'REMOTE TABLE' THEN
+		CASE ts.table_type_name
+			WHEN 'REMOTE TABLE' THEN
 				sys.get_remote_table_expressions(s.name, t.name)
-			WHEN ts.table_type_name = 'MERGE TABLE' THEN
+			WHEN 'MERGE TABLE' THEN
 				sys.get_merge_table_partition_expressions(t.id)
-			WHEN ts.table_type_name = 'VIEW' THEN
+			WHEN 'VIEW' THEN
 				sys.schema_guard(s.name, t.name, t.query)
 			ELSE
 				''
@@ -330,7 +326,7 @@ CREATE VIEW sys.describe_comments AS
 
 			UNION ALL
 
-			SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, sys.FQN(s.name, t.name)
+			SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
 			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
 			WHERE s.name <> 'tmp'
 
@@ -386,12 +382,7 @@ CREATE VIEW sys.describe_privileges AS
 			ELSE
 				o.nme
 		END o_nme,
-		CASE
-			WHEN o.tpe IS NOT NULL THEN
-				o.tpe
-			ELSE
-				'GLOBAL'
-		END o_tpe,
+		coalesce(o.tpe, 'GLOBAL') o_tpe,
 		pc.privilege_code_name p_nme,
 		a.name a_nme,
 		g.name g_nme,
@@ -458,7 +449,7 @@ CREATE VIEW sys.describe_partition_tables AS
 	FROM 
     (WITH
 		tp("type", table_id) AS
-		(SELECT CASE WHEN (table_partitions."type" & 2) = 2 THEN 'VALUES' ELSE 'RANGE' END, table_partitions.table_id FROM sys.table_partitions),
+		(SELECT ifthenelse((table_partitions."type" & 2) = 2, 'VALUES', 'RANGE'), table_partitions.table_id FROM sys.table_partitions),
 		subq(m_tid, p_mid, "type", m_sch, m_tbl, p_sch, p_tbl) AS
 		(SELECT m_t.id, p_m.id, m_t."type", m_s.name, m_t.name, p_s.name, p_m.name
 		FROM sys.schemas m_s, sys._tables m_t, sys.dependencies d, sys.schemas p_s, sys._tables p_m
@@ -477,7 +468,7 @@ CREATE VIEW sys.describe_partition_tables AS
 		subq.p_tbl,
 		tp."type" AS p_raw_type,
 		CASE WHEN tp."type" = 'VALUES'
-			THEN (SELECT GROUP_CONCAT(vp.value, ',')FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid)
+			THEN (SELECT GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid)
 			ELSE NULL
 		END AS pvalues,
 		CASE WHEN tp."type" = 'RANGE'
