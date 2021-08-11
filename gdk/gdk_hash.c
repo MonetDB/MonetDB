@@ -583,10 +583,9 @@ BATcheckhash(BAT *b)
 	return ret;
 }
 
-static gdk_return
+static void
 BAThashsave_intern(BAT *b, bool dosync)
 {
-	gdk_return rc = GDK_SUCCEED;
 	Hash *h;
 	lng t0 = 0;
 
@@ -600,7 +599,6 @@ BAThashsave_intern(BAT *b, bool dosync)
 		dosync = false;
 #endif
 
-		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&
@@ -609,20 +607,20 @@ BAThashsave_intern(BAT *b, bool dosync)
 		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
 			hp->dirty = false;
-			rc = HASHfix(h, true, dosync);
+			gdk_return rc = HASHfix(h, true, dosync);
 			TRC_DEBUG(ACCELERATOR,
 				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
+		GDKclrerr();
 	}
-	return rc;
 }
 
-gdk_return
+void
 BAThashsave(BAT *b, bool dosync)
 {
 	Hash *h = b->thash;
 	if (h == NULL)
-		return GDK_SUCCEED;
+		return;
 	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
 	((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
 	((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
@@ -630,7 +628,7 @@ BAThashsave(BAT *b, bool dosync)
 	((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
 	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-	return BAThashsave_intern(b, dosync);
+	BAThashsave_intern(b, dosync);
 }
 
 #ifdef PERSISTENTHASH
@@ -1104,21 +1102,25 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
 	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHfix(h, false, true) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
+		GDKclrerr();
 		return;
 	}
 	if ((ATOMsize(b->ttype) > 2 &&
@@ -1131,6 +1133,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		HEAPfree(&h->heapbckt, true);
 		HEAPfree(&h->heaplink, true);
 		GDKfree(h);
+		GDKclrerr();
 		return;
 	}
 	h->Link = h->heaplink.base;
@@ -1173,17 +1176,20 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
 	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHfix(h, false, true) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	BUN c = HASHprobe(h, v);
@@ -1254,17 +1260,20 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
 	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	if (HASHfix(h, false, true) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	BUN c = HASHprobe(h, v);
