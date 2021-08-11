@@ -8745,26 +8745,70 @@ static sql_rel *
 rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 {
 	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
-	node *n;
 
 	assert(!p->exps);
 	p->exps = sa_list(sql->sa);
 	const char *pname = t->base.name;
 	if (isRemote(t))
 		pname = mapiuri_table(t->query, sql->sa, pname);
-	for (n = mt_rel->exps->h; n; n = n->next) {
+	for (node *n = mt_rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		if (is_intern(e) || exp_name(e)[0] == '%') /* break on tid/idxs */
-			break;
-		sql_column *c = ol_find_name(mt->columns, exp_name(e))->data;
-		sql_column *rc = ol_fetch(t->columns, c->colnr);
-		/* with name find column in merge table, with colnr find column in member */
-		list_append(p->exps, exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0));
-	}
-	if (n) {
-		sql_exp *e = n->data;
-		if (strcmp(exp_name(e), TID) == 0)
+		node *cn = NULL, *ci = NULL;
+		const char *nname = exp_name(e);
+
+		if (strcmp(nname, TID) == 0) {
 			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+			rel_base_use_tid(sql, p);
+		} else if ((cn = ol_find_name(mt->columns, nname))) {
+			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
+
+			/* with name find column in merge table, with colnr find column in member */
+			sql_exp *e = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
+			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
+				prop *p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+				p->value = rc->t->pkey;
+			} else if (rc->unique == 1) {
+				prop *p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+				p->value = NULL;
+			}
+			set_basecol(e);
+			rel_base_use(sql, p, rc->colnr);
+			list_append(p->exps, e);
+		} else if (nname[0] && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
+			sql_idx *i = ci->data, *ri = NULL;
+			int has_nils = 0;
+
+			/* indexes don't have a number field like 'colnr', so get the index the old way */
+			for (node *nn = mt->idxs->l->h, *mm = t->idxs->l->h; nn && mm ; nn = nn->next, mm = mm->next) {
+				sql_idx *ii = nn->data;
+
+				if (ii->base.id == i->base.id) {
+					ri = mm->data;
+					break;
+				}
+			}
+
+			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
+			for (node *nn = ri->columns->h ; nn && !has_nils; nn = nn->next) { /* check for NULL values */
+				sql_kc *kc = nn->data;
+
+				if (kc->c->null)
+					has_nils = 1;
+			}
+			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
+			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
+
+			sql_exp *e = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nils, 1);
+			/* index names are prefixed, to make them independent */
+			if (hash_index(ri->type)) {
+				prop *p = e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
+				p->value = ri;
+			} else if (ri->type == join_idx) {
+				prop *p = e->p = prop_create(sql->sa, PROP_JOINIDX, e->p);
+				p->value = ri;
+			}
+			list_append(p->exps, e);
+		}
 	}
 	rel_base_set_mergetable(p, mt);
 	return p;
