@@ -12,7 +12,7 @@
 - The sys.epoch function has always been confusing.  There are two
   versions, one with an INTEGER argument, and one with a BIGINT
   argument.  The former accepted values as seconds, whereas the
-  latter epected milliseconds.  Also, the construct EXTRACT(EPOCH
+  latter expected milliseconds.  Also, the construct EXTRACT(EPOCH
   FROM value) returns a BIGINT with millisecond precision.  This has
   now been overhauled.  There is no longer a function sys.epoch with
   BIGINT argument, but instead there is a new function sys.epoch with
