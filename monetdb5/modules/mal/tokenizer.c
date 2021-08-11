@@ -405,8 +405,10 @@ TKNZRdepositFile(void *r, str *fnme)
 		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
 	}
 	bs = bstream_create(fs, SIZE);
-	if (bs == NULL)
+	if (bs == NULL) {
+		close_stream(fs);
 		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
 		   !mnstr_errnr(bs->s))
 	{
