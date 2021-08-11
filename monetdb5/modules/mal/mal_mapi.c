@@ -392,7 +392,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 #endif
 
-		data = GDKmalloc(sizeof(*data));
+		data = GDKzalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
 			TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
