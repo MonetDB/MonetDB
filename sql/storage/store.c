@@ -2303,7 +2303,7 @@ store_manager(sqlstore *store)
 
 		if (res != LOG_OK) {
 			MT_lock_unset(&store->flush);
-			GDKfatal("write-ahead logging failure, disk full?");
+			GDKfatal("write-ahead logging failure");
 		}
 
 		if (GDKexiting())

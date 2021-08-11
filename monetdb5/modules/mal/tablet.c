@@ -927,7 +927,7 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_set(&mal_copyLock);
 	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) != GDK_SUCCEED) {
-			tablet_error(task, lng_nil, col, "Failed to extend the BAT, perhaps disk full\n", "SQLworker_column");
+			tablet_error(task, lng_nil, col, "Failed to extend the BAT\n", "SQLworker_column");
 			MT_lock_unset(&mal_copyLock);
 			return -1;
 		}
