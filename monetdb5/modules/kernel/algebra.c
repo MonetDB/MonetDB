@@ -1403,8 +1403,7 @@ ALG2bataggr(dbl *res, const bat *bid1, const bat *bid2,
 			dbl (*func)(BAT *, BAT *, BAT *, BAT *),
 			const char *malfunc)
 {
-	BAT *b1, *b2;
-	BAT *s1 = NULL, *s2 = NULL;
+	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	dbl result;
 
 	if ((b1 = BATdescriptor(*bid1)) == NULL ||
