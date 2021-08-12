@@ -351,7 +351,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	bat *res = getArgReference_bat(stk, pci, 0), *hid = getArgReference_bat(stk, pci, 1), *bid = getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL, *sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
-	BAT *hb = NULL, *ob = NULL, *b = NULL, *bn = NULL, *s1 = NULL, *s2 = NULL;
+	BAT *hb = NULL, *b = NULL, *bn = NULL, *s1 = NULL, *s2 = NULL;
 	int lbit = *getArgReference_int(stk, pci, 2), rbit = (int) sizeof(lng) * 8 - lbit;
 	str msg = MAL_SUCCEED;
 	struct canditer ci1 = {0}, ci2 = {0};
@@ -370,10 +370,14 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	ob = b;
-	if ((b->ttype == TYPE_msk || mask_cand(b)) && !(b = BATunmask(b))) {
-		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+	if (b->ttype == TYPE_msk || mask_cand(b)) {
+		BAT *ob = b;
+		b = BATunmask(b);
+		BBPunfix(ob->batCacheid);
+		if (!b) {
+			BBPunfix(hb->batCacheid);
+			throw(MAL, "mkey.rotate_xor_hash", GDK_EXCEPTION);
+		}
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(s1 = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(s2 = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
@@ -466,8 +470,6 @@ bailout:
 	}
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (ob && b != ob)
-		BBPunfix(ob->batCacheid);
 	if (hb)
 		BBPunfix(hb->batCacheid);
 	if (s1)
