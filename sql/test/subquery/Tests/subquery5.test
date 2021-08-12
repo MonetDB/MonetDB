@@ -361,7 +361,7 @@ False
 False
 False
 
-statement error 21000!Cardinality violation, scalar value expected
+statement error GDK reported error: BATsubcross: more than one match
 SELECT (SELECT 1 UNION SELECT 2) IN (SELECT 1) FROM integers i1
 
 query T rowsort

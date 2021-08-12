@@ -42,8 +42,6 @@ sql.mvc
 1
 sql.tid
 1
-sql.bind
-2
 sql.update
 1
 user.main
@@ -54,8 +52,6 @@ explain UPDATE mytest SET d = c * b
 ----
 aggr.count
 1
-algebra.projection
-2
 querylog.define
 1
 sql.affectedRows
@@ -66,8 +62,6 @@ sql.mvc
 1
 sql.tid
 1
-sql.bind
-2
 sql.update
 1
 user.main
@@ -78,8 +72,6 @@ explain UPDATE mytest SET e = d + a
 ----
 aggr.count
 1
-algebra.projection
-2
 querylog.define
 1
 sql.affectedRows
@@ -90,27 +82,25 @@ sql.mvc
 1
 sql.tid
 1
-sql.bind
-2
 sql.update
 1
 user.main
 1
 
 statement ok
-        UPDATE mytest SET a = 1234567890987654321
+UPDATE mytest SET a = 1234567890987654321
 
 statement ok
-        UPDATE mytest SET b = 10000000000
+UPDATE mytest SET b = 10000000000
 
 statement ok
-        UPDATE mytest SET c = a * b
+UPDATE mytest SET c = a * b
 
 statement ok
-        UPDATE mytest SET d = c * b
+UPDATE mytest SET d = c * b
 
 statement ok
-        UPDATE mytest SET e = d + a
+UPDATE mytest SET e = d + a
 
 query IIIII rowsort
 SELECT a, b, c, d, e from mytest
