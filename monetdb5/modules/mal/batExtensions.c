@@ -238,11 +238,20 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				}
+				if (mask_cand(d)) {
+					BAT *du = d;
+					d = BATunmask(d);
+					BBPunfix(du->batCacheid);
+					if (!d) {
+						BBPunfix(b->batCacheid);
+						throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
+					}
+				}
 				rt = BATappend(b, d, NULL, force);
 				BBPunfix(d->batCacheid);
 				if (rt != GDK_SUCCEED) {
 					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
 				}
 			}
 		} else {
@@ -250,7 +259,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			total = number_existing + inputs;
 			if (BATextend(b, total) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
-				throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
 			}
 			for (int i = 3, args = pci->argc; i < args; i++) {
 				ptr u = getArgReference(stk,pci,i);
@@ -258,7 +267,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					u = (ptr) *(ptr *) u;
 				if (BUNappend(b, u, force) != GDK_SUCCEED) {
 					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
 				}
 			}
 		}
