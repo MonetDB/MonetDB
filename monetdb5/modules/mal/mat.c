@@ -144,7 +144,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
-				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
 		}
 		BATtseqbase(bn, b->tseqbase);
@@ -250,7 +250,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(bn);
-	throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	throw(MAL, "mat.pack", GDK_EXCEPTION);
 }
 
 #include "mel.h"
