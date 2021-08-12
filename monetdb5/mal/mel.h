@@ -34,7 +34,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	var_t (*put) (BAT *, var_t *, const void *);
 	void (*del) (Heap *, var_t *);
 	size_t (*length) (const void *);
-	void (*heap) (Heap *, size_t);
+	gdk_return (*heap) (Heap *, size_t);
 	gdk_return (*fix) (const void *);
 	gdk_return (*unfix) (const void *);
 	int (*storage) (void);

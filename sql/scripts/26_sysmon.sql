@@ -16,8 +16,8 @@ returns table(
 	"status" string,	-- paused, running, finished
 	"query" string,
 	"finished" timestamp,	
-	"workers" int,
-	"memory" int
+	"maxworkers" int,	-- maximum number of concurrent worker threads
+	"footprint" int		-- maximum memory claim awarded
 )
 external name sysmon.queue;
 grant execute on function sys.queue to public;

@@ -9,7 +9,7 @@
 #PREPARE (SELECT DISTINCT t0.c0, INTERVAL '1734780053' SECOND FROM t0, t1) UNION ALL (SELECT ?, ? FROM t2);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 12,	3,	1,	0,	3,	2 # length
 [ "boolean",	1,	0,	"",	"%10",	"c0"	]
 [ "sec_interval",	13,	0,	"",	"%10",	"%1"	]
@@ -26,8 +26,8 @@
 #((SELECT DISTINCT 6.9089063E7, TRUE FROM t2 WHERE TRUE) EXCEPT (SELECT ALL 0.4, FALSE FROM t2, t1 INNER JOIN t0 ON FALSE)) AS sub0 WHERE FALSE)) INTERSECT DISTINCT (SELECT DISTINCT 0.2, ? FROM t0, t2 WHERE ?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 7,	3,	1,	0,	3,	3 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	2,	1,	0,	3,	3 # length
 [ "decimal",	2,	1,	"",	"%22",	"%13"	]
 [ "int",	32,	0,	"",	"%22",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
@@ -39,7 +39,7 @@
 #PREPARE SELECT 1 WHERE greatest(true, ?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -47,7 +47,7 @@
 #PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 12,	2,	1,	0,	2,	2 # length
 [ "day_interval",	4,	0,	"",	"%3",	"%3"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
@@ -56,7 +56,7 @@
 #PREPARE SELECT round(-'b', ?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "double",	1,	0,	"",	"%2",	"%2"	]
 [ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
@@ -64,7 +64,7 @@
 #PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	2,	0,	2,	2 # length
 [ "double",	53,	17,	"",	"%2",	"%2"	]
 [ "char",	9,	0,	NULL,	NULL,	NULL	]
@@ -75,8 +75,8 @@
 #WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 7,	3,	1,	0,	3,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	2,	1,	0,	3,	2 # length
 [ "bigint",	64,	0,	"",	"%10",	"%2"	]
 [ "char",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
@@ -85,7 +85,7 @@
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
 #START TRANSACTION;
@@ -94,7 +94,7 @@
 #prepare select case when true then false when ? then not exists (select ?, ?, 6) end from v10 as l0v10;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	3,	3 # length
 [ "boolean",	1,	0,	"",	"%11",	"%11"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -105,7 +105,7 @@
 #prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "decimal",	3,	2,	"",	"%1",	"%1"	]
 [ "tinyint",	2,	0,	"",	"%2",	"%2"	]
@@ -116,8 +116,8 @@
 #PREPARE SELECT myintudf(?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 3,	3,	1,	0,	2,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 3,	2,	1,	0,	2,	2 # length
 [ "int",	32,	0,	"",	"%2",	"%2"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #EXEC  0(1);
@@ -130,14 +130,14 @@
 #PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	2,	1,	0,	3,	3 # length
 [ "boolean",	1,	0,	"",	"%11",	"%11"	]
 [ "decimal",	16,	6,	NULL,	NULL,	NULL	]
 #PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	2,	1,	0,	3,	3 # length
 [ "boolean",	1,	0,	"",	"%11",	"%11"	]
 [ "decimal",	16,	6,	NULL,	NULL,	NULL	]

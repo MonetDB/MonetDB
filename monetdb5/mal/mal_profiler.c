@@ -209,6 +209,10 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return NULL;
 
+/* align the variable namings with EXPLAIN and TRACE */
+	if( pci->pc == 1 && start)
+		renameVariables(mb);
+
 	logbuf = (struct logbuf) {0};
 
 	usec= pci->clock;
@@ -317,13 +321,16 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 				tname = getTypeName(getBatType(tpe));
 				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
 				GDKfree(tname);
-				if (!ok)
+				if (!ok) {
+					if (d)
+						BBPunfix(d->batCacheid);
 					goto cleanup_and_exit;
+				}
 				if(d) {
 					BAT *v;
 					cnt = BATcount(d);
 					if(isVIEW(d)){
-						v= BBPquickdesc(VIEWtparent(d), false);
+						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
 									",\"view\":\"true\""
 									",\"parent\":%d"
@@ -331,11 +338,15 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 									",\"mode\":\"%s\"",
 									VIEWtparent(d),
 									d->hseqbase,
-									v && !v->batTransient ? "persistent" : "transient"))
-							goto cleanup_and_exit;
+									v && !v->batTransient ? "persistent" : "transient")) {
+										BBPunfix(d->batCacheid);
+										goto cleanup_and_exit;
+						}
 					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent")))
+						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
+							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
+						}
 					}
 					if (!logadd(&logbuf,
 								",\"sorted\":%d"
@@ -347,21 +358,27 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 								d->trevsorted,
 								d->tnonil,
 								d->tnil,
-								d->tkey))
+								d->tkey)) {
+						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
-#define keepprop(NME, LNME)\
-{const void *valp = BATgetprop(d, NME); \
-if ( valp){\
-	cv = VALformat(valp);\
-	if(cv){\
-		char * cvquote = mal_quote(cv, strlen(cv));\
-		ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);\
-		GDKfree(cv);\
-		GDKfree(cvquote);\
-		if (!ok)\
-			goto cleanup_and_exit;\
-	}\
-}}
+					}
+#define keepprop(NME, LNME)												\
+	do {																\
+		const void *valp = BATgetprop(d, NME);							\
+		if ( valp){														\
+			cv = VALformat(valp);										\
+			if (cv) {													\
+				char *cvquote = mal_quote(cv, strlen(cv));				\
+				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
+				GDKfree(cv);											\
+				GDKfree(cvquote);										\
+				if (!ok) {												\
+					BBPunfix(d->batCacheid);							\
+					goto cleanup_and_exit;								\
+				}														\
+			}															\
+		}																\
+	} while (0)
 					keepprop(GDK_MIN_VALUE,"min");
 					keepprop(GDK_MAX_VALUE,"max");
 					keepprop(GDK_MIN_POS,"minpos");
@@ -377,18 +394,31 @@ if ( valp){\
 						*c = 0;
 					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
 					GDKfree(cv);
-					if (!ok)
+					if (!ok) {
+						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
-					total += cnt * d->twidth;
-					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
+					}
+					total += cnt << d->tshift;
+					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
+						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
+					}
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid)))
+					MT_rwlock_rdlock(&d->thashlock);
+					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
+						MT_rwlock_rdunlock(&d->thashlock);
+						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
-					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
+					}
+					MT_rwlock_rdunlock(&d->thashlock);
+					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
+						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
-					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))
+					}
+					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
+						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
+					}
 					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
 					BBPunfix(d->batCacheid);
 				}
@@ -628,13 +658,23 @@ openProfilerStream(Client cntxt)
 	// Ignore the JSON rendering mode, use compiled time version
 
 	/* show all in progress instructions for stethoscope startup */
-	/* this code is not thread safe, because the inprogress administration may change concurrently */
-	MT_lock_set(&mal_delayLock);
-	for(j = 0; j <THREADS; j++)
-	if(workingset[j].mb)
-		/* show the event */
-		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
-	MT_lock_unset(&mal_delayLock);
+	/* wait a short time for instructions to finish updating there thread admin
+	 * and then follow the locking scheme */
+
+	MT_sleep_ms(200);
+
+	MT_lock_set(&mal_profileLock);
+	for(j = 0; j <THREADS; j++){
+		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
+		c = workingset[j].cntxt;
+		m = workingset[j].mb;
+		s = workingset[j].stk;
+		p =  workingset[j].pci;
+		if( c && m && s && p )
+			/* show the event  assuming the quadruple is aligned*/
+			profilerEvent(c, m, s, p, 1);
+	}
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -914,13 +954,17 @@ getDiskSpace(void)
 			b = BATdescriptor(i);
 			if (b) {
 				size += sizeof(BAT);
+
+				MT_lock_set(&b->theaplock);
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
-					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
 					if (b->tvheap)
 						size += HEAPvmsize(b->tvheap);
+					MT_lock_unset(&b->theaplock);
+
+					size += tailsize(b, cnt);
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
 					/* also add the size of an imprint, ordered index or mosaic */
@@ -928,6 +972,8 @@ getDiskSpace(void)
 						size += IMPSimprintsize(b);
 					if(b->torderidx)
 						size += HEAPvmsize(b->torderidx);
+				} else {
+					MT_lock_unset(&b->theaplock);
 				}
 				BBPunfix(i);
 			}

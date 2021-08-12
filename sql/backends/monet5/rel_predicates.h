@@ -6,15 +6,14 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
-#include "monetdb_config.h"
+#ifndef _REL_PREDICATES_H_
+#define _REL_PREDICATES_H_
 
-int
-main(void)
-{
-#ifdef HAVE_OPENSSL
-    return @DETECT@;
-#else
-    return @UNDETECT@;
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "mal_backend.h"
 
-#endif
-}
+extern sql_rel *rel_predicates(backend *be, sql_rel *rel);
+extern int add_column_predicate(backend *be, sql_column *c);
+
+#endif /*_REL_PREDICATES_H_*/

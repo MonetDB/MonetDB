@@ -384,8 +384,7 @@ MBMmix(bat *bn, bat *batid)
 		*(int *) Tloc(b, idx) = val;
 	}
 
-	BBPunfix(b->batCacheid);
-	*bn = b->batCacheid;
+	BBPkeepref(*bn= b->batCacheid);
 
 	return MAL_SUCCEED;
 }

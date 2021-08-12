@@ -64,7 +64,7 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	//if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
+	if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
 	//if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTgarbageCollectorImplementation(cntxt, mb, stk, p);
 

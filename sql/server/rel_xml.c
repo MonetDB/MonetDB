@@ -247,7 +247,7 @@ rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	return rel_binop_(query->sql, rel ? *rel : NULL, target_st, val_st, NULL, "pi", card_value);
 }
 
-/* cast string too xml */
+/* cast string to xml */
 static sql_exp *
 rel_xmltext(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
@@ -302,4 +302,3 @@ rel_xml(sql_query *query, sql_rel **rel, symbol *s, int f, exp_kind knd)
 	}
 	return ret;
 }
-

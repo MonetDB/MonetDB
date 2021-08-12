@@ -105,7 +105,7 @@ PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
 | table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
-) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
 
 query IIII rowsort
 SELECT DISTINCT col0, col1, col2, col0 FROM tab0

@@ -36,12 +36,6 @@ if (NOT WIN32)
     set(PKG_LIBXML2 "libxml-2.0")
   endif()
 
-  if(OPENSSL_FOUND)
-    # In OpenSSL case, we link only to the crypto library, so it will be
-    # always one library to link to
-    set(PKG_CRYPTO "libcrypto")
-  endif()
-
   if(PCRE_FOUND)
     set(PKG_PCRE "libpcre")
   endif()

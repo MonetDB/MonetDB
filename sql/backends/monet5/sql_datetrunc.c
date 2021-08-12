@@ -67,7 +67,8 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 		throw(SQL, "sql.truncate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	bt = (const timestamp *) Tloc(b, 0);
+	BATiter bi = bat_iterator(b);
+	bt = (const timestamp *) bi.base;
 	dt = (timestamp *) Tloc(bn, 0);
 
 	lo = 0;
@@ -165,6 +166,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
+	bat_iterator_end(&bi);
 	BATsetcount(bn, (BUN) lo);
 	/* we can inherit most properties */
 	bn->tnonil = b->tnonil;

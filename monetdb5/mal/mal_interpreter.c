@@ -515,6 +515,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	exceptionVar = -1;
 
 	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
+#ifndef NDEBUG
+	/* very short timeout */
+	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=mb->starttime};
+#endif
 	/* save, in case this function is called recursively */
 	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
 	MT_thread_set_qry_ctx(&qry_ctx);
@@ -546,6 +550,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
+				MT_thread_set_qry_ctx(&qry_ctx_abort);
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 				break;
 			}
@@ -855,7 +860,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 						!is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
-						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, false);
+						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval);
 						if (b == NULL) {
 							if (ret == MAL_SUCCEED)
 								ret = createException(MAL, "mal.propertyCheck", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

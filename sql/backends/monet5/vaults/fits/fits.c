@@ -272,7 +272,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	col = mvc_bind_column(m, tbl, colname[0]);
 
-	nrows = store->storage_api.count_col(tr, col, 1);
+	nrows = store->storage_api.count_col(tr, col, 0);
 	assert(nrows <= (size_t) GDK_oid_max);
 
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
@@ -720,21 +720,27 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = store->table_api.column_find_row(m->session->tr, col, fname, NULL);
 	if (!is_oid_nil(rid)) {
 		fits_close_file(fptr, &status);
-		msg = createException(SQL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
-		return msg;
+		throw(MAL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
 	}
 
 	/* add row in the fits_files catalog table */
-	size_t pos = store->storage_api.claim_tab(m->session->tr, fits_fl, 1);
+	BUN offset;
+	if (store->storage_api.claim_tab(m->session->tr, fits_fl, 1, &offset, NULL) != LOG_OK) {
+		fits_close_file(fptr, &status);
+		throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if (!isNew(fits_fl) && sql_trans_add_dependency_change(m->session->tr, fits_fl->base.id, dml) != LOG_OK) {
+		fits_close_file(fptr, &status);
+		throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	col = mvc_bind_column(m, fits_fl, "id");
-	fid = store->storage_api.count_col(tr, col, 1) + 1;
+	fid = store->storage_api.count_col(tr, col, 0) + 1;
 	store->storage_api.append_col(m->session->tr,
-		mvc_bind_column(m, fits_fl, "id"), pos, &fid, TYPE_int, 1);
+		mvc_bind_column(m, fits_fl, "id"), offset, NULL, &fid, 1, TYPE_int);
 	store->storage_api.append_col(m->session->tr,
-		mvc_bind_column(m, fits_fl, "name"), pos, fname, TYPE_str, 1);
-
+		mvc_bind_column(m, fits_fl, "name"), offset, NULL, &fname, 1, TYPE_str);
 	col = mvc_bind_column(m, fits_tbl, "id");
-	tid = store->storage_api.count_col(tr, col, 1) + 1;
+	tid = store->storage_api.count_col(tr, col, 0) + 1;
 
 	if ((s = strrchr(fname, DIR_SEP)) == NULL)
 		s = fname;
@@ -799,56 +805,80 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		fits_get_num_cols(fptr, &cnum, &status);
 
-		size_t pos = store->storage_api.claim_tab(m->session->tr, fits_tbl, 1);
+		BUN offset;
+		if (store->storage_api.claim_tab(m->session->tr, fits_tbl, 1, &offset, NULL) != LOG_OK) {
+			fits_close_file(fptr, &status);
+			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!isNew(fits_tbl) && sql_trans_add_dependency_change(m->session->tr, fits_tbl->base.id, dml) != LOG_OK) {
+			fits_close_file(fptr, &status);
+			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "id"), pos, &tid, TYPE_int, 1);
+			mvc_bind_column(m, fits_tbl, "id"), offset, NULL, &tid, 1, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "name"), pos, tname_low, TYPE_str, 1);
+			mvc_bind_column(m, fits_tbl, "name"), offset, NULL, &tname_low, 1, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "columns"), pos, &cnum, TYPE_int, 1);
+			mvc_bind_column(m, fits_tbl, "columns"), offset, NULL, &cnum, 1, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "file_id"), pos, &fid, TYPE_int, 1);
+			mvc_bind_column(m, fits_tbl, "file_id"), offset, NULL, &fid, 1, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "hdu"), pos, &i, TYPE_int, 1);
+			mvc_bind_column(m, fits_tbl, "hdu"), offset, NULL, &i, 1, TYPE_int);
+		char *vptr = tdate;
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "date"), pos, tdate, TYPE_str, 1);
+			mvc_bind_column(m, fits_tbl, "date"), offset, NULL, &vptr, 1, TYPE_str);
+		vptr = orig;
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "origin"), pos, orig, TYPE_str, 1);
+			mvc_bind_column(m, fits_tbl, "origin"), offset, NULL, &vptr, 1, TYPE_str);
+		vptr = comm;
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "comment"), pos, comm, TYPE_str, 1);
+			mvc_bind_column(m, fits_tbl, "comment"), offset, NULL, &vptr, 1, TYPE_str);
 
-		pos = store->storage_api.claim_tab(m->session->tr, fits_tp, 1);
+		if (store->storage_api.claim_tab(m->session->tr, fits_tp, 1, &offset, NULL) != LOG_OK) {
+			fits_close_file(fptr, &status);
+			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!isNew(fits_tp) && sql_trans_add_dependency_change(m->session->tr, fits_tp->base.id, dml) != LOG_OK) {
+			fits_close_file(fptr, &status);
+			throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "table_id"), pos, &tid, TYPE_int, 1);
+			mvc_bind_column(m, fits_tp, "table_id"), offset, NULL, &tid, 1, TYPE_int);
+		vptr = xtensionname;
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "xtension"), pos, xtensionname, TYPE_str, 1);
+			mvc_bind_column(m, fits_tp, "xtension"), offset, NULL, &vptr, 1, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "bitpix"), pos, &bitpixnumber, TYPE_int, 1);
+			mvc_bind_column(m, fits_tp, "bitpix"), offset, NULL, &bitpixnumber, 1, TYPE_int);
+		vptr = stilversion;
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "stilvers"), pos, stilversion, TYPE_str, 1);
+			mvc_bind_column(m, fits_tp, "stilvers"), offset, NULL, &vptr, 1, TYPE_str);
+		vptr = stilclass;
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "stilclas"), pos, stilclass, TYPE_str, 1);
+			mvc_bind_column(m, fits_tp, "stilclas"), offset, NULL, &vptr, 1, TYPE_str);
 
 		/* read columns description */
 		s = stmt;
 		col = mvc_bind_column(m, fits_col, "id");
-		cid = store->storage_api.count_col(tr, col, 1) + 1;
+		cid = store->storage_api.count_col(tr, col, 0) + 1;
 		for (j = 1; j <= cnum; j++, cid++) {
 			fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
 			/* escape the various strings to avoid SQL injection attacks */
 			esc_cname = SQLescapeString(cname);
 			if (!esc_cname) {
+				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tform = SQLescapeString(tform);
 			if (!esc_tform) {
 				GDKfree(esc_cname);
+				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
 			if (!esc_tform) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
+				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);
@@ -885,6 +915,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	long *rep = NULL, *wid = NULL, rows; /* type long used by fits library */
 	char keywrd[80], **cname, nm[FLEN_VALUE];
 	const void *nilptr;
+	BUN offset;
+	BAT *pos = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
 		return msg;
@@ -920,6 +952,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, fits_fl, "id");
 	frid = store->table_api.column_find_row(m->session->tr, col, (void *)fid, NULL);
 	GDKfree(fid);
+	if (is_oid_nil(frid)) {
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Table %s is unknown in FITS catalog. Attach first the containing file\n", tname);
+		return msg;
+	}
 	col = mvc_bind_column(m, fits_fl, "name");
 	fname = (char *)store->table_api.column_find_value(m->session->tr, col, frid);
 	if (fits_open_file(&fptr, fname, READONLY, &status)) {
@@ -978,6 +1014,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	TRC_INFO(FITS, "Loading %ld rows in table %s\n", rows, tname);
 
+	if (store->storage_api.claim_tab(m->session->tr, tbl, rows, &offset, &pos) != LOG_OK) {
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
 		int time0 = GDKms();
@@ -987,11 +1027,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		tmp = COLnew(0, mtype, rows, TRANSIENT);
 		if (tmp == NULL){
-			GDKfree(tpcode);
-			GDKfree(rep);
-			GDKfree(wid);
-			GDKfree(cname);
-			throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 		if (mtype == TYPE_blob) {
 			long i;
@@ -1002,42 +1039,34 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nilptr = ATOMnilptr(mtype);
 
 			if (v == NULL) {
-				GDKfree(tpcode);
-				GDKfree(rep);
-				GDKfree(wid);
-				GDKfree(cname);
-				throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				BBPreclaim(tmp);
+				msg = createException(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
 			}
 
 			for(i = 0; i < rows; i++) {
 				v[i] = (blob *)GDKmalloc(offsetof(blob, data) + nbytes);
 				if (v[i] == NULL) {
-					GDKfree(tpcode);
-					GDKfree(rep);
-					GDKfree(wid);
-					GDKfree(cname);
+					BBPreclaim(tmp);
 					long k = 0;
 					for (k = 0; k < i; k++) {
 						GDKfree(v[k]);
 					}
 					GDKfree(v);
-					throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
 					      (void *)v[i]->data, &anynull, &status);
 				v[i]->nitems = nbytes;
 				if (BUNappend(tmp, v[i], false) != GDK_SUCCEED) {
 					BBPreclaim(tmp);
-					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					GDKfree(tpcode);
-					GDKfree(rep);
-					GDKfree(wid);
-					GDKfree(cname);
 					for (i = 0; i < rows; i++) {
 						GDKfree(v[i]);
 					}
 					GDKfree(v);
-					return msg;
+					msg = createException(MAL,"fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 			}
 
@@ -1074,7 +1103,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			TRC_INFO(FITS, "String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
 		else {
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
+			BATiter bi = bat_iterator_nolock(tmp);
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bi, 0), &anynull, &status);
 			BATsetcount(tmp, rows);
 			tmp->tsorted = false;
 			tmp->trevsorted = false;
@@ -1083,24 +1113,23 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (status) {
 			char buf[FLEN_ERRMSG + 1];
 			fits_read_errmsg(buf);
+			BBPreclaim(tmp);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
 			break;
 		}
 
 		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
-		size_t pos = store->storage_api.claim_tab(m->session->tr, tbl, BATcount(tmp));
-		if (store->storage_api.append_col(m->session->tr, col, pos, tmp, TYPE_bat, 0) != LOG_OK) {
-			BBPunfix(tmp->batCacheid);
+		if (store->storage_api.append_col(m->session->tr, col, offset, pos, tmp, BATcount(tmp), TYPE_bat) != LOG_OK) {
+			BBPreclaim(tmp);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;
 		}
-
 		TRC_INFO(FITS, "Total %d ms\n", GDKms() - time0);
-		BBPunfix(tmp->batCacheid);
+		BBPreclaim(tmp);
 	}
 
   bailout:
-
+	bat_destroy(pos);
 	GDKfree(tpcode);
 	GDKfree(rep);
 	GDKfree(wid);

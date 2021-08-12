@@ -1461,7 +1461,7 @@ rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, 
 }
 
 static sql_rel *
-push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, int f) /* 'e' is an expression where the right is a constant(s)! */
+push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, int f)
 {
 	if (is_outerjoin(rel->op)) {
 		if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, ls)) {
@@ -1472,15 +1472,15 @@ push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, int
 			return rel;
 		}
 		if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
-			rel->r = rel_push_select(sql, rel->r, L, e, f);
+			rel->r = rel_push_select(sql, rel->r, ls, e, f);
 			return rel;
 		} else if (is_right(rel->op) && rel_find_exp(rel->l, ls)) {
-			rel->l = rel_push_select(sql, rel->l, L, e, f);
+			rel->l = rel_push_select(sql, rel->l, ls, e, f);
 			return rel;
 		}
 	}
 	/* push select into the given relation */
-	return rel_push_select(sql, rel, L, e, f);
+	return rel_push_select(sql, rel, ls, e, f);
 }
 
 static sql_rel *
@@ -1502,7 +1502,7 @@ static sql_rel *
 rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti, int ff)
 {
 	node *n;
-	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
+	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	list *tl = sa_list(sql->sa);
 	bool found = false;
@@ -1577,9 +1577,9 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
-		return push_select_exp(sql, rel, e, l->h->data, L, ff);
+		return push_select_exp(sql, rel, e, l->h->data, ff);
 	} else { /* join */
-		return push_join_exp(sql, rel, e, L, R, NULL, ff);
+		return push_join_exp(sql, rel, e, l->h->data, r->h->data, NULL, ff);
 	}
 	return rel;
 }
@@ -1600,7 +1600,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *r1, sql_exp *r2, s
 }
 
 static sql_rel *
-rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, sql_exp *rs, sql_exp *R, sql_exp *rs2, int f)
+rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int f)
 {
 	if (!is_join(rel->op) && !is_select(rel->op))
 		return rel_select(sql->sa, rel, e);
@@ -1610,9 +1610,9 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 		if (ls->card == rs->card || (rs2 && (ls->card == rs2->card || rs->card == rs2->card)) || rel->processed) /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
-		return push_select_exp(sql, rel, e, ls, L, f);
+		return push_select_exp(sql, rel, e, ls, f);
 	} else { /* join */
-		return push_join_exp(sql, rel, e, L, R, rs2, f);
+		return push_join_exp(sql, rel, e, ls, rs, rs2, f);
 	}
 	return rel;
 }
@@ -1676,7 +1676,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	return rel_select_push_exp_down(sql, rel, e, ls, ls, rs, rs, rs2, f);
+	return rel_select_push_exp_down(sql, rel, e, ls, rs, rs2, f);
 }
 
 static sql_rel *
@@ -2081,7 +2081,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if ((exp_card(ls) == rcard) || rel->processed) /* bin compare op */
 				return rel_select(sql->sa, rel, e);
 
-			return push_select_exp(sql, rel, e, ls, ls, f);
+			return push_select_exp(sql, rel, e, ls, f);
 		} else { /* join */
 			sql_exp *rs = rlist ? ((list*)e->r)->h->data : e->r;
 			return push_join_exp(sql, rel, e, ls, rs, NULL, f);
@@ -2683,7 +2683,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			set_anti(le);
 		set_has_no_nil(le);
 		set_semantics(le);
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
+		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_NOT: {
 		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
@@ -2697,7 +2697,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!le || !(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
+		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
@@ -2714,7 +2714,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!e || or != rel)
 			return NULL;
 		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, e, e, e, e, e, NULL, f);
+		return rel_select_push_exp_down(sql, rel, e, e->l, e->r, NULL, f);
 	}
 	case SQL_IDENT:
 	case SQL_COLUMN: {
@@ -2730,7 +2730,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!e || or != rel)
 			return NULL;
 		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, e, e, e, e, e, NULL, f);
+		return rel_select_push_exp_down(sql, rel, e, e->l, e->r, NULL, f);
 	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
@@ -2760,7 +2760,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (!le)
 				return NULL;
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-			return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
+			return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 		} else {
 			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || sq->single)?op_left:op_join);
 		}
@@ -2778,7 +2778,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
+		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	}
 	/* never reached, as all switch cases have a `return` */
@@ -3001,7 +3001,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			if (EC_NUMBER(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t1->type->eclass))
-					tp = *t1; /* for float and interval fall back too the same as left */
+					tp = *t1; /* for float and interval fall back to the same as left */
 				r = exp_check_type(sql, &tp, rel, r, type_equal);
 				if (!r)
 					return NULL;
@@ -3009,7 +3009,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t2->type->eclass))
-					tp = *t2; /* for float and interval fall back too the same as right */
+					tp = *t2; /* for float and interval fall back to the same as right */
 				l = exp_check_type(sql, &tp, rel, l, type_equal);
 				if (!l)
 					return NULL;
@@ -5318,36 +5318,6 @@ exp_key(sql_exp *e)
 	if (e->alias.name)
 		return hash_key(e->alias.name);
 	return 0;
-}
-
-static list *
-check_distinct_exp_names(mvc *sql, list *exps)
-{
-	list *distinct_exps = NULL;
-	bool duplicates = false;
-
-	if (list_length(exps) < 5) {
-		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
-	} else { /* for longer lists, use hashing */
-		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
-
-		for (node *n = exps->h; n && !duplicates; n = n->next) {
-			sql_exp *e = n->data;
-			int key = ht->key(e);
-			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
-
-			for (; he && !duplicates; he = he->chain) {
-				sql_exp *f = he->value;
-
-				if (!exp_equal(e, f))
-					duplicates = true;
-			}
-			hash_add(ht, key, e);
-		}
-	}
-	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
-		return NULL;
-	return exps;
 }
 
 static list *

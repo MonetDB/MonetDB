@@ -44,8 +44,10 @@ mtwriter.start()
 i = 0
 while i < 3:
     barrier1.wait()
+    cursor.execute('START TRANSACTION;')
     cursor.execute('CREATE TABLE "dummy"(col1 int);')
     cursor.execute('DROP TABLE "dummy";')
+    cursor.execute('COMMIT;')
     barrier2.wait()
     barrier1.reset()
     barrier2.reset()

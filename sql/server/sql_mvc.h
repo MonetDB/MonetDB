@@ -65,8 +65,7 @@
 #define mod_debug 	1
 #define mod_trace 	2
 #define mod_explain 	4
-/* locked needs unlocking */
-#define mod_locked 	16
+#define mod_exec 	8
 
 #define sql_shared_module_name "sql"
 #define sql_private_module_name "user"
@@ -156,7 +155,7 @@ typedef struct mvc {
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 
 /* should return structure */
-extern sql_store mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su);
+extern sql_store mvc_init(int debug, store_type store, int ro, int su);
 extern void mvc_exit(sql_store store);
 
 extern void mvc_logmanager(sql_store store);
@@ -203,7 +202,7 @@ extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
 extern int mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
-extern sql_schema *mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner);
+extern int mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
@@ -238,8 +237,8 @@ extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, 
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 /*dependency control*/
-extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type);
-extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type);
+extern int mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type);
+extern int mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type);
 extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */

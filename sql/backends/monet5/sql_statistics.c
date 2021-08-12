@@ -112,12 +112,18 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch (argc) {
 	case 6:
 		col = *getArgReference_str(stk, pci, 5);
+		if (strNil(col))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Column name cannot be NULL");
 		/* fall through */
 	case 5:
 		tbl = *getArgReference_str(stk, pci, 4);
+		if (strNil(tbl))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Table name cannot be NULL");
 		/* fall through */
 	case 4:
 		sch = *getArgReference_str(stk, pci, 3);
+		if (strNil(sch))
+			throw(SQL, "sql.analyze", SQLSTATE(42000) "Schema name cannot be NULL");
 	}
 
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
@@ -127,7 +133,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
 	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *)b;
-		if (!isalpha((unsigned char) s->base.name[0]))
+		if (s->base.name[0] == '%')
 			continue;
 
 		if (sch && strcmp(s->base.name, sch))
@@ -171,7 +177,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
 	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *)b;
-		if (!isalpha((unsigned char) b->name[0]))
+		if (b->name[0] == '%')
 			continue;
 
 		if (sch && strcmp(sch, b->name))
@@ -183,11 +189,19 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (tbl && strcmp(b->name, tbl))
 				continue;
-			if (isTable(t) && ol_first_node(t->columns))
+			if (isTable(t) && ol_first_node(t->columns)) {
+				BAT *cands;
+
+				if ((cands = store->storage_api.bind_cands(tr, t, 1, 0)) == NULL) {
+					GDKfree(maxval);
+					GDKfree(minval);
+					throw(SQL, "analyze", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				}
+
 				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_base *bc = ncol->data;
 					sql_column *c = (sql_column *) ncol->data;
-					BAT *bn, *br;
+					BAT *bn, *nbn, *br;
 					BAT *bsample;
 					lng sz;
 					ssize_t (*tostr)(str*,size_t*,const void*,bool);
@@ -206,6 +220,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						/* XXX throw error instead? */
 						continue;
 					}
+					nbn = BATproject(cands, bn);
+					BBPunfix(bn->batCacheid);
+					if (!nbn) {
+						/* XXX throw error instead? */
+						continue;
+					}
+					bn = nbn;
 					sz = BATcount(bn);
 					tostr = BATatoms[bn->ttype].atomToStr;
 
@@ -217,6 +238,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, true, false, false);
 					if (br == NULL) {
 						BBPunfix(bn->batCacheid);
+						if (bsample)
+							BBPunfix(bsample->batCacheid);
 						/* XXX throw error instead? */
 						continue;
 					}
@@ -257,6 +280,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (maxval == NULL) {
 							GDKfree(minval);
 							BBPunfix(bn->batCacheid);
+							BBPunfix(cands->batCacheid);
 							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						maxlen = 4;
@@ -267,6 +291,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (minval == NULL){
 							GDKfree(maxval);
 							BBPunfix(bn->batCacheid);
+							BBPunfix(cands->batCacheid);
 							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						minlen = 4;
@@ -280,6 +305,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(minval);
 								GDKfree(maxval);
 								BBPunfix(bn->batCacheid);
+								BBPunfix(cands->batCacheid);
 								throw(SQL, "analyze", GDK_EXCEPTION);
 							}
 							GDKfree(val);
@@ -292,6 +318,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(minval);
 								GDKfree(maxval);
 								BBPunfix(bn->batCacheid);
+								BBPunfix(cands->batCacheid);
 								throw(SQL, "analyze", GDK_EXCEPTION);
 							}
 							GDKfree(val);
@@ -305,16 +332,26 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(tr, sysstats, rid)) != LOG_OK) {
 						GDKfree(maxval);
 						GDKfree(minval);
+						BBPunfix(cands->batCacheid);
 						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 					}
 					if ((log_res = store->table_api.table_insert(tr, sysstats, &c->base.id, &c->type.type->base.name, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, &minval, &maxval, &sorted, &revsorted)) != LOG_OK) {
 						GDKfree(maxval);
 						GDKfree(minval);
+						BBPunfix(cands->batCacheid);
 						throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 					}
+					if (!isNew(c) && (log_res = sql_trans_add_dependency(tr, c->base.id, ddl)) != LOG_OK) {
+						GDKfree(maxval);
+						GDKfree(minval);
+						BBPunfix(cands->batCacheid);
+						throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 				}
+				BBPunfix(cands->batCacheid);
 			}
 		}
+	}
 	GDKfree(maxval);
 	GDKfree(minval);
 	return MAL_SUCCEED;

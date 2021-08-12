@@ -95,6 +95,7 @@ enum formatters {
 static enum formatters formatter = NOformatter;
 char *separator = NULL;		/* column separator for CSV/TAB format */
 bool csvheader = false;		/* include header line in CSV format */
+bool noquote = false;		/* don't use quotes in CSV format */
 
 #define DEFWIDTH 80
 
@@ -942,7 +943,7 @@ CSVrenderer(MapiHdl hdl)
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s != NULL && s[strcspn(s, specials)] != '\0') {
+			if (!noquote && s != NULL && s[strcspn(s, specials)] != '\0') {
 				mnstr_printf(toConsole, "%s\"",
 					     i == 0 ? "" : separator);
 				while (*s) {
@@ -1647,6 +1648,7 @@ setFormatter(const char *s)
 		free(separator);
 	separator = NULL;
 	csvheader = false;
+	noquote = false;
 #ifdef _TWO_DIGIT_EXPONENT
 	if (formatter == TESTformatter)
 		_set_output_format(0);
@@ -1672,6 +1674,29 @@ setFormatter(const char *s)
 				separator[strlen(separator) - 1] = 0;
 		} else
 			separator = strdup(s + 4);
+		csvheader = true;
+	} else if (strcmp(s, "csv-noquote") == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		separator = strdup(",");
+	} else if (strncmp(s, "csv-noquote=", 12) == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		if (s[12] == '"') {
+			separator = strdup(s + 13);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 12);
+	} else if (strncmp(s, "csv-noquote+", 12) == 0) {
+		noquote = true;
+		formatter = CSVformatter;
+		if (s[12] == '"') {
+			separator = strdup(s + 13);
+			if (separator[strlen(separator) - 1] == '"')
+				separator[strlen(separator) - 1] = 0;
+		} else
+			separator = strdup(s + 12);
 		csvheader = true;
 	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
@@ -1808,7 +1833,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter) {
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
-			} else if (formatter != TRASHformatter) {
+			} else if (formatter != TRASHformatter && formatter != CSVformatter) {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
@@ -3472,18 +3497,18 @@ main(int argc, char **argv)
 		free(dbname);
 	dbname = NULL;
 
+	if (mid == NULL) {
+		mnstr_printf(stderr_stream, "failed to allocate Mapi structure\n");
+		exit(2);
+	}
+
 	mapi_cache_limit(mid, -1);
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
 
-	if (mid && mapi_error(mid) == MOK)
+	if (mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
-
-	if (mid == NULL) {
-		mnstr_printf(stderr_stream, "failed to allocate Mapi structure\n");
-		exit(2);
-	}
 
 	if (mapi_error(mid)) {
 		if (trace)

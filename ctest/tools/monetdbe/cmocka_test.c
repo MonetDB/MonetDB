@@ -14,23 +14,23 @@
 #include "cmocka.h"
 #include "test_helper.h"
 
-#define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
+#define error(msg) do{fprintf(stderr, "Failure: %s\n", msg); return -1;}while(0)
 
 static int setup(void **state) {
 	monetdbe_database mdbe = NULL;
 	if (monetdbe_open(&mdbe, NULL, NULL))
-		error("Failed to open database")
+		error("Failed to open database");
 
 	*state = mdbe;
-     return 0;
+	return 0;
 }
 
 static int teardown(void **state) {
 	monetdbe_database mdbe = *state;
 
 	if (monetdbe_close(mdbe))
-		error("Failed to close database")
-     return 0;
+		error("Failed to close database");
+	return 0;
 }
 
 static void create_table_test(void **state) {
@@ -47,12 +47,12 @@ static void populate_table_test(void **state) {
     char* err;
 
 	err = monetdbe_query(mdbe,
-	"INSERT INTO test VALUES "
-		"(4, 40, 400, 'aaa', x'aaaaaa', '2020-06-17', '12:00:00', '2020-06-17 12:00:00'),"
-		"(6, 60, 600, 'ccc', x'cccccc', '2022-06-17', '14:00:00', '2022-06-17 14:00:00'),"
-		"(5, 50, 500, 'bbb', x'bbbbbb', '2021-06-17', '13:00:00', '2021-06-17 13:00:00'),"
-		"(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
-	NULL, NULL);
+		"INSERT INTO test VALUES "
+			"(4, 40, 400, 'aaa', x'aaaaaa', '2020-06-17', '12:00:00', '2020-06-17 12:00:00'),"
+			"(6, 60, 600, 'ccc', x'cccccc', '2022-06-17', '14:00:00', '2022-06-17 14:00:00'),"
+			"(5, 50, 500, 'bbb', x'bbbbbb', '2021-06-17', '13:00:00', '2021-06-17 13:00:00'),"
+			"(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
+		NULL, NULL);
 
 	assert_null(err);
 }
