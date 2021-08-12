@@ -325,7 +325,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *bid)
 {
-	BAT *hb, *b, *ob = NULL, *bn;
+	BAT *hb, *b, *bn;
 	int lbit = *nbits;
 	int rbit = (int) sizeof(lng) * 8 - lbit;
 	ulng *restrict r;
@@ -346,13 +346,13 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		throw(MAL, "mkey.rotate_xor_hash",
 			  OPERATION_FAILED ": input bats are not aligned");
 	}
-	ob = b;
-	if (b && (b->ttype == TYPE_msk || mask_cand(b))) {
+	if (b->ttype == TYPE_msk || mask_cand(b)) {
+		BAT *ob = b;
 		b = BATunmask(b);
+		BBPunfix(ob->batCacheid);
 		if (!b) {
 			BBPunfix(hb->batCacheid);
-			BBPunfix(ob->batCacheid);
-			throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "mkey.rotate_xor_hash", GDK_EXCEPTION);
 		}
 	}
 
@@ -361,8 +361,6 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
-		if (b != ob)
-			BBPunfix(ob->batCacheid);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -435,8 +433,6 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	bn->tnil = false;
 
 	BBPkeepref(*res = bn->batCacheid);
-	if (b != ob)
-		BBPunfix(ob->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(hb->batCacheid);
 	return MAL_SUCCEED;
