@@ -12,11 +12,14 @@ set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_client.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_errors.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_exception.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_import.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_instruction.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_linker.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_listing.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_module.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_namespace.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_resolve.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_stack.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_type.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_prelude.h
@@ -60,9 +63,6 @@ target_sources(mal
   ${mal_public_headers})
 
 target_include_directories(mal
-  PRIVATE
-  $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
-  $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
   PUBLIC
   $<TARGET_PROPERTY:bat,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

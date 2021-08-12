@@ -22,15 +22,7 @@ query T python .explain.function_histogram
 explain select count(*) from my_generate_series(1,5) as t1,
 my_generate_series(1,100) as t2
 ----
-user.main
-1
-querylog.define
-1
-sql.my_generate_series
-2
 aggr.count
-2
-bat.single
 2
 algebra.crossproduct
 1
@@ -38,7 +30,15 @@ algebra.projection
 2
 bat.pack
 5
+bat.single
+2
+querylog.define
+1
+sql.my_generate_series
+2
 sql.resultSet
+1
+user.main
 1
 
 query I rowsort

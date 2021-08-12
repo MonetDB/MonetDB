@@ -99,9 +99,3 @@ void mal_runtime_reset(void)
 
 char *dupError(const char *err)
 	__attribute__((__visibility__("hidden"), __returns_nonnull__));
-
-char *concatErrors(char *err1, const char *err2)
-	__attribute__((__visibility__("hidden")))
-	__attribute__((__nonnull__(1, 2)))
-	__attribute__((__returns_nonnull__));
-

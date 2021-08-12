@@ -301,12 +301,10 @@ ATOMlen(int t, const void *src)
 gdk_return
 ATOMheap(int t, Heap *hp, size_t cap)
 {
-	void (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
+	gdk_return (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
 
 	if (h) {
-		(*h) (hp, cap);
-		if (hp->base == NULL)
-			return GDK_FAIL;
+		return (*h) (hp, cap);
 	}
 	return GDK_SUCCEED;
 }
@@ -595,7 +593,7 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 	size_t i;
 	str s;
 
-	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
+	if (is_bat_nil(b) || !BBPcheck(b) || (s = BBP_logical(b)) == NULL || *s == 0) {
 		atommem(4);
 		if (external) {
 			strcpy(*dst, "nil");
@@ -914,9 +912,10 @@ mskWrite(const msk *a, stream *s, size_t cnt)
 }
 
 static void *
-mskRead(msk *a, size_t *dstlen, stream *s, size_t cnt)
+mskRead(msk *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	int8_t v;
+	msk *a = A;
 	if (cnt != 1)
 		return NULL;
 	if (a == NULL || *dstlen == 0) {
@@ -924,8 +923,11 @@ mskRead(msk *a, size_t *dstlen, stream *s, size_t cnt)
 			return NULL;
 		*dstlen = 1;
 	}
-	if (mnstr_readBte(s, &v) != 1)
+	if (mnstr_readBte(s, &v) != 1) {
+		if (a != A)
+			GDKfree(a);
 		return NULL;
+	}
 	*a = v != 0;
 	return a;
 }
@@ -1324,7 +1326,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 static BUN
 UUIDhash(const void *v)
 {
-	return mix_uuid(*(const uuid *) v);
+	return mix_uuid((const uuid *) v);
 }
 
 static void *

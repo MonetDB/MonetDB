@@ -59,33 +59,40 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 
 	if (r == NULL)
 		return GDK_FAIL;
+	BATiter ci = bat_iterator(cnts);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->tseqbase;
-		lng *cnt = (lng*)Tloc(cnts, 0);
+		lng *cnt = (lng*)ci.base;
 		for(j = 0; j < gcnt; j++) {
 			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, &id, false) != GDK_SUCCEED) {
 					BBPreclaim(r);
+					bat_iterator_end(&ci);
 					return GDK_FAIL;
 				}
 			}
 			id++;
 		}
 	} else {
-		oid *id = (oid*)Tloc(gids, 0);
-		lng *cnt = (lng*)Tloc(cnts, 0);
+		BATiter gi = bat_iterator(gids);
+		oid *id = (oid*)gi.base;
+		lng *cnt = (lng*)ci.base;
 		for(j = 0; j < gcnt; j++) {
 			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, id, false) != GDK_SUCCEED) {
 					BBPreclaim(r);
+					bat_iterator_end(&ci);
+					bat_iterator_end(&gi);
 					return GDK_FAIL;
 				}
 			}
 			id++;
 		}
+		bat_iterator_end(&gi);
 	}
+	bat_iterator_end(&ci);
 	r -> tkey = false;
 	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
@@ -822,19 +829,29 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 	BAT *sl = NULL, *sr = NULL;
 	gdk_return ret;
 
-	if ((L = BBPquickdesc(*left, false)) == NULL)
+	L = BATdescriptor(*left);
+	R = BATdescriptor(*right);
+	if (L == NULL || R == NULL) {
+		if (L)
+			BBPunfix(L->batCacheid);
+		if (R)
+			BBPunfix(R->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((R = BBPquickdesc(*right, false)) == NULL)
-		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL)
-		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (srid && !is_bat_nil(*srid) && (sr = BATdescriptor(*srid)) == NULL) {
+	}
+	if ((slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL) ||
+		(srid && !is_bat_nil(*srid) && (sr = BATdescriptor(*srid)) == NULL)) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(R->batCacheid);
 		if (sl)
 			BBPunfix(sl->batCacheid);
+		if (sr)
+			BBPunfix(sr->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	ret = BATsubcross(&bn1, r ? &bn2 : NULL, L, R, sl, sr,
 					  max_one && !is_bit_nil(*max_one) && *max_one);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
 	if (sl)
 		BBPunfix(sl->batCacheid);
 	if (sr)
@@ -1000,46 +1017,28 @@ ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, 
 static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
-	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *s = NULL;
-	bool heap_loaded = false;
+	BAT *b, *s = NULL;
 
-	if (!(b = BBPquickdesc(*bid, false))) {
-		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (cnd && !is_bat_nil(*cnd) && !(s = BATdescriptor(*cnd))) {
-		msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (b->ttype == TYPE_void || b->ttype == TYPE_msk || (*ignore_nils && !b->tnonil)) {
-		if (!(b = BATdescriptor(*bid))) { /* has to load the heap */
-			msg = createException(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
-		}
-		heap_loaded = true;
-	}
-
-	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		assert(heap_loaded);
-		if (BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false) != GDK_SUCCEED) {
-			msg = createException(MAL, "aggr.count", GDK_EXCEPTION);
-			goto bailout;
-		}
-	} else if (*ignore_nils && !b->tnonil) {
-		assert(heap_loaded);
-		*result = (lng) BATcount_no_nil(b, s);
-	} else {
-		struct canditer ci;
-		*result = (lng) canditer_init(&ci, b, s);
-	}
-
-bailout:
-	if (b && heap_loaded)
+	if (cnd && !is_bat_nil(*cnd) && (s = BATdescriptor(*cnd)) == NULL) {
 		BBPunfix(b->batCacheid);
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (b->ttype == TYPE_msk || mask_cand(b)) {
+		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
+	} else
+        if (*ignore_nils) {
+			*result = (lng) BATcount_no_nil(b, s);
+        } else {
+			struct canditer ci;
+			*result = (lng) canditer_init(&ci, b, s);
+        }
 	if (s)
 		BBPunfix(s->batCacheid);
-	return msg;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 static str
@@ -1128,7 +1127,7 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if (*start < 0 || *start > (lng) BUN_MAX ||
 		(*end < 0 && !is_lng_nil(*end)) || *end >= (lng) BUN_MAX)
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if ((b = BBPquickdesc(*bid)) == NULL)
 		throw(MAL, "algebra.subslice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	s = (BUN) *start;
 	if (s > BATcount(b))
@@ -1139,7 +1138,6 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if (e < s)
 		e = s;
 	bn = BATdense(0, b->hseqbase + s, e - s);
-	BBPunfix(*bid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
@@ -1154,15 +1152,16 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 static str
 doALGfetch(ptr ret, BAT *b, BUN pos)
 {
-	BATiter bi = bat_iterator(b);
-
 	assert(pos <= BUN_MAX);
+	BATiter bi = bat_iterator(b);
 	if (ATOMextern(b->ttype)) {
 		ptr _src = BUNtail(bi,pos);
 		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
-		if( _dst == NULL)
+		if( _dst == NULL) {
+			bat_iterator_end(&bi);
 			throw(MAL,"doAlgFetch", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
@@ -1172,21 +1171,22 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 			if (!is_oid_nil(b->tseqbase))
 				*(oid*)ret += pos;
 		} else if (_s == 4) {
-			*(int*) ret = *(int*) Tloc(b, pos);
+			*(int*) ret = ((int*) bi.base)[pos];
 		} else if (_s == 1) {
-			*(bte*) ret = *(bte*) Tloc(b, pos);
+			*(bte*) ret = ((bte*) bi.base)[pos];
 		} else if (_s == 2) {
-			*(sht*) ret = *(sht*) Tloc(b, pos);
+			*(sht*) ret = ((sht*) bi.base)[pos];
 		} else if (_s == 8) {
-			*(lng*) ret = *(lng*) Tloc(b, pos);
+			*(lng*) ret = ((lng*) bi.base)[pos];
 #ifdef HAVE_HGE
 		} else if (_s == 16) {
-			*(hge*) ret = *(hge*) Tloc(b, pos);
+			*(hge*) ret = ((hge*) bi.base)[pos];
 #endif
 		} else {
-			memcpy(ret, Tloc(b, pos), _s);
+			memcpy(ret, (const char *) bi.base + (pos << bi.shift), _s);
 		}
 	}
+	bat_iterator_end(&bi);
 	return MAL_SUCCEED;
 }
 
@@ -1274,7 +1274,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if( isaBatType(getArgType(mb,pci,2)) )
 		throw(MAL,"algebra.project","Scalar value expected");
-	if ((b = BBPquickdesc(bid, false)) == NULL)
+	if ((b = BBPquickdesc(bid)) == NULL)
 		throw(MAL, "algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
 	if (bn == NULL) {

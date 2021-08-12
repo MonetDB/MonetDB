@@ -149,27 +149,6 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	return hasSideEffects(mb,p,FALSE);
 }
 
-/* Collect the BATs that are used concurrently to ensure that
- * there is a single point where they can be released
- */
-static int
-dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
-{
-	InstrPtr r;
-	int i;
-	for( i =0; i<top; i++)
-		if( getArg(sink[i],1) == var)
-			return top;
-	(void) cntxt;
-
-	r = newInstruction(NULL,languageRef, passRef);
-	getArg(r,0) = newTmpVariable(mb,TYPE_void);
-	r= addArgument(mb,r, var);
-	sink[top++] = r;
-	return top;
-}
-
-
 static str
 get_str_arg(MalBlkPtr mb, InstrPtr p, int argno)
 {
@@ -204,23 +183,24 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 	if (p->fcnname != appendRef && p->fcnname != updateRef)
 		return false;
 
-	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,7, arg("",int),
-	//              arg("mvc",int
-	//              arg("sname",str
-	//              arg("tname",str
-	//              arg("cname",str
-	//              arg("offset",lng
+	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,8, arg("",int),
+	//              arg("mvc",int),
+	//              arg("sname",str),
+	//              arg("tname",str),
+	//              arg("cname",str),
+	//              arg("offset",lng),
+	//              batarg("pos",oid),
 	//              argany("ins",0))),
 
- 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int
+ 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int),
 	//              arg("mvc",int),
-	//              arg("sname",str
-	//              arg("tname",str
-	//              arg("cname",str
-	//              argany("rids",0
-	//              argany("upd",0))
+	//              arg("sname",str),
+	//              arg("tname",str),
+	//              arg("cname",str),
+	//              argany("rids",0),
+	//              argany("upd",0)))
 
-	if (p->argc != 7)
+	if ((p->fcnname == appendRef && p->argc != 8) || (p->fcnname == updateRef && p->argc != 7))
 		return false;
 
 	int mvc_var = getArg(p, 1);
@@ -354,8 +334,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, start, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
-	InstrPtr *sink = NULL, *old = NULL, q;
-	int limit, vlimit, top = 0;
+	InstrPtr *old = NULL, q;
+	int limit, vlimit;
 	States states;
 	char  buf[256];
 	region_state state = { singleton_region };
@@ -375,8 +355,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
-	sink = (InstrPtr *) GDKzalloc(mb->stop * sizeof(InstrPtr));
-	if (states == NULL || sink == NULL){
+	if (states == NULL ){
 		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
@@ -417,15 +396,17 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				// collect BAT variables garbage collected within the block
 				if( !simple)
 					for( k=q->retc; k<q->argc; k++){
-						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) )
-								top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
+						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) ){
+							InstrPtr r;
+							r = newInstruction(NULL,languageRef, passRef);
+							getArg(r,0) = newTmpVariable(mb,TYPE_void);
+							r= addArgument(mb,r, getArg(q,k));
+							pushInstruction(mb,r);
+						}
 					}
 			}
 			/* exit parallel block */
 			if ( ! simple){
-				// force the pending final garbage statements
-				for( j=0; j<top; j++)
-					pushInstruction(mb,sink[j]);
 				q= newAssignment(mb);
 				q->barrier= EXITsymbol;
 				getArg(q,0) = flowblock;
@@ -439,7 +420,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 			// Start a new region
 			memset((char*) states, 0, vlimit * sizeof(char));
-			top = 0;
 			start = i;
 			decideRegionType(cntxt, mb, p, states, &state);
 		}
@@ -480,7 +460,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 wrapup:
 	if(states) GDKfree(states);
-	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
 	return msg;
 }

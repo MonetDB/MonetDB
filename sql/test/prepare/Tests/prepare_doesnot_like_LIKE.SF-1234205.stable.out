@@ -22,7 +22,7 @@ stdout of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'sql/test/Bug
 #prepare select name from t1234205 where name like ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	4,	1,	0,	8,	4 # length
 [ "varchar",	1024,	0,	"",	"t1234205",	"name"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
@@ -38,7 +38,7 @@ stdout of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'sql/test/Bug
 #prepare select name from t1234205 where name like 'n%';
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	4,	1,	0,	8,	4 # length
 [ "varchar",	1024,	0,	"",	"t1234205",	"name"	]
 #execute 4 ();

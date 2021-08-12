@@ -622,6 +622,7 @@ os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, 
 	}
 	return NULL;
 }
+
 #define sql_bind_func_result_extra \
 	do { \
 		if (!res && (res = sql_bind_func_result_internal(sql, funcs, name, type, ops, r_res))) /* search system wide functions first */ \

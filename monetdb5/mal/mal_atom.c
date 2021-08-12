@@ -77,7 +77,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
-			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
+			BATatoms[tpe].atomHeap = (gdk_return (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}

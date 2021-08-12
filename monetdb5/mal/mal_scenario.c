@@ -489,7 +489,6 @@ runScenarioBody(Client c, int once)
 		if( GDKerrbuf && GDKerrbuf[0])
 			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
 		assert(c->curprg->def->errors == NULL);
-		c->actions++;
 		if( once) break;
 	}
 	if (once == 0)

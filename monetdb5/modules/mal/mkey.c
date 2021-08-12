@@ -174,7 +174,7 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define MKEYbathashloop(TPE) \
 	do { \
-		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
+		const TPE *restrict v = (const TPE *) bi.base; \
 		if (ci.tpe == cand_dense) { \
 			for (BUN i = 0; i < n; i++) { \
 				oid p = (canditer_next_dense(&ci) - off); \
@@ -199,6 +199,7 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid off;
 	BUN n = 0;
 	lng *restrict r;
+	BATiter bi = {0};
 
 	(void) cntxt;
 	(void) mb;
@@ -218,6 +219,7 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off = b->hseqbase;
 	r = (lng *) Tloc(bn, 0);
 
+	bi = bat_iterator(b);
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void: {
 		oid o = b->tseqbase;
@@ -252,7 +254,6 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 #endif
 	default: {
-		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
 		if (ci.tpe == cand_dense) {
@@ -268,6 +269,7 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	if (bn && !msg) {
@@ -329,8 +331,8 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define MKEYbulk_rotate_xor_hashloop(TPE) \
 	do { \
-		const lng *restrict h = (const lng *) Tloc(hb, 0); \
-		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
+		const lng *restrict h = (const lng *) hbi.base; \
+		const TPE *restrict v = (const TPE *) bi.base; \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) { \
 			for (BUN i = 0; i < n; i++) { \
 				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2); \
@@ -349,13 +351,14 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	bat *res = getArgReference_bat(stk, pci, 0), *hid = getArgReference_bat(stk, pci, 1), *bid = getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL, *sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
-	BAT *hb = NULL, *b = NULL, *bn = NULL, *s1 = NULL, *s2 = NULL;
+	BAT *hb = NULL, *ob = NULL, *b = NULL, *bn = NULL, *s1 = NULL, *s2 = NULL;
 	int lbit = *getArgReference_int(stk, pci, 2), rbit = (int) sizeof(lng) * 8 - lbit;
 	str msg = MAL_SUCCEED;
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 	BUN n = 0;
 	lng *restrict r;
+	BATiter hbi = {0}, bi = {0};
 
 	(void) cntxt;
 	(void) mb;
@@ -365,6 +368,11 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	ob = b;
+	if ((b->ttype == TYPE_msk || mask_cand(b)) && !(b = BATunmask(b))) {
+		msg = createException(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(s1 = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(s2 = BATdescriptor(*sid2)))) {
@@ -388,6 +396,8 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	off1 = hb->hseqbase;
 	off2 = b->hseqbase;
 
+	hbi = bat_iterator(hb);
+	bi = bat_iterator(b);
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 		MKEYbulk_rotate_xor_hashloop(bte);
@@ -400,7 +410,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		MKEYbulk_rotate_xor_hashloop(int);
 		break;
 	case TYPE_lng: { /* hb and b areas may overlap, so for this case the 'restrict' keyword cannot be used */
-		const lng *h = (const lng *) Tloc(hb, 0), *v = (const lng *) Tloc(b, 0);
+		const lng *h = (const lng *) hbi.base, *v = (const lng *) bi.base;
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 			for (BUN i = 0; i < n; i++) {
 				oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
@@ -421,30 +431,8 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		MKEYbulk_rotate_xor_hashloop(hge);
 		break;
 #endif
-	case TYPE_str:
-		if (b->tvheap->hashash) {
-			const lng *restrict h = (const lng *) Tloc(hb, 0);
-			BATiter bi = bat_iterator(b);
-
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				for (BUN i = 0; i < n; i++) {
-					oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
-					const void *restrict s = BUNtvar(bi, p2);
-					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (lng) ((const BUN *) s)[-1];
-				}
-			} else {
-				for (BUN i = 0; i < n; i++) {
-					oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-					const void *restrict s = BUNtvar(bi, p2);
-					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (lng) ((const BUN *) s)[-1];
-				}
-			}
-			break;
-		}
-		/* fall through */
 	default: {
-		const lng *restrict h = (const lng *) Tloc(hb, 0);
-		BATiter bi = bat_iterator(b);
+		const lng *restrict h = (const lng *) hbi.base;
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -461,6 +449,8 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		break;
 	}
 	}
+	bat_iterator_end(&hbi);
+	bat_iterator_end(&bi);
 
 bailout:
 	if (bn && !msg) {
@@ -476,6 +466,8 @@ bailout:
 	}
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (ob && b != ob)
+		BBPunfix(ob->batCacheid);
 	if (hb)
 		BBPunfix(hb->batCacheid);
 	if (s1)
@@ -499,6 +491,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	BUN n = 0;
 	lng *restrict r, val;
 	const lng *restrict h;
+	BATiter hbi = {0};
 
 	(void) cntxt;
 	if (!(hb = BATdescriptor(*hid))) {
@@ -545,8 +538,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 	r = (lng *) Tloc(bn, 0);
-	h = (const lng *) Tloc(hb, 0);
-
+	hbi = bat_iterator(hb);
+	h = (const lng *) hbi.base;
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < n; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
@@ -558,6 +551,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			r[i] = GDK_ROTATE(h[p], lbit, rbit) ^ val;
 		}
 	}
+	bat_iterator_end(&hbi);
 
 bailout:
 	if (bn && !msg) {
@@ -580,7 +574,7 @@ bailout:
 
 #define MKEYconstbulk_rotate_xor_hashloop(TPE) \
 	do { \
-		const TPE *restrict v = (const TPE *) Tloc(b, 0); \
+		const TPE *restrict v = (const TPE *) bi.base; \
 		if (ci.tpe == cand_dense) { \
 			for (BUN i = 0; i < n; i++) { \
 				oid p = (canditer_next_dense(&ci) - off); \
@@ -606,6 +600,7 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	oid off;
 	BUN n = 0;
 	lng *restrict r, h = GDK_ROTATE(*getArgReference_lng(stk, pci, 1), lbit, rbit);
+	BATiter bi = {0};
 
 	(void) cntxt;
 	(void) mb;
@@ -625,6 +620,7 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	off = b->hseqbase;
 	r = (lng *) Tloc(bn, 0);
 
+	bi = bat_iterator(b);
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 		MKEYconstbulk_rotate_xor_hashloop(bte);
@@ -645,28 +641,7 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		MKEYconstbulk_rotate_xor_hashloop(hge);
 		break;
 #endif
-	case TYPE_str:
-		if (b->tvheap->hashash) {
-			BATiter bi = bat_iterator(b);
-
-			if (ci.tpe == cand_dense) {
-				for (BUN i = 0; i < n; i++) {
-					oid p = (canditer_next_dense(&ci) - off);
-					const char *restrict s = BUNtvar(bi, p);
-					r[i] = h ^ (lng) ((const BUN *) s)[-1];
-				}
-			} else {
-				for (BUN i = 0; i < n; i++) {
-					oid p = (canditer_next(&ci) - off);
-					const char *restrict s = BUNtvar(bi, p);
-					r[i] = h ^ (lng) ((const BUN *) s)[-1];
-				}
-			}
-			break;
-		}
-		/* fall through */
 	default: {
-		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
 		if (ci.tpe == cand_dense) {
@@ -683,6 +658,7 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		break;
 	}
 	}
+	bat_iterator_end(&bi);
 
 bailout:
 	if (bn && !msg) {

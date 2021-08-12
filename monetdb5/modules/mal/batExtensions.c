@@ -75,10 +75,9 @@ CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat input = *getArgReference_bat(stk, pci, 2);
 
 	(void)cntxt;
-	if ((i = BATdescriptor(input)) == NULL)
+	if ((i = BBPquickdesc(input)) == NULL)
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	b = COLnew(i->hseqbase, tt, BATcount(i), TRANSIENT);
-	BBPunfix(i->batCacheid);
 	if (b == 0)
 		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = b->batCacheid;

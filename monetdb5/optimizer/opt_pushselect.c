@@ -320,26 +320,30 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* rewrite batalgebra.like + [theta]select -> likeselect */
 			if (getModuleId(p) == algebraRef && p->retc == 1 &&
-					(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)) {
+				(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)) {
 				int var = getArg(p, 1);
 				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
 				if (isLikeOp(q) &&
-						 isaBatType(getArgType(mb, q, 1)) && /* input is a column */
-						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
-						!isaBatType(getArgType(mb, q, 3)) && /* escape is a value */
-						!isaBatType(getArgType(mb, q, 4)) && /* isensitive flag is a value */
-						strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
+					isaBatType(getArgType(mb, q, 1)) && /* input is a column */
+					!isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) && /* pattern is a value */
+					isVarConstant(mb, getArg(q, 3)) && /* escape is a value */
+					isVarConstant(mb, getArg(q, 4)) && /* isensitive flag is a value */
+					strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), anti = (getFunctionId(q)[0] == 'n');
 					bit selectok = TRUE;
 
 					/* TODO at the moment we cannot convert if the select statement has NULL semantics
 						we can convert it into VAL is NULL or PATTERN is NULL or ESCAPE is NULL
 					*/
-					if (getFunctionId(p) == selectRef) {
+					if (getFunctionId(p) == selectRef && isVarConstant(mb, getArg(p, 2 + has_cand)) &&
+						isVarConstant(mb, getArg(p, 3 + has_cand)) && isVarConstant(mb, getArg(p, 4 + has_cand)) &&
+						isVarConstant(mb, getArg(p, 5 + has_cand)) && isVarConstant(mb, getArg(p, 6 + has_cand)) &&
+						(p->argc < (has_cand ? 9 : 8) || isVarConstant(mb, getArg(p, 7 + has_cand)))) {
 						bit low = *(bit*)getVarValue(mb, getArg(p, 2 + has_cand)), high = *(bit*)getVarValue(mb, getArg(p, 3 + has_cand));
 						bit li = *(bit*)getVarValue(mb, getArg(p, 4 + has_cand)), hi = *(bit*)getVarValue(mb, getArg(p, 5 + has_cand));
-						bit santi = *(bit*)getVarValue(mb, getArg(p, 6 + has_cand)), sunknown = (p->argc == (has_cand ? 9 : 8)) ? 0 : *(bit*)getVarValue(mb, getArg(p, 7 + has_cand));
+						bit santi = *(bit*)getVarValue(mb, getArg(p, 6 + has_cand));
+						bit sunknown = (p->argc == (has_cand ? 9 : 8)) ? 0 : *(bit*)getVarValue(mb, getArg(p, 7 + has_cand));
 
 						/* semantic or not symmetric cases, it cannot be converted */
 						if (is_bit_nil(low) || is_bit_nil(li) || is_bit_nil(santi) || low != high || li != hi || sunknown)
@@ -352,7 +356,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							anti = !anti;
 						if (santi)
 							anti = !anti;
-					} else if (getFunctionId(p) == thetaselectRef) {
+					} else if (getFunctionId(p) == thetaselectRef &&
+							   isVarConstant(mb, getArg(p, 3)) && isVarConstant(mb, getArg(p, 4))) {
 						bit truth_value = *(bit*)getVarValue(mb, getArg(p, 3));
 						str comparison = (str)getVarValue(mb, getArg(p, 4));
 
@@ -365,6 +370,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							anti = !anti;
 						else if (strcmp(comparison, "==") != 0)
 							selectok = FALSE;
+					} else {
+						selectok = FALSE;
 					}
 
 					if (selectok) {

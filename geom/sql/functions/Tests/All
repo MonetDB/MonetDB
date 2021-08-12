@@ -68,3 +68,5 @@ HAVE_GEOM?ST_MakeBox2D
 
 
 HAVE_GEOM?dropTestGeometries
+
+HAVE_GEOM?geomcasts

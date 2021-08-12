@@ -49,11 +49,11 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -78,7 +78,8 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		daytime *restrict vals = (daytime*) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		daytime *restrict vals = (daytime*) bi.base;
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
@@ -104,16 +105,13 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
 		*ret = is_daytime_nil(next) ? daytime_nil : daytime_2time_daytime_imp(next, shift, divider, multiplier);
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -124,6 +122,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -169,11 +171,11 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -197,7 +199,8 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		lng *restrict vals = (lng*) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		lng *restrict vals = (lng*) bi.base;
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q ; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
@@ -223,6 +226,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		lng next = *(lng*)getArgReference(stk, pci, 1);
 		*ret = is_lng_nil(next) ? daytime_nil : second_interval_2_daytime_imp(next, shift, divider, multiplier);
@@ -255,10 +259,9 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		daytime d = daytime_nil;
-		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1))))
+			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_daytime, &d, BATcount(b), TRANSIENT);
-		BBPunfix(b->batCacheid);
 		if (!res)
 			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
@@ -315,11 +318,11 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -370,6 +373,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 				}
 			}
 		}
+		bat_iterator_end(&it);
 	} else {
 		str next = *(str*)in;
 		if (strNil(next))
@@ -460,11 +464,11 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -489,7 +493,8 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		timestamp *restrict vals = (timestamp*) bi.base;
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
@@ -515,6 +520,7 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
 		*ret = is_timestamp_nil(next) ? daytime_nil : timestamp_2_daytime_imp(next, shift, divider, multiplier);
@@ -555,11 +561,11 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -575,7 +581,8 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		date *restrict vals = (date*) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		date *restrict vals = (date*) bi.base;
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
@@ -589,15 +596,12 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils |= is_timestamp_nil(ret[i]);
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		*ret = timestamp_fromdate(*(date*)getArgReference(stk, pci, 1));
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -608,6 +612,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -652,11 +660,11 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -681,7 +689,8 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		timestamp *restrict vals = (timestamp*) bi.base;
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
@@ -707,16 +716,13 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
 		*ret = is_timestamp_nil(next) ? timestamp_nil : timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -727,6 +733,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -739,10 +749,9 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		timestamp d = timestamp_nil;
-		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1))))
+			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_timestamp, &d, BATcount(b), TRANSIENT);
-		BBPunfix(b->batCacheid);
 		if (!res)
 			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
@@ -799,11 +808,11 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -854,6 +863,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		str next = *(str*)in;
 		if (strNil(next))
@@ -939,11 +949,11 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -985,6 +995,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
 
@@ -1038,11 +1049,11 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -1084,6 +1095,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
 
@@ -1115,7 +1127,7 @@ bailout:
 	do { \
 		if (is_a_bat) { \
 			oid off = b->hseqbase; \
-			TPE_IN *restrict vals = Tloc(b, 0); \
+			TPE_IN *restrict vals = bi.base; \
 			if (ci.tpe == cand_dense) { \
 				for (BUN i = 0; i < q; i++) { \
 					oid p = (canditer_next_dense(&ci) - off); \
@@ -1164,11 +1176,11 @@ bailout:
 			char *str_val = NULL; \
 			if (BATatoms[tpe].atomToStr(&str_val, &len, &next, false) < 0) { \
 				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-				goto bailout; \
+				goto bailout1; \
 			} \
 			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Value %s too large to fit at a " FUNC_NAME, str_val); \
 			GDKfree(str_val); \
-			goto bailout; \
+			goto bailout1; \
 		} \
 	} while (0)
 
@@ -1179,11 +1191,11 @@ bailout:
 			char *str_val = NULL; \
 			if (BATatoms[tpe].atomToStr(&str_val, &len, &cast, false) < 0) { \
 				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-				goto bailout; \
+				goto bailout1; \
 			} \
 			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in conversion of %s to " FUNC_NAME, str_val); \
 			GDKfree(str_val); \
-			goto bailout; \
+			goto bailout1; \
 		} \
 	} while (0)
 
@@ -1198,17 +1210,18 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2): NULL;
 	BUN q = 0;
 	struct canditer ci = {0};
+	BATiter bi;
 
 	(void) cntxt;
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -1234,6 +1247,7 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	}
 
+	bi = bat_iterator(b);
 	switch (tpe) {
 	case TYPE_bte:
 		interval_loop(month_interval_convert, bte, int, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
@@ -1256,12 +1270,10 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(ILLARG, "batcalc.month_interval", SQLSTATE(42000) "Illegal argument in month interval");
 	}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -1272,6 +1284,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1294,7 +1310,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	lng *restrict ret = NULL, multiplier = 1;
-	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)), 
+	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)),
 		scale = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
 	bool is_a_bat = false, nils = false;
 	BAT *b = NULL, *s = NULL, *res = NULL;
@@ -1306,6 +1322,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 	lng shift = 0, divider = 1;
 #endif
+	BATiter bi;
 
 	(void) cntxt;
 	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0])) {
@@ -1316,11 +1333,11 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -1359,6 +1376,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		divider = scales[scale];
 	}
 
+	bi = bat_iterator(b);
 	switch (tpe) {
 	case TYPE_bte:
 		interval_loop(second_interval_convert, bte, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
@@ -1381,12 +1399,10 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(ILLARG, "batcalc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
 	}
+bailout1:
+	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -1397,6 +1413,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1417,11 +1437,11 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -1458,7 +1478,8 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		daytime *restrict vals = (daytime*) Tloc(b, 0);
+		BATiter bi = bat_iterator(b);
+		daytime *restrict vals = (daytime*) bi.base;
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
@@ -1484,16 +1505,13 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
+		bat_iterator_end(&bi);
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
 		*ret = is_daytime_nil(next) ? lng_nil : (next / divider) * multiplier;
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -1504,6 +1522,10 @@ bailout:
 		BBPkeepref(*r = res->batCacheid);
 	} else if (res)
 		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1516,10 +1538,9 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		date d = date_nil;
-		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		if (!(b = BBPquickdesc(*getArgReference_bat(stk, pci, 1))))
+			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_date, &d, BATcount(b), TRANSIENT);
-		BBPunfix(b->batCacheid);
 		if (!res)
 			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = getArgReference_bat(stk, pci, 0);
@@ -1559,11 +1580,11 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
@@ -1605,6 +1626,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 				}
 			}
 		}
+		bat_iterator_end(&it);
 	} else {
 		str next = *(str*)in;
 		if (strNil(next))

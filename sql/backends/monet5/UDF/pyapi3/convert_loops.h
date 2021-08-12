@@ -19,17 +19,19 @@
 
 #define BAT_TO_NP(bat, mtpe, nptpe)                                            \
 	do {                                                                       \
+		BATiter bi = bat_iterator(bat);                                        \
 		if (copy) {                                                            \
 			vararray = PyArray_EMPTY(1, elements, nptpe, 0);                   \
-			memcpy(PyArray_DATA((PyArrayObject *)vararray), Tloc(bat, 0),      \
+			memcpy(PyArray_DATA((PyArrayObject *)vararray), bi.base,           \
 				sizeof(mtpe) * (t_end - t_start));                             \
 		} else {                                                               \
 			vararray =                                                         \
 				PyArray_New(&PyArray_Type, 1, elements, nptpe, NULL,           \
-							&((mtpe *)Tloc(bat, 0))[t_start], 0,               \
+							&((mtpe *)bi.base)[t_start], 0,                    \
 							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);   \
 		}                                                                      \
-	} while(0)                                                                 \
+		bat_iterator_end(&bi);                                                 \
+	} while(0)
 
 // This #define creates a new BAT with the internal data and mask from a Numpy
 // array, without copying the data

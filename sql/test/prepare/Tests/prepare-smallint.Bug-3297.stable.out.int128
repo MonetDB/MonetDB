@@ -29,7 +29,7 @@ stdout of test 'prepare-smallint.Bug-3297` in directory 'sql/test/BugTracker-201
 #prepare INSERT INTO ints VALUES ( ? - 20 );
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	3,	1,	0,	0,	0 # length
 [ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
 #exec  5(1);

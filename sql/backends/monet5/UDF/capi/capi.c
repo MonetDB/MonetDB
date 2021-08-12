@@ -379,6 +379,59 @@ static timestamp timestamp_from_data(cudf_data_timestamp *ptr);
 
 static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
 
+static str
+empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)
+{
+	str msg = MAL_SUCCEED;
+	void **res = GDKzalloc(retcols * sizeof(void*));
+
+	if (!res) {
+		msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (size_t i = 0; i < retcols; i++) {
+		if (isaBatType(getArgType(mb, pci, i))) {
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto bailout;
+			}
+			((BAT**)res)[i] = b;
+		} else { // single value return, only for non-grouped aggregations
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
+		}
+	}
+
+bailout:
+	if (res) {
+		for (size_t i = 0; i < retcols; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				BAT *b = ((BAT**)res)[i];
+
+				if (b && msg) {
+					BBPreclaim(b);
+				} else if (b) {
+					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+				}
+			} else if (msg) {
+				ValPtr pt = ((ValPtr*)res)[i];
+
+				if (pt)
+					VALclear(pt);
+			}
+		}
+		GDKfree(res);
+	}
+	return msg;
+}
+
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bool grouped)
 {
@@ -971,8 +1024,19 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else {
 			// deal with BAT input
 			bat_type = getBatType(getArgType(mb, pci, i));
-			input_bats[index] =
-				BATdescriptor(*getArgReference_bat(stk, pci, i));
+			if (!(input_bats[index] =
+				  BATdescriptor(*getArgReference_bat(stk, pci, i)))) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			if (BATcount(input_bats[index]) == 0) {
+				/* empty input, generate trivial return */
+				/* I expect all inputs to have the same size,
+				   so this should be safe */
+				msg = empty_return(mb, stk, pci, output_count,
+								   input_bats[index]->hseqbase);
+				goto wrapup;
+			}
 		}
 
 		if (bat_type == TYPE_bit) {
@@ -1023,6 +1087,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					} else {
 						bat_data->data[j] = wrapped_GDK_malloc_nojump(strlen(t) + 1);
 						if (!bat_data->data[j]) {
+							bat_iterator_end(&li);
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 							goto wrapup;
 						}
@@ -1031,6 +1096,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				j++;
 			}
+			bat_iterator_end(&li);
 			if (can_mprotect_varheap) {
 				// mprotect the varheap of the BAT to prevent modification of input strings
 				mprotect_retval =
@@ -1126,6 +1192,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						bat_data->data[j].data = t->nitems == 0 ? NULL :
 							wrapped_GDK_malloc_nojump(t->nitems);
 						if (t->nitems > 0 && !bat_data->data[j].data) {
+							bat_iterator_end(&li);
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 							goto wrapup;
 						}
@@ -1134,6 +1201,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				j++;
 			}
+			bat_iterator_end(&li);
 			bat_data->null_value.size = ~(size_t) 0;
 			bat_data->null_value.data = NULL;
 			if (can_mprotect_varheap) {
@@ -1176,6 +1244,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					size_t length = 0;
 					if (BATatoms[bat_type].atomToStr(&result, &length, t, false) ==
 						0) {
+						bat_iterator_end(&li);
 						msg = createException(
 							MAL, "cudf.eval",
 							"Failed to convert element to string");
@@ -1185,6 +1254,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				j++;
 			}
+			bat_iterator_end(&li);
 		}
 		input_size = BATcount(input_bats[index]) > input_size
 						 ? BATcount(input_bats[index])
@@ -1505,6 +1575,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						BUNtail(li, 0)) == NULL) {
 				msg = createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			bat_iterator_end(&li);
 			BBPunfix(b->batCacheid);
 		}
 	}

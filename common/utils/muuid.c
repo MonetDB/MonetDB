@@ -15,15 +15,34 @@
 #ifdef HAVE_UUID_UUID_H
 # include <uuid/uuid.h>
 #endif
-#ifndef HAVE_UUID
-#ifdef HAVE_OPENSSL
-# include <openssl/rand.h>
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonCrypto.h>
-#include <CommonCrypto/CommonRandom.h>
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
 #endif
-#endif
+
+#if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static inline bool
+generate_uuid(char *out)
+{
+	union {
+		unsigned int randbuf[4];
+		unsigned char uuid[16];
+	} u;
+	for (int i = 0; i < 4; i++)
+		if (rand_s(&u.randbuf[i]) != 0)
+			return false;
+	/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
+	u.uuid[8] = (u.uuid[8] & 0x3F) | 0x80;
+	/* make sure this is version 4 (random UUID) */
+	u.uuid[6] = (u.uuid[6] & 0x0F) | 0x40;
+	snprintf(out, 37,
+			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+			 "%02x%02x%02x%02x%02x%02x",
+			 u.uuid[0], u.uuid[1], u.uuid[2], u.uuid[3],
+			 u.uuid[4], u.uuid[5], u.uuid[6], u.uuid[7],
+			 u.uuid[8], u.uuid[9], u.uuid[10], u.uuid[11],
+			 u.uuid[12], u.uuid[13], u.uuid[14], u.uuid[15]);
+	return true;
+}
 #endif
 
 /**
@@ -47,9 +66,9 @@ generateUUID(void)
 	/* try to do some pseudo interesting stuff, and stash it in the
 	 * format of a UUID to at least return some uniform answer */
 	char out[37];
-#ifdef HAVE_OPENSSL
+#if defined(HAVE_GETENTROPY)
 	unsigned char randbuf[16];
-	if (RAND_bytes(randbuf, 16) >= 0) {
+	if (getentropy(randbuf, 16) == 0) {
 		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
 		randbuf[8] = (randbuf[8] & 0x3F) | 0x80;
 		/* make sure this is version 4 (random UUID) */
@@ -62,23 +81,8 @@ generateUUID(void)
 			 randbuf[8], randbuf[9], randbuf[10], randbuf[11],
 			 randbuf[12], randbuf[13], randbuf[14], randbuf[15]);
 	} else
-#else
-#ifdef HAVE_COMMONCRYPTO
-	unsigned char randbuf[16];
-	if (CCRandomGenerateBytes(randbuf, 16) == kCCSuccess) {
-		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
-		randbuf[8] = (randbuf[8] & 0x3F) | 0x80;
-		/* make sure this is version 4 (random UUID) */
-		randbuf[6] = (randbuf[6] & 0x0F) | 0x40;
-		snprintf(out, sizeof(out),
-			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
-			 "%02x%02x%02x%02x%02x%02x",
-			 randbuf[0], randbuf[1], randbuf[2], randbuf[3],
-			 randbuf[4], randbuf[5], randbuf[6], randbuf[7],
-			 randbuf[8], randbuf[9], randbuf[10], randbuf[11],
-			 randbuf[12], randbuf[13], randbuf[14], randbuf[15]);
-	} else
-#endif
+#elif defined(HAVE_RAND_S)
+	if (!generate_uuid(out))
 #endif
 	{
 		/* generate something like this:
