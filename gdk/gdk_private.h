@@ -66,7 +66,7 @@ gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, B
 	__attribute__((__visibility__("hidden")));
 Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
-gdk_return BAThashsave(BAT *b, bool dosync)
+void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
