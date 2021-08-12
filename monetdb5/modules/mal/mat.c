@@ -77,25 +77,31 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
-		BAT *ob = b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if ((unmask && b && b->ttype == TYPE_msk) || mask_cand(b))
+		if (!(b = BATdescriptor(stk->stk[getArg(p,i)].val.ival))) {
+			BBPreclaim(bn);
+			throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		if ((unmask && b->ttype == TYPE_msk) || mask_cand(b)) {
+			BAT *ob = b;
 			b = BATunmask(b);
-		if( b ){
-			if (BATcount(bn) == 0) {
-				BAThseqbase(bn, b->hseqbase);
-				BATtseqbase(bn, b->tseqbase);
-			}
-			if (BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
-				BBPunfix(bn->batCacheid);
-				BBPunfix(b->batCacheid);
+			BBPunfix(ob->batCacheid);
+			if (!b) {
+				BBPreclaim(bn);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
-			BBPunfix(b->batCacheid);
 		}
-		if (b != ob)
-			BBPunfix(ob->batCacheid);
+		if (BATcount(bn) == 0) {
+			BAThseqbase(bn, b->hseqbase);
+			BATtseqbase(bn, b->tseqbase);
+		}
+		if (BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			BBPunfix(b->batCacheid);
+			throw(MAL, "mat.pack", GDK_EXCEPTION);
+		}
+		BBPunfix(b->batCacheid);
 	}
-	if (!(!bn->tnil || !bn->tnonil)) {
+	if (bn->tnil && bn->tnonil) {
 		BBPreclaim(bn);
 		throw(MAL, "mat.pack", "INTERNAL ERROR" "bn->tnil or  bn->tnonil fails ");
 	}
@@ -112,7 +118,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *ret = getArgReference_bat(stk,p,0);
 	int	pieces;
-	BAT *b, *bb, *bn;
+	BAT *b, *bb, *bn, *nb;
 	size_t newsize;
 
 	(void) cntxt;
@@ -121,7 +127,6 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ( getArgType(mb,p,2) == TYPE_int){
-		BAT *ob = b;
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p,2)].val.ival;
 		int tt = ATOMtype(b->ttype);
@@ -138,58 +143,69 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			newsize =  b->tvheap->size * pieces;
 			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				BBPreclaim(bn);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
 		}
 		BATtseqbase(bn, b->tseqbase);
-		if (b->ttype == TYPE_msk || mask_cand(b))
+		if (b->ttype == TYPE_msk || mask_cand(b)) {
+			BAT *ob = b;
 			b = BATunmask(b);
-		if (b && BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
-			BBPunfix(bn->batCacheid);
-			if (b != ob)
-				BBPunfix(ob->batCacheid);
+			BBPunfix(ob->batCacheid);
+			if (!b) {
+				BBPreclaim(bn);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
+		}
+		if (BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
+			BBPreclaim(bn);
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
 		bn->unused = (pieces-1); /* misuse "unused" field */
 		BATsettrivprop(bn);
-		if (b != ob)
-			BBPunfix(ob->batCacheid);
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (!(!bn->tnil || !bn->tnonil)) {
+		BBPunfix(b->batCacheid);
+		if (bn->tnil && bn->tnonil) {
 			BBPreclaim(bn);
-			throw(MAL, "mat.packIncrement", "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
+			throw(MAL, "mat.pack", "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
 		}
 		*ret = bn->batCacheid;
 		BBPretain(bn->batCacheid);
 		BBPunfix(bn->batCacheid);
 	} else {
 		/* remaining steps */
-		BAT *obb = bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
-		if (bb && (bb->ttype == TYPE_msk || mask_cand(bb)))
+		if (!(bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival))) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		if (bb->ttype == TYPE_msk || mask_cand(bb)) {
+			BAT *obb = bb;
 			bb = BATunmask(bb);
-		if ( bb ){
-			if (BATcount(b) == 0) {
-				BAThseqbase(b, bb->hseqbase);
-				BATtseqbase(b, bb->tseqbase);
-			}
-			if (BATappend(b, bb, NULL, false) != GDK_SUCCEED) {
-				BBPunfix(bb->batCacheid);
+			BBPunfix(obb->batCacheid);
+			if (!bb) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
-			BBPunfix(bb->batCacheid);
 		}
-		if (bb != obb)
-			BBPunfix(obb->batCacheid);
-		b->unused--;
-		if (b->unused == 0 && (b = BATsetaccess(b, BAT_READ)) == NULL) {
+		if (BATcount(b) == 0) {
+			BAThseqbase(b, bb->hseqbase);
+			BATtseqbase(b, bb->tseqbase);
+		}
+		if (BATappend(b, bb, NULL, false) != GDK_SUCCEED) {
+			BBPunfix(bb->batCacheid);
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
-		if (!(!b->tnil || !b->tnonil)) {
+		BBPunfix(bb->batCacheid);
+		b->unused--;
+		if (b->unused == 0) {
+			if (!(nb = BATsetaccess(b, BAT_READ))) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
+			b = nb;
+		}
+		if (b->tnil && b->tnonil) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");
 		}
@@ -234,7 +250,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(bn);
-	throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	throw(MAL, "mat.pack", GDK_EXCEPTION);
 }
 
 #include "mel.h"
