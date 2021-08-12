@@ -308,6 +308,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		GDKfree(path);
 		return GDK_SUCCEED;
 	}
+	GDKerror("no name specified");
 	return GDK_FAIL;
 }
 

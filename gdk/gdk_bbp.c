@@ -1396,7 +1396,7 @@ BBPinit(void)
 		if (BBPrecover_subdir() != GDK_SUCCEED) {
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
-			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
+			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s.", SUBDIR);
 			MT_lock_unset(&GDKtmLock);
 			return GDK_FAIL;
 		}
@@ -1434,6 +1434,7 @@ BBPinit(void)
 				TRC_DEBUG(IO_, "reverting to dir saved in BBP.bak.\n");
 
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
+				GDKsyserror("cannot open BBP.dir");
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
 				MT_lock_unset(&GDKtmLock);
@@ -1486,7 +1487,7 @@ BBPinit(void)
 		gdk_return rc = BBPprepare(false);
 		MT_lock_unset(&GDKtmLock);
 		if (rc != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
+			TRC_CRITICAL(GDK, "cannot properly prepare process %s.", BAKDIR);
 			return rc;
 		}
 	}
@@ -1542,7 +1543,7 @@ BBPinit(void)
 
   bailout:
 	/* now it is time for real panic */
-	TRC_CRITICAL(GDK, "could not write %s%cBBP.dir. Please check whether your disk is full or write-protected", BATDIR, DIR_SEP);
+	TRC_CRITICAL(GDK, "could not write %s%cBBP.dir.", BATDIR, DIR_SEP);
 	return GDK_FAIL;
 }
 
@@ -3199,10 +3200,11 @@ BBPprepare(bool subcommit)
 	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
 
-	if(!(bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL)))
-		return GDK_FAIL;
-	if(!(subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL))) {
+	bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
+	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+	if (bakdirpath == NULL || subdirpath == NULL) {
 		GDKfree(bakdirpath);
+		GDKfree(subdirpath);
 		return GDK_FAIL;
 	}
 
@@ -3833,7 +3835,7 @@ BBPrecover(int farmid)
 		TRC_DEBUG(IO_, "rmdir %s = %d\n", bakdirpath, (int) ret);
 	}
 	if (ret != GDK_SUCCEED)
-		GDKerror("recovery failed. Please check whether your disk is full or write-protected.\n");
+		GDKerror("recovery failed.\n");
 
 	TRC_DEBUG(IO_, "end\n");
 	GDKfree(bakdirpath);
@@ -3889,7 +3891,7 @@ BBPrecover_subdir(void)
 	TRC_DEBUG(IO_, "end = %d\n", (int) ret);
 
 	if (ret != GDK_SUCCEED)
-		GDKerror("recovery failed. Please check whether your disk is full or write-protected.\n");
+		GDKerror("recovery failed.\n");
 	return ret;
 }
 
