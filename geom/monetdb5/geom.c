@@ -94,6 +94,7 @@ static GeoPoint deg2RadPoint(GeoPoint geo)
 }
 
 #if 0
+
 /**
  *  Converts a longitude value in radians to degrees
  *  The normalization part was taken from PostGIS
@@ -153,7 +154,6 @@ static double rad2DegLatitude(double lat_radians)
 
 	return lat;
 }
-
 /* Converts the GeoPoint from degrees to radians latitude and longitude*/
 static void rad2DegPoint(GeoPoint *geo)
 {
@@ -424,7 +424,7 @@ static GEOSGeom cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 	return GEOSGeom_createLineString(lineSeq);
 }
 
-//TODO Check if this works always
+//TODO Fix this
 //TODO For fast testing, we could use the polygon's minimum bounding box
 //TODO Implement intersection ourselves so we don't use GEOS?
 static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
@@ -448,7 +448,24 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 
 		//If there is an intersection, a point will be returned (line when there is none)
 		if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
+		{
 			intersectionNum++;
+			/*printf("Cross!\n");
+			CartPoint pDegrees;
+			GeoPoint pRadians;
+			double x, y, z;
+			GEOSGeomGetX(intersectionPoints, &x);
+			GEOSGeomGetY(intersectionPoints, &y);
+			GEOSGeomGetZ(intersectionPoints, &z);
+			pDegrees.x = x;
+			pDegrees.y = y;
+			pDegrees.z = z;
+			pRadians = cart2geo_r(pDegrees);
+			printf("Intersection Num: %d\n", intersectionNum);
+			printf("Intersection Point (%f %f)\n", pRadians.lon, pRadians.lat);
+			printf("Line (%f %f)->(%f %f)\nLine (%f %f)->(%f %f)\n", lon_o, lat_o, point.lon, point.lat, polygonRing.segments[i].start.lon, polygonRing.segments[i].start.lat, polygonRing.segments[i].end.lon, polygonRing.segments[i].end.lat);
+			fflush(stdout);*/
+		}
 
 		if (intersectionPoints != NULL)
 			GEOSGeom_destroy(intersectionPoints);
@@ -467,7 +484,11 @@ static double geoDistancePointPolygon(GeoPoint point, GeoLines polygonRing)
 {
 	//Check if point is in polygon
 	if (pointWithinPolygon(point, polygonRing))
+	{
+		printf("Point within Polygon\n");
+		fflush(stdout);
 		return 0;
+	}
 
 	//Compare Point to the various polygon segments
 	return geoDistancePointLine(point, polygonRing);
@@ -576,6 +597,10 @@ static double geoDistanceInternal(GEOSGeom a, GEOSGeom b)
 	return min_distance;
 }
 
+/**
+* Distance 
+* 
+**/
 /* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
 str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 {
@@ -667,6 +692,13 @@ wkbNULLcopy(void)
 	if (n)
 		*n = wkb_nil;
 	return n;
+}
+
+/* returns a pointer to a null wkb */
+static const void *
+wkbNULL(void)
+{
+	return &wkb_nil;
 }
 
 /* the first argument in the functions is the return variable */
@@ -5150,7 +5182,7 @@ str wkbUnion(wkb **out, wkb **a, wkb **b)
 }
 
 //Gets a BAT with geometries and returns a single LineString
-str wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
+str wkbUnionAggr(wkb **outWKB, const bat *inBAT_id)
 {
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
@@ -5203,6 +5235,132 @@ str wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
+}
+
+static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
+	str msg = MAL_SUCCEED;
+	oid min, max;
+	BUN ngrp, ncand;
+	struct canditer ci;
+	const char *err;
+	const oid *gids = NULL;
+	BATiter bi;
+
+	//TODO Do we need to use skip_nils?
+	(void)skip_nils;
+
+	//Get the BAT descriptors for the value bat + the other 3 optional BATs
+	if ((b = BATdescriptor(*bid)) == NULL ||
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
+	{
+		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
+		goto free;
+	}
+
+	//Fill in the values of the group aggregate operation
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
+	{
+		msg = createException(MAL, "geom.Union", "%s", err);
+		goto free;
+	}
+
+	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	if (((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT))) == NULL)
+	{
+		createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	//Allocate space for the intermediate unions of wkb's
+	wkb **unions = GDKzalloc(sizeof(wkb *) * ngrp);
+
+	bi = bat_iterator(b);
+	if (g && !BATtdense(g))
+		gids = (const oid *)Tloc(g, 0);
+
+	//Loop through the input rows and do the union operation for each different group
+	for (BUN i = 0; i < ncand; i++)
+	{
+		//Get the index of the next candidate
+		oid o = canditer_next(&ci);
+		BUN p = o - b->hseqbase;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		//Determine the group id
+		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+
+		char *geomSTR;
+		wkbAsText(&geomSTR, &inWKB, NULL);
+		printf("Row %zu: %s\n", i, geomSTR);
+		fflush(stdout);
+
+		if (unions[grp] == NULL)
+		{
+			//First value for a group, copy input wkb
+			if ((msg = wkbFromWKB(&(unions[grp]), &inWKB)) != MAL_SUCCEED)
+			{
+				msg = createException(MAL, "geom.Union", "%s", msg);
+				goto free;
+			}
+		}
+		else
+		{
+			if ((err = wkbUnion(&(unions[grp]), &(unions[grp]), &inWKB)) != MAL_SUCCEED)
+			{
+				msg = createException(MAL, "geom.Union", "%s", err);
+				goto free;
+			}
+		}
+		//printf("Candidate %d\no = %zu\ngrp = %zu\n", (int)i, o, grp);
+		//printf("outWKB Len: %d\ninWKB Len: %d\n", unions[grp]->len, inWKB->len);
+	}
+
+	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(unions[i]);
+		GDKfree(unions);
+		goto free;
+	}
+
+	for (BUN i = 0; i < ngrp; i++)
+		GDKfree(unions[i]);
+	GDKfree(unions);
+
+	BBPkeepref(*outid = out->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return MAL_SUCCEED;
+free:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return msg;
+}
+
+//static str wkbUnionAggrSubGrouped(wkb **outWKB, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
+static str wkbUnionAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
+}
+
+static str wkbUnionAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
+{
+	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
 }
 
 str wkbDifference(wkb **out, wkb **a, wkb **b)
@@ -6104,13 +6262,6 @@ wkbHASH(const void *W)
 		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
 	}
 	return h;
-}
-
-/* returns a pointer to a null wkb */
-static const void *
-wkbNULL(void)
-{
-	return &wkb_nil;
 }
 
 static int
@@ -7529,8 +7680,15 @@ static mel_func geom_init_funcs[] = {
 	command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring", args(1, 2, arg("", dbl), arg("w", wkb))),
 	command("geom", "ConvexHull", wkbConvexHull, false, "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.", args(1, 2, arg("", wkb), arg("w", wkb))),
 	command("geom", "Intersection", wkbIntersection, false, "Returns a geometry that represents the point set intersection of the Geometries a, b", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
+
 	command("geom", "Union", wkbUnion, false, "Returns a geometry that represents the point set union of the Geometries a, b", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
 	command("geom", "Union", wkbUnionAggr, false, "Gets a BAT with geometries and returns their union", args(1, 2, arg("", wkb), batarg("a", wkb))),
+
+	command("geom", "Union", wkbUnionAggrGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
+	//command("geom", "subUnion", wkbUnionAggrSubGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 6, arg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), arg("skip_nils", bit), arg("abort_on_error", bit))),
+	command("geom", "subUnion", wkbUnionAggrSubGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+	command("geom", "subUnion", wkbUnionAggrSubGroupedCand, false, "Gets a BAT with geometries and returns their union", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
+
 	command("geom", "Difference", wkbDifference, false, "Returns a geometry that represents that part of geometry A that does not intersect with geometry B", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
 	command("geom", "SymDifference", wkbSymDifference, false, "Returns a geometry that represents the portions of A and B that do not intersect", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
 	command("geom", "Buffer", wkbBuffer, false, "Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.", args(1, 3, arg("", wkb), arg("a", wkb), arg("distance", dbl))),
