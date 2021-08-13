@@ -339,7 +339,7 @@ STRMPcreateStrimpHeap(BAT *b)
 		/* Make sure no other thread got here first */
                 if (b->tstrimps == NULL) {
 			STRMPbuildHeader(b, hpairs); /* Find the header pairs */
-			sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor */
+			sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and the pair sizes */
 			for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
 				sz += hpairs[i].psize;
 			}
@@ -465,31 +465,42 @@ STRMPfilter(BAT *b, char *q)
 	BUN i;
 	uint64_t qbmask;
 	uint64_t *ptr;
+	Strimps *strmps;
 
-	if (b->tstrimps == NULL)
-		goto sfilter_fail;
+	if (isVIEW(b)) {
+		// b = BBP_cache(VIEWtparent(b));
+		BAT *pb = BBP_cache(VIEWtparent(b));
+		if (!BATcheckstrimps(pb))
+			goto sfilter_fail;
+		strmps = pb->tstrimps;
+	}
+	else {
+		if (!BATcheckstrimps(b))
+			goto sfilter_fail;
+		strmps = b->tstrimps;
+	}
 
 	r = COLnew(b->hseqbase, TYPE_oid, b->batCount, TRANSIENT);
 	if (r == NULL) {
 		goto sfilter_fail;
 	}
 
-	if (!BATcheckstrimps(b)) {
-		BBPunfix(r->batCacheid);
-		goto sfilter_fail;
-	}
-	qbmask = STRMPmakebitstring(q, b->tstrimps);
-	ptr = (uint64_t *)b->tstrimps->strimps_base;
+	qbmask = STRMPmakebitstring(q, strmps);
+	ptr = (uint64_t *)strmps->strimps_base;
 
 	for (i = 0; i < b->batCount; i++) {
 		if ((*(ptr + i) & qbmask) == qbmask) {
-			oid pos = i;
+			oid pos = i + b->hseqbase;
 			if (BUNappend(r, &pos, false) != GDK_SUCCEED)
 				goto sfilter_fail;
 		}
 	}
 
 	r->tkey = true;
+	r->tsorted = true;
+	r->trevsorted = BATcount(r) <= 1;
+	r->tnil = false;
+	r->tnonil = true;
 	return virtualize(r);
 
 
@@ -497,7 +508,6 @@ STRMPfilter(BAT *b, char *q)
 	return NULL;
 }
 
-#if 0
 static void
 BATstrimpsync(void *arg)
 {
@@ -568,7 +578,8 @@ persistStrimp(BAT *b)
 	} else
 		TRC_DEBUG(ACCELERATOR, "persistStrimp(" ALGOBATFMT "): NOT persisting strimp\n", ALGOBATPAR(b));
 }
-#endif
+
+static ATOMIC_TYPE STRMPnthread = ATOMIC_VAR_INIT(0);
 
 /* Create */
 gdk_return
@@ -580,27 +591,33 @@ STRMPcreate(BAT *b)
 	str s;
 	Strimps *h;
 	uint64_t *dh;
+	BAT *pb;
 
-	assert(b->ttype == TYPE_str);
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-
-
-	if (BATcheckstrimps(b))
-		return GDK_SUCCEED;
-
-	/* Disable this before merging to default */
-	if (VIEWtparent(b)) {
-		assert(b->tstrimps == NULL);
-		b = BBP_cache(VIEWtparent(b));
-	}
-
-	if ((h = STRMPcreateStrimpHeap(b)) == NULL) {
+	if (b->ttype != TYPE_str) {
+		GDKerror("strimps only valid for strings\n");
 		return GDK_FAIL;
 	}
-	dh = (uint64_t *)((uint8_t*)h->strimps.base + h->strimps.free);
+
+	(void)ATOMIC_INC(&STRMPnthread);
+	/* Disable this before merging to default */
+        if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	if (BATcheckstrimps(pb))
+		return GDK_SUCCEED;
+
+        if ((h = STRMPcreateStrimpHeap(pb)) == NULL) {
+		return GDK_FAIL;
+	}
+	dh = (uint64_t *)((uint8_t*)h->strimps.base + h->strimps.free + b->hseqbase*8);
 
 	bi = bat_iterator(b);
-	for (i = 0; i < b->batCount; i++) {
+	for (i = 0; i < bi.count; i++) {
 		s = (str)BUNtvar(bi, i);
 		if (!strNil(s))
 			*dh++ = STRMPmakebitstring(s, h);
@@ -608,25 +625,16 @@ STRMPcreate(BAT *b)
 			*dh++ = 0; /* no pairs in nil values */
 	}
 	bat_iterator_end(&bi);
+
+	MT_lock_set(&b->batIdxLock);
 	h->strimps.free += b->batCount*sizeof(uint64_t);
+	MT_lock_unset(&b->batIdxLock);
 
-
-#ifndef NDEBUG
-	{
-		FILE *f = fopen("/tmp/strmp", "wb");
-		if (f) {
-			fwrite(h->strimps.base, 1, h->strimps.free, f);
-			fclose(f);
-		}
+	/* The thread that reaches this point last needs to write the strimp to disk. */
+	(void)ATOMIC_DEC(&STRMPnthread);
+	if (STRMPnthread == 0) {
+		persistStrimp(pb);
 	}
-#endif
-
-	/* After we have computed the strimp, attempt to write it back
-	 * to the BAT.
-	 */
-	/* MT_lock_set(&b->batIdxLock); */
-	/* persistStrimp(b); */
-	/* MT_lock_unset(&b->batIdxLock); */
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
