@@ -33,7 +33,6 @@ gdk_export gdk_return BAThash(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(const Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
-gdk_export gdk_return HASHgrowbucket(BAT *b);
 
 #define BUN2 2
 #define BUN4 4
@@ -203,23 +202,31 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_dbl(H,V)	hash_lng(H,V)
 
 static inline BUN __attribute__((__const__))
-mix_uuid(uuid u)
+mix_uuid(const uuid *u)
 {
 	ulng u1, u2;
 
-	u1 = (ulng) (uint8_t) u.u[0] << 56 | (ulng) (uint8_t) u.u[1] << 48 |
-		(ulng) (uint8_t) u.u[2] << 40 | (ulng) (uint8_t) u.u[3] << 32 |
-		(ulng) (uint8_t) u.u[4] << 24 | (ulng) (uint8_t) u.u[5] << 16 |
-		(ulng) (uint8_t) u.u[6] << 8 | (ulng) (uint8_t) u.u[7];
-	u2 = (ulng) (uint8_t) u.u[8] << 56 | (ulng) (uint8_t) u.u[9] << 48 |
-		(ulng) (uint8_t) u.u[10] << 40 | (ulng) (uint8_t) u.u[11] << 32 |
-		(ulng) (uint8_t) u.u[12] << 24 | (ulng) (uint8_t) u.u[13] << 16 |
-		(ulng) (uint8_t) u.u[14] << 8 | (ulng) (uint8_t) u.u[15];
+	u1 = (ulng) (uint8_t) u->u[0] << 56 |
+		(ulng) (uint8_t) u->u[1] << 48 |
+		(ulng) (uint8_t) u->u[2] << 40 |
+		(ulng) (uint8_t) u->u[3] << 32 |
+		(ulng) (uint8_t) u->u[4] << 24 |
+		(ulng) (uint8_t) u->u[5] << 16 |
+		(ulng) (uint8_t) u->u[6] << 8 |
+		(ulng) (uint8_t) u->u[7];
+	u2 = (ulng) (uint8_t) u->u[8] << 56 |
+		(ulng) (uint8_t) u->u[9] << 48 |
+		(ulng) (uint8_t) u->u[10] << 40 |
+		(ulng) (uint8_t) u->u[11] << 32 |
+		(ulng) (uint8_t) u->u[12] << 24 |
+		(ulng) (uint8_t) u->u[13] << 16 |
+		(ulng) (uint8_t) u->u[14] << 8 |
+		(ulng) (uint8_t) u->u[15];
 	/* we're not using mix_hge since this way we get the same result
 	 * on systems with and without 128 bit integer support */
 	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
 }
-#define hash_uuid(H,V)	HASHbucket(H, mix_uuid(*(const uuid *) (V)))
+#define hash_uuid(H,V)	HASHbucket(H, mix_uuid((const uuid *) (V)))
 
 /*
  * @- hash-table supported loop over BUNs The first parameter `bi' is
@@ -275,10 +282,10 @@ mix_uuid(uuid u)
 #define HASHloop_flt(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, flt)
 #define HASHloop_dbl(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, dbl)
 #ifdef HAVE_HGE
-#define HASHloop_uuid(bi, h, hb, v)					\
-	for (hb = HASHget(h, hash_uuid(h, v));				\
+#define HASHloop_uuid(bi, hsh, hb, v)					\
+	for (hb = HASHget(hsh, hash_uuid(hsh, v));			\
 	     hb != BUN_NONE;						\
-	     hb = HASHgetlink(h,hb))					\
+	     hb = HASHgetlink(hsh,hb))					\
 		if (((const uuid *) (v))->h == ((const uuid *) BUNtloc(bi, hb))->h)
 #else
 #define HASHloop_uuid(bi, h, hb, v)					\
@@ -288,58 +295,5 @@ mix_uuid(uuid u)
 		if (memcmp((const uuid *) (v), (const uuid *) BUNtloc(bi, hb), 16) == 0)
 //		if (((const uuid *) (v))->l[0] == ((const uuid *) BUNtloc(bi, hb))->l[0] && ((const uuid *) (v))->l[1] == ((const uuid *) BUNtloc(bi, hb))->l[1])
 #endif
-
-#define HASHfnd_str(x,y,z)						\
-	do {								\
-		BUN _i;							\
-		(x) = BUN_NONE;						\
-		if (BAThash((y).b) == GDK_SUCCEED) {			\
-			MT_rwlock_rdlock(&(y).b->thashlock);		\
-			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
-				(x) = _i;				\
-				break;					\
-			}						\
-			MT_rwlock_rdunlock(&(y).b->thashlock);		\
-		} else							\
-			goto hashfnd_failed;				\
-	} while (0)
-#define HASHfnd(x,y,z)						\
-	do {							\
-		BUN _i;						\
-		(x) = BUN_NONE;					\
-		if (BAThash((y).b) == GDK_SUCCEED) {		\
-			MT_rwlock_rdlock(&(y).b->thashlock);	\
-			HASHloop((y), (y).b->thash, _i, (z)) {	\
-				(x) = _i;			\
-				break;				\
-			}					\
-			MT_rwlock_rdunlock(&(y).b->thashlock);	\
-		} else						\
-			goto hashfnd_failed;			\
-	} while (0)
-#define HASHfnd_TYPE(x,y,z,TYPE)					\
-	do {								\
-		BUN _i;							\
-		(x) = BUN_NONE;						\
-		if (BAThash((y).b) == GDK_SUCCEED) {			\
-			MT_rwlock_rdlock(&(y).b->thashlock);		\
-			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
-				(x) = _i;				\
-				break;					\
-			}						\
-			MT_rwlock_rdunlock(&(y).b->thashlock);		\
-		} else							\
-			goto hashfnd_failed;				\
-	} while (0)
-#define HASHfnd_bte(x,y,z)	HASHfnd_TYPE(x,y,z,bte)
-#define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)
-#define HASHfnd_int(x,y,z)	HASHfnd_TYPE(x,y,z,int)
-#define HASHfnd_lng(x,y,z)	HASHfnd_TYPE(x,y,z,lng)
-#ifdef HAVE_HGE
-#define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
-#endif
-#define HASHfnd_flt(x,y,z)	HASHfnd_TYPE(x,y,z,flt)
-#define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
-#define HASHfnd_uuid(x,y,z)	HASHfnd_TYPE(x,y,z,uuid)
 
 #endif /* _GDK_SEARCH_H_ */

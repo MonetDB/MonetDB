@@ -12,12 +12,6 @@
 #include "sql_mem.h"
 #include "sql_types.h"
 
-typedef struct atom {
-	int isnull;
-	sql_subtype tpe;
-	ValRecord data;
-} atom;
-
 #define atom_null(a) (((atom*)a)->isnull)
 
 extern void atom_init( atom *a );
@@ -40,9 +34,6 @@ extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
-
-/* duplicate atom */
-extern atom *atom_dup( sql_allocator *sa, atom *a);
 
 /* cast atom a to type tp (success == 1, fail == 0) */
 extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);

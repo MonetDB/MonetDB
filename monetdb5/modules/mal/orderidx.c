@@ -359,8 +359,10 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (b->torderidx )
+	if (b->torderidx) {
+		BBPunfix(bid);
 		throw(MAL, "bat.orderidx", SQLSTATE(HY002) "INTERNAL ERROR, torderidx already set");
+	}
 
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:

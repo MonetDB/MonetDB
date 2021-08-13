@@ -2645,22 +2645,12 @@ mapi_reconnect(Mapi mid)
 		return mid->error;
 	}
 	char *algsv[] = {
-#ifdef HAVE_RIPEMD160_UPDATE
 		"RIPEMD160",
-#endif
 		"SHA512",
-#ifdef HAVE_SHA384_UPDATE
 		"SHA384",
-#endif
-#ifdef HAVE_SHA256_UPDATE
 		"SHA256",
-#endif
-#ifdef HAVE_SHA224_UPDATE
 		"SHA224",
-#endif
-#ifdef HAVE_SHA1_UPDATE
 		"SHA1",
-#endif
 		NULL
 	};
 	char **algs = algsv;
@@ -2701,41 +2691,25 @@ mapi_reconnect(Mapi mid)
 	/* hash password, if not already */
 	if (mid->password[0] != '\1') {
 		char *pwdhash = NULL;
-#ifdef HAVE_RIPEMD160_UPDATE
 		if (strcmp(serverhash, "RIPEMD160") == 0) {
 			pwdhash = mcrypt_RIPEMD160Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-		if (strcmp(serverhash, "SHA512") == 0) {
+		} else if (strcmp(serverhash, "SHA512") == 0) {
 			pwdhash = mcrypt_SHA512Sum(mid->password,
 							strlen(mid->password));
-		} else
-#ifdef HAVE_SHA384_UPDATE
-		if (strcmp(serverhash, "SHA384") == 0) {
+		} else if (strcmp(serverhash, "SHA384") == 0) {
 			pwdhash = mcrypt_SHA384Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-#ifdef HAVE_SHA256_UPDATE
-		if (strcmp(serverhash, "SHA256") == 0) {
+		} else if (strcmp(serverhash, "SHA256") == 0) {
 			pwdhash = mcrypt_SHA256Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-#ifdef HAVE_SHA224_UPDATE
-		if (strcmp(serverhash, "SHA224") == 0) {
+		} else if (strcmp(serverhash, "SHA224") == 0) {
 			pwdhash = mcrypt_SHA224Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-#ifdef HAVE_SHA1_UPDATE
-		if (strcmp(serverhash, "SHA1") == 0) {
+		} else if (strcmp(serverhash, "SHA1") == 0) {
 			pwdhash = mcrypt_SHA1Sum(mid->password,
 							strlen(mid->password));
-		} else
-#endif
-		{
+		} else {
 			(void)pwdhash;
 			snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
 					serverhash);
@@ -3139,6 +3113,10 @@ close_connection(Mapi mid)
 	}
 	mid->redircnt = 0;
 	mapi_log_record(mid, "Connection closed\n");
+	if (mid->tracelog) {
+		close_stream(mid->tracelog);
+		mid->tracelog = 0;
+	}
 }
 
 MapiMsg
@@ -3707,6 +3685,8 @@ read_line(Mapi mid)
 			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
 		if (len == 0) {	/* add prompt */
+			if (mnstr_eof(mid->from))
+				return NULL;
 			if (mid->blk.end > mid->blk.nxt) {
 				/* add fake newline since newline was
 				 * missing from server */
@@ -4379,8 +4359,15 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		result = hdl->result;	/* may also be NULL */
 	for (;;) {
 		line = read_line(mid);
-		if (line == NULL)
+		if (line == NULL) {
+			if (mnstr_eof(mid->from)) {
+				mapi_log_record(mid, "unexpected end of file");
+				mapi_log_record(mid, __func__);
+				close_connection(mid);
+				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
+			}
 			return mid->error;
+		}
 		switch (*line) {
 		case PROMPTBEG: /* \001 */
 			mid->active = NULL;

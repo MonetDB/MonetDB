@@ -48,7 +48,7 @@ DEP_SCHEMA
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
-564 values hashing to cff98513dfae81673eb5b21ca15700dc
+627 values hashing to ba31ce2ed151ea27b635fb7be420a269
 
 query TTT rowsort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
@@ -126,7 +126,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1974 values hashing to abcbd4ad07690fa48e84a43f050b9e94
+2178 values hashing to 50df54353d1b5c45b536250115f70c64
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
@@ -190,7 +190,7 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-264 values hashing to 8de72aae52a67c02cd49a46842f5a171
+270 values hashing to cffffcc5c307d9fbc2f33b06858b20fa
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -208,6 +208,9 @@ DEP_FUNC
 dump_column_defaults
 dump_database
 DEP_FUNC
+dump_column_grants
+dump_database
+DEP_FUNC
 dump_comments
 dump_database
 DEP_FUNC
@@ -223,6 +226,9 @@ DEP_FUNC
 dump_foreign_keys
 dump_database
 DEP_FUNC
+dump_function_grants
+dump_database
+DEP_FUNC
 dump_functions
 dump_database
 DEP_FUNC
@@ -235,9 +241,6 @@ DEP_FUNC
 dump_partition_tables
 dump_database
 DEP_FUNC
-dump_privileges
-dump_database
-DEP_FUNC
 dump_sequences
 dump_database
 DEP_FUNC
@@ -245,6 +248,9 @@ dump_start_sequences
 dump_database
 DEP_FUNC
 dump_table_constraint_type
+dump_database
+DEP_FUNC
+dump_table_grants
 dump_database
 DEP_FUNC
 dump_tables

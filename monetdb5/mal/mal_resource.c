@@ -69,17 +69,22 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		b = BATdescriptor( stk->stk[getArg(pci, i)].val.bval);
 		if (b == NULL)
 			return 0;
+		MT_lock_set(&b->theaplock);
 		if (flag && isVIEW(b)) {
+			MT_lock_unset(&b->theaplock);
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
 
 		/* calculate the basic scan size */
-		total += BATcount(b) * b->twidth;
+		total += BATcount(b) << b->tshift;
 		total += heapinfo(b->tvheap, b->batCacheid);
+		MT_lock_unset(&b->theaplock);
 
 		/* indices should help, find their maximum footprint */
+		MT_rwlock_rdlock(&b->thashlock);
 		itotal = hashinfo(b->thash, d->batCacheid);
+		MT_rwlock_rdunlock(&b->thashlock);
 		t = IMPSimprintsize(b);
 		if( t > itotal)
 			itotal = t;

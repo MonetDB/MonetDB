@@ -58,14 +58,16 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 			BAT *b = BBP_cache(bid);
 
 			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid, true);
+				b = BBPquickdesc(bid);
 				if (b == NULL)
 					return GDK_FAIL;
 			}
 			if (b) {
+				MT_lock_set(&b->theaplock);
 				assert(!isVIEW(b));
 				assert(b->batRole == PERSISTENT);
 				BATcommit(b, sizes ? sizes[i] : BUN_NONE);
+				MT_lock_unset(&b->theaplock);
 			}
 		}
 	}
@@ -78,7 +80,7 @@ prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
  * destroyed.
  */
 static void
-epilogue(int cnt, bat *subcommit)
+epilogue(int cnt, bat *subcommit, bool locked)
 {
 	int i = 0;
 
@@ -105,23 +107,21 @@ epilogue(int cnt, bat *subcommit)
 					TRC_WARNING(GDK, "BATcheckmodes failed\n");
 			}
 		}
+		if (!locked)
+			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, true);
+			BAT *b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
 			if (b) {
 				BATdelete(b);
-				if (BBP_cache(bid)) {
-					/* those that quickdesc
-					 * decides to load => free
-					 * memory */
-					BATfree(b);
-				}
 			}
-			BBPclear(bid);	/* clear with locking */
+			BBPclear(bid, false);
 		}
 		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
+		if (!locked)
+			MT_lock_unset(&GDKswapLock(bid));
 	}
 	GDKclrerr();
 }
@@ -140,7 +140,7 @@ TMcommit(void)
 	BBPlock();
 	if (prelude(getBBPsize(), NULL, NULL) == GDK_SUCCEED &&
 	    BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
-		epilogue(getBBPsize(), NULL);
+		epilogue(getBBPsize(), NULL, true);
 		ret = GDK_SUCCEED;
 	}
 	BBPunlock();
@@ -205,16 +205,13 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		}
 	}
 	if (prelude(cnt, subcommit, sizes) == GDK_SUCCEED) {	/* save the new bats outside the lock */
-		/* lock just prevents BBPtrims, and other global
-		 * (sub-)commits */
-		for (xx = 0; xx <= BBP_THREADMASK; xx++)
-			MT_lock_set(&GDKtrimLock(xx));
+		/* lock just prevents other global (sub-)commits */
+		MT_lock_set(&GDKtmLock);
 		if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
-			epilogue(cnt, subcommit);
+			epilogue(cnt, subcommit, false);
 			ret = GDK_SUCCEED;
 		}
-		for (xx = BBP_THREADMASK; xx >= 0; xx--)
-			MT_lock_unset(&GDKtrimLock(xx));
+		MT_lock_unset(&GDKtmLock);
 	}
 	return ret;
 }
@@ -226,12 +223,12 @@ TMsubcommit(BAT *b)
 	gdk_return ret = GDK_FAIL;
 	bat *subcommit;
 	BUN p, q;
-	BATiter bi = bat_iterator(b);
 
 	subcommit = GDKmalloc((BATcount(b) + 1) * sizeof(bat));
 	if (subcommit == NULL)
 		return GDK_FAIL;
 
+	BATiter bi = bat_iterator(b);
 	subcommit[0] = 0;	/* BBP artifact: slot 0 in the array will be ignored */
 	/* collect the list and save the new bats outside any
 	 * locking */
@@ -241,6 +238,7 @@ TMsubcommit(BAT *b)
 		if (bid)
 			subcommit[cnt++] = bid;
 	}
+	bat_iterator_end(&bi);
 
 	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
 	GDKfree(subcommit);
@@ -262,7 +260,7 @@ TMabort(void)
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i, false);
+			BAT *b = BBPquickdesc(i);
 
 			if (b) {
 				if (!b->batTransient)
@@ -274,7 +272,7 @@ TMabort(void)
 	}
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, true);
+			BAT *b = BBPquickdesc(i);
 
 			if (b == NULL)
 				continue;

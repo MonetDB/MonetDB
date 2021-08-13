@@ -47,7 +47,7 @@ stdout of test 'fixed_limit_for_prepare.Bug-3208` in directory 'sql/test/BugTrac
 #	"76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88",
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	3,	1,	0,	0,	0 # length
 [ "varchar",	255,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	255,	0,	NULL,	NULL,	NULL	]
