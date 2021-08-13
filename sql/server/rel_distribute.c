@@ -249,23 +249,29 @@ distribute(visitor *v, sql_rel *rel)
 			l = rel->l = rel_visitor_bottomup(&rv, l, &replica);
 			rv.data = NULL;
 			r = rel->r = rel_visitor_bottomup(&rv, r, &replica);
+			if ((!l || !r) && v->sql->session->status) /* if the recursive calls failed */
+				return NULL;
 		}
 		if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
-			l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
-			r && find_prop(r->p, PROP_REMOTE) == NULL) {
+			(pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+			find_prop(r->p, PROP_REMOTE) == NULL) {
 			visitor rv = { .sql = v->sql, .data = pl->value };
 
-			r = rel_visitor_bottomup(&rv, r, &replica);
+			if (!(r = rel_visitor_bottomup(&rv, r, &replica)) && v->sql->session->status)
+				return NULL;
 			rv.data = NULL;
-			r = rel->r = rel_visitor_bottomup(&rv, l, &distribute);
+			if (!(r = rel->r = rel_visitor_bottomup(&rv, l, &distribute)) && v->sql->session->status)
+				return NULL;
 		} else if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
-			l && find_prop(l->p, PROP_REMOTE) == NULL &&
-			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
+			find_prop(l->p, PROP_REMOTE) == NULL &&
+			(pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			visitor rv = { .sql = v->sql, .data = pr->value };
 
-			l = rel_visitor_bottomup(&rv, l, &replica);
+			if (!(l = rel_visitor_bottomup(&rv, l, &replica)) && v->sql->session->status)
+				return NULL;
 			rv.data = NULL;
-			l = rel->l = rel_visitor_bottomup(&rv, l, &distribute);
+			if (!(l = rel->l = rel_visitor_bottomup(&rv, l, &distribute)) && v->sql->session->status)
+				return NULL;
 		}
 
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
