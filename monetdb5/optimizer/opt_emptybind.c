@@ -39,9 +39,9 @@ str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, actions =0, extras= 0;
-	int *empty;
+	int *empty = NULL;
 	int limit = mb->stop, slimit = mb->ssize;
-	InstrPtr p, q, *old = mb->stmt, *updated;
+	InstrPtr p, q, *old = NULL, *updated = NULL;
 	char buf[256];
 	lng usec = GDKusec();
 	str sch,tbl;
@@ -59,8 +59,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for( i=0; i< mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
 			extras += getInstrPtr(mb,i)->argc;
-	if (extras == 0)
+	if (extras == 0){
 		goto wrapup;
+	}
 
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
@@ -71,9 +72,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	if( updated == 0){
 		GDKfree(empty);
-		return 0;
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);

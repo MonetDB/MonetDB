@@ -40,7 +40,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
-		return 0;
+		goto wrapup;
 
 	limit = mb->stop;
 
@@ -120,6 +120,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			msg = chkDeclarations(mb);
 	}
 	/* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
 	newComment(mb,buf);
