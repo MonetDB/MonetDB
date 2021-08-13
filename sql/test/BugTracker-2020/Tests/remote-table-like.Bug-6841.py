@@ -72,5 +72,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
             if node2_cur.fetchall() != [(2, None, 1, 5, 8, 1)]:
                 sys.stderr.write("Just row (2, None, 1, 5, 8, 1) expected")
             # cleanup: shutdown the monetdb servers and remove tempdir
+            node1_cur.close()
+            node1_conn.close()
+            node2_cur.close()
+            node2_conn.close()
             node1_proc.communicate()
             node2_proc.communicate()

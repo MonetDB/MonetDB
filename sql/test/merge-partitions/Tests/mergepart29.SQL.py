@@ -57,6 +57,10 @@ with tempfile.TemporaryDirectory() as farm_dir:
             if node1_cur.fetchall() != [(1, 1), (2, 2), (3, 3)]:
                 sys.stderr.write('[(1, 1), (2, 2), (3, 3)] expected')
 
+            node1_cur.close()
+            node1_conn.close()
+            node2_cur.close()
+            node2_conn.close()
             out2, err2 = node2_proc.communicate()
             sys.stderr.write(err2)
 

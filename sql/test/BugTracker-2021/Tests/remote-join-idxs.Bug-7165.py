@@ -114,6 +114,12 @@ with tempfile.TemporaryDirectory() as farm_dir:
                     sys.stderr.write("[(0,), (0,), (3,), (3,)] expected")
 
                 # cleanup: shutdown the monetdb servers
+                node1_cur.close()
+                node1_conn.close()
+                node2_cur.close()
+                node2_conn.close()
+                node3_cur.close()
+                node3_conn.close()
                 out, err = node1_proc.communicate()
                 sys.stderr.write(err)
                 out, err = node2_proc.communicate()
