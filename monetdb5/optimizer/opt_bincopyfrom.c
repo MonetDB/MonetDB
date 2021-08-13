@@ -30,8 +30,6 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void)stk;
 	(void)pci;
 
-	const char *importTableRef = putName("importTable");
-
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr p = getInstrPtr(mb, i);
