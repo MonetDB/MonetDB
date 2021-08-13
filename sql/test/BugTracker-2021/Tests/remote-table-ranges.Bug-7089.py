@@ -83,5 +83,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 sys.stderr.write("[('A000000014', 20201011), ('A000000013', 20201010), ('A000000012', 20201009), ('A000000011', 20201008), ('A000000010', 20201007), ('A000000009', 20201006)] expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
+            node1_cur.close()
+            node1_conn.close()
+            node2_cur.close()
+            node2_conn.close()
             node1_proc.communicate()
             node2_proc.communicate()
