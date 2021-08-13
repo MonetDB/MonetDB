@@ -4038,6 +4038,11 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
+			} else if (strncmp(p + 1, "tstrimps", 8) == 0) {
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->tstrimps = (Strimps *)1;
 			} else if (strncmp(p + 1, "new", 3) != 0) {
 				ok = false;
 			}

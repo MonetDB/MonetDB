@@ -78,7 +78,7 @@
  * first 8 bytes of the heap.
  */
 #define NPAIRS(d) (((d) & (0xff << 8)) >> 8)
-#define HSIZE(d) (((d) & (0xffff << 16)) >> 16)
+#define HSIZE(d) (((d) & (0xffff << 15)) >> 15)
 
 #undef UTF8STRINGS 		/* Not using utf8 for now */
 #ifdef UTF8STRINGS
@@ -426,9 +426,9 @@ BATcheckstrimps(BAT *b)
 								      /* bitmasks */
 								      BATcount(b)*(npairs/8))
 					    && HEAPload(&hp->strimps, nme, "tstrimps", false) == GDK_SUCCEED) {
-						hp->sizes_base = (uint8_t *)hp + 8;         /* sizes start just after the descriptor */
-						hp->pairs_base = hp->sizes_base + npairs;   /* pairs start after the offsets */
-						hp->strimps_base = hp->sizes_base + hsize;  /* bitmasks start after the pairs */
+						hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
+						hp->pairs_base = hp->sizes_base + npairs;         /* pairs just after the offsets */
+						hp->strimps_base = hp->sizes_base + hsize;        /* bitmasks just after the pairs */
 
 						close(fd);
 						hp->strimps.parentid = b->batCacheid;
