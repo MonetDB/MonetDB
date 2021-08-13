@@ -3750,7 +3750,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 static int
 claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets, bool locked)
 {
-	if (cnt > 1)
+	if (cnt > 1 && offsets)
 		return claim_segmentsV2(tr, t, s, cnt, offset, offsets, locked);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);

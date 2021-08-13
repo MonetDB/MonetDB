@@ -2402,31 +2402,35 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat lenId= *getArgReference_bat(stk, pci,4);
 	bat scaleId= *getArgReference_bat(stk, pci,5);
 	bat bid;
-	int i,res;
+	int i, res, ok;
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be = NULL;
-	BAT *b, *tbl, *atr, *tpe,*len,*scale;
+	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
 	bid = *getArgReference_bat(stk,pci,6);
 	b = BATdescriptor(bid);
-	if ( b == NULL)
-		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
+	if ( b == NULL) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto wrapup_result_set;
+	}
 	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
-	if (res < 0)
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result table construction failed");
 	BBPunfix(b->batCacheid);
+	if (res < 0) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
-	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+	if (tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set;
 	/* mimick the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
@@ -2444,9 +2448,9 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
+			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
 		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
-			msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
 	}
@@ -2456,11 +2460,11 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
 	/* now send it to the channel cntxt->fdout */
-	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
-		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
+	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize)) < 0)
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
+  wrapup_result_set:
 	mb->starttime = 0;
 	mb->optimize = 0;
-  wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -2487,9 +2491,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat tpeId= *getArgReference_bat(stk, pci,10);
 	bat lenId= *getArgReference_bat(stk, pci,11);
 	bat scaleId= *getArgReference_bat(stk, pci,12);
-	stream *s;
+	stream *s = NULL;
 	bat bid;
-	int i,res;
+	int i, res, ok;
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
@@ -2509,17 +2513,20 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	m = be->mvc;
 
 	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.resultSet", "cannot transfer files to client");
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot transfer files to client");
+		goto wrapup_result_set1;
 	}
 
 	bid = *getArgReference_bat(stk,pci,13);
 	order = BATdescriptor(bid);
-	if ( order == NULL)
-		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
+	if ( order == NULL) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto wrapup_result_set1;
+	}
 	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
 	t = be->results;
-	if (res < 0){
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
+	if (res < 0) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup_result_set1;
 	}
 
@@ -2551,9 +2558,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
 		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
-			msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
 	}
@@ -2592,10 +2599,12 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set1;
 		}
 	}
-	if (mvc_export_result(cntxt->sqlcontext, s, res, tostdout, mb->starttime, mb->optimize))
-		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
-	mb->starttime = 0;
-	mb->optimize = 0;
+	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, mb->starttime, mb->optimize)) < 0) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
+		if (!onclient && !tostdout)
+			close_stream(s);
+		goto wrapup_result_set1;
+	}
 	if (onclient) {
 		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
@@ -2607,7 +2616,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(s);
 	}
   wrapup_result_set1:
-	BBPunfix(order->batCacheid);
+	mb->starttime = 0;
+	mb->optimize = 0;
+	if( order) BBPunfix(order->batCacheid);
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -2626,7 +2637,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat tpeId= *getArgReference_bat(stk, pci,3);
 	bat lenId= *getArgReference_bat(stk, pci,4);
 	bat scaleId= *getArgReference_bat(stk, pci,5);
-	int i, res;
+	int i, res, ok;
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
@@ -2634,13 +2645,15 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	backend *be = NULL;
 	ptr v;
 	int mtype;
-	BAT  *tbl, *atr, *tpe,*len,*scale;
+	BAT *tbl = NULL, *atr = NULL, *tpe = NULL, *len = NULL, *scale = NULL;
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
 	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
-	if (res < 0)
-		throw(SQL, "sql.resultset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (res < 0) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
@@ -2667,19 +2680,26 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mtype = getArgType(mb, pci, i);
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
-		if (mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
-			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
+		if ((ok = mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype) < 0)) {
+			msg = createException(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
+			bat_iterator_end(&itertbl);
+			bat_iterator_end(&iteratr);
+			bat_iterator_end(&itertpe);
+			bat_iterator_end(&iterdig);
+			bat_iterator_end(&iterscl);
+			goto wrapup_result_set;
+		}
 	}
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
 	bat_iterator_end(&itertpe);
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
-	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
-		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
+	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize)) < 0)
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
+  wrapup_result_set:
 	mb->starttime = 0;
 	mb->optimize = 0;
-  wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -2706,8 +2726,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat lenId= *getArgReference_bat(stk, pci,11);
 	bat scaleId= *getArgReference_bat(stk, pci,12);
 
-	int i, res;
-	stream *s;
+	int i, res, ok;
+	stream *s = NULL;
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
 	int *digits, *scaledigits;
 	oid o = 0;
@@ -2727,14 +2747,15 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	m = be->mvc;
 	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.resultSet", "cannot transfer files to client");
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot transfer files to client");
+		goto wrapup_result_set;
 	}
 
 	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
 
 	t = be->results;
 	if (res < 0){
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
 
@@ -2748,7 +2769,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
-	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+	if (tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set;
 	/* mimick the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
@@ -2768,8 +2789,15 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mtype = getArgType(mb, pci, i);
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
-		if (mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
-			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
+		if ((ok = mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype)) < 0) {
+			msg = createException(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, s, ok));
+			bat_iterator_end(&itertbl);
+			bat_iterator_end(&iteratr);
+			bat_iterator_end(&itertpe);
+			bat_iterator_end(&iterdig);
+			bat_iterator_end(&iterscl);
+			goto wrapup_result_set;
+		}
 	}
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
@@ -2802,12 +2830,12 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set;
 		}
 	}
-	if (mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize)){
-		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
+	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize)) < 0) {
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
+		if (!onclient && !tostdout)
+			close_stream(s);
 		goto wrapup_result_set;
 	}
-	mb->starttime = 0;
-	mb->optimize = 0;
 	if (onclient) {
 		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
@@ -2819,6 +2847,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(s);
 	}
   wrapup_result_set:
+	mb->starttime = 0;
+	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -2849,12 +2879,11 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	if ((order = BATdescriptor(order_bid)) == NULL) {
+	if ((order = BATdescriptor(order_bid)) == NULL)
 		throw(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
 	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype, order);
 	if (*res_id < 0)
-		res = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
+		res = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	BBPunfix(order->batCacheid);
 	return res;
 }
@@ -2864,7 +2893,7 @@ str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	int *res = getArgReference_int(stk, pci, 0), error;
+	int *res = getArgReference_int(stk, pci, 0), ok;
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
@@ -2878,11 +2907,11 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_lng);
 	nr = *getArgReference_lng(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	error = mvc_export_affrows(b, b->out, nr, "", mb->tag, mb->starttime, mb->optimize);
+	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, mb->starttime, mb->optimize);
 	mb->starttime = 0;
 	mb->optimize = 0;
-	if (error)
-		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed");
+	if (ok < 0)
+		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
 	return MAL_SUCCEED;
 }
 
@@ -2892,17 +2921,18 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	stream **s = (stream **) getArgReference(stk, pci, 1);
-	int res_id = *getArgReference_int(stk, pci, 2);
+	int res_id = *getArgReference_int(stk, pci, 2), ok;
 	str msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_head(b, *s, res_id, FALSE, TRUE, mb->starttime, mb->optimize))
-		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed");
+	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, mb->starttime, mb->optimize);
 	mb->starttime = 0;
 	mb->optimize = 0;
+	if (ok < 0)
+		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, *s, ok));
 	return MAL_SUCCEED;
 }
 
@@ -2911,22 +2941,20 @@ str
 mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	stream **s = (stream **) getArgReference(stk, pci, 1);
-	int res_id = *getArgReference_int(stk, pci, 2);
+	stream **s = (stream **) getArgReference(stk, pci, 1), *sout;
+	int res_id = *getArgReference_int(stk, pci, 2), ok;
 	str msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if( pci->argc > 5){
-		res_id = *getArgReference_int(stk, pci, 2);
-		if (mvc_export_result(b, cntxt->fdout, res_id, true, mb->starttime, mb->optimize))
-			throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed");
-	} else if (mvc_export_result(b, *s, res_id, false, mb->starttime, mb->optimize))
-		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed");
+	sout = pci->argc > 5 ? cntxt->fdout : *s;
+	ok = mvc_export_result(b, sout, res_id, false, mb->starttime, mb->optimize);
 	mb->starttime = 0;
 	mb->optimize = 0;
+	if (ok < 0)
+		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, sout, ok));
 	return MAL_SUCCEED;
 }
 
@@ -2936,7 +2964,7 @@ mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	stream **s = (stream **) getArgReference(stk, pci, 1);
-	int res_id = *getArgReference_int(stk, pci, 2);
+	int res_id = *getArgReference_int(stk, pci, 2), ok;
 	BUN offset = 0;
 	BUN nr = 0;
 	str msg;
@@ -2951,8 +2979,8 @@ mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_chunk(b, *s, res_id, offset, nr))
-		throw(SQL, "sql.exportChunk", SQLSTATE(45000) "Result set construction failed");
+	if ((ok = mvc_export_chunk(b, *s, res_id, offset, nr)) < 0)
+		throw(SQL, "sql.exportChunk", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, *s, ok));
 	return NULL;
 }
 
@@ -2962,17 +2990,19 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	backend *b = NULL;
 	str msg;
+	int ok;
 
 	(void) stk;		/* NOT USED */
 	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_operation(b, b->out, "", mb->starttime, mb->optimize))
-		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed");
+	ok = mvc_export_operation(b, b->out, "", mb->starttime, mb->optimize);
 	mb->starttime = 0;
 	mb->optimize = 0;
-	return NULL;
+	if (ok < 0)
+		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
+	return MAL_SUCCEED;
 }
 
 str
@@ -2988,7 +3018,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, 7);
 	str msg;
 	backend *be = NULL;
-	int res_id;
+	int res_id, ok;
 	(void) mb;		/* NOT USED */
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
@@ -2996,18 +3026,26 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE, NULL)) < 0)
+	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE, NULL)) < 0) {
+		mb->starttime = 0;
+		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (mvc_result_value(be, tn, cn, type, digits, scale, p, mtype))
-		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
+	}
+	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, p, mtype)) < 0) {
+		mb->starttime = 0;
+		mb->optimize = 0;
+		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
+	}
 	if (be->output_format == OFMT_NONE) {
+		mb->starttime = 0;
+		mb->optimize = 0;
 		return MAL_SUCCEED;
 	}
-	if (mvc_export_result(be, be->out, res_id, true, mb->starttime, mb->optimize) < 0) {
-		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
-	}
+	ok = mvc_export_result(be, be->out, res_id, true, mb->starttime, mb->optimize);
 	mb->starttime = 0;
 	mb->optimize = 0;
+	if (ok < 0)
+		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
 	return MAL_SUCCEED;
 }
 

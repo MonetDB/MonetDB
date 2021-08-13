@@ -548,7 +548,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (tr->parent) {
 		while (tr->parent != NULL && ok == SQL_OK) {
 			if ((ok = sql_trans_commit(tr)) == SQL_ERR)
-				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
+				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
 			tr = sql_trans_destroy(tr);
 		}
 		while (tr->parent != NULL)
@@ -569,7 +569,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if ((ok = sql_trans_commit(tr)) == SQL_ERR)
-		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
+		GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
 
 	(void)sql_trans_end(m->session, ok);
 	if (chain && sql_trans_begin(m->session) < 0)

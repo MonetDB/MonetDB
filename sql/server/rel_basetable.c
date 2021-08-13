@@ -387,7 +387,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 
 			sql_exp *e;
 			sql_idx *i = cn->data;
-			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
+			sql_subtype *t;
 			char *iname = NULL;
 			int has_nils = 0;
 
@@ -395,9 +395,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 
-			if (i->type == join_idx)
-				t = sql_bind_localtype("oid");
-
+			t = (i->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
 			iname = sa_strconcat( sa, "%", i->base.name);
 			for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
 				sql_kc *kc = n->data;

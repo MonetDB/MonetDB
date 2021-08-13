@@ -301,12 +301,10 @@ ATOMlen(int t, const void *src)
 gdk_return
 ATOMheap(int t, Heap *hp, size_t cap)
 {
-	void (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
+	gdk_return (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
 
 	if (h) {
-		(*h) (hp, cap);
-		if (hp->base == NULL)
-			return GDK_FAIL;
+		return (*h) (hp, cap);
 	}
 	return GDK_SUCCEED;
 }
@@ -1328,7 +1326,7 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 static BUN
 UUIDhash(const void *v)
 {
-	return mix_uuid(*(const uuid *) v);
+	return mix_uuid((const uuid *) v);
 }
 
 static void *

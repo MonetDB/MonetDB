@@ -344,7 +344,7 @@ void HASHdestroy(BAT *b);
 BUN HASHlist(Hash *h, BUN i);
 BUN HASHprobe(const Hash *h, const void *v);
 void HEAP_free(Heap *heap, var_t block);
-void HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
+gdk_return HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
 var_t HEAP_malloc(BAT *b, size_t nbytes);
 void HEAPdecref(Heap *h, bool remove);
 gdk_return HEAPextend(Heap *h, size_t size, bool mayshare) __attribute__((__warn_unused_result__));

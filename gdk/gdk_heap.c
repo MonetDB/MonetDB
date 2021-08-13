@@ -1037,7 +1037,7 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	headp->next = 0;
 }
 
-void
+gdk_return
 HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 {
 	/* For now we know about two alignments. */
@@ -1053,12 +1053,13 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 
 		total = roundup_8(total);
 		if (HEAPalloc(heap, total, 1, 1) != GDK_SUCCEED)
-			return;
+			return GDK_FAIL;
 		heap->free = heap->size;
 	}
 
 	/* initialize heap as empty */
 	HEAP_empty(heap, nprivate, alignment);
+	return GDK_SUCCEED;
 }
 
 
@@ -1089,7 +1090,7 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		assert(trail == 0 || block > trail);
 		if (trail != 0 && block <= trail) {
 			GDKerror("Free list is not orderered\n");
-			return 0;
+			return (var_t) -1;
 		}
 
 		if (blockp->size >= nbytes)
@@ -1112,7 +1113,7 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
 		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, false) != GDK_SUCCEED) {
-			return 0;
+			return (var_t) -1;
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
