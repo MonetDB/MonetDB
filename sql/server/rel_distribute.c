@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
+#include "sql_privileges.h"
 
 static int
 has_remote_or_replica( sql_rel *rel )
@@ -65,34 +66,40 @@ has_remote_or_replica( sql_rel *rel )
 }
 
 static sql_rel *
-rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_prop)
+rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_prop)
 {
 	node *n, *m;
-	sql_table *p = find_sql_table_id(sql->session->tr, t->s, pd->member);
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
+	int allowed = 1;
 
-	for (n = rel->exps->h; n; n = n->next) {
+	if (!table_privs(sql, p, PRIV_SELECT)) /* Test for privileges */
+		allowed = 0;
+
+	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
+		const char *nname = exp_name(e);
 
-		node *n = ol_find_name(t->columns, exp_name(e));
-		if (n) {
-			sql_column *c = n->data;
+		node *nn = ol_find_name(t->columns, nname);
+		if (nn) {
+			sql_column *c = nn->data;
 
+			if (!allowed && !column_privs(sql, ol_fetch(p->columns, c->colnr), PRIV_SELECT))
+				return sql_error(sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(sql, "current_user"),
+								 p->s->base.name, p->base.name, TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, t->base.name);
 			rel_base_use(sql, r, c->colnr);
-		} else if (strcmp(exp_name(e), TID) == 0) {
+		} else if (strcmp(nname, TID) == 0) {
 			rel_base_use_tid(sql, r);
 		} else {
 			assert(0);
 		}
 	}
-	rel = rewrite_basetable(sql, r);
-	for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
+	r = rewrite_basetable(sql, r);
+	for (n = exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = n->data;
 		sql_exp *ne = m->data;
 
 		exp_prop_alias(sql->sa, ne, e);
 	}
-	rel_destroy(rel);
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
@@ -104,10 +111,56 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 }
 
 static sql_rel *
+replica_rewrite(visitor *v, sql_table *t, list *exps)
+{
+	sql_rel *res = NULL;
+	const char *uri = (const char *) v->data;
+
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (uri) {
+		/* replace by the replica which matches the uri */
+		for (node *n = t->members->h; n; n = n->next) {
+			sql_part *p = n->data;
+			sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
+
+			if (isRemote(pt) && strcmp(uri, pt->query) == 0) {
+				res = rewrite_replica(v->sql, exps, t, pt, 0);
+				break;
+			}
+		}
+	} else { /* no match, find one without remote or use first */
+		sql_table *pt = NULL;
+		int remote = 1;
+
+		for (node *n = t->members->h; n; n = n->next) {
+			sql_part *p = n->data;
+			sql_table *next = find_sql_table_id(v->sql->session->tr, t->s, p->member);
+
+			/* give preference to local tables and avoid empty merge or replica tables */
+			if (!isRemote(next) && ((!isReplicaTable(next) && !isMergeTable(next)) || !list_empty(next->members))) {
+				pt = next;
+				remote = 0;
+				break;
+			}
+		}
+		if (!pt) {
+			sql_part *p = t->members->h->data;
+			pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
+		}
+
+		if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
+			return sql_error(v->sql, 02, SQLSTATE(42000) "The %s '%s.%s' should have at least one table associated",
+								TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
+		res = isReplicaTable(pt) ? replica_rewrite(v, pt, exps) : rewrite_replica(v->sql, exps, t, pt, remote);
+	}
+	return res;
+}
+
+static sql_rel *
 replica(visitor *v, sql_rel *rel)
 {
-	const char *uri = v->data;
- 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
 			sql_rel *nrel = rel_copy(v->sql, rel, 1);
@@ -121,36 +174,13 @@ replica(visitor *v, sql_rel *rel)
 	if (is_basetable(rel->op)) {
 		sql_table *t = rel->l;
 
-		if (t && isReplicaTable(t) && !list_empty(t->members)) {
-			if (uri) {
-				/* replace by the replica which matches the uri */
-				for (node *n = t->members->h; n; n = n->next) {
-					sql_part *p = n->data;
-					sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
+		if (t && isReplicaTable(t)) {
+			if (list_empty(t->members)) /* in DDL statement cases skip if replica is empty */
+				return rel;
 
-					if (isRemote(pt) && strcmp(uri, pt->query) == 0) {
-						rel = rewrite_replica(v->sql, rel, t, p, 0);
-						break;
-					}
-				}
-			} else { /* no match, find one without remote or use first */
-				int fnd = 0;
-				sql_part *p;
-				for (node *n = t->members->h; n; n = n->next) {
-					sql_part *p = n->data;
-					sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
-
-					if (!isRemote(pt)) {
-						fnd = 1;
-						rel = rewrite_replica(v->sql, rel, t, p, 0);
-						break;
-					}
-				}
-				if (!fnd) {
-					p = t->members->h->data;
-					rel = rewrite_replica(v->sql, rel, t, p, 1);
-				}
-			}
+			sql_rel *r = replica_rewrite(v, t, rel->exps);
+			rel_destroy(rel);
+			rel = r;
 		}
 	}
 	return rel;
@@ -178,7 +208,7 @@ distribute(visitor *v, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		/* set_remote() */
-		if (t && isRemote(t)) {
+		if (t && isRemote(t) && (p = find_prop(rel->p, PROP_REMOTE)) == NULL) {
 			char *local_name = sa_strconcat(v->sql->sa, sa_strconcat(v->sql->sa, t->s->base.name, "."), t->base.name);
 			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
 			p->value = local_name;
