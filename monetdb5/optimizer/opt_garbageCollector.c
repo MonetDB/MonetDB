@@ -33,7 +33,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 #ifndef NDEBUG
-	int j;
+	int j, vlimit = 0;
 	int *used;
 #endif
 
@@ -62,7 +62,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	// Actual garbage collection stuff, just mark them for re-assessment
 #ifndef NDEBUG
-	int vlimit = mb->vtop;
+	vlimit = mb->vtop;
 	used = (int *) GDKzalloc(vlimit * sizeof(int));
 #endif
 	p = NULL;
