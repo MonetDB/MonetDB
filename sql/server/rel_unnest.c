@@ -1157,7 +1157,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 						rel_destroy(l);
 					}
 					if (is_groupby(l->op)) { /* TODO: check if group by exps and distinct list are equal */
-						/* add aggr exps of r too l, replace r by l */
+						/* add aggr exps of r to l, replace r by l */
 						node *n;
 						for(n = r->exps->h; n; n = n->next) {
 							sql_exp *e = n->data;
@@ -1913,10 +1913,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_project:
-	case op_union:
-	case op_inter:
-	case op_except: {
+	case op_project: {
 		switch(e->type) {
 		case e_aggr:
 		case e_func: {
@@ -1956,6 +1953,11 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 			break;
 		}
 	} break;
+	case op_inter:
+	case op_except:
+	case op_union: {
+		e->card = CARD_MULTI;
+	} break;
 	case op_groupby: {
 		switch(e->type) {
 		case e_aggr:
@@ -1979,7 +1981,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	}
 	if (is_simple_project(rel->op) && need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
 		e->card = MIN(e->card, CARD_AGGR);
-	if (!is_groupby(rel->op) || !list_empty(rel->r)) /* global groupings have atomic cardinality */
+	if (!is_set(rel->op) && (!is_groupby(rel->op) || !list_empty(rel->r))) /* global groupings have atomic cardinality */
 		rel->card = MAX(e->card, rel->card); /* the relation cardinality may get updated too */
 	return e;
 }
@@ -2321,7 +2323,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						set_ascending(ne);
 					if (nulls_last(oe))
 						set_nulls_last(ne);
-					/* disable sorting info (ie back too defaults) */
+					/* disable sorting info (ie back to defaults) */
 					set_descending(oe);
 					set_nulls_first(oe);
 					n->data = ne;
@@ -3451,8 +3453,9 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
 					} else {
-						ne = exp_ref(v->sql, e);
-						append(exps, e);
+						sql_exp *ec = exp_copy(v->sql, e);
+						ne = exp_ref(v->sql, ec);
+						append(exps, ec);
 					}
 					append(pexps, ne);
 				}

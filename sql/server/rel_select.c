@@ -3001,7 +3001,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			if (EC_NUMBER(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t1->type->eclass))
-					tp = *t1; /* for float and interval fall back too the same as left */
+					tp = *t1; /* for float and interval fall back to the same as left */
 				r = exp_check_type(sql, &tp, rel, r, type_equal);
 				if (!r)
 					return NULL;
@@ -3009,7 +3009,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t2->type->eclass))
-					tp = *t2; /* for float and interval fall back too the same as right */
+					tp = *t2; /* for float and interval fall back to the same as right */
 				l = exp_check_type(sql, &tp, rel, l, type_equal);
 				if (!l)
 					return NULL;
@@ -5318,36 +5318,6 @@ exp_key(sql_exp *e)
 	if (e->alias.name)
 		return hash_key(e->alias.name);
 	return 0;
-}
-
-static list *
-check_distinct_exp_names(mvc *sql, list *exps)
-{
-	list *distinct_exps = NULL;
-	bool duplicates = false;
-
-	if (list_length(exps) < 5) {
-		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
-	} else { /* for longer lists, use hashing */
-		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
-
-		for (node *n = exps->h; n && !duplicates; n = n->next) {
-			sql_exp *e = n->data;
-			int key = ht->key(e);
-			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
-
-			for (; he && !duplicates; he = he->chain) {
-				sql_exp *f = he->value;
-
-				if (!exp_equal(e, f))
-					duplicates = true;
-			}
-			hash_add(ht, key, e);
-		}
-	}
-	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
-		return NULL;
-	return exps;
 }
 
 static list *

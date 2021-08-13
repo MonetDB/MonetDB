@@ -105,7 +105,7 @@ HASHclear(Hash *h)
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
-static void
+void
 doHASHdestroy(BAT *b, Hash *hs)
 {
 	if (hs == (Hash *) 1) {
@@ -291,7 +291,58 @@ HASHupgradehashheap(BAT *b)
 	return GDK_SUCCEED;
 }
 
-gdk_return
+/* write/remove the bit into/from the hash file that indicates the hash
+ * is good to go; the bit is the last part to be written and the first
+ * to be removed */
+static inline gdk_return
+HASHfix(Hash *h, bool save, bool dosync)
+{
+	if (!h->heapbckt.dirty && !h->heaplink.dirty) {
+		const size_t mask = (size_t) 1 << 24;
+		if (((size_t *) h->heapbckt.base)[0] & mask) {
+			if (save)
+				return GDK_SUCCEED;
+			((size_t *) h->heapbckt.base)[0] &= ~mask;
+		} else {
+			if (!save)
+				return GDK_SUCCEED;
+			((size_t *) h->heapbckt.base)[0] |= mask;
+		}
+		if (h->heapbckt.storage == STORE_MEM) {
+			gdk_return rc = GDK_FAIL;
+			int fd = GDKfdlocate(h->heapbckt.farmid, h->heapbckt.filename, "rb+", NULL);
+			if (fd >= 0) {
+				if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) == SIZEOF_SIZE_T) {
+					if (dosync &&
+					    !(GDKdebug & NOSYNCMASK)) {
+#if defined(NATIVE_WIN32)
+						_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+						fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+						fsync(fd);
+#endif
+					}
+					rc = GDK_SUCCEED;
+				}
+				close(fd);
+			}
+			if (rc != GDK_SUCCEED)
+				((size_t *) h->heapbckt.base)[0] &= ~mask;
+			return rc;
+		} else {
+			if (dosync &&
+			    !(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
+				((size_t *) h->heapbckt.base)[0] &= ~mask;
+				return GDK_FAIL;
+			}
+		}
+	}
+	return GDK_SUCCEED;
+}
+
+static gdk_return
 HASHgrowbucket(BAT *b)
 {
 	Hash *h = b->thash;
@@ -300,19 +351,6 @@ HASHgrowbucket(BAT *b)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return GDK_FAIL;
-			}
-		}
-	}
 
 	/* only needed to fix hash tables built before this fix was
 	 * introduced */
@@ -326,7 +364,6 @@ HASHgrowbucket(BAT *b)
 	while (h->nunique >= (nbucket = h->nbucket) * 7 / 8) {
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
-		BATiter bi = bat_iterator(b);
 		BUN mask = h->mask1 + 1; /* == h->mask2 - h->mask1 */
 
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
@@ -353,6 +390,7 @@ HASHgrowbucket(BAT *b)
 		h->heapbckt.free += h->width;
 		BUN lold, lnew, hb;
 		lold = lnew = BUN_NONE;
+		BATiter bi = bat_iterator(b);
 		if ((hb = HASHget(h, old)) != BUN_NONE) {
 			h->nheads--;
 			do {
@@ -379,6 +417,7 @@ HASHgrowbucket(BAT *b)
 				hb = HASHgetlink(h, hb);
 			} while (hb != BUN_NONE);
 		}
+		bat_iterator_end(&bi);
 		if (lnew == BUN_NONE)
 			HASHput(h, new, BUN_NONE);
 		else
@@ -538,16 +577,15 @@ BATcheckhash(BAT *b)
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	ret = b->thash != NULL;
-	if (ret)
+	if (ret) {
 		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
+	}
 	return ret;
 }
 
-static gdk_return
+static void
 BAThashsave_intern(BAT *b, bool dosync)
 {
-	int fd;
-	gdk_return rc = GDK_SUCCEED;
 	Hash *h;
 	lng t0 = 0;
 
@@ -561,59 +599,28 @@ BAThashsave_intern(BAT *b, bool dosync)
 		dosync = false;
 #endif
 
-		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
-		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
-		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
+		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free) == GDK_SUCCEED &&
+		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
-			if (hp->storage == STORE_MEM) {
-				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
-					((size_t *) hp->base)[0] |= (size_t) 1 << 24;
-					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-						rc = GDK_SUCCEED;
-						if (dosync &&
-						    !(GDKdebug & NOSYNCMASK)) {
-#if defined(NATIVE_WIN32)
-							_commit(fd);
-#elif defined(HAVE_FDATASYNC)
-							fdatasync(fd);
-#elif defined(HAVE_FSYNC)
-							fsync(fd);
-#endif
-						}
-						hp->dirty = false;
-					} else {
-						perror("write hash");
-						((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
-					}
-					close(fd);
-				}
-			} else {
-				((size_t *) hp->base)[0] |= (size_t) 1 << 24;
-				if (dosync && !(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
-					((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
-				} else {
-					hp->dirty = false;
-					rc = GDK_SUCCEED;
-				}
-			}
+			hp->dirty = false;
+			gdk_return rc = HASHfix(h, true, dosync);
 			TRC_DEBUG(ACCELERATOR,
 				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
+		GDKclrerr();
 	}
-	return rc;
 }
 
-gdk_return
+void
 BAThashsave(BAT *b, bool dosync)
 {
 	Hash *h = b->thash;
 	if (h == NULL)
-		return GDK_SUCCEED;
+		return;
 	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
 	((size_t *) h->heapbckt.base)[1] = (size_t) (h->heaplink.free / h->width);
 	((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
@@ -621,7 +628,7 @@ BAThashsave(BAT *b, bool dosync)
 	((size_t *) h->heapbckt.base)[4] = (size_t) BATcount(b);
 	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-	return BAThashsave_intern(b, dosync);
+	BAThashsave_intern(b, dosync);
 }
 
 #ifdef PERSISTENTHASH
@@ -731,7 +738,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	const ValRecord *prop;
-	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
+	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -750,6 +757,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			TRC_DEBUG(ACCELERATOR,
 				  "cannot create hash-table on void-NIL column.\n");
 			GDKerror("no hash on void/nil column\n");
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 		TRC_DEBUG(ACCELERATOR,
@@ -762,6 +770,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0 ||
 	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, b->ttype, hashheap)) < 0) {
 		GDKfree(h);
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 	h->width = HASHwidth(BATcapacity(b));
@@ -774,6 +783,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
 		      h->width, 0) != GDK_SUCCEED) {
 		GDKfree(h);
+		bat_iterator_end(&bi);
 		return NULL;
 	}
 	h->heaplink.free = ci->ncand * h->width;
@@ -806,6 +816,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		maxmask = HASHmask(ci->ncand);
 		if (mask > maxmask)
 			mask = maxmask;
+ 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_UNIQUE_ESTIMATE)) != NULL) {
+		assert(prop->vtype == TYPE_dbl);
+		mask = (BUN) (prop->val.dval * 8 / 7);
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
@@ -836,6 +849,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			    mask, ci->ncand, true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 
@@ -966,9 +980,15 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
+	bat_iterator_end(&bi);
 	if (!hascand) {
+		/* don't keep these properties while we have a hash
+		 * structure: they get added again when the hash is
+		 * freed */
+		MT_lock_set(&b->theaplock);
 		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
 		BATrmprop_nolock(b, GDK_NUNIQUE);
+		MT_lock_unset(&b->theaplock);
 	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;
@@ -994,6 +1014,10 @@ gdk_return
 BAThash(BAT *b)
 {
 	assert(b->batCacheid > 0);
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		GDKerror("No hash on msk type bats\n");
+		return GDK_FAIL;
+	}
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
@@ -1087,7 +1111,7 @@ HASHprobe(const Hash *h, const void *v)
 	}
 }
 
-static inline void
+void
 HASHappend_locked(BAT *b, BUN i, const void *v)
 {
 	Hash *h = b->thash;
@@ -1097,23 +1121,25 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(i * h->width == h->heaplink.free);
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return;
-			}
-		}
+	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
+	}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
 	}
 	if (HASHwidth(i + 1) > h->width &&
 	     HASHupgradehashheap(b) != GDK_SUCCEED) {
+		GDKclrerr();
 		return;
 	}
 	if ((ATOMsize(b->ttype) > 2 &&
@@ -1126,6 +1152,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		HEAPfree(&h->heapbckt, true);
 		HEAPfree(&h->heaplink, true);
 		GDKfree(h);
+		GDKclrerr();
 		return;
 	}
 	h->Link = h->heaplink.base;
@@ -1133,7 +1160,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	h->heaplink.free += h->width;
 	BUN hb = HASHget(h, c);
 	BUN hb2;
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	for (hb2 = hb;
 	     hb2 != BUN_NONE;
@@ -1158,7 +1185,7 @@ HASHappend(BAT *b, BUN i, const void *v)
 }
 
 /* insert value v at position p into the hash table of b */
-static inline void
+void
 HASHinsert_locked(BAT *b, BUN p, const void *v)
 {
 	Hash *h = b->thash;
@@ -1168,24 +1195,25 @@ HASHinsert_locked(BAT *b, BUN p, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return;
-			}
-		}
+	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
+	}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == BUN_NONE || hb < p) {
 		/* bucket is empty, or bucket is used by lower numbered
@@ -1241,7 +1269,7 @@ HASHinsert(BAT *b, BUN p, const void *v)
 }
 
 /* delete value v at position p from the hash table of b */
-static inline void
+void
 HASHdelete_locked(BAT *b, BUN p, const void *v)
 {
 	Hash *h = b->thash;
@@ -1251,24 +1279,25 @@ HASHdelete_locked(BAT *b, BUN p, const void *v)
 	if (h == (Hash *) 1) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
+		GDKclrerr();
 		return;
 	}
 	assert(p * h->width < h->heaplink.free);
-	if (!h->heapbckt.dirty && !h->heaplink.dirty &&
-	    ((size_t *) h->heapbckt.base)[0] & ((size_t) 1 << 24)) {
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK) &&
-			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
-				doHASHdestroy(b, h);
-				b->thash = NULL;
-				return;
-			}
-		}
+	if (h->nunique < b->batCount / HASH_DESTROY_UNIQUES_FRACTION) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
+	}
+	if (HASHfix(h, false, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	BATiter bi = bat_iterator(b);
+	BATiter bi = bat_iterator_nolock(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == p) {
 		BUN hb2 = HASHgetlink(h, p);
@@ -1378,24 +1407,27 @@ bool
 HASHgonebad(BAT *b, const void *v)
 {
 	Hash *h = b->thash;
-	BATiter bi = bat_iterator(b);
 	BUN cnt, hit;
 
 	if (h == NULL)
 		return true;	/* no hash is bad hash? */
 
+	BATiter bi = bat_iterator(b);
 	if (h->nbucket * 2 < BATcount(b)) {
 		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v));
 		for (cnt = hit = 1; i != BUN_NONE; i = HASHgetlink(h, i), cnt++)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);
 
-		if (cnt / hit > 4)
+		if (cnt / hit > 4) {
+			bat_iterator_end(&bi);
 			return true;	/* linked list too long */
+		}
 
 		/* in this case, linked lists are long but contain the
 		 * desired values such hash tables may be useful for
 		 * locating all duplicates */
 	}
+	bat_iterator_end(&bi);
 	return false;		/* a-ok */
 }

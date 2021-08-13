@@ -53,7 +53,7 @@ typedef struct _AggrParams{
 } AggrParams;
 
 static void ComputeParallelAggregation(AggrParams *p);
-static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
 static const char *FunctionBasePath(void)
@@ -296,7 +296,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				// one of the input BATs is empty, don't execute the function at
 				// all
 				// just return empty BATs
-				CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
+				msg = CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
 				goto wrapup;
 			}
 		}
@@ -768,9 +768,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			// now split the columns one by one
 			for (i = 0; i < named_columns; i++) {
 				PyInput input = pyinput_values[i];
-				void *basevals = Tloc(input.bat, 0);
-
 				if (!input.scalar) {
+					BATiter bi = bat_iterator(input.bat);
+					void *basevals = bi.base;
+
 					switch (input.bat_type) {
 						case TYPE_void:
 							NP_SPLIT_BAT(oid);
@@ -825,7 +826,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 								for (element_it = 0; element_it < elements;
 									 element_it++) {
 									// append current element to proper group
-									ptr[element_it][i][temp_indices[element_it]++] = 
+									ptr[element_it][i][temp_indices[element_it]++] =
 										batcontent[element_it];
 								}
 							} else {
@@ -845,9 +846,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 							msg = createException(
 								MAL, "pyapi3.eval", SQLSTATE(PY000) "Unrecognized BAT type %s",
 								BatType_Format(input.bat_type));
+							bat_iterator_end(&bi);
 							goto aggrwrapup;
-							break;
 					}
+					bat_iterator_end(&bi);
 				}
 			}
 
@@ -1209,16 +1211,17 @@ returnvalues:
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
+			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
+				if (VALinit(&stk->stk[pci->argv[i]], bat_type, li.base) ==
 					NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				BATiter li = bat_iterator(b);
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			bat_iterator_end(&li);
 		}
 		if (argnode) {
 			argnode = argnode->next;
@@ -1632,20 +1635,57 @@ wrapup:
 	gstate = Python_ReleaseGIL(gstate);
 }
 
-static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-							  size_t retcols, oid seqbase)
+static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+							 size_t retcols, oid seqbase)
 {
-	size_t i;
-	for (i = 0; i < retcols; i++) {
-		int bat_type = getBatType(getArgType(mb, pci, i));
-		BAT *b = COLnew(seqbase, bat_type, 0, TRANSIENT);
+	str msg = MAL_SUCCEED;
+	void **res = GDKzalloc(retcols * sizeof(void*));
+
+	if (!res) {
+		msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (size_t i = 0; i < retcols; i++) {
 		if (isaBatType(getArgType(mb, pci, i))) {
-			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto bailout;
+			}
+			((BAT**)res)[i] = b;
 		} else { // single value return, only for non-grouped aggregations
-			VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
 		}
 	}
+
+bailout:
+	if (res) {
+		for (size_t i = 0; i < retcols; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				BAT *b = ((BAT**)res)[i];
+
+				if (b && msg) {
+					BBPreclaim(b);
+				} else if (b) {
+					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+				}
+			} else if (msg) {
+				ValPtr pt = ((ValPtr*)res)[i];
+
+				if (pt)
+					VALclear(pt);
+			}
+		}
+		GDKfree(res);
+	}
+	return msg;
 }
 
 #include "mel.h"

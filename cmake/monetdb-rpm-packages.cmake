@@ -49,7 +49,7 @@ set(CPACK_RPM_client_RECCOMMENDS "%{name}-SQL-server5%{?_isa} = %{version}-%{rel
 set(CPACK_RPM_clientdev_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-client-devel")
 set(CPACK_RPM_clientdev_FILE_NAME "${CPACK_RPM_clientdev_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_clientdev_PACKAGE_SUMMARY "MonetDB - Monet Database Management System Client Programs")
-set(CPACK_RPM_clientdev_PACKAGE_REQUIRES "%{name}-client%{?_isa} = %{version}-%{release}, %{name}-stream-devel%{?_isa} = %{version}-%{release}, openssl-devel")
+set(CPACK_RPM_clientdev_PACKAGE_REQUIRES "%{name}-client%{?_isa} = %{version}-%{release}, %{name}-stream-devel%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_odbc_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-client-odbc")
 set(CPACK_RPM_odbc_FILE_NAME "${CPACK_RPM_odbc_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")

@@ -26,6 +26,9 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
+#define _CRT_RAND_S				/* for Windows rand_s, before stdlib.h */
+#define HAVE_RAND_S 1
+
 #endif
 
 #if !defined(_XOPEN_SOURCE) && defined(__CYGWIN__)
@@ -97,6 +100,7 @@
 #cmakedefine HAVE_SYS_SYSCTL_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1
+#cmakedefine HAVE_SYS_RANDOM_H 1
 #cmakedefine HAVE_SYS_RESOURCE_H 1
 #cmakedefine HAVE_SYS_TIME_H 1
 #cmakedefine HAVE_SYS_TIMES_H 1
@@ -127,6 +131,7 @@
 #cmakedefine HAVE_FORK 1
 #cmakedefine HAVE_FSYNC 1
 #cmakedefine HAVE_FTIME 1
+#cmakedefine HAVE_GETENTROPY 1
 #cmakedefine HAVE_GETEXECNAME 1
 #cmakedefine HAVE_GETLOGIN 1
 #cmakedefine HAVE_GETOPT_LONG 1
@@ -176,8 +181,6 @@
 #cmakedefine HAVE_ICONV 1
 #cmakedefine HAVE_PTHREAD_H 1
 #cmakedefine HAVE_LIBPCRE 1
-#cmakedefine HAVE_OPENSSL 1
-#cmakedefine HAVE_COMMONCRYPTO 1
 #cmakedefine HAVE_LIBBZ2 1
 #cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_LIBLZMA 1
@@ -260,14 +263,6 @@
 
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH_TOKEN @PASSWORD_BACKEND@
-
-#cmakedefine HAVE_MD5_UPDATE 1
-#cmakedefine HAVE_RIPEMD160_UPDATE 1
-#cmakedefine HAVE_SHA1_UPDATE 1
-#cmakedefine HAVE_SHA224_UPDATE 1
-#cmakedefine HAVE_SHA256_UPDATE 1
-#cmakedefine HAVE_SHA384_UPDATE 1
-#cmakedefine HAVE_SHA512_UPDATE 1
 
 #ifndef _Noreturn
 #cmakedefine _Noreturn @_Noreturn@

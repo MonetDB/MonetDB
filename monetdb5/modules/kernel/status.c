@@ -226,25 +226,29 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	throw(MAL, "status.memStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-#define heap(X1,X2,X3,X4)									\
+#define heap(X1,X2,X3,X4,UNLOCK)							\
 	if (X1) {												\
 		sz = HEAPmemsize(X2);								\
 		if (sz > *minsize) {								\
 			sprintf(buf, X4"/%s", s);						\
 			if (BUNappend(bn, buf, false) != GDK_SUCCEED ||	\
-				BUNappend(b, &sz, false) != GDK_SUCCEED)	\
+				BUNappend(b, &sz, false) != GDK_SUCCEED) {	\
+				UNLOCK;										\
 				goto bailout;								\
+			}												\
 		}													\
 		X3 += sz; tot += sz;								\
 	}
-#define heapvm(X1,X2,X3,X4)									\
+#define heapvm(X1,X2,X3,X4,UNLOCK)							\
 	if (X1) {												\
 		sz = HEAPvmsize(X2);								\
 		if (sz > *minsize) {								\
 			sprintf(buf, X4"/%s", s);						\
 			if (BUNappend(bn, buf, false) != GDK_SUCCEED ||	\
-				BUNappend(b, &sz, false) != GDK_SUCCEED)	\
+				BUNappend(b, &sz, false) != GDK_SUCCEED) {	\
+				UNLOCK;										\
 				goto bailout;								\
+			}												\
 		}													\
 		X3 += sz; tot += sz;								\
 	}
@@ -265,13 +269,13 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
-		BAT *c = BBPquickdesc(i, false);
+		BAT *c = BBPquickdesc(i);
 		str s;
 
 		if( c == NULL  || !BBPvalid(i))
 			continue;
 
-		s = BBPname(i);
+		s = BBP_logical(i);
 		sz = 0;
 		if (BBP_desc(i))
 			sz += sizeof(BAT);
@@ -288,13 +292,21 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		}
 		tot += (lng) sz;
 
+		if (c)
+			MT_lock_set(&c->theaplock);
 		if (c == NULL || isVIEW(c)) {
+			if (c)
+				MT_lock_unset(&c->theaplock);
 			continue;
 		}
-		heap(1,c->theap,tbuns,"tbuns");
-		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
-		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
-		heap(c->tvheap,c->tvheap,tail,"tail");
+
+		heap(1,c->theap,tbuns,"tbuns", MT_lock_unset(&c->theaplock));
+		heap(c->tvheap,c->tvheap,tail,"tail", MT_lock_unset(&c->theaplock));
+		MT_lock_unset(&c->theaplock);
+		MT_rwlock_rdlock(&c->thashlock);
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl",MT_rwlock_rdunlock(&c->thashlock));
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb",MT_rwlock_rdunlock(&c->thashlock));
+		MT_rwlock_rdunlock(&c->thashlock);
 	}
 	/* totals per category */
 	if (BUNappend(bn, "_tot/hbuns", false) != GDK_SUCCEED ||
@@ -386,15 +398,24 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (!BBPvalid(i))
 			continue;
 
-		s = BBPname(i);
+		s = BBP_logical(i);
  		c = BBP_cache(i);
+
+		if (c)
+			MT_lock_set(&c->theaplock);
 		if (c == NULL || isVIEW(c)) {
+			if (c)
+				MT_lock_unset(&c->theaplock);
 			continue;
 		}
-		heapvm(1,c->theap,tbuns,"tcuns");
-		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
-		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
-		heapvm(c->tvheap,c->tvheap,tail,"tail");
+
+		heapvm(1,c->theap,tbuns,"tcuns",MT_lock_unset(&c->theaplock));
+		heapvm(c->tvheap,c->tvheap,tail,"tail",MT_lock_unset(&c->theaplock));
+		MT_lock_unset(&c->theaplock);
+		MT_rwlock_rdlock(&c->thashlock);
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl",MT_rwlock_rdunlock(&c->thashlock));
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb",MT_rwlock_rdunlock(&c->thashlock));
+		MT_rwlock_rdunlock(&c->thashlock);
 	}
 	/* totals per category */
 	if (BUNappend(bn, "_tot/hbuns", false) != GDK_SUCCEED ||

@@ -17,7 +17,6 @@ These packages are required.
 | gettext-devel
 | libxml2-devel
 | mercurial
-| openssl-devel
 
 These packages are optional, but they are required to build RPMs using
 the command make rpm.

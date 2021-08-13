@@ -1050,46 +1050,72 @@ struct callback_context {
 };
 
 static str
-monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
-	monetdbe_database_internal *mdbe = ((struct callback_context*) context)->mdbe;
+monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results, size_t nr_results) {
+
+	char* error = NULL;
 
 	if (nr_results == 0)
 		return MAL_SUCCEED; // No work to do.
 
-	backend *be = NULL;
-	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
-		return mdbe->msg;
-
-	BAT* order = BATdescriptor(results[0].id);
-	if (!order) {
-		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
-		return mdbe->msg;
+	BAT* b_0 = BATdescriptor(results[0].id); // Fetch the first column to get the count.
+	if (!b_0) {
+		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot access column descriptor ");
+		return error;
 	}
 
-	mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
+	BAT* order = BATdense(0, 0, BATcount(b_0));
+	if (mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order) < 0) {
+		BBPreclaim(order);
+		BBPunfix(b_0->batCacheid);
+		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
+		return error;
+	}
 
-	for (unsigned  i = 0; i < nr_results; i++) {
+	unsigned  i = 0;
+	for (i = 0; i < nr_results; i++) {
 		BAT *b = NULL;
 		if (i > 0) {
 			b = BATdescriptor(results[i].id);
 		}
 		else
-			b = order; // We already fetched this first column
+			b = b_0; // We already fetched this first column
 
 		char* colname	= results[i].colname;
 		char* tpename	= results[i].tpename;
 		int digits		= results[i].digits;
 		int scale		= results[i].scale;
 
-		if ( b == NULL)
-			mdbe->msg= createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
-		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-		if( b)
-			BBPkeepref(b->batCacheid);
+		if ( b == NULL) {
+			error= createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot access column descriptor ");
+			break;
+		}
+		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b)) {
+			error = createException(SQL, "monetdbe.monetdbe_set_remote_results", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			BBPunfix(b->batCacheid);
+			break;
+		}
+		BBPunfix(b->batCacheid);
+	}
+
+	BBPunfix(order->batCacheid);
+
+	if (error) {
+		res_tables_destroy(be->results);
+		return error;
 	}
 
 	return MAL_SUCCEED;
+}
+
+static str
+monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
+	monetdbe_database_internal *mdbe = ((struct callback_context*) context)->mdbe;
+
+	backend *be = NULL;
+	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+	return monetdbe_set_remote_results(be, tblname, results, nr_results);
 }
 
 struct prepare_callback_context {
@@ -1103,11 +1129,14 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	monetdbe_database_internal *mdbe	= ((struct prepare_callback_context*) context)->mdbe;
 	int *prepare_id						= ((struct prepare_callback_context*) context)->prepare_id;
 
-	if (nr_results != 6) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn
+	if (nr_results != 7) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn 7) bimpl
 		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "result table for prepared statement is wrong.");
 
 	backend *be = NULL;
 	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+	if ( (mdbe->msg =  monetdbe_set_remote_results(be, tblname, results, nr_results)) != NULL)
 		return mdbe->msg;
 
 	BAT* btype = NULL;
@@ -1116,10 +1145,13 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	BAT* bschema = NULL;
 	BAT* btable = NULL;
 	BAT* bcolumn = NULL;
+	BAT* bimpl = NULL;
 
 	size_t nparams = 0;
+	BATiter btype_iter = {0};
 	BATiter bcolumn_iter = {0};
 	BATiter btable_iter = {0};
+	BATiter bimpl_iter = {0};
 	char* function = NULL;
 	Symbol prg = NULL;
 	MalBlkPtr mb = NULL;
@@ -1138,7 +1170,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		!(bscale	= BATdescriptor(results[2].id))	||
 		!(bschema	= BATdescriptor(results[3].id))	||
 		!(btable	= BATdescriptor(results[4].id))	||
-		!(bcolumn	= BATdescriptor(results[5].id)))
+		!(bcolumn	= BATdescriptor(results[5].id))	||
+		!(bimpl		= BATdescriptor(results[6].id)))
 	{
 		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Cannot access prepare result");
 		goto cleanup;
@@ -1147,17 +1180,20 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	nparams = BATcount(btype);
 
 	if (nparams 	!= BATcount(bdigits) ||
+		nparams 	!= BATcount(bimpl) ||
 		nparams 	!= BATcount(bscale) ||
 		nparams 	!= BATcount(bschema) ||
-		nparams + 1 != BATcount(btable) ||
+		nparams 	!= BATcount(btable) ||
 		nparams 	!= BATcount(bcolumn))
 	{
 		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "prepare results are incorrect.");
 		goto cleanup;
 	}
 
-	bcolumn_iter	= bat_iterator(bcolumn);
+	btype_iter		= bat_iterator(btype);
+	bcolumn_iter		= bat_iterator(bcolumn);
 	btable_iter		= bat_iterator(btable);
+	bimpl_iter		= bat_iterator(bimpl);
 	function		=  BUNtvar(btable_iter, BATcount(btable)-1);
 
 	{
@@ -1212,15 +1248,20 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	for (size_t i = 0; i < nparams; i++) {
 
-		char* table =  BUNtvar(btable_iter, i);
+		char* table	= BUNtvar(btable_iter, i);
+
+		sql_type *t = SA_ZNEW(sa, sql_type);
+		char* name = BUNtvar(btype_iter, i);
+		t->base.name = GDKstrdup(name);
+		char* impl = BUNtvar(bimpl_iter, i);
+		t->impl	= GDKstrdup(impl);
+		t->localtype = ATOMindex(t->impl);
+
+		sql_subtype *st = SA_ZNEW(sa, sql_subtype);
+		sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
 
 		if (strNil(table)) {
 			// input argument
-			sql_type *t = SA_ZNEW(sa, sql_type);
-			t->localtype = *(int*) Tloc(btype, i);
-
-			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
-			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
 
 			sql_arg *a = SA_ZNEW(sa, sql_arg);
 			a->type = *st;
@@ -1238,14 +1279,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		}
 		else {
 			// output argument
-			sql_type *t = SA_ZNEW(sa, sql_type);
-			int type = *(int*) Tloc(btype, i);
-			t->localtype = type;
 
 			char* column = BUNtvar(bcolumn_iter, i);
-			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
-			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
-
 			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false);
 			append(rets, c);
 		}
@@ -1281,8 +1316,15 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
+	if (bcolumn) {
+		bat_iterator_end(&btype_iter);
+		bat_iterator_end(&bcolumn_iter);
+		bat_iterator_end(&btable_iter);
+		bat_iterator_end(&bimpl_iter);
+	}
 	// clean these up
 	if (btype)		BBPunfix(btype->batCacheid);
+	if (bimpl)		BBPunfix(bimpl->batCacheid);
 	if (bdigits)	BBPunfix(bdigits->batCacheid);
 	if (bscale)		BBPunfix(bscale->batCacheid);
 	if (bschema)	BBPunfix(bschema->batCacheid);
@@ -1435,7 +1477,7 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 }
 
 char*
-monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt)
+monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt, monetdbe_result** result)
 {
 	if (!dbhdl)
 		return NULL;
@@ -1447,10 +1489,10 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL");
 		assert(mdbe->msg != MAL_SUCCEED); /* help Coverity */
 	} else if (mdbe->mid) {
-		mdbe->msg = monetdbe_query_remote(mdbe, query, NULL, NULL, &prepare_id);
+		mdbe->msg = monetdbe_query_remote(mdbe, query, result, NULL, &prepare_id);
 	} else {
 		*stmt = NULL;
-		mdbe->msg = monetdbe_query_internal(mdbe, query, NULL, NULL, &prepare_id, 'S');
+		mdbe->msg = monetdbe_query_internal(mdbe, query, result, NULL, &prepare_id, 'S');
 	}
 
 	if (mdbe->msg == MAL_SUCCEED) {
@@ -1558,20 +1600,22 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	backend *b = (backend *) stmt_internal->mdbe->c->sqlcontext;
 	mvc *m = b->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
+	MalStkPtr glb = NULL;
+	cq *q = stmt_internal->q;
+	Symbol s = NULL;
 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
 	/* check if all inputs are bound */
 	for(int i = 0; i< list_length(stmt_internal->q->f->ops); i++){
-		if (!stmt_internal->data[i].vtype)
-			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
+		if (!stmt_internal->data[i].vtype) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
+			goto cleanup;
+		}
 	}
-	cq* q = stmt_internal->q;
 
-	MalStkPtr glb = NULL;
-	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
-
+	s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
 	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
 		goto cleanup;
 
@@ -2001,6 +2045,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	node *n;
 	Symbol remote_prg = NULL;
 	BAT *pos = NULL;
+	BUN offset;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -2126,9 +2171,13 @@ remote_cleanup:
 	}
 
 	cnt = input[0]->count;
-	pos = store->storage_api.claim_tab(m->session->tr, t, cnt);
-	if (!pos) {
+	if (store->storage_api.claim_tab(m->session->tr, t, cnt, &offset, &pos) != LOG_OK) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Claim failed");
+		goto cleanup;
+	}
+	/* signal an insert was made on the table */
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(m->session->tr, t->base.id, dml) != LOG_OK) {
+		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2140,6 +2189,9 @@ remote_cleanup:
 
 		if (mtype < 0) {
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
+			goto cleanup;
+		} else if (input[i]->count != cnt) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Number of values don't match between columns");
 			goto cleanup;
 		}
 		if (mtype >= TYPE_bit && mtype <=
@@ -2187,7 +2239,7 @@ remote_cleanup:
 				bn->tnil = false;
 			}
 
-			if (store->storage_api.append_col(m->session->tr, c, pos, bn, TYPE_bat) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
 				bn->theap->base = prev_base;
 				bn->theap->size = prev_size;
 				BBPreclaim(bn);
@@ -2202,10 +2254,14 @@ remote_cleanup:
 			char **d = (char**)v;
 
 			for (size_t j=0; j<cnt; j++) {
-				if (!d[j])
+				if (!d[j]) {
 					d[j] = (char*) nil;
+				} else if (!checkUTF8(d[j])) {
+					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrectly encoded UTF-8");
+					goto cleanup;
+				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				goto cleanup;
 			}
@@ -2227,7 +2283,7 @@ remote_cleanup:
 					d[j] = timestamp_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2252,7 +2308,7 @@ remote_cleanup:
 					d[j] = date_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2277,7 +2333,7 @@ remote_cleanup:
 					d[j] = time_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2311,7 +2367,7 @@ remote_cleanup:
 					d[j] = b;
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, pos, d, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 				err = 1;
 			}
@@ -2395,6 +2451,8 @@ remote_cleanup:
 	}
 
 cleanup:
+	if (pos)
+		BBPreclaim(pos);
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
 	return mdbe->msg;
 }
@@ -2523,6 +2581,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			}
 			j++;
 		}
+		bat_iterator_end(&li);
 	} else if (bat_type == TYPE_date) {
 		date *baseptr;
 		GENERATE_BAT_INPUT_BASE(date);
@@ -2596,6 +2655,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 				bat_data->data[j].size = t->nitems;
 				bat_data->data[j].data = GDKmalloc(t->nitems);
 				if (!bat_data->data[j].data) {
+					bat_iterator_end(&li);
 					mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -2603,6 +2663,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			}
 			j++;
 		}
+		bat_iterator_end(&li);
 		bat_data->null_value.size = 0;
 		bat_data->null_value.data = NULL;
 	} else {
@@ -2631,6 +2692,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 				char *sresult = NULL;
 				size_t length = 0;
 				if (BATatoms[bat_type].atomToStr(&sresult, &length, t, true) == 0) {
+					bat_iterator_end(&li);
 					mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", "Failed to convert element to string");
 					goto cleanup;
 				}
@@ -2638,6 +2700,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			}
 			j++;
 		}
+		bat_iterator_end(&li);
 	}
 	if (column_result)
 		column_result->name = result->monetdbe_resultset->cols[column_index].name;

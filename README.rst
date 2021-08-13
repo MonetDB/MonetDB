@@ -81,7 +81,6 @@ STRICT          Enable strict compiler flags (default=ON for development sources
 TESTING         Enable support for testing
 WITH_BZ2        Include bz2 support
 WITH_CMOCKA     Include cmocka support (default=OFF)
-WITH_CRYPTO     Only in very some special cases we build without crypto dependencies
 WITH_CURL       Include curl support
 WITH_LZMA       Include lzma support
 WITH_PCRE       Include pcre support
@@ -97,8 +96,7 @@ Required packages
 .................
 
 On Fedora, the following packages are required:
-``bison``, ``cmake``, ``gcc``, ``openssl-devel``, ``pkgconf``,
-``python3``.
+``bison``, ``cmake``, ``gcc``, ``pkgconf``, ``python3``.
 
 The following packages are optional but recommended:
 ``bzip2-devel``, ``libuuid-devel``, ``pcre-devel``, ``readline-devel``,
