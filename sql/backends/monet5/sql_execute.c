@@ -235,7 +235,11 @@ SQLrun(Client c, mvc *m)
 	} else if( m->emod & mod_debug) {
 		c->idle = 0;
 		c->lastcmd = time(0);
+#ifdef NDEBUG
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY000) "DEBUG requires compilation for debugging");
+#else
 		msg = runMALDebugger(c, mb);
+#endif
 	} else {
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
