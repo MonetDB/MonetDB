@@ -70,7 +70,7 @@ gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, B
 	__attribute__((__visibility__("hidden")));
 Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
-gdk_return BAThashsave(BAT *b, bool dosync)
+void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -259,7 +259,7 @@ void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int 
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
-void strHeap(Heap *d, size_t cap)
+gdk_return strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));

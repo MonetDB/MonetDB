@@ -8745,26 +8745,63 @@ static sql_rel *
 rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 {
 	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
-	node *n;
 
 	assert(!p->exps);
 	p->exps = sa_list(sql->sa);
 	const char *pname = t->base.name;
 	if (isRemote(t))
 		pname = mapiuri_table(t->query, sql->sa, pname);
-	for (n = mt_rel->exps->h; n; n = n->next) {
+	for (node *n = mt_rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		if (is_intern(e) || exp_name(e)[0] == '%') /* break on tid/idxs */
-			break;
-		sql_column *c = ol_find_name(mt->columns, exp_name(e))->data;
-		sql_column *rc = ol_fetch(t->columns, c->colnr);
-		/* with name find column in merge table, with colnr find column in member */
-		list_append(p->exps, exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0));
-	}
-	if (n) {
-		sql_exp *e = n->data;
-		if (strcmp(exp_name(e), TID) == 0)
+		node *cn = NULL, *ci = NULL;
+		const char *nname = exp_name(e);
+
+		if (strcmp(nname, TID) == 0) {
 			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+			rel_base_use_tid(sql, p);
+		} else if (nname[0] != '%' && (cn = ol_find_name(mt->columns, nname))) {
+			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
+
+			/* with name find column in merge table, with colnr find column in member */
+			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
+			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
+				p->value = rc->t->pkey;
+			} else if (rc->unique == 1) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
+				p->value = NULL;
+			}
+			set_basecol(ne);
+			rel_base_use(sql, p, rc->colnr);
+			list_append(p->exps, ne);
+		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
+			sql_idx *i = ci->data, *ri = NULL;
+
+			/* indexes don't have a number field like 'colnr', so get the index the old way */
+			for (node *nn = mt->idxs->l->h, *mm = t->idxs->l->h; nn && mm ; nn = nn->next, mm = mm->next) {
+				sql_idx *ii = nn->data;
+
+				if (ii->base.id == i->base.id) {
+					ri = mm->data;
+					break;
+				}
+			}
+
+			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
+			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
+			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
+
+			sql_exp *ne = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), 1);
+			/* index names are prefixed, to make them independent */
+			if (hash_index(ri->type)) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
+				p->value = ri;
+			} else if (ri->type == join_idx) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
+				p->value = ri;
+			}
+			list_append(p->exps, ne);
+		}
 	}
 	rel_base_set_mergetable(p, mt);
 	return p;
@@ -9303,6 +9340,9 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 static sql_rel *
 out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, operator_type new_type) {
 
+	/* handle inner_join relations with a simple select */
+	if (is_select(inner_join_side->op) && inner_join_side->l)
+		inner_join_side = inner_join_side->l;
     if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
         // Nothing to do here.
         return sel;
@@ -9520,16 +9560,17 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_basecount(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && rel->l && !rel->r && list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *bt = rel->l;
 		sql_exp *e = rel->exps->h->data;
-		if (is_basetable(bt->op) && !e->l) { /* count(*) */
-			/* change into select cnt('schema','table') */;
+		if (is_basetable(bt->op) && list_empty(e->l)) { /* count(*) */
+			/* change into select cnt('schema','table') */
 			sql_table *t = bt->l;
-			if (!isTable(t))
+			/* I need to get the declared table's frame number to make this work correctly for those */
+			if (!isTable(t) || isDeclaredTable(t))
 				return rel;
 			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC);
 			list *exps = sa_list(v->sql->sa);
@@ -9539,9 +9580,57 @@ rel_basecount(visitor *v, sql_rel *rel)
 
 			ne = exp_propagate(v->sql->sa, ne, e);
 			exp_setname(v->sql->sa, ne, exp_find_rel_name(e), exp_name(e));
-			return rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), ne));
+			rel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), ne));
+			v->changes++;
 		}
-		return rel;
+	}
+	return rel;
+}
+
+static inline sql_rel *
+rel_simplify_count(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) && !list_empty(rel->exps)) {
+		mvc *sql = v->sql;
+		int ncountstar = 0;
+
+		/* Convert count(no null) into count(*) */
+		for (node *n = rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_aggr_is_count(e) && !need_distinct(e)) {
+				if (list_length(e->l) == 0) {
+					ncountstar++;
+				} else if (list_length(e->l) == 1 && exp_is_not_null((sql_exp*)((list*)e->l)->h->data)) {
+					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, ne, e);
+					n->data = ne;
+					ncountstar++;
+					v->changes++;
+				}
+			}
+		}
+		/* With multiple count(*), use exp_ref to reduce the number of calls to this aggregate */
+		if (ncountstar > 1) {
+			sql_exp *count_star = NULL;
+			for (node *n = rel->exps->h; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_aggr_is_count(e) && !need_distinct(e) && list_length(e->l) == 0) {
+					if (!count_star) {
+						count_star = e;
+					} else {
+						sql_exp *ne = exp_ref(sql, count_star);
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
+						n->data = ne;
+						v->changes++;
+					}
+				}
+			}
+		}
 	}
 	return rel;
 }
@@ -9560,8 +9649,11 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
-	if (v->value_based_opt) /* only when value_based_opt is on, ie not for dependency resolution */
+	/* only when value_based_opt is on, ie not for dependency resolution */
+	if (v->value_based_opt) {
+		rel = rel_simplify_count(v, rel);
 		rel = rel_basecount(v, rel);
+	}
 	return rel;
 }
 

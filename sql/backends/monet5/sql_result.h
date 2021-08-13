@@ -31,6 +31,16 @@ sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_qu
 sql5_export int mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);
 
+/*
+  The covered errors so far:
+
+  -1 Allocation failure
+  -2 BAT descriptor error
+  -3 GDK error
+  -4 Stream error
+*/
+extern const char *mvc_export_error(backend *be, stream *s, int err_code);
+
 extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len);
 
 #endif /* sql_result_H */

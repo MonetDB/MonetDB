@@ -961,7 +961,7 @@ SQLparser(Client c)
 	str msg = NULL;
 	backend *be;
 	mvc *m;
-	int oldvtop, oldstop, oldvid;
+	int oldvtop, oldstop, oldvid, ok;
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 
@@ -1018,8 +1018,8 @@ SQLparser(Client c)
 		if (n == 2 || n == 3) {
 			if (n == 2)
 				len = m->reply_size;
-			if (mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) {
-				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
+			if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
+				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
 				goto finalize;
 			}
 
@@ -1227,39 +1227,46 @@ SQLparser(Client c)
 				qc_clean(m->qc);
 			}
 			/* For deallocate statements just export a simple output */
-			if (!GDKembedded())
-				err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize);
+			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				goto finalize;
+			}
 		} else if (be->q) {
 			assert(m->emode == m_prepare);
 			/* For prepared queries, return a table with result set structure*/
 			/* optimize the code block and rename it */
-			err = mvc_export_prepare(be, c->fdout);
+			if ((err = mvc_export_prepare(be, c->fdout)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				goto finalize;
+			}
 		}
 
-		if (!err) {
-			pushEndInstruction(c->curprg->def);
-			/* check the query wrapper for errors */
-			if( msg == MAL_SUCCEED)
-				msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
+		pushEndInstruction(c->curprg->def);
+		/* check the query wrapper for errors */
+		if( msg == MAL_SUCCEED)
+			msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
-			/* in case we had produced a non-cachable plan, the optimizer should be called */
-			if (msg == MAL_SUCCEED && opt ) {
-				msg = SQLoptimizeQuery(c, c->curprg->def);
+		/* in case we had produced a non-cachable plan, the optimizer should be called */
+		if (msg == MAL_SUCCEED && opt ) {
+			msg = SQLoptimizeQuery(c, c->curprg->def);
 
-				if (msg != MAL_SUCCEED) {
-					str other = c->curprg->def->errors;
-					/* In debugging mode you may want to assess what went wrong in the optimizers*/
+			if (msg != MAL_SUCCEED) {
+				str other = c->curprg->def->errors;
+				/* In debugging mode you may want to assess what went wrong in the optimizers*/
 #ifndef NDEBUG
-					if( m->emod & mod_debug)
-						runMALDebugger(c, c->curprg->def);
+				if( m->emod & mod_debug)
+					runMALDebugger(c, c->curprg->def);
 #endif
-					c->curprg->def->errors = 0;
-					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-					if (other != msg)
-						freeException(other);
-					goto finalize;
-				}
+				c->curprg->def->errors = 0;
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				if (other != msg)
+					freeException(other);
+				goto finalize;
 			}
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
@@ -1277,8 +1284,7 @@ SQLparser(Client c)
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
 				*m->errstr = 0;
 			} else if (msg) {
-				str newmsg;
-				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
+				str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
 				freeException(msg);
 				msg = newmsg;
 			}

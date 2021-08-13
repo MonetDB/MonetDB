@@ -1036,7 +1036,7 @@ bat_iterator_nolock(BAT *b)
  * private space.
  */
 
-gdk_export void HEAP_initialize(
+gdk_export gdk_return HEAP_initialize(
 	Heap *heap,		/* nbytes -- Initial size of the heap. */
 	size_t nbytes,		/* alignment -- for objects on the heap. */
 	size_t nprivate,	/* nprivate -- Size of private space */

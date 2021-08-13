@@ -792,9 +792,6 @@ select "😀"()
 1
 
 statement ok
-rollback
-
-statement ok
 CREATE FUNCTION ups() RETURNS INT
 BEGIN
 	DECLARE "nononononononononononononononononononononononononononononononono" int;
@@ -803,6 +800,9 @@ END;  -- error for now
 
 statement error
 select ups()
+
+statement ok
+rollback
 
 statement error
 create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
@@ -833,3 +833,24 @@ rollback
 
 statement ok
 drop table thisnamewontconflict
+
+statement ok
+start transaction
+
+statement ok
+CREATE OR REPLACE FUNCTION nasty() RETURNS BIGINT
+BEGIN
+	DECLARE TABLE atest (a int);
+	DECLARE res BIGINT;
+	INSERT INTO atest VALUES (1),(2),(3);
+	SELECT count(*) INTO res FROM atest;
+	RETURN res;
+END
+
+query I rowsort
+select nasty()
+----
+3
+
+statement ok
+rollback

@@ -57,7 +57,7 @@ typedef struct {
 	var_t (*atomPut) (BAT *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
 	size_t (*atomLen) (const void *atom);
-	void (*atomHeap) (Heap *, size_t);
+	gdk_return (*atomHeap) (Heap *, size_t);
 } atomDesc;
 
 #define MAXATOMS	128
@@ -302,7 +302,7 @@ static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMputVAR(BAT *b, var_t *dst, const void *src)
 {
 	assert(BATatoms[b->ttype].atomPut != NULL);
-	if ((*BATatoms[b->ttype].atomPut)(b, dst, src) == 0)
+	if ((*BATatoms[b->ttype].atomPut)(b, dst, src) == (var_t) -1)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -353,7 +353,7 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
 	int type = b->ttype;
 
 	assert(BATatoms[type].atomPut != NULL);
-	if ((*BATatoms[type].atomPut)(b, &loc, src) == 0)
+	if ((*BATatoms[type].atomPut)(b, &loc, src) == (var_t) -1)
 		return GDK_FAIL;
 	if (ATOMunfix(type, dst) != GDK_SUCCEED)
 		return GDK_FAIL;

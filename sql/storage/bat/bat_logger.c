@@ -16,6 +16,7 @@
 
 #define CATALOG_NOV2019 52203	/* first in Apr2019 */
 #define CATALOG_JUN2020 52204	/* first in Jun2020 */
+#define CATALOG_JUN2020_MMT 52206	/* only in Jun2020-mmt */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
@@ -39,6 +40,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_JUN2020
 	if (oldversion == CATALOG_JUN2020) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_JUN2020_MMT
+	if (oldversion == CATALOG_JUN2020_MMT) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -932,6 +941,7 @@ struct table {
 		.column = "nr",
 		.fullname = "sys_objects_nr",
 		.newid = 2113,
+		.hasids = true,
 	},
 	{
 		.schema = "sys",
@@ -939,6 +949,7 @@ struct table {
 		.column = "sub",
 		.fullname = "sys_objects_sub",
 		.newid = 2163,
+		.hasids = true,
 	},
 	{
 		.schema = "tmp",
@@ -1415,7 +1426,7 @@ upgrade(old_logger *lg)
 		mapnew = NULL;
 	}
 
-	/* do the mapping in the system tables: all tables with the .hasids
+	/* do the mapping in the system tables: all columns with the .hasids
 	 * flag set may contain IDs that have to be mapped; also add all
 	 * system tables to the new catalog bats and add the new ones to the
 	 * lg->add bat and the old ones that were replaced to the lg->del bat */
@@ -1874,7 +1885,11 @@ bl_postversion(void *Store, old_logger *old_lg)
 #endif
 
 #ifdef CATALOG_JUN2020
-	if (store->catalog_version <= CATALOG_JUN2020) {
+	if (store->catalog_version <= CATALOG_JUN2020
+#ifdef CATALOG_JUN2020_MMT
+		|| store->catalog_version == CATALOG_JUN2020_MMT
+#endif
+		) {
 		BAT *b;								 /* temp variable */
 		{
 			/* new BOOLEAN column sys.functions.semantics */
@@ -2070,7 +2085,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 #endif
 
 #ifdef CATALOG_OCT2020
-	if (store->catalog_version <= CATALOG_OCT2020) {
+	if (store->catalog_version <= CATALOG_OCT2020) { /* not for Jun2020-mmt! */
 		/* add sub column to "objects" table. This is required for merge tables */
 		/* alter table sys.objects add column sub integer; */
 		if (tabins(lg, old_lg, tabins_first, -1, 0,
@@ -2283,7 +2298,14 @@ bl_postversion(void *Store, old_logger *old_lg)
 			BBPretain(objs_sub->batCacheid);
 			bat_destroy(objs_sub);
 		}
-
+	}
+#endif
+#ifdef CATALOG_OCT2020
+	if (store->catalog_version <= CATALOG_OCT2020
+#ifdef CATALOG_JUN2020_MMT
+		|| store->catalog_version == CATALOG_JUN2020_MMT
+#endif
+		) {
 		/* update sys.functions set mod = 'sql' where mod = 'user'; */
 		{
 			BAT *b1, *b2, *b3;

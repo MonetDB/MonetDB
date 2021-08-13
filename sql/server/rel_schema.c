@@ -1472,6 +1472,8 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 		}
 		return NULL;
 	}
+	if (!isView(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP VIEW: unable to drop view '%s': is a table", tname);
 
 	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, NULL, nr, if_exists);
 }

@@ -194,6 +194,15 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	if (mask_cand(u)) {
+		BAT *ou = u;
+		u = BATunmask(u);
+		BBPunfix(ou->batCacheid);
+		if (!u) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+		}
+	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(u->batCacheid);

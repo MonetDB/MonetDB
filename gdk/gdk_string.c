@@ -64,15 +64,14 @@
 
 const char str_nil[2] = { '\200', 0 };
 
-void
+gdk_return
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1, 1) != GDK_SUCCEED)
-		GDKerror("alloc failed");
+	return HEAPalloc(d, size, 1, 1);
 }
 
 
@@ -141,7 +140,7 @@ strCleanHash(Heap *h, bool rebuild)
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
- * returns zero.
+ * returns (var_t) -2 (-1 is reserved for error).
  */
 var_t
 strLocate(Heap *h, const char *v)
@@ -152,7 +151,7 @@ strLocate(Heap *h, const char *v)
 	BUN off;
 	if (h->free == 0) {
 		/* empty, so there are no strings */
-		return 0;
+		return (var_t) -2;
 	}
 
 	off = strHash(v);
@@ -167,18 +166,8 @@ strLocate(Heap *h, const char *v)
 		if (strcmp(v, (str) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
-	return 0;
+	return (var_t) -2;
 }
-
-#ifdef __GNUC__
-/* __builtin_expect returns its first argument; it is expected to be
- * equal to the second argument */
-#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
-#define likely(expr)	__builtin_expect((expr) != 0, 1)
-#else
-#define unlikely(expr)	(expr)
-#define likely(expr)	(expr)
-#endif
 
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
@@ -193,7 +182,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (h->free == 0) {
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				return 0;
+				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
@@ -245,7 +234,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 #ifndef NDEBUG
 	if (!checkUTF8(v)) {
 		GDKerror("incorrectly encoded UTF-8\n");
-		return 0;
+		return (var_t) -1;
 	}
 #endif
 
@@ -279,11 +268,11 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 		if (h->free + pad + len >= (size_t) VAR_MAX) {
 			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
-			return 0;
+			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED) {
-			return 0;
+			return (var_t) -1;
 		}
 		h = b->tvheap;
 
@@ -316,6 +305,16 @@ strPut(BAT *b, var_t *dst, const void *V)
  * Convert an "" separated string to a GDK string value, checking that
  * the input is correct UTF-8.
  */
+
+#ifdef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
 
 ssize_t
 GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
