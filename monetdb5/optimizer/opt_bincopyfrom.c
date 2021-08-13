@@ -24,6 +24,8 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	InstrPtr *old_mb_stmt = NULL;
 	lng usec = GDKusec();
 	int actions = 0;
+	size_t old_ssize = 0;
+	size_t old_stop = 0;
 
 	(void)stk;
 	(void)pci;
@@ -39,15 +41,14 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 	}
 	if (found_at == -1)
-		return MAL_SUCCEED;
+		// we didn't find a reason to modify the plan
+		goto wrapup;
 
 	old_mb_stmt = mb->stmt;
-	size_t old_ssize = mb->ssize;
-	size_t old_stop = mb->stop;
-	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) {
-		msg = createException(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto end;
-	}
+	old_ssize = mb->ssize;
+	old_stop = mb->stop;
+	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) 
+		throw(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
@@ -79,6 +80,7 @@ end:
         	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
 	char buf[256];
     snprintf(buf, sizeof(buf), "%-20s actions=%2d time=" LLFMT " usec","bincopyfrom",actions, usec);

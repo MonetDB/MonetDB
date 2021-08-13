@@ -23,13 +23,12 @@ static int
 OPTprojectionPrefix(Client cntxt, MalBlkPtr mb)
 {
 	int i, j, k, maxmatch, actions=0;
-	InstrPtr p,q,*old;
+	InstrPtr p,q,*old = NULL;
 	int limit, slimit;
 	InstrPtr *paths = NULL;
 	int     *alias = NULL;
 
 	(void) cntxt;
-	old = mb->stmt;
 	limit = mb->stop;
 	slimit= mb->ssize;
 
@@ -43,6 +42,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb)
 	}
 
 	maxmatch = 0; // to collect maximum common paths
+	old = mb->stmt;
 	/* Collect the projection paths achored at the same start */
 	for( i=0; i< limit; i++){
 		p = old[i];
@@ -143,10 +143,10 @@ str
 OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0, maxprefixlength=0;
-	int *pc =0;
+	int *pc = NULL;
 	InstrPtr q,r;
 	InstrPtr *old=0;
-	int *varcnt= 0;		/* use count */
+	int *varcnt=  NULL;		/* use count */
 	int limit,slimit;
 	char buf[256];
 	lng usec = GDKusec();
@@ -155,7 +155,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
-		return MAL_SUCCEED;
+		goto wrapupall;
 	//if ( optimizerIsApplied(mb,"projectionpath") )
 		//return 0;
 
@@ -169,9 +169,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		goto wrapupall;
 	}
 
-	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
+	old= mb->stmt;
 	if ( newMalBlkStmt(mb, 2 * mb->stop) < 0)
 		throw(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -179,8 +179,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2);
 	if (pc == NULL || varcnt == NULL ){
-		msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapupall;
+		if(pc) GDKfree(pc);
+		if(varcnt) GDKfree(varcnt);
+		throw(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/*

@@ -15,7 +15,7 @@ str
 OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, se,limit, slimit;
-	InstrPtr p=0, *old= mb->stmt;
+	InstrPtr p=0, *old= NULL;
 	int actions = 0;
 	int *varused=0;
 	char buf[256];
@@ -27,17 +27,18 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	varused = GDKzalloc(mb->vtop * sizeof(int));
 	if (varused == NULL)
-		return MAL_SUCCEED;
+		goto wrapup;
 
+	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapup;
+		GDKfree(varused);
+		throw(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// Calculate the instructions in which a variable is used.
