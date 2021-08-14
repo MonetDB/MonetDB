@@ -19,7 +19,6 @@
 #include "sql_user.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
-#include "bat5.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "mcrypt.h"
@@ -683,7 +682,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		freeException(path_err);
 		return ok == 0 ? -3 : -1;
 	}
-	
+
 	/* reset the user and schema names */
 	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
 		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
