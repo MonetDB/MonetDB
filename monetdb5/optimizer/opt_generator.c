@@ -83,11 +83,14 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p = old[i];
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
 			needed = 1;
-		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
-			return 0;
+		/* avoid error in table-udf-column-descriptor */
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol){
+			old = NULL;
+			goto wrapup;
+		}
 	}
 	if (!needed)
-		return 0;
+		goto wrapup;
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
@@ -168,6 +171,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
     newComment(mb,buf);

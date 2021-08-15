@@ -59,8 +59,10 @@ typedef struct objectset {
 	int id_based_cnt;
 	struct sql_hash *name_map;
 	struct sql_hash *id_map;
-	bool temporary;
-	bool unique;	/* names are unique */
+	bool
+		temporary:1,
+		unique:1, /* names are unique */
+		concurrent:1;	/* concurrent inserts are allowed */
 	sql_store store;
 } objectset;
 
@@ -157,6 +159,7 @@ hash_delete(sql_hash *h, void *data)
 		if (!h->sa)
 			_DELETE(p);
 	}
+	h->entries--;
 }
 
 static void
@@ -317,32 +320,38 @@ os_append_name(objectset *os, objectversion *ov)
 	return os;
 }
 
+static void
+os_append_id_map(objectset *os)
+{
+	if (os->id_map)
+		hash_destroy(os->id_map);
+	os->id_map = hash_new(os->sa, os->id_based_cnt, (fkeyvalue)&os_id_key);
+	if (os->id_map == NULL)
+		return ;
+	for (versionhead  *n = os->id_based_h; n; n = n->next ) {
+		int key = os_id_key(n);
+
+		if (hash_add(os->id_map, key, n) == NULL) {
+			hash_destroy(os->id_map);
+			os->id_map = NULL;
+			return ;
+		}
+	}
+}
+
 static objectset *
 os_append_node_id(objectset *os, versionhead  *n)
 {
 	lock_writer(os);
-	if ((!os->id_map || (os->id_map->size*16 < os->id_based_cnt && os->id_based_cnt > HASH_MIN_SIZE)) && os->sa) {
-		hash_destroy(os->id_map);
-		os->id_map = hash_new(os->sa, os->id_based_cnt, (fkeyvalue)&os_id_key);
-		if (os->id_map == NULL) {
-			unlock_writer(os);
-			return NULL;
-		}
-		for (versionhead  *n = os->id_based_h; n; n = n->next ) {
-			int key = os_id_key(n);
-
-			if (hash_add(os->id_map, key, n) == NULL) {
-				unlock_writer(os);
-				return NULL;
-			}
-		}
-	}
+	if ((!os->id_map || os->id_map->size*16 < os->id_based_cnt) && os->id_based_cnt > HASH_MIN_SIZE)
+		os_append_id_map(os); /* on failure just fall back to slow method */
 
 	if (os->id_map) {
 		int key = os->id_map->key(n);
 		if (hash_add(os->id_map, key, n) == NULL) {
-			unlock_writer(os);
-			return NULL;
+			hash_destroy(os->id_map);
+			os->id_map = NULL;
+			/* fall back to slow search */
 		}
 	}
 
@@ -606,6 +615,8 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 		ov->ts = commit_ts;
 		change->committed = commit_ts < TRANSACTION_ID_BASE ? true: false;
 		(void)oldest;
+		if (!tr->parent)
+			change->obj->new = 0;
 	}
 	else {
 		os_rollback(ov, tr->store);
@@ -615,7 +626,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
@@ -624,6 +635,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, sql
 		.destroy = destroy,
 		.temporary = temporary,
 		.unique = unique,
+		.concurrent = concurrent,
 		.store = store
 	};
 	os->destroy = destroy;
@@ -665,10 +677,10 @@ os_destroy(objectset *os, sql_store store)
 		n = hn;
 	}
 
-	if (os->id_map && !os->id_map->sa)
+	if (os->id_map)
 		hash_destroy(os->id_map);
 
-	if (os->name_map && !os->name_map->sa)
+	if (os->name_map)
 		hash_destroy(os->name_map);
 
 	if (!os->sa)
@@ -846,10 +858,20 @@ static int /*ok, error (name existed) and conflict (added before) */
 os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	int res = 0;
-	objectversion *ov = SA_ZNEW(os->sa, objectversion);
-	ov->ts = tr->tid;
-	ov->b = b;
-	ov->os = os;
+	objectversion *ov = SA_NEW(os->sa, objectversion);
+
+	*ov = (objectversion) {
+		.ts = tr->tid,
+		.b = b,
+		.os = os,
+	};
+
+	if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */
+		if (os->destroy)
+			os->destroy(os->store, ov->b);
+		_DELETE(ov);
+		return -3; /* conflict */
+	}
 
 	if ((res = os_add_id_based(os, tr, b->id, ov))) {
 		if (os->destroy)
@@ -943,11 +965,14 @@ static int
 os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	int res = 0;
-	objectversion *ov = SA_ZNEW(os->sa, objectversion);
+	objectversion *ov = SA_NEW(os->sa, objectversion);
+
+	*ov = (objectversion) {
+		.ts = tr->tid,
+		.b = b,
+		.os = os,
+	};
 	os_atmc_set_state(ov, deleted);
-	ov->ts = tr->tid;
-	ov->b = b;
-	ov->os = os;
 
 	if ((res = os_del_id_based(os, tr, b->id, ov))) {
 		if (os->destroy)
@@ -1101,10 +1126,24 @@ os_obj_intransaction(objectset *os, struct sql_trans *tr, sql_base *b)
 	versionhead  *n = find_id(os, b->id);
 
 	if (n) {
-		//objectversion *ov = get_valid_object_id(tr, n->ov);
 		objectversion *ov = n->ov;
 
 		if (ov && os_atmc_get_state(ov) == active && ov->ts == tr->tid)
+			return true;
+	}
+	return false;
+}
+
+/* return true if this object set has changes pending for an other transaction */
+bool
+os_has_changes(objectset *os, struct sql_trans *tr)
+{
+	versionhead  *n = os->id_based_t;
+
+	if (n) {
+		objectversion *ov = n->ov;
+
+		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE)
 			return true;
 	}
 	return false;

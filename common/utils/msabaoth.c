@@ -29,6 +29,9 @@
 #include <string.h> /* for getting error messages */
 #include <stddef.h>
 #include <ctype.h>
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
+#endif
 
 #include "msabaoth.h"
 #include "mutils.h"
@@ -40,15 +43,6 @@
 #define unlink _unlink
 #define fdopen _fdopen
 #define fileno _fileno
-#endif
-
-#ifdef HAVE_OPENSSL
-#include <openssl/rand.h>		/* RAND_bytes */
-#else
-#ifdef HAVE_COMMONCRYPTO
-#include <CommonCrypto/CommonCrypto.h>
-#include <CommonCrypto/CommonRandom.h>
-#endif
 #endif
 
 #ifndef O_CLOEXEC
@@ -594,16 +588,24 @@ msab_pickSecret(char **generated_secret)
 	secret = malloc(SECRET_LENGTH + 1);
 	secret[SECRET_LENGTH] = '\0';
 
-#ifdef HAVE_OPENSSL
-	if (RAND_bytes(bin_secret, SECRET_LENGTH / 2) != 1) {
+#if defined(HAVE_GETENTROPY)
+	if (getentropy(bin_secret, sizeof(bin_secret)) < 0) {
 		free(secret);
-		return strdup("RAND_bytes failed");
+		return strdup("getentropy failed");
 	}
-#else
-#ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(bin_secret, SECRET_LENGTH / 2) != kCCSuccess) {
-		free(secret);
-		return strdup("CCRandomGenerateBytes failed");
+#elif defined(HAVE_RAND_S)
+	for (size_t i = 0; i < sizeof(bin_secret) / sizeof(unsigned int); i++) {
+		unsigned int r;
+		if (rand_s(&r) != 0) {
+			if (generated_secret)
+				*generated_secret = NULL;
+			free(secret);
+			return NULL;
+		}
+		for (size_t j = 0; j < sizeof(unsigned int); j++) {
+			bin_secret[i] = (unsigned char) (r & 0xFF);
+			r >>= 8;
+		}
 	}
 #else
 	(void)bin_secret;
@@ -613,16 +615,11 @@ msab_pickSecret(char **generated_secret)
 	free(secret);
 	return NULL;
 #endif
-#endif
-#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
+#if defined(HAVE_GETENTROPY) || defined(HAVE_RAND_S)
 	int fd;
 	FILE *f;
-	for (size_t i = 0; i < SECRET_LENGTH / 2; i++) {
-		snprintf(
-			secret + 2 * i, 3,
-			"%02x",
-			bin_secret[i]
-			);
+	for (size_t i = 0; i < sizeof(bin_secret); i++) {
+		snprintf(secret + 2 * i, 3, "%02x", bin_secret[i]);
 	}
 
 	if ((fd = MT_open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC)) == -1) {

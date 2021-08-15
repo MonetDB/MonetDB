@@ -89,5 +89,5 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.droporderindex", SQLSTATE(38000) "Column can not be accessed");
 	msg = OIDXdropImplementation(cntxt, b);
 	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }

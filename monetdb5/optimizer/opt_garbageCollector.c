@@ -33,14 +33,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 #ifndef NDEBUG
-	int j;
+	int j, vlimit = 0;
 	int *used;
 #endif
 
 	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
-		return 0;
+		goto wrapup;
 
 	limit = mb->stop;
 
@@ -62,7 +62,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	// Actual garbage collection stuff, just mark them for re-assessment
 #ifndef NDEBUG
-	int vlimit = mb->vtop;
+	vlimit = mb->vtop;
 	used = (int *) GDKzalloc(vlimit * sizeof(int));
 #endif
 	p = NULL;
@@ -120,6 +120,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			msg = chkDeclarations(mb);
 	}
 	/* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
 	newComment(mb,buf);

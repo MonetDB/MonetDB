@@ -1,10 +1,10 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 0,	1,	1,	0,	0,	0 # length
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 0,	1,	1,	0,	0,	0 # length
 % sys.mydata,	sys.mydata,	sys.mydata,	sys.mydata # table_name
 % sensor,	dt,	val,	exponent # name

@@ -16,7 +16,7 @@ str
 OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit, slimit;
-	InstrPtr p=0, q=0, r=0, *old= mb->stmt;
+	InstrPtr p=0, q=0, r=0, *old= NULL;
 	int actions = 0;
 	int *varused=0;
 	char buf[256];
@@ -28,17 +28,18 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	varused = GDKzalloc(2 * mb->vtop * sizeof(int));
 	if (varused == NULL)
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
+	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapup;
+		GDKfree(varused);
+		throw(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// Consolidate the actual need for variables
@@ -94,13 +95,13 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mask",actions, usec);
     newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
-wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
 	return msg;

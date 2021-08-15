@@ -21,7 +21,7 @@ stdout of test 'prepare_decimal_float.SF-1675795` in directory 'sql/test/BugTrac
 #prepare insert into xy values (?,?,?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 9,	1,	1,	0,	0,	0 # length
 [ "timestamp",	7,	0,	NULL,	NULL,	NULL	]
 [ "decimal",	6,	4,	NULL,	NULL,	NULL	]

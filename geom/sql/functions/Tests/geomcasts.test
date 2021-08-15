@@ -1,0 +1,43 @@
+query T rowsort
+SELECT CAST(x as geometry) from (values ('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)')) x(x)
+----
+LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)
+
+query T rowsort
+SELECT CAST(x as geometry) from (values ('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'),('LINESTRING (0 0, 0 9, 9 8, 9 0, 0 0)'),('LINESTRING (0 0, 0 4, 9 9, 6 0, 0 0)')) x(x)
+----
+LINESTRING (0 0, 0 4, 9 9, 6 0, 0 0)
+LINESTRING (0 0, 0 9, 9 8, 9 0, 0 0)
+LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)
+
+statement error 38000!Geos operation GEOSWKTReader_read failed
+SELECT CAST(x as geometry) from (values ('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'),('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'),('LINESTRING (i am not right)')) x(x)
+
+query T rowsort
+SELECT CAST(x as point) from (values ('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)')) x(x)
+----
+LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)
+
+query T rowsort
+SELECT CAST(x as point) from (values ('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'),('LINESTRING (0 0, 0 9, 9 8, 9 0, 0 0)'),('LINESTRING (0 0, 0 4, 9 9, 6 0, 0 0)')) x(x)
+----
+LINESTRING (0 0, 0 4, 9 9, 6 0, 0 0)
+LINESTRING (0 0, 0 9, 9 8, 9 0, 0 0)
+LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)
+
+statement error 38000!Geos operation GEOSWKTReader_read failed
+SELECT CAST(x as point) from (values ('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'),('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'),('LINESTRING (i am not right)')) x(x)
+
+query T rowsort
+SELECT CAST(st_point(lon,lat) as point) from (values (1,1)) x(lon,lat)
+----
+POINT (1 1)
+
+query T rowsort
+SELECT CAST(st_point(lon,lat) as point) from (values (1,1),(2,2),(3,3)) x(lon,lat)
+----
+POINT (1 1)
+POINT (2 2)
+POINT (3 3)
+
+

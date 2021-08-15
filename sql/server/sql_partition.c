@@ -20,6 +20,23 @@
 #include "rel_updates.h"
 #include "mal_exception.h"
 
+list *
+partition_find_mergetables(mvc *sql, sql_table *t)
+{
+	sql_trans *tr = sql->session->tr;
+	list *res = NULL;
+	sql_part *pt = NULL;
+
+	for (; t; t = pt?pt->t:NULL) {
+		if ((pt=partition_find_part(tr, t, NULL))) {
+			if (!res)
+				res = sa_list(sql->sa);
+			list_append(res, pt);
+		}
+	}
+	return res;
+}
+
 static int
 key_column_colnr(sql_kc *pkey)
 {
@@ -276,7 +293,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		}
 	}
 
-	if (instantiate) {
+	if (instantiate && !msg) {
 		r = rel_project(sql->sa, r, NULL);
 		sql_rel *base = r->l, *nr = r;
 		r->l = NULL; /* omit table from list of dependencies */
@@ -284,8 +301,9 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 
 		nr = sql_processrelation(sql, nr, 0, 0);
 		if (nr) {
-			list *id_l = rel_dependencies(sql, nr);
-			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
+			list *blist = rel_dependencies(sql, nr);
+			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))
+				msg = createException(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->l = base;
 	}
