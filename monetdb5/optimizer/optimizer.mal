@@ -98,6 +98,14 @@ pattern optimizer.jit(mod:str, fcn:str):str
 address OPTwrapper
 comment "Propagate candidate lists in just-in-time optimization";
 
+#opt_properties.mal
+
+pattern optimizer.properties():str
+address OPTwrapper;
+pattern optimizer.properties(mod:str, fcn:str):str
+address OPTwrapper
+comment "Scale down the footprint";
+
 #opt_evaluate.mal
 
 pattern optimizer.evaluate():str

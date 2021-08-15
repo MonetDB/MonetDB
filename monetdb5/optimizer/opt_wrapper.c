@@ -39,6 +39,7 @@
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_oltp.h"
+#include "opt_properties.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
 #include "opt_mergetable.h"
@@ -88,6 +89,7 @@ struct{
 	{"oltp", &OPToltpImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
+	{"properties", &OPTpropertiesImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
 	{"pushselect", &OPTpushselectImplementation,0,0},
 	{"querylog", &OPTquerylogImplementation,0,0},

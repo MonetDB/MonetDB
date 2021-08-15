@@ -43,6 +43,7 @@ target_sources(malmodules
   projectionpath.c
   tablet.c tablet.h
   batcalc.c calc.c
+  properties.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/wlc.h)
 

@@ -120,7 +120,8 @@ str
 getSQLoptimizer(mvc *m)
 {
 	char *opt = get_string_global_var(m, "optimizer");
-	char *pipe = "default_pipe";
+	//REMOVE char *pipe = "default_pipe"; not for this experiment
+	char *pipe = "properties_pipe";
 
 	if (opt)
 		pipe = opt;
@@ -148,10 +149,12 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
 		}else
-			pipe = "default_pipe";
+			//REMOVE pipe = "default_pipe";
+			pipe = "properties_pipe";
 	} else
 	*/
-	pipe = pipe? pipe: "default_pipe";
+	//REMOVE pipe = pipe? pipe: "default_pipe";
+	pipe = pipe? pipe: "properties_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;

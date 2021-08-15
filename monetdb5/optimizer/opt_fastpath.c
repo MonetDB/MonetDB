@@ -23,6 +23,7 @@
 #include "opt_generator.h"
 #include "opt_inline.h"
 #include "opt_jit.h"
+#include "opt_properties.h"
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"

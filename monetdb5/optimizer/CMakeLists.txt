@@ -39,6 +39,7 @@ target_sources(optimizer
   opt_wlc.c opt_wlc.h
   opt_pipes.c
   opt_prelude.c opt_prelude.h
+  opt_properties.c opt_properties.h
   opt_reduce.c opt_reduce.h
   opt_remap.c opt_remap.h
   opt_remoteQueries.c opt_remoteQueries.h

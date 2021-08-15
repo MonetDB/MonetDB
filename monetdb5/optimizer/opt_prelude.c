@@ -221,6 +221,7 @@ const char *postludeRef;
 const char *preludeRef;
 const char *printRef;
 const char *prodRef;
+const char *propertiesRef;
 const char *profilerRef;
 const char *projectdeltaRef;
 const char *projectionpathRef;
@@ -527,6 +528,7 @@ void optimizerInit(void)
 	preludeRef = putName("prelude");
 	printRef = putName("print");
 	prodRef = putName("prod");
+	propertiesRef = putName("properties");
 	profilerRef = putName("profiler");
 	projectdeltaRef = putName("projectdelta");
 	projectionpathRef = putName("projectionpath");

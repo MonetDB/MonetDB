@@ -219,6 +219,7 @@ mal_export  const char *postludeRef;
 mal_export  const char *preludeRef;
 mal_export  const char *printRef;
 mal_export  const char *prodRef;
+mal_export  const char *propertiesRef;
 mal_export  const char *profilerRef;
 mal_export  const char *projectdeltaRef;
 mal_export  const char *projectionpathRef;

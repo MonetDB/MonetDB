@@ -111,6 +111,7 @@ static mel_func optimizer_init_funcs[] = {
  command("optimizer", "epilogue", optimizer_epilogue, false, "release the resources held by the optimizer module", args(1,1, arg("",void))),
  pattern("optimizer", "optimize", QOToptimize, false, "Optimize a specific operation", args(0,2, arg("mod",str),arg("fcn",str))),
  optwrapper_pattern("inline", "Expand inline functions"),
+ optwrapper_pattern("properties", "Scale down the columns if properties of the underlying BAT allows"),
  optwrapper_pattern("projectionpath", "Join path constructor"),
  pattern("optimizer", "macro", OPTmacro, false, "Inline the code of the target function.", args(1,3, arg("",void),arg("targetmod",str),arg("targetfcn",str))),
  pattern("optimizer", "macro", OPTmacro, false, "Inline a target function used in a specific function.", args(1,5, arg("",void),arg("mod",str),arg("fcn",str),arg("targetmod",str),arg("targetfcn",str))),
