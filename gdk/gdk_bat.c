@@ -2181,9 +2181,9 @@ BATsetaccess(BAT *b, restrict_t newmode)
 	BATcheck(b, NULL);
 	if ((isVIEW(b) || b->batSharecnt) && newmode != BAT_READ) {
 		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BBPunfix(b->batCacheid);
 		if (bn == NULL)
 			return NULL;
-		BBPunfix(b->batCacheid);
 		b = bn;
 	}
 	bakmode = (restrict_t) b->batRestricted;
