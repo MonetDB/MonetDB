@@ -17,6 +17,9 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
+/* to avoid memory fragmentation stmt and var blocks are allocated in chunks */
+#define MALCHUNK 32
+
 /* If we encounter an error it can be left behind in the MalBlk
  * for the upper layers to abandon the track
  */
@@ -86,6 +89,7 @@ int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
+	maxstmts= (maxstmts / MALCHUNK + 1) * MALCHUNK;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL)
@@ -108,7 +112,8 @@ newMalBlk(int elements)
 
 	/* each MAL instruction implies at least one variable
  	 * we reserve some extra for constants */
-	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
+	elements= ((elements + 8) / MALCHUNK + 1) * MALCHUNK;
+	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * elements );
 	if (v == NULL) {
 		GDKfree(mb);
 		return NULL;
@@ -147,20 +152,14 @@ newMalBlk(int elements)
 /* We only grow until the MAL block can be used */
 static int growBlk(int elm)
 {
-	int steps =1 ;
-	int old = elm;
-
-	while( old / 2 > 1){
-		old /= 2;
-		steps++;
-	}
-	return elm + steps * STMT_INCREMENT;
+	return (elm / MALCHUNK + 1) * MALCHUNK;
 }
 
 int
 resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
+	elements = (elements / MALCHUNK + 1) * MALCHUNK;
 
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
@@ -1395,7 +1394,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb, growBlk(mb->ssize) + extra) ){
+		if( resizeMalBlk(mb, growBlk(mb->ssize + extra)) ){
 			/* perhaps we can continue with a smaller increment.
 			 * But the block remains marked as faulty.
 			 */
