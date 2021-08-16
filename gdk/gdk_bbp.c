@@ -2511,14 +2511,15 @@ BBPkeepref(bat i)
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
 		BAT *b;
 
+		incref(i, true, lock);
 		if ((b = BBPdescriptor(i)) != NULL) {
-			b = BATsetaccess(b, BAT_READ);
 			BATsettrivprop(b);
 			if (GDKdebug & (CHECKMASK | PROPMASK))
 				BATassertProps(b);
+			if (BATsetaccess(b, BAT_READ) == NULL)
+				return; /* already decreffed */
 		}
 
-		incref(i, true, lock);
 		assert(BBP_refs(i));
 		decref(i, false, false, lock, "BBPkeepref");
 	}
