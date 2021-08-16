@@ -4505,9 +4505,9 @@ CREATE VIEW sys.dump_create_roles AS
      AND grantor <> 0;
 CREATE VIEW sys.dump_create_users AS
   SELECT
-    'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
+    'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||
       sys.sq(sys.password_hash(ui.name)) ||
-      ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;' stmt,
+      ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '"sys"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,
     ui.name user_name
     FROM sys.db_user_info ui, sys.schemas s
    WHERE ui.default_schema = s.id
@@ -4515,7 +4515,7 @@ CREATE VIEW sys.dump_create_users AS
      AND ui.name <> '.snapshot';
 CREATE VIEW sys.dump_create_schemas AS
   SELECT
-    'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,
+    'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,
     s.name schema_name
     FROM sys.schemas s, sys.auths a
    WHERE s.authorization = a.id AND s.system = FALSE;
@@ -4675,7 +4675,7 @@ CREATE VIEW sys.dump_sequences AS
     FROM sys.describe_sequences;
 CREATE VIEW sys.dump_start_sequences AS
   SELECT
-    'UPDATE sys.sequences seq SET start = ' || s  ||
+    'UPDATE sys.sequences seq SET start = ' || s ||
       ' WHERE name = ' || sys.SQ(seq) ||
       ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,
     sch schema_name,
@@ -4735,7 +4735,7 @@ BEGIN
     DECLARE _cnt INT;
     SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
     IF _cnt > 0 THEN
-      SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
+      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
       DECLARE SELECT_DATA_STMT STRING;
       SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
       DECLARE M INT;
@@ -4748,7 +4748,7 @@ BEGIN
 	SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);
       END WHILE;
       SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
-      SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
+      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
       insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
       CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
     END IF;
