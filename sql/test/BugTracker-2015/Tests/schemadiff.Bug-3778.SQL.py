@@ -107,11 +107,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
             else:
                 print(str(c.fetchall()))
 
+            c.close()
             masterproc.communicate()
             for worker in workers:
                 workerrec['proc'].communicate()
         finally:
             for worker in workers:
+                workerrec['conn'].close()
                 p = workerrec.get('proc')
                 if p is not None:
                     p.terminate()
+            masterconn.close()
