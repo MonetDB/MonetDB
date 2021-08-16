@@ -117,7 +117,7 @@ static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 	(void)si;
 	(void)unused;
 
-	longjmp(jump_buffer[tid], 1);
+	longjmp(jump_buffer[tid-1], 1);
 }
 
 static bool can_mprotect_region(void* addr) {
@@ -173,7 +173,7 @@ static void *jump_GDK_malloc(size_t size)
 		return NULL;
 	void *ptr = GDKmalloc(size);
 	if (!ptr && option_enable_longjmp) {
-		longjmp(jump_buffer[THRgettid()], 2);
+		longjmp(jump_buffer[THRgettid()-1], 2);
 	}
 	return ptr;
 }
@@ -183,8 +183,8 @@ static void *add_allocated_region(void *ptr)
 	allocated_region *region;
 	int tid = THRgettid();
 	region = (allocated_region *)ptr;
-	region->next = allocated_regions[tid];
-	allocated_regions[tid] = region;
+	region->next = allocated_regions[tid-1];
+	allocated_regions[tid-1] = region;
 	return (char *)ptr + sizeof(allocated_region);
 }
 
@@ -237,7 +237,7 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		}                                                                      \
 		b = COLnew(0, TYPE_##tpename, count, TRANSIENT);                       \
 		if (!b) {                                                              \
-			if (option_enable_longjmp) longjmp(jump_buffer[THRgettid()], 2);   \
+			if (option_enable_longjmp) longjmp(jump_buffer[THRgettid()-1], 2); \
 			else return;                                                       \
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
@@ -509,7 +509,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	(void)cntxt;
 
-	allocated_regions[tid] = NULL;
+	allocated_regions[tid-1] = NULL;
 
 	if (!GDKgetenv_istrue("embedded_c") && !GDKgetenv_isyes("embedded_c"))
 		throw(MAL, "cudf.eval", "Embedded C has not been enabled. "
@@ -1324,7 +1324,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// this longjmp point is used for some error handling in the C function
 	// such as failed mallocs
 	if (option_enable_longjmp) {
-		ret = setjmp(jump_buffer[tid]);
+		ret = setjmp(jump_buffer[tid-1]);
 		if (ret < 0) {
 			// error value
 			msg = createException(MAL, "cudf.eval", "Failed setjmp: %s",
@@ -1598,10 +1598,10 @@ wrapup:
 			regions = next;
 		}
 	}
-	while (allocated_regions[tid]) {
-		allocated_region *next = allocated_regions[tid]->next;
-		GDKfree(allocated_regions[tid]);
-		allocated_regions[tid] = next;
+	while (allocated_regions[tid-1]) {
+		allocated_region *next = allocated_regions[tid-1]->next;
+		GDKfree(allocated_regions[tid-1]);
+		allocated_regions[tid-1] = next;
 	}
 	if (option_enable_mprotect) {
 		// block segfaults and bus errors again after we exit
