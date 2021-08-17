@@ -779,7 +779,7 @@ gettailnamebi(const BATiter *bi)
 }
 
 gdk_return
-BATsave_locked(BAT *b, BATiter *bi)
+BATsave_locked(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
@@ -859,7 +859,6 @@ BATsave_locked(BAT *b, BATiter *bi)
 
 	if (err == GDK_SUCCEED) {
 		MT_lock_set(&b->theaplock);
-		b->batCopiedtodisk = true;
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
@@ -868,8 +867,19 @@ BATsave_locked(BAT *b, BATiter *bi)
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
 		}
-		b->batDirtyflushed = DELTAdirty(b);
-		b->batDirtydesc = false;
+		if (size != b->batCount || b->batInserted < b->batCount) {
+			/* if the sizes don't match, the BAT must be dirty */
+			b->batCopiedtodisk = false;
+			b->batDirtyflushed = true;
+			b->batDirtydesc = true;
+			b->theap->dirty = true;
+			if (b->tvheap)
+				b->tvheap->dirty = true;
+		} else {
+			b->batCopiedtodisk = true;
+			b->batDirtyflushed = DELTAdirty(b);
+			b->batDirtydesc = false;
+		}
 		MT_lock_unset(&b->theaplock);
 		if (MT_rwlock_rdtry(&b->thashlock)) {
 			/* if we can't get the lock, don't bother saving
@@ -893,7 +903,7 @@ BATsave(BAT *b)
 
 	MT_rwlock_rdlock(&b->thashlock);
 	BATiter bi = bat_iterator(b);
-	rc = BATsave_locked(b, &bi);
+	rc = BATsave_locked(b, &bi, bi.count);
 	bat_iterator_end(&bi);
 	MT_rwlock_rdunlock(&b->thashlock);
 	return rc;
