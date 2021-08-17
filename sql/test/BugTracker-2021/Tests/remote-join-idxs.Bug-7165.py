@@ -110,8 +110,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 node3_cur.execute("ALTER TABLE t_combined ADD TABLE t2")
 
                 node3_cur.execute("SELECT s_pk FROM s_combined, t_combined WHERE s_pk = t_fk ORDER BY s_pk")
-                if node3_cur.fetchall() != [(0,), (0,), (3,), (3,)]:
-                    sys.stderr.write("[(0,), (0,), (3,), (3,)] expected")
+                res = node3_cur.fetchall()
+                if res != [(0,), (0,), (1,), (1,), (2,), (2,), (3,), (3,)]:
+                    sys.stderr.write("[(0,), (0,), (1,), (1,), (2,), (2,), (3,), (3,)] expected, got %s" % (res,))
 
                 # cleanup: shutdown the monetdb servers
                 node1_cur.close()
