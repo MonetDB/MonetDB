@@ -643,7 +643,7 @@ tablet_error(READERtask *task, lng row, lng lineno, int col, const char *msg, co
 {
 	MT_lock_set(&errorlock);
 	if (task->cntxt->error_row != NULL) {
-		if (BUNappend(task->cntxt->error_row, &(lng){(lng)task->cnt + row + 1}, false) != GDK_SUCCEED ||
+		if (BUNappend(task->cntxt->error_row, &lineno, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_msg, msg, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_input, fcn, false) != GDK_SUCCEED)

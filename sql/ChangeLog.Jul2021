@@ -3,5 +3,7 @@
 
 * Mon Aug 16 2021 Sjoerd Mullender <sjoerd@acm.org>
 - Improved error reporting in COPY INTO by giving the line number
-  (starting with one) for the row in which an error was found.
+  (starting with one) for the row in which an error was found.  In
+  particular, the sys.rejects() table now lists the line number of the
+  CSV file on which the record started in which an error was found.
 
