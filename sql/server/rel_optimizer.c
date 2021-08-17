@@ -88,7 +88,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 				}
 			}
 		}
-		if (ol_length(t->idxs) && name[0]) {
+		if (name[0] == '%' && ol_length(t->idxs)) {
 			for (node *cn = ol_first_node(t->idxs); cn; cn = cn->next) {
 				sql_idx *i = cn->data;
 				if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
