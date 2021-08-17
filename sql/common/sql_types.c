@@ -150,9 +150,9 @@ int sql_type_convert (int from, int to)
 	return convert_matrix[from][to];
 }
 
-bool is_commutative(const char *fnm)
+bool is_commutative(const char *sname, const char *fnm)
 {
-	return strcmp("sql_add", fnm) == 0 || strcmp("sql_mul", fnm) == 0 || strcmp("scale_up", fnm) == 0;
+	return (!sname || strcmp("sys", sname) == 0) && (strcmp("sql_add", fnm) == 0 || strcmp("sql_mul", fnm) == 0 || strcmp("scale_up", fnm) == 0);
 }
 
 void
