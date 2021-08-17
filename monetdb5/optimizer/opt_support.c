@@ -141,7 +141,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
-		resetMalBlk(mb, mb->stop);
+		resetMalTypes(mb, mb->stop);
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
