@@ -2412,18 +2412,20 @@ exp_is_pkey(sql_rel *rel, sql_exp *e)
 	return NULL;
 }
 
-static int
-rel_is_join_on_pkey(sql_rel *rel)
+static sql_exp *
+rel_is_join_on_pkey(sql_rel *rel, bool pk_fk)
 {
 	if (!rel || !rel->exps)
-		return 0;
+		return NULL;
 	for (node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *je = n->data;
 
-		if (je->type == e_cmp && je->flag == cmp_equal && (exp_is_pkey(rel, je->l) || exp_is_pkey(rel, je->r)))
-			return 1;
+		if (je->type == e_cmp && je->flag == cmp_equal &&
+			(exp_is_pkey(rel, je->l) || exp_is_pkey(rel, je->r)) &&
+			(!pk_fk || find_prop(je->p, PROP_JOINIDX)))
+			return je;
 	}
-	return 0;
+	return NULL;
 }
 
 /* if all arguments to a distinct aggregate are unique, remove 'distinct' property */
@@ -2616,7 +2618,7 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk ] ) [ p.pk ]
 	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    l && (is_select(l->op) || l->op == op_join) && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
+	    l && (is_select(l->op) || l->op == op_join) && rel_is_join_on_pkey(l, true) /* [ pk == fk ] */) {
 		sql_exp *found = NULL, *pk = NULL, *fk = NULL;
 		bool all_exps_atoms = true;
 		sql_column *pkc = NULL;
@@ -2624,6 +2626,9 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 		for (node *m = l->exps->h ; m ; m = m->next) { /* find a primary key join */
 			sql_exp *je = (sql_exp *) m->data;
 			sql_exp *le = je->l, *re = je->r;
+
+			if (!find_prop(je->p, PROP_JOINIDX)) /* must be a pk-fk join expression */
+				continue;
 
 			if ((pkc = exp_is_pkey(l, le))) { /* le is the primary key */
 				all_exps_atoms = true;
@@ -4378,7 +4383,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 
 		if ((left && is_base(jl->op)) || (!left && is_base(jr->op))||
 		    (left && is_select(jl->op)) || (!left && is_select(jr->op))
-		    || rel_is_join_on_pkey(j))
+		    || rel_is_join_on_pkey(j, false))
 			return rel;
 
 		/* only add aggr (based on left/right), and repeat the group by column */
@@ -5044,7 +5049,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps;
-		sql_exp *je = exps_find_prop(exps, PROP_JOINIDX);
+		sql_exp *je = NULL;
 
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
@@ -5055,8 +5060,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 
 		/* both sides only if we have a join index */
 		if (!l || !r ||(is_union(l->op) && is_union(r->op) &&
-			!je && /* FKEY JOIN */
-			!rel_is_join_on_pkey(rel))) /* aligned PKEY JOIN */
+			!(je = rel_is_join_on_pkey(rel, true)))) /* aligned PKEY-FKEY JOIN */
 			return rel;
 		if (is_semi(rel->op) && is_union(l->op) && !je)
 			return rel;
@@ -5177,9 +5181,8 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 		 * */
 		} else if (!is_union(l->op) &&
 			   is_union(r->op) && !need_distinct(r) && !is_single(r) &&
-			   is_semi(rel->op) && rel_is_join_on_pkey(rel)) {
+			   is_semi(rel->op) && (je = rel_is_join_on_pkey(rel, true))) {
 			/* use first join expression, to find part nr */
-			sql_exp *je = rel->exps->h->data;
 			int lpnr = rel_part_nr(l, je);
 			sql_rel *rl = r->l;
 			sql_rel *rr = r->r;
@@ -5271,69 +5274,48 @@ rel_is_empty( sql_rel *rel )
 {
 	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
+		sql_exp *je;
 
-		if (rel_is_empty(l) || ((is_join(rel->op) || is_semi(rel->op)) && rel_is_empty(r)))
+		if (rel_is_empty(l) || rel_is_empty(r))
 			return 1;
 		/* check */
-		if (rel_is_join_on_pkey(rel)) {
-			sql_exp *je = rel->exps->h->data;
+		if ((je = rel_is_join_on_pkey(rel, true))) {
 			int lpnr = rel_part_nr(l, je);
 
 			if (lpnr >= 0 && !rel_uses_part_nr(r, je, lpnr))
 				return 1;
 		}
+		return 0;
 	}
-	if (!is_union(rel->op)) {
-		if (is_simple_project(rel->op) || is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
-			if (rel->l)
-				return rel_is_empty(rel->l);
-		} else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
-			int empty = 1;
-			if (rel->l)
-				empty &= rel_is_empty(rel->l);
-			if (empty && rel->r)
-				empty &= rel_is_empty(rel->r);
-			return empty;
-		}
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) ||
+		is_topn(rel->op) || is_sample(rel->op)) {
+		if (rel->l)
+			return rel_is_empty(rel->l);
+	} else if (is_join(rel->op) || is_semi(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
+		return rel_is_empty(rel->l) && rel_is_empty(rel->r);
 	}
 	return 0;
 }
 
 /* non overlapping partitions should be removed */
-static sql_rel *
+static inline sql_rel *
 rel_remove_empty_join(visitor *v, sql_rel *rel)
 {
-	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+	if (!is_union(rel->op))
+		return rel;
+	/* For half empty unions replace by projects */
+	sql_rel *l = rel->l, *r = rel->r;
 
-	if (!rel)
-		return NULL;
-	/* recurse check rel_is_empty
-	 * For half empty unions replace by projects
-	 * */
-	if (is_union(rel->op)) {
-		sql_rel *l = rel->l, *r = rel->r;
-
-		if (!(rel->l = l = rel_remove_empty_join(v, l)))
-			return NULL;
-		if (!(rel->r = r = rel_remove_empty_join(v, r)))
-			return NULL;
-		if (rel_is_empty(l)) {
-			v->changes++;
-			return rel_inplace_project(v->sql->sa, rel, rel_dup(r), rel->exps);
-		} else if (rel_is_empty(r)) {
-			v->changes++;
-			return rel_inplace_project(v->sql->sa, rel, rel_dup(l), rel->exps);
-		}
-	} else if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_topn(rel->op) ||
-				is_select(rel->op) || is_sample(rel->op))) {
-		if (rel->l && !(rel->l = rel_remove_empty_join(v, rel->l)))
-			return NULL;
-	} else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
-		if (rel->l && !(rel->l = rel_remove_empty_join(v, rel->l)))
-			return NULL;
-		if (rel->r && !(rel->r = rel_remove_empty_join(v, rel->r)))
-			return NULL;
+	if (rel_is_empty(l)) {
+		v->changes++;
+		rel->l = NULL;
+		rel_destroy(l);
+		return rel_inplace_project(v->sql->sa, rel, rel_dup(r), rel->exps);
+	} else if (rel_is_empty(r)) {
+		v->changes++;
+		rel->r = NULL;
+		rel_destroy(r);
+		return rel_inplace_project(v->sql->sa, rel, rel_dup(l), rel->exps);
 	}
 	return rel;
 }
@@ -9571,6 +9553,7 @@ rel_optimize_unions_bottomup(visitor *v, sql_rel *rel)
 {
 	rel = rel_remove_union_partitions(v, rel);
 	rel = rel_merge_union(v, rel);
+	rel = rel_remove_empty_join(v, rel);
 	return rel;
 }
 
@@ -9755,7 +9738,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_projections);
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
-		rel = rel_remove_empty_join(&v, rel);
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_joins);
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
