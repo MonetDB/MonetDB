@@ -5272,11 +5272,12 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 static int
 rel_is_empty( sql_rel *rel )
 {
-	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		sql_exp *je;
 
-		if (rel_is_empty(l) || rel_is_empty(r))
+		if (((is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)) && rel_is_empty(l)) ||
+			((is_innerjoin(rel->op) || is_right(rel->op)) && rel_is_empty(r)))
 			return 1;
 		/* check */
 		if ((je = rel_is_join_on_pkey(rel, true))) {
@@ -5287,12 +5288,13 @@ rel_is_empty( sql_rel *rel )
 		}
 		return 0;
 	}
-	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) ||
-		is_topn(rel->op) || is_sample(rel->op)) {
+	/* global aggregates always return 1 row */
+	if (is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r)) || is_select(rel->op) ||
+		is_topn(rel->op) || is_sample(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
 		if (rel->l)
 			return rel_is_empty(rel->l);
-	} else if (is_join(rel->op) || is_semi(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
-		return rel_is_empty(rel->l) && rel_is_empty(rel->r);
+	} else if (is_innerjoin(rel->op) && list_empty(rel->exps)) { /* cartesian product */
+		return rel_is_empty(rel->l) || rel_is_empty(rel->r);
 	}
 	return 0;
 }
