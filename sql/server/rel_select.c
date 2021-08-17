@@ -2924,7 +2924,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	if (card == card_loader)
 		card = card_none;
 
-	if (is_commutative(fname) && l->card < r->card) { /* move constants to the right if possible */
+	if (is_commutative(sname, fname) && l->card < r->card) { /* move constants to the right if possible */
 		sql_subtype *tmp = t1;
 		t1 = t2;
 		t2 = tmp;
@@ -2983,7 +2983,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
-	if (!f && is_commutative(fname)) {
+	if (!f && is_commutative(sname, fname)) {
 		if ((f = bind_func(sql, sname, fname, t2, t1, type, &found))) {
 			sql_subtype *tmp = t1;
 			t1 = t2;
