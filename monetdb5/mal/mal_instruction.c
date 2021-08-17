@@ -18,7 +18,7 @@
 #include "mal_private.h"
 
 /* to avoid memory fragmentation stmt and var blocks are allocated in chunks */
-#define MALCHUNK 128
+#define MALCHUNK 256
 
 /* If we encounter an error it can be left behind in the MalBlk
  * for the upper layers to abandon the track
@@ -89,7 +89,7 @@ int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
-	maxstmts= (maxstmts / MALCHUNK + 1) * MALCHUNK;
+	maxstmts= maxstmts % MALCHUNK == 0 ? maxstmts : ((maxstmts / MALCHUNK) + 1) * MALCHUNK;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL)
@@ -112,7 +112,7 @@ newMalBlk(int elements)
 
 	/* each MAL instruction implies at least one variable
  	 * we reserve some extra for constants */
-	elements= ((elements + 8) / MALCHUNK + 1) * MALCHUNK;
+	elements= (elements + 8) %  MALCHUNK == 0 ? elements + 8: ((elements + 8)/MALCHUNK + 1) * MALCHUNK;
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * elements );
 	if (v == NULL) {
 		GDKfree(mb);
@@ -152,14 +152,14 @@ newMalBlk(int elements)
 /* We only grow until the MAL block can be used */
 static int growBlk(int elm)
 {
-	return (elm / MALCHUNK + 1) * MALCHUNK;
+	return elm % MALCHUNK ==0 ? elm + MALCHUNK : elm;
 }
 
 int
 resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
-	elements = (elements / MALCHUNK + 1) * MALCHUNK;
+	elements = elements  %  MALCHUNK == 0?  elements: (elements / MALCHUNK +1) * MALCHUNK;
 
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
@@ -218,7 +218,7 @@ resetMalBlk(MalBlkPtr mb)
 		mb->stmt[i] = NULL;
 	}
 	if( mb->ssize != MALCHUNK){
-		new = (InstrPtr*) GDKrealloc(mb->var, sizeof(InstrPtr) * MALCHUNK);
+		new = (InstrPtr*) GDKrealloc(mb->stmt, sizeof(InstrPtr) * MALCHUNK);
 		if( new == NULL){
 			// the only place to return an error signal at this stage.
 			// The Client context should be passed around more deeply
@@ -229,11 +229,12 @@ resetMalBlk(MalBlkPtr mb)
 		mb->ssize = MALCHUNK;
 	}
 	/* Reuse the initial function statement */
-	mb->stop = 1;
-	resetMalTypes(mb, 1);
+	mb->stop = 0;
 
-	for(i=0; i< mb->vtop; i++)
-		VALclear(&getVarConstant(mb,i));
+	for(i=0; i< mb->vtop; i++){
+		if (isVarConstant(mb, i))
+			VALclear(&getVarConstant(mb,i));
+	}
 
 	if(mb->vsize != MALCHUNK){
 		vnew = (VarRecord*) GDKrealloc(mb->var, sizeof(VarRecord) * MALCHUNK);
@@ -246,8 +247,8 @@ resetMalBlk(MalBlkPtr mb)
 		mb->var = vnew;
 		mb->vsize = MALCHUNK;
 	}
-    mb->vtop = 1;
-    mb->vid = 1;
+    mb->vtop = 0;
+    mb->vid = 0;
 }
 
 
