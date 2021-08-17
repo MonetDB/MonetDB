@@ -18,7 +18,7 @@
 #include "mal_private.h"
 
 /* to avoid memory fragmentation stmt and var blocks are allocated in chunks */
-#define MALCHUNK 32
+#define MALCHUNK 128
 
 /* If we encounter an error it can be left behind in the MalBlk
  * for the upper layers to abandon the track

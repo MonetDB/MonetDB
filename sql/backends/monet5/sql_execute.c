@@ -776,7 +776,6 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
 	} else {
-		int oldvtop = c->curprg->def->vtop, oldstop = c->curprg->def->stop, oldvid = c->curprg->def->vid;
 
 		if (*opt && rel)
 			rel = sql_processrelation(m, rel, 1, 1);
@@ -798,8 +797,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( msg == MAL_SUCCEED)
 			msg = SQLrun(c,m);
 		if (!msg) {
-			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+			resetMalBlk(c->curprg->def);
 		}
 	}
 	return RAcommit_statement(be, msg);
