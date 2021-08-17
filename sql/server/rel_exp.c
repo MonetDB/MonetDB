@@ -1348,7 +1348,8 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			break;
 		case e_func: {
 			sql_subfunc *e1f = (sql_subfunc*) e1->f;
-			int (*comp)(list*, list*) = !e1f->func->s && is_commutative(e1f->func->base.name) ? exp_match_list : exps_equal;
+			const char *sname = e1f->func->s ? e1f->func->s->base.name : NULL;
+			int (*comp)(list*, list*) = is_commutative(sname, e1f->func->base.name) ? exp_match_list : exps_equal;
 
 			if (!e1f->func->side_effect &&
 				!subfunc_cmp(e1f, e2->f) && /* equal functions */

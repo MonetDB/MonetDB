@@ -1659,8 +1659,8 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       free,
 		       b->theap->size,
 		       (int) b->theap->newstorage,
-		       minprop ? minprop->val.oval : oid_nil,
-		       maxprop ? maxprop->val.oval : oid_nil);
+		       minprop && minprop->val.oval < b->hseqbase + size ? minprop->val.oval : oid_nil,
+		       maxprop && maxprop->val.oval < b->hseqbase + size ? maxprop->val.oval : oid_nil);
 }
 
 static inline int
@@ -3581,6 +3581,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			bat i = subcommit ? subcommit[idx] : idx;
 			/* BBP_desc(i) may be NULL */
 			BATiter bi = bat_iterator(BBP_desc(i));
+			BUN size = sizes ? sizes[idx] : BUN_NONE;
+			if (size > bi.count)
+				size = bi.count;
 
 			if (BBP_status(i) & BBPPERSISTENT) {
 				BAT *b = dirty_bat(&i, subcommit != NULL);
@@ -3589,10 +3592,10 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					break;
 				}
 				if (b)
-					ret = BATsave_locked(b, &bi);
+					ret = BATsave_locked(b, &bi, size);
 			}
 			if (ret == GDK_SUCCEED) {
-				n = BBPdir_step(i, sizes ? sizes[idx] : BUN_NONE, n, buf, sizeof(buf), &obbpf, nbbpf);
+				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf);
 			}
 			bat_iterator_end(&bi);
 			if (n == -2)
