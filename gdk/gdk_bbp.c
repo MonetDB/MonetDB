@@ -1377,8 +1377,8 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       free,
 		       b->theap->size,
 		       (int) b->theap->newstorage,
-		       minprop ? minprop->val.oval : oid_nil,
-		       maxprop ? maxprop->val.oval : oid_nil);
+		       minprop && minprop->val.oval < b->hseqbase + size ? minprop->val.oval : oid_nil,
+		       maxprop && maxprop->val.oval < b->hseqbase + size ? maxprop->val.oval : oid_nil);
 }
 
 static inline int
