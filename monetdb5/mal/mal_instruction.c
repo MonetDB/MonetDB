@@ -190,10 +190,11 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 	}
 	return 0;
 }
-/* The resetMalBlk code removes instructions, but without freeing the
- * space. This way the structure is prepared for re-use */
+/* For a MAL session we have to keep the variables around
+ * and only need to reset the instruction pointer
+ */
 void
-resetMalBlk(MalBlkPtr mb, int stop)
+resetMalTypes(MalBlkPtr mb, int stop)
 {
 	int i;
 
@@ -203,17 +204,52 @@ resetMalBlk(MalBlkPtr mb, int stop)
 	mb->errors = NULL;
 }
 
+/* For SQL operations we have to cleanup variables and trim the space
+ * A portion is retained for the next query */
 void
-resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop)
+resetMalBlk(MalBlkPtr mb)
 {
 	int i;
+	InstrPtr *new;
+	VarRecord *vnew;
 
-	for(i=stop; i<mb->stop; i++) {
+	for(i=MALCHUNK; i<mb->ssize; i++) {
 		freeInstruction(mb->stmt[i]);
 		mb->stmt[i] = NULL;
 	}
-	resetMalBlk(mb, stop);
+	if( mb->ssize != MALCHUNK){
+		new = (InstrPtr*) GDKrealloc(mb->var, sizeof(InstrPtr) * MALCHUNK);
+		if( new == NULL){
+			// the only place to return an error signal at this stage.
+			// The Client context should be passed around more deeply
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return ;
+		}
+		mb->stmt = new;
+		mb->ssize = MALCHUNK;
+	}
+	/* Reuse the initial function statement */
+	mb->stop = 1;
+	resetMalTypes(mb, 1);
+
+	for(i=0; i< mb->vtop; i++)
+		VALclear(&getVarConstant(mb,i));
+
+	if(mb->vsize != MALCHUNK){
+		vnew = (VarRecord*) GDKrealloc(mb->var, sizeof(VarRecord) * MALCHUNK);
+		if (vnew == NULL) {
+			// the only place to return an error signal at this stage.
+			// The Client context should be passed around more deeply
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return;
+		}
+		mb->var = vnew;
+		mb->vsize = MALCHUNK;
+	}
+    mb->vtop = 1;
+    mb->vid = 1;
 }
+
 
 /* The freeMalBlk code is quite defensive. It is used to localize an
  * illegal re-use of a MAL blk. */
