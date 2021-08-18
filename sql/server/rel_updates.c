@@ -224,7 +224,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	if (need_nulls) {
 		rel_destroy(ins);
 		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1));
+		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
 		set_processed(rt);
 	} else {
 		inserts->r = nnlls;
@@ -853,7 +853,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (need_nulls) {
 		rel_destroy(ups);
 		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1));
+		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
 		set_processed(rt);
 	} else {
 		updates->r = nnlls;

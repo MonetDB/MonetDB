@@ -73,7 +73,7 @@ extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps,
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
-extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps);
+extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
