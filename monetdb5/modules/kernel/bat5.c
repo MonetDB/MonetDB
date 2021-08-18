@@ -854,6 +854,11 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		uint16_t width = bi.width;
 
 		switch (width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "bat.shrink", SQLSTATE(42000) "bat.shrink not available for 0 width types");
 		case 1:shrinkloop(bte); break;
 		case 2:shrinkloop(sht); break;
 		case 4:shrinkloop(int); break;
@@ -1014,12 +1019,18 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bs->batCacheid);
-				throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				throw(MAL, "bat.reuse", GDK_EXCEPTION);
 			}
 		}
 	} else {
 		BUN n = 0;
 		switch (bi.width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bs->batCacheid);
+			throw(MAL, "bat.reuse", SQLSTATE(42000) "bat.reuse not available for 0 width types");
 		case 1:
 			reuseloop(bte);
 			break;
