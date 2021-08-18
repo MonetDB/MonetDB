@@ -2762,7 +2762,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 			return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 		} else {
-			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || sq->single)?op_left:op_join);
+			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || is_single(sq))?op_left:op_join);
 		}
 		return sq;
 	}

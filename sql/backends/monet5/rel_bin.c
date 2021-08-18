@@ -1522,7 +1522,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				/* value compare or select */
 				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
 					int in_flag = e->flag==mark_in?1:0;
-					if (e->anti)
+					if (is_anti(e))
 						in_flag = !in_flag;
 					sql_subfunc *f = sql_bind_func(sql, "sys", in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
@@ -2602,7 +2602,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	} else {
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
-		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, rel->single);
+		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, is_single(rel));
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);
@@ -2667,7 +2667,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		stmt *l = ld = stmt_mirror(be, bin_find_smallest_column(be, left));
 		if (rel->op == op_left || rel->op == op_full)
 			ld = stmt_tdiff(be, ld, jl, NULL);
-		if (rel->single && !list_empty(rel->exps)) {
+		if (is_single(rel) && !list_empty(rel->exps)) {
 			join = stmt_semijoin(be, l, jl, NULL, NULL, 0, true);
 			jl = stmt_result(be, join, 0);
 			jr = stmt_project(be, stmt_result(be, join, 1), jr);
@@ -2867,7 +2867,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				stmt *s = NULL;
 
 				/* only handle simple joins here */
-				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && e->anti)) {
+				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && is_anti(e))) {
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_find_smallest_column(be, left);
 						stmt *r = bin_find_smallest_column(be, right);
@@ -2898,13 +2898,13 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					if (be->no_mitosis && list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !e->anti && is_equi_exp_(e)) {
+					if (be->no_mitosis && list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
 						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
 						semijoin_only = 1;
 						en = NULL;
 						break;
 					} else
-						s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
+						s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false);
 					lcand = left->cand;
 				} else {
 					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
@@ -3172,7 +3172,7 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	sub = rel_rename(be, rel, sub);
 	if (need_distinct(rel))
 		sub = rel2bin_distinct(be, sub, NULL);
-	if (rel->single)
+	if (is_single(rel))
 		sub = rel2bin_single(be, sub);
 	return sub;
 }

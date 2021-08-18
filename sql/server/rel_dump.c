@@ -268,7 +268,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
 			mnstr_printf(fout, " BETWEEN ");
-			if (e->symmetric)
+			if (is_symmetric(e))
 				mnstr_printf(fout, " SYM ");
 		} else {
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);

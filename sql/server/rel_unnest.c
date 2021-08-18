@@ -290,7 +290,7 @@ rel_only_freevar(sql_query *query, sql_rel *rel, bool *arguments_correlated, boo
 static int
 freevar_equal( sql_exp *e1, sql_exp *e2)
 {
-	assert(e1 && e2 && e1->freevar && e2->freevar);
+	assert(e1 && e2 && is_freevar(e1) && is_freevar(e2));
 	if (e1 == e2)
 		return 0;
 	if (e1->type != e_column || e2->type != e_column)
@@ -323,7 +323,7 @@ exp_freevar(mvc *sql, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->freevar)
+		if (is_freevar(e))
 			return append(sa_list(sql->sa), e);
 		break;
 	case e_convert:
@@ -497,7 +497,7 @@ rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 		for(n = fvs->h; n; n=n->next) {
 			sql_exp *e = n->data;
 
-			if (e->freevar && (exp_is_atom(e) || rel_find_exp(rel,e)))
+			if (is_freevar(e) && (exp_is_atom(e) || rel_find_exp(rel,e)))
 				reset_freevar(e);
 		}
 	}
@@ -884,7 +884,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
 
-				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+				if (!is_freevar(e) || exp_name(e)) { /* only skip full freevars */
 					if (exp_has_freevar(sql, e)) {
 						rel_bind_var(sql, rel->l, e);
 						if (is_left(rel->op)) { /* add ifthenelse */
@@ -908,7 +908,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				for (m=exps->h; m; m = m->next) {
 					sql_exp *e = m->data;
 
-					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+					if (!is_freevar(e) || exp_name(e)) { /* only skip full freevars */
 						if (exp_has_freevar(sql, e))
 							rel_bind_var(sql, rel->l, e);
 					}
@@ -1263,7 +1263,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				rel_destroy(j);
 				j = nj;
@@ -1304,7 +1304,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!rd) {
 				rel->r = rel_dup(jl);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
@@ -1319,7 +1319,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!ld) {
 				rel->r = rel_dup(jr);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
