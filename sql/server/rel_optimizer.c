@@ -898,7 +898,7 @@ order_joins(visitor *v, list *rels, list *exps)
 	   	   and a list of (simple) relations, there are no outer joins
 	   	   involved, we can simply do a crossproduct here.
 	 	 */
-		rsingle = r->single;
+		rsingle = is_single(r);
 		reset_single(r);
 		top = rel_crossproduct(v->sql->sa, l, r, op_join);
 		if (rsingle)
@@ -967,7 +967,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				append(n_rels, r);
 
 				/* create a join using the current expression */
-				rsingle = r->single;
+				rsingle = is_single(r);
 				reset_single(r);
 				top = rel_crossproduct(v->sql->sa, top, r, op_join);
 				if (rsingle)
@@ -1003,7 +1003,7 @@ order_joins(visitor *v, list *rels, list *exps)
 			sql_rel *nr = n->data;
 
 			if (top) {
-				rsingle = nr->single;
+				rsingle = is_single(nr);
 				reset_single(nr);
 				top = rel_crossproduct(v->sql->sa, top, nr, op_join);
 				if (rsingle)
@@ -1125,7 +1125,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 				}
 				/* with this expression find other relation */
 				if (je && (l = find_rel(rels, je->l)) != NULL) {
-					unsigned int rsingle = r->single;
+					unsigned int rsingle = is_single(r);
 					reset_single(r);
 					sql_rel *nr = rel_crossproduct(sql->sa, l, r, op_join);
 					if (rsingle)
@@ -9131,7 +9131,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data, *c = e->l;
 					int flag = e->flag;
 
-					if (e->type != e_cmp || (!is_theta_exp(flag) && flag != cmp_in) || e->symmetric || !(c = rel_find_exp(rel, c)))
+					if (e->type != e_cmp || (!is_theta_exp(flag) && flag != cmp_in) || is_symmetric(e) || !(c = rel_find_exp(rel, c)))
 						continue;
 
 					if (flag == cmp_gt || flag == cmp_gte || flag == cmp_lte || flag == cmp_lt || flag == cmp_equal) {

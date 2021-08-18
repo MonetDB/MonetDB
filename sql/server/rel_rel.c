@@ -556,8 +556,8 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	rel->single = r->single;
-	if (r->single)
+	rel->single = is_single(r);
+	if (is_single(r))
 		reset_single(r);
 	return rel;
 }
@@ -630,7 +630,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
-			if (!e->freevar) {
+			if (!is_freevar(e)) {
 				if (all) {
 					nr = ++sql->label;
 					cnme = number2name(cname, sizeof(cname), nr);
@@ -832,7 +832,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = list_length(e);
 		else
 			rel->nrcols = l->nrcols;
-		rel->single = l->single;
+		rel->single = is_single(l);
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);
