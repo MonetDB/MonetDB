@@ -345,7 +345,7 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
-	if (!e->semantics && l && !have_nil(l))
+	if (!is_semantics(e) && l && !have_nil(l))
 		set_has_no_nil(e);
 	return e;
 }
@@ -854,7 +854,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 		return NULL;
 	e->l = rel;
 	e->flag = PSM_REL;
-	e->card = rel->single?CARD_ATOM:rel->card;
+	e->card = is_single(rel)?CARD_ATOM:rel->card;
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
@@ -1763,9 +1763,9 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 	*/
 	if (e->flag != cmp_equal && e->flag != cmp_notequal)
 		return false;
-	if (e->flag == cmp_equal && !e->anti)
+	if (e->flag == cmp_equal && !is_anti(e))
 		return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
-	if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) )
+	if (((e->flag == cmp_notequal) && !is_anti(e)) || ((e->flag == cmp_equal) && is_anti(e)) )
 		return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
 	return false;
 }
@@ -1796,7 +1796,7 @@ static inline bool
 exp_regular_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
 
-    if (e->semantics)   return exp_is_cmp_exp_is_false(e);
+    if (is_semantics(e))return exp_is_cmp_exp_is_false(e);
     if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(e);
     else                return exp_single_bound_cmp_exp_is_false(e);
 }
@@ -1882,7 +1882,7 @@ exp_is_not_null(sql_exp *e)
 	case e_convert:
 		return exp_is_not_null(e->l);
 	case e_func:
-		if (!e->semantics && e->l) {
+		if (!is_semantics(e) && e->l) {
 			list *l = e->l;
 			for (node *n = l->h; n; n=n->next) {
 				sql_exp *p = n->data;
@@ -1917,7 +1917,7 @@ exp_is_null(sql_exp *e )
 	case e_convert:
 		return exp_is_null(e->l);
 	case e_func:
-		if (!e->semantics && e->l) {
+		if (!is_semantics(e) && e->l) {
 			/* This is a call to a function with no-nil semantics.
 			 * If one of the parameters is null the expression itself is null
 			 */
