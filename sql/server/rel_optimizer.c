@@ -5269,68 +5269,6 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static int
-rel_is_empty(mvc *sql, sql_rel *rel)
-{
-	if (mvc_highwater(sql))
-		return 0;
-	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
-		sql_rel *l = rel->l, *r = rel->r;
-		sql_exp *je;
-
-		if (((is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)) && rel_is_empty(sql, l)) ||
-			((is_innerjoin(rel->op) || is_right(rel->op)) && rel_is_empty(sql, r)))
-			return 1;
-		/* check */
-		if ((je = rel_is_join_on_pkey(rel, true))) {
-			int lpnr = rel_part_nr(l, je);
-
-			if (lpnr >= 0 && !rel_uses_part_nr(r, je, lpnr))
-				return 1;
-		}
-		return 0;
-	}
-	/* global aggregates always return 1 row */
-	if (is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r)) || is_select(rel->op) ||
-		is_topn(rel->op) || is_sample(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
-		if (rel->l)
-			return rel_is_empty(sql, rel->l);
-	} else if (is_innerjoin(rel->op) && list_empty(rel->exps)) { /* cartesian product */
-		return rel_is_empty(sql, rel->l) || rel_is_empty(sql, rel->r);
-	}
-	return 0;
-}
-
-/* non overlapping partitions should be removed */
-static inline sql_rel *
-rel_remove_empty_join(visitor *v, sql_rel *rel)
-{
-	if (!is_union(rel->op) || rel_is_ref(rel))
-		return rel;
-	/* For half empty unions replace by projects */
-	if (!rel_is_ref(rel->l) && rel_is_empty(v->sql, rel->l)) {
-		sql_rel *r = rel->r;
-		if (!is_project(r->op))
-			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
-		rel_rename_exps(v->sql, rel->exps, r->exps);
-		rel->r = NULL;
-		rel_destroy(rel);
-		v->changes++;
-		return r;
-	}
-	if (!rel_is_ref(rel->r) && rel_is_empty(v->sql, rel->r)) {
-		sql_rel *l = rel->l;
-		if (!is_project(l->op))
-			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-		rel_rename_exps(v->sql, rel->exps, l->exps);
-		rel->l = NULL;
-		rel_destroy(rel);
-		v->changes++;
-		return l;
-	}
-	return rel;
-}
-
 static bool
 find_projection_for_join2semi(sql_rel *rel)
 {
@@ -9437,62 +9375,75 @@ exp_skip_output_parts(sql_rel *rel)
 
 /* return true if the given expression is guaranteed to have no rows */
 static int
-exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
+exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
 {
-	sql_table *t;
-	node *n;
-
-	if (!rel || mvc_highwater(sql))
+	if (!rel || mvc_highwater(v->sql))
 		return 0;
 	rel = exp_skip_output_parts(rel);
 	if (is_select(rel->op) && rel->l) {
 		sel = rel;
 		rel = exp_skip_output_parts(rel->l);
 	}
-	if (!sel)
-		return 0;
-	if (rel->op == op_join)
-		return exp_is_zero_rows(sql, rel->l, sel) || exp_is_zero_rows(sql, rel->r, sel);
-	if (rel->op == op_left || is_semi(rel->op))
-		return exp_is_zero_rows(sql, rel->l, sel);
-	if (rel->op == op_right)
-		return exp_is_zero_rows(sql, rel->r, sel);
-	if (!is_basetable(rel->op) || !rel->l)
-		return 0;
-	t = rel->l;
-	if (!isTable(t) || t->access != TABLE_READONLY)
-		return 0;
 
-	if (sel->exps) for (n = sel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		atom *lval = NULL, *hval = NULL;
+	sql_table *t = is_basetable(rel->op) && rel->l ? rel->l : NULL;
+	bool table_readonly = t && isTable(t) && t->access == TABLE_READONLY;
 
-		if (e->type == e_cmp && (e->flag == cmp_equal || e->f)) {   /* half-ranges are theoretically optimizable here, but not implemented */
-			sql_exp *c = e->l;
-			if (c->type == e_column) {
-				sql_exp *l = e->r;
-				sql_exp *h = e->f;
+	if (sel && !list_empty(sel->exps) && (v->value_based_opt || table_readonly)) {
+		for (node *n = sel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-				lval = exp_flatten(sql, l);
-				hval = h ? exp_flatten(sql, h) : lval;
-				if (lval && hval) {
-					sql_rel *bt;
-					sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
-					char *min = NULL, *max = NULL;
-					atom *amin, *amax;
-					sql_subtype *ct = exp_subtype(c);
+			/* if the expression is false, then the select is empty */
+			if (v->value_based_opt && (exp_is_false(e) || exp_is_null(e)))
+				return 1;
+			if (table_readonly && e->type == e_cmp && (e->flag == cmp_equal || e->f)) {
+				/* half-ranges are theoretically optimizable here, but not implemented */
+				sql_exp *c = e->l;
+				if (c->type == e_column) {
+					sql_exp *l = e->r;
+					sql_exp *h = e->f;
 
-					if (col
-						&& col->t == t
-						&& sql_trans_ranges(sql->session->tr, col, &min, &max)
-						&& min && max
-						&& (amin = atom_general(sql->sa, ct, min)) && (amax = atom_general(sql->sa, ct, max))
-						&& !exp_range_overlap(amin, amax, lval, hval, false, false)) {
-						return 1;
+					atom *lval = exp_flatten(v->sql, l);
+					atom *hval = h ? exp_flatten(v->sql, h) : lval;
+					if (lval && hval) {
+						sql_rel *bt;
+						sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
+						char *min = NULL, *max = NULL;
+						atom *amin, *amax;
+						sql_subtype *ct = exp_subtype(c);
+
+						if (col
+							&& col->t == t
+							&& sql_trans_ranges(v->sql->session->tr, col, &min, &max)
+							&& min && max
+							&& (amin = atom_general(v->sql->sa, ct, min)) && (amax = atom_general(v->sql->sa, ct, max))
+							&& !exp_range_overlap(amin, amax, lval, hval, false, false)) {
+							return 1;
+						}
 					}
 				}
 			}
 		}
+	}
+	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+		sql_exp *je;
+
+		/* check non overlaping pk-fk join */
+		if ((je = rel_is_join_on_pkey(rel, true))) {
+			int lpnr = rel_part_nr(rel->l, je);
+
+			if (lpnr >= 0 && !rel_uses_part_nr(rel->r, je, lpnr))
+				return 1;
+		}
+		return (((is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)) && exp_is_zero_rows(v, rel->l, sel)) ||
+			((is_innerjoin(rel->op) || is_right(rel->op)) && exp_is_zero_rows(v, rel->r, sel)));
+	}
+	/* global aggregates always return 1 row */
+	if (is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r)) || is_select(rel->op) ||
+		is_topn(rel->op) || is_sample(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
+		if (rel->l)
+			return exp_is_zero_rows(v, rel->l, sel);
+	} else if (is_innerjoin(rel->op) && list_empty(rel->exps)) { /* cartesian product */
+		return exp_is_zero_rows(v, rel->l, sel) || exp_is_zero_rows(v, rel->r, sel);
 	}
 	return 0;
 }
@@ -9507,7 +9458,24 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 {
 	if (!is_union(rel->op) || rel_is_ref(rel))
 		return rel;
-	if (!rel_is_ref(rel->l) && exp_is_zero_rows(v->sql, rel->l, NULL)) {
+	int left_zero_rows = !rel_is_ref(rel->l) && exp_is_zero_rows(v, rel->l, NULL);
+	int right_zero_rows = !rel_is_ref(rel->r) && exp_is_zero_rows(v, rel->r, NULL);
+
+	if (left_zero_rows && right_zero_rows) {
+		/* generate dummy relation */
+		list *converted = sa_list(v->sql->sa);
+		sql_rel *nrel = rel_project(v->sql->sa, NULL, list_append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
+		nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
+
+		for (node *n = rel->exps->h ; n ; n = n->next) {
+			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+			exp_prop_alias(v->sql->sa, a, e);
+			list_append(converted, a);
+		}
+		rel_destroy(rel);
+		v->changes++;
+		return rel_project(v->sql->sa, nrel, converted);
+	} else if (left_zero_rows) {
 		sql_rel *r = rel->r;
 		if (!is_project(r->op))
 			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
@@ -9516,8 +9484,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		rel_destroy(rel);
 		v->changes++;
 		return r;
-	}
-	if (!rel_is_ref(rel->r) && exp_is_zero_rows(v->sql, rel->r, NULL)) {
+	} else if (right_zero_rows) {
 		sql_rel *l = rel->l;
 		if (!is_project(l->op))
 			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
@@ -9564,7 +9531,6 @@ rel_optimize_unions_bottomup(visitor *v, sql_rel *rel)
 {
 	rel = rel_remove_union_partitions(v, rel);
 	rel = rel_merge_union(v, rel);
-	rel = rel_remove_empty_join(v, rel);
 	return rel;
 }
 
