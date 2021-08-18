@@ -3307,41 +3307,40 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
 			/* BBP_desc(i) may be NULL */
-			BATiter bi = bat_iterator(BBP_desc(i));
 			BUN size = sizes ? sizes[idx] : BUN_NONE;
-			BAT *b = NULL;
-			if (size > bi.count)
-				size = bi.count;
 
 			if (BBP_status(i) & BBPPERSISTENT) {
-				b = dirty_bat(&i, subcommit != NULL);
+				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
-					bat_iterator_end(&bi);
 					break;
 				}
 				if (b) {
+					/* wait for BBPSAVING so that we
+					 * can set it, wait for
+					 * BBPUNLOADING before
+					 * attempting to save */
 					for (;;) {
 						if (lock)
 							MT_lock_set(&GDKswapLock(i));
-						if (!(BBP_status(i) & BBPSAVING))
+						if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
 							break;
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
-						BBPspin(i, __func__, BBPSAVING);
+						BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
 					}
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
+					BATiter bi = bat_iterator(b);
+					if (size > bi.count)
+						size = bi.count;
 					ret = BATsave_locked(b, &bi, size);
+					bat_iterator_end(&bi);
+					BBP_status_off(i, BBPSAVING);
 				}
 			}
 			if (ret == GDK_SUCCEED) {
 				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf);
-			}
-			bat_iterator_end(&bi);
-			if (b) {
-				/* turn bit off after closing the iterator */
-				BBP_status_off(i, BBPSAVING);
 			}
 			if (n == -2)
 				break;
