@@ -1016,6 +1016,38 @@ movestrbats(void)
 #endif
 
 static void
+BBPtrim(bool aggresive)
+{
+	int n = 0;
+	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
+	if (!aggresive)
+		flag |= BBPHOT;
+	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+		MT_lock_set(&GDKswapLock(bid));
+		BAT *b = NULL;
+		bool swap = false;
+		if (BBP_refs(bid) == 0 &&
+		    BBP_lrefs(bid) != 0 &&
+		    (b = BBP_cache(bid)) != NULL &&
+		    b->batSharecnt == 0 &&
+		    (!BATdirty(b) || (b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
+		    !(BBP_status(bid) & flag) &&
+		    (BBP_status(bid) & BBPPERSISTENT)) {
+			BBP_status_on(bid, BBPUNLOADING);
+			swap = true;
+		}
+		MT_lock_unset(&GDKswapLock(bid));
+		if (swap) {
+			TRC_DEBUG(BAT_, "unload and free bat %d\n", bid);
+			if (BBPfree(b) != GDK_SUCCEED)
+				GDKerror("unload failed for bat %d", bid);
+			n++;
+		}
+	}
+	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggresive ? " (also hot)" : "");
+}
+
+static void
 BBPmanager(void *dummy)
 {
 	(void) dummy;
@@ -1031,35 +1063,12 @@ BBPmanager(void *dummy)
 			MT_lock_unset(&GDKswapLock(bid));
 		}
 		TRC_DEBUG(BAT_, "cleared HOT bit from %d bats\n", n);
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0, n = GDKvm_cursize() > GDK_vm_maxsize / 2 ? 25 : 100; i < n; i++) {
 			MT_sleep_ms(100);
 			if (GDKexiting())
 				return;
 		}
-		n = 0;
-		for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
-			MT_lock_set(&GDKswapLock(bid));
-			BAT *b = NULL;
-			bool swap = false;
-			if (BBP_refs(bid) == 0 &&
-			    BBP_lrefs(bid) != 0 &&
-			    (b = BBP_cache(bid)) != NULL &&
-			    b->batSharecnt == 0 &&
-			    !BATdirty(b) &&
-			    !(BBP_status(bid) & (BBPHOT | BBPUNLOADING | BBPSYNCING)) &&
-			    (BBP_status(bid) & BBPPERSISTENT)) {
-				BBP_status_on(bid, BBPUNLOADING);
-				swap = true;
-			}
-			MT_lock_unset(&GDKswapLock(bid));
-			if (swap) {
-				TRC_DEBUG(BAT_, "unload and free bat %d\n", bid);
-				if (BBPfree(b) != GDK_SUCCEED)
-					GDKerror("unload failed for bat %d", bid);
-				n++;
-			}
-		}
-		TRC_DEBUG(BAT_, "unloaded %d bats\n", n);
+		BBPtrim(false);
 		if (GDKexiting())
 			return;
 	}
@@ -3300,22 +3309,40 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			/* BBP_desc(i) may be NULL */
 			BATiter bi = bat_iterator(BBP_desc(i));
 			BUN size = sizes ? sizes[idx] : BUN_NONE;
+			BAT *b = NULL;
 			if (size > bi.count)
 				size = bi.count;
 
 			if (BBP_status(i) & BBPPERSISTENT) {
-				BAT *b = dirty_bat(&i, subcommit != NULL);
+				b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0) {
 					bat_iterator_end(&bi);
 					break;
 				}
-				if (b)
+				if (b) {
+					for (;;) {
+						if (lock)
+							MT_lock_set(&GDKswapLock(i));
+						if (!(BBP_status(i) & BBPSAVING))
+							break;
+						if (lock)
+							MT_lock_unset(&GDKswapLock(i));
+						BBPspin(i, __func__, BBPSAVING);
+					}
+					BBP_status_on(i, BBPSAVING);
+					if (lock)
+						MT_lock_unset(&GDKswapLock(i));
 					ret = BATsave_locked(b, &bi, size);
+				}
 			}
 			if (ret == GDK_SUCCEED) {
 				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf);
 			}
 			bat_iterator_end(&bi);
+			if (b) {
+				/* turn bit off after closing the iterator */
+				BBP_status_off(i, BBPSAVING);
+			}
 			if (n == -2)
 				break;
 			/* we once again have a saved heap */
