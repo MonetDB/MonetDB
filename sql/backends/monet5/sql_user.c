@@ -572,21 +572,24 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
 	if (is_oid_nil(rid))
-		return -1;
+		return -2;
 	username = store->table_api.column_find_string_start(m->session->tr, find_sql_column(auths, "name"), rid, &cbat);
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
 	store->table_api.column_find_string_end(cbat);
 
 	if (!is_oid_nil(rid))
 		schema_id = store->table_api.column_find_sqlid(m->session->tr, find_sql_column(user_info, "default_schema"), rid);
-	if (!is_int_nil(schema_id)) {
-		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas, "id"), &schema_id, NULL);
-		if (!is_oid_nil(rid)) {
-			str sname = store->table_api.column_find_string_start(m->session->tr, find_sql_column(schemas, "name"), rid, &cbat);
-			*schema = sa_strdup(m->session->sa, sname);
-			store->table_api.column_find_string_end(cbat);
-		}
-	}
+	if (is_int_nil(schema_id))
+		return -3;
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas, "id"), &schema_id, NULL);
+	if (is_oid_nil(rid))
+		return -3;
+
+	str sname = store->table_api.column_find_string_start(m->session->tr, find_sql_column(schemas, "name"), rid, &cbat);
+	*schema = sa_strdup(m->session->sa, sname);
+	store->table_api.column_find_string_end(cbat);
+	if (!*schema)
+		return -1;
 	return 0;
 }
 
@@ -614,7 +617,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 
 	if ((err = AUTHresolveUser(&username, user)) != MAL_SUCCEED) {
 		freeException(err);
-		return -2;
+		return -1;
 	}
 
 	if ((res = mvc_trans(m)) < 0) {
