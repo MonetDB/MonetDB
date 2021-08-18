@@ -1638,7 +1638,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
-			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+			if (cname[0] != '%') { /* Skip TID column */
 				sql_column *c = mvc_bind_column(sql, t, cname);
 
 				if (!c)

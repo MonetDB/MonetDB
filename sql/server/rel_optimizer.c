@@ -6892,9 +6892,17 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_delete:
 		if (proj && rel->r) {
 			sql_rel *r = rel->r;
-			if (r->exps && r->exps->h) { /* TID is used */
-				sql_exp *e = r->exps->h->data;
-				e->used = 1;
+
+			if (!list_empty(r->exps)) {
+				for (node *n = r->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					const char *nname = exp_name(e);
+
+					if (nname[0] == '%' && strcmp(nname, TID) == 0) { /* TID is used */
+						e->used = 1;
+						break;
+					}
+				}
 			}
 			rel_exps_mark_used(sql->sa, rel, rel->r);
 			rel_mark_used(sql, rel->r, 0);
