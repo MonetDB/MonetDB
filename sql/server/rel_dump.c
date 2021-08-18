@@ -2062,7 +2062,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
-		rel_setop_set_exps(sql, rel, exps);
+		rel_setop_set_exps(sql, rel, exps, false);
 		if (rel_set_types(sql, rel) < 0)
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		set_processed(rel);

@@ -4296,7 +4296,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		}
 
 		u = rel_setop(v->sql->sa, ul, ur, op_union);
-		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1));
+		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1), false);
 		set_processed(u);
 
 		exps = new_exp_list(v->sql->sa);
@@ -5270,13 +5270,16 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 }
 
 static int
-rel_is_empty( sql_rel *rel )
+rel_is_empty(mvc *sql, sql_rel *rel)
 {
-	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+	if (mvc_highwater(sql))
+		return 0;
+	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		sql_exp *je;
 
-		if (rel_is_empty(l) || rel_is_empty(r))
+		if (((is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)) && rel_is_empty(sql, l)) ||
+			((is_innerjoin(rel->op) || is_right(rel->op)) && rel_is_empty(sql, r)))
 			return 1;
 		/* check */
 		if ((je = rel_is_join_on_pkey(rel, true))) {
@@ -5287,12 +5290,13 @@ rel_is_empty( sql_rel *rel )
 		}
 		return 0;
 	}
-	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) ||
-		is_topn(rel->op) || is_sample(rel->op)) {
+	/* global aggregates always return 1 row */
+	if (is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r)) || is_select(rel->op) ||
+		is_topn(rel->op) || is_sample(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
 		if (rel->l)
-			return rel_is_empty(rel->l);
-	} else if (is_join(rel->op) || is_semi(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
-		return rel_is_empty(rel->l) && rel_is_empty(rel->r);
+			return rel_is_empty(sql, rel->l);
+	} else if (is_innerjoin(rel->op) && list_empty(rel->exps)) { /* cartesian product */
+		return rel_is_empty(sql, rel->l) || rel_is_empty(sql, rel->r);
 	}
 	return 0;
 }
@@ -5301,21 +5305,28 @@ rel_is_empty( sql_rel *rel )
 static inline sql_rel *
 rel_remove_empty_join(visitor *v, sql_rel *rel)
 {
-	if (!is_union(rel->op))
+	if (!is_union(rel->op) || rel_is_ref(rel))
 		return rel;
 	/* For half empty unions replace by projects */
-	sql_rel *l = rel->l, *r = rel->r;
-
-	if (rel_is_empty(l)) {
-		v->changes++;
-		rel->l = NULL;
-		rel_destroy(l);
-		return rel_inplace_project(v->sql->sa, rel, rel_dup(r), rel->exps);
-	} else if (rel_is_empty(r)) {
-		v->changes++;
+	if (!rel_is_ref(rel->l) && rel_is_empty(v->sql, rel->l)) {
+		sql_rel *r = rel->r;
+		if (!is_project(r->op))
+			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
+		rel_rename_exps(v->sql, rel->exps, r->exps);
 		rel->r = NULL;
-		rel_destroy(r);
-		return rel_inplace_project(v->sql->sa, rel, rel_dup(l), rel->exps);
+		rel_destroy(rel);
+		v->changes++;
+		return r;
+	}
+	if (!rel_is_ref(rel->r) && rel_is_empty(v->sql, rel->r)) {
+		sql_rel *l = rel->l;
+		if (!is_project(l->op))
+			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+		rel_rename_exps(v->sql, rel->exps, l->exps);
+		rel->l = NULL;
+		rel_destroy(rel);
+		v->changes++;
+		return l;
 	}
 	return rel;
 }
@@ -8703,7 +8714,7 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 			add_nulls( v->sql, nr, r);
 			exps = rel_projections(v->sql, nl, NULL, 1, 1);
 			nl = rel_setop(v->sql->sa, nl, nr, op_union);
-			rel_setop_set_exps(v->sql, nl, exps);
+			rel_setop_set_exps(v->sql, nl, exps, false);
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
@@ -8722,7 +8733,7 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 				(fdup)NULL);
 			exps = rel_projections(v->sql, nl, NULL, 1, 1);
 			nl = rel_setop(v->sql->sa, nl, nr, op_union);
-			rel_setop_set_exps(v->sql, nl, exps);
+			rel_setop_set_exps(v->sql, nl, exps, false);
 			set_processed(nl);
 		}
 
@@ -9140,7 +9151,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 
 			if (nrel) {
 				nrel = rel_setop(v->sql->sa, nrel, next, op_union);
-				rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1));
+				rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
 				set_processed(nrel);
 			} else {
 				nrel = next;
@@ -9417,7 +9428,7 @@ static sql_rel*
 exp_skip_output_parts(sql_rel *rel)
 {
 	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
-		if (is_groupby(rel->op) && list_empty(rel->r))
+		if (is_union(rel->op) || (is_groupby(rel->op) && list_empty(rel->r)))
 			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
 		rel = rel->l;
 	}
@@ -9431,7 +9442,7 @@ exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
 	sql_table *t;
 	node *n;
 
-	if (!rel)
+	if (!rel || mvc_highwater(sql))
 		return 0;
 	rel = exp_skip_output_parts(rel);
 	if (is_select(rel->op) && rel->l) {
@@ -9494,9 +9505,9 @@ statistics, similarly to the merge table optimizer, e.g.
 static inline sql_rel *
 rel_remove_union_partitions(visitor *v, sql_rel *rel)
 {
-	if (!is_union(rel->op))
+	if (!is_union(rel->op) || rel_is_ref(rel))
 		return rel;
-	if (exp_is_zero_rows(v->sql, rel->l, NULL)) {
+	if (!rel_is_ref(rel->l) && exp_is_zero_rows(v->sql, rel->l, NULL)) {
 		sql_rel *r = rel->r;
 		if (!is_project(r->op))
 			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
@@ -9506,7 +9517,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		v->changes++;
 		return r;
 	}
-	if (exp_is_zero_rows(v->sql, rel->r, NULL)) {
+	if (!rel_is_ref(rel->r) && exp_is_zero_rows(v->sql, rel->r, NULL)) {
 		sql_rel *l = rel->l;
 		if (!is_project(l->op))
 			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
