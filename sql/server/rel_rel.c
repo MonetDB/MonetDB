@@ -421,7 +421,7 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
-	rel_setop_set_exps(sql, rel, exps);
+	rel_setop_set_exps(sql, rel, exps, false);
 	set_processed(rel);
 	return rel;
 }
@@ -514,7 +514,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 }
 
 void
-rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
+rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 {
 	sql_rel *l = rel->l, *r = rel->r;
 	list *lexps = l->exps, *rexps = r->exps;
@@ -534,7 +534,8 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
-			e->p = NULL; /* remove all the properties on unions */
+			if (!keep_props)
+				e->p = NULL; /* remove all the properties on unions on the general case */
 		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
@@ -1344,7 +1345,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 	if (!rel)
 		return NULL;
-	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1), false);
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);

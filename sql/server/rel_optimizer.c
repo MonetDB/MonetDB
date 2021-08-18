@@ -4296,7 +4296,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		}
 
 		u = rel_setop(v->sql->sa, ul, ur, op_union);
-		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1));
+		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1), false);
 		set_processed(u);
 
 		exps = new_exp_list(v->sql->sa);
@@ -8714,7 +8714,7 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 			add_nulls( v->sql, nr, r);
 			exps = rel_projections(v->sql, nl, NULL, 1, 1);
 			nl = rel_setop(v->sql->sa, nl, nr, op_union);
-			rel_setop_set_exps(v->sql, nl, exps);
+			rel_setop_set_exps(v->sql, nl, exps, false);
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
@@ -8733,7 +8733,7 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 				(fdup)NULL);
 			exps = rel_projections(v->sql, nl, NULL, 1, 1);
 			nl = rel_setop(v->sql->sa, nl, nr, op_union);
-			rel_setop_set_exps(v->sql, nl, exps);
+			rel_setop_set_exps(v->sql, nl, exps, false);
 			set_processed(nl);
 		}
 
@@ -9151,7 +9151,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 
 			if (nrel) {
 				nrel = rel_setop(v->sql->sa, nrel, next, op_union);
-				rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1));
+				rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
 				set_processed(nrel);
 			} else {
 				nrel = next;
@@ -9428,7 +9428,7 @@ static sql_rel*
 exp_skip_output_parts(sql_rel *rel)
 {
 	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
-		if (is_groupby(rel->op) && list_empty(rel->r))
+		if (is_union(rel->op) || (is_groupby(rel->op) && list_empty(rel->r)))
 			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
 		rel = rel->l;
 	}
