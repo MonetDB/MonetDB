@@ -561,9 +561,8 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 	sql_table *user_info = NULL;
 	sql_table *schemas = NULL;
 	sql_table *auths = NULL;
-	str username = NULL;
+	str username = NULL, sname = NULL;
 	sqlstore *store = m->session->tr->store;
-	ptr cbat;
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	auths = find_sql_table(m->session->tr, sys, "auths");
@@ -573,9 +572,10 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
 	if (is_oid_nil(rid))
 		return -2;
-	username = store->table_api.column_find_string_start(m->session->tr, find_sql_column(auths, "name"), rid, &cbat);
+	if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
+		return -1;
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
-	store->table_api.column_find_string_end(cbat);
+	_DELETE(username);
 
 	if (!is_oid_nil(rid))
 		schema_id = store->table_api.column_find_sqlid(m->session->tr, find_sql_column(user_info, "default_schema"), rid);
@@ -585,12 +585,11 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 	if (is_oid_nil(rid))
 		return -3;
 
-	str sname = store->table_api.column_find_string_start(m->session->tr, find_sql_column(schemas, "name"), rid, &cbat);
-	*schema = sa_strdup(m->session->sa, sname);
-	store->table_api.column_find_string_end(cbat);
-	if (!*schema)
+	if (!(sname = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas, "name"), rid)))
 		return -1;
-	return 0;
+	*schema = sa_strdup(m->session->sa, sname);
+	_DELETE(sname);
+	return *schema ? 0 : -1;
 }
 
 int

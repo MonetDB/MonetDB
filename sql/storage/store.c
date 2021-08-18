@@ -983,7 +983,6 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 	sql_table *ss = find_sql_table(tr, syss, "schemas");
 	sqlid sid;
 	str v;
-	ptr cbat;
 
 	sid = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "id"), rid);
 	s = find_sql_schema_id(tr, sid);
@@ -994,9 +993,9 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 	TRC_DEBUG(SQL_STORE, "Update schema: %s %d\n", s->base.name, s->base.id);
 
 	_DELETE(s->base.name);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(ss, "name"), rid, &cbat);
+	v = store->table_api.column_find_value(tr, find_sql_column(ss, "name"), rid);
 	base_init(tr->sa, &s->base, sid, 0, v);
-	store->table_api.column_find_string_end(cbat);
+	_DELETE(v);
 	s->auth_id = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "authorization"), rid);
 	s->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(ss, "system"), rid);
 	s->owner = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "owner"), rid);
@@ -5975,17 +5974,16 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (!is_oid_nil(rid)) {
-				ptr cbat;
 				char *v;
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");
 
-				v = store->table_api.column_find_string_start(tr, stats_min, rid, &cbat);
+				v = store->table_api.column_find_value(tr, stats_min, rid);
 				*min = col->min = SA_STRDUP(tr->sa, v);
-				store->table_api.column_find_string_end(cbat);
-				v = store->table_api.column_find_string_start(tr, stats_max, rid, &cbat);
+				_DELETE(v);
+				v = store->table_api.column_find_value(tr, stats_max, rid);
 				*max = col->max = SA_STRDUP(tr->sa, v);
-				store->table_api.column_find_string_end(cbat);
+				_DELETE(v);
 				return 1;
 			}
 		}
