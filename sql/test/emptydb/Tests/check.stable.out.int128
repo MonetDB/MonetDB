@@ -8001,7 +8001,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %12,	access,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 21,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%12,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .%12,	.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
 % %12,	temporary,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % char,	tinyint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 24,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
