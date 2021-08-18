@@ -253,9 +253,7 @@ SQLrun(Client c, mvc *m)
 			c->lastcmd = time(0);
 			msg = runMAL(c, mb, 0, 0);
 		}
-		if (!msg) {
-			resetMalBlk(mb);
-		}
+		resetMalBlk(mb);
 	}
 	/* after the query has been finished we enter the idle state */
 	c->idle = time(0);
@@ -799,9 +797,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		rel_destroy(rel);
 		if( msg == MAL_SUCCEED)
 			msg = SQLrun(c,m);
-		if (!msg) {
-			resetMalBlk(c->curprg->def);
-		}
+		resetMalBlk(c->curprg->def);
 	}
 	return RAcommit_statement(be, msg);
 }
