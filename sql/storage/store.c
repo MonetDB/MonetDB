@@ -992,8 +992,10 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 
 	TRC_DEBUG(SQL_STORE, "Update schema: %s %d\n", s->base.name, s->base.id);
 
-	_DELETE(s->base.name);
 	v = store->table_api.column_find_value(tr, find_sql_column(ss, "name"), rid);
+	if (!v)
+		return; /* TODO do better than this */
+	_DELETE(s->base.name);
 	base_init(tr->sa, &s->base, sid, 0, v);
 	_DELETE(v);
 	s->auth_id = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "authorization"), rid);
@@ -5974,16 +5976,20 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (!is_oid_nil(rid)) {
-				char *v;
+				char *v1 = NULL, *v2 = NULL;
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");
 
-				v = store->table_api.column_find_value(tr, stats_min, rid);
-				*min = col->min = SA_STRDUP(tr->sa, v);
-				_DELETE(v);
-				v = store->table_api.column_find_value(tr, stats_max, rid);
-				*max = col->max = SA_STRDUP(tr->sa, v);
-				_DELETE(v);
+				if (!(v1 = store->table_api.column_find_value(tr, stats_min, rid)) ||
+					!(v2 = store->table_api.column_find_value(tr, stats_max, rid))) {
+					_DELETE(v1);
+					_DELETE(v2);
+					return 0;
+				}
+				*min = col->min = SA_STRDUP(tr->sa, v1);
+				_DELETE(v1);
+				*max = col->max = SA_STRDUP(tr->sa, v2);
+				_DELETE(v2);
 				return 1;
 			}
 		}

@@ -881,10 +881,13 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 		/* remove them and continue the deletion */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK && msg; rid = store->table_api.rids_next(A)) {
 			sqlid nuid = store->table_api.column_find_sqlid(tr, find_sql_column(auths, "id"), rid);
-			char* nname = store->table_api.column_find_value(tr, find_sql_column(auths, "name"), rid);
+			char *nname = store->table_api.column_find_value(tr, find_sql_column(auths, "name"), rid);
 
-			if (!(msg = sql_drop_granted_users(sql, nuid, nname, deleted_users)))
+			if (!nname)
+				msg = createException(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			else if (!(msg = sql_drop_granted_users(sql, nuid, nname, deleted_users)))
 				log_res = store->table_api.table_delete(tr, auths, rid);
+			_DELETE(nname);
 		}
 		store->table_api.rids_destroy(A);
 		if (!msg && log_res != LOG_OK)
