@@ -24,3 +24,4 @@ sum-union.Bug-7147
 distinct-union.Bug-7148
 HAVE_LIBPY3?python-aggregates-empty.Bug-7158
 remote-join-idxs.Bug-7165
+shutdown-force.Bug-7167
