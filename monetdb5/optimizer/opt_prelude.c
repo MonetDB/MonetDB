@@ -591,6 +591,7 @@ void optimizerInit(void)
 	stoptraceRef = putName("stoptrace");
 	streamsRef = putName("streams");
 	strimpsRef = putName("strimps");
+	strimpFilterSelectRef = putName("strimpfilterselect");
 	strRef = putName("str");
 	subavgRef = putName("subavg");
 	subcountRef = putName("subcount");

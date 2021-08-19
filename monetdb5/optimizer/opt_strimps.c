@@ -26,10 +26,13 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, limit;
 	// int mvcvar = -1;
 	int count=0;
-	InstrPtr p,q, *old = mb->stmt;
+	InstrPtr p,q,r, *old = mb->stmt;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	/* int res, nvar; */
+	/* ValRecord cst; */
+	int res;
 
 	(void) pci;
 	(void) cntxt;
@@ -53,10 +56,24 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			pushInstruction(mb, q);
 			typeChecker(cntxt->usermodule, mb, q, mb->stop-1, TRUE);
 
+			/* cst.vtype = TYPE_bit; */
+			/* nvar = defConstant(mb, TYPE_bit, &cst); */
+			r = newInstruction(mb, strimpsRef, strimpFilterSelectRef);
+			res = newTmpVariable(mb, newBatType(TYPE_oid));
+			setDestVar(r, res);
+			r = addArgument(mb, r, getArg(p, 1));
+			r = addArgument(mb, r, getArg(p, 2));
+			r = addArgument(mb, r, getArg(p, 3));
+			r = addArgument(mb, r, getArg(p, 6));
+
+			pushInstruction(mb, r);
+			// typeChecker(cntxt->usermodule, mb, r, mb->stop-1, TRUE);
+
 			count++;
 		}
 		pushInstruction(mb, p);
 	}
+	GDKfree(old);
 
     /* Defense line against incorrect plans */
     if( count){
@@ -68,7 +85,7 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","strimps",count,usec);
     newComment(mb,buf);
 	if( count > 0)
 		addtoMalBlkHistory(mb);
