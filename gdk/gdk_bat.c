@@ -94,7 +94,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		.batRole = role,
 		.batTransient = true,
 	};
-	if (heapnames && (bn->theap = GDKzalloc(sizeof(Heap))) == NULL) {
+	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
 		return NULL;
 	}
@@ -115,16 +115,23 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 	if (heapnames) {
 		assert(bn->theap != NULL);
-		bn->theap->parentid = bn->batCacheid;
-		bn->theap->farmid = BBPselectfarm(role, bn->ttype, offheap);
+		*bn->theap = (Heap) {
+			.parentid = bn->batCacheid,
+			.farmid = BBPselectfarm(role, bn->ttype, offheap),
+		};
 
 		const char *nme = BBP_physical(bn->batCacheid);
 		strconcat_len(bn->theap->filename, sizeof(bn->theap->filename),
 			      nme, ".tail", NULL);
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL)
-				goto bailout;
+			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
+				BBPclear(bn->batCacheid, true);
+				HEAPfree(bn->theap, true);
+				GDKfree(bn->theap);
+				GDKfree(bn);
+				return NULL;
+			}
 			*bn->tvheap = (Heap) {
 				.parentid = bn->batCacheid,
 				.farmid = BBPselectfarm(role, bn->ttype, varheap),
@@ -147,14 +154,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	MT_rwlock_init(&bn->thashlock, name);
 	bn->batDirtydesc = true;
 	return bn;
-      bailout:
-	BBPclear(bn->batCacheid, true);
-	if (bn->theap)
-		HEAPdecref(bn->theap, true);
-	if (bn->tvheap)
-		HEAPdecref(bn->tvheap, true);
-	GDKfree(bn);
-	return NULL;
 }
 
 uint8_t
