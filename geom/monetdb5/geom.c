@@ -5247,6 +5247,7 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 	const char *err;
 	const oid *gids = NULL;
 	BATiter bi;
+	wkb **unions = NULL;
 
 	//TODO Do we need to use skip_nils?
 	(void)skip_nils;
@@ -5271,15 +5272,18 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 	}
 
 	//Create a new BAT column of wkb type, with lenght equal to the number of groups
-	if (((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT))) == NULL)
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL)
 	{
-		createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
 	//Allocate space for the intermediate unions of wkb's
-	wkb **unions;
-	unions = GDKzalloc(sizeof(wkb *) * ngrp);
+	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
 
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
@@ -5294,10 +5298,13 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		//Determine the group id
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 
+#ifndef NDEBUG
 		char *geomSTR;
 		wkbAsText(&geomSTR, &inWKB, NULL);
 		printf("Row %zu: %s\n", i, geomSTR);
 		fflush(stdout);
+		GDKfree(geomSTR);
+#endif
 
 		if (unions[grp] == NULL)
 		{
@@ -5323,9 +5330,6 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED)
 	{
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
-		for (BUN i = 0; i < ngrp; i++)
-			GDKfree(unions[i]);
-		GDKfree(unions);
 		goto free;
 	}
 
@@ -5351,6 +5355,10 @@ free:
 		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (unions)
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(unions[i]);
+		GDKfree(unions);
 	return msg;
 }
 
