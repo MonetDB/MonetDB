@@ -53,6 +53,7 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
+#include "opt_strimps.h"
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 
@@ -95,6 +96,7 @@ struct{
 	{"remap", &OPTremapImplementation,0,0},
 	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
 	{"reorder", &OPTreorderImplementation,0,0},
+	{"strimps", &OPTstrimpsImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
 	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
