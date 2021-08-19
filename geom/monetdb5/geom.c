@@ -5258,14 +5258,16 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
 	{
 		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
-		goto free;
+		return msg;
 	}
+	bi = bat_iterator(b);
 
 	//Fill in the values of the group aggregate operation
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
 	{
 		msg = createException(MAL, "geom.Union", "%s", err);
-		goto free;
+		BBPunfix(b->batCacheid);
+		return msg;
 	}
 
 	//Create a new BAT column of wkb type, with lenght equal to the number of groups
@@ -5276,9 +5278,9 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 	}
 
 	//Allocate space for the intermediate unions of wkb's
-	wkb **unions = GDKzalloc(sizeof(wkb *) * ngrp);
+	wkb **unions;
+	unions = GDKzalloc(sizeof(wkb *) * ngrp);
 
-	bi = bat_iterator(b);
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
 
