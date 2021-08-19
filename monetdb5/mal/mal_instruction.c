@@ -232,7 +232,7 @@ resetMalBlk(MalBlkPtr mb)
 	mb->stop = 0;
 
 	for(i=0; i< mb->vtop; i++){
-		if (isVarConstant(mb, i))
+		if (isVarConstant(mb, i) || isVarDisabled(mb, i))
 			VALclear(&getVarConstant(mb,i));
 	}
 
