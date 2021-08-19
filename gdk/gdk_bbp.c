@@ -1670,10 +1670,11 @@ BBPdump(void)
 				fprintf(stderr, " Theap -> %d", b->theap->parentid);
 			} else {
 				fprintf(stderr,
-					" Theap=[%zu,%zu,f=%d]%s",
-					HEAPmemsize(b->theap),
-					HEAPvmsize(b->theap),
+					" Theap=[%zu,%zu,f=%d]%s%s",
+					b->theap->free,
+					b->theap->size,
 					b->theap->farmid,
+					b->theap->storage == STORE_MMAP ? "M" : "",
 					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->theap);
@@ -1693,10 +1694,11 @@ BBPdump(void)
 					b->tvheap->parentid);
 			} else {
 				fprintf(stderr,
-					" Tvheap=[%zu,%zu,f=%d]%s",
-					HEAPmemsize(b->tvheap),
-					HEAPvmsize(b->tvheap),
+					" Tvheap=[%zu,%zu,f=%d]%s%s",
+					b->tvheap->free,
+					b->tvheap->size,
 					b->tvheap->farmid,
+					b->tvheap->storage == STORE_MMAP ? "M" : "",
 					b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
