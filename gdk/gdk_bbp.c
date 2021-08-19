@@ -1674,7 +1674,7 @@ BBPdump(void)
 					b->theap->free,
 					b->theap->size,
 					b->theap->farmid,
-					b->theap->storage == STORE_MMAP ? "M" : "",
+					b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
 					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->theap);
@@ -1698,7 +1698,7 @@ BBPdump(void)
 					b->tvheap->free,
 					b->tvheap->size,
 					b->tvheap->farmid,
-					b->tvheap->storage == STORE_MMAP ? "M" : "",
+					b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
 					b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
