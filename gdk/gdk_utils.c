@@ -877,6 +877,8 @@ GDKembedded(void)
 	return Mbedded;
 }
 
+static MT_Id mainpid;
+
 gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
@@ -887,6 +889,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	mainpid = MT_getpid();
 
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
@@ -1188,12 +1192,13 @@ GDKexiting(void)
 void
 GDKprepareExit(void)
 {
-	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
-		return;
+	ATOMIC_ADD(&GDKstopped, 1);
 
-	TRC_DEBUG_IF(THRD)
-		dump_threads();
-	join_detached_threads();
+	if (MT_getpid() == mainpid) {
+		TRC_DEBUG_IF(THRD)
+			dump_threads();
+		join_detached_threads();
+	}
 }
 
 void
