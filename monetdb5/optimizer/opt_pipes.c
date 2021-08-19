@@ -49,7 +49,20 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();" 
+	 "optimizer.profiler();"
+	 //"optimizer.candidates();" only for decoration in explain
+	 //"optimizer.mask();"
+	 "optimizer.garbageCollector();",
+	 "stable", NULL, 1},
+	{"minimal_strimps_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.strimps();"
+	 "optimizer.deadcode();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.profiler();"
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",

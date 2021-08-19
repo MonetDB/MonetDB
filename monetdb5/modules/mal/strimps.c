@@ -86,10 +86,10 @@ PATstrimpCreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "strimps.strimpHeader", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "strimps.strimpCreate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if(STRMPcreate(b) != GDK_SUCCEED)
-		throw(MAL, "strimps.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
+		throw(MAL, "strimps.strimpCreate", SQLSTATE(HY002) OPERATION_FAILED);
 
 	// *getArgReference_lng(stk, pci, 0) = 0;
 	return MAL_SUCCEED;
