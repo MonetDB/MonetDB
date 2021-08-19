@@ -1016,11 +1016,11 @@ movestrbats(void)
 #endif
 
 static void
-BBPtrim(bool aggresive)
+BBPtrim(bool aggressive)
 {
 	int n = 0;
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
-	if (!aggresive)
+	if (!aggressive)
 		flag |= BBPHOT;
 	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
 		MT_lock_set(&GDKswapLock(bid));
@@ -1030,9 +1030,10 @@ BBPtrim(bool aggresive)
 		    BBP_lrefs(bid) != 0 &&
 		    (b = BBP_cache(bid)) != NULL &&
 		    b->batSharecnt == 0 &&
-		    (!BATdirty(b) || (b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
-		    !(BBP_status(bid) & flag) &&
-		    (BBP_status(bid) & BBPPERSISTENT)) {
+		    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
+		    !(BBP_status(bid) & flag) /*&&
+		    (BBP_status(bid) & BBPPERSISTENT ||
+		    (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
 			BBP_status_on(bid, BBPUNLOADING);
 			swap = true;
 		}
@@ -1044,7 +1045,7 @@ BBPtrim(bool aggresive)
 			n++;
 		}
 	}
-	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggresive ? " (also hot)" : "");
+	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggressive ? " (also hot)" : "");
 }
 
 static void
@@ -1057,13 +1058,14 @@ BBPmanager(void *dummy)
 		for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
 			MT_lock_set(&GDKswapLock(bid));
 			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
+				n += (BBP_status(bid) & BBPHOT) != 0;
 				BBP_status_off(bid, BBPHOT);
-				n++;
 			}
 			MT_lock_unset(&GDKswapLock(bid));
 		}
 		TRC_DEBUG(BAT_, "cleared HOT bit from %d bats\n", n);
-		for (int i = 0, n = GDKvm_cursize() > GDK_vm_maxsize / 2 ? 25 : 100; i < n; i++) {
+		size_t cur = GDKvm_cursize();
+		for (int i = 0, n = cur > GDK_vm_maxsize / 2 ? 1 : cur > GDK_vm_maxsize / 4 ? 10 : 100; i < n; i++) {
 			MT_sleep_ms(100);
 			if (GDKexiting())
 				return;
@@ -2453,11 +2455,15 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
+	unsigned chkflag = BBPSYNCING;
+	if (GDKvm_cursize() < GDK_vm_maxsize &&
+	     ((b && b->theap ? b->theap->size : 0) + (b && b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
+		chkflag |= BBPHOT;
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
 	     (b == NULL ||
 	      BATdirty(b) ||
-	      (BBP_status(i) & (BBPHOT | BBPSYNCING)) ||
+	      (BBP_status(i) & chkflag) ||
 	      !(BBP_status(i) & BBPPERSISTENT) ||
 	      GDKinmemory(farmid)))) {
 		/* bat cannot be swapped out */
