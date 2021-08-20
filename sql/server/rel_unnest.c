@@ -3296,7 +3296,7 @@ rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 	if (rel->op == op_join && list_empty(rel->exps)) {
 		sql_rel *r = rel->r;
 
-		if (is_simple_project(r->op) && r->l && !project_unsafe(r, 1)) {
+		if (is_simple_project(r->op) && r->l && !project_unsafe(r, 1, 0)) {
 			sql_rel *rl = r->l;
 
 			if (is_simple_project(rl->op) && !rl->l && list_length(rl->exps) == 1) {

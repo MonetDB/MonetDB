@@ -2894,7 +2894,7 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 	    prj && prj->op == op_project && !(rel_is_ref(prj)) && !prj->r) {
 		int all = 1;
 
-		if (project_unsafe(rel,0) || project_unsafe(prj,0) || exps_share_expensive_exp(rel->exps, prj->exps))
+		if (project_unsafe(rel,0,0) || project_unsafe(prj,0,0) || exps_share_expensive_exp(rel->exps, prj->exps))
 			return rel;
 
 		/* here we need to fix aliases */
@@ -3396,8 +3396,8 @@ rel_merge_union(visitor *v, sql_rel *rel)
 	sql_rel *ref = NULL;
 
 	if (is_union(rel->op) &&
-	    l && is_project(l->op) && !project_unsafe(l,0) &&
-	    r && is_project(r->op) && !project_unsafe(r,0) &&
+	    l && is_project(l->op) && !project_unsafe(l,0,0) &&
+	    r && is_project(r->op) && !project_unsafe(r,0,0) &&
 	    (ref = rel_find_ref(l)) != NULL && ref == rel_find_ref(r)) {
 		/* Find selects and try to merge */
 		sql_rel *ls = rel_find_select(l);
@@ -4687,7 +4687,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && r && r->op == op_project && !(rel_is_ref(r))){
 		sql_rel *pl = r->l;
 		/* we cannot push through rank (row_number etc) functions or projects with distinct */
-		if (pl && !project_unsafe(r, 1)) {
+		if (pl && !project_unsafe(r, 1, 1)) {
 			/* introduce selects under the project (if needed) */
 			set_processed(pl);
 			for (n = exps->h; n;) {
@@ -5619,7 +5619,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0,0))
 			return rel;
 		/* don't push project down union of single values */
 		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
@@ -6427,8 +6427,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
-		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
-		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))
+		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op),0))) ||
+		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0,0))))))
 			return rel;
 
 		if (l->op == op_project && l->l) {
@@ -6754,7 +6754,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 	}
 	/* for count/rank we need atleast one column */
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
-		(is_simple_project(rel->op) && project_unsafe(rel, 0))) {
+		(is_simple_project(rel->op) && project_unsafe(rel, 0, 0))) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}
