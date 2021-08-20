@@ -13,13 +13,13 @@ language P
 	return retval
 }
 
-query TTII rowsort
+query TTIT rowsort
 SELECT * FROM pyapi17()
 ----
 foo
 bar
 0
-1
+True
 
 statement ok
 DROP FUNCTION pyapi17
@@ -37,13 +37,13 @@ language P
 	return retval
 }
 
-query TTII rowsort
+query TTIT rowsort
 SELECT * FROM pyapi17()
 ----
 foo
 bar
 0
-1
+True
 
 statement ok
 DROP FUNCTION pyapi17
@@ -60,7 +60,7 @@ language P
 	return retval
 }
 
-statement error
+statement error PY000!Error converting dict return value "a": An array of size 2 was returned, yet we expect a list of 1 columns. The result is invalid..
 SELECT * FROM pyapi17()
 
 statement ok
@@ -80,7 +80,7 @@ language P
 	return retval
 }
 
-statement error
+statement error PY000!Expected a return value with name "c", but this key was not present in the dictionary.
 SELECT * FROM pyapi17()
 
 statement ok
@@ -92,7 +92,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO integers VALUES (3)
 
 statement ok
@@ -104,7 +104,7 @@ language P
 	return retval
 }
 
-statement error
+statement error PY000!Expected a return value with name "result", but this key was not present in the dictionary.
 SELECT pyapi17(i) FROM integers
 
 statement ok
@@ -116,7 +116,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE integers(i INTEGER)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO integers VALUES (3)
 
 statement ok
