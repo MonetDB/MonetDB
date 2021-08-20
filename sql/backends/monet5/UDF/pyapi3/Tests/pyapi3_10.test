@@ -66,12 +66,10 @@ language P
     return {'i': numpy.ma.masked_array(res['i'], mask=res['i'] < 50), 'j': numpy.ma.masked_array(res['j'], mask=res['j'] < 50)}
 }
 
-statement error
+statement ok
 CREATE FUNCTION pyapi10_indentation_error(i integer,j integer) returns integer
 language PYTHON_MAP
-{   a = 1
-
-statement error
+{   a = 1;
     b = 2
     c = 3
     d = 4
@@ -94,12 +92,10 @@ SELECT AVG(pyapi10_indentation_error(i,j)) FROM pyapi10_random_table_nulls(5000)
 statement ok
 ROLLBACK
 
-statement error
+statement ok
 CREATE FUNCTION pyapi10_indentation_error(i integer,j integer) returns integer
 language PYTHON_MAP
-{   a = 1
-
-statement error
+{   a = 1;
     b = 2
     c = 3
     d = 4
@@ -128,16 +124,16 @@ language P
     return {'i': numpy.ma.masked_array(res['i'], mask=res['i'] < 50), 'j': numpy.ma.masked_array(res['j'], mask=res['j'] < 50)}
 }
 
-statement error
+statement ok
 CREATE FUNCTION pyapi10_runtime_exception(i integer,j integer) returns integer
 language PYTHON_MAP
 {
-    return_val = i * j
-
-statement error
+    return_val = i * j;
     myint = 5
     mydivision = 0
+    # comments
     hello = myint / mydivision
+    # comments
     return return_val
 }
 
