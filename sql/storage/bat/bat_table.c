@@ -752,16 +752,25 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	}
 	rcb = s;
 
-	diff = BATdiff(lcb, rcb, l->data, NULL, false, false, BUN_NONE);
-	bat_destroy(rcb);
-	if (diff == NULL) {
+	s = BATproject(l->data, lcb);
+	if (s == NULL) {
 		bat_destroy(lcb);
+		bat_destroy(rcb);
 		return NULL;
 	}
 
-	ret = BATjoin(&rids, NULL, lcb, lcb, NULL, diff, false, BATcount(lcb) - BATcount(diff));
+	diff = BATdiff(s, rcb, NULL, NULL, false, false, BUN_NONE);
+	bat_destroy(rcb);
+	if (diff == NULL) {
+		bat_destroy(lcb);
+		bat_destroy(s);
+		return NULL;
+	}
+
+	ret = BATjoin(&rids, NULL, lcb, s, NULL, diff, false, BATcount(s));
 	bat_destroy(diff);
 	bat_destroy(lcb);
+	bat_destroy(s);
 	if (ret != GDK_SUCCEED)
 		return NULL;
 
