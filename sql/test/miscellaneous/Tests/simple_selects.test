@@ -753,7 +753,7 @@ select ups()
 2
 
 statement ok
-create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end
+create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; return 1; end
 
 query I rowsort
 select ups()
@@ -761,7 +761,7 @@ select ups()
 1
 
 statement ok
-create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end
+create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; return 3; end
 
 query I rowsort
 select ups()
@@ -854,3 +854,11 @@ select nasty()
 
 statement ok
 rollback
+
+statement error CREATE FUNCTION: missing return statement
+CREATE FUNCTION wrongfunc() RETURNS INT
+BEGIN
+	WHILE (FALSE) DO
+		RETURN 1;
+	END WHILE;
+END

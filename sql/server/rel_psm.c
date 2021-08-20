@@ -585,29 +585,6 @@ rel_select_with_into(sql_query *query, symbol *sq)
 	return rel_psm_block(query->sql->sa, reslist);
 }
 
-static int while_exps_find_one_return(list *l);
-
-static int
-while_exp_find_one_return(sql_exp *e)
-{
-	if (e->flag & PSM_RETURN)
-		return 1;
-	if (e->flag & PSM_WHILE)
-		return while_exps_find_one_return(e->r);
-	if (e->flag & PSM_IF)
-		return while_exps_find_one_return(e->r) || (e->f && while_exps_find_one_return(e->f));
-	return 0;
-}
-
-static int
-while_exps_find_one_return(list *l)
-{
-	int res = 0;
-	for (node *n = l->h ; n && !res; n = n->next)
-		res |= while_exp_find_one_return(n->data);
-	return res;
-}
-
 static int has_return( list *l );
 
 static int
@@ -618,8 +595,6 @@ exp_has_return(sql_exp *e)
 			return 1;
 		if (e->flag & PSM_IF) /* for if, both sides must exist and both must have a return */
 			return has_return(e->r) && e->f && has_return(e->f);
-		if (e->flag & PSM_WHILE) /* for while, at least one of the statements must have a return */
-			return while_exps_find_one_return(e->r);
 	}
 	return 0;
 }
