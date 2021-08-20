@@ -87,6 +87,9 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 		pushInstruction(mb, p);
 	}
+	for (; i < slimit; i++)
+	if (old[i])
+		freeInstruction(old[i]);
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
