@@ -23,9 +23,8 @@
 str
 OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit;
+	int i, limit, needed =0, actions=0;
 	// int mvcvar = -1;
-	int count=0;
 	InstrPtr p,q,r, *old = mb->stmt;
 	char buf[256];
 	lng usec = GDKusec();
@@ -42,12 +41,27 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
+	// check applicability first
+	for( i=0; i < limit; i++){
+		p = old[i];
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef)
+			needed = 1;
+	}
+	if (!needed)
+		goto bailout;
+
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.strimps", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
+                if (p->token == ENDsymbol){
+                        pushInstruction(mb,p);
+                        break;
+                }
+		/* Look for bind operations on strings, because for those we migh need strimps */
+
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef) {
 			q = newInstruction(0, strimpsRef, mkstrimpsRef); /* This should be void? */
 			setDestVar(q, newTmpVariable(mb, TYPE_void));
@@ -69,14 +83,14 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			pushInstruction(mb, r);
 			// typeChecker(cntxt->usermodule, mb, r, mb->stop-1, TRUE);
 
-			count++;
+			actions++;
 		}
 		pushInstruction(mb, p);
 	}
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( count){
+    if( actions){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
         	msg = chkFlow(mb);
@@ -84,10 +98,11 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
+bailout:
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","strimps",count,usec);
-    newComment(mb,buf);
-	if( count > 0)
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","strimps",actions,usec);
+	newComment(mb,buf);
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 	return msg;
 }
