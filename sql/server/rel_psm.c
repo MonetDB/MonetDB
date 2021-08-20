@@ -231,12 +231,11 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		if (!(cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek)))
+			return NULL;
 		psm_zero_or_one(cond);
 		n = n->next;
-		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
-
-		if (sql->session->status || !cond || !whilestmts)
+		if (!(whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func)))
 			return NULL;
 
 		return exp_while( sql->sa, cond, whilestmts );
@@ -263,14 +262,15 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		if (!(cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek)))
+			return NULL;
 		psm_zero_or_one(cond);
 		n = n->next;
-		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
+		if (!(ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func)))
+			return NULL;
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
-
-		if (sql->session->status || !cond || !ifstmts)
+		if (sql->session->status)
 			return NULL;
 
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
@@ -296,13 +296,15 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		if (!(cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek)))
+			return NULL;
 		psm_zero_or_one(cond);
 		n = n->next;
-		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
+		if (!(ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func)))
+			return NULL;
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
-		if (sql->session->status || !cond || !ifstmts)
+		if (sql->session->status)
 			return NULL;
 
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);

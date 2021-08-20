@@ -527,6 +527,8 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 		return NULL;
 	s = BATproject(r->data, b);
 	bat_destroy(b);
+	if (s == NULL)
+		return NULL;
 	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;
@@ -750,25 +752,16 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	}
 	rcb = s;
 
-	s = BATproject(l->data, lcb);
-	if (s == NULL) {
-		bat_destroy(lcb);
-		bat_destroy(rcb);
-		return NULL;
-	}
-
-	diff = BATdiff(s, rcb, NULL, NULL, false, false, BUN_NONE);
+	diff = BATdiff(lcb, rcb, l->data, NULL, false, false, BUN_NONE);
 	bat_destroy(rcb);
 	if (diff == NULL) {
 		bat_destroy(lcb);
-		bat_destroy(s);
 		return NULL;
 	}
 
-	ret = BATjoin(&rids, NULL, lcb, s, NULL, diff, false, BATcount(s));
+	ret = BATjoin(&rids, NULL, lcb, lcb, NULL, diff, false, BATcount(lcb) - BATcount(diff));
 	bat_destroy(diff);
 	bat_destroy(lcb);
-	bat_destroy(s);
 	if (ret != GDK_SUCCEED)
 		return NULL;
 
