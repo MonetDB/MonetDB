@@ -1,0 +1,157 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table "plantest0" ("id" bigint)
+
+statement ok
+create table "plantest1" ("id" bigint)
+
+statement ok
+create procedure plantestp()
+begin
+declare rowindex bigint;
+set rowindex = 0;
+while rowindex < 5 do
+insert into plantest0 (id) values (100000000 + rowindex);
+insert into plantest1 (id) values (110000000 + rowindex);
+set rowindex = rowindex + 1;
+end while;
+end
+
+statement ok
+call plantestp()
+
+statement ok
+create view plantestv as
+select
+v.*, v.id / 10000000 as id_div
+from
+(
+select * from plantest0 union all
+select * from plantest1
+) as v
+
+query T nosort
+plan select
+id_r * 10000000 as id_range_base,
+count(id_r) as nrows
+from
+(select
+id / 10000000
+from
+plantestv v
+where
+id >= 150000000
+) as t (id_r)
+group by
+id_r
+order by
+id_r asc
+----
+project (
+| project (
+| | group by (
+| | | union (
+| | | | group by (
+| | | | | project (
+| | | | | | select (
+| | | | | | | table("sys"."plantest0") [ "plantest0"."id" ] COUNT 
+| | | | | | ) [ "plantest0"."id" >= bigint "150000000" ]
+| | | | | ) [ "sys"."sql_div"("plantest0"."id" as "v"."id", int "10000000") as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ],
+| | | | group by (
+| | | | | project (
+| | | | | | select (
+| | | | | | | table("sys"."plantest1") [ "plantest1"."id" ] COUNT 
+| | | | | | ) [ "plantest1"."id" >= bigint "150000000" ]
+| | | | | ) [ "sys"."sql_div"("plantest1"."id" as "v"."id", int "10000000") as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ]
+| | | ) [ "t"."id_r", "%6"."%6" ]
+| | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."sum" no nil ("%6"."%6") as "%6"."%6" ]
+| ) [ "sys"."sql_mul"("t"."id_r", int "10000000") as "id_range_base", "%6"."%6" NOT NULL as "nrows", "t"."id_r" ]
+) [ "id_range_base", "nrows" NOT NULL ] [ "t"."id_r" ASC ]
+
+query II rowsort
+select
+id_r * 10000000 as id_range_base,
+count(id_r) as nrows
+from
+(select
+id / 10000000
+from
+plantestv v
+where
+id >= 150000000
+) as t (id_r)
+group by
+id_r
+order by
+id_r asc
+----
+
+
+query T nosort
+plan select
+id_r * 10000000 as id_range_base,
+count(id_r) as nrows
+from
+(select
+id_div
+from
+plantestv v
+where
+id >= 150000000
+) as t (id_r)
+group by
+id_r
+order by
+id_r asc
+----
+project (
+| project (
+| | group by (
+| | | union (
+| | | | group by (
+| | | | | project (
+| | | | | | project (
+| | | | | | | select (
+| | | | | | | | table("sys"."plantest0") [ "plantest0"."id" ] COUNT 
+| | | | | | | ) [ "plantest0"."id" >= bigint "150000000" ]
+| | | | | | ) [ "sys"."sql_div"("plantest0"."id" as "v"."id", int "10000000") as "v"."id_div" ]
+| | | | | ) [ "v"."id_div" as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ],
+| | | | group by (
+| | | | | project (
+| | | | | | project (
+| | | | | | | select (
+| | | | | | | | table("sys"."plantest1") [ "plantest1"."id" ] COUNT 
+| | | | | | | ) [ "plantest1"."id" >= bigint "150000000" ]
+| | | | | | ) [ "sys"."sql_div"("plantest1"."id" as "v"."id", int "10000000") as "v"."id_div" ]
+| | | | | ) [ "v"."id_div" as "t"."id_r" ]
+| | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ]
+| | | ) [ "t"."id_r", "%6"."%6" ]
+| | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."sum" no nil ("%6"."%6") as "%6"."%6" ]
+| ) [ "sys"."sql_mul"("t"."id_r", int "10000000") as "id_range_base", "%6"."%6" NOT NULL as "nrows", "t"."id_r" ]
+) [ "id_range_base", "nrows" NOT NULL ] [ "t"."id_r" ASC ]
+
+query II rowsort
+select
+id_r * 10000000 as id_range_base,
+count(id_r) as nrows
+from
+(select
+id_div
+from
+plantestv v
+where
+id >= 150000000
+) as t (id_r)
+group by
+id_r
+order by
+id_r asc
+----
+
+statement ok
+ROLLBACK

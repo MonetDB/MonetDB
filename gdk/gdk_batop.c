@@ -961,6 +961,7 @@ BATdel(BAT *b, BAT *d)
 					Tloc(b, o + c),
 					Tsize(b) * (BATcount(b) - (o + c)));
 			}
+			b->theap->dirty = true;
 			// o += b->hseqbase; // if this were to be used again
 		}
 		MT_lock_set(&b->theaplock);
@@ -1034,6 +1035,7 @@ BATdel(BAT *b, BAT *d)
 		}
 		bat_iterator_end(&di);
 		MT_lock_set(&b->theaplock);
+		b->theap->dirty = true;
 		b->batCount -= nd;
 		MT_lock_unset(&b->theaplock);
 	}
