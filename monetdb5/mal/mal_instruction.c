@@ -123,6 +123,7 @@ newMalBlk(int elements)
 	mb->vid = 0;
 	mb->vsize = elements;
 	mb->help = NULL;
+	mb->statichelp = NULL;
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	mb->workers = 0;
@@ -282,9 +283,10 @@ freeMalBlk(MalBlkPtr mb)
 	mb->tag = 0;
 	mb->memory = 0;
 	mb->workers = 0;
-	if (mb->help)
+	if (mb->help && mb->statichelp != mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
+	mb->statichelp = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	freeException(mb->errors);
