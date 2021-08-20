@@ -2405,7 +2405,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"update sys.functions set system = true"
 							" where schema_id = 2000 and name = 'deltas';\n");
 			pos += snprintf(buf + pos, bufsize - pos, 
-							"create view sys.malfunctions as select \"signature\", \"comment\" from sys.malfunctions();\n");
+							"create view sys.malfunctions as select * from sys.malfunctions();\n");
 
 			/* 26_sysmon */
 			t = mvc_bind_table(sql, s, "queue");
