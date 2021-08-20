@@ -1,6 +1,5 @@
-import os, socket, tempfile, sys
+import os, socket, tempfile, sys, pymonetdb
 
-from MonetDBtesting.sqltest import SQLTestCase
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -19,8 +18,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
     with process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
-            tc.execute("call sys.shutdown(1, true);")
+        conn = pymonetdb.connect(database='db1', port=myport, autocommit=True)
+        cur = conn.cursor()
+        try:
+            cur.execute("call sys.shutdown(1, true);")
+            sys.stderr.write('Exception expected')
+        except:
+            pass
+        cur.close()
+        conn.close()
         out, err = srv.communicate()
         sys.stderr.write(err)

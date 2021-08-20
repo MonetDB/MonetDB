@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE dval(i integer)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO dval VALUES (1),(2),(3),(4)
 
 statement ok
@@ -14,13 +14,13 @@ language P
     return [True] * 4
 }
 
-query I rowsort
+query T rowsort
 SELECT pyapi04() FROM dval
 ----
-1
-1
-1
-1
+True
+True
+True
+True
 
 statement ok
 DROP FUNCTION pyapi04
