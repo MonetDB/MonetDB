@@ -117,7 +117,7 @@ static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 	(void)si;
 	(void)unused;
 
-	longjmp(jump_buffer[tid], 1);
+	longjmp(jump_buffer[tid-1], 1);
 }
 
 static bool can_mprotect_region(void* addr) {
@@ -173,7 +173,7 @@ static void *jump_GDK_malloc(size_t size)
 		return NULL;
 	void *ptr = GDKmalloc(size);
 	if (!ptr && option_enable_longjmp) {
-		longjmp(jump_buffer[THRgettid()], 2);
+		longjmp(jump_buffer[THRgettid()-1], 2);
 	}
 	return ptr;
 }
@@ -183,8 +183,8 @@ static void *add_allocated_region(void *ptr)
 	allocated_region *region;
 	int tid = THRgettid();
 	region = (allocated_region *)ptr;
-	region->next = allocated_regions[tid];
-	allocated_regions[tid] = region;
+	region->next = allocated_regions[tid-1];
+	allocated_regions[tid-1] = region;
 	return (char *)ptr + sizeof(allocated_region);
 }
 
@@ -237,7 +237,7 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		}                                                                      \
 		b = COLnew(0, TYPE_##tpename, count, TRANSIENT);                       \
 		if (!b) {                                                              \
-			if (option_enable_longjmp) longjmp(jump_buffer[THRgettid()], 2);   \
+			if (option_enable_longjmp) longjmp(jump_buffer[THRgettid()-1], 2); \
 			else return;                                                       \
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
@@ -379,6 +379,59 @@ static timestamp timestamp_from_data(cudf_data_timestamp *ptr);
 
 static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
 
+static str
+empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)
+{
+	str msg = MAL_SUCCEED;
+	void **res = GDKzalloc(retcols * sizeof(void*));
+
+	if (!res) {
+		msg = createException(MAL, "capi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (size_t i = 0; i < retcols; i++) {
+		if (isaBatType(getArgType(mb, pci, i))) {
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "capi.eval", GDK_EXCEPTION);
+				goto bailout;
+			}
+			((BAT**)res)[i] = b;
+		} else { // single value return, only for non-grouped aggregations
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				msg = createException(MAL, "capi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
+		}
+	}
+
+bailout:
+	if (res) {
+		for (size_t i = 0; i < retcols; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				BAT *b = ((BAT**)res)[i];
+
+				if (b && msg) {
+					BBPreclaim(b);
+				} else if (b) {
+					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+				}
+			} else if (msg) {
+				ValPtr pt = ((ValPtr*)res)[i];
+
+				if (pt)
+					VALclear(pt);
+			}
+		}
+		GDKfree(res);
+	}
+	return msg;
+}
+
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bool grouped)
 {
@@ -456,7 +509,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	(void)cntxt;
 
-	allocated_regions[tid] = NULL;
+	allocated_regions[tid-1] = NULL;
 
 	if (!GDKgetenv_istrue("embedded_c") && !GDKgetenv_isyes("embedded_c"))
 		throw(MAL, "cudf.eval", "Embedded C has not been enabled. "
@@ -971,8 +1024,19 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else {
 			// deal with BAT input
 			bat_type = getBatType(getArgType(mb, pci, i));
-			input_bats[index] =
-				BATdescriptor(*getArgReference_bat(stk, pci, i));
+			if (!(input_bats[index] =
+				  BATdescriptor(*getArgReference_bat(stk, pci, i)))) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			if (BATcount(input_bats[index]) == 0) {
+				/* empty input, generate trivial return */
+				/* I expect all inputs to have the same size,
+				   so this should be safe */
+				msg = empty_return(mb, stk, pci, output_count,
+								   input_bats[index]->hseqbase);
+				goto wrapup;
+			}
 		}
 
 		if (bat_type == TYPE_bit) {
@@ -1260,7 +1324,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// this longjmp point is used for some error handling in the C function
 	// such as failed mallocs
 	if (option_enable_longjmp) {
-		ret = setjmp(jump_buffer[tid]);
+		ret = setjmp(jump_buffer[tid-1]);
 		if (ret < 0) {
 			// error value
 			msg = createException(MAL, "cudf.eval", "Failed setjmp: %s",
@@ -1534,10 +1598,10 @@ wrapup:
 			regions = next;
 		}
 	}
-	while (allocated_regions[tid]) {
-		allocated_region *next = allocated_regions[tid]->next;
-		GDKfree(allocated_regions[tid]);
-		allocated_regions[tid] = next;
+	while (allocated_regions[tid-1]) {
+		allocated_region *next = allocated_regions[tid-1]->next;
+		GDKfree(allocated_regions[tid-1]);
+		allocated_regions[tid-1] = next;
 	}
 	if (option_enable_mprotect) {
 		// block segfaults and bus errors again after we exit

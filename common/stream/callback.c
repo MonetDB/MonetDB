@@ -52,7 +52,9 @@ cb_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct cbstream *cb = s->stream_data.p;
 
-	return cb->read(cb->private, buf, elmsize, cnt);
+	ssize_t ret = cb->read(cb->private, buf, elmsize, cnt);
+	s->eof |= ret == 0;
+	return ret;
 }
 
 static ssize_t

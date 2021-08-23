@@ -4,38 +4,41 @@ START TRANSACTION
 statement ok
 CREATE TABLE rval(i integer,j integer)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO rval VALUES (1,4), (2,3), (3,2), (4,1)
 
-statement error
+statement ok
 CREATE FUNCTION pyapi02(i integer,j integer,z integer) returns integer
 language P
 {
-    x = i * sum(j) * z
-
-statement error
-    return(x)
-
-statement error
+    x = i * sum(j) * z;
+    return(x);
 }
 
-statement error
+query I rowsort
 SELECT pyapi02(i,j,2) FROM rval
+----
+20
+40
+60
+80
 
-statement error
+statement ok
 DROP FUNCTION pyapi02
 
-statement error
+statement ok
 CREATE FUNCTION pyapi02(i integer) returns integer
 language P
 {
 	return numpy.min(i)
 }
 
-statement error
+query I rowsort
 SELECT pyapi02(i) FROM rval
+----
+1
 
-statement error
+statement ok
 DROP TABLE rval
 
 statement ok

@@ -254,12 +254,13 @@ BATmaterialize(BAT *b)
 	b->theap = tail;
 	b->tbaseoff = 0;
 	b->theap->dirty = true;
+	BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
+	BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){is_oid_nil(t) ? 1.0 : (dbl)b->batCount});
 	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;
 	BATsetdims(b);
 	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
-	BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
 
 	return GDK_SUCCEED;
 }
@@ -302,15 +303,18 @@ VIEWunlink(BAT *b)
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = NULL;
 		}
+
 		MT_lock_unset(&b->theaplock);
 
-		/* unlink properties shared with parent */
-		if (tpb && b->tprops && b->tprops == tpb->tprops)
-			b->tprops = NULL;
-
+		MT_lock_set(&b->batIdxLock);
 		/* unlink imprints shared with parent */
-		if (tpb && b->timprints && b->timprints == tpb->timprints)
+		if (b->timprints &&
+		    b->timprints != (Imprints *) 1 &&
+		    b->timprints->imprints.parentid != b->batCacheid) {
+			IMPSdecref(b->timprints, false);
 			b->timprints = NULL;
+		}
+		MT_lock_unset(&b->batIdxLock);
 	}
 }
 

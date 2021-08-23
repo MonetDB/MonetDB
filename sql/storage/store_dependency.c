@@ -46,6 +46,7 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_depend
 
 	if (is_oid_nil(store->table_api.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &dtype, NULL)))
 		log_res = store->table_api.table_insert(tr, t, &id, &depend_id, &dtype);
+
 	return log_res;
 }
 
@@ -112,11 +113,19 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 
 	rs = store->table_api.rids_select(tr, dep_id, &id, &id, NULL);
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)){
-		v = store->table_api.column_find_value(tr, dep_dep_id, rid);
+		if (!(v = store->table_api.column_find_value(tr, dep_dep_id, rid))) {
+			list_destroy(dep_list);
+			store->table_api.rids_destroy(rs);
+			return NULL;
+		}
 		id = *(sqlid*)v;
 		if (!(ignore_ids  && list_find_func_id(ignore_ids, id))) {
 			list_append(dep_list, v);
-			v = store->table_api.column_find_value(tr, dep_dep_type, rid);
+			if (!(v = store->table_api.column_find_value(tr, dep_dep_type, rid))) {
+				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
+				return NULL;
+			}
 			list_append(dep_list, v);
 		} else {
 			_DELETE(v);
@@ -132,16 +141,18 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 
 		rs = store->table_api.rids_select(tr, table_id, &id, &id, NULL);
 		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-			v = store->table_api.column_find_value(tr, tri_id, rid);
-			list_append(dep_list, v);
-			v = MNEW(sht);
-			if (v) {
-				*(sht *) v = (sht) depend_type;
-			} else {
+			if (!(v = store->table_api.column_find_value(tr, tri_id, rid))) {
 				list_destroy(dep_list);
 				store->table_api.rids_destroy(rs);
 				return NULL;
 			}
+			list_append(dep_list, v);
+			if (!(v = MNEW(sht))) {
+				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
+				return NULL;
+			}
+			*(sht *) v = (sht) depend_type;
 			list_append(dep_list, v);
 		}
 		store->table_api.rids_destroy(rs);
@@ -212,22 +223,24 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 	rids *users;
 	oid rid;
 
-	if (!l)
+	if (!l || !(users = backend_schema_user_dependencies(tr, schema_id))) {
+		list_destroy(l);
 		return NULL;
-
-	users = backend_schema_user_dependencies(tr, schema_id);
+	}
 
 	for (rid = store->table_api.rids_next(users); !is_oid_nil(rid); rid = store->table_api.rids_next(users)) {
-		v = store->table_api.column_find_value(tr, auth_id, rid);
-		list_append(l,v);
-		v = MNEW(sht);
-		if (v) {
-			*(sht*)v = (sht) type;
-		} else {
+		if (!(v = store->table_api.column_find_value(tr, auth_id, rid))) {
 			list_destroy(l);
 			store->table_api.rids_destroy(users);
 			return NULL;
 		}
+		list_append(l,v);
+		if (!(v = MNEW(sht))) {
+			list_destroy(l);
+			store->table_api.rids_destroy(users);
+			return NULL;
+		}
+		*(sht*)v = (sht) type;
 		list_append(l,v);
 	}
 	store->table_api.rids_destroy(users);
@@ -255,16 +268,18 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid owner_id)
 	rs = store->table_api.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
 
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-		v = store->table_api.column_find_value(tr, schema_id, rid);
-		list_append(l, v);
-		v = MNEW(sht);
-		if (v) {
-			*(sht*)v = (sht) type;
-		} else {
+		if (!(v = store->table_api.column_find_value(tr, schema_id, rid))) {
 			list_destroy(l);
 			store->table_api.rids_destroy(rs);
 			return NULL;
 		}
+		list_append(l, v);
+		if (!(v = MNEW(sht))) {
+			list_destroy(l);
+			store->table_api.rids_destroy(rs);
+			return NULL;
+		}
+		*(sht*)v = (sht) type;
 		list_append(l,v);
 	}
 	store->table_api.rids_destroy(rs);

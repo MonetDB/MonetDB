@@ -74,7 +74,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	0,	0 # length
 #exec  7();
 [ 1	]
@@ -90,7 +90,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 3,	2,	1,	0,	0,	0 # length
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
@@ -106,8 +106,8 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
-% 4,	3,	1,	0,	19,	6 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 4,	2,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
@@ -126,7 +126,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #on source.id=share_daily_history.id;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 4,	2,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
@@ -144,7 +144,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #on source.id=share_daily_history.id;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 4,	2,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
@@ -169,7 +169,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #on source.id=share_daily_history.id;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 4,	2,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
@@ -194,7 +194,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #on source.id=share_daily_history.id;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 4,	2,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
@@ -218,7 +218,7 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 #on source.id=share_daily_history.id;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 4,	2,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
 [ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]

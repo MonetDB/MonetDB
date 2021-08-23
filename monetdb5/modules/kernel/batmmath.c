@@ -388,12 +388,12 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BBPquickdesc(*bid, false))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+	if (!(b = BBPquickdesc(*bid))) {
+		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci, b, bs);

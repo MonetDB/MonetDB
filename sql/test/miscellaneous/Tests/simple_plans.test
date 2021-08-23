@@ -481,6 +481,65 @@ project (
 ) [ "%1"."%1" NOT NULL ]
 
 statement ok
+create table t1 (a int, b string)
+
+statement ok rowcount 4
+insert into t1 values (1,'a'), (2, 'b'), (3, 'c'), (4, 'd')
+
+statement ok
+create table t2 (a int)
+
+statement ok rowcount 4
+insert into t2 values (1),(2),(3),(4)
+
+statement ok
+create table t3 (b string)
+
+statement ok rowcount 4
+insert into t3 values ('a'),('b'),('c'),('d')
+
+query T nosort
+plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
+----
+project (
+| join (
+| | join (
+| | | table("sys"."t1") [ "t1"."a", "t1"."b" ] COUNT ,
+| | | table("sys"."t2") [ "t2"."a" ] COUNT 
+| | ) [ "t1"."a" = "t2"."a" ],
+| | table("sys"."t3") [ "t3"."b" ] COUNT 
+| ) [ ("t1"."b") FILTER "like" ("t3"."b", clob "", boolean "false") ]
+) [ "t1"."a", "t1"."b" ]
+
+query T python .explain.function_histogram
+explain select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
+----
+algebra.join
+1
+algebra.likejoin
+1
+algebra.projection
+4
+algebra.projectionpath
+2
+bat.pack
+5
+bat.single
+2
+querylog.define
+1
+sql.bind
+4
+sql.mvc
+1
+sql.resultSet
+1
+sql.tid
+3
+user.main
+1
+
+statement ok
 rollback
 
 statement ok

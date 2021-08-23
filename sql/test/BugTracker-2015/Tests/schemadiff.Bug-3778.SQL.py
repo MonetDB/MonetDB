@@ -101,17 +101,20 @@ with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 c.execute("select * from " + shardtable + workers[0]['tpf'] )
                 sys.stderr.write('Exception expected')
-            except pymonetdb.OperationalError as e:
-                if 'Parameter 1 has wrong SQL type, expected int, but got bigint instead' not in str(e):
+            except pymonetdb.IntegrityError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
                    print(str(e))
             else:
                 print(str(c.fetchall()))
 
+            c.close()
             masterproc.communicate()
             for worker in workers:
                 workerrec['proc'].communicate()
         finally:
             for worker in workers:
+                workerrec['conn'].close()
                 p = workerrec.get('proc')
                 if p is not None:
                     p.terminate()
+            masterconn.close()

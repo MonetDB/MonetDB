@@ -57,6 +57,16 @@ static void GDKunlockHome(int farmid);
 #undef realloc
 #undef free
 
+/* when the number of updates to a BAT is less than 1 in this number, we
+ * keep the GDK_UNIQUE_ESTIMATE property */
+BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
+/* if the number of unique values is less than 1 in this number, we
+ * destroy the hash rather than update it in HASH{append,insert,delete} */
+BUN HASH_DESTROY_UNIQUES_FRACTION = 1000;     /* likewise */
+/* if the estimated number of unique values is less than 1 in this
+ * number, don't build a hash table to do a hashselect */
+dbl NO_HASH_SELECT_FRACTION = 1000;           /* same here */
+
 /*
  * @+ Monet configuration file
  * Parse a possible MonetDB config file (if specified by command line
@@ -109,7 +119,7 @@ GDKgetenv(const char *name)
 	}
 	MT_lock_unset(&GDKenvlock);
 	if (GDKkey && GDKval) {
-		BUN b = BUNfnd(GDKkey, (ptr) name);
+		BUN b = BUNfnd(GDKkey, name);
 
 		if (b != BUN_NONE) {
 			BATiter GDKenvi = bat_iterator(GDKval);
@@ -250,9 +260,16 @@ GDKsetenv(const char *name, const char *value)
 		}
 		MT_lock_unset(&GDKenvlock);
 	}
-	gdk_return rc = BUNappend(GDKkey, name, false);
-	if (rc == GDK_SUCCEED)
-		rc = BUNappend(GDKval, conval ? conval : value, false);
+	BUN p = BUNfnd(GDKkey, name);
+	gdk_return rc;
+	if (p != BUN_NONE) {
+		rc = BUNreplace(GDKval, p + GDKval->hseqbase,
+				conval ? conval : value, false);
+	} else {
+		rc = BUNappend(GDKkey, name, false);
+		if (rc == GDK_SUCCEED)
+			rc = BUNappend(GDKval, conval ? conval : value, false);
+	}
 	GDKfree(conval);
 	return rc;
 }
@@ -860,6 +877,8 @@ GDKembedded(void)
 	return Mbedded;
 }
 
+static MT_Id mainpid;
+
 gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
@@ -870,6 +889,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	mainpid = MT_getpid();
 
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
@@ -1055,6 +1076,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "BBPrename of environment BATs failed");
 		return GDK_FAIL;
 	}
+	BBP_pid(GDKkey->batCacheid) = 0;
+	BBP_pid(GDKval->batCacheid) = 0;
 
 	/* store options into environment BATs */
 	for (i = 0; i < nlen; i++)
@@ -1137,6 +1160,21 @@ GDKinit(opt *set, int setlen, bool embedded)
 		TRC_CRITICAL(GDK, "GDKsetenv revision failed");
 		return GDK_FAIL;
 	}
+	GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 0;
+	if ((p = GDKgetenv("gdk_unique_estimate_keep_fraction")) != NULL)
+		GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = (BUN) strtoll(p, NULL, 10);
+	if (GDK_UNIQUE_ESTIMATE_KEEP_FRACTION == 0)
+		GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000;
+	HASH_DESTROY_UNIQUES_FRACTION = 0;
+	if ((p = GDKgetenv("hash_destroy_uniques_fraction")) != NULL)
+		HASH_DESTROY_UNIQUES_FRACTION = (BUN) strtoll(p, NULL, 10);
+	if (HASH_DESTROY_UNIQUES_FRACTION == 0)
+		HASH_DESTROY_UNIQUES_FRACTION = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
+	NO_HASH_SELECT_FRACTION = 0;
+	if ((p = GDKgetenv("no_hash_select_fraction")) != NULL)
+		NO_HASH_SELECT_FRACTION = (dbl) strtoll(p, NULL, 10);
+	if (NO_HASH_SELECT_FRACTION == 0)
+		NO_HASH_SELECT_FRACTION = (dbl) GDK_UNIQUE_ESTIMATE_KEEP_FRACTION;
 
 	return GDK_SUCCEED;
 }
@@ -1154,12 +1192,13 @@ GDKexiting(void)
 void
 GDKprepareExit(void)
 {
-	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
-		return;
+	ATOMIC_ADD(&GDKstopped, 1);
 
-	TRC_DEBUG_IF(THRD)
-		dump_threads();
-	join_detached_threads();
+	if (MT_getpid() == mainpid) {
+		TRC_DEBUG_IF(THRD)
+			dump_threads();
+		join_detached_threads();
+	}
 }
 
 void

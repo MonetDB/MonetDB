@@ -372,7 +372,7 @@ BATcalcnot(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -384,6 +384,8 @@ BATcalcnot(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
@@ -567,7 +569,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -580,6 +582,8 @@ BATcalcnegate(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
@@ -706,9 +710,9 @@ BATcalcabsolute(BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils= 0;
+	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -721,6 +725,8 @@ BATcalcabsolute(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
@@ -853,7 +859,7 @@ BATcalciszero(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -865,6 +871,8 @@ BATcalciszero(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, TYPE_bit,
@@ -995,7 +1003,7 @@ BATcalcsign(BAT *b, BAT *s)
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
-	oid x, bhseqbase = b->hseqbase;
+	oid x, bhseqbase;
 	struct canditer ci;
 
 	lng timeoffset = 0;
@@ -1007,6 +1015,8 @@ BATcalcsign(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
 		return BATconstant(ci.hseq, TYPE_bte,
@@ -1151,7 +1161,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	struct canditer ci;
 	bit *restrict dst;
 	BUN nils = 0;
-	oid bhseqbase = b->hseqbase;
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1163,6 +1173,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 
 	BATcheck(b, NULL);
 
+	bhseqbase = b->hseqbase;
 	ncand = canditer_init(&ci, b, s);
 
 	if (b->tnonil || BATtdense(b)) {
@@ -1321,7 +1332,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1334,6 +1345,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1392,7 +1405,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) < 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1410,7 +1423,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) < 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1541,7 +1554,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1554,6 +1567,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1616,7 +1631,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1638,7 +1653,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1753,9 +1768,9 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1766,6 +1781,10 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1818,7 +1837,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				} else {
 					p1 = cmp(p1, p2) < 0 ? p1 : p2;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
@@ -1914,9 +1933,9 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1927,6 +1946,10 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -1978,7 +2001,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -1989,7 +2012,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2065,7 +2088,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2078,6 +2101,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2136,7 +2161,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) > 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2154,7 +2179,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p1, p2) > 0 ? p1 : p2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2243,7 +2268,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bool nils = false;
 	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase = b1->hseqbase, b2hseqbase = b2->hseqbase;
+	oid b1hseqbase, b2hseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2256,6 +2281,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
+	b1hseqbase = b1->hseqbase;
+	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2319,7 +2346,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2342,7 +2369,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					} else {
 						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2442,9 +2469,9 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2455,6 +2482,10 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2507,7 +2538,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				} else {
 					p1 = cmp(p1, p2) > 0 ? p1 : p2;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
@@ -2576,9 +2607,9 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	BUN ncand;
 	struct canditer ci;
 	const void *p2;
-	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	oid bhseqbase = b->hseqbase;
+	const void *restrict nil;
+	int (*cmp)(const void *, const void *);
+	oid bhseqbase;
 
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2589,6 +2620,10 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
@@ -2641,7 +2676,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -2652,7 +2687,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
-					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -4309,7 +4344,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			r = BUNtvar(b2i, x2);
 		if (strNil(l) || strNil(r)) {
 			nils++;
-			if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 				goto bunins_failed;
 		} else {
 			llen = strlen(l);
@@ -4322,7 +4357,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 					goto bunins_failed;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
-			if (tfastins_nocheckVAR(bn, i, s, Tsize(bn)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -4393,9 +4428,9 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
 	 * the result is also sorted */
-	bn->tsorted = (abort_on_error && b1->tsorted & b2->tsorted && nils == 0)
+	bn->tsorted = (abort_on_error && b1->tsorted && b2->tsorted && nils == 0)
 		|| ncand <= 1 || nils == ncand;
-	bn->trevsorted = (abort_on_error && b1->trevsorted & b2->trevsorted && nils == 0)
+	bn->trevsorted = (abort_on_error && b1->trevsorted && b2->trevsorted && nils == 0)
 		|| ncand <= 1 || nils == ncand;
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
@@ -14809,7 +14844,7 @@ BATcalcifthenelse_intern(BAT *b,
 						else
 							p = col2;
 					}
-					if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 						BBPreclaim(bn);
 						return NULL;
 					}
@@ -14833,7 +14868,7 @@ BATcalcifthenelse_intern(BAT *b,
 					else
 						p = col2;
 				}
-				if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -15925,7 +15960,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			src = BUNtvar(bi, x);
 			if (strNil(src))
 				nils++;
-			if (tfastins_nocheckVAR(bn, i, src, bn->twidth) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(bn, i, src) != GDK_SUCCEED) {
 				goto bunins_failed;
 			}
 		}
@@ -15936,12 +15971,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			src = BUNtvar(bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-				if (tfastins_nocheckVAR(bn, i, str_nil, bn->twidth) != GDK_SUCCEED) {
+				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0 ||
-				    tfastins_nocheckVAR(bn, i, dst, bn->twidth) != GDK_SUCCEED) {
+				    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
@@ -15951,8 +15986,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			const char *v;
 			x = canditer_next(ci) - candoff;
 			v = Tmskval(&bi, x) ? "1" : "0";
-			if (tfastins_nocheckVAR(bn, i, v,
-						bn->twidth) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, v) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	} else {
@@ -15961,12 +15995,12 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			src = BUNtloc(bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-				if (tfastins_nocheckVAR(bn, i, str_nil, bn->twidth) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 					goto bunins_failed;
 			} else {
 				if ((*atomtostr)(&dst, &len, src, false) < 0)
 					goto bunins_failed;
-				if (tfastins_nocheckVAR(bn, i, dst, bn->twidth) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 		}
@@ -16168,7 +16202,7 @@ convert_void_any(oid seq, BAT *bn,
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
 				goto bunins_failed;
-			if (tfastins_nocheckVAR(bn, i, s, bn->twidth) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 		GDKfree(s);

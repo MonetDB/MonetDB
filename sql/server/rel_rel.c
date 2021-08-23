@@ -25,7 +25,7 @@ rel_set_exps(sql_rel *rel, list *exps)
 
 /* some projections results are order dependend (row_number etc) */
 int
-project_unsafe(sql_rel *rel, int allow_identity)
+project_unsafe(sql_rel *rel, int allow_identity, int allow_self_reference)
 {
 	sql_rel *sub = rel->l;
 	node *n;
@@ -43,9 +43,8 @@ project_unsafe(sql_rel *rel, int allow_identity)
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity))
 			return 1;
-		ne = rel_find_exp(rel, e);
-		if (ne && ne != e) /* no self referencing */
-			return 1;
+		if (!allow_self_reference && (ne = rel_find_exp(rel, e)) && ne != e)
+			return 1; /* no self referencing */
 	}
 	return 0;
 }
@@ -147,14 +146,10 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	if (!rel)
 		return NULL;
 
-	rel->l = NULL;
-	rel->r = NULL;
-	rel->card = i->card;
-	rel->flag = i->flag;
-
+	rel->op = i->op;
 	switch(i->op) {
 	case op_basetable:
-		rel->l = i->l;
+		rel_base_copy(sql, i, rel);
 		break;
 	case op_table:
 		rel->l = i->l;
@@ -211,7 +206,25 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 			rel->r = rel_copy(sql, i->r, deep);
 		break;
 	}
-	rel->op = i->op;
+
+	rel->card = i->card;
+	rel->flag = i->flag;
+	rel->nrcols = i->nrcols;
+	rel->grouped = i->grouped;
+	rel->used = i->used;
+
+	if (is_processed(i))
+		set_processed(rel);
+	if (is_dependent(i))
+		set_dependent(rel);
+	if (is_outer(i))
+		set_outer(rel);
+	if (is_single(i))
+		set_single(rel);
+	if (need_distinct(i))
+		set_distinct(rel);
+
+	rel->p = prop_copy(sql->sa, i->p);
 	rel->exps = (!i->exps)?NULL:deep?exps_copy(sql, i->exps):list_dup(i->exps, (fdup)NULL);
 	return rel;
 }
@@ -407,7 +420,7 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
-	rel_setop_set_exps(sql, rel, exps);
+	rel_setop_set_exps(sql, rel, exps, false);
 	set_processed(rel);
 	return rel;
 }
@@ -500,7 +513,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 }
 
 void
-rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
+rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 {
 	sql_rel *l = rel->l, *r = rel->r;
 	list *lexps = l->exps, *rexps = r->exps;
@@ -520,7 +533,8 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
-			e->p = NULL; /* remove all the properties on unions */
+			if (!keep_props)
+				e->p = NULL; /* remove all the properties on unions on the general case */
 		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
@@ -541,8 +555,8 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	rel->single = r->single;
-	if (r->single)
+	rel->single = is_single(r);
+	if (is_single(r))
 		reset_single(r);
 	return rel;
 }
@@ -615,7 +629,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
-			if (!e->freevar) {
+			if (!is_freevar(e)) {
 				if (all) {
 					nr = ++sql->label;
 					cnme = number2name(cname, sizeof(cname), nr);
@@ -817,7 +831,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = list_length(e);
 		else
 			rel->nrcols = l->nrcols;
-		rel->single = l->single;
+		rel->single = is_single(l);
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);
@@ -1330,7 +1344,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 	if (!rel)
 		return NULL;
-	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1), false);
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
@@ -1589,18 +1603,18 @@ exps_deps(mvc *sql, list *exps, list *refs, list *l)
 }
 
 static int
-id_cmp(sqlid *id1, sqlid *id2)
+id_cmp(sql_base *id1, sql_base *id2)
 {
-	if (*id1 == *id2)
+	if (id1->id == id2->id)
 		return 0;
 	return -1;
 }
 
 static list *
-cond_append(list *l, sqlid *id)
+cond_append(list *l, sql_base *b)
 {
-	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
-		 list_append(l, id);
+	if (b->id >= FUNC_OIDS && !list_find(l, b, (fcmp) &id_cmp))
+		list_append(l, b);
 	return l;
 }
 
@@ -1643,7 +1657,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
 			return -1;
-		cond_append(l, &f->func->base.id);
+		cond_append(l, &f->func->base);
 		if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
 			/* add dependency on seq nr */
 			list *nl = e->l;
@@ -1656,7 +1670,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 				if (sche) {
 					sql_sequence *seq = find_sql_sequence(sql->session->tr, sche, seq_name);
 					if (seq)
-						cond_append(l, &seq->base.id);
+						cond_append(l, &seq->base);
 				}
 			}
 		}
@@ -1666,13 +1680,13 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
 			return -1;
-		cond_append(l, &a->func->base.id);
+		cond_append(l, &a->func->base);
 	} break;
 	case e_cmp: {
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (e->flag == cmp_filter) {
 				sql_subfunc *f = e->f;
-				cond_append(l, &f->func->base.id);
+				cond_append(l, &f->func->base);
 			}
 			if (exps_deps(sql, e->l, refs, l) != 0 ||
 				exps_deps(sql, e->r, refs, l) != 0)
@@ -1709,12 +1723,8 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	switch (r->op) {
 	case op_basetable: {
 		sql_table *t = r->l;
-		sql_column *c = r->r;
 
-		if (!t && c)
-			t = c->t;
-
-		cond_append(l, &t->base.id);
+		cond_append(l, &t->base);
 		/* find all used columns */
 		for (node *en = r->exps->h; en; en = en->next) {
 			sql_exp *exp = en->data;
@@ -1725,10 +1735,10 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				continue;
 			} else if (oname[0] == '%') {
 				sql_idx *i = find_sql_idx(t, oname+1);
-				cond_append(l, &i->base.id);
+				cond_append(l, &i->base);
 			} else {
 				sql_column *c = find_sql_column(t, oname);
-				cond_append(l, &c->base.id);
+				cond_append(l, &c->base);
 			}
 		}
 	} break;
@@ -1736,7 +1746,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		if ((IS_TABLE_PROD_FUNC(r->flag) || r->flag == TABLE_FROM_RELATION) && r->r) { /* table producing function, excluding rel_relational_func cases */
 			sql_exp *op = r->r;
 			sql_subfunc *f = op->f;
-			cond_append(l, &f->func->base.id);
+			cond_append(l, &f->func->base);
 		}
 	} break;
 	case op_join:

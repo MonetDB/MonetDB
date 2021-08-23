@@ -21,3 +21,6 @@ if has_huge:
     cur1.execute('select bit_and(3749090034127126942, 0xffffffffffffffff);')
     if cur1.fetchall() != [(3749090034127126942,)]:
         sys.stderr.write('[(3749090034127126942,)] expected')
+
+cur1.close()
+conn1.close()

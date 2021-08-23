@@ -17,6 +17,9 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
+/* to avoid memory fragmentation stmt and var blocks are allocated in chunks */
+#define MALCHUNK 256
+
 /* If we encounter an error it can be left behind in the MalBlk
  * for the upper layers to abandon the track
  */
@@ -86,6 +89,7 @@ int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
+	maxstmts= maxstmts % MALCHUNK == 0 ? maxstmts : ((maxstmts / MALCHUNK) + 1) * MALCHUNK;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL)
@@ -108,7 +112,8 @@ newMalBlk(int elements)
 
 	/* each MAL instruction implies at least one variable
  	 * we reserve some extra for constants */
-	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
+	elements= (elements + 8) %  MALCHUNK == 0 ? elements + 8: ((elements + 8)/MALCHUNK + 1) * MALCHUNK;
+	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * elements );
 	if (v == NULL) {
 		GDKfree(mb);
 		return NULL;
@@ -118,6 +123,7 @@ newMalBlk(int elements)
 	mb->vid = 0;
 	mb->vsize = elements;
 	mb->help = NULL;
+	mb->statichelp = NULL;
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	mb->workers = 0;
@@ -147,20 +153,14 @@ newMalBlk(int elements)
 /* We only grow until the MAL block can be used */
 static int growBlk(int elm)
 {
-	int steps =1 ;
-	int old = elm;
-
-	while( old / 2 > 1){
-		old /= 2;
-		steps++;
-	}
-	return elm + steps * STMT_INCREMENT;
+	return elm % MALCHUNK ==0 ? elm + MALCHUNK : elm;
 }
 
 int
 resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
+	elements = elements  %  MALCHUNK == 0?  elements: (elements / MALCHUNK +1) * MALCHUNK;
 
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
@@ -191,10 +191,11 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 	}
 	return 0;
 }
-/* The resetMalBlk code removes instructions, but without freeing the
- * space. This way the structure is prepared for re-use */
+/* For a MAL session we have to keep the variables around
+ * and only need to reset the instruction pointer
+ */
 void
-resetMalBlk(MalBlkPtr mb, int stop)
+resetMalTypes(MalBlkPtr mb, int stop)
 {
 	int i;
 
@@ -204,17 +205,53 @@ resetMalBlk(MalBlkPtr mb, int stop)
 	mb->errors = NULL;
 }
 
+/* For SQL operations we have to cleanup variables and trim the space
+ * A portion is retained for the next query */
 void
-resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop)
+resetMalBlk(MalBlkPtr mb)
 {
 	int i;
+	InstrPtr *new;
+	VarRecord *vnew;
 
-	for(i=stop; i<mb->stop; i++) {
+	for(i=MALCHUNK; i<mb->ssize; i++) {
 		freeInstruction(mb->stmt[i]);
 		mb->stmt[i] = NULL;
 	}
-	resetMalBlk(mb, stop);
+	if( mb->ssize != MALCHUNK){
+		new = (InstrPtr*) GDKrealloc(mb->stmt, sizeof(InstrPtr) * MALCHUNK);
+		if( new == NULL){
+			// the only place to return an error signal at this stage.
+			// The Client context should be passed around more deeply
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return ;
+		}
+		mb->stmt = new;
+		mb->ssize = MALCHUNK;
+	}
+	/* Reuse the initial function statement */
+	mb->stop = 0;
+
+	for(i=0; i< mb->vtop; i++){
+		if (isVarConstant(mb, i) || isVarDisabled(mb, i))
+			VALclear(&getVarConstant(mb,i));
+	}
+
+	if(mb->vsize != MALCHUNK){
+		vnew = (VarRecord*) GDKrealloc(mb->var, sizeof(VarRecord) * MALCHUNK);
+		if (vnew == NULL) {
+			// the only place to return an error signal at this stage.
+			// The Client context should be passed around more deeply
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return;
+		}
+		mb->var = vnew;
+		mb->vsize = MALCHUNK;
+	}
+    mb->vtop = 0;
+    mb->vid = 0;
 }
+
 
 /* The freeMalBlk code is quite defensive. It is used to localize an
  * illegal re-use of a MAL blk. */
@@ -246,9 +283,10 @@ freeMalBlk(MalBlkPtr mb)
 	mb->tag = 0;
 	mb->memory = 0;
 	mb->workers = 0;
-	if (mb->help)
+	if (mb->help && mb->statichelp != mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
+	mb->statichelp = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	freeException(mb->errors);
@@ -1395,7 +1433,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb, growBlk(mb->ssize) + extra) ){
+		if( resizeMalBlk(mb, growBlk(mb->ssize + extra)) ){
 			/* perhaps we can continue with a smaller increment.
 			 * But the block remains marked as faulty.
 			 */

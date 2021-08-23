@@ -14,7 +14,7 @@
 
 #define DEFAULT_ADAPTER BASIC
 #define DEFAULT_LOG_LEVEL M_ERROR
-#define DEFAULT_FLUSH_LEVEL M_INFO
+#define DEFAULT_FLUSH_LEVEL M_DEBUG
 
 #define FILE_NAME "mdbtrace.log"
 
@@ -525,7 +525,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
-			MT_thread_getname(), func, GDKERROR,
+			MT_thread_getname(), func, level == M_WARNING ? GDKWARNING : GDKERROR,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
 		if (active_tracer == NULL || active_tracer == stderr)

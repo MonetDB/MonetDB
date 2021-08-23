@@ -273,10 +273,18 @@ SQLprepareClient(Client c, int login)
 	}
 	MT_lock_unset(&sql_contextLock);
 	if (login) {
-		str schema = monet5_user_set_def_schema(m, c->user);
-		if (!schema) {
-			msg = createException(PERMD,"sql.initClient", SQLSTATE(08004) "Schema authorization error");
-			goto bailout;
+		switch (monet5_user_set_def_schema(m, c->user)) {
+			case -1:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			case -2:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				goto bailout;
+			case -3:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				goto bailout;
+			default:
+				break;
 		}
 	}
 
@@ -382,7 +390,6 @@ SQLinit(Client c)
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
-	sql_allocator *sa = NULL;
 	const char *opt_pipe;
 
 	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
@@ -409,11 +416,7 @@ SQLinit(Client c)
 	if (readonly)
 		SQLdebug |= 32;
 
-	if (!(sa = sa_create(NULL))) {
-		MT_lock_unset(&sql_contextLock);
-		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if ((SQLstore = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
+	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -426,6 +429,8 @@ SQLinit(Client c)
 		bstream *fdin;
 
 		if ( b == NULL || cbuf == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			GDKfree(b);
 			GDKfree(cbuf);
@@ -435,6 +440,8 @@ SQLinit(Client c)
 		buffer_init(b, cbuf, len);
 		buf = buffer_rastream(b, "si");
 		if ( buf == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -442,6 +449,8 @@ SQLinit(Client c)
 
 		fdin = bstream_create(buf, b->len);
 		if ( fdin == NULL) {
+			mvc_exit(SQLstore);
+			SQLstore = NULL;
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -452,6 +461,8 @@ SQLinit(Client c)
 			TRC_ERROR(SQL_PARSER, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
 		TRC_INFO(SQL_PARSER, "%s\n", msg);
 		return msg;
@@ -469,6 +480,11 @@ SQLinit(Client c)
 			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
 			if (t == NULL)
 				store->first = 1;
+			msg = mvc_rollback(m, 0, NULL, false);
+		}
+		if (msg) {
+			freeException(msg);
+			msg = MAL_SUCCEED;
 		}
 	}
 	if (store->first > 0) {
@@ -483,7 +499,6 @@ SQLinit(Client c)
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
-
 		}
 		/* 99_system.sql */
 		if (!msg) {
@@ -545,22 +560,36 @@ SQLinit(Client c)
 	}
 
 	other = SQLresetClient(c);
-	MT_lock_unset(&sql_contextLock);
 	if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
 		msg = other;
 	else if (other)
 		freeException(other);
-	if (msg != MAL_SUCCEED)
+	if (msg != MAL_SUCCEED) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
 		return msg;
+	}
 
-	if (GDKinmemory(0))
-		return MAL_SUCCEED;
+	if (GDKinmemory(0)) {
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
-	if ( wlc_state == WLC_STARTUP)
-		return WLCinit();
+	if (wlc_state == WLC_STARTUP && GDKgetenv_istrue("wlc_enabled") && (msg = WLCinit()) != MAL_SUCCEED) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
+
+	MT_lock_unset(&sql_contextLock);
 	return MAL_SUCCEED;
 }
 
@@ -615,18 +644,33 @@ SQLtrans(mvc *m)
 	if (!m->session->tr->active) {
 		sql_session *s;
 
-		if (mvc_trans(m) < 0)
-			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		switch (mvc_trans(m)) {
+			case -1:
+				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -3:
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
+			default:
+				break;
+		}
 		s = m->session;
 		if (!s->schema) {
-			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
-			if (!s->schema_name) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			switch (monet5_user_get_def_schema(m, m->user_id, &s->schema_name)) {
+				case -1:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				case -3:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				default:
+					break;
 			}
-			assert(s->schema_name);
-			s->schema = find_sql_schema(s->tr, s->schema_name);
-			assert(s->schema);
+			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
+				mvc_cancel_session(m);
+				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
+			}
 		}
 	}
 	return MAL_SUCCEED;
@@ -922,7 +966,7 @@ SQLparser(Client c)
 	str msg = NULL;
 	backend *be;
 	mvc *m;
-	int oldvtop, oldstop, oldvid;
+	int oldvtop, oldstop, oldvid, ok;
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 
@@ -979,8 +1023,8 @@ SQLparser(Client c)
 		if (n == 2 || n == 3) {
 			if (n == 2)
 				len = m->reply_size;
-			if (mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) {
-				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
+			if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
+				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
 				goto finalize;
 			}
 
@@ -1080,7 +1124,6 @@ SQLparser(Client c)
 		sqlcleanup(be, err);
 		goto finalize;
 	}
-	assert(m->session->schema);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).
@@ -1137,7 +1180,7 @@ SQLparser(Client c)
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
-				opt = 1;
+				opt = (m->emod & mod_exec) == 0;//1;
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1189,39 +1232,46 @@ SQLparser(Client c)
 				qc_clean(m->qc);
 			}
 			/* For deallocate statements just export a simple output */
-			if (!GDKembedded())
-				err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize);
+			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				goto finalize;
+			}
 		} else if (be->q) {
 			assert(m->emode == m_prepare);
 			/* For prepared queries, return a table with result set structure*/
 			/* optimize the code block and rename it */
-			err = mvc_export_prepare(be, c->fdout, "");
+			if ((err = mvc_export_prepare(be, c->fdout)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				goto finalize;
+			}
 		}
 
-		if (!err) {
-			pushEndInstruction(c->curprg->def);
-			/* check the query wrapper for errors */
-			if( msg == MAL_SUCCEED)
-				msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
+		pushEndInstruction(c->curprg->def);
+		/* check the query wrapper for errors */
+		if( msg == MAL_SUCCEED)
+			msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
-			/* in case we had produced a non-cachable plan, the optimizer should be called */
-			if (msg == MAL_SUCCEED && opt ) {
-				msg = SQLoptimizeQuery(c, c->curprg->def);
+		/* in case we had produced a non-cachable plan, the optimizer should be called */
+		if (msg == MAL_SUCCEED && opt ) {
+			msg = SQLoptimizeQuery(c, c->curprg->def);
 
-				if (msg != MAL_SUCCEED) {
-					str other = c->curprg->def->errors;
-					/* In debugging mode you may want to assess what went wrong in the optimizers*/
+			if (msg != MAL_SUCCEED) {
+				str other = c->curprg->def->errors;
+				/* In debugging mode you may want to assess what went wrong in the optimizers*/
 #ifndef NDEBUG
-					if( m->emod & mod_debug)
-						runMALDebugger(c, c->curprg->def);
+				if( m->emod & mod_debug)
+					runMALDebugger(c, c->curprg->def);
 #endif
-					c->curprg->def->errors = 0;
-					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-					if (other != msg)
-						freeException(other);
-					goto finalize;
-				}
+				c->curprg->def->errors = 0;
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				if (other != msg)
+					freeException(other);
+				goto finalize;
 			}
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
@@ -1239,8 +1289,7 @@ SQLparser(Client c)
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
 				*m->errstr = 0;
 			} else if (msg) {
-				str newmsg;
-				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
+				str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
 				freeException(msg);
 				msg = newmsg;
 			}

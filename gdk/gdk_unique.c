@@ -82,15 +82,23 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	BUN initsize = 1024;
+	BUN initsize = BUN_NONE;
 	if (s == NULL) {
 		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash != NULL && b->thash != (Hash *) 1)
 			initsize = b->thash->nunique;
-		else if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-			initsize = prop->val.oval;
 		MT_rwlock_rdunlock(&b->thashlock);
+		if (initsize == BUN_NONE) {
+			MT_lock_set(&b->theaplock);
+			if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
+				initsize = prop->val.oval;
+			else if ((prop = BATgetprop_nolock(b, GDK_UNIQUE_ESTIMATE)) != NULL)
+				initsize = (BUN) prop->val.dval;
+			MT_lock_unset(&b->theaplock);
+		}
 	}
+	if (initsize == BUN_NONE)
+		initsize = 1024;
 	bn = COLnew(0, TYPE_oid, initsize, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
@@ -209,6 +217,7 @@ BATunique(BAT *b, BAT *s)
 			if (hb == BUN_NONE || hb < lo) {
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED) {
 					MT_rwlock_rdunlock(&b->thashlock);
+					hs = NULL;
 					goto bunins_failed;
 				}
 			}
@@ -301,7 +310,7 @@ BATunique(BAT *b, BAT *s)
 	bat_iterator_end(&bi);
 	if (seen)
 		GDKfree(seen);
-	if (hs != NULL && hs != b->thash) {
+	if (hs != NULL) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);

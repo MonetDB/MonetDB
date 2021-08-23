@@ -30,12 +30,12 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 
 	//get the descriptor of the BAT
 	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
-		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	bi = bat_iterator(b);
 	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
-		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -53,7 +53,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 
 			if ((msg = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
 				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, outWKB, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, outWKB) != GDK_SUCCEED) {
 				GDKfree(outWKB);
 				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
@@ -69,7 +69,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 
 			if ((msg = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
 				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, outWKB, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, outWKB) != GDK_SUCCEED) {
 				GDKfree(outWKB);
 				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
@@ -81,10 +81,10 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	}
 
 bailout:
-	if (b)
+	if (b) {
 		bat_iterator_end(&bi);
-	if (b)
 		BBPunfix(b->batCacheid);
+	}
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {
@@ -120,12 +120,12 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 
 	//get the descriptor of the BAT
 	if ((b = BATdescriptor(*inBAT_id)) == NULL) {
-		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	bi = bat_iterator(b);
 	if (cand && !is_bat_nil(*cand) && (s = BATdescriptor(*cand)) == NULL) {
-		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
@@ -144,7 +144,7 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 
 			if ((msg = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
 				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, outSingle, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, outSingle) != GDK_SUCCEED) {
 				GDKfree(outSingle);
 				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
@@ -161,7 +161,7 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 
 			if ((msg = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
 				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, outSingle, Tsize(dst)) != GDK_SUCCEED) {
+			if (tfastins_nocheckVAR(dst, i, outSingle) != GDK_SUCCEED) {
 				GDKfree(outSingle);
 				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
@@ -173,10 +173,10 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 	}
 
 bailout:
-	if (b)
+	if (b) {
 		bat_iterator_end(&bi);
-	if (b)
 		BBPunfix(b->batCacheid);
+	}
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (dst && !msg) {

@@ -1,4 +1,11 @@
 #!/usr/bin/perl
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
+
 # MonetDB DBI test script
 # ---------------------
 # This scripts will call all methods as defined in DBI 1.37 (Perl 5.8.1)
@@ -1164,9 +1171,10 @@ if(!$error){
 =item C<bind_param_inout>
 
 DBI states:
-"It is expected that few drivers will support this method. The only driver cur­
-rently known to do so is DBD::Oracle (DBD::ODBC may support it in a future
-release). Therefore it should not be used for database independent applications."
+"It is expected that few drivers will support this method. The only
+driver currently known to do so is DBD::Oracle (DBD::ODBC may support
+it in a future release). Therefore it should not be used for database
+independent applications."
 
 As bin_param also fails at the moment this is skipped for now.
 

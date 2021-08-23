@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /* author Joeri van Ruth
@@ -24,11 +24,11 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	InstrPtr *old_mb_stmt = NULL;
 	lng usec = GDKusec();
 	int actions = 0;
+	size_t old_ssize = 0;
+	size_t old_stop = 0;
 
 	(void)stk;
 	(void)pci;
-
-	const char *importTableRef = putName("importTable");
 
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
@@ -39,15 +39,14 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 	}
 	if (found_at == -1)
-		return MAL_SUCCEED;
+		// we didn't find a reason to modify the plan
+		goto wrapup;
 
 	old_mb_stmt = mb->stmt;
-	size_t old_ssize = mb->ssize;
-	size_t old_stop = mb->stop;
-	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) {
-		msg = createException(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto end;
-	}
+	old_ssize = mb->ssize;
+	old_stop = mb->stop;
+	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) 
+		throw(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
@@ -79,6 +78,7 @@ end:
         	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
 	char buf[256];
     snprintf(buf, sizeof(buf), "%-20s actions=%2d time=" LLFMT " usec","bincopyfrom",actions, usec);
