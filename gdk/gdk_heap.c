@@ -144,16 +144,17 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 {
 	h->base = NULL;
 	h->size = 1;
-	if (itemsize)
+	if (itemsize) {
+		/* check for overflow */
+		if (nitems > BUN_NONE / itemsize) {
+			GDKerror("allocating more than heap can accomodate\n");
+			return GDK_FAIL;
+		}
 		h->size = MAX(1, nitems) * itemsize;
+	}
 	h->free = 0;
 	h->cleanhash = false;
 
-	/* check for overflow */
-	if (itemsize && nitems > (h->size / itemsize)) {
-		GDKerror("allocating more than heap can accomodate\n");
-		return GDK_FAIL;
-	}
 	if (GDKinmemory(h->farmid) ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
