@@ -66,7 +66,7 @@ gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, B
 	__attribute__((__visibility__("hidden")));
 Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
-gdk_return BAThashsave(BAT *b, bool dosync)
+void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -81,7 +81,7 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATsave_locked(BAT *bd)
+gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -91,6 +91,8 @@ ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+void BBPclear(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
@@ -127,6 +129,8 @@ BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
+	__attribute__((__visibility__("hidden")));
+void doHASHdestroy(BAT *b, Hash *hs)
 	__attribute__((__visibility__("hidden")));
 void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
@@ -206,7 +210,7 @@ gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__visibility__("hidden")));
 void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync)
+gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPshrink(Heap *h, size_t size)
@@ -214,9 +218,13 @@ gdk_return HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
+void IMPSdecref(Imprints *imprints, bool remove)
+	__attribute__((__visibility__("hidden")));
 void IMPSfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
+	__attribute__((__visibility__("hidden")));
+void IMPSincref(Imprints *imprints)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)		/* never called: for debugging only */
@@ -247,7 +255,7 @@ void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int 
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
-void strHeap(Heap *d, size_t cap)
+gdk_return strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
@@ -266,6 +274,25 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
+
+static inline bool
+imprintable(int tpe)
+{
+	switch (ATOMbasetype(tpe)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		return true;
+	default:		/* type not supported */
+		return false;
+	}
+}
 
 /* calculate the integer 2 logarithm (i.e. position of highest set
  * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
@@ -435,6 +462,16 @@ extern MT_Lock GDKtmLock;
 #endif
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
+
+/* when the number of updates to a BAT is less than 1 in this number, we
+ * keep the GDK_UNIQUE_ESTIMATE property */
+extern BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
+/* if the number of unique values is less than 1 in this number, we
+ * destroy the hash rather than update it in HASH{append,insert,delete} */
+extern BUN HASH_DESTROY_UNIQUES_FRACTION;     /* likewise */
+/* if the estimated number of unique values is less than 1 in this
+ * number, don't build a hash table to do a hashselect */
+extern dbl NO_HASH_SELECT_FRACTION;           /* same here */
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */

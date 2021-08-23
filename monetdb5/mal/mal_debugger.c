@@ -89,7 +89,7 @@ printBATproperties(stream *f, BAT *b)
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
 	if (b->theap->parentid != b->batCacheid)
-		mnstr_printf(f, "view on %s ", BBPname(b->theap->parentid));
+		mnstr_printf(f, "view on %s ", BBP_logical(b->theap->parentid));
 }
 
 static void
@@ -138,7 +138,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat) {
 		bat i = v->val.bval;
-		BAT *b = BBPquickdesc(i, false);
+		BAT *b = BBPquickdesc(i);
 
 		if (b) {
 			nme = getTypeName(newBatType(b->ttype));
@@ -426,16 +426,22 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 
 	    BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, (b->tvheap && b->tvheap->dirty) ? "dirty" : "clean", false) != GDK_SUCCEED ||
-		infoHeap(bk, bv, b->tvheap, "theap.") != GDK_SUCCEED ||
-
-		/* dump index information */
-		(b->thash &&
-		 HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED)) {
+		infoHeap(bk, bv, b->tvheap, "theap.") != GDK_SUCCEED) {
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	/* dump index information */
+	MT_rwlock_rdlock(&b->thashlock);
+	if (b->thash && HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED) {
+		MT_rwlock_rdunlock(&b->thashlock);
+		BBPreclaim(bk);
+		BBPreclaim(bv);
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	MT_rwlock_rdunlock(&b->thashlock);
 	*key = bk;
 	*val = bv;
 	assert(BATcount(bk) == BATcount(bv));
@@ -1091,7 +1097,7 @@ retryRead:
 				/* watchout, you don't want to wait for locks by others */
 				mnstr_printf(out, "BBP contains %d entries\n", limit);
 				for (; i < limit; i++)
-					if ((BBP_lrefs(i) || BBP_refs(i)) && BBP_cache(i)) {
+					if (BBPcheck(i) && (BBP_lrefs(i) || BBP_refs(i)) && BBP_cache(i)) {
 						mnstr_printf(out, "#[%d] %-15s", i, BBP_logical(i));
 						if (BBP_cache(i))
 							printBATproperties(out, BBP_cache(i));
@@ -1104,19 +1110,20 @@ retryRead:
 							mnstr_printf(out, " dirty");
 						if (*BBP_logical(i) == '.')
 							mnstr_printf(out, " zombie ");
-						if (BBPstatus(i) & BBPLOADED)
+						unsigned status = BBP_status(i);
+						if (status & BBPLOADED)
 							mnstr_printf(out, " loaded ");
-						if (BBPstatus(i) & BBPSWAPPED)
+						if (status & BBPSWAPPED)
 							mnstr_printf(out, " swapped ");
-						if (BBPstatus(i) & BBPTMP)
+						if (status & BBPTMP)
 							mnstr_printf(out, " tmp ");
-						if (BBPstatus(i) & BBPDELETED)
+						if (status & BBPDELETED)
 							mnstr_printf(out, " deleted ");
-						if (BBPstatus(i) & BBPEXISTING)
+						if (status & BBPEXISTING)
 							mnstr_printf(out, " existing ");
-						if (BBPstatus(i) & BBPNEW)
+						if (status & BBPNEW)
 							mnstr_printf(out, " new ");
-						if (BBPstatus(i) & BBPPERSISTENT)
+						if (status & BBPPERSISTENT)
 							mnstr_printf(out, " persistent ");
 						mnstr_printf(out, "\n");
 					}

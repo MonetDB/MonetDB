@@ -2762,7 +2762,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 			return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 		} else {
-			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || sq->single)?op_left:op_join);
+			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || is_single(sq))?op_left:op_join);
 		}
 		return sq;
 	}
@@ -2924,7 +2924,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	if (card == card_loader)
 		card = card_none;
 
-	if (is_commutative(fname) && l->card < r->card) { /* move constants to the right if possible */
+	if (is_commutative(sname, fname) && l->card < r->card) { /* move constants to the right if possible */
 		sql_subtype *tmp = t1;
 		t1 = t2;
 		t2 = tmp;
@@ -2983,7 +2983,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
-	if (!f && is_commutative(fname)) {
+	if (!f && is_commutative(sname, fname)) {
 		if ((f = bind_func(sql, sname, fname, t2, t1, type, &found))) {
 			sql_subtype *tmp = t1;
 			t1 = t2;
@@ -3001,7 +3001,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			if (EC_NUMBER(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t1->type->eclass))
-					tp = *t1; /* for float and interval fall back too the same as left */
+					tp = *t1; /* for float and interval fall back to the same as left */
 				r = exp_check_type(sql, &tp, rel, r, type_equal);
 				if (!r)
 					return NULL;
@@ -3009,7 +3009,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && EC_NUMBER(t2->type->eclass)) {
 				sql_subtype tp;
 				if (!largest_numeric_type(&tp, t2->type->eclass))
-					tp = *t2; /* for float and interval fall back too the same as right */
+					tp = *t2; /* for float and interval fall back to the same as right */
 				l = exp_check_type(sql, &tp, rel, l, type_equal);
 				if (!l)
 					return NULL;
@@ -5815,7 +5815,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
 	if (rel) {
-		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1));
+		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
 		set_processed(rel);
 	}
 	return rel;

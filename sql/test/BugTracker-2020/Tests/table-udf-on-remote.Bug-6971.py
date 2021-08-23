@@ -62,8 +62,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
             try:
                 node2_cur.execute("select * from mudf((select sx,sxx,sxy,sy,syy,'\"' from fofo))")
                 sys.stderr.write('Exception expected')
-            except pymonetdb.OperationalError as e:
-                if 'to type int failed' not in str(e):
+            except pymonetdb.IntegrityError as e:
+                if 'Exception occurred in the remote server, please check the log there' not in str(e):
                     sys.stderr.write(str(e))
             node2_cur.execute("select * from mudf((select sx,sxx,sxy,sy,syy,1 as \"a\"\"a\" from fofo))")
             if node2_cur.fetchall() != [(0.5,)]:
@@ -73,5 +73,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 sys.stderr.write("Just row (0.5, 0.6) expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
+            node1_cur.close()
+            node1_conn.close()
+            node2_cur.close()
+            node2_conn.close()
             node1_proc.communicate()
             node2_proc.communicate()

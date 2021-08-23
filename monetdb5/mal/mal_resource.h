@@ -18,7 +18,7 @@
 #define MAX_DELAYS 1000 /* never wait more then 2000 ms */
 
 //#define heapinfo(X,Id)	(((X) && (X)->base && ((X)->parentid == 0 || (X)->parentid == Id)) ? (X)->free : 0)
-#define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
+#define heapinfo(X,Id)	((X) ? (X)->free : 0)
 #define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo(&(X)->heaplink, Id) + heapinfo(&(X)->heapbckt, Id) : 0)
 
 mal_export int MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);

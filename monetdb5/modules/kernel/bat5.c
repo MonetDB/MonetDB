@@ -109,7 +109,7 @@ BKCmirror(bat *ret, const bat *bid)
 	BAT *b, *bn;
 
 	*ret = 0;
-	if (!(b = BBPquickdesc(*bid, false)))
+	if (!(b = BBPquickdesc(*bid)))
 		throw(MAL, "bat.mirror", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (!(bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b))))
 		throw(MAL, "bat.mirror", GDK_EXCEPTION);
@@ -193,6 +193,15 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (mask_cand(u)) {
+		BAT *ou = u;
+		u = BATunmask(u);
+		BBPunfix(ou->batCacheid);
+		if (!u) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+		}
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
@@ -345,12 +354,11 @@ static str
 BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
-	if (BBPcheck(*bid, "bat.getCapacity")) {
-		BAT *b = BBPquickdesc(*bid, false);
+	BAT *b = BBPquickdesc(*bid);
 
-		if (b != NULL)
-			*res = (lng) BATcapacity(b);
-	}
+	if (b == NULL)
+		throw(MAL, "bat.getCapacity", ILLEGAL_ARGUMENT);
+	*res = (lng) BATcapacity(b);
 	return MAL_SUCCEED;
 }
 
@@ -358,14 +366,11 @@ static str
 BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
+	BAT *b = BBPquickdesc(*bid);
 
-	if (BBPcheck(*bid, "bat.getColumnType")) {
-		BAT *b = BBPquickdesc(*bid, false);
-
-		if (b) {
-			ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
-		}
-	}
+	if (b == NULL)
+		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);
+	ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
 	*res = GDKstrdup(ret);
 	if(*res == NULL)
 		throw(MAL,"bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -426,7 +431,7 @@ BKCgetKey(bit *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	*ret = BATkeyed(b);
+	*ret = b->tkey;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -576,14 +581,20 @@ BKCgetSize(lng *tot, const bat *bid){
 	}
 
 	size = sizeof (bat);
+
+	MT_lock_set(&b->theaplock);
 	if ( !isVIEW(b)) {
 		BUN cnt = BATcapacity(b);
 		size += ROUND_UP(b->theap->free, blksize);
 		if (b->tvheap)
 			size += ROUND_UP(b->tvheap->free, blksize);
+		MT_lock_unset(&b->theaplock);
+
 		if (b->thash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		size += IMPSimprintsize(b);
+	} else {
+		MT_lock_unset(&b->theaplock);
 	}
 	*tot = size;
 	BBPunfix(*bid);
@@ -700,7 +711,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getName", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = GDKstrdup(BBPname(b->batCacheid));
+	*ret = GDKstrdup(BBP_logical(b->batCacheid));
 	BBPunfix(b->batCacheid);
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
@@ -796,16 +807,14 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		Type *p = (Type*)bi.base;					\
-		Type *q = p + bi.count;						\
-		Type *r = (Type*)Tloc(bn, 0);				\
-		cnt=0;										\
+		const Type *restrict in = (Type*)bi.base;	\
+		Type *restrict r = (Type*)Tloc(bn, 0);		\
 		for (;p<q; oidx++, p++) {					\
 			if ( o < ol && *o == oidx ){			\
 				o++;								\
 			} else {								\
+				*r++ = in[p];						\
 				cnt++;								\
-				*r++ = *p;							\
 			}										\
 		}											\
 	} while (0)
@@ -814,7 +823,7 @@ str
 BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
-	BUN cnt =0;
+	BUN cnt = 0, p = 0, q;
 	oid oidx = 0, *o, *ol;
 	gdk_return res;
 
@@ -840,54 +849,55 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	o = (oid*)Tloc(bs, 0);
-	ol= (oid*)Tloc(bs, BUNlast(bs));
+	ol = (oid*)Tloc(bs, BUNlast(bs));
 
 	BATiter bi = bat_iterator(b);
-	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: shrinkloop(bte); break;
-	case TYPE_sht: shrinkloop(sht); break;
-	case TYPE_int: shrinkloop(int); break;
-	case TYPE_lng: shrinkloop(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: shrinkloop(hge); break;
-#endif
-	case TYPE_flt: shrinkloop(flt); break;
-	case TYPE_dbl: shrinkloop(dbl); break;
-	case TYPE_oid: shrinkloop(oid); break;
-	default:
-		if (ATOMvarsized(bn->ttype)) {
-			BUN p = 0;
-			BUN q = BUNlast(b);
+	q = bi.count;
+	if (ATOMvarsized(bi.type)) {
+		for (;p<q; oidx++, p++) {
+			if ( o < ol && *o == oidx ){
+				o++;
+			} else {
+				if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
+					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
+					throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				}
+				cnt++;
+			}
+		}
+	} else {
+		uint16_t width = bi.width;
 
-			cnt=0;
+		switch (width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "bat.shrink", SQLSTATE(42000) "bat.shrink not available for 0 width types");
+		case 1:shrinkloop(bte); break;
+		case 2:shrinkloop(sht); break;
+		case 4:shrinkloop(int); break;
+		case 8:shrinkloop(lng); break;
+#ifdef HAVE_HGE
+		case 16:shrinkloop(hge); break;
+#endif
+		default: {
+			const int8_t *restrict src = (int8_t*) bi.base;
+			int8_t *restrict dst = (int8_t*) Tloc(bn, 0);
+
 			for (;p<q; oidx++, p++) {
-				if ( o < ol && *o == oidx ){
+				if (o < ol && *o == oidx) {
 					o++;
 				} else {
-					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
-						bat_iterator_end(&bi);
-						BBPunfix(b->batCacheid);
-						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", GDK_EXCEPTION);
-					}
+					memcpy(dst, src, width);
+					dst += width;
 					cnt++;
 				}
+				src += width;
 			}
-		} else {
-			switch( bi.width){
-			case 1:shrinkloop(bte); break;
-			case 2:shrinkloop(sht); break;
-			case 4:shrinkloop(int); break;
-			case 8:shrinkloop(lng); break;
-#ifdef HAVE_HGE
-			case 16:shrinkloop(hge); break;
-#endif
-			default:
-				bat_iterator_end(&bi);
-				BBPunfix(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				throw(MAL, "bat.shrink", "Illegal argument type");
-			}
+		}
 		}
 	}
 	bat_iterator_end(&bi);
@@ -1026,12 +1036,18 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bs->batCacheid);
-				throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				throw(MAL, "bat.reuse", GDK_EXCEPTION);
 			}
 		}
 	} else {
 		BUN n = 0;
 		switch (bi.width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bs->batCacheid);
+			throw(MAL, "bat.reuse", SQLSTATE(42000) "bat.reuse not available for 0 width types");
 		case 1:
 			reuseloop(bte);
 			break;

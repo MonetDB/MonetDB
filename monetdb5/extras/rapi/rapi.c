@@ -543,6 +543,59 @@ static char *RAPIinstalladdons(void) {
 	return NULL;
 }
 
+static str
+empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)
+{
+	str msg = MAL_SUCCEED;
+	void **res = GDKzalloc(retcols * sizeof(void*));
+
+	if (!res) {
+		msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (size_t i = 0; i < retcols; i++) {
+		if (isaBatType(getArgType(mb, pci, i))) {
+			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "rapi.eval", GDK_EXCEPTION);
+				goto bailout;
+			}
+			((BAT**)res)[i] = b;
+		} else { // single value return, only for non-grouped aggregations
+			// return NULL to conform to SQL aggregates
+			int tpe = getArgType(mb, pci, i);
+			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
+		}
+	}
+
+bailout:
+	if (res) {
+		for (size_t i = 0; i < retcols; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				BAT *b = ((BAT**)res)[i];
+
+				if (b && msg) {
+					BBPreclaim(b);
+				} else if (b) {
+					BBPkeepref(*getArgReference_bat(stk, pci, i) = b->batCacheid);
+				}
+			} else if (msg) {
+				ValPtr pt = ((ValPtr*)res)[i];
+
+				if (pt)
+					VALclear(pt);
+			}
+		}
+		GDKfree(res);
+	}
+	return msg;
+}
+
 static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
@@ -654,6 +707,12 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			if (BATcount(b) == 0) { /* empty input, generate trivial return */
+				/* I expect all inputs to have the same size, so this should be safe */
+				msg = empty_return(mb, stk, pci, pci->retc, b->hseqbase);
+				BBPunfix(b->batCacheid);
 				goto wrapup;
 			}
 		}
@@ -780,9 +839,9 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		}
 		msg = MAL_SUCCEED;
 	}
+  wrapup:
 	/* unprotect environment, so it will be eaten by the GC. */
 	UNPROTECT(1);
-  wrapup:
 	MT_lock_unset(&rapiLock);
 	if (argnames)
 		free(argnames);

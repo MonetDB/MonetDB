@@ -75,6 +75,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 
+	//mnstr_printf(cntxt->fdout,"inline limit %d ssize %d vtop %d vsize %d\n", mb->stop, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
     /* Defense line against incorrect plans */
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);

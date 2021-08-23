@@ -19,7 +19,10 @@ bat_destroy(BAT *b)
 BAT *
 bat_new(int tt, BUN size, role_t role)
 {
-	return COLnew(0, tt, size, role);
+	BAT *bn = COLnew(0, tt, size, role);
+	if (bn)
+		BBP_pid(bn->batCacheid) = 0;
+	return bn;
 }
 
 void
@@ -39,7 +42,7 @@ temp_descriptor(log_bid b)
 BAT *
 quick_descriptor(log_bid b)
 {
-	return BBPquickdesc((bat) b, false);
+	return BBPquickdesc((bat) b);
 }
 
 void
@@ -65,29 +68,30 @@ temp_create(BAT *b)
 }
 
 log_bid
-temp_copy(log_bid b, int temp)
+temp_copy(log_bid b, bool renew, bool temp)
 {
 	/* make a copy of b, if temp is set only create a empty bat */
-	BAT *o = temp_descriptor(b);
-	BAT *c;
+	BAT *o, *c = NULL;
 	log_bid r;
 
-	if (!o)
-		return BID_NIL;
-	if (!temp) {
-		if (!(c = COLcopy(o, o->ttype, true, PERSISTENT))) {
-			bat_destroy(o);
+	if (!renew) {
+		if (!(o = temp_descriptor(b)))
 			return BID_NIL;
-		}
-		bat_set_access(c, BAT_READ);
-		BATcommit(c, BUN_NONE);
-	} else if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT))) {
+		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		bat_destroy(o);
-		return BID_NIL;
+		if (!c)
+			return BID_NIL;
+		BATcommit(c, BUN_NONE);
+	} else {
+		if (!(o = quick_descriptor(b)))
+			return BID_NIL;
+		if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT)))
+			return BID_NIL;
 	}
+	if (!temp)
+		bat_set_access(c, BAT_READ);
 	r = temp_create(c);
 	bat_destroy(c);
-	bat_destroy(o);
 	return r;
 }
 

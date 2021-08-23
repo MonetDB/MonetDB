@@ -73,6 +73,7 @@ sortlocklist(MT_Lock *l)
 		r = r->next;
 	}
 	ll->next = NULL;	/* break list into two */
+	r->prev = NULL;
 	/* recursively sort both sublists */
 	l = sortlocklist(l);
 	r = sortlocklist(r);
@@ -92,6 +93,7 @@ sortlocklist(MT_Lock *l)
 				t = ll = l;
 			} else {
 				ll->next = l;
+				l->prev = ll;
 				ll = ll->next;
 			}
 			l = l->next;
@@ -102,13 +104,20 @@ sortlocklist(MT_Lock *l)
 				t = ll = r;
 			} else {
 				ll->next = r;
+				r->prev = ll;
 				ll = ll->next;
 			}
 			r = r->next;
 		}
 	}
 	/* append rest of remaining list */
-	ll->next = l ? l : r;
+	if (l) {
+		ll->next = l;
+		l->prev = ll;
+	} else {
+		ll->next = r;
+		r->prev = ll;
+	}
 	return t;
 }
 
@@ -143,7 +152,9 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	fprintf(stderr, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
+	fprintf(stderr, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"lock name", "count", "content", "sleep",
+		"locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||

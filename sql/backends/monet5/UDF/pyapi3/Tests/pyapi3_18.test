@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE date_table(d DATE)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO date_table VALUES (cast('2000-10-10' AS DATE))
 
 statement ok
@@ -18,7 +18,7 @@ SELECT pyapi_date(d) FROM date_table
 statement ok
 CREATE TABLE time_table(d TIME)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO time_table VALUES (cast('12:00:00' AS TIME))
 
 statement ok
@@ -32,7 +32,7 @@ SELECT pyapi_time(d) FROM time_table
 statement ok
 CREATE TABLE timestamp_table(d TIMESTAMP)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO timestamp_table VALUES (cast('2000-1-1 12:00:00' AS TIMESTAMP))
 
 statement ok
@@ -46,7 +46,7 @@ SELECT pyapi_timestamp(d) FROM timestamp_table
 statement ok
 CREATE TABLE decimal_table(d DECIMAL(10, 3))
 
-statement ok
+statement ok rowcount 1
 INSERT INTO decimal_table VALUES (123.4567)
 
 statement ok
@@ -129,14 +129,14 @@ statement ok
 CREATE FUNCTION pyapi_ret_decimal() RETURNS TABLE(d DECIMAL)
 LANGUAGE PYTHON
 {
-    return numpy.arange(100001)
+    return numpy.arange(100001) # return 100k decimal values
 }
 
 statement ok
 CREATE FUNCTION pyapi_inp_decimal(d DECIMAL) RETURNS DOUBLE
 LANGUAGE PYTHON
 {
-    return numpy.mean(d)
+    return numpy.mean(d) # average 100k decimal values
 }
 
 query R rowsort
@@ -147,7 +147,7 @@ SELECT pyapi_inp_decimal(d) FROM pyapi_ret_decimal()
 statement ok
 CREATE TABLE uuid_tbl(d UUID)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO uuid_tbl VALUES ('54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c')
 
 statement ok

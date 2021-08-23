@@ -194,19 +194,27 @@ query T nosort
 plan select count(distinct a) from dummyme
 ----
 project (
-| group by (
-| | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ "sys"."count" no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(clob "sys", clob "dummyme") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
+
+query I nosort
+select count(distinct a) from dummyme
+----
+3
 
 query T nosort
 PLAN select count(distinct a) from dummyme group by b
 ----
 project (
 | group by (
-| | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
-| ) [ "dummyme"."b" ] [ "sys"."count" no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
+| | table("sys"."dummyme") [ "dummyme"."b" ] COUNT 
+| ) [ "dummyme"."b" ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
+
+query I nosort
+select count(distinct a) from dummyme group by b
+----
+3
 
 query T nosort
 /* not eliminated */
@@ -217,6 +225,11 @@ project (
 | | table("sys"."dummyme") [ "dummyme"."b" ] COUNT 
 | ) [  ] [ "sys"."count" unique  no nil ("dummyme"."b") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
+
+query I nosort
+select count(distinct b) from dummyme
+----
+1
 
 query T nosort
 PLAN select count(distinct a + 1) from dummyme
@@ -229,6 +242,11 @@ project (
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+query I nosort
+select count(distinct a + 1) from dummyme
+----
+3
+
 query T nosort
 PLAN select count(distinct a + b) from dummyme
 ----
@@ -240,6 +258,11 @@ project (
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+query I nosort
+select count(distinct a + b) from dummyme
+----
+3
+
 query T nosort
 PLAN select count(distinct abs(a)) from dummyme
 ----
@@ -250,6 +273,42 @@ project (
 | | ) [ "sys"."abs"("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
+
+query I nosort
+select count(distinct abs(a)) from dummyme
+----
+3
+
+query T nosort
+PLAN select count(abs(a)) from dummyme
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| | ) [ "sys"."abs"("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%2"."%2" ]
+| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
+
+query I nosort
+select count(abs(a)) from dummyme
+----
+3
+
+query T nosort
+PLAN select count(a) as x, count(*) as y from dummyme
+----
+project (
+| group by (
+| | table("sys"."dummyme") [ "dummyme"."%TID%" NOT NULL ] COUNT 
+| ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1", "%1"."%1" NOT NULL as "%2"."%2" ]
+) [ "%1"."%1" NOT NULL as "x", "%2"."%2" NOT NULL as "y" ]
+
+query II nosort
+select count(a) as x, count(*) as y from dummyme
+----
+3
+3
 
 statement ok
 ROLLBACK

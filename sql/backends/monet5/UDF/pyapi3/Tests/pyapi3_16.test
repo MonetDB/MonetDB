@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE vals(a STRING, b STRING, c STRING, d INTEGER)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO vals VALUES ('foo', 'bar', '123', 33), ('t', 'e', 's', 7), ('f', 'o', 'u', 4), ('i', 'k', 'r', 149)
 
 statement ok
@@ -19,10 +19,10 @@ language P
 	return True
 }
 
-query I rowsort
+query T rowsort
 SELECT * FROM pyapi16( (SELECT * FROM vals) )
 ----
-1
+True
 
 statement ok
 DROP FUNCTION pyapi16

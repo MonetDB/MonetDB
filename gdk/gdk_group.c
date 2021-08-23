@@ -696,12 +696,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			maxgrp = g->tseqbase + BATcount(g);
 		else if (BATtordered(g))
 			maxgrp = * (oid *) Tloc(g, BATcount(g) - 1);
+		else if (BATtrevordered(g))
+			maxgrp = * (oid *) Tloc(g, 0);
 		else {
-			prop = BATgetprop(g, GDK_MAX_VALUE);
+			MT_lock_set(&b->theaplock);
+			prop = BATgetprop_nolock(g, GDK_MAX_VALUE);
 			if (prop)
 				maxgrp = prop->val.oval;
-			else if (BATordered(g) && BATordered_rev(g))
-				maxgrp = 0;
+			MT_lock_unset(&b->theaplock);
+			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
+				BATmax(g, &maxgrp);
+			}
 		}
 		if (maxgrp == 0)
 			g = NULL; /* single group */
@@ -802,10 +807,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = b->thash->nunique;
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
-		if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		MT_lock_set(&b->theaplock);
+		if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
 			maxgrps = prop->val.oval;
 		else
 			maxgrps = cnt / 10;
+		MT_lock_unset(&b->theaplock);
 	}
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
@@ -1142,22 +1149,28 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			nbucket |= nbucket >> 32;
 #endif
 			nbucket++;
-			/* nbucket is a power of two, so ctz(nbucket)
-			 * tells us which power of two */
-			bits = 8 * SIZEOF_OID - ctz(nbucket);
 		} else {
 			nbucket = MAX(HASHmask(cnt), 1 << 16);
 		}
-		switch (t) {
-		case TYPE_bte:
-			nbucket = 256;
-			break;
-		case TYPE_sht:
-			nbucket = 65536;
-			break;
-		default:
-			break;
+		if (grps == NULL || is_oid_nil(maxgrp)
+#if SIZEOF_OID == SIZEOF_LNG
+		    || maxgrp >= ((oid) 1 << (SIZEOF_LNG * 8 - 8))
+#endif
+			) {
+			switch (t) {
+			case TYPE_bte:
+				nbucket = 256;
+				break;
+			case TYPE_sht:
+				nbucket = 65536;
+				break;
+			default:
+				break;
+			}
 		}
+		/* nbucket is a power of two, so ctz(nbucket)
+		 * tells us which power of two */
+		bits = 8 * SIZEOF_OID - ctz(nbucket);
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
 		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {

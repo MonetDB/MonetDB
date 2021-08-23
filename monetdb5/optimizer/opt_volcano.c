@@ -26,7 +26,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, limit;
 	int mvcvar = -1;
 	int count=0;
-	InstrPtr p,q, *old = mb->stmt;
+	InstrPtr p,q, *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -36,8 +36,9 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
+	old = mb->stmt;
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
 		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -102,6 +103,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
     newComment(mb,buf);

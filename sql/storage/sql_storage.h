@@ -140,7 +140,7 @@ typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, 
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef int (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets);
-
+typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
 /*
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
@@ -214,6 +214,8 @@ typedef struct store_functions {
 
 	delete_tab_fptr delete_tab;
 	claim_tab_fptr claim_tab;
+	claim_tab_fptr key_claim_tab;
+	tab_validate_fptr tab_validate;
 
 	count_del_fptr count_del;
 	count_col_fptr count_col;
@@ -309,7 +311,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern struct sqlstore *store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser);
+extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser);
 extern void store_exit(struct sqlstore *store);
 
 extern void store_suspend_log(struct sqlstore *store);
@@ -343,7 +345,7 @@ extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
 extern void sql_trans_update_schemas(sql_trans *tr);
 
-extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner);
+extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner);
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
@@ -394,10 +396,8 @@ extern int sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_a
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
 extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
-extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);
-
 extern sql_sequence *create_sql_sequence(struct sqlstore *store, sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
-extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
+extern int sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
 extern int sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern int sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
 extern int sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
@@ -441,6 +441,7 @@ extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx *
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
 
 #define NR_TABLE_LOCKS 64
+#define NR_COLUMN_LOCKS 512
 #define TRANSACTION_ID_BASE	(1ULL<<63)
 
 typedef struct sqlstore {
@@ -450,8 +451,8 @@ typedef struct sqlstore {
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too tables (storage) */
-	MT_Lock column_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too columns (storage) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
+	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
@@ -465,7 +466,9 @@ typedef struct sqlstore {
 	int initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;
-	list *changes;			/* pending changes too cleanup */
+	list *changes;			/* pending changes to cleanup */
+	sql_hash *dependencies; /* pending dependencies created to cleanup */
+	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;
@@ -475,6 +478,17 @@ typedef struct sqlstore {
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
 } sqlstore;
+
+typedef enum sql_dependency_change_type {
+	ddl = 1,
+	dml = 2
+} sql_dependency_change_type;
+
+typedef struct sql_dependency_change {
+	sqlid objid; /* id of the object where the dependency was created */
+	sql_dependency_change_type type; /* type of dependency */
+	ulng ts; /* transaction timestamp of the dependency */
+} sql_dependency_change;
 
 typedef struct sql_change {
 	sql_base *obj;
@@ -489,5 +503,9 @@ typedef struct sql_change {
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
+
+extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
+extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp);
+sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 
 #endif /*SQL_STORAGE_H */

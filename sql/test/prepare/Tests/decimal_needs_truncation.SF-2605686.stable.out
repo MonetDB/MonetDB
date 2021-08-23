@@ -33,7 +33,7 @@ stdout of test 'decimal_needs_truncation.SF-2605686` in directory 'sql/test/BugT
 #PREPARE INSERT INTO testdec (testdec) values (?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	1,	1,	0,	0,	0 # length
 [ "decimal",	5,	4,	NULL,	NULL,	NULL	]
 #exec 6(0.12345);

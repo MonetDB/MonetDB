@@ -649,6 +649,19 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		getArg(p, 0) = lret[i];
 	}
 
+	/* end remote transaction */
+	p = newInstruction(curBlk, remoteRef, execRef);
+	p = pushArgument(curBlk, p, q);
+	p = pushStr(curBlk, p, sqlRef);
+	p = pushStr(curBlk, p, deregisterRef);
+	getArg(p, 0) = -1;
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushInt(curBlk, o, TYPE_int);
+	p = pushReturn(curBlk, p, getArg(o, 0));
+	pushInstruction(curBlk, p);
+
 	/* remote.disconnect(q); */
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
@@ -665,13 +678,32 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	/* catch exceptions */
-	p = newCatchStmt(curBlk,"MALexception");
-	p = newExitStmt(curBlk,"MALexception");
-	p = newCatchStmt(curBlk,"SQLexception");
-	p = newExitStmt(curBlk,"SQLexception");
+	p = newCatchStmt(curBlk,"MALException");
+	p = newExitStmt(curBlk,"MALException");
+	p = newCatchStmt(curBlk,"SQLException");
+	p = newExitStmt(curBlk,"SQLException");
+
+	/* end remote transaction */
+	p = newInstruction(curBlk, remoteRef, execRef);
+	p = pushArgument(curBlk, p, q);
+	p = pushStr(curBlk, p, sqlRef);
+	p = pushStr(curBlk, p, deregisterRef);
+	getArg(p, 0) = -1;
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushInt(curBlk, o, TYPE_int);
+	p = pushReturn(curBlk, p, getArg(o, 0));
+	pushInstruction(curBlk, p);
+
 	/* remote.disconnect(q); */
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
+
+	/* throw the exception back */
+	p = newStmt(curBlk, remoteRef, assertRef);
+	p = pushBit(curBlk, p, TRUE);
+	p = pushStr(curBlk, p, "Exception occurred in the remote server, please check the log there");
 
 	pushEndInstruction(curBlk);
 
@@ -998,19 +1030,16 @@ static int
 backend_create_r_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("rapi");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("rapi");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("rapi");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
@@ -1022,25 +1051,19 @@ static int
 backend_create_py_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("pyapi3");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval_loader");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
@@ -1051,38 +1074,19 @@ static int
 backend_create_map_py_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("pyapi3map");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3map");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3map");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
-	return 0;
-}
-
-static int
-backend_create_py3_func(backend *be, sql_func *f)
-{
-	backend_create_py_func(be, f);
-	f->mod = GDKstrdup("pyapi3");
-	return 0;
-}
-
-static int
-backend_create_map_py3_func(backend *be, sql_func *f)
-{
-	backend_create_map_py_func(be, f);
-	f->mod = GDKstrdup("pyapi3map");
 	return 0;
 }
 
@@ -1091,20 +1095,17 @@ static int
 backend_create_c_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("capi");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("capi");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
 	case F_PROC: /* no output */
 	case F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("capi");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
@@ -1389,13 +1390,11 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_R:
 		return backend_create_r_func(be, f);
 	case FUNC_LANG_PY:
+	case FUNC_LANG_PY3:
 		return backend_create_py_func(be, f);
 	case FUNC_LANG_MAP_PY:
-		return backend_create_map_py_func(be, f);
-	case FUNC_LANG_PY3:
-		return backend_create_py3_func(be, f);
 	case FUNC_LANG_MAP_PY3:
-		return backend_create_map_py3_func(be, f);
+		return backend_create_map_py_func(be, f);
 	case FUNC_LANG_C:
 	case FUNC_LANG_CPP:
 		return backend_create_c_func(be, f);

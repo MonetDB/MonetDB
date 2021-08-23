@@ -64,15 +64,14 @@
 
 const char str_nil[2] = { '\200', 0 };
 
-void
+gdk_return
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1, 1) != GDK_SUCCEED)
-		GDKerror("alloc failed");
+	return HEAPalloc(d, size, 1, 1);
 }
 
 
@@ -141,7 +140,7 @@ strCleanHash(Heap *h, bool rebuild)
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
- * returns zero.
+ * returns (var_t) -2 (-1 is reserved for error).
  */
 var_t
 strLocate(Heap *h, const char *v)
@@ -152,7 +151,7 @@ strLocate(Heap *h, const char *v)
 	BUN off;
 	if (h->free == 0) {
 		/* empty, so there are no strings */
-		return 0;
+		return (var_t) -2;
 	}
 
 	off = strHash(v);
@@ -167,81 +166,7 @@ strLocate(Heap *h, const char *v)
 		if (strcmp(v, (str) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
-	return 0;
-}
-
-#ifdef __GNUC__
-/* __builtin_expect returns its first argument; it is expected to be
- * equal to the second argument */
-#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
-#define likely(expr)	__builtin_expect((expr) != 0, 1)
-#else
-#define unlikely(expr)	(expr)
-#define likely(expr)	(expr)
-#endif
-
-/*
- * UTF-8 encoding is as follows:
- * U-00000000 - U-0000007F: 0xxxxxxx
- * U-00000080 - U-000007FF: 110zzzzx 10xxxxxx
- * U-00000800 - U-0000FFFF: 1110zzzz 10zxxxxx 10xxxxxx
- * U-00010000 - U-0010FFFF: 11110zzz 10zzxxxx 10xxxxxx 10xxxxxx
- *
- * To be correctly coded UTF-8, the sequence should be the shortest
- * possible encoding of the value being encoded.  This means that at
- * least one of the z bits must be non-zero.  Also note that the four
- * byte sequence can encode more than is allowed and that the values
- * U+D800..U+DFFF are not allowed to be encoded.
- */
-static inline gdk_return
-checkUTF8(const char *v)
-{
-	/* It is unlikely that this functions returns GDK_FAIL, because
-	 * it is likely that the string presented is a correctly coded
-	 * UTF-8 string.  So we annotate the tests that are very
-	 * unlikely to succeed, i.e. the ones that lead to a return of
-	 * GDK_FAIL, as being expected to return 0 using the
-	 * __builtin_expect function. */
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8 */
-		for (size_t i = 0; v[i]; i++) {
-			/* we do not annotate all tests, only the ones
-			 * leading directly to an unlikely return
-			 * statement */
-			if ((v[i] & 0x80) == 0) {
-				;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				if (unlikely((v[i] & 0x1E) == 0))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				if ((v[i++] & 0x0F) == 0) {
-					if (unlikely((v[i] & 0xE0) != 0xA0))
-						return GDK_FAIL;
-				} else {
-					if (unlikely((v[i] & 0xC0) != 0x80))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				if ((v[i++] & 0x07) == 0) {
-					if (unlikely((v[i] & 0x30) == 0))
-						return GDK_FAIL;
-				}
-				if (unlikely((v[i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-			} else {
-				return GDK_FAIL;
-			}
-		}
-	}
-	return GDK_SUCCEED;
+	return (var_t) -2;
 }
 
 var_t
@@ -257,7 +182,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (h->free == 0) {
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->theaplock, &b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				return 0;
+				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
@@ -307,9 +232,9 @@ strPut(BAT *b, var_t *dst, const void *V)
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
 #ifndef NDEBUG
-	if (checkUTF8(v) != GDK_SUCCEED) {
+	if (!checkUTF8(v)) {
 		GDKerror("incorrectly encoded UTF-8\n");
-		return 0;
+		return (var_t) -1;
 	}
 #endif
 
@@ -343,11 +268,11 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 		if (h->free + pad + len >= (size_t) VAR_MAX) {
 			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
-			return 0;
+			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPgrow(&b->theaplock, &b->tvheap, newsize, true) != GDK_SUCCEED) {
-			return 0;
+			return (var_t) -1;
 		}
 		h = b->tvheap;
 
@@ -380,6 +305,16 @@ strPut(BAT *b, var_t *dst, const void *V)
  * Convert an "" separated string to a GDK string value, checking that
  * the input is correct UTF-8.
  */
+
+#ifdef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
 
 ssize_t
 GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
@@ -654,13 +589,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
  * Convert a GDK string value to something printable.
  */
 /* all but control characters (in range 0 to 31) and DEL */
-#ifdef ASCII_CHR
-/* ASCII printable characters */
-#define printable_chr(ch)	(' ' <= (ch) && (ch) <= '~')
-#else
-/* everything except ASCII control characters */
 #define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
-#endif
 
 size_t
 escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
@@ -676,7 +605,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 		    || (sep1len && strncmp(src + end, sep1, sep1len) == 0)
 		    || (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
 			sz += 2;
-#ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
 			   0200 <= ((int) src[end + 1] & 0377) &&
 			   ((int) src[end + 1] & 0377) <= 0237) {
@@ -688,7 +616,6 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 			 * 1, together that's 8, i.e. the width of two
 			 * backslash-escaped octal coded characters */
 			sz += 7;
-#endif
 		} else if (!printable_chr(src[end])) {
 			sz += 4;
 		} else {
@@ -707,16 +634,13 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 	sep2len = sep2 ? strlen(sep2) : 0;
 	for (; src[cur] && l < dstlen; cur++)
 		if (!printable_chr(src[cur])
-#ifndef ASCII_CHR
 		    || (src[cur] == '\302'
 			&& 0200 <= (src[cur + 1] & 0377)
 			&& ((int) src[cur + 1] & 0377) <= 0237)
 		    || (cur > 0
 			&& src[cur - 1] == '\302'
 			&& 0200 <= (src[cur] & 0377)
-			&& (src[cur] & 0377) <= 0237)
-#endif
-			) {
+			&& (src[cur] & 0377) <= 0237)) {
 			dst[l++] = '\\';
 			switch (src[cur]) {
 			case '\t':
@@ -806,7 +730,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (checkUTF8(a) != GDK_SUCCEED) {
+	if (!checkUTF8(a)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return GDK_FAIL;
 	}
@@ -1348,14 +1272,14 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			}						\
 			if (empty) {					\
 				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, str_nil, Tsize(r)) != GDK_SUCCEED) \
+					if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED) \
 						goto allocation_error;	\
 				has_nils = true;			\
 			} else {					\
 				char save = single_str[slice_length];	\
 				single_str[slice_length] = '\0';	\
 				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, single_str, Tsize(r)) != GDK_SUCCEED) \
+					if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED) \
 						goto allocation_error;	\
 				single_str[slice_length] = save;	\
 			}						\
@@ -1368,7 +1292,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		empty = true;						\
 		compute_next_single_str(k, i);				\
 		for (; k < i; k++)					\
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
 				goto allocation_error;			\
 	} while (0)
 
@@ -1376,7 +1300,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	do {								\
 		for (; k < i; k++) {					\
 			str next = BUNtvar(bi, k);			\
-			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
 				goto allocation_error;			\
 			has_nils |= strNil(next);			\
 		}							\
@@ -1388,7 +1312,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			next_group_length = next_length = offset = 0;	\
 			empty = true;					\
 			compute_next_single_str(start[k], end[k]);	\
-			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
 	} while (0)
