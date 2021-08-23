@@ -2761,7 +2761,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
                     Srvr.append('--dbextra=in-memory')
-                Srvr.extens(mserver5_opts)
+                Srvr.extend(mserver5_opts)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
                 os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
