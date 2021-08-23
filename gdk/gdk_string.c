@@ -267,7 +267,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		assert(newsize);
 
 		if (h->free + pad + len >= (size_t) VAR_MAX) {
-			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
+			GDKerror("string heap gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
