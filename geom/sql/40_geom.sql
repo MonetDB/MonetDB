@@ -34,7 +34,7 @@ create view sys.geometry_columns as
 		c.name as f_geometry_column,
 		cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
 		c.type_scale as srid,
-		get_type(c.type_digits, 0) as type
+		get_type(c.type_digits, 0) as geometry_type
 	from sys.columns c, sys.tables t, sys.schemas s
 	where c.table_id = t.id and t.schema_id = s.id
 	  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
