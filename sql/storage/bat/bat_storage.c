@@ -4000,8 +4000,14 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 static int
 swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
+	sql_delta *d = NULL;
+	bool update_conflict = false;
+	int in_transaction = segments_in_transaction(tr, col->t);
+	if (in_transaction) return LOG_CONFLICT;
+
+	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	sqlid id = col->base.id;
-	sql_delta *d = ATOMIC_PTR_GET(&col->data);
 	bat bid = d->cs.bid;
 	lock_column(tr->store, id);
 	d->cs.bid = temp_create(bn);
@@ -4011,8 +4017,6 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 	d->cs.cleared = 0;
 	d->cs.ts = tr->tid;
 	d->cs.refcnt = 1;
-	// maybe unfix in caller
-	// bat_destroy(bn);
 	temp_destroy(bid);
 	unlock_column(tr->store, id);
 	return LOG_OK;
