@@ -163,86 +163,11 @@ GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn)
 	return spatialInfo;
 }
 
-//Using mvc_* methods (not working yet)
-str createSHPtableMVC(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
-{
-	char *nameToLowerCase = NULL;
-	str msg = MAL_SUCCEED;
-
-	if (field_definitions == NULL)
-	{
-		/* Can't find shapefile field definitions */
-		GDALWClose(&shp_conn);
-		return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* Create the table that will store the data of the shape file (Allows integers, floats and strings) */
-	sql_table *shp_out;
-	sql_column *col;
-	shp_out = mvc_bind_table(m, sch, tablename);
-
-	if (shp_out == NULL)
-	{
-		shp_out = mvc_create_table(m, sch, tablename, tt_table, 0, SQL_PERSIST, 0, shp_conn.numFieldDefinitions, 0);
-		col = mvc_create_column_(m, shp_out, "gid", "int", 32);
-		if (col == NULL)
-		{
-			//Failure to create column
-			//TODO: Should this be the error that's returned?
-			free(field_definitions);
-			return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		printf("Created column gid\n");
-		fflush(stdout);
-		for (int i = 0; i < shp_conn.numFieldDefinitions; i++)
-		{
-			nameToLowerCase = toLower(field_definitions[i].fieldName);
-			if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
-			{
-				col = mvc_create_column_(m, shp_out, nameToLowerCase, "int", 32);
-			}
-			else if (strcmp(field_definitions[i].fieldType, "Real") == 0)
-			{
-				//TODO: Do real data types in Shapefiles have 32 or 64 bits?
-				col = mvc_create_column_(m, shp_out, nameToLowerCase, "real", 64);
-			}
-			else
-			{
-				col = mvc_create_column_(m, shp_out, nameToLowerCase, "clob", 0);
-			}
-			if (col == NULL)
-			{
-				//Failure to create column
-				//TODO: Should this be the error that's returned?
-				free(field_definitions);
-				return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			printf("Created column %s\n", nameToLowerCase);
-			fflush(stdout);
-			GDKfree(nameToLowerCase);
-		}
-
-		col = mvc_create_column_(m, shp_out, "geom", "geometry", 0);
-		if (col == NULL)
-		{
-			//Failure to create column
-			//TODO: Should this be the error that's returned?
-			free(field_definitions);
-			return createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	}
-	else
-	{
-		//TODO: Table with tablename already created, warn the user
-	}
-	return msg;
-}
-
 //Using SQL query
-str createSHPtable(Client cntxt, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
+str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
 {
 	unsigned int size = BUFSIZ;
-	char *buf = malloc(BUFSIZ * sizeof(char)), *temp_buf = malloc(BUFSIZ * sizeof(char));
+	char *buf = GDKmalloc(BUFSIZ * sizeof(char)), *temp_buf = GDKmalloc(BUFSIZ * sizeof(char));
 	char *nameToLowerCase = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -281,18 +206,24 @@ str createSHPtable(Client cntxt, str tablename, GDALWConnection shp_conn, GDALWS
 
 	//Each shapefile table has one geom column
 	sprintf(temp_buf + strlen(temp_buf), "geom GEOMETRY ");
-	snprintf(buf, size, CRTTBL, tablename, temp_buf);
 
-	if ((msg = SQLstatementIntern(cntxt, buf, "shp.load", TRUE, FALSE, NULL)) != MAL_SUCCEED)
-		//Create table command didn't succeed, free field_definitions
-		free(field_definitions);
+	//Concat the schema name with the table name
+	size_t schemaTableSize = strlen(schemaname) + strlen(tablename) + 3;
+	char* schemaTable = GDKmalloc(schemaTableSize);
+	snprintf(schemaTable,schemaTableSize-1,"%s.%s",schemaname,tablename);
+	
+	//Build the CREATE TABLE command
+	snprintf(buf, size, CRTTBL, schemaTable, temp_buf);
+	
+	msg = SQLstatementIntern(cntxt, buf, "shp.load", TRUE, FALSE, NULL);
 
-	free(buf);
-	free(temp_buf);
+	GDKfree(buf);
+	GDKfree(temp_buf);
+	GDKfree(schemaTable);
 	return msg;
 }
 
-str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info)
+str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info)
 {
 	sql_table *data_table = NULL;
 	sql_column **cols;
@@ -304,7 +235,6 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 	char *nameToLowerCase = NULL;
 	int i;
 
-	BAT *pos = NULL;
 	sqlstore *store;
 
 	/* SHP-level descriptor */
@@ -329,7 +259,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 	if (!(data_table = mvc_bind_table(m, sch, tablename)))
 	{
 		/* Previously create output table is missing */
-		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Table 'sys.%s' missing", tablename);
+		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Table '%s.%s' missing", schemaname, tablename);
 		GDALWClose(&shp_conn);
 		return msg;
 	}
@@ -357,7 +287,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 		GDKfree(nameToLowerCase);
 		if (cols[i] == NULL)
 		{
-			msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column 'sys.%s(%s)' missing", tablename, toLower(field_definitions[i].fieldName));
+			msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column '%s.%s(%s)' missing", schemaname, tablename, toLower(field_definitions[i].fieldName));
 			goto unfree;
 		}
 		/*create the BAT */
@@ -389,7 +319,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 	/* Bind GID and GEOM columns */
 	if (!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid")))
 	{
-		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column 'sys.%s(gid)' missing", tablename);
+		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column '%s.%s(gid)' missing", schemaname, tablename);
 		goto unfree;
 	}
 	if (!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
@@ -399,7 +329,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 	}
 	if (!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom")))
 	{
-		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column 'sys.%s(geom)' missing", tablename);
+		msg = createException(MAL, "shp.load", SQLSTATE(42SO2) "Column '%s.%s(geom)' missing", schemaname, tablename);
 		goto unfree;
 	}
 	if (!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT)))
@@ -471,14 +401,18 @@ str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_con
 		if (rc != GDK_SUCCEED)
 			goto unfree;
 	}
-	store = m->session->tr->store;
 	/* finalise the BATs */
-	pos = store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]));
-	if (!pos)
-		throw(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	store = m->session->tr->store;
+	BUN offset;
+	BAT *pos = NULL;
+	if (store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]), &offset, &pos) != LOG_OK) {
+		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto unfree;
+	}
+		
 	for (i = 0; i < colsNum; i++)
 	{
-		if (store->storage_api.append_col(m->session->tr, cols[i], pos, colsBAT[i], TYPE_bat) != LOG_OK)
+		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[i]), TYPE_bat) != LOG_OK)
 		{
 			bat_destroy(pos);
 			msg = createException(MAL, "shp.load", SQLSTATE(38000) "Geos append column failed");
@@ -494,22 +428,30 @@ unfree:
 			BBPunfix(colsBAT[i]->batCacheid);
 	}
 	free(field_definitions);
+	GDALWClose(&shp_conn);
 	GDKfree(colsBAT);
 	return msg;
 }
 
-/* Attach and load single shp file given its name and output table name */
 /* TODO: Use Shapefile table to avoid loading the same file more than once, or allow the user to load as many times as he wants? */
+/* Attach and load single shp file given its file name and output table name (uses sys schema) */
 str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str msg = MAL_SUCCEED;
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
-	str msg = MAL_SUCCEED;
 
 	/* Shapefile name (argument 1) */
-	str fname = *(str *)getArgReference(stk, pci, 1);
-	/* Output table name (argument 2) */
-	str tablename = *(str *)getArgReference(stk, pci, 2);
+	str filename = *(str *)getArgReference(stk, pci, 1);
+	/* Output schema name (argument 2) */
+	str schemaname = *(str *)getArgReference(stk, pci, 2);
+	/* Output table name (argument 3) */
+	str tablename = *(str *)getArgReference(stk, pci, 3);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
+		return msg;
 
 	/* SHP-level descriptor */
 	GDALWConnection shp_conn;
@@ -517,23 +459,21 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDALWSimpleFieldDef *field_definitions;
 	GDALWSpatialInfo spatial_info;
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
-		return msg;
-	if (!(sch = mvc_bind_schema(m, "sys")))
-		return createException(MAL, "shp.load", SQLSTATE(38000) "Schema sys missing\n");
-
-	if ((shp_conn_ptr = GDALWConnect((char *)fname)) == NULL)
-	{
-		/* Can't find shapefile */
-		return createException(MAL, "shp.load", SQLSTATE(38000) "Missing shape file %s\n", fname);
+	if (!(sch = mvc_bind_schema(m, schemaname))) {
+		/* Can't find schema */
+		return createException(MAL, "shp.load", SQLSTATE(38000) "Schema %s missing\n",schemaname);
 	}
 
 	if ((tablename != NULL) && (tablename[0] == '\0'))
 	{
 		/* Output table name is NULL */
 		return createException(MAL, "shp.load", SQLSTATE(38000) "Missing output table name %s\n", tablename);
+	}
+		
+	if ((shp_conn_ptr = GDALWConnect((char *)filename)) == NULL)
+	{
+		/* Can't find shapefile */
+		return createException(MAL, "shp.load", SQLSTATE(38000) "Missing shape file %s\n", filename);
 	}
 
 	/* Get info about fields and spatial attributes of shapefile*/
@@ -542,19 +482,22 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 
 	/* Create table for outputting shapefile data */
-	if ((msg = createSHPtable(cntxt, tablename, shp_conn, field_definitions)) != MAL_SUCCEED)
+	if ((msg = createSHPtable(cntxt, schemaname, tablename, shp_conn, field_definitions)) != MAL_SUCCEED)
 	{
 		/* Create table failed */
+		//TODO Am I freeing everything?
+		free(field_definitions);
+		GDALWClose(shp_conn_ptr);
 		return msg;
 	}
 
 	/* Load shapefile data into table */
-	return loadSHPtable(m, sch, tablename, shp_conn, field_definitions, spatial_info);
+	return loadSHPtable(m, sch, schemaname, tablename, shp_conn, field_definitions, spatial_info);
 }
 
 #include "mel.h"
 static mel_func shp_init_funcs[] = {
-	pattern("shp", "load", SHPload, false, "Import an ESRI Shapefile", args(1, 3, arg("", void), arg("filename", str), arg("tablename", str))),
+	pattern("shp", "load", SHPload, false, "Import an ESRI Shapefile into a new table", args(1, 4, arg("", void), arg("filename", str), arg("schemaname", str), arg("tablename", str))),
 	{.imp = NULL}};
 #include "mal_import.h"
 #ifdef _MSC_VER

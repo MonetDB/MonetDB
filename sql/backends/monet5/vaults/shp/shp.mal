@@ -6,6 +6,6 @@
 
 module shp;
 
-pattern load(filename:str, tablename:str) :void
+pattern load(filename:str, schemaname:str, tablename:str) :void
 address SHPload
-comment "Import an ESRI Shapefile";
+comment "Import an ESRI Shapefile into a new table";
