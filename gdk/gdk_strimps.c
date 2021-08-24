@@ -238,16 +238,18 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 }
 
 static bool
-STRMPbuildHeader(BAT *b, CharPair *hpairs) {
+STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	lng t0 = 0;
 	BATiter bi;
-	str s;
+	str cs;
 	BUN i;
 	size_t hidx;
 	size_t hlen;
 	PairHistogramElem *hist;
 	PairIterator pi, *pip;
 	CharPair cp, *cpp;
+
+	(void)s;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	hlen = STRIMP_HISTSIZE;
@@ -266,9 +268,9 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 	pip = &pi;
 	cpp = &cp;
 	for (i = 0; i < b->batCount; i++) {
-		s = (str)BUNtvar(bi, i);
-		if (!strNil(s)) {
-			pi.s = s;
+		cs = (str)BUNtvar(bi, i);
+		if (!strNil(cs)) {
+			pi.s = cs;
 			pi.pos = 0;
 			pi.lim = strlen(pi.s);
 			while (pair_at(pip, cpp)) {
@@ -324,7 +326,7 @@ STRMPbuildHeader(BAT *b, CharPair *hpairs) {
 
 /* Create the heap for a string imprint. Returns NULL on failure. */
 static Strimps *
-STRMPcreateStrimpHeap(BAT *b)
+STRMPcreateStrimpHeap(BAT *b, BAT *s)
 {
 	uint8_t *h1, *h2;
 	Strimps *r = NULL;
@@ -338,7 +340,7 @@ STRMPcreateStrimpHeap(BAT *b)
 		MT_lock_set(&b->batIdxLock);
 		/* Make sure no other thread got here first */
                 if (b->tstrimps == NULL) {
-			STRMPbuildHeader(b, hpairs); /* Find the header pairs */
+			STRMPbuildHeader(b, s, hpairs); /* Find the header pairs */
 			sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and the pair sizes */
 			for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
 				sz += hpairs[i].psize;
@@ -459,13 +461,14 @@ BATcheckstrimps(BAT *b)
  * list.
  */
 BAT *
-STRMPfilter(BAT *b, char *q)
+STRMPfilter(BAT *b, BAT *s, char *q)
 {
 	BAT *r = NULL;
 	BUN i;
 	uint64_t qbmask;
 	uint64_t *ptr;
 	Strimps *strmps;
+	(void)s;
 
 	if (isVIEW(b)) {
 		// b = BBP_cache(VIEWtparent(b));
@@ -583,12 +586,12 @@ static ATOMIC_TYPE STRMPnthread = ATOMIC_VAR_INIT(0);
 
 /* Create */
 gdk_return
-STRMPcreate(BAT *b)
+STRMPcreate(BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BATiter bi;
 	BUN i;
-	str s;
+	str cs;
 	Strimps *h;
 	uint64_t *dh;
 	BAT *pb;
@@ -611,16 +614,16 @@ STRMPcreate(BAT *b)
 	if (BATcheckstrimps(pb))
 		return GDK_SUCCEED;
 
-        if ((h = STRMPcreateStrimpHeap(pb)) == NULL) {
+        if ((h = STRMPcreateStrimpHeap(pb, s)) == NULL) {
 		return GDK_FAIL;
 	}
 	dh = (uint64_t *)((uint8_t*)h->strimps.base + h->strimps.free + b->hseqbase*8);
 
 	bi = bat_iterator(b);
 	for (i = 0; i < bi.count; i++) {
-		s = (str)BUNtvar(bi, i);
-		if (!strNil(s))
-			*dh++ = STRMPmakebitstring(s, h);
+		cs = (str)BUNtvar(bi, i);
+		if (!strNil(cs))
+			*dh++ = STRMPmakebitstring(cs, h);
 		else
 			*dh++ = 0; /* no pairs in nil values */
 	}
