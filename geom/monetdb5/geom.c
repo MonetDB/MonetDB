@@ -4169,6 +4169,8 @@ str wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	{
 		throw(MAL, "geom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	//iterator over the BATs
+	inBAT_iter = bat_iterator(inBAT);
 
 	/* TODO: what should be returned if the input BAT is less than
 	 * two rows? --sjoerd */
@@ -4179,11 +4181,9 @@ str wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 			throw(MAL, "geom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	//iterator over the BATs
-	inBAT_iter = bat_iterator(inBAT);
-	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
-	if (BATcount(inBAT) == 1) {
-		bat_iterator_end(&inBAT_iter);
+	aWKB = (wkb *)BUNtvar(inBAT_iter, 0);
+	if (BATcount(inBAT) == 1)
+	{
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err)
@@ -4208,7 +4208,6 @@ str wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
-	bat_iterator_end(&inBAT_iter);
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
@@ -5208,9 +5207,9 @@ str wkbUnionAggr(wkb **outWKB, const bat *inBAT_id)
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 
-	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
-	if (BATcount(inBAT) == 1) {
-		bat_iterator_end(&inBAT_iter);
+	aWKB = (wkb *)BUNtvar(inBAT_iter, 0);
+	if (BATcount(inBAT) == 1)
+	{
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err)
@@ -5233,7 +5232,6 @@ str wkbUnionAggr(wkb **outWKB, const bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
-	bat_iterator_end(&inBAT_iter);
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
@@ -5249,6 +5247,7 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 	const char *err;
 	const oid *gids = NULL;
 	BATiter bi;
+	wkb **unions = NULL;
 
 	//TODO Do we need to use skip_nils?
 	(void)skip_nils;
@@ -5260,27 +5259,32 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
 	{
 		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
-		goto free;
+		return msg;
 	}
+	bi = bat_iterator(b);
 
 	//Fill in the values of the group aggregate operation
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
 	{
 		msg = createException(MAL, "geom.Union", "%s", err);
-		goto free;
+		BBPunfix(b->batCacheid);
+		return msg;
 	}
 
 	//Create a new BAT column of wkb type, with lenght equal to the number of groups
-	if (((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT))) == NULL)
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL)
 	{
-		createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
 	//Allocate space for the intermediate unions of wkb's
-	wkb **unions = GDKzalloc(sizeof(wkb *) * ngrp);
+	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
 
-	bi = bat_iterator(b);
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
 
@@ -5294,15 +5298,13 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		//Determine the group id
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 
-		/*char *geomSTR;
+#ifndef NDEBUG
+		char *geomSTR;
 		wkbAsText(&geomSTR, &inWKB, NULL);
 		printf("Row %zu: %s\n", i, geomSTR);
-		fflush(stdout);*/
-		if (i % 1000 == 0)
-		{
-			printf("Processed %zu records, currently on group: %zu\n", i, grp);
-			fflush(stdout);
-		}
+		fflush(stdout);
+		GDKfree(geomSTR);
+#endif
 
 		if (unions[grp] == NULL)
 		{
@@ -5328,9 +5330,6 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED)
 	{
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
-		for (BUN i = 0; i < ngrp; i++)
-			GDKfree(unions[i]);
-		GDKfree(unions);
 		goto free;
 	}
 
@@ -5356,6 +5355,10 @@ free:
 		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (unions)
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(unions[i]);
+		GDKfree(unions);
 	return msg;
 }
 
@@ -6345,7 +6348,8 @@ wkbPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkb_size(val->len));
 	base = b->tvheap->base;
-	if (*bun != (var_t) -1) {
+	if (*bun)
+	{
 		memcpy(&base[*bun], val, wkb_size(val->len));
 		b->tvheap->dirty = true;
 	}
@@ -6367,10 +6371,10 @@ wkbLENGTH(const void *P)
 	return (size_t)len;
 }
 
-static gdk_return
+static void
 wkbHEAP(Heap *heap, size_t capacity)
 {
-	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	HEAP_initialize(heap, capacity, 0, (int)sizeof(var_t));
 }
 
 /***********************************************/
@@ -6838,7 +6842,8 @@ wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
 	base = b->tvheap->base;
-	if (*bun != (var_t) -1) {
+	if (*bun)
+	{
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
 		b->tvheap->dirty = true;
 	}
@@ -6860,10 +6865,10 @@ wkbaLENGTH(const void *P)
 	return (size_t)len;
 }
 
-static gdk_return
+static void
 wkbaHEAP(Heap *heap, size_t capacity)
 {
-	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	HEAP_initialize(heap, capacity, 0, (int)sizeof(var_t));
 }
 
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
@@ -6913,10 +6918,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	BATiter bpxi = bat_iterator(bpx);
-	BATiter bpyi = bat_iterator(bpy);
-	px = (dbl *) bpxi.base;
-	py = (dbl *) bpyi.base;
+	px = (dbl *)Tloc(bpx, 0);
+	py = (dbl *)Tloc(bpy, 0);
 
 	nv = nvert - 1;
 	cnt = BATcount(bpx);
@@ -6941,8 +6944,6 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		}
 		*cs++ = wn & 1;
 	}
-	bat_iterator_end(&bpxi);
-	bat_iterator_end(&bpyi);
 
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
@@ -6990,10 +6991,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	BATiter bpxi = bat_iterator(bpx);
-	BATiter bpyi = bat_iterator(bpy);
-	px = (dbl *) bpxi.base;
-	py = (dbl *) bpyi.base;
+	px = (dbl *)Tloc(bpx, 0);
+	py = (dbl *)Tloc(bpy, 0);
 	cnt = BATcount(bpx);
 	cs = (bit *)Tloc(bo, 0);
 	for (i = 0; i < cnt; i++)
@@ -7049,8 +7048,6 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
-	bat_iterator_end(&bpxi);
-	bat_iterator_end(&bpyi);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
 	BATsetcount(bo, cnt);
@@ -7609,10 +7606,47 @@ static const unsigned char geom_functions[9054] = {
 
 #include "mel.h"
 static mel_atom geom_init_atoms[] = {
- { .name="mbr", .basetype="lng", .size=sizeof(mbr), .tostr=mbrTOSTR, .fromstr=mbrFROMSTR, .hash=mbrHASH, .null=mbrNULL, .cmp=mbrCOMP, .read=mbrREAD, .write=mbrWRITE, },
- { .name="wkb", .tostr=wkbTOSTR, .fromstr=wkbFROMSTR, .hash=wkbHASH, .null=wkbNULL, .cmp=wkbCOMP, .read=wkbREAD, .write=wkbWRITE, .put=wkbPUT, .del=wkbDEL, .length=wkbLENGTH, .heap=wkbHEAP, },
- { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
-};
+	{
+		.name = "mbr",
+		.basetype = "lng",
+		.size = sizeof(mbr),
+		.tostr = mbrTOSTR,
+		.fromstr = mbrFROMSTR,
+		.hash = mbrHASH,
+		.null = mbrNULL,
+		.cmp = mbrCOMP,
+		.read = mbrREAD,
+		.write = mbrWRITE,
+	},
+	{
+		.name = "wkb",
+		.tostr = wkbTOSTR,
+		.fromstr = wkbFROMSTR,
+		.hash = wkbHASH,
+		.null = wkbNULL,
+		.cmp = wkbCOMP,
+		.read = wkbREAD,
+		.write = wkbWRITE,
+		.put = wkbPUT,
+		.del = wkbDEL,
+		.length = wkbLENGTH,
+		.heap = wkbHEAP,
+	},
+	{
+		.name = "wkba",
+		.tostr = wkbaTOSTR,
+		.fromstr = wkbaFROMSTR,
+		.null = wkbaNULL,
+		.hash = wkbaHASH,
+		.cmp = wkbaCOMP,
+		.read = wkbaREAD,
+		.write = wkbaWRITE,
+		.put = wkbaPUT,
+		.del = wkbaDEL,
+		.length = wkbaLENGTH,
+		.heap = wkbaHEAP,
+	},
+	{.cmp = NULL}};
 static mel_func geom_init_funcs[] = {
 	command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
 	command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
