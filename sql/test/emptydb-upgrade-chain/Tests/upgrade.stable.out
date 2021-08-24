@@ -19,6 +19,8 @@ external name mtime.epoch;
 grant execute on function sys.epoch (DECIMAL(18,3)) to public;
 update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
 set schema "sys";
+create view sys.malfunctions as select * from sys.malfunctions();
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'malfunctions';
 drop function sys.dump_database(boolean);
 drop procedure sys.dump_table_data();
 drop procedure sys._dump_table_data(string, string);

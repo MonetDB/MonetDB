@@ -2398,8 +2398,6 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"external name \"sql\".\"deltas\";\n"
 							"update sys.functions set system = true"
 							" where schema_id = 2000 and name = 'deltas';\n");
-			pos += snprintf(buf + pos, bufsize - pos, 
-							"create view sys.malfunctions as select * from sys.malfunctions();\n");
 
 			/* 26_sysmon */
 			t = mvc_bind_table(sql, s, "queue");
@@ -3526,6 +3524,12 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = %d;\n", F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+	/* 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create view sys.malfunctions as select * from sys.malfunctions();\n"
+					"update sys._tables set system = true where system <> true and schema_id = 2000"
+					" and name = 'malfunctions';\n");
 
 	/* 52_describe.sql; but we need to drop most everything from
 	 * 76_dump.sql first */
