@@ -5013,7 +5013,10 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
 		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
 			BBPreclaim(bn);
-			throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "swap_bats call failed %s.%s.%s", sname, tname, cname);
+			if (res == LOG_CONFLICT)
+				throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			if (res == LOG_ERR)
+				throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "LOG ERROR  in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 		}
 	}
 	BBPunfix(b->batCacheid);
