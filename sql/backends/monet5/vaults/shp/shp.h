@@ -79,13 +79,7 @@ void GDALWClose(GDALWConnection *);
 #define shp_export extern
 #endif
 
-str createSHPtable(Client cntxt, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
-str createSHPtableMVC(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
-str loadSHPtable(mvc *m, sql_schema *sch, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info);
-shp_export str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-/* Remove these?*/
-//shp_export str SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-//shp_export str SHPimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-//shp_export str SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
+str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info);
+str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
