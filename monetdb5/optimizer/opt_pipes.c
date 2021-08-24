@@ -58,9 +58,9 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.bincopyfrom();"
-	 "optimizer.strimps();"
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
+	 "optimizer.strimps();"
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 //"optimizer.candidates();" only for decoration in explain

@@ -23,9 +23,9 @@
 str
 OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, needed =0, actions=0;
+	int i, limit, slimit, needed =0, actions=0;
 	// int mvcvar = -1;
-	InstrPtr p,q,r, *old = mb->stmt;
+	InstrPtr p, q, *old = mb->stmt;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -37,63 +37,63 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
+	limit= mb->stop;
 
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	// check applicability first
-	for( i=0; i < limit; i++){
+	for(i=0; i < limit; i++) {
 		p = old[i];
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef)
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef)
 			needed = 1;
 	}
+
 	if (!needed)
 		goto bailout;
 
-	limit= mb->stop;
-	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
+	if (newMalBlkStmt(mb, mb->ssize + 20) < 0)
 		throw(MAL,"optimizer.strimps", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	slimit = mb->stop;
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-                if (p->token == ENDsymbol){
-                        pushInstruction(mb,p);
-                        break;
-                }
+		if (p->token == ENDsymbol) {
+			pushInstruction(mb,p);
+			break;
+		}
+
 		/* Look for bind operations on strings, because for those we migh need strimps */
 
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef) {
-			q = newInstruction(0, strimpsRef, mkstrimpsRef); /* This should be void? */
-			setDestVar(q, newTmpVariable(mb, TYPE_void));
+
+			/* cst.vtype = TYPE_bit; */
+			/* nvar = defConstant(mb, TYPE_bit, &cst); */
+			q = newInstruction(mb, strimpsRef, strimpFilterSelectRef);
+			res = newTmpVariable(mb, newBatType(TYPE_oid));
+			setDestVar(q, res);
 			q = addArgument(mb, q, getArg(p, 1));
+			q = addArgument(mb, q, getArg(p, 2));
+			q = addArgument(mb, q, getArg(p, 3));
+			q = addArgument(mb, q, getArg(p, 6));
 
 			pushInstruction(mb, q);
 			typeChecker(cntxt->usermodule, mb, q, mb->stop-1, TRUE);
 
-			/* cst.vtype = TYPE_bit; */
-			/* nvar = defConstant(mb, TYPE_bit, &cst); */
-			r = newInstruction(mb, strimpsRef, strimpFilterSelectRef);
-			res = newTmpVariable(mb, newBatType(TYPE_oid));
-			setDestVar(r, res);
-			r = addArgument(mb, r, getArg(p, 1));
-			r = addArgument(mb, r, getArg(p, 2));
-			r = addArgument(mb, r, getArg(p, 3));
-			r = addArgument(mb, r, getArg(p, 6));
-
-			pushInstruction(mb, r);
-			// typeChecker(cntxt->usermodule, mb, r, mb->stop-1, TRUE);
+			p = setArgument(mb, p, 2, getArg(q, 0));
 
 			actions++;
 		}
 		pushInstruction(mb, p);
 	}
-	for (; i < slimit; i++)
-	if (old[i])
-		freeInstruction(old[i]);
+	(void)slimit;
+	/* for (; i < slimit; i++) */
+	/* 	if (old[i]) */
+	/* 		freeInstruction(old[i]); */
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( actions){
+    if (actions){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
         	msg = chkFlow(mb);
