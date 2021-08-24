@@ -5355,10 +5355,11 @@ free:
 		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (unions)
+	if (unions) {
 		for (BUN i = 0; i < ngrp; i++)
 			GDKfree(unions[i]);
 		GDKfree(unions);
+	}
 	return msg;
 }
 
@@ -6371,10 +6372,10 @@ wkbLENGTH(const void *P)
 	return (size_t)len;
 }
 
-static void
+static gdk_return
 wkbHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int)sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int)sizeof(var_t));
 }
 
 /***********************************************/
@@ -6865,10 +6866,10 @@ wkbaLENGTH(const void *P)
 	return (size_t)len;
 }
 
-static void
+static gdk_return
 wkbaHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int)sizeof(var_t));
+	return HEAP_initialize(heap, capacity, 0, (int)sizeof(var_t));
 }
 
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
