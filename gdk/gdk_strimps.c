@@ -242,20 +242,25 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	lng t0 = 0;
 	BATiter bi;
 	str cs;
-	BUN i;
+	BUN i, ncand;
 	size_t hidx;
+	oid x;
 	size_t hlen;
 	PairHistogramElem *hist;
 	PairIterator pi, *pip;
 	CharPair cp, *cpp;
+	struct canditer ci;
 
-	(void)s;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	hlen = STRIMP_HISTSIZE;
 	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
-		// TODO handle error
-		return 0;
+		return false;
+	}
+
+	ncand = canditer_init(&ci, b, s);
+	if (ncand == 0) {
+		return false;
 	}
 
 	for(hidx = 0; hidx < hlen; hidx++) {
@@ -267,8 +272,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	bi = bat_iterator(b);
 	pip = &pi;
 	cpp = &cp;
-	for (i = 0; i < b->batCount; i++) {
-		cs = (str)BUNtvar(bi, i);
+	for (i = 0; i < ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		cs = (str)BUNtvar(bi, x);
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
@@ -339,8 +345,8 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	if (b->tstrimps == NULL) {
 		MT_lock_set(&b->batIdxLock);
 		/* Make sure no other thread got here first */
-                if (b->tstrimps == NULL) {
-			STRMPbuildHeader(b, s, hpairs); /* Find the header pairs */
+                if (b->tstrimps == NULL &&
+		    STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put the result in hpairs */
 			sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and the pair sizes */
 			for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
 				sz += hpairs[i].psize;
@@ -464,14 +470,14 @@ BAT *
 STRMPfilter(BAT *b, BAT *s, char *q)
 {
 	BAT *r = NULL;
-	BUN i;
+	BUN i, ncand;
 	uint64_t qbmask;
 	uint64_t *ptr;
 	Strimps *strmps;
-	(void)s;
+	oid x;
+	struct canditer ci;
 
 	if (isVIEW(b)) {
-		// b = BBP_cache(VIEWtparent(b));
 		BAT *pb = BBP_cache(VIEWtparent(b));
 		if (!BATcheckstrimps(pb))
 			goto sfilter_fail;
@@ -483,17 +489,27 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 		strmps = b->tstrimps;
 	}
 
-	r = COLnew(b->hseqbase, TYPE_oid, b->batCount, TRANSIENT);
+	ncand = canditer_init(&ci, b, s);
+	if (ncand == 0)
+		/* Is this correct? */
+		return BATdense(b->hseqbase, 0, 0);
+	r = COLnew(b->hseqbase, TYPE_oid, ncand, TRANSIENT);
 	if (r == NULL) {
 		goto sfilter_fail;
 	}
 
+	/* TODO: Compare patterns with and without SQL pattern metachars
+	 * (% and _). Theoretically they should produce the same results
+	 * because bitstring creation ignores punctuation characters
+	 * (see the macro isIgnored).
+	 */
 	qbmask = STRMPmakebitstring(q, strmps);
 	ptr = (uint64_t *)strmps->strimps_base;
 
-	for (i = 0; i < b->batCount; i++) {
-		if ((*(ptr + i) & qbmask) == qbmask) {
-			oid pos = i + b->hseqbase;
+	for (i = 0; i < ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		if ((*(ptr + x) & qbmask) == qbmask) {
+			oid pos = x + b->hseqbase;
 			if (BUNappend(r, &pos, false) != GDK_SUCCEED)
 				goto sfilter_fail;
 		}
@@ -590,11 +606,13 @@ STRMPcreate(BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BATiter bi;
-	BUN i;
+	BUN i, ncand;
 	str cs;
 	Strimps *h;
 	uint64_t *dh;
 	BAT *pb;
+	oid x;
+	struct canditer ci;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	if (b->ttype != TYPE_str) {
@@ -619,9 +637,12 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 	dh = (uint64_t *)((uint8_t*)h->strimps.base + h->strimps.free + b->hseqbase*8);
 
+	ncand = canditer_init(&ci, b, s);
+
 	bi = bat_iterator(b);
-	for (i = 0; i < bi.count; i++) {
-		cs = (str)BUNtvar(bi, i);
+	for (i = 0; i < ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		cs = (str)BUNtvar(bi, x);
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, h);
 		else
