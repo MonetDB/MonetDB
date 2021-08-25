@@ -92,6 +92,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		.tseqbase = oid_nil,
 		.tminpos = BUN_NONE,
 		.tmaxpos = BUN_NONE,
+		.tunique_est = 0.0,
 
 		.batRole = role,
 		.batTransient = true,
@@ -590,6 +591,7 @@ BATclear(BAT *b, bool force)
 	PROPdestroy(b);
 	b->tminpos = BUN_NONE;
 	b->tmaxpos = BUN_NONE;
+	b->tunique_est = 0.0;
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
@@ -677,7 +679,7 @@ BATfree(BAT *b)
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){nunique});
-		BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){(dbl)nunique});
+		b->tunique_est = (double) nunique;
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){nbucket});
 	}
 	if (b->theap) {
@@ -936,6 +938,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tnil = b->tnil;
 		bn->tminpos = b->tminpos;
 		bn->tmaxpos = b->tmaxpos;
+		bn->tunique_est = b->tunique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BUNlast(b);
@@ -963,6 +966,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		}
 		bn->tminpos = b->tminpos;
 		bn->tmaxpos = b->tmaxpos;
+		bn->tunique_est = b->tunique_est;
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
@@ -1050,7 +1054,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+		b->tunique_est = 0;
 	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
@@ -1302,7 +1306,7 @@ BUNdelete(BAT *b, oid o)
 	MT_lock_set(&b->theaplock);
 	b->batCount--;
 	if (BATcount(b) < GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-		BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
+		b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	if (b->batCount <= 1) {
 		/* some trivial properties */
@@ -1350,6 +1354,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		PROPdestroy(b);
 		b->tminpos = BUN_NONE;
 		b->tmaxpos = BUN_NONE;
+		b->tunique_est = 0.0;
 	}
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
@@ -1423,7 +1428,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					}
 				}
 				if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-					BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+					b->tunique_est = 0;
 			}
 			HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		} else {
@@ -1437,6 +1442,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			b->tminpos = BUN_NONE;
 			b->tmaxpos = BUN_NONE;
+			b->tunique_est = 0.0;
 		}
 		OIDXdestroy(b);
 		IMPSdestroy(b);

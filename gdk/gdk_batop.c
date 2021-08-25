@@ -723,7 +723,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 	if (cnt > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+		b->tunique_est = 0;
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
@@ -1042,6 +1042,7 @@ BATdel(BAT *b, BAT *d)
 	b->tnokey[0] = b->tnokey[1] = 0;
 	b->tminpos = BUN_NONE;
 	b->tmaxpos = BUN_NONE;
+	b->tunique_est = 0.0;
 
 	return GDK_SUCCEED;
 }
@@ -1104,7 +1105,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-		BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+		b->tunique_est = 0;
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
