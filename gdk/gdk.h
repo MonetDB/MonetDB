@@ -1148,59 +1148,6 @@ typedef var_t stridx_t;
 
 #include "gdk_cand.h"
 
-/* return the oid value at BUN position p from the (v)oid bat b
- * works with any TYPE_void or TYPE_oid bat */
-static inline oid
-BUNtoid(BAT *b, BUN p)
-{
-	oid o;
-
-	assert(ATOMtype(b->ttype) == TYPE_oid);
-	/* BATcount is the number of valid entries, so with
-	 * exceptions, the last value can well be larger than
-	 * b->tseqbase + BATcount(b) */
-	assert(p < BATcount(b));
-	assert(b->ttype == TYPE_void || b->tvheap == NULL);
-	if (is_oid_nil(b->tseqbase)) {
-		if (b->ttype == TYPE_void)
-			return b->tseqbase; /* i.e. oid_nil */
-		MT_lock_set(&b->theaplock);
-		o = ((const oid *) b->theap->base)[p + b->tbaseoff];
-		MT_lock_unset(&b->theaplock);
-		return o;
-	}
-	o = b->tseqbase + p;
-	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
-		return o;
-	}
-	/* b->tvheap != NULL, so we know there will be no parallel
-	 * modifications (so no locking) */
-	assert(!mask_cand(b));
-	/* exceptions only allowed on transient BATs */
-	assert(b->batRole == TRANSIENT);
-	/* make sure exception area is a reasonable size */
-	assert(ccand_free(b) % SIZEOF_OID == 0);
-	BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
-	if (nexc == 0) {
-		/* no exceptions (why the vheap?) */
-		return o;
-	}
-	const oid *exc = (oid *) ccand_first(b);
-	if (o < exc[0])
-		return o;
-	if (o + nexc > exc[nexc - 1])
-		return o + nexc;
-	BUN lo = 0, hi = nexc - 1;
-	while (hi - lo > 1) {
-		BUN mid = (hi + lo) / 2;
-		if (exc[mid] - mid > o)
-			hi = mid;
-		else
-			lo = mid;
-	}
-	return o + hi;
-}
-
 /*
  * @- BAT properties
  * @multitable @columnfractions 0.08 0.7
@@ -1940,10 +1887,10 @@ BATdescriptor(bat i)
 static inline void *
 Tpos(BATiter *bi, BUN p)
 {
-	if (bi->h->base) {
-		bi->tvid = ((const oid *) bi->h->base)[p];
-	} else if (bi->vh) {
+	assert(bi->base == NULL);
+	if (bi->vh) {
 		oid o;
+		assert(!is_oid_nil(bi->tseq));
 		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
 			BUN nexc = (bi->vh->free - sizeof(ccand_t)) / SIZEOF_OID;
 			o = bi->tseq + p;
@@ -1984,17 +1931,18 @@ Tpos(BATiter *bi, BUN p)
 			}
 		}
 		bi->tvid = o;
+	} else if (is_oid_nil(bi->tseq)) {
+		bi->tvid = oid_nil;
 	} else {
 		bi->tvid = bi->tseq + p;
 	}
-	bi->tvid = BUNtoid(bi->b, p);
-	return (void*)&bi->tvid;
+	return (void *) &bi->tvid;
 }
 
 static inline bool
 Tmskval(BATiter *bi, BUN p)
 {
-	return ((uint32_t *) bi->h->base)[p / 32] & (1U << (p % 32));
+	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 
 static inline void *
@@ -2002,6 +1950,34 @@ Tmsk(BATiter *bi, BUN p)
 {
 	bi->tmsk = Tmskval(bi, p);
 	return &bi->tmsk;
+}
+
+/* return the oid value at BUN position p from the (v)oid bat b
+ * works with any TYPE_void or TYPE_oid bat */
+static inline oid
+BUNtoid(BAT *b, BUN p)
+{
+	assert(ATOMtype(b->ttype) == TYPE_oid);
+	/* BATcount is the number of valid entries, so with
+	 * exceptions, the last value can well be larger than
+	 * b->tseqbase + BATcount(b) */
+	assert(p < BATcount(b));
+	assert(b->ttype == TYPE_void || b->tvheap == NULL);
+	if (is_oid_nil(b->tseqbase)) {
+		if (b->ttype == TYPE_void)
+			return oid_nil;
+		MT_lock_set(&b->theaplock);
+		oid o = ((const oid *) b->theap->base)[p + b->tbaseoff];
+		MT_lock_unset(&b->theaplock);
+		return o;
+	}
+	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
+		return b->tseqbase + p;
+	}
+	/* b->tvheap != NULL, so we know there will be no parallel
+	 * modifications (so no locking) */
+	BATiter bi = bat_iterator_nolock(b);
+	return * (oid *) Tpos(&bi, p);
 }
 
 /*
