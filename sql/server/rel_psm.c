@@ -1158,7 +1158,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 }
 
 static sql_rel *
-rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *triggername, int time, int orientation, int event, const char *old_name, const char *new_name, symbol *condition, const char *query)
+rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *triggername, int time, int orientation, int event, const char *old_name, const char *new_name, symbol *condition, const char *query, int replace)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1176,6 +1176,7 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	(void)condition;
 	append(exps, exp_atom_str(sql->sa, NULL, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, query, sql_bind_localtype("str") ));
+	append(exps, exp_atom_int(sql->sa, replace));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -1207,7 +1208,6 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
 	sql_table *t = NULL;
-	sql_trigger *st = NULL;
 	list *sq = NULL;
 	sql_rel *r = NULL;
 	char *q, *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
@@ -1243,21 +1243,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 		if (isView(t))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
-		if ((st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
-			if (replace) {
-				switch (mvc_drop_trigger(sql, ss, st)) {
-					case -1:
-						return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
-					case -2:
-					case -3:
-						return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
-					default:
-						break;
-				}
-			} else {
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
-			}
-		}
+		if (!replace && mvc_bind_trigger(sql, ss, triggername) != NULL)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
 		switch (trigger_event->token) {
 			case SQL_INSERT: {
 				if (old_name)
@@ -1290,8 +1277,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		assert(triggered_action->h->type == type_int);
 		orientation = triggered_action->h->data.i_val;
 		q = query_cleaned(sql->ta, QUERY(sql->scanner));
-		r = rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q);
-		return r;
+		return rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
 	}
 
 	if (!instantiate) {

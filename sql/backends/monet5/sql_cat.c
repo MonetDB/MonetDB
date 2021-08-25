@@ -524,23 +524,37 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 }
 
 static char *
-create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
+create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query, int replace)
 {
-	sql_trigger *tri = NULL;
+	sql_trigger *tri = NULL, *other = NULL;
 	sql_schema *s = NULL;
 	sql_table *t;
+	const char *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 
 	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: no such schema '%s'", sname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "CREATE TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (mvc_bind_trigger(sql, s, triggername))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: name '%s' already in use", triggername);
+		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: unknown table '%s'", tname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
 	if (isView(t))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
 
+	if (replace && other) {
+		if (other->t->base.id != t->base.id) /* defensive line */
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: the to be replaced trigger '%s' is not from table '%s'", base, triggername, tname);
+		switch (mvc_drop_trigger(sql, s, other)) {
+			case -1:
+				throw(SQL,"sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.create_trigger", SQLSTATE(42000) "%s: transaction conflict detected", base);
+			default:
+				break;
+		}
+	}
 	if ((tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query))) {
 		char *buf;
 		sql_rel *r = NULL;
@@ -575,7 +589,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	} else {
-		throw(SQL,"sql.create_trigger", SQLSTATE(42000) "CREATE TRIGGER: transaction conflict detected");
+		throw(SQL,"sql.create_trigger", SQLSTATE(42000) "%s: transaction conflict detected", base);
 	}
 	return MAL_SUCCEED;
 }
@@ -942,17 +956,17 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	sql_subfunc *sf;
 	sql_schema *s = NULL;
 	int clientid = sql->clientid, res = 0;
-	char *F = NULL, *fn = NULL;
+	char *F = NULL, *fn = NULL, *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
 	FUNC_TYPE_STR(f->type, F, fn)
 
 	(void) fn;
 	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
+		throw(SQL,"sql.create_func", SQLSTATE(3F000) "%s %s: no such schema '%s'", base, F, sname);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: access denied for %s to schema '%s'", base, F, get_string_global_var(sql, "current_user"), s->base.name);
 	if (strlen(fname) >= IDLENGTH)
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: name '%s' too large for the backend", F, fname);
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: name '%s' too large for the backend", base, F, fname);
 
 	if (replace) {
 		list *tl = sa_list(sql->sa);
@@ -970,7 +984,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			char *fimp = NULL;
 
 			if (!sff->s || sff->system)
-				throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE OR REPLACE %s: not allowed to replace system %s %s;", F, fn, sff->base.name);
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
 
 			if (sff->lang == FUNC_LANG_MAL && !mal_function_find_implementation_address(&fimp, sql, sff)) {
 				backend_ok = false;
@@ -993,13 +1007,13 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			_DELETE(fimp);
 
 			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, sff->base.name);
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
 			switch ((res = mvc_drop_func(sql, s, sff, 0))) {
 				case -1:
 					throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE OR REPLACE %s: transaction conflict detected", F);
+					throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: transaction conflict detected", base, F);
 				default:
 					break;
 			}
@@ -1010,12 +1024,12 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	}
 
 	if (!(nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)))
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: transaction conflict detected", base, F);
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
 		if (!backend_resolve_function(&clientid, nf))
-			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound", F, nf->mod, nf->base.name);
+			throw(SQL,"sql.create_func", SQLSTATE(3F000) "%s %s: external name %s.%s not bound", base, F, nf->mod, nf->base.name);
 		if (nf->query == NULL)
 			break;
 		/* fall through */
@@ -1828,12 +1842,13 @@ SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *new_name = *getArgReference_str(stk, pci, 8);
 	char *condition = *getArgReference_str(stk, pci, 9);
 	char *query = *getArgReference_str(stk, pci, 10);
+	int replace = *getArgReference_int(stk, pci, 11);
 
 	initcontext();
 	old_name=(strNil(old_name))?NULL:old_name;
 	new_name=(strNil(new_name))?NULL:new_name;
 	condition=(strNil(condition))?NULL:condition;
-	msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
+	msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query, replace);
 	return msg;
 }
 
