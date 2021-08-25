@@ -209,12 +209,12 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 
 	//Concat the schema name with the table name
 	size_t schemaTableSize = strlen(schemaname) + strlen(tablename) + 3;
-	char* schemaTable = GDKmalloc(schemaTableSize);
-	snprintf(schemaTable,schemaTableSize-1,"%s.%s",schemaname,tablename);
-	
+	char *schemaTable = GDKmalloc(schemaTableSize);
+	snprintf(schemaTable, schemaTableSize - 1, "%s.%s", schemaname, tablename);
+
 	//Build the CREATE TABLE command
 	snprintf(buf, size, CRTTBL, schemaTable, temp_buf);
-	
+
 	msg = SQLstatementIntern(cntxt, buf, "shp.load", TRUE, FALSE, NULL);
 
 	GDKfree(buf);
@@ -235,6 +235,8 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 	char *nameToLowerCase = NULL;
 	int i;
 
+	BUN offset;
+	BAT *pos = NULL;
 	sqlstore *store;
 
 	/* SHP-level descriptor */
@@ -403,13 +405,12 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 	}
 	/* finalise the BATs */
 	store = m->session->tr->store;
-	BUN offset;
-	BAT *pos = NULL;
-	if (store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]), &offset, &pos) != LOG_OK) {
+	if (store->storage_api.claim_tab(m->session->tr, data_table, BATcount(colsBAT[0]), &offset, &pos) != LOG_OK)
+	{
 		msg = createException(MAL, "shp.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto unfree;
 	}
-		
+
 	for (i = 0; i < colsNum; i++)
 	{
 		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[i]), TYPE_bat) != LOG_OK)
@@ -459,9 +460,10 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDALWSimpleFieldDef *field_definitions;
 	GDALWSpatialInfo spatial_info;
 
-	if (!(sch = mvc_bind_schema(m, schemaname))) {
+	if (!(sch = mvc_bind_schema(m, schemaname)))
+	{
 		/* Can't find schema */
-		return createException(MAL, "shp.load", SQLSTATE(38000) "Schema %s missing\n",schemaname);
+		return createException(MAL, "shp.load", SQLSTATE(38000) "Schema %s missing\n", schemaname);
 	}
 
 	if ((tablename != NULL) && (tablename[0] == '\0'))
@@ -469,7 +471,7 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Output table name is NULL */
 		return createException(MAL, "shp.load", SQLSTATE(38000) "Missing output table name %s\n", tablename);
 	}
-		
+
 	if ((shp_conn_ptr = GDALWConnect((char *)filename)) == NULL)
 	{
 		/* Can't find shapefile */

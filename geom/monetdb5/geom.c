@@ -4184,6 +4184,7 @@ str wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	aWKB = (wkb *)BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1)
 	{
+		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err)
@@ -4208,6 +4209,7 @@ str wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
+	bat_iterator_end(&inBAT_iter);
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
@@ -5206,10 +5208,10 @@ str wkbUnionAggr(wkb **outWKB, const bat *inBAT_id)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-
 	aWKB = (wkb *)BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1)
 	{
+		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err)
@@ -5232,11 +5234,13 @@ str wkbUnionAggr(wkb **outWKB, const bat *inBAT_id)
 		GDKfree(aWKB);
 	}
 
+	bat_iterator_end(&inBAT_iter);
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
 }
 
+//TODO This is very slow. Is it because of the constant wkbToGEOS and GEOSToWkb transformations?
 static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
@@ -5261,15 +5265,15 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
 		return msg;
 	}
-	bi = bat_iterator(b);
 
 	//Fill in the values of the group aggregate operation
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
 	{
 		msg = createException(MAL, "geom.Union", "%s", err);
-		BBPunfix(b->batCacheid);
-		return msg;
+		goto free;
 	}
+
+	//TODO Add check if the ngrp/ncand is 0, or the GDKzalloc below will crash mserver
 
 	//Create a new BAT column of wkb type, with lenght equal to the number of groups
 	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL)
@@ -5278,6 +5282,7 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		goto free;
 	}
 
+	bi = bat_iterator(b);
 	//Allocate space for the intermediate unions of wkb's
 	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL)
 	{
@@ -5299,11 +5304,18 @@ static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 
 #ifndef NDEBUG
-		char *geomSTR;
+		/*char *geomSTR;
 		wkbAsText(&geomSTR, &inWKB, NULL);
 		printf("Row %zu: %s\n", i, geomSTR);
 		fflush(stdout);
-		GDKfree(geomSTR);
+		GDKfree(geomSTR);*/
+		if (i % 100 == 0) {
+			printf("Processed %zu records, on group %zu\n", i,grp);
+			time_t t = time(NULL);
+  			struct tm tm = *localtime(&t);
+  			printf("%d-%02d-%02d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			fflush(stdout);
+		}
 #endif
 
 		if (unions[grp] == NULL)
@@ -5355,7 +5367,8 @@ free:
 		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (unions) {
+	if (unions)
+	{
 		for (BUN i = 0; i < ngrp; i++)
 			GDKfree(unions[i]);
 		GDKfree(unions);
@@ -6349,7 +6362,7 @@ wkbPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkb_size(val->len));
 	base = b->tvheap->base;
-	if (*bun)
+	if (*bun != (var_t) -1)
 	{
 		memcpy(&base[*bun], val, wkb_size(val->len));
 		b->tvheap->dirty = true;
@@ -6843,7 +6856,7 @@ wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
 	base = b->tvheap->base;
-	if (*bun)
+	if (*bun != (var_t) -1)
 	{
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
 		b->tvheap->dirty = true;
@@ -6919,8 +6932,10 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *)Tloc(bpx, 0);
-	py = (dbl *)Tloc(bpy, 0);
+	BATiter bpxi = bat_iterator(bpx);
+	BATiter bpyi = bat_iterator(bpy);
+	px = (dbl *) bpxi.base;
+	py = (dbl *) bpyi.base;
 
 	nv = nvert - 1;
 	cnt = BATcount(bpx);
@@ -6946,6 +6961,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		*cs++ = wn & 1;
 	}
 
+	bat_iterator_end(&bpxi);
+	bat_iterator_end(&bpyi);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
 	BATsetcount(bo, cnt);
@@ -6992,8 +7009,10 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *)Tloc(bpx, 0);
-	py = (dbl *)Tloc(bpy, 0);
+	BATiter bpxi = bat_iterator(bpx);
+	BATiter bpyi = bat_iterator(bpy);
+	px = (dbl *) bpxi.base;
+	py = (dbl *) bpyi.base;
 	cnt = BATcount(bpx);
 	cs = (bit *)Tloc(bo, 0);
 	for (i = 0; i < cnt; i++)
@@ -7049,6 +7068,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
+	bat_iterator_end(&bpxi);
+	bat_iterator_end(&bpyi);
 	bo->tsorted = bo->trevsorted = false;
 	bo->tkey = false;
 	BATsetcount(bo, cnt);
@@ -7798,9 +7819,8 @@ static mel_func geom_init_funcs[] = {
 	command("calc", "wkb", wkbFromWKB, false, "It is called when adding a new geometry column to an existing table", args(1, 2, arg("", wkb), arg("v", wkb))),
 	command("calc", "wkb", geom_2_geom, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1, 4, arg("", wkb), arg("geo", wkb), arg("columnType", int), arg("columnSRID", int))),
 	command("batcalc", "wkb", geom_2_geom_bat, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1, 5, batarg("", wkb), batarg("geo", wkb), batarg("s", oid), arg("columnType", int), arg("columnSRID", int))),
-	command("batcalc", "wkb", wkbFromText_bat_cand, false, "", args(1,5, batarg("",wkb),batarg("wkt",str),batarg("s",oid),arg("srid",int),arg("type",int))),
-	{.imp = NULL}
-};
+	command("batcalc", "wkb", wkbFromText_bat_cand, false, "", args(1, 5, batarg("", wkb), batarg("wkt", str), batarg("s", oid), arg("srid", int), arg("type", int))),
+	{.imp = NULL}};
 #include "mal_import.h"
 #ifdef _MSC_VER
 #undef read
