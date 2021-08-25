@@ -925,12 +925,23 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	return MAL_SUCCEED;
 }
 
+static int
+args_cmp(sql_arg *a1, sql_arg *a2)
+{
+	if (a1->inout != a2->inout)
+		return -1;
+	if (strcmp(a1->name, a2->name) != 0)
+		return -1;
+	return subtype_cmp(&a1->type, &a2->type);
+}
+
 static char *
-create_func(mvc *sql, char *sname, char *fname, sql_func *f)
+create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 {
 	sql_func *nf;
+	sql_subfunc *sf;
 	sql_schema *s = NULL;
-	int clientid = sql->clientid;
+	int clientid = sql->clientid, res = 0;
 	char *F = NULL, *fn = NULL;
 
 	FUNC_TYPE_STR(f->type, F, fn)
@@ -942,6 +953,62 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 	if (strlen(fname) >= IDLENGTH)
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: name '%s' too large for the backend", F, fname);
+
+	if (replace) {
+		list *tl = sa_list(sql->sa);
+		if (!list_empty(f->ops)) {
+			for (node *n = f->ops->h ; n ; n = n->next ) {
+				sql_arg *arg = n->data;
+
+				list_append(tl, &arg->type);
+			}
+		}
+
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type)) != NULL) {
+			sql_func *sff = sf->func;
+			bool backend_ok = true;
+			char *fimp = NULL;
+
+			if (!sff->s || sff->system)
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE OR REPLACE %s: not allowed to replace system %s %s;", F, fn, sff->base.name);
+
+			if (sff->lang == FUNC_LANG_MAL && !mal_function_find_implementation_address(&fimp, sql, sff)) {
+				backend_ok = false;
+				sql->session->status = 0; /* clean the error */
+				sql->errstr[0] = '\0';
+			}
+
+			/* if all function parameters are the same, return */
+			if (backend_ok && sff->lang == f->lang && sff->type == f->type &&
+				sff->varres == f->varres && sff->vararg == f->vararg &&
+				strcmp(sff->s->base.name, s->base.name) == 0 &&
+				((!sff->mod && !f->mod) || (sff->mod && f->mod && strcmp(sff->mod, f->mod) == 0)) &&
+				(sff->lang != FUNC_LANG_MAL || strcmp(fimp, f->imp) == 0) &&
+				((!sff->query && !f->query) || (sff->query && f->query && strcmp(sff->query, f->query) == 0)) &&
+				list_cmp(sff->res, f->res, (fcmp) &args_cmp) == 0 &&
+				list_cmp(sff->ops, f->ops, (fcmp) &args_cmp) == 0) {
+				_DELETE(fimp);
+				return MAL_SUCCEED;
+			}
+			_DELETE(fimp);
+
+			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+				throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, sff->base.name);
+			switch ((res = mvc_drop_func(sql, s, sff, 0))) {
+				case -1:
+					throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE OR REPLACE %s: transaction conflict detected", F);
+				default:
+					break;
+			}
+		} else {
+			sql->session->status = 0; /* if the function was not found clean the error */
+			sql->errstr[0] = '\0';
+		}
+	}
+
 	if (!(nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)))
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
 	switch (nf->lang) {
@@ -1740,9 +1807,10 @@ SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	str fname = *getArgReference_str(stk, pci, 2);
 	sql_func *f = *(sql_func **) getArgReference(stk, pci, 3);
+	int replace = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_func(sql, sname, fname, f);
+	msg = create_func(sql, sname, fname, f, replace);
 	return msg;
 }
 
