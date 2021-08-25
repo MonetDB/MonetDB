@@ -3220,11 +3220,10 @@ guess_uniques(BAT *b, struct canditer *ci)
 
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		const ValRecord *p = BATgetprop(b, GDK_UNIQUE_ESTIMATE);
-		if (p) {
+		if (b->tunique_est != 0) {
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
 				  ALGOBATPAR(b));
-			return p->val.dval;
+			return b->tunique_est;
 		}
 		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
@@ -3243,7 +3242,7 @@ guess_uniques(BAT *b, struct canditer *ci)
 	B += A * ci->ncand;
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		BATsetprop(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &B);
+		b->tunique_est = B;
 	}
 	return B;
 }

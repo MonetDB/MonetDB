@@ -382,13 +382,14 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					if ((d->tminpos != BUN_NONE &&
 						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", d->tminpos)) ||
 						(d->tmaxpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", d->tmaxpos))) {
+						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", d->tmaxpos)) ||
+						(d->tunique_est != 0 &&
+						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", d->tunique_est))) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
 					keepprop(GDK_HASH_BUCKETS,"hbuckets");
 					keepprop(GDK_NUNIQUE,"nunique");
-					keepprop(GDK_UNIQUE_ESTIMATE,"nestimate");
 
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');

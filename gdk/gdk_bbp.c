@@ -495,6 +495,7 @@ heapinit(BAT *b, const char *buf,
 	b->tnil = (properties & 0x0800) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
+	b->tunique_est = 0.0;
 	/* (properties & 0x0200) is the old tdense flag */
 	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap->free = (size_t) free;

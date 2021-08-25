@@ -816,9 +816,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		maxmask = HASHmask(ci->ncand);
 		if (mask > maxmask)
 			mask = maxmask;
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_UNIQUE_ESTIMATE)) != NULL) {
-		assert(prop->vtype == TYPE_dbl);
-		mask = (BUN) (prop->val.dval * 8 / 7);
+ 	} else if (!hascand && b->tunique_est != 0) {
+		mask = (BUN) (b->tunique_est * 1.15); /* about 8/7 */
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there

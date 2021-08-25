@@ -725,6 +725,7 @@ typedef struct {
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN minpos, maxpos;	/* location of min/max value */
+	double unique_est;	/* estimated number of unique values */
 	oid seq;		/* start of dense sequence */
 
 	Heap *heap;		/* space for the column. */
@@ -796,6 +797,7 @@ typedef struct BAT {
 #define tnorevsorted	T.norevsorted
 #define tminpos		T.minpos
 #define tmaxpos		T.maxpos
+#define tunique_est	T.unique_est
 #define theap		T.heap
 #define tbaseoff	T.baseoff
 #define tvheap		T.vheap
@@ -2216,7 +2218,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 enum prop_t {
 	GDK_HASH_BUCKETS = 3,	/* last used hash bucket size (oid) */
 	GDK_NUNIQUE,		/* number of unique values (oid) */
-	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values (dbl) */
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);

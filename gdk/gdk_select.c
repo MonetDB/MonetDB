@@ -1584,9 +1584,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (wanthash && !havehash) {
-			const ValRecord *prop;
-			if ((prop = BATgetprop(b, GDK_UNIQUE_ESTIMATE)) != NULL &&
-			    prop->val.dval < BATcount(b) / NO_HASH_SELECT_FRACTION) {
+			if (b->tunique_est != 0 &&
+			    b->tunique_est < BATcount(b) / NO_HASH_SELECT_FRACTION) {
 				/* too many duplicates: not worth it */
 				wanthash = false;
 			}
