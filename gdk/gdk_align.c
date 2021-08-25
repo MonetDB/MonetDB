@@ -359,6 +359,14 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
+	if (view->tminpos >= l && view->tminpos < l + cnt)
+		view->tminpos -= l;
+	else
+		view->tminpos = BUN_NONE;
+	if (view->tmaxpos >= l && view->tmaxpos < l + cnt)
+		view->tmaxpos -= l;
+	else
+		view->tmaxpos = BUN_NONE;
 }
 
 /*

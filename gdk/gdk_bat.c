@@ -90,6 +90,8 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		.trevsorted = ATOMlinear(tt),
 		.tident = BATstring_t,
 		.tseqbase = oid_nil,
+		.tminpos = BUN_NONE,
+		.tmaxpos = BUN_NONE,
 
 		.batRole = role,
 		.batTransient = true,
@@ -586,6 +588,8 @@ BATclear(BAT *b, bool force)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
+	b->tminpos = BUN_NONE;
+	b->tmaxpos = BUN_NONE;
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
@@ -930,6 +934,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tnosorted = b->tnosorted;
 		bn->tnonil = b->tnonil;
 		bn->tnil = b->tnil;
+		bn->tminpos = b->tminpos;
+		bn->tmaxpos = b->tmaxpos;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BUNlast(b);
@@ -955,6 +961,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
+		bn->tminpos = b->tminpos;
+		bn->tmaxpos = b->tmaxpos;
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
@@ -1139,6 +1147,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+	const void *atomnil = ATOMnilptr(b->ttype);
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
 		if (b->tvarsized) {
@@ -1152,9 +1162,23 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
+				if (atomcmp(t, atomnil) != 0) {
+					if (p == 0) {
+						b->tminpos = b->tmaxpos = 0;
+					} else {
+						BATiter bi = bat_iterator_nolock(b);
+						if (b->tminpos != BUN_NONE &&
+						    atomcmp(BUNtvar(bi, b->tminpos), t) > 0)
+							b->tminpos = p;
+						if (b->tmaxpos != BUN_NONE &&
+						    atomcmp(BUNtvar(bi, b->tmaxpos), t) < 0)
+							b->tmaxpos = p;
+					}
+				}
 				p++;
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+			b->tminpos = b->tmaxpos = BUN_NONE;
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				mskSetVal(b, p, *(msk *) t);
@@ -1170,6 +1194,19 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
+				}
+				if (atomcmp(t, atomnil) != 0) {
+					if (p == 0) {
+						b->tminpos = b->tmaxpos = 0;
+					} else {
+						BATiter bi = bat_iterator_nolock(b);
+						if (b->tminpos != BUN_NONE &&
+						    atomcmp(BUNtloc(bi, b->tminpos), t) > 0)
+							b->tminpos = p;
+						if (b->tmaxpos != BUN_NONE &&
+						    atomcmp(BUNtloc(bi, b->tmaxpos), t) < 0)
+							b->tmaxpos = p;
+					}
 				}
 				p++;
 			}
@@ -1208,7 +1245,6 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator_nolock(b);
 	const void *val;
-	const ValRecord *prop;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1223,27 +1259,10 @@ BUNdelete(BAT *b, oid o)
 	}
 	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
-	if (ATOMlinear(b->ttype) &&
-	    ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
-		MT_lock_set(&b->theaplock);
-		if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-			if (ATOMcmp(b->ttype, VALptr(prop), val) >= 0) {
-				BATrmprop_nolock(b, GDK_MAX_VALUE);
-				BATrmprop_nolock(b, GDK_MAX_POS);
-			}
-		} else {
-			BATrmprop_nolock(b, GDK_MAX_POS);
-		}
-		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-			if (ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
-				BATrmprop_nolock(b, GDK_MIN_VALUE);
-				BATrmprop_nolock(b, GDK_MIN_POS);
-			}
-		} else {
-			BATrmprop_nolock(b, GDK_MIN_POS);
-		}
-		MT_lock_unset(&b->theaplock);
-	}
+	if (b->tmaxpos == p)
+		b->tmaxpos = BUN_NONE;
+	if (b->tminpos == p)
+		b->tminpos = BUN_NONE;
 	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
 		return GDK_FAIL;
 	HASHdelete(b, p, val);
@@ -1267,6 +1286,10 @@ BUNdelete(BAT *b, oid o)
 			HASHdelete(b, BUNlast(b) - 1, val);
 			memcpy(Tloc(b, p), val, Tsize(b));
 			HASHinsert(b, p, val);
+			if (b->tminpos == BUNlast(b) - 1)
+				b->tminpos = p;
+			if (b->tmaxpos == BUNlast(b) - 1)
+				b->tmaxpos = p;
 		}
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
@@ -1323,12 +1346,19 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	if (b->ttype == TYPE_void) {
+		PROPdestroy(b);
+		b->tminpos = BUN_NONE;
+		b->tmaxpos = BUN_NONE;
+	}
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
 		const void *t = b->ttype && b->tvarsized ?
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
+		const bool isnil = ATOMlinear(b->ttype) &&
+			ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) == 0;
 
 		/* retrieve old value, but if this comes from the
 		 * logger, we need to deal with offsets that point
@@ -1350,68 +1380,50 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		if (val) {
 			if (ATOMcmp(b->ttype, val, t) == 0)
 				continue; /* nothing to do */
-			if (b->tnil &&
-			    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
-			    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
+			if (!isnil &&
+			    b->tnil &&
+			    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0) {
 				/* if old value is nil and new value
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
 				 * it */
 				b->tnil = false;
 			}
-			if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
-				const ValRecord *prop;
-
-				MT_lock_set(&b->theaplock);
-				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-					    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
+			if (b->ttype != TYPE_void) {
+				if (b->tmaxpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, b->tmaxpos), t) < 0) {
 						/* new value is larger
 						 * than previous
 						 * largest */
-						BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, t);
-						BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
-					} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-						   ATOMcmp(b->ttype, VALptr(prop), val) == 0) {
+						b->tmaxpos = p;
+					} else if (b->tmaxpos == p && ATOMcmp(b->ttype, BUNtail(bi, b->tmaxpos), t) != 0) {
 						/* old value is equal to
 						 * largest and new value
-						 * is smaller (see
+						 * is smaller or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						BATrmprop_nolock(b, GDK_MAX_VALUE);
-						BATrmprop_nolock(b, GDK_MAX_POS);
+						b->tmaxpos = BUN_NONE;
 					}
-				} else {
-					BATrmprop_nolock(b, GDK_MAX_POS);
 				}
-				if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-					    ATOMcmp(b->ttype, VALptr(prop), t) > 0) {
+				if (b->tminpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, b->tminpos), t) > 0) {
 						/* new value is smaller
 						 * than previous
 						 * smallest */
-						BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, t);
-						BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
-					} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-						   ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
+						b->tminpos = p;
+					} else if (b->tminpos == p && ATOMcmp(b->ttype, BUNtail(bi, b->tminpos), t) != 0) {
 						/* old value is equal to
-						 * smallest and new
-						 * value is larger (see
+						 * smallest and new value
+						 * is larger or nil (see
 						 * above), so we don't
 						 * know anymore which is
-						 * the smallest */
-						BATrmprop_nolock(b, GDK_MIN_VALUE);
-						BATrmprop_nolock(b, GDK_MIN_POS);
+						 * the largest */
+						b->tminpos = BUN_NONE;
 					}
-				} else {
-					BATrmprop_nolock(b, GDK_MIN_POS);
 				}
 				if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-					BATrmprop_nolock(b, GDK_UNIQUE_ESTIMATE);
-				MT_lock_unset(&b->theaplock);
-			} else {
-				PROPdestroy(b);
+					BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 			}
 			HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		} else {
@@ -1423,6 +1435,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->thash = NULL;
 				doHASHdestroy(b, hs);
 			}
+			b->tminpos = BUN_NONE;
+			b->tmaxpos = BUN_NONE;
 		}
 		OIDXdestroy(b);
 		IMPSdestroy(b);
@@ -2547,31 +2561,18 @@ BATassertProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
-		const ValRecord *prop;
 		const void *maxval = NULL;
 		const void *minval = NULL;
 		bool seenmax = false, seenmin = false;
 		bool seennil = false;
 
-		if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL)
-			maxval = VALptr(prop);
-		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL)
-			minval = VALptr(prop);
-		if ((prop = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
-			if (maxval) {
-				assert(prop->vtype == TYPE_oid);
-				assert(prop->val.oval < b->batCount);
-				valp = BUNtail(bi, prop->val.oval);
-				assert(cmpf(maxval, valp) == 0);
-			}
+		if (b->tmaxpos != BUN_NONE) {
+			assert(b->tmaxpos < BATcount(b));
+			maxval = BUNtail(bi, b->tmaxpos);
 		}
-		if ((prop = BATgetprop_nolock(b, GDK_MIN_POS)) != NULL) {
-			if (minval) {
-				assert(prop->vtype == TYPE_oid);
-				assert(prop->val.oval < b->batCount);
-				valp = BUNtail(bi, prop->val.oval);
-				assert(cmpf(minval, valp) == 0);
-			}
+		if (b->tminpos != BUN_NONE) {
+			assert(b->tminpos < BATcount(b));
+			minval = BUNtail(bi, b->tminpos);
 		}
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			/* for now, don't do extra checks for bit mask */

@@ -1146,6 +1146,8 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 	bn->tseqbase = oid_nil;
 	bn->tnil = false;
 	bn->tnonil = true;
+	bn->tminpos = 0;
+	bn->tmaxpos = BATcount(bn) - 1;
 	return virtualize(bn);
 }
 
