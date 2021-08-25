@@ -925,6 +925,7 @@ typedef struct BATiter {
 	oid tseq;
 	BUN hfree, vhfree;
 	BUN minpos, maxpos;
+	double unique_est;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -953,6 +954,7 @@ bat_iterator_nolock(BAT *b)
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
 			.minpos = b->tminpos,
 			.maxpos = b->tmaxpos,
+			.unique_est = b->tunique_est,
 #ifndef NDEBUG
 			.locked = false,
 #endif

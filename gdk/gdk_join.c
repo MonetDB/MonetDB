@@ -3220,10 +3220,13 @@ guess_uniques(BAT *b, struct canditer *ci)
 
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		if (b->tunique_est != 0) {
+		MT_lock_set(&b->theaplock);
+		double unique_est = b->tunique_est;
+		MT_lock_unset(&b->theaplock);
+		if (unique_est != 0) {
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
 				  ALGOBATPAR(b));
-			return b->tunique_est;
+			return unique_est;
 		}
 		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
@@ -3242,7 +3245,10 @@ guess_uniques(BAT *b, struct canditer *ci)
 	B += A * ci->ncand;
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		b->tunique_est = B;
+		MT_lock_set(&b->theaplock);
+		if (b->tunique_est == 0)
+			b->tunique_est = B;
+		MT_lock_unset(&b->theaplock);
 	}
 	return B;
 }
@@ -3308,8 +3314,10 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		if (!rhash) {
-			double unique_est;
-			if ((unique_est = r->tunique_est) == 0)
+			MT_lock_set(&r->theaplock);
+			double unique_est = r->tunique_est;
+			MT_lock_unset(&r->theaplock);
+			if (unique_est == 0)
 				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
@@ -3336,8 +3344,10 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		if (rhash && !prhash) {
 			rccost = (double) cnt / nheads;
 		} else {
-			double unique_est;
-			if ((unique_est = r->tunique_est) == 0)
+			MT_lock_set(&r->theaplock);
+			double unique_est = r->tunique_est;
+			MT_lock_unset(&r->theaplock);
+			if (unique_est == 0)
 				unique_est = guess_uniques(r, rci);
 			/* we have an estimate of the number of unique
 			 * values, assume some chains */

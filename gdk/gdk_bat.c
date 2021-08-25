@@ -589,9 +589,6 @@ BATclear(BAT *b, bool force)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
-	b->tminpos = BUN_NONE;
-	b->tmaxpos = BUN_NONE;
-	b->tunique_est = 0.0;
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
@@ -650,6 +647,9 @@ BATclear(BAT *b, bool force)
 	BATsettrivprop(b);
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
+	b->tminpos = BUN_NONE;
+	b->tmaxpos = BUN_NONE;
+	b->tunique_est = 0.0;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
@@ -771,7 +771,6 @@ wrongtype(int t1, int t2)
  * is bat[void,T] for a simple fixed-size type T. In that case we
  * do inline array[T] inserts.
  */
-/* TODO make it simpler, ie copy per column */
 BAT *
 COLcopy(BAT *b, int tt, bool writable, role_t role)
 {
@@ -933,9 +932,9 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tnosorted = b->tnosorted;
 		bn->tnonil = b->tnonil;
 		bn->tnil = b->tnil;
-		bn->tminpos = b->tminpos;
-		bn->tmaxpos = b->tmaxpos;
-		bn->tunique_est = b->tunique_est;
+		bn->tminpos = bi.minpos;
+		bn->tmaxpos = bi.maxpos;
+		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BUNlast(b);
@@ -961,9 +960,9 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
-		bn->tminpos = b->tminpos;
-		bn->tmaxpos = b->tmaxpos;
-		bn->tunique_est = b->tunique_est;
+		bn->tminpos = bi.minpos;
+		bn->tmaxpos = bi.maxpos;
+		bn->tunique_est = bi.unique_est;
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
@@ -1050,8 +1049,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+	if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+		MT_lock_set(&b->theaplock);
 		b->tunique_est = 0;
+		MT_lock_unset(&b->theaplock);
+	}
 	b->theap->dirty = true;
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
@@ -1150,6 +1152,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 	const void *atomnil = ATOMnilptr(b->ttype);
+	MT_lock_set(&b->theaplock);
+	BUN minpos = b->tminpos;
+	BUN maxpos = b->tmaxpos;
+	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
 		if (b->tvarsized) {
@@ -1165,21 +1171,21 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
-						b->tminpos = b->tmaxpos = 0;
+						minpos = maxpos = 0;
 					} else {
 						BATiter bi = bat_iterator_nolock(b);
-						if (b->tminpos != BUN_NONE &&
-						    atomcmp(BUNtvar(bi, b->tminpos), t) > 0)
-							b->tminpos = p;
-						if (b->tmaxpos != BUN_NONE &&
-						    atomcmp(BUNtvar(bi, b->tmaxpos), t) < 0)
-							b->tmaxpos = p;
+						if (minpos != BUN_NONE &&
+						    atomcmp(BUNtvar(bi, minpos), t) > 0)
+							minpos = p;
+						if (maxpos != BUN_NONE &&
+						    atomcmp(BUNtvar(bi, maxpos), t) < 0)
+							maxpos = p;
 					}
 				}
 				p++;
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
-			b->tminpos = b->tmaxpos = BUN_NONE;
+			minpos = maxpos = BUN_NONE;
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				mskSetVal(b, p, *(msk *) t);
@@ -1198,15 +1204,15 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
-						b->tminpos = b->tmaxpos = 0;
+						minpos = maxpos = 0;
 					} else {
 						BATiter bi = bat_iterator_nolock(b);
-						if (b->tminpos != BUN_NONE &&
-						    atomcmp(BUNtloc(bi, b->tminpos), t) > 0)
-							b->tminpos = p;
-						if (b->tmaxpos != BUN_NONE &&
-						    atomcmp(BUNtloc(bi, b->tmaxpos), t) < 0)
-							b->tmaxpos = p;
+						if (minpos != BUN_NONE &&
+						    atomcmp(BUNtloc(bi, minpos), t) > 0)
+							minpos = p;
+						if (maxpos != BUN_NONE &&
+						    atomcmp(BUNtloc(bi, maxpos), t) < 0)
+							maxpos = p;
 					}
 				}
 				p++;
@@ -1226,6 +1232,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	MT_lock_set(&b->theaplock);
+	b->tminpos = minpos;
+	b->tmaxpos = maxpos;
+	MT_lock_unset(&b->theaplock);
 	BATsetcount(b, p);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
@@ -1260,10 +1270,15 @@ BUNdelete(BAT *b, oid o)
 	}
 	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
+	/* writing the values should be locked, reading could be done
+	 * unlocked (since we're the only thread that should be changing
+	 * anything) */
+	MT_lock_set(&b->theaplock);
 	if (b->tmaxpos == p)
 		b->tmaxpos = BUN_NONE;
 	if (b->tminpos == p)
 		b->tminpos = BUN_NONE;
+	MT_lock_unset(&b->theaplock);
 	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
 		return GDK_FAIL;
 	HASHdelete(b, p, val);
@@ -1287,10 +1302,12 @@ BUNdelete(BAT *b, oid o)
 			HASHdelete(b, BUNlast(b) - 1, val);
 			memcpy(Tloc(b, p), val, Tsize(b));
 			HASHinsert(b, p, val);
+			MT_lock_set(&b->theaplock);
 			if (b->tminpos == BUNlast(b) - 1)
 				b->tminpos = p;
 			if (b->tmaxpos == BUNlast(b) - 1)
 				b->tmaxpos = p;
+			MT_lock_unset(&b->theaplock);
 		}
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
@@ -1347,12 +1364,18 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void) {
 		PROPdestroy(b);
 		b->tminpos = BUN_NONE;
 		b->tmaxpos = BUN_NONE;
 		b->tunique_est = 0.0;
+	} else if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
+		b->tunique_est = 0;
 	}
+	BUN minpos = b->tminpos;
+	BUN maxpos = b->tmaxpos;
+	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
@@ -1392,40 +1415,38 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->tnil = false;
 			}
 			if (b->ttype != TYPE_void) {
-				if (b->tmaxpos != BUN_NONE) {
-					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, b->tmaxpos), t) < 0) {
+				if (maxpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, maxpos), t) < 0) {
 						/* new value is larger
 						 * than previous
 						 * largest */
-						b->tmaxpos = p;
-					} else if (b->tmaxpos == p && ATOMcmp(b->ttype, BUNtail(bi, b->tmaxpos), t) != 0) {
+						maxpos = p;
+					} else if (maxpos == p && ATOMcmp(b->ttype, BUNtail(bi, maxpos), t) != 0) {
 						/* old value is equal to
 						 * largest and new value
 						 * is smaller or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						b->tmaxpos = BUN_NONE;
+						maxpos = BUN_NONE;
 					}
 				}
-				if (b->tminpos != BUN_NONE) {
-					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, b->tminpos), t) > 0) {
+				if (minpos != BUN_NONE) {
+					if (!isnil && ATOMcmp(b->ttype, BUNtail(bi, minpos), t) > 0) {
 						/* new value is smaller
 						 * than previous
 						 * smallest */
-						b->tminpos = p;
-					} else if (b->tminpos == p && ATOMcmp(b->ttype, BUNtail(bi, b->tminpos), t) != 0) {
+						minpos = p;
+					} else if (minpos == p && ATOMcmp(b->ttype, BUNtail(bi, minpos), t) != 0) {
 						/* old value is equal to
 						 * smallest and new value
 						 * is larger or nil (see
 						 * above), so we don't
 						 * know anymore which is
 						 * the largest */
-						b->tminpos = BUN_NONE;
+						minpos = BUN_NONE;
 					}
 				}
-				if (count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
-					b->tunique_est = 0;
 			}
 			HASHdelete_locked(b, p, val);	/* first delete old value from hash */
 		} else {
@@ -1437,9 +1458,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->thash = NULL;
 				doHASHdestroy(b, hs);
 			}
-			b->tminpos = BUN_NONE;
-			b->tmaxpos = BUN_NONE;
+			MT_lock_set(&b->theaplock);
+			minpos = BUN_NONE;
+			maxpos = BUN_NONE;
 			b->tunique_est = 0.0;
+			MT_lock_unset(&b->theaplock);
 		}
 		OIDXdestroy(b);
 		IMPSdestroy(b);
@@ -1581,6 +1604,10 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	MT_lock_set(&b->theaplock);
+	b->tminpos = minpos;
+	b->tmaxpos = maxpos;
+	MT_lock_unset(&b->theaplock);
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;

@@ -1584,11 +1584,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (wanthash && !havehash) {
+			MT_lock_set(&b->theaplock);
 			if (b->tunique_est != 0 &&
 			    b->tunique_est < BATcount(b) / NO_HASH_SELECT_FRACTION) {
 				/* too many duplicates: not worth it */
 				wanthash = false;
 			}
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 
