@@ -698,10 +698,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		else if (BATtrevordered(g))
 			maxgrp = * (oid *) Tloc(g, 0);
 		else {
-			MT_lock_set(&b->theaplock);
+			/* group bats are not modified in parallel, so
+			 * no need for locks */
 			if (g->tmaxpos != BUN_NONE)
 				maxgrp = BUNtoid(g, g->tmaxpos);
-			MT_lock_unset(&b->theaplock);
 			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
 				BATmax(g, &maxgrp);
 			}

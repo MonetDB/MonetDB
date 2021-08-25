@@ -806,8 +806,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && b->tunique_est != 0) {
-		mask = (BUN) (b->tunique_est * 1.15); /* about 8/7 */
+ 	} else if (!hascand && bi.unique_est != 0) {
+		mask = (BUN) (bi.unique_est * 1.15); /* about 8/7 */
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there

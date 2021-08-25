@@ -694,6 +694,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
+	MT_lock_set(&b->theaplock);
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
 			BATiter bi = bat_iterator_nolock(b);
@@ -722,8 +723,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tminpos = BUN_NONE;
 		}
 	}
-	if (cnt > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+	if (cnt > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;
+	}
+	MT_lock_unset(&b->theaplock);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
@@ -1038,11 +1041,13 @@ BATdel(BAT *b, BAT *d)
 		}
 	}
 	/* not sure about these anymore */
+	MT_lock_set(&b->theaplock);
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
 	b->tminpos = BUN_NONE;
 	b->tmaxpos = BUN_NONE;
 	b->tunique_est = 0.0;
+	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
 }
@@ -1104,8 +1109,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 	OIDXdestroy(b);
 	IMPSdestroy(b);
-	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION)
+	MT_lock_set(&b->theaplock);
+	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;
+	}
+	BUN minpos = b->tminpos;
+	BUN maxpos = b->tmaxpos;
+	MT_lock_unset(&b->theaplock);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
@@ -1178,44 +1188,36 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
-			if (b->tmaxpos != BUN_NONE) {
+			if (maxpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtvar(bi, b->tmaxpos), new) < 0) {
+				    atomcmp(BUNtvar(bi, maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
-					MT_lock_set(&b->theaplock);
-					b->tmaxpos = updid;
-					MT_lock_unset(&b->theaplock);
-				} else if (atomcmp(BUNtvar(bi, b->tmaxpos), old) == 0 &&
+					maxpos = updid;
+				} else if (atomcmp(BUNtvar(bi, maxpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
 					 * anymore which is the
 					 * largest */
-					MT_lock_set(&b->theaplock);
-					b->tmaxpos = BUN_NONE;
-					MT_lock_unset(&b->theaplock);
+					maxpos = BUN_NONE;
 				}
 			}
-			if (b->tminpos != BUN_NONE) {
+			if (minpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtvar(bi, b->tminpos), new) > 0) {
+				    atomcmp(BUNtvar(bi, minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
-					MT_lock_set(&b->theaplock);
-					b->tminpos = updid;
-					MT_lock_unset(&b->theaplock);
-				} else if (atomcmp(BUNtvar(bi, b->tminpos), old) == 0 &&
+					minpos = updid;
+				} else if (atomcmp(BUNtvar(bi, minpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
 					 * anymore which is the
 					 * smallest */
-					MT_lock_set(&b->theaplock);
-					b->tminpos = BUN_NONE;
-					MT_lock_unset(&b->theaplock);
+					minpos = BUN_NONE;
 				}
 			}
 			if (!locked) {
@@ -1365,10 +1367,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (is_oid_nil(ni.tseq)) {
 				/* we may or may not overwrite the old
 				 * min/max values */
-				MT_lock_set(&b->theaplock);
-				b->tminpos = BUN_NONE;
-				b->tmaxpos = BUN_NONE;
-				MT_lock_unset(&b->theaplock);
+				minpos = BUN_NONE;
+				maxpos = BUN_NONE;
 				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = oid_nil;
 				b->tnil = true;
@@ -1377,20 +1377,18 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				/* we know min/max of n, so we know
 				 * the new min/max of b if those of n
 				 * are smaller/larger than the old */
-				MT_lock_set(&b->theaplock);
-				if (b->tminpos != BUN_NONE) {
-					if (v <= BUNtoid(b, b->tminpos))
-						b->tminpos = pos;
-					else if (pos <= b->tminpos && b->tminpos < pos + ni.count)
-						b->tminpos = BUN_NONE;
+				if (minpos != BUN_NONE) {
+					if (v <= BUNtoid(b, minpos))
+						minpos = pos;
+					else if (pos <= minpos && minpos < pos + ni.count)
+						minpos = BUN_NONE;
 				}
-				if (b->tmaxpos != BUN_NONE) {
-					if (v + ni.count - 1 >= BUNtoid(b, b->tmaxpos))
-						b->tmaxpos = pos + ni.count - 1;
-					else if (pos <= b->tmaxpos && b->tmaxpos < pos + ni.count)
-						b->tmaxpos = BUN_NONE;
+				if (maxpos != BUN_NONE) {
+					if (v + ni.count - 1 >= BUNtoid(b, maxpos))
+						maxpos = pos + ni.count - 1;
+					else if (pos <= maxpos && maxpos < pos + ni.count)
+						maxpos = BUN_NONE;
 				}
-				MT_lock_unset(&b->theaplock);
 				for (BUN i = 0, j = ni.count; i < j; i++)
 					o[i] = v++;
 			}
@@ -1399,20 +1397,18 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * extreme as those of b, we can replace b's
 			 * min/max, else we don't know what b's new
 			 * min/max are*/
-			MT_lock_set(&b->theaplock);
-			if (b->tminpos != BUN_NONE && n->tminpos != BUN_NONE &&
-			    atomcmp(BUNtloc(bi, b->tminpos), BUNtail(ni, n->tminpos)) >= 0) {
-				b->tminpos = pos + n->tminpos;
+			if (minpos != BUN_NONE && n->tminpos != BUN_NONE &&
+			    atomcmp(BUNtloc(bi, minpos), BUNtail(ni, n->tminpos)) >= 0) {
+				minpos = pos + n->tminpos;
 			} else {
-				b->tminpos = BUN_NONE;
+				minpos = BUN_NONE;
 			}
-			if (b->tmaxpos != BUN_NONE && n->tmaxpos != BUN_NONE &&
-			    atomcmp(BUNtloc(bi, b->tmaxpos), BUNtail(ni, n->tmaxpos)) <= 0) {
-				b->tmaxpos = pos + n->tmaxpos;
+			if (maxpos != BUN_NONE && n->tmaxpos != BUN_NONE &&
+			    atomcmp(BUNtloc(bi, maxpos), BUNtail(ni, n->tmaxpos)) <= 0) {
+				maxpos = pos + n->tmaxpos;
 			} else {
-				b->tmaxpos = BUN_NONE;
+				maxpos = BUN_NONE;
 			}
-			MT_lock_unset(&b->theaplock);
 			memcpy(Tloc(b, pos), ni.base,
 			       ni.count << b->tshift);
 		}
@@ -1430,8 +1426,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			/* if we replaced all values of b by values
 			 * from n, we can also copy the min/max
 			 * properties */
-			b->tminpos = n->tminpos;
-			b->tmaxpos = n->tmaxpos;
+			minpos = n->tminpos;
+			maxpos = n->tmaxpos;
 			if (BATtdense(n)) {
 				/* replaced all of b with a dense sequence */
 				BATtseqbase(b, ni.tseq);
@@ -1493,44 +1489,36 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
-			if (b->tmaxpos != BUN_NONE) {
+			if (maxpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtloc(bi, b->tmaxpos), new) < 0) {
+				    atomcmp(BUNtloc(bi, maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
-					MT_lock_set(&b->theaplock);
-					b->tmaxpos = updid;
-					MT_lock_unset(&b->theaplock);
-				} else if (atomcmp(BUNtloc(bi, b->tmaxpos), old) == 0 &&
+					maxpos = updid;
+				} else if (atomcmp(BUNtloc(bi, maxpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
 					 * anymore which is the
 					 * largest */
-					MT_lock_set(&b->theaplock);
-					b->tmaxpos = BUN_NONE;
-					MT_lock_unset(&b->theaplock);
+					maxpos = BUN_NONE;
 				}
 			}
-			if (b->tminpos != BUN_NONE) {
+			if (minpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtloc(bi, b->tminpos), new) > 0) {
+				    atomcmp(BUNtloc(bi, minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
-					MT_lock_set(&b->theaplock);
-					b->tminpos = updid;
-					MT_lock_unset(&b->theaplock);
-				} else if (atomcmp(BUNtloc(bi, b->tminpos), old) == 0 &&
+					minpos = updid;
+				} else if (atomcmp(BUNtloc(bi, minpos), old) == 0 &&
 					   atomcmp(new, old) != 0) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
 					 * anymore which is the
 					 * smallest */
-					MT_lock_set(&b->theaplock);
-					b->tminpos = BUN_NONE;
-					MT_lock_unset(&b->theaplock);
+					minpos = BUN_NONE;
 				}
 			}
 
@@ -1571,6 +1559,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		}
 	}
 	bat_iterator_end(&ni);
+	MT_lock_set(&b->theaplock);
+	b->tminpos = minpos;
+	b->tmaxpos = maxpos;
+	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG(ALGO,
 		  "BATreplace(" ALGOBATFMT "," ALGOOPTBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOBATPAR(n),
