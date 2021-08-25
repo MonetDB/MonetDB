@@ -1907,26 +1907,26 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->f) {
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
-			char *nme;
 			sql_var_name *vname = (sql_var_name*) e->r;
+			const char *nme = sql_escape_ident(sql->sa, vname->name);
+			char *buf = NULL;
 
 			if (vname->sname) { /* Global variable */
-				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(vname->sname) + strlen(vname->name) + 5);
-				if (!nme)
+				const char *sname = sql_escape_ident(sql->sa, vname->sname);
+				if (!nme || !sname || !(buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(sname) + strlen(nme) + 6)))
 					return NULL;
-				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A0%"), vname->sname), "%"), vname->name); /* mangle variable name */
+				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "0\""), sname), "\"\""), nme), "\""); /* escape variable name */
 			} else { /* Parameter or local variable */
 				char levelstr[16];
 				snprintf(levelstr, sizeof(levelstr), "%u", e->flag);
-				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(vname->name) + 3);
-				if (!nme)
+				if (!nme || !(buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(nme) + 3)))
 					return NULL;
-				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), levelstr), "%"), vname->name); /* mangle variable name */
+				stpcpy(stpcpy(stpcpy(stpcpy(buf, levelstr), "\""), nme), "\""); /* escape variable name */
 			}
-			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
+			if (!list_find(args, buf, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
 
-				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
+				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, buf));
 				list_append(args, s);
 			}
 		}
