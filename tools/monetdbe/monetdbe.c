@@ -1583,7 +1583,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
 		goto cleanup;
 
-	if (!b->results && b->rowcnt >= 0 && affected_rows)
+	if (b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
 	if (result) {
