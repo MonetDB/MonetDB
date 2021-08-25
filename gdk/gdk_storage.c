@@ -803,7 +803,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	const char *tail = gettailnamebi(bi);
-	if (bi->type != TYPE_void && bi->h->base == NULL) {
+	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
 			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
