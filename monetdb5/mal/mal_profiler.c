@@ -379,11 +379,13 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			}															\
 		}																\
 	} while (0)
-					keepprop(GDK_MIN_VALUE,"min");
-					keepprop(GDK_MAX_VALUE,"max");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MAX_POS,"maxpos");
+					if ((d->tminpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", d->tminpos)) ||
+						(d->tmaxpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", d->tmaxpos))) {
+						BBPunfix(d->batCacheid);
+						goto cleanup_and_exit;
+					}
 					keepprop(GDK_HASH_BUCKETS,"hbuckets");
 					keepprop(GDK_NUNIQUE,"nunique");
 					keepprop(GDK_UNIQUE_ESTIMATE,"nestimate");

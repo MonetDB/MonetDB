@@ -724,6 +724,7 @@ typedef struct {
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
+	BUN minpos, maxpos;	/* location of min/max value */
 	oid seq;		/* start of dense sequence */
 
 	Heap *heap;		/* space for the column. */
@@ -793,6 +794,8 @@ typedef struct BAT {
 #define tnokey		T.nokey
 #define tnosorted	T.nosorted
 #define tnorevsorted	T.norevsorted
+#define tminpos		T.minpos
+#define tmaxpos		T.maxpos
 #define theap		T.heap
 #define tbaseoff	T.baseoff
 #define tvheap		T.vheap
@@ -919,6 +922,7 @@ typedef struct BATiter {
 	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
+	BUN minpos, maxpos;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -929,13 +933,11 @@ typedef struct BATiter {
 } BATiter;
 
 static inline BATiter
-bat_iterator(BAT *b)
+bat_iterator_nolock(BAT *b)
 {
-	/* needs matching bat_iterator_end */
-	BATiter bi;
+	/* does not get matched by bat_iterator_end */
 	if (b) {
-		MT_lock_set(&b->theaplock);
-		bi = (BATiter) {
+		return (BATiter) {
 			.b = b,
 			.h = b->theap,
 			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
@@ -947,10 +949,27 @@ bat_iterator(BAT *b)
 			.tseq = b->tseqbase,
 			.hfree = b->theap->free,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
+			.minpos = b->tminpos,
+			.maxpos = b->tmaxpos,
 #ifndef NDEBUG
-			.locked = true,
+			.locked = false,
 #endif
 		};
+	}
+	return (BATiter) {0};
+}
+
+static inline BATiter
+bat_iterator(BAT *b)
+{
+	/* needs matching bat_iterator_end */
+	BATiter bi;
+	if (b) {
+		MT_lock_set(&b->theaplock);
+		bi = bat_iterator_nolock(b);
+#ifndef NDEBUG
+		bi.locked = true;
+#endif
 		HEAPincref(bi.h);
 		if (bi.vh)
 			HEAPincref(bi.vh);
@@ -977,31 +996,6 @@ bat_iterator_end(BATiter *bip)
 	if (bip->vh)
 		HEAPdecref(bip->vh, false);
 	*bip = (BATiter) {0};
-}
-
-static inline BATiter
-bat_iterator_nolock(BAT *b)
-{
-	/* does not get matched by bat_iterator_end */
-	if (b) {
-		return (BATiter) {
-			.b = b,
-			.h = b->theap,
-			.base = b->theap->base ? b->theap->base + (b->tbaseoff << b->tshift) : NULL,
-			.vh = b->tvheap,
-			.count = b->batCount,
-			.width = b->twidth,
-			.shift = b->tshift,
-			.type = b->ttype,
-			.tseq = b->tseqbase,
-			.hfree = b->theap->free,
-			.vhfree = b->tvheap ? b->tvheap->free : 0,
-#ifndef NDEBUG
-			.locked = false,
-#endif
-		};
-	}
-	return (BATiter) {0};
 }
 
 /*
@@ -1446,6 +1440,8 @@ BATsettrivprop(BAT *b)
 			} else {
 				b->tnonil = true;
 				b->tnil = false;
+				b->tminpos = 0;
+				b->tmaxpos = 0;
 			}
 			b->tseqbase = sqbs;
 		}
@@ -2242,11 +2238,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 enum prop_t {
-	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
-	GDK_MIN_POS,		/* BUN position of smallest value (oid) */
-	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
-	GDK_MAX_POS,		/* BUN position of largest value (oid) */
-	GDK_HASH_BUCKETS,	/* last used hash bucket size (oid) */
+	GDK_HASH_BUCKETS = 3,	/* last used hash bucket size (oid) */
 	GDK_NUNIQUE,		/* number of unique values (oid) */
 	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values (dbl) */
 };

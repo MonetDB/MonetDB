@@ -700,9 +700,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			maxgrp = * (oid *) Tloc(g, 0);
 		else {
 			MT_lock_set(&b->theaplock);
-			prop = BATgetprop_nolock(g, GDK_MAX_VALUE);
-			if (prop)
-				maxgrp = prop->val.oval;
+			if (g->tmaxpos != BUN_NONE)
+				maxgrp = BUNtoid(g, g->tmaxpos);
 			MT_lock_unset(&b->theaplock);
 			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
 				BATmax(g, &maxgrp);
@@ -758,14 +757,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, false, TRANSIENT);
 			if (gn == NULL)
 				goto error;
-			if (!is_oid_nil(maxgrp)) {
-				prop = BATgetprop(g, GDK_MAX_VALUE);
-				if (prop)
-					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
-				prop = BATgetprop(g, GDK_MAX_POS);
-				if (prop)
-					BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &prop->val.oval);
-			}
 
 			*groups = gn;
 			if (extents) {
@@ -1307,9 +1298,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
 	gn->tnonil = true;
 	gn->tnil = false;
-	ngrp--;	     /* max value is one less than number of values */
-	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
-	BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &(oid){maxgrppos});
+	gn->tmaxpos = maxgrppos;
 	*groups = gn;
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
