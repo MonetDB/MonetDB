@@ -3308,15 +3308,12 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		if (!rhash) {
-			const ValRecord *prop = BATgetprop(r, GDK_NUNIQUE);
-			if (prop) {
-				/* we know number of unique values, assume some
-				 * collisions */
-				rcost *= 1.1 * ((double) BATcount(r) / prop->val.oval);
-			} else {
-				/* guess number of unique value and work with that */
-				rcost *= 1.1 * ((double) cnt / guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)}));
-			}
+			double unique_est;
+			if ((unique_est = r->tunique_est) == 0)
+				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
+			/* we have an estimate of the number of unique
+			 * values, assume some collisions */
+			rcost *= 1.1 * ((double) cnt / unique_est);
 #ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
@@ -3339,15 +3336,12 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		if (rhash && !prhash) {
 			rccost = (double) cnt / nheads;
 		} else {
-			ValPtr prop = BATgetprop(r, GDK_NUNIQUE);
-			if (prop) {
-				/* we know number of unique values, assume some
-				 * chains */
-				rccost = 1.1 * ((double) cnt / prop->val.oval);
-			} else {
-				/* guess number of unique value and work with that */
-				rccost = 1.1 * ((double) cnt / guess_uniques(r, rci));
-			}
+			double unique_est;
+			if ((unique_est = r->tunique_est) == 0)
+				unique_est = guess_uniques(r, rci);
+			/* we have an estimate of the number of unique
+			 * values, assume some chains */
+			rccost = 1.1 * ((double) cnt / unique_est);
 		}
 		rccost *= lci->ncand;
 		rccost += rci->ncand * 2.0; /* cost of building the hash */
