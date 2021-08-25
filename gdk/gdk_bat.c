@@ -667,10 +667,9 @@ BATfree(BAT *b)
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
 	MT_rwlock_rdlock(&b->thashlock);
-	BUN nunique = BUN_NONE, nbucket = BUN_NONE;
+	BUN nunique = BUN_NONE;
 	if (b->thash && b->thash != (Hash *) 1) {
 		nunique = b->thash->nunique;
-		nbucket = b->thash->nbucket;
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
 	HASHfree(b);
@@ -678,9 +677,7 @@ BATfree(BAT *b)
 	OIDXfree(b);
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
-		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){nunique});
 		b->tunique_est = (double) nunique;
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){nbucket});
 	}
 	if (b->theap) {
 		assert(ATOMIC_GET(&b->theap->refs) == 1);

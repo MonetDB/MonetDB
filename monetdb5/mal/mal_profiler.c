@@ -388,8 +388,6 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
-					keepprop(GDK_HASH_BUCKETS,"hbuckets");
-					keepprop(GDK_NUNIQUE,"nunique");
 
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');

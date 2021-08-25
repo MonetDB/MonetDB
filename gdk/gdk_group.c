@@ -622,7 +622,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN lo = 0;
 	struct canditer ci;
 	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
-	const ValRecord *prop;
 	lng t0 = 0;
 	const char *algomsg = "";
 	bool locked = false;
@@ -799,8 +798,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
 		MT_lock_set(&b->theaplock);
-		if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-			maxgrps = prop->val.oval;
+		if (b->tunique_est != 0)
+			maxgrps = (BUN) b->tunique_est;
 		else
 			maxgrps = cnt / 10;
 		MT_lock_unset(&b->theaplock);

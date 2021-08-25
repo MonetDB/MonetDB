@@ -254,7 +254,6 @@ BATmaterialize(BAT *b)
 	b->theap = tail;
 	b->tbaseoff = 0;
 	b->theap->dirty = true;
-	BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;

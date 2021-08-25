@@ -39,7 +39,6 @@ BATunique(BAT *b, BAT *s)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 	struct canditer ci;
-	const ValRecord *prop;
 	const char *algomsg = "";
 	lng t0 = 0;
 
@@ -90,9 +89,7 @@ BATunique(BAT *b, BAT *s)
 		MT_rwlock_rdunlock(&b->thashlock);
 		if (initsize == BUN_NONE) {
 			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-				initsize = prop->val.oval;
-			else if (b->tunique_est != 0)
+			if (b->tunique_est != 0)
 				initsize = (BUN) b->tunique_est;
 			MT_lock_unset(&b->theaplock);
 		}

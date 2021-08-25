@@ -2216,8 +2216,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 enum prop_t {
-	GDK_HASH_BUCKETS = 3,	/* last used hash bucket size (oid) */
-	GDK_NUNIQUE,		/* number of unique values (oid) */
+	CURRENTLY_NO_PROPERTIES_DEFINED,
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
