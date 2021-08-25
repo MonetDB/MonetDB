@@ -456,16 +456,6 @@ select sys.alpha(5.0, 1.2)
 ----
 1.205
 
-query I rowsort
-select sys.fuse(2, 6)
-----
-518
-
-query I rowsort
-select sys.fuse(256 , 1)
-----
-16777217
-
 query R rowsort
 select sys.ms_round(1.2359, 2, 0)
 ----
