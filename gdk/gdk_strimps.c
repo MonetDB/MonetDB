@@ -472,7 +472,7 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	BAT *r = NULL;
 	BUN i, ncand;
 	uint64_t qbmask;
-	uint64_t *ptr;
+	uint64_t *bitstring_array;
 	Strimps *strmps;
 	oid x;
 	struct canditer ci;
@@ -491,7 +491,6 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		/* Is this correct? */
 		return BATdense(b->hseqbase, 0, 0);
 	r = COLnew(b->hseqbase, TYPE_oid, ncand, TRANSIENT);
 	if (r == NULL) {
@@ -504,14 +503,15 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	 * (see the macro isIgnored).
 	 */
 	qbmask = STRMPmakebitstring(q, strmps);
-	ptr = (uint64_t *)strmps->strimps_base;
+	bitstring_array = (uint64_t *)strmps->strimps_base;
 
 	for (i = 0; i < ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		if ((*(ptr + x) & qbmask) == qbmask) {
-			oid pos = x + b->hseqbase;
-			if (BUNappend(r, &pos, false) != GDK_SUCCEED)
+		x = canditer_next(&ci);
+		if ((bitstring_array[x] & qbmask) == qbmask) {
+			if (BUNappend(r, &x, false) != GDK_SUCCEED) {
+				BBPunfix(r->batCacheid);
 				goto sfilter_fail;
+			}
 		}
 	}
 
