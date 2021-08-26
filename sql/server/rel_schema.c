@@ -46,6 +46,16 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 }
 
 static sql_rel *
+rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr, int replace)
+{
+	sql_rel *rel = rel_table(sql, cat_type, sname, t, nr);
+	if (!rel)
+		return NULL;
+	append(rel->exps, exp_atom_int(sql->sa, replace));
+	return rel;
+}
+
+static sql_rel *
 rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
 {
 	sql_rel *rel = rel_create(sa);
@@ -1184,29 +1194,9 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if (create && !replace && mvc_bind_table(sql, s, name) != NULL)
+		return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
 
-	if (create) {
-		if ((t = mvc_bind_table(sql, s, name))) {
-			if (replace) {
-				if (!isView(t)) {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to drop view '%s': is a table", base, name);
-				} else if (t->system) {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace system view '%s'", base, name);
-				} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
-				} else {
-					str output;
-					if ((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
-						sql_error(sql, 02, SQLSTATE(42000) "%s", output);
-						freeException(output);
-						return NULL;
-					}
-				}
-			} else {
-				return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
-			}
-		}
-	}
 	if (ast) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
@@ -1244,7 +1234,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_table(sql, ddl_create_view, s->base.name, t, SQL_PERSIST);
+			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, SQL_PERSIST, replace);
 		}
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);

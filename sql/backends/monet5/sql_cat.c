@@ -1469,7 +1469,7 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
 	return msg;
 }
 
@@ -1481,9 +1481,10 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//str vname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
+	int replace = *getArgReference_int(stk, pci, 5);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp, replace);
 	return msg;
 }
 
