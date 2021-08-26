@@ -857,7 +857,7 @@ mvc_export_binary_bat(stream *s, BAT* bn) {
 			BATiter bni = bat_iterator(bn);
 			mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1);
 			if (sendtheap)
-				mnstr_write(s, /* theap */ bni.vh->base, bni.vh->free, 1);
+				mnstr_write(s, /* theap */ bni.vh->base, bni.vhfree, 1);
 			bat_iterator_end(&bni);
 		}
 }

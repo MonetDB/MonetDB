@@ -1559,7 +1559,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vi.base, vi.count * vi.width, 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-						vi.vh->base, vi.vh->free, 1);
+						vi.vh->base, vi.vhfree, 1);
 		bat_iterator_end(&vi);
 	}
 	/* flush is done by the calling environment (MAL) */
