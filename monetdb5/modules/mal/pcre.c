@@ -1873,6 +1873,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
+	bool use_strimps = true;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1881,6 +1882,17 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
+	}
+
+	if (use_strimps) {
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
+			BAT *tmp_s;
+			tmp_s = STRMPfilter(b, s, *pat);
+			if(s)
+				BBPunfix(s->batCacheid);
+			s = tmp_s;
+		} /* If we cannot create the strimp just continue normally */
+
 	}
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
