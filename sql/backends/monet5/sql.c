@@ -4999,11 +4999,11 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c = NULL;
 
 	if((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Invalid or missing schema %s",sname);
+		throw(SQL, "sql.column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if((t = mvc_bind_table(m, s, tname)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Invalid or missing table %s.%s",sname,tname);
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
+		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
 	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
 		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
@@ -5014,9 +5014,10 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
 			BBPreclaim(bn);
 			if (res == LOG_CONFLICT)
-				throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+				throw(SQL, "sql.column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 			if (res == LOG_ERR)
-				throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "LOG ERROR  in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+				throw(SQL, "sql.column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			throw(SQL, "sql.column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 		}
 	}
 	BBPunfix(b->batCacheid);
