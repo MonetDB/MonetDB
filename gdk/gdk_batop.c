@@ -134,7 +134,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				len = GDK_STRHASHSIZE + ci->ncand * (len + 12);
 			/* len is total estimated expected size of vheap */
 
-			if (len > ni.vh->free / 2) {
+			if (len > ni.vhfree / 2) {
 				/* we copy the string heap, perhaps appending */
 				if (oldcnt == 0) {
 					toff = 0;
@@ -148,8 +148,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vh->free);
-				b->tvheap->free = toff + ni.vh->free;
+				memcpy(b->tvheap->base + toff, ni.vh->base, ni.vhfree);
+				b->tvheap->free = toff + ni.vhfree;
 			}
 		}
 	}
@@ -256,7 +256,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				break;
 			}
 		}
-	} else if (b->tvheap->free < ni.vh->free / 2 ||
+	} else if (b->tvheap->free < ni.vhfree / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
 		 * heap, don't bother checking whether n's string

@@ -390,7 +390,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			 TRANSIENT)) == NULL)
 		return NULL;
 
-	v = (var_t) r1i->vh->free;
+	v = (var_t) r1i->vhfree;
 	if (r1i->vh == r2i->vh) {
 		h1off = 0;
 		BBPshare(r1i->vh->parentid);
@@ -400,18 +400,18 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	} else {
 		v = (v + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		h1off = (BUN) v;
-		v += ((var_t) r2i->vh->free + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+		v += ((var_t) r2i->vhfree + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		if (HEAPextend(bn->tvheap, v, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
-		memcpy(bn->tvheap->base, r1i->vh->base, r1i->vh->free);
+		memcpy(bn->tvheap->base, r1i->vh->base, r1i->vhfree);
 #ifndef NDEBUG
-		if (h1off > r1i->vh->free)
-			memset(bn->tvheap->base + r1i->vh->free, 0, h1off - r1i->vh->free);
+		if (h1off > r1i->vhfree)
+			memset(bn->tvheap->base + r1i->vhfree, 0, h1off - r1i->vhfree);
 #endif
-		memcpy(bn->tvheap->base + h1off, r2i->vh->base, r2i->vh->free);
-		bn->tvheap->free = h1off + r2i->vh->free;
+		memcpy(bn->tvheap->base + h1off, r2i->vh->base, r2i->vhfree);
+		bn->tvheap->free = h1off + r2i->vhfree;
 	}
 
 	if (v >= ((var_t) 1 << (8 << bn->tshift)) &&

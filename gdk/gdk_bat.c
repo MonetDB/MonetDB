@@ -1150,15 +1150,22 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
-	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
-	const void *atomnil = ATOMnilptr(b->ttype);
-	MT_lock_set(&b->theaplock);
-	BUN minpos = b->tminpos;
-	BUN maxpos = b->tmaxpos;
-	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
+		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+		const void *atomnil = ATOMnilptr(b->ttype);
+		MT_lock_set(&b->theaplock);
+		BUN minpos = b->tminpos;
+		BUN maxpos = b->tmaxpos;
+		MT_lock_unset(&b->theaplock);
+		const void *minvalp = NULL, *maxvalp = NULL;
+		BATiter bi = bat_iterator_nolock(b);
+		if (minpos != BUN_NONE)
+			minvalp = BUNtail(bi, minpos);
+		if (maxpos != BUN_NONE)
+			maxvalp = BUNtail(bi, maxpos);
 		if (b->tvarsized) {
+			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
 				gdk_return rc = tfastins_nocheckVAR(b, p, t);
@@ -1166,26 +1173,44 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					MT_rwlock_wrunlock(&b->thashlock);
 					return rc;
 				}
+				if (vbase != b->tvheap->base) {
+					/* tvheap changed location, so
+					 * pointers may need to be
+					 * updated (not if they were
+					 * initialized from t below, but
+					 * we don't know) */
+					bi = bat_iterator_nolock(b);
+					vbase = b->tvheap->base;
+					if (minpos != BUN_NONE)
+						minvalp = BUNtvar(bi, minpos);
+					if (maxpos != BUN_NONE)
+						maxvalp = BUNtvar(bi, maxpos);
+				}
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
 						minpos = maxpos = 0;
+						minvalp = maxvalp = t;
 					} else {
-						BATiter bi = bat_iterator_nolock(b);
 						if (minpos != BUN_NONE &&
-						    atomcmp(BUNtvar(bi, minpos), t) > 0)
+						    atomcmp(minvalp, t) > 0) {
 							minpos = p;
+							minvalp = t;
+						}
 						if (maxpos != BUN_NONE &&
-						    atomcmp(BUNtvar(bi, maxpos), t) < 0)
+						    atomcmp(maxvalp, t) < 0) {
 							maxpos = p;
+							maxvalp = t;
+						}
 					}
 				}
 				p++;
 			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			minpos = maxpos = BUN_NONE;
+			minvalp = maxvalp = NULL;
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				mskSetVal(b, p, *(msk *) t);
@@ -1205,19 +1230,27 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				if (atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
 						minpos = maxpos = 0;
+						minvalp = maxvalp = t;
 					} else {
-						BATiter bi = bat_iterator_nolock(b);
 						if (minpos != BUN_NONE &&
-						    atomcmp(BUNtloc(bi, minpos), t) > 0)
+						    atomcmp(minvalp, t) > 0) {
 							minpos = p;
+							minvalp = t;
+						}
 						if (maxpos != BUN_NONE &&
-						    atomcmp(BUNtloc(bi, maxpos), t) < 0)
+						    atomcmp(maxvalp, t) < 0) {
 							maxpos = p;
+							maxvalp = t;
+						}
 					}
 				}
 				p++;
 			}
 		}
+		MT_lock_set(&b->theaplock);
+		b->tminpos = minpos;
+		b->tmaxpos = maxpos;
+		MT_lock_unset(&b->theaplock);
 	} else {
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
@@ -1232,10 +1265,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
-	MT_lock_set(&b->theaplock);
-	b->tminpos = minpos;
-	b->tmaxpos = maxpos;
-	MT_lock_unset(&b->theaplock);
 	BATsetcount(b, p);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
