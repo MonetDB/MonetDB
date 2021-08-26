@@ -4710,6 +4710,55 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			}
 		}
 	}
+
+	/* try push select under set relation */
+	if (is_select(rel->op) && r && !(rel_is_ref(r)) && !list_empty(exps)) {
+		sql_rel *u = r, *ou = u;
+		sql_rel *ul = u->l;
+		sql_rel *ur = u->r;
+
+		if (!rel_is_ref(u) && u->op == op_project)
+			u = u->l;
+
+		if (u && is_set(u->op) && !is_single(u) && !list_empty(u->exps) && !rel_is_ref(u)) {
+			ul = u->l;
+			ur = u->r;
+
+			ul = rel_dup(ul);
+			ur = rel_dup(ur);
+			if (!is_project(ul->op))
+				ul = rel_project(v->sql->sa, ul,
+					rel_projections(v->sql, ul, NULL, 1, 1));
+			if (!is_project(ur->op))
+				ur = rel_project(v->sql->sa, ur,
+					rel_projections(v->sql, ur, NULL, 1, 1));
+			rel_rename_exps(v->sql, u->exps, ul->exps);
+			rel_rename_exps(v->sql, u->exps, ur->exps);
+
+			if (u != ou) {
+				ul = rel_project(v->sql->sa, ul, NULL);
+				ul->exps = exps_copy(v->sql, ou->exps);
+				rel_rename_exps(v->sql, ou->exps, ul->exps);
+				set_processed(ul);
+				ur = rel_project(v->sql->sa, ur, NULL);
+				ur->exps = exps_copy(v->sql, ou->exps);
+				rel_rename_exps(v->sql, ou->exps, ur->exps);
+				set_processed(ur);
+			}
+
+			/* introduce selects under the set */
+			ul = rel_select(v->sql->sa, ul, NULL);
+			ul->exps = exps_copy(v->sql, exps);
+			ur = rel_select(v->sql->sa, ur, NULL);
+			ur->exps = exps_copy(v->sql, exps);
+
+			rel = rel_inplace_setop(v->sql, rel, ul, ur, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
+			if (need_distinct(u))
+				set_distinct(rel);
+			v->changes++;
+		}
+	}
+
 	return try_remove_empty_select(v, rel);
 }
 
@@ -5471,60 +5520,6 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 				v->changes++;
 			}
 		}
-	}
-	return rel;
-}
-
-static sql_rel *
-rel_push_select_down_union(visitor *v, sql_rel *rel)
-{
-	if (is_select(rel->op) && rel->l && rel->exps) {
-		sql_rel *u = rel->l, *ou = u;
-		sql_rel *ul = u->l;
-		sql_rel *ur = u->r;
-
-		if (u->op == op_project)
-			u = u->l;
-
-		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
-			return rel;
-
-		ul = u->l;
-		ur = u->r;
-
-		ul = rel_dup(ul);
-		ur = rel_dup(ur);
-		if (!is_project(ul->op))
-			ul = rel_project(v->sql->sa, ul,
-				rel_projections(v->sql, ul, NULL, 1, 1));
-		if (!is_project(ur->op))
-			ur = rel_project(v->sql->sa, ur,
-				rel_projections(v->sql, ur, NULL, 1, 1));
-		rel_rename_exps(v->sql, u->exps, ul->exps);
-		rel_rename_exps(v->sql, u->exps, ur->exps);
-
-		if (u != ou) {
-			ul = rel_project(v->sql->sa, ul, NULL);
-			ul->exps = exps_copy(v->sql, ou->exps);
-			rel_rename_exps(v->sql, ou->exps, ul->exps);
-			ur = rel_project(v->sql->sa, ur, NULL);
-			ur->exps = exps_copy(v->sql, ou->exps);
-			rel_rename_exps(v->sql, ou->exps, ur->exps);
-		}
-
-		/* introduce selects under the set (if needed) */
-		set_processed(ul);
-		set_processed(ur);
-		if (rel_is_ref(rel) || !list_empty(rel->exps)) { /* don't generate empty selects */
-			ul = rel_select(v->sql->sa, ul, NULL);
-			ul->exps = exps_copy(v->sql, rel->exps);
-			ur = rel_select(v->sql->sa, ur, NULL);
-			ur->exps = exps_copy(v->sql, rel->exps);
-		}
-
-		rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
-		v->changes++;
-		return rel;
 	}
 	return rel;
 }
@@ -9579,7 +9574,6 @@ rel_optimize_unions_bottomup(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 {
-	rel = rel_push_select_down_union(v, rel);
 	rel = rel_push_project_down_union(v, rel);
 	rel = rel_push_join_down_union(v, rel);
 	return rel;
