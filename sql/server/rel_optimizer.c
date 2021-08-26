@@ -4634,13 +4634,13 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	exps = rel->exps;
 
 	/* push select through join */
-	if (is_select(rel->op) && r && is_join(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && is_join(r->op) && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *jl = r->l;
 		sql_rel *jr = r->r;
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
 
-		if (r->op == op_full || is_single(r))
+		if (r->op == op_full)
 			return rel;
 
 		/* introduce selects under the join (if needed) */
@@ -4668,7 +4668,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 
 	/* merge select and cross product ? */
-	if (is_select(rel->op) && r && r->op == op_join && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r)){
 		for (n = exps->h; n;) {
 			node *next = n->next;
 			sql_exp *e = n->data;
@@ -4684,7 +4684,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		}
 	}
 
-	if (is_select(rel->op) && r && r->op == op_project && !(rel_is_ref(r))){
+	if (is_select(rel->op) && r && r->op == op_project && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l;
 		/* we cannot push through rank (row_number etc) functions or projects with distinct */
 		if (pl && !project_unsafe(r, 1, 1)) {
@@ -4712,12 +4712,12 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 
 	/* try push select under set relation */
-	if (is_select(rel->op) && r && !(rel_is_ref(r)) && !list_empty(exps)) {
+	if (is_select(rel->op) && r && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r, *ou = u;
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!rel_is_ref(u) && u->op == op_project)
+		if (!rel_is_ref(u) && !is_single(u) && u->op == op_project)
 			u = u->l;
 
 		if (u && is_set(u->op) && !is_single(u) && !list_empty(u->exps) && !rel_is_ref(u)) {
