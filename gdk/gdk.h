@@ -751,11 +751,11 @@ typedef struct {
 
 typedef struct BAT {
 	/* static bat properties */
-	bat batCacheid;		/* index into BBP */
 	oid hseqbase;		/* head seq base */
+	MT_Id creator_tid;	/* which thread created it */
+	bat batCacheid;		/* index into BBP */
 
 	/* dynamic bat properties */
-	MT_Id creator_tid;	/* which thread created it */
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
