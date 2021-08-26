@@ -1896,7 +1896,7 @@ Tpos(BATiter *bi, BUN p)
 		oid o;
 		assert(!is_oid_nil(bi->tseq));
 		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
-			BUN nexc = (bi->vh->free - sizeof(ccand_t)) / SIZEOF_OID;
+			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
 			o = bi->tseq + p;
 			if (nexc > 0) {
 				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
@@ -1919,7 +1919,7 @@ Tpos(BATiter *bi, BUN p)
 			}
 		} else {
 			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
-			BUN nmsk = (bi->vh->free - sizeof(ccand_t)) / sizeof(uint32_t);
+			BUN nmsk = (bi->vhfree - sizeof(ccand_t)) / sizeof(uint32_t);
 			o = 0;
 			for (BUN i = 0; i < nmsk; i++) {
 				uint32_t m = candmask_pop(msk[i]);
