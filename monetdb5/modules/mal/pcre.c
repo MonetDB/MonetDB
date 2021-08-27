@@ -1873,7 +1873,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = GDKgetenv("gdk_use_strimps");
+	bool use_strimps = GDKgetenv_int("gdk_use_strimps", 0);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1883,6 +1883,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
 
 	if (use_strimps) {
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
@@ -1895,7 +1897,6 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	}
 
-	assert(ATOMstorage(b->ttype) == TYPE_str);
 	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
 		goto bailout;
 
