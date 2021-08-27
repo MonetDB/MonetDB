@@ -4007,6 +4007,8 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 
 	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+	// TODO is this right ???
+	trans_add(tr, &col->base, d, &tc_gc_col, &commit_create_col, &log_update_col);
 	sqlid id = col->base.id;
 	bat bid = d->cs.bid;
 	lock_column(tr->store, id);
