@@ -456,7 +456,12 @@ BATcheckstrimps(BAT *b)
 		}
 		MT_lock_unset(&b->batIdxLock);
         }
-        ret = b->tstrimps != NULL;
+	/* The string imprint is initialized if the strimp pointer is
+	 * not null and the number of bitstrings is equal to the bat
+	 * count.
+	 */
+        ret = b->tstrimps != NULL &&
+		(b->tstrimps->strimps.free - ((char *)b->tstrimps->strimps_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount;
 	if (ret)
 		TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 
