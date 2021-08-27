@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Aug 23 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The example modules opt_sql_append and udf are no longer loaded by
+  default and no longer part of the binary release.  If installed,
+  they can be loaded using the --loadmodule option.
+
 * Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
 - The built-in SQL functions to produce a dump that were added as a
   proof-of-concept in the previous release have been improved and are

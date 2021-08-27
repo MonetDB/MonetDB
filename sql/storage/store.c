@@ -3397,7 +3397,7 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 }
 
 static void
-sql_trans_rollback(sql_trans *tr)
+sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 
@@ -3418,7 +3418,8 @@ sql_trans_rollback(sql_trans *tr)
 			list_prepend(nl, n->data);
 
 		/* rollback */
-		MT_lock_set(&store->commit);
+		if (!commit_lock)
+			MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
@@ -3441,18 +3442,21 @@ sql_trans_rollback(sql_trans *tr)
 				_DELETE(c);
 		}
 		store_unlock(store);
-		MT_lock_unset(&store->commit);
+		if (!commit_lock)
+			MT_lock_unset(&store->commit);
 		list_destroy(nl);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
-		MT_lock_set(&store->commit);
+		if (!commit_lock)
+			MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
-		MT_lock_unset(&store->commit);
+		if (!commit_lock)
+			MT_lock_unset(&store->commit);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3505,7 +3509,7 @@ sql_trans_destroy(sql_trans *tr)
 		tr->name = NULL;
 	}
 	if (!list_empty(tr->changes))
-		sql_trans_rollback(tr);
+		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
@@ -3705,8 +3709,8 @@ sql_trans_commit(sql_trans *tr)
 		if (!tr->parent && !list_empty(tr->predicates)) {
 			ok = sql_trans_valid(tr);
 			if (ok != LOG_OK) {
+				sql_trans_rollback(tr, true);
 				MT_lock_unset(&store->commit);
-				sql_trans_rollback(tr);
 				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 			}
 		}
@@ -3714,8 +3718,8 @@ sql_trans_commit(sql_trans *tr)
 		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			ok = transaction_check_dependencies_and_removals(tr);
 			if (ok != LOG_OK) {
+				sql_trans_rollback(tr, true);
 				MT_lock_unset(&store->commit);
-				sql_trans_rollback(tr);
 				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 			}
 		}
@@ -6727,7 +6731,7 @@ sql_trans_end(sql_session *s, int ok)
 	if (ok == SQL_OK) {
 		ok = sql_trans_commit(s->tr);
 	} else if (ok == SQL_ERR) { /* if a conflict happened, it was already rollbacked */
-		sql_trans_rollback(s->tr);
+		sql_trans_rollback(s->tr, false);
 	}
 	assert(s->tr->active);
 	s->tr->active = 0;
