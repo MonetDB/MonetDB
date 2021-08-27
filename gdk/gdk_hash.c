@@ -737,7 +737,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	Hash *h = NULL;
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
-	const ValRecord *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	lng timeoffset = 0;
@@ -807,18 +806,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_NUNIQUE)) != NULL) {
-		assert(prop->vtype == TYPE_oid);
-		mask = prop->val.oval * 8 / 7;
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_HASH_BUCKETS)) != NULL) {
-		assert(prop->vtype == TYPE_oid);
-		mask = prop->val.oval;
-		maxmask = HASHmask(ci->ncand);
-		if (mask > maxmask)
-			mask = maxmask;
- 	} else if (!hascand && (prop = BATgetprop_try(b, GDK_UNIQUE_ESTIMATE)) != NULL) {
-		assert(prop->vtype == TYPE_dbl);
-		mask = (BUN) (prop->val.dval * 8 / 7);
+ 	} else if (!hascand && bi.unique_est != 0) {
+		mask = (BUN) (bi.unique_est * 1.15); /* about 8/7 */
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
@@ -981,15 +970,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	bat_iterator_end(&bi);
-	if (!hascand) {
-		/* don't keep these properties while we have a hash
-		 * structure: they get added again when the hash is
-		 * freed */
-		MT_lock_set(&b->theaplock);
-		BATrmprop_nolock(b, GDK_HASH_BUCKETS);
-		BATrmprop_nolock(b, GDK_NUNIQUE);
-		MT_lock_unset(&b->theaplock);
-	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,

@@ -298,7 +298,6 @@ BBPinithash(int j)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
 	if (BBP_hash == NULL) {
-		GDKerror("cannot allocate memory\n");
 		return GDK_FAIL;
 	}
 	BBP_mask--;
@@ -496,6 +495,7 @@ heapinit(BAT *b, const char *buf,
 	b->tnil = (properties & 0x0800) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
+	b->tunique_est = 0.0;
 	/* (properties & 0x0200) is the old tdense flag */
 	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap->free = (size_t) free;
@@ -508,9 +508,13 @@ heapinit(BAT *b, const char *buf,
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
 	if (minpos < b->batCount)
-		BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
+		b->tminpos = (BUN) minpos;
+	else
+		b->tminpos = BUN_NONE;
 	if (maxpos < b->batCount)
-		BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
+		b->tmaxpos = (BUN) maxpos;
+	else
+		b->tmaxpos = BUN_NONE;
 	if (b->theap->free > b->theap->size) {
 		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
 		return -1;
@@ -1639,9 +1643,6 @@ BBPexit(void)
 static inline int
 heap_entry(FILE *fp, BAT *b, BUN size)
 {
-	const ValRecord *minprop, *maxprop;
-	minprop = BATgetprop_nolock(b, GDK_MIN_POS);
-	maxprop = BATgetprop_nolock(b, GDK_MAX_POS);
 	size_t free = b->theap->free;
 	if (size < BUN_NONE) {
 		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk)) {
@@ -1652,7 +1653,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 			free = size << b->tshift;
 	}
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,
+		       BUNFMT " " OIDFMT " %zu %zu %d %" PRIu64" %" PRIu64,
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
 		       b->twidth,
 		       b->tvarsized,
@@ -1670,8 +1671,8 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       free,
 		       b->theap->size,
 		       (int) b->theap->newstorage,
-		       minprop && minprop->val.oval < b->hseqbase + size ? minprop->val.oval : oid_nil,
-		       maxprop && maxprop->val.oval < b->hseqbase + size ? maxprop->val.oval : oid_nil);
+		       b->tminpos < b->hseqbase + size ? (uint64_t) b->tminpos : (uint64_t) oid_nil,
+		       b->tmaxpos < b->hseqbase + size ? (uint64_t) b->tmaxpos : (uint64_t) oid_nil);
 }
 
 static inline int

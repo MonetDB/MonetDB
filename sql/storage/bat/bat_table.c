@@ -527,6 +527,8 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 		return NULL;
 	s = BATproject(r->data, b);
 	bat_destroy(b);
+	if (s == NULL)
+		return NULL;
 	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;

@@ -665,7 +665,6 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		t->res = list_append(SA_LIST(sa, (fdestroy) &arg_destroy), fres);
 	} else
 		t->res = NULL;
-	t->nr = list_length(funcs);
 	t->sql = 0;
 	t->lang = FUNC_LANG_INT;
 	t->semantics = semantics;

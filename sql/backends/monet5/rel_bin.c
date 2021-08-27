@@ -1907,26 +1907,26 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->f) {
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
-			char *nme;
 			sql_var_name *vname = (sql_var_name*) e->r;
+			const char *nme = sql_escape_ident(sql->sa, vname->name);
+			char *buf = NULL;
 
 			if (vname->sname) { /* Global variable */
-				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(vname->sname) + strlen(vname->name) + 5);
-				if (!nme)
+				const char *sname = sql_escape_ident(sql->sa, vname->sname);
+				if (!nme || !sname || !(buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(sname) + strlen(nme) + 6)))
 					return NULL;
-				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A0%"), vname->sname), "%"), vname->name); /* mangle variable name */
+				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "0\""), sname), "\"\""), nme), "\""); /* escape variable name */
 			} else { /* Parameter or local variable */
 				char levelstr[16];
 				snprintf(levelstr, sizeof(levelstr), "%u", e->flag);
-				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(vname->name) + 3);
-				if (!nme)
+				if (!nme || !(buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(nme) + 3)))
 					return NULL;
-				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), levelstr), "%"), vname->name); /* mangle variable name */
+				stpcpy(stpcpy(stpcpy(stpcpy(buf, levelstr), "\""), nme), "\""); /* escape variable name */
 			}
-			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
+			if (!list_find(args, buf, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
 
-				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
+				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, buf));
 				list_append(args, s);
 			}
 		}
@@ -6187,7 +6187,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	stmt *table = NULL, *sname, *tname = NULL, *kname = NULL, *ifexists = NULL;
+	stmt *table = NULL, *sname, *tname = NULL, *kname = NULL, *ifexists = NULL, *replace = NULL;
 	list *l = sa_list(sql->sa);
 
 	if (!action)
@@ -6222,6 +6222,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 			table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			if (!table)
 				return NULL;
+			en = en->next;
 		}
 		append(l, table);
 	} else {
@@ -6229,12 +6230,23 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 			ifexists = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			if (!ifexists)
 				return NULL;
+			en = en->next;
 		} else {
 			ifexists = stmt_atom_int(be, 0);
 		}
 		append(l, ifexists);
 	}
 	append(l, action);
+	if (rel->flag == ddl_create_view) {
+		if (en) {
+			replace = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!replace)
+				return NULL;
+		} else {
+			replace = stmt_atom_int(be, 0);
+		}
+		append(l, replace);
+	}
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }
 

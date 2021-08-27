@@ -58,7 +58,7 @@ static void GDKunlockHome(int farmid);
 #undef free
 
 /* when the number of updates to a BAT is less than 1 in this number, we
- * keep the GDK_UNIQUE_ESTIMATE property */
+ * keep the unique_est property */
 BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */

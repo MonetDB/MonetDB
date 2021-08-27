@@ -4143,8 +4143,6 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
-create function fuse(one bigint, two bigint)
-returns hugeint external name udf.fuse;
 create function sys.generate_series(first hugeint, "limit" hugeint)
 returns table (value hugeint)
 external name generator.series;
@@ -4208,7 +4206,6 @@ GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;
 create function json.filter(js json, name hugeint)
 returns json external name json.filter;
 GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;
-update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
 update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 6;
@@ -4236,6 +4233,8 @@ external name mtime.epoch;
 grant execute on function sys.epoch (DECIMAL(18,3)) to public;
 update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
 set schema "sys";
+create view sys.malfunctions as select * from sys.malfunctions();
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'malfunctions';
 drop function sys.dump_database(boolean);
 drop procedure sys.dump_table_data();
 drop procedure sys._dump_table_data(string, string);
@@ -4814,4 +4813,6 @@ update sys.functions set system = true where system <> true and name in ('esc', 
 update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = 5;
 update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = 2;
 update sys._tables set system = true where name in ('dump_create_roles', 'dump_create_users', 'dump_create_schemas', 'dump_add_schemas_to_users', 'dump_grant_user_privileges', 'dump_table_constraint_type', 'dump_table_grants', 'dump_column_grants', 'dump_function_grants', 'dump_indices', 'dump_column_defaults', 'dump_foreign_keys', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'dump_functions', 'dump_tables', 'dump_triggers', 'dump_comments', 'dump_user_defined_types') AND schema_id = 2000;
+drop function sys.reverse(string);
+drop all function sys.fuse;
 

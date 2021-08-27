@@ -129,7 +129,7 @@ extern str sql_dense_rank(bat *rid, const bat *bid);
 extern str SQLidentity(oid *rid, const void *i);
 extern str BATSQLidentity(bat *rid, const bat *bid);
 extern str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp);
+extern str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace);
 sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 sql5_export str append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
