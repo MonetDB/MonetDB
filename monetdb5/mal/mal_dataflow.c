@@ -400,11 +400,11 @@ DFLOWworker(void *T)
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 	}
-/* Try to get rid of the hot potatoe or locate an alternative to proceed.
+/* Try to get rid of the hot potato or locate an alternative to proceed.
  */
-#define HOTPOTATOE
-#ifdef HOTPOTATOE
-	/* HOT potatoe choice */
+#define HOTPOTATO
+#ifdef HOTPOTATO
+	/* HOT potato choice */
 	int last = 0, nxt = -1;
 	lng nxtclaim = -1;
 
@@ -422,7 +422,7 @@ DFLOWworker(void *T)
 			}
 		}
 	}
-	/* hot potatoe can not be removed, use alternative to proceed */
+	/* hot potato can not be removed, use alternative to proceed */
 	if( nxt >= 0){
 		flow->status[nxt].state = DFLOWrunning;
 		flow->status[nxt].blocks = 0;
