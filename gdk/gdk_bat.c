@@ -2135,7 +2135,7 @@ BATroles(BAT *b, const char *tnme)
 /* rather than deleting X.new, we comply with the commit protocol and
  * move it to backup storage */
 static gdk_return
-backup_new(Heap *hp)
+backup_new(Heap *hp, bool lock)
 {
 	int batret, bakret, ret = -1;
 	char *batpath, *bakpath;
@@ -2146,7 +2146,8 @@ backup_new(Heap *hp)
 	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
-		MT_lock_set(&GDKtmLock);
+		if (lock)
+			MT_lock_set(&GDKtmLock);
 
 		batret = MT_stat(batpath, &st);
 		bakret = MT_stat(bakpath, &st);
@@ -2166,7 +2167,8 @@ backup_new(Heap *hp)
 		} else {
 			ret = 0;
 		}
-		MT_lock_unset(&GDKtmLock);
+		if (lock)
+			MT_lock_unset(&GDKtmLock);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
@@ -2189,7 +2191,7 @@ HEAPchangeaccess(Heap *hp, int dstmode, bool existing)
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = true;
-		return backup_new(hp) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
+		return backup_new(hp, true) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 	}
 	return hp->storage;	/* 7=>5 */
 }
@@ -2201,7 +2203,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 	if (existing) {		/* existing, ie will become transient */
 		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) {	/* 6=>2 */
 			hp->dirty = true;
-			return backup_new(hp) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
+			return backup_new(hp, false) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 		}
 		return hp->newstorage;	/* 4=>0,5=>1,7=>3,c=>a no change */
 	}
