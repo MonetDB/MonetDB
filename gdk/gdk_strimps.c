@@ -476,6 +476,9 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	Strimps *strmps;
 	oid x;
 	struct canditer ci;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (isVIEW(b)) {
 		BAT *pb = BBP_cache(VIEWtparent(b));
@@ -520,6 +523,9 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	r->trevsorted = BATcount(r) <= 1;
 	r->tnil = false;
 	r->tnonil = true;
+	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " LLFMT
+		  " items took " LLFMT " usec\n", ncand, GDKusec()-t0);
+	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	return virtualize(r);
 
 
