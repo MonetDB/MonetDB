@@ -1496,6 +1496,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	if (BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
+	BBPretain(new->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -1554,7 +1555,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	    catalog_bid == list_bid &&
 	    catalog_nme == list_nme &&
 	    lg->catalog_bid == catalog_bid) {
-		BAT *bids, *nmes, *tids, *tpes, *oids;
+		BAT *bids, *nmes, *tids, *tpes, *oids, *dcat;
 
 		tids = bm_tids(catalog_bid, dcatalog);
 		if (tids == NULL) {
@@ -1565,13 +1566,15 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		nmes = logbat_new(TYPE_str, BATcount(tids), PERSISTENT);
 		tpes = logbat_new(TYPE_bte, BATcount(tids), PERSISTENT);
 		oids = logbat_new(TYPE_lng, BATcount(tids), PERSISTENT);
+		dcat = logbat_new(TYPE_oid, 0, PERSISTENT);
 
-		if (bids == NULL || nmes == NULL || tpes == NULL || oids == NULL) {
+		if (bids == NULL || nmes == NULL || tpes == NULL || oids == NULL || dcat == NULL) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
 			logbat_destroy(nmes);
 			logbat_destroy(tpes);
 			logbat_destroy(oids);
+			logbat_destroy(dcat);
 			GDKfree(n);
 			return GDK_FAIL;
 		}
@@ -1585,16 +1588,17 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			logbat_destroy(nmes);
 			logbat_destroy(tpes);
 			logbat_destroy(oids);
+			logbat_destroy(dcat);
 			GDKfree(n);
 			return GDK_FAIL;
 		}
 		logbat_destroy(tids);
-		BATclear(dcatalog, true);
 
 		if (logger_switch_bat(catalog_bid, bids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_nme, nmes, lg->fn, "catalog_nme") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_tpe, tpes, lg->fn, "catalog_tpe") != GDK_SUCCEED ||
-		    logger_switch_bat(catalog_oid, oids, lg->fn, "catalog_oid") != GDK_SUCCEED) {
+		    logger_switch_bat(catalog_oid, oids, lg->fn, "catalog_oid") != GDK_SUCCEED ||
+		    logger_switch_bat(dcatalog, dcat, lg->fn, "dcatalog") != GDK_SUCCEED) {
 			logbat_destroy(bids);
 			logbat_destroy(nmes);
 			GDKfree(n);
@@ -1604,16 +1608,19 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		n[i++] = nmes->batCacheid;
 		n[i++] = tpes->batCacheid;
 		n[i++] = oids->batCacheid;
+		n[i++] = dcat->batCacheid;
 
 		logbat_destroy(lg->catalog_bid);
 		logbat_destroy(lg->catalog_nme);
 		logbat_destroy(lg->catalog_tpe);
 		logbat_destroy(lg->catalog_oid);
+		logbat_destroy(lg->dcatalog);
 
 		lg->catalog_bid = catalog_bid = bids;
 		lg->catalog_nme = catalog_nme = nmes;
 		lg->catalog_tpe = catalog_tpe = tpes;
 		lg->catalog_oid = catalog_oid = oids;
+		lg->dcatalog = dcatalog = dcat;
 	}
 	if (lg->seqs_id && list_nme) {
 		n[i++] = lg->seqs_id->batCacheid;
