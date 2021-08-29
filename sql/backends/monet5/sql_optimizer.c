@@ -58,9 +58,18 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 	sql_trans *tr = m->session->tr;
 	lng size,space = 0, i;
 	str lasttable = 0;
+	InstrPtr *old, q;
+	int limit, extend = 1;
+	
+	limit = mb->stop;
+	old = mb->stmt;
+    if ( newMalBlkStmt(mb, mb->ssize) < 0){
+        extend = 0;
+	}
 
-	for (i = 0; i < mb->stop; i++) {
-		InstrPtr p = mb->stmt[i];
+	for (i = 0; i < limit; i++) {
+		InstrPtr p = old[i];
+		pushInstruction(mb, p);
 
 		/* now deal with the update binds, it is only necessary to identify that there are updats
 		 * The actual size is not that important */
@@ -72,6 +81,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			sql_schema *s = mvc_bind_schema(m, sname);
 			sql_table *t = 0;
 			sql_column *c = 0;
+			int bid = 0;
 
 			if (!s)
 				continue;
@@ -82,6 +92,12 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			if (!c)
 				continue;
 
+			bid = ((sql_delta *)c->data)->cs.bid;
+			if( extend == 1){
+				q = newStmt(mb, propertiesRef,  bindRef);
+				q = pushArgument(mb, q, getArg(p,0));
+				q = pushInt(mb, q, bid);
+			}
 			/* we have to sum the cost of all three components of a BAT */
 			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
 				size = SQLgetColumnSize(tr, c, access);
