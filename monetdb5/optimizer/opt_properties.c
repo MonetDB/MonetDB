@@ -9,7 +9,7 @@
 /* author M.Kersten
  * This optimizer is used to scale-down columns when properties
  * of the underlying BATs permits it.
- * The effect should be a smaller footprint.
+ * The effect should be a smaller intermediate footprint.
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
@@ -18,22 +18,56 @@
 
 #define properties(TPE) \
 	val =  BATmax_skipnil(bn, (void*) (&vmax.val.TPE), 1);\
+	vmax.vtype = basetype;\
+	restype =scaledown(&vmax);\
 	if( val != &vmax.val.TPE){\
+		assert(0);\
 		/* error */\
 	}\
 	val =  BATmin_skipnil(bn, (void*) (&vmin.val.TPE), 1);\
+	vmin.vtype = basetype;\
+	restype =scaledown(&vmin);\
 	if( val != &vmin.val.TPE){\
 		/* error */\
 	}
 
 
-#define keeparound(TPE)\
+#define keeparound(T, TPE)\
+	q = newStmt(mb, propertiesRef, infoRef);\
 	setArgType(mb, q, 0, TYPE_void);\
 	q = pushArgument(mb, q, getArg(pci,1));\
-	q = pushInt(mb, q, vmin.val.TPE);\
-	q = pushInt(mb, q, vmax.val.TPE);\
-	q = pushLng(mb, q, nils);
+	q = push##T(mb, q, vmin.val.TPE);\
+	q = push##T(mb, q, vmax.val.TPE);\
+	q = pushLng(mb, q, cnt);\
+	q->token = REMsymbol
 
+
+static int
+scaledown(ValPtr v){
+	switch(v->vtype){
+#ifdef HAVE_HGE
+	case TYPE_hge:
+				if( v->val.lval > - INT_MAX && v->val.lval < INT_MAX){
+					v->vtype = TYPE_int;
+				} else break;
+#endif
+	case TYPE_lng:
+				if( v->val.lval > - INT_MAX && v->val.lval < INT_MAX){
+					v->vtype = TYPE_int;
+				} else break;
+	case TYPE_int:
+				if( v->val.ival > -(1<<16) && v->val.ival < 1<<16){
+					v->vtype = TYPE_sht;
+				} else break;
+	case TYPE_sht:
+				if( v->val.shval > -128 && v->val.shval <128){
+					v->vtype = TYPE_bte;
+				} else break;
+	case TYPE_bte:
+		break;
+	}
+	return v->vtype;
+}
 
 static str
 PROPstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -41,20 +75,22 @@ PROPstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr q;
 	bat bid;
 	BAT *b, *bn;
-	int tpe = TYPE_int, basetype= TYPE_any;
+	int restype = TYPE_any, basetype= TYPE_any;
 	ValRecord vmin, vmax;
-	lng nils=5;
+	lng cnt = 0;
 	ptr val;
 
     (void) cntxt;
     (void) mb;
     (void) stk;
 
+	vmin.val.lval = vmax.val.lval = 0;
+	vmin.vtype = vmax.vtype = TYPE_void;
 	bid = getVarConstant(mb, getArg(pci, 2)).val.ival;
 	basetype = getBatType(getArgType(mb, pci,1));
 
 	switch(basetype){
-		case TYPE_bte: case TYPE_sht: case TYPE_int: case TYPE_lng: case TYPE_hge: break;
+		case TYPE_bte: case TYPE_sht: case TYPE_int: case TYPE_lng: case TYPE_hge: case TYPE_flt: case TYPE_dbl: case TYPE_oid:break;
 		default: return MAL_SUCCEED;
 	}
 
@@ -62,18 +98,35 @@ PROPstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         throw(MAL, "algebra.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = VIEWcreate(b->hseqbase, b);
+	cnt = (lng) BATcount(bn);
 
     // Access a BAT and derive the properties 
 	switch(basetype){
-	case TYPE_bte: properties(btval); break;
-	case TYPE_int: properties(ival); break;
+		case TYPE_bte: properties(btval); break;
+		case TYPE_sht: properties(shval); break;
+		case TYPE_int: properties(ival); break;
+		case TYPE_lng: properties(lval); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: properties(hval); break;
+#endif
+		case TYPE_flt: properties(fval); break;
+		case TYPE_dbl: properties(dval); break;
+		case TYPE_oid: properties(oval); break;
 	}
     // Consolidate the type, looking for the minimum type needed for the min/max value;
 
 	// Leave the properties behind in the plan
-	q = newStmt(mb, propertiesRef, getRef);
-	switch(tpe){
-	case TYPE_int: keeparound(ival); break;
+	switch(restype){
+		case TYPE_bte: keeparound(Bte, btval); break;
+		case TYPE_sht: keeparound(Sht, shval); break;
+		case TYPE_int: keeparound(Int, ival); break;
+		case TYPE_lng: keeparound(Lng, lval); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: keeparound(Hge, hval); break;
+#endif
+		case TYPE_flt: keeparound(Flt, fval); break;
+		case TYPE_dbl: keeparound(Dbl, dval); break;
+		case TYPE_oid: keeparound(Oid, oval); break;
 	}
 	BBPunfix(bn->batCacheid);
 	BBPunfix(b->batCacheid);

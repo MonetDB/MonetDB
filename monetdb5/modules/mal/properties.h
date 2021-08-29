@@ -11,6 +11,6 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-mal_export str PROPget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str PROPinfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str PROPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _PROPS_H */

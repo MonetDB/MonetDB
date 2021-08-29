@@ -19,7 +19,7 @@
 
 // dummy procedures to monitor the generation of the properties code.
 str
-PROPget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PROPinfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
@@ -48,10 +48,10 @@ PROPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 mel_func properties_init_funcs[] = {
  pattern("properties", "bind", PROPbind, false, "Retrieve actual properties from a BAT", args(1,3,  arg("",void),batargany("",1),arg("min",int))),
- pattern("properties", "get", PROPget, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",bte),arg("max",bte),arg("nils",lng) )),
- pattern("properties", "get", PROPget, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",sht),arg("max",sht),arg("nils",lng) )),
- pattern("properties", "get", PROPget, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",int),arg("max",int),arg("nils",lng) )),
- pattern("properties", "get", PROPget, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",lng),arg("max",lng),arg("nils",lng) )),
+ pattern("properties", "info", PROPinfo, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",bte),arg("max",bte),arg("cnt",lng) )),
+ pattern("properties", "info", PROPinfo, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",sht),arg("max",sht),arg("cnt",lng) )),
+ pattern("properties", "info", PROPinfo, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",int),arg("max",int),arg("cnt",lng) )),
+ pattern("properties", "info", PROPinfo, false, "Retrieve actual properties from a BAT", args(1,5,  arg("",void),batargany("",1),arg("min",lng),arg("max",lng),arg("cnt",lng) )),
  { .imp=NULL }
 };
 #include "mal_import.h"

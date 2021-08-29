@@ -153,6 +153,7 @@ const char *identityRef;
 const char *ifthenelseRef;
 const char *importColumnRef;
 const char *importTableRef;
+const char *infoRef;
 const char *intersectcandRef;
 const char *intersectRef;
 const char *intRef;
@@ -462,6 +463,7 @@ void optimizerInit(void)
 	ifthenelseRef = putName("ifthenelse");
 	importColumnRef = putName("importColumn");
 	importTableRef = putName("importTable");
+	infoRef= putName("info");
 	intersectcandRef= putName("intersectcand");
 	intersectRef = putName("intersect");
 	intRef = putName("int");
