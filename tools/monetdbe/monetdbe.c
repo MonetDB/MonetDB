@@ -1586,6 +1586,8 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 			memcpy(b->data, be->data, len);
 		}
 		VALset(&stmt_internal->data[i], tpe, b);
+	} else if (tpe == TYPE_str) {
+		VALset(&stmt_internal->data[i], tpe, GDKstrdup(data));
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
@@ -1619,7 +1621,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
 		goto cleanup;
 
-	if (!b->results && b->rowcnt >= 0 && affected_rows)
+	if (b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
 	if (result) {
@@ -1645,6 +1647,14 @@ monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt)
 	cq *q = stmt_internal->q;
 
 	assert(!stmt_internal->mdbe || mdbe == stmt_internal->mdbe);
+
+	for (size_t i = 0; i < stmt_internal->res.nparam + 1; i++) {
+		ValPtr data = &stmt_internal->data[i];
+		if (data->vtype == TYPE_str || data->vtype == TYPE_blob) {
+			GDKfree(data->val.pval);
+		}
+	}
+
 	GDKfree(stmt_internal->data);
 	GDKfree(stmt_internal->args);
 	GDKfree(stmt_internal->res.type);

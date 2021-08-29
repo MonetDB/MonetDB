@@ -307,33 +307,51 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
+create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
-	sql_table *nt = NULL;
+	sql_table *nt = NULL, *ot;
 	node *n;
 	int check = 0;
-	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
+	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : (replace ? "CREATE OR REPLACE" : "CREATE");
 	const char *obj = t->query ? "VIEW" : "TABLE";
+	str msg = MAL_SUCCEED;
 
 	if (store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
-		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
-	if (mvc_bind_table(sql, s, t->base.name)) {
-		return sql_message(SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'", action, obj, get_string_global_var(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_DECLARED_TABLE && ol_length(t->keys)) {
-		return sql_message(SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
+	if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP)))
+		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'",
+						 action, obj, get_string_global_var(sql, "current_user"), s->base.name);
+	if ((ot = mvc_bind_table(sql, s, t->base.name))) {
+		if (replace) {
+			if (ot->type != t->type)
+				return sql_error(sql, 02, SQLSTATE(42000) "%s %s: unable to drop %s '%s': is a %s",
+								 action, obj, obj, t->base.name, TABLE_TYPE_DESCRIPTION(ot->type, ot->properties));
+			if (ot->system)
+				return sql_error(sql, 02, SQLSTATE(42000) "%s %s: cannot replace system %s '%s'", action, obj, obj, t->base.name);
+			if (mvc_check_dependency(sql, ot->base.id, isView(ot) ? VIEW_DEPENDENCY : TABLE_DEPENDENCY, NULL))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s %s: cannot replace %s '%s', there are database objects which depend on it",
+								 action, obj, obj, t->base.name);
+			if ((msg = mvc_drop_table(sql, s, ot, 0)) != MAL_SUCCEED) {
+				sql_error(sql, 02, "%s", msg);
+				freeException(msg);
+				return NULL;
+			}
+		} else {
+			return sql_error(sql, 02, SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
+		}
 	}
+	if (temp == SQL_DECLARED_TABLE && ol_length(t->keys))
+		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
 								t->sz, t->properties);
 	if (!nt)
-		return sql_message(SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
 
 	osa = sql->sa;
 	sql->sa = sql->ta;
@@ -586,7 +604,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 	}
-	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0)) != MAL_SUCCEED)
+	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0)) != MAL_SUCCEED)
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
@@ -5816,7 +5834,7 @@ static mel_func sql_init_funcs[] = {
  pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("wlr", "create_table", WLRgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
- pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
+ pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("tname",str),arg("temp",int),arg("replace",int))),
  pattern("wlr", "drop_table", WLRgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlr", "drop_view", WLRgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
@@ -5839,8 +5857,8 @@ static mel_func sql_init_funcs[] = {
  pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
  pattern("wlr", "drop_index", WLRgeneric, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
  pattern("wlr", "drop_function", WLRgeneric, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,2, arg("sname",str),arg("fname",str))),
- pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("replace",int))),
+ pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
  pattern("wlr", "drop_trigger", WLRgeneric, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
  pattern("wlr", "alter_add_table", WLRgeneric, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("wlr", "alter_del_table", WLRgeneric, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
@@ -5865,7 +5883,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
- pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,5, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int),arg("replace",int))),
  pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_constraint", SQLdrop_constraint, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
@@ -5888,8 +5906,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
  pattern("sqlcatalog", "drop_index", SQLdrop_index, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_function", SQLdrop_function, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("sqlcatalog", "create_function", SQLcreate_function, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("fcn",ptr))),
- pattern("sqlcatalog", "create_trigger", SQLcreate_trigger, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("sqlcatalog", "create_function", SQLcreate_function, false, "Catalog operation create_function", args(0,4, arg("sname",str),arg("fname",str),arg("fcn",ptr),arg("replace",int))),
+ pattern("sqlcatalog", "create_trigger", SQLcreate_trigger, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
  pattern("sqlcatalog", "drop_trigger", SQLdrop_trigger, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
  pattern("sqlcatalog", "alter_add_table", SQLalter_add_table, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("sqlcatalog", "alter_del_table", SQLalter_del_table, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),

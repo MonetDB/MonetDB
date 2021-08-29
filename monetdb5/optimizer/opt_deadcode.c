@@ -40,6 +40,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		GDKfree(varused);
 		throw(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	//mnstr_printf(cntxt->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -107,9 +108,11 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		}
 	}
+	/* save the free instructions records for later */
 	for(; i<slimit; i++)
-		if( old[i])
-			freeInstruction(old[i]);
+	if(old[i]){
+		freeInstruction(old[i]);
+	}
     /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
         // no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);

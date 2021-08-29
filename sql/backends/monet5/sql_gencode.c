@@ -1030,19 +1030,16 @@ static int
 backend_create_r_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("rapi");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("rapi");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("rapi");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
@@ -1054,25 +1051,19 @@ static int
 backend_create_py_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("pyapi3");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval_loader");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
@@ -1083,38 +1074,19 @@ static int
 backend_create_map_py_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("pyapi3map");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3map");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("pyapi3map");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
-	return 0;
-}
-
-static int
-backend_create_py3_func(backend *be, sql_func *f)
-{
-	backend_create_py_func(be, f);
-	f->mod = GDKstrdup("pyapi3");
-	return 0;
-}
-
-static int
-backend_create_map_py3_func(backend *be, sql_func *f)
-{
-	backend_create_map_py_func(be, f);
-	f->mod = GDKstrdup("pyapi3map");
 	return 0;
 }
 
@@ -1123,20 +1095,17 @@ static int
 backend_create_c_func(backend *be, sql_func *f)
 {
 	(void)be;
+	_DELETE(f->mod);
+	_DELETE(f->imp);
+	f->mod = GDKstrdup("capi");
 	switch(f->type) {
 	case  F_AGGR:
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("capi");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
 	case F_PROC: /* no output */
 	case F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		_DELETE(f->mod);
-		_DELETE(f->imp);
-		f->mod = GDKstrdup("capi");
 		f->imp = GDKstrdup("eval");
 		break;
 	}
@@ -1144,8 +1113,8 @@ backend_create_c_func(backend *be, sql_func *f)
 }
 
 /* Parse the SQL query from the function, and extract the MAL function from the generated abstract syntax tree */
-static int
-mal_function_find_implementation_address(mvc *m, sql_func *f)
+int
+mal_function_find_implementation_address(str *res, mvc *m, sql_func *f)
 {
 	mvc *o = m;
 	buffer *b = NULL;
@@ -1162,9 +1131,12 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	}
 	m->type = Q_PARSE;
 	m->user_id = m->role_id = USER_MONETDB;
-
-	m->session = sql_session_create(m->store, m->pa, 0);
-	if (!m->session) {
+	m->store = o->store;
+	if (!(m->pa = sa_create(NULL))) {
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(m->session = sql_session_create(m->store, m->pa, 0))) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1201,8 +1173,8 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	assert(m->sym->token == SQL_CREATE_FUNC);
 	l = m->sym->data.lval;
 	ext_name = l->h->next->next->next->data.lval;
-	f->imp = sa_strdup(f->sa, qname_schema_object(ext_name)); /* found the implementation, set it */
-
+	if (!(*res = _STRDUP(qname_schema_object(ext_name)))) /* found the implementation, set it */
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 bailout:
 	if (m) {
 		bstream_destroy(m->scanner.rs);
@@ -1240,8 +1212,13 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
-		if (f->lang == FUNC_LANG_MAL && !f->imp && !mal_function_find_implementation_address(m, f))
-			return -1;
+		if (f->lang == FUNC_LANG_MAL && !f->imp) {
+			char *imp = NULL;
+			if (!mal_function_find_implementation_address(&imp, m, f))
+				return -1;
+			f->imp = sa_strdup(f->sa, imp);
+			_DELETE(imp);
+		}
 		if (!backend_resolve_function(&clientid, f)) {
 			if (f->lang == FUNC_LANG_INT)
 				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found", f->mod, f->imp);
@@ -1421,13 +1398,11 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_R:
 		return backend_create_r_func(be, f);
 	case FUNC_LANG_PY:
+	case FUNC_LANG_PY3:
 		return backend_create_py_func(be, f);
 	case FUNC_LANG_MAP_PY:
-		return backend_create_map_py_func(be, f);
-	case FUNC_LANG_PY3:
-		return backend_create_py3_func(be, f);
 	case FUNC_LANG_MAP_PY3:
-		return backend_create_map_py3_func(be, f);
+		return backend_create_map_py_func(be, f);
 	case FUNC_LANG_C:
 	case FUNC_LANG_CPP:
 		return backend_create_c_func(be, f);

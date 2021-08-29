@@ -85,6 +85,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			break;
 	}
 
+	//mnstr_printf(cntxt->fdout,"garbacollector limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
 #ifndef NDEBUG

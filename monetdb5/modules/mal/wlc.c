@@ -563,7 +563,7 @@ WLCpreparewrite(Client cntxt)
 
 	if( wlc_state != WLC_RUN){
 		trimMalVariables(cntxt->wlc, NULL);
-		resetMalBlk(cntxt->wlc, 0);
+		resetMalTypes(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
 		return MAL_SUCCEED;
 	}
@@ -585,7 +585,7 @@ WLCpreparewrite(Client cntxt)
 
 		MT_lock_unset(&wlc_lock);
 		trimMalVariables(cntxt->wlc, NULL);
-		resetMalBlk(cntxt->wlc, 0);
+		resetMalTypes(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
 	} else
 		throw(MAL,"wlc.write","WLC log path missing ");

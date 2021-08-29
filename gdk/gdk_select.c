@@ -1448,16 +1448,17 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
+	BATiter bi = bat_iterator(b);
+
 	if (anti) {
-		const ValRecord *prop;
 		int c;
 
 		MT_lock_set(&b->theaplock);
-		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(prop));
+		if (b->tminpos != BUN_NONE) {
+			c = ATOMcmp(t, tl, BUNtail(bi, b->tminpos));
 			if (c < 0 || (li && c == 0)) {
-				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-					c = ATOMcmp(t, th, VALptr(prop));
+				if (b->tmaxpos != BUN_NONE) {
+					c = ATOMcmp(t, th, BUNtail(bi, b->tmaxpos));
 					if (c > 0 || (hi && c == 0)) {
 						MT_lock_unset(&b->theaplock);
 						/* tl..th range fully
@@ -1473,6 +1474,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 							  " (" LLFMT " usec): "
 							  "nothing, out of range\n",
 							  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+						bat_iterator_end(&bi);
 						return bn;
 					}
 				}
@@ -1480,13 +1482,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		MT_lock_unset(&b->theaplock);
 	} else if (!equi || !lnil) {
-		const ValRecord *prop;
 		int c;
 
 		if (hval) {
 			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-				c = ATOMcmp(t, th, VALptr(prop));
+			if (b->tminpos != BUN_NONE) {
+				c = ATOMcmp(t, th, BUNtail(bi, b->tminpos));
 				if (c < 0 || (!hi && c == 0)) {
 					MT_lock_unset(&b->theaplock);
 					/* smallest value in BAT larger than
@@ -1501,6 +1502,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						  ALGOBATPAR(b),
 						  ALGOOPTBATPAR(s), anti,
 						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+					bat_iterator_end(&bi);
 					return bn;
 				}
 			}
@@ -1508,8 +1510,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		if (lval) {
 			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-				c = ATOMcmp(t, tl, VALptr(prop));
+			if (b->tmaxpos != BUN_NONE) {
+				c = ATOMcmp(t, tl, BUNtail(bi, b->tmaxpos));
 				if (c > 0 || (!li && c == 0)) {
 					MT_lock_unset(&b->theaplock);
 					/* largest value in BAT smaller than
@@ -1524,6 +1526,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						  ALGOBATPAR(b),
 						  ALGOOPTBATPAR(s), anti,
 						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+					bat_iterator_end(&bi);
 					return bn;
 				}
 			}
@@ -1581,12 +1584,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 			 BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (wanthash && !havehash) {
-			const ValRecord *prop;
-			if ((prop = BATgetprop(b, GDK_UNIQUE_ESTIMATE)) != NULL &&
-			    prop->val.dval < BATcount(b) / NO_HASH_SELECT_FRACTION) {
+			MT_lock_set(&b->theaplock);
+			if (b->tunique_est != 0 &&
+			    b->tunique_est < BATcount(b) / NO_HASH_SELECT_FRACTION) {
 				/* too many duplicates: not worth it */
 				wanthash = false;
 			}
+			MT_lock_unset(&b->theaplock);
 		}
 	}
 
@@ -1814,6 +1818,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL) {
 					HEAPdecref(oidxh, false);
+					bat_iterator_end(&bi);
 					return NULL;
 				}
 
@@ -1853,6 +1858,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			  ALGOOPTBATPAR(bn), algo,
 			  GDKusec() - t0);
 
+		bat_iterator_end(&bi);
 		return bn;
 	}
 
@@ -1940,10 +1946,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	estimate = MIN(estimate, maximum);
 
 	bn = COLnew(0, TYPE_oid, estimate, TRANSIENT);
-	if (bn == NULL)
+	if (bn == NULL) {
+		bat_iterator_end(&bi);
 		return NULL;
+	}
 
-	BATiter bi = bat_iterator(b);
 	if (wanthash) {
 		/* hashselect unlocks the hash lock */
 		bn = hashselect(b, &bi, &ci, bn, tl, maximum, havehash, phash, &algo);

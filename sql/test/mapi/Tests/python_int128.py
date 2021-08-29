@@ -21,3 +21,5 @@ if cursor.fetchall() != [(123456789098765432101234567890987654321,)]:
     sys.stderr.write("Result set [(123456789098765432101234567890987654321,)] expected")
 
 cursor.execute('DROP TABLE python_int128;')
+cursor.close()
+dbh.close()

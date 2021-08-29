@@ -150,9 +150,9 @@ int sql_type_convert (int from, int to)
 	return convert_matrix[from][to];
 }
 
-bool is_commutative(const char *fnm)
+bool is_commutative(const char *sname, const char *fnm)
 {
-	return strcmp("sql_add", fnm) == 0 || strcmp("sql_mul", fnm) == 0 || strcmp("scale_up", fnm) == 0;
+	return (!sname || strcmp("sys", sname) == 0) && (strcmp("sql_add", fnm) == 0 || strcmp("sql_mul", fnm) == 0 || strcmp("scale_up", fnm) == 0);
 }
 
 void
@@ -665,7 +665,6 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		t->res = list_append(SA_LIST(sa, (fdestroy) &arg_destroy), fres);
 	} else
 		t->res = NULL;
-	t->nr = list_length(funcs);
 	t->sql = 0;
 	t->lang = FUNC_LANG_INT;
 	t->semantics = semantics;

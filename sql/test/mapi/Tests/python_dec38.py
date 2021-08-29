@@ -22,3 +22,5 @@ if cursor.fetchall() != [(Decimal('12345678901234567899876543210987654321'), Dec
     sys.stderr.write("Result set [(Decimal('12345678901234567899876543210987654321'), Decimal('1234567890123456789.9876543210987654321'), Decimal('0.12345678901234567899876543210987654321'))] expected")
 
 cursor.execute('DROP TABLE python_dec38;')
+cursor.close()
+dbh.close()

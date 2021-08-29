@@ -983,7 +983,6 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 	sql_table *ss = find_sql_table(tr, syss, "schemas");
 	sqlid sid;
 	str v;
-	ptr cbat;
 
 	sid = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "id"), rid);
 	s = find_sql_schema_id(tr, sid);
@@ -993,10 +992,12 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 
 	TRC_DEBUG(SQL_STORE, "Update schema: %s %d\n", s->base.name, s->base.id);
 
+	v = store->table_api.column_find_value(tr, find_sql_column(ss, "name"), rid);
+	if (!v)
+		return; /* TODO do better than this */
 	_DELETE(s->base.name);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(ss, "name"), rid, &cbat);
 	base_init(tr->sa, &s->base, sid, 0, v);
-	store->table_api.column_find_string_end(cbat);
+	_DELETE(v);
 	s->auth_id = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "authorization"), rid);
 	s->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(ss, "system"), rid);
 	s->owner = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "owner"), rid);
@@ -3396,7 +3397,7 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 }
 
 static void
-sql_trans_rollback(sql_trans *tr)
+sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 
@@ -3417,7 +3418,8 @@ sql_trans_rollback(sql_trans *tr)
 			list_prepend(nl, n->data);
 
 		/* rollback */
-		MT_lock_set(&store->commit);
+		if (!commit_lock)
+			MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
@@ -3440,18 +3442,21 @@ sql_trans_rollback(sql_trans *tr)
 				_DELETE(c);
 		}
 		store_unlock(store);
-		MT_lock_unset(&store->commit);
+		if (!commit_lock)
+			MT_lock_unset(&store->commit);
 		list_destroy(nl);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
-		MT_lock_set(&store->commit);
+		if (!commit_lock)
+			MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_timestamp(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
-		MT_lock_unset(&store->commit);
+		if (!commit_lock)
+			MT_lock_unset(&store->commit);
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
@@ -3504,7 +3509,7 @@ sql_trans_destroy(sql_trans *tr)
 		tr->name = NULL;
 	}
 	if (!list_empty(tr->changes))
-		sql_trans_rollback(tr);
+		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
@@ -3704,8 +3709,8 @@ sql_trans_commit(sql_trans *tr)
 		if (!tr->parent && !list_empty(tr->predicates)) {
 			ok = sql_trans_valid(tr);
 			if (ok != LOG_OK) {
+				sql_trans_rollback(tr, true);
 				MT_lock_unset(&store->commit);
-				sql_trans_rollback(tr);
 				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 			}
 		}
@@ -3713,8 +3718,8 @@ sql_trans_commit(sql_trans *tr)
 		if (!tr->parent && (!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			ok = transaction_check_dependencies_and_removals(tr);
 			if (ok != LOG_OK) {
+				sql_trans_rollback(tr, true);
 				MT_lock_unset(&store->commit);
-				sql_trans_rollback(tr);
 				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 			}
 		}
@@ -5975,17 +5980,20 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (!is_oid_nil(rid)) {
-				ptr cbat;
-				char *v;
+				char *v1 = NULL, *v2 = NULL;
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");
 
-				v = store->table_api.column_find_string_start(tr, stats_min, rid, &cbat);
-				*min = col->min = SA_STRDUP(tr->sa, v);
-				store->table_api.column_find_string_end(cbat);
-				v = store->table_api.column_find_string_start(tr, stats_max, rid, &cbat);
-				*max = col->max = SA_STRDUP(tr->sa, v);
-				store->table_api.column_find_string_end(cbat);
+				if (!(v1 = store->table_api.column_find_value(tr, stats_min, rid)) ||
+					!(v2 = store->table_api.column_find_value(tr, stats_max, rid))) {
+					_DELETE(v1);
+					_DELETE(v2);
+					return 0;
+				}
+				*min = col->min = SA_STRDUP(tr->sa, v1);
+				_DELETE(v1);
+				*max = col->max = SA_STRDUP(tr->sa, v2);
+				_DELETE(v2);
 				return 1;
 			}
 		}
@@ -6723,7 +6731,7 @@ sql_trans_end(sql_session *s, int ok)
 	if (ok == SQL_OK) {
 		ok = sql_trans_commit(s->tr);
 	} else if (ok == SQL_ERR) { /* if a conflict happened, it was already rollbacked */
-		sql_trans_rollback(s->tr);
+		sql_trans_rollback(s->tr, false);
 	}
 	assert(s->tr->active);
 	s->tr->active = 0;

@@ -621,7 +621,7 @@ MALparser(Client c)
 		msg =c->curprg->def->errors;
 		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
+		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
@@ -629,7 +629,7 @@ MALparser(Client c)
 	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
+		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
 	return MAL_SUCCEED;
@@ -689,7 +689,7 @@ MALengine(Client c)
 		msg = prg->def->errors;
 		prg->def->errors = NULL;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
+		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
@@ -724,7 +724,7 @@ MALengine(Client c)
 		}
 	}
 	MSresetVariables(c, prg->def, c->glb, 0);
-	resetMalBlk(prg->def, 1);
+	resetMalTypes(prg->def, 1);
 	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;

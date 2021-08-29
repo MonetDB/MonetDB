@@ -44,6 +44,8 @@ create function sys.malfunctions()
 	returns table("module" string, "function" string, "signature" string, "address" string, "comment" string)
 	external name "manual"."functions";
 
+create view sys.malfunctions as select * from sys.malfunctions();
+
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
 
