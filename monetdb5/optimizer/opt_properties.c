@@ -19,26 +19,27 @@
 #define properties(TPE) \
 	val =  BATmax_skipnil(bn, (void*) (&vmax.val.TPE), 1);\
 	vmax.vtype = basetype;\
-	restype =scaledown(&vmax);\
+	r1 =scaledown(&vmax);\
 	if( val != &vmax.val.TPE){\
 		assert(0);\
 		/* error */\
 	}\
 	val =  BATmin_skipnil(bn, (void*) (&vmin.val.TPE), 1);\
 	vmin.vtype = basetype;\
-	restype =scaledown(&vmin);\
+	r2 =scaledown(&vmin);\
 	if( val != &vmin.val.TPE){\
 		/* error */\
-	}
+	} restype= MAX(r1,r2);\
+	vmin.vtype = vmax.vtype = restype;
 
 
 #define keeparound(T, TPE)\
 	q = newStmt(mb, propertiesRef, infoRef);\
 	setArgType(mb, q, 0, TYPE_void);\
 	q = pushArgument(mb, q, getArg(pci,1));\
+	q = pushLng(mb, q, cnt);\
 	q = push##T(mb, q, vmin.val.TPE);\
 	q = push##T(mb, q, vmax.val.TPE);\
-	q = pushLng(mb, q, cnt);\
 	q->token = REMsymbol
 
 
@@ -75,7 +76,7 @@ PROPstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr q;
 	bat bid;
 	BAT *b, *bn;
-	int restype = TYPE_any, basetype= TYPE_any;
+	int r1, r2, restype = TYPE_any, basetype= TYPE_any;
 	ValRecord vmin, vmax;
 	lng cnt = 0;
 	ptr val;

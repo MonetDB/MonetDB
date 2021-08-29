@@ -98,6 +98,12 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				q = pushArgument(mb, q, getArg(p,0));
 				q = pushInt(mb, q, bid);
 				q->token = REMsymbol;
+				if( p->retc == 2){
+					q = newStmt(mb, propertiesRef,  bindRef);
+					q = pushArgument(mb, q, getArg(p,1));
+					q = pushInt(mb, q, bid);
+					q->token = REMsymbol;
+				}
 			}
 			/* we have to sum the cost of all three components of a BAT */
 			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
