@@ -560,7 +560,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
-					GDKerror("short read from heap %s%s\n", nme, ext ? ext : "");
+					GDKerror("short read from heap %s%s%s\n", nme, ext ? "." : "", ext ? ext : "");
 					ret = NULL;
 				}
 #ifndef NDEBUG
