@@ -654,13 +654,18 @@ SQLtrans(mvc *m)
 		}
 		s = m->session;
 		if (!s->schema) {
-			if (monet5_user_get_def_schema(m, m->user_id, &s->schema_name) < 0) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
-			}
-			if (!s->schema_name) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			switch (monet5_user_get_def_schema(m, m->user_id, &s->schema_name)) {
+				case -1:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				case -3:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				default:
+					break;
 			}
 			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
 				mvc_cancel_session(m);

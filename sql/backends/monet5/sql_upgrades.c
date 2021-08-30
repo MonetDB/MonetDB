@@ -166,11 +166,6 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
-	/* 80_udf_hge.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create function fuse(one bigint, two bigint)\n"
-			"returns hugeint external name udf.fuse;\n");
-
 	/* 90_generator_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.generate_series(first hugeint, \"limit\" hugeint)\n"
@@ -244,12 +239,11 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
-			(int) F_FUNC, (int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
+			(int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -3531,6 +3525,12 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
+	/* 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create view sys.malfunctions as select * from sys.malfunctions();\n"
+					"update sys._tables set system = true where system <> true and schema_id = 2000"
+					" and name = 'malfunctions';\n");
+
 	/* 52_describe.sql; but we need to drop most everything from
 	 * 76_dump.sql first */
 	t = mvc_bind_table(sql, s, "dump_privileges");
@@ -3859,9 +3859,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"     AND grantor <> 0;\n"
 					"CREATE VIEW sys.dump_create_users AS\n"
 					"  SELECT\n"
-					"    'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||\n"
+					"    'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||\n"
 					"      sys.sq(sys.password_hash(ui.name)) ||\n"
-					"      ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;' stmt,\n"
+					"      ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '\"sys\"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,\n"
 					"    ui.name user_name\n"
 					"    FROM sys.db_user_info ui, sys.schemas s\n"
 					"   WHERE ui.default_schema = s.id\n"
@@ -3869,7 +3869,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"     AND ui.name <> '.snapshot';\n"
 					"CREATE VIEW sys.dump_create_schemas AS\n"
 					"  SELECT\n"
-					"    'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,\n"
+					"    'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,\n"
 					"    s.name schema_name\n"
 					"    FROM sys.schemas s, sys.auths a\n"
 					"   WHERE s.authorization = a.id AND s.system = FALSE;\n"
@@ -4029,7 +4029,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    FROM sys.describe_sequences;\n"
 					"CREATE VIEW sys.dump_start_sequences AS\n"
 					"  SELECT\n"
-					"    'UPDATE sys.sequences seq SET start = ' || s  ||\n"
+					"    'UPDATE sys.sequences seq SET start = ' || s ||\n"
 					"      ' WHERE name = ' || sys.SQ(seq) ||\n"
 					"      ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,\n"
 					"    sch schema_name,\n"
@@ -4089,7 +4089,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    DECLARE _cnt INT;\n"
 					"    SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));\n"
 					"    IF _cnt > 0 THEN\n"
-					"      SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);\n"
+					"      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);\n"
 					"      DECLARE SELECT_DATA_STMT STRING;\n"
 					"      SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);\n"
 					"      DECLARE M INT;\n"
@@ -4102,7 +4102,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"	SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);\n"
 					"      END WHILE;\n"
 					"      SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\\\n'',''\"'';');\n"
-					"      SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);\n"
+					"      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);\n"
 					"      insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);\n"
 					"      CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');\n"
 					"    END IF;\n"
@@ -4172,6 +4172,11 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = %d;\n", F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('dump_create_roles', 'dump_create_users', 'dump_create_schemas', 'dump_add_schemas_to_users', 'dump_grant_user_privileges', 'dump_table_constraint_type', 'dump_table_grants', 'dump_column_grants', 'dump_function_grants', 'dump_indices', 'dump_column_defaults', 'dump_foreign_keys', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'dump_functions', 'dump_tables', 'dump_triggers', 'dump_comments', 'dump_user_defined_types') AND schema_id = 2000;\n");
+
+	/* 80_udf.sql (removed) */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"drop function sys.reverse(string);\n"
+					"drop all function sys.fuse;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);

@@ -2329,9 +2329,12 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (nr)
-			return la_bat_update_count(lg, id, offset+cnt);
-		return GDK_SUCCEED;
+		if (nr) {
+			logger_lock(lg);
+			ok = la_bat_update_count(lg, id, offset+cnt);
+			logger_unlock(lg);
+		}
+		return ok;
 	}
 
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;

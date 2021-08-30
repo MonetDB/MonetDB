@@ -31,7 +31,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) cntxt;
 	/* we only need the beautified version if we plan to emit events */
 	if(malProfileMode == 0 )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -85,6 +85,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);
 	newComment(mb,buf);

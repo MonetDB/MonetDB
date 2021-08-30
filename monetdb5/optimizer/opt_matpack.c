@@ -19,7 +19,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int v, i, j, limit, slimit;
 	InstrPtr p,q;
 	int actions = 0;
-	InstrPtr *old;
+	InstrPtr *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -44,6 +44,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
 		throw(MAL,"optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {

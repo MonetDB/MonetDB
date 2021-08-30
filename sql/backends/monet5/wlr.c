@@ -198,8 +198,7 @@ WLRgetMaster(void)
  */
 
 #define cleanup(){\
-	resetMalBlkAndFreeInstructions(mb, 1);\
-	trimMalVariables(mb, NULL);\
+	resetMalBlk(mb);\
 	}
 
 static str

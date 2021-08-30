@@ -3660,6 +3660,7 @@ add_offsets(BUN slot, size_t nr, size_t total, BUN *offset, BAT **offsets)
 	for(size_t i = 0; i < nr; i++)
 		dst[i] = slot + i;
 	(*offsets)->batCount += nr;
+	(*offsets)->theap->dirty = true;
 	return LOG_OK;
 }
 

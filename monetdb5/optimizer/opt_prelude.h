@@ -149,6 +149,7 @@ mal_export  const char *hgeRef;
 mal_export  const char *identityRef;
 mal_export  const char *ifthenelseRef;
 mal_export  const char *importColumnRef;
+mal_export  const char *importTableRef;
 mal_export  const char *intersectcandRef;
 mal_export  const char *intersectRef;
 mal_export  const char *intRef;

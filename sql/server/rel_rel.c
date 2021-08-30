@@ -28,24 +28,22 @@ int
 project_unsafe(sql_rel *rel, int allow_identity)
 {
 	sql_rel *sub = rel->l;
-	node *n;
 
 	if (need_distinct(rel) || rel->r /* order by */)
 		return 1;
-	if (!rel->exps)
+	if (list_empty(rel->exps))
 		return 0;
 	/* projects without sub and projects around ddl's cannot be changed */
-	if (!sub || (sub && sub->op == op_ddl))
+	if (!sub || sub->op == op_ddl)
 		return 1;
-	for(n = rel->exps->h; n; n = n->next) {
+	for(node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data, *ne;
 
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity))
 			return 1;
-		ne = rel_find_exp(rel, e);
-		if (ne && ne != e) /* no self referencing */
-			return 1;
+		if ((ne = rel_find_exp(rel, e)) && ne != e)
+			return 1; /* no self referencing */
 	}
 	return 0;
 }
@@ -421,7 +419,7 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
-	rel_setop_set_exps(sql, rel, exps);
+	rel_setop_set_exps(sql, rel, exps, false);
 	set_processed(rel);
 	return rel;
 }
@@ -514,7 +512,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 }
 
 void
-rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
+rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 {
 	sql_rel *l = rel->l, *r = rel->r;
 	list *lexps = l->exps, *rexps = r->exps;
@@ -534,7 +532,8 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
-			e->p = NULL; /* remove all the properties on unions */
+			if (!keep_props)
+				e->p = NULL; /* remove all the properties on unions on the general case */
 		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
@@ -555,8 +554,8 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	rel->single = r->single;
-	if (r->single)
+	rel->single = is_single(r);
+	if (is_single(r))
 		reset_single(r);
 	return rel;
 }
@@ -629,7 +628,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
-			if (!e->freevar) {
+			if (!is_freevar(e)) {
 				if (all) {
 					nr = ++sql->label;
 					cnme = number2name(cname, sizeof(cname), nr);
@@ -831,7 +830,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = list_length(e);
 		else
 			rel->nrcols = l->nrcols;
-		rel->single = l->single;
+		rel->single = is_single(l);
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);
@@ -1344,7 +1343,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 	if (!rel)
 		return NULL;
-	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1), false);
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
