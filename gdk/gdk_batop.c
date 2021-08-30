@@ -1467,7 +1467,6 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					goto bailout;
 				}
 				if (BUNappend(b, new, force) != GDK_SUCCEED) {
-					MT_rwlock_wrunlock(&b->thashlock);
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}

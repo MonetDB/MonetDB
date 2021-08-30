@@ -3625,7 +3625,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BATiter bi = bat_iterator(b);
 					if (size > bi.count)
 						size = bi.count;
+					MT_rwlock_rdlock(&b->thashlock);
 					ret = BATsave_locked(b, &bi, size);
+					MT_rwlock_rdunlock(&b->thashlock);
 					bat_iterator_end(&bi);
 					BBP_status_off(i, BBPSAVING);
 				}
