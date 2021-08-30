@@ -166,11 +166,15 @@ QLOGcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b)
-		return b;
+	if (b) {
+		/* make append-only in case this wasn't done when created */
+		return BATsetaccess(b, BAT_APPEND);
+	}
 
 	b = COLnew(0, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
+		return NULL;
+	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL)
 		return NULL;
 
 	if (BBPrename(b->batCacheid, buf) != 0 ||
