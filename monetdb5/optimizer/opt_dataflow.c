@@ -336,7 +336,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int flowblock= 0;
 	InstrPtr *old = NULL, q;
 	int limit, vlimit;
-	States states;
+	States states = NULL;
 	char  buf[256];
 	region_state state = { singleton_region };
 	lng usec = GDKusec();
@@ -344,20 +344,19 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1)
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	if ( optimizerIsApplied(mb,"dataflow"))
-		return MAL_SUCCEED;
+		goto wrapup;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
 	if (states == NULL ){
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapup;
+		throw(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	setVariableScope(mb);
@@ -366,9 +365,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		actions = -1;
-		goto wrapup;
+		GDKfree(states);
+		throw(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* inject new dataflow barriers using a single pass through the program */

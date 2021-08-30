@@ -26,7 +26,7 @@ extern unsigned int digits2bits(unsigned int d);
 extern unsigned int type_digits_to_char_digits(sql_subtype *t);
 
 extern int sql_type_convert(int form, int to); /* return 1, convert possible but it's a down cast, 2 convert possible can be done savely */
-extern bool is_commutative(const char *fnm); 	/* return true if commutative */
+extern bool is_commutative(const char *sname, const char *fnm); 	/* return true if commutative */
 
 extern char *sql_bind_alias(const char *alias);
 

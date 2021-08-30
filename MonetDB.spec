@@ -527,7 +527,6 @@ exit 0
 %{_libdir}/monetdb5/lib_capi.so
 %endif
 %{_libdir}/monetdb5/lib_generator.so
-%{_libdir}/monetdb5/lib_udf.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
@@ -832,6 +831,7 @@ rm -f %{buildroot}%{_libdir}/monetdb5/run_*.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/microbenchmark.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 

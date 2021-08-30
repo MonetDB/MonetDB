@@ -58,7 +58,7 @@ static void GDKunlockHome(int farmid);
 #undef free
 
 /* when the number of updates to a BAT is less than 1 in this number, we
- * keep the GDK_UNIQUE_ESTIMATE property */
+ * keep the unique_est property */
 BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
@@ -877,6 +877,8 @@ GDKembedded(void)
 	return Mbedded;
 }
 
+static MT_Id mainpid;
+
 gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
@@ -887,6 +889,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	mainpid = MT_getpid();
 
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
@@ -1188,12 +1192,13 @@ GDKexiting(void)
 void
 GDKprepareExit(void)
 {
-	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
-		return;
+	ATOMIC_ADD(&GDKstopped, 1);
 
-	TRC_DEBUG_IF(THRD)
-		dump_threads();
-	join_detached_threads();
+	if (MT_getpid() == mainpid) {
+		TRC_DEBUG_IF(THRD)
+			dump_threads();
+		join_detached_threads();
+	}
 }
 
 void

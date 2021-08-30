@@ -39,6 +39,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 	}
 	if( i == limit){
+		// we didn't found a simple assignment that warrants a rewrite
 		goto wrapup;
 	}
 	k = i;
@@ -82,8 +83,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	// if ( msg == MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
 wrapup:
-	/* keep all actions taken as a post block comment
-	 * and update statics */
+	/* keep all actions taken as a post block comment and update statics */
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);
     newComment(mb,buf);

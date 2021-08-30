@@ -268,7 +268,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
 			mnstr_printf(fout, " BETWEEN ");
-			if (e->symmetric)
+			if (is_symmetric(e))
 				mnstr_printf(fout, " SYM ");
 		} else {
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
@@ -1638,7 +1638,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
-			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+			if (cname[0] != '%') { /* Skip TID column */
 				sql_column *c = mvc_bind_column(sql, t, cname);
 
 				if (!c)
@@ -2062,7 +2062,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
-		rel_setop_set_exps(sql, rel, exps);
+		rel_setop_set_exps(sql, rel, exps, false);
 		if (rel_set_types(sql, rel) < 0)
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		set_processed(rel);

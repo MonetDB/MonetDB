@@ -85,7 +85,7 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATsave_locked(BAT *bd, BATiter *bi)
+gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -476,7 +476,7 @@ extern MT_Lock GDKtmLock;
 #define BBP_free(y)	GDKbbpLock[y].free
 
 /* when the number of updates to a BAT is less than 1 in this number, we
- * keep the GDK_UNIQUE_ESTIMATE property */
+ * keep the unique_est property */
 extern BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */

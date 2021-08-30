@@ -139,7 +139,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0, no_mito = 0;
 	char *rslices = NULL, *oclean = NULL;
-	InstrPtr p, *old;
+	InstrPtr p, *old = NULL;
 	subselect_t subselects;
 	char buf[256];
 	lng usec = GDKusec();

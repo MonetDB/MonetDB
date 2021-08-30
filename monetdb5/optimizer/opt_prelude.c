@@ -152,6 +152,7 @@ const char *hgeRef;
 const char *identityRef;
 const char *ifthenelseRef;
 const char *importColumnRef;
+const char *importTableRef;
 const char *intersectcandRef;
 const char *intersectRef;
 const char *intRef;
@@ -462,6 +463,7 @@ void optimizerInit(void)
 	identityRef = putName("identity");
 	ifthenelseRef = putName("ifthenelse");
 	importColumnRef = putName("importColumn");
+	importTableRef = putName("importTable");
 	intersectcandRef= putName("intersectcand");
 	intersectRef = putName("intersect");
 	intRef = putName("int");

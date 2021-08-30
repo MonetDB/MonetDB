@@ -44,6 +44,8 @@
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
+#include "mal_profiler.h"
+#include "opt_prelude.h"
 
 str
 OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -52,20 +54,32 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	InstrPtr q;
+	int i, bincopy = 0, generator = 0, multiplex = 0;
 
 	(void)cntxt;
 	(void)stk;
 	(void) p;
 
+	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	for( i=0; i<mb->stop; i++){
+		q = getInstrPtr(mb,i);
+		if (q->modname == sqlRef && q->fcnname == importTableRef) 
+			bincopy= 1;
+		if( getModuleId(q) == generatorRef)
+			generator = 1;
+		if ( getFunctionId(q) == multiplexRef)
+			multiplex = 1;
+	}
 
 	msg = OPTinlineImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTremapImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
+	if( bincopy && msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
-	//if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
+	if( multiplex && msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
+	if( generator &&  msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
+	if( malProfileMode &&  msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
+	if( malProfileMode &&  msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTgarbageCollectorImplementation(cntxt, mb, stk, p);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
@@ -86,12 +100,24 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+    InstrPtr q;
+    int i, bincopy = 0, generator = 0, multiplex = 0;
 
 	(void)cntxt;
 	(void)stk;
 	(void) p;
 
 
+	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	for( i=0; i<mb->stop; i++){
+		q = getInstrPtr(mb,i);
+		if (q->modname == sqlRef && q->fcnname == importTableRef) 
+			bincopy= 1;
+		if( getModuleId(q) == generatorRef)
+			generator = 1;
+		if ( getFunctionId(q) == multiplexRef)
+			multiplex = 1;
+	}
 	msg = OPTinlineImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTremapImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTcostModelImplementation(cntxt, mb, stk, p);
@@ -104,7 +130,7 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTmitosisImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTmergetableImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
+	if( bincopy && msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTconstantsImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTcommonTermsImplementation(cntxt, mb, stk, p);
@@ -114,10 +140,10 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if( msg == MAL_SUCCEED) msg = OPTmatpackImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTdataflowImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTquerylogImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
+	if( multiplex && msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
+	if( generator && msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
+	if( malProfileMode &&  msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
+	if( malProfileMode &&  msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
 	if( msg == MAL_SUCCEED) msg = OPTpostfixImplementation(cntxt, mb, stk, p);
 	// if( msg == MAL_SUCCEED) msg = OPTjitImplementation(cntxt, mb, stk, p);

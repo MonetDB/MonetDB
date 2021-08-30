@@ -1206,9 +1206,10 @@ tokenize(mvc * c, int cur)
 /* SQL 'quoted' idents consist of a set of any character of
  * the source language character set other than a 'quote'
  *
- * MonetDB has 2 restrictions:
+ * MonetDB has 3 restrictions:
  * 	1 we disallow '%' as the first character.
  * 	2 the length is limited to 1024 characters
+ * 	3 the identifier 'TID%' is not allowed
  */
 static bool
 valid_ident(const char *restrict s, char *restrict dst)

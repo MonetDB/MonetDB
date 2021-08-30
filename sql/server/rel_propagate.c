@@ -653,7 +653,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
-			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+			if (cname[0] != '%') { /* Skip TID column */
 				sql_column *c = mvc_bind_column(sql, sub, cname);
 
 				if (!c)
