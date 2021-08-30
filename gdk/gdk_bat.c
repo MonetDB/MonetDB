@@ -2221,7 +2221,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 }
 
 
-#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
+#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str /*|| GDK_ELIMDOUBLES(h) */)
 
 /* change the heap modes at a commit */
 gdk_return
