@@ -1374,6 +1374,9 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                                             pollfile)
                         os.chdir(TSTTRGDIR)
                         pSrvr.LaunchIt()
+                        if pSrvr.port is None:
+                            print('\nFailed to start server.\n')
+                            break
                         os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                         SetExecEnv(env['exe'],pSrvr.port,verbose)
                     if global_timeout and start_time + global_timeout < time.time():
@@ -2764,6 +2767,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 Srvr.extend(mserver5_opts)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
+                if pSrvr.port is None:
+                    print('\nFailed to start server.\n')
+                    return 'serverfail'
                 os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                 SetExecEnv(exe,pSrvr.port,verbose)
             else:
