@@ -655,7 +655,7 @@ STRMPcreate(BAT *b, BAT *s)
         if ((h = STRMPcreateStrimpHeap(pb, s)) == NULL) {
 		return GDK_FAIL;
 	}
-	dh = (uint64_t *)((uint8_t*)h->strimps.base + h->strimps.free + b->hseqbase*8);
+	dh = (uint64_t *)h->strimps_base + b->hseqbase;
 
 	ncand = canditer_init(&ci, b, s);
 
