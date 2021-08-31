@@ -126,7 +126,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	GDKfree(s);\
 	pushInstruction(mb,r);\
 	freeInstruction(p);\
-	doit++;
+	actions++;
 
 typedef struct{
 	str dbname;
@@ -137,14 +137,13 @@ str
 OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
-	int i, j, k, cnt, limit, slimit, doit=0;
+	int i, j, k, cnt, limit, slimit, actions=0;
 	int remoteSite,collectFirst;
 	int *location;
 	DBalias *dbalias;
 	int dbtop;
 	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	cst.vtype= TYPE_int;
@@ -153,7 +152,6 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	(void) cntxt;
 	(void) stk;
-	(void) pci;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -225,7 +223,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
-				doit++;
+				actions++;
 			}
 		} else if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
@@ -264,10 +262,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				pushInstruction(mb,p);
 			}
 		} else
-		if( getModuleId(p) && strcmp(getModuleId(p),"optimizer")==0 &&
-		    getFunctionId(p) && strcmp(getFunctionId(p),"remoteQueries")==0 )
-			freeInstruction(p);
-		else if (cnt == 0 || p->barrier) /* local only or flow control statement */
+		if( getModuleId(p) == optimizerRef || cnt == 0 || p->barrier) /* local only or flow control statement */
 			pushInstruction(mb,p);
 		else {
 			/*
@@ -288,7 +283,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					collectFirst= TRUE;
 			}
 			if( getModuleId(p)== ioRef || (getModuleId(p)== sqlRef
-		            && (getFunctionId(p)== resultSetRef ||
+					&& (getFunctionId(p)== resultSetRef ||
 				getFunctionId(p)== rsColumnRef)))
 				 collectFirst= TRUE;
 
@@ -315,7 +310,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				/* as of now all the targets are also local */
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= 0;
-				doit++;
+				actions++;
 			} else if (remoteSite){
 				/* single remote site involved */
 				r= newInstruction(mb,mapiRef,rpcRef);
@@ -338,31 +333,27 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= remoteSite;
 				freeInstruction(p);
-				doit++;
+				actions++;
 			} else
 				pushInstruction(mb,p);
 		}
 	}
 	for(; i<slimit; i++)
 	if( old[i])
-		freeInstruction(old[i]);
+		pushInstruction(mb, old[i]);
 	GDKfree(old);
 	GDKfree(location);
 	GDKfree(dbalias);
 
-    /* Defense line against incorrect plans */
-    if( doit){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit,  usec);
-    newComment(mb,buf);
-	if( doit > 0)
-		addtoMalBlkHistory(mb);
+	/* Defense line against incorrect plans */
+	if( actions){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

@@ -29,15 +29,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	int i, limit;
 	InstrPtr p;
 	int actions = 0;
-	char buf[1024];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-#ifndef NDEBUG
-	int j, vlimit = 0;
-	int *used;
-#endif
 
-	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
 		goto wrapup;
@@ -61,10 +54,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
-#ifndef NDEBUG
-	vlimit = mb->vtop;
-	used = (int *) GDKzalloc(vlimit * sizeof(int));
-#endif
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = getInstrPtr(mb, i);
@@ -72,15 +61,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-#ifndef NDEBUG
-		if ( i > 1 && getModuleId(p) != languageRef && getModuleId(p) != querylogRef && getModuleId(p) != sqlRef && !p->barrier)
-			for( j=0; j< p->retc; j++)
-				used[getArg(p,j)] = i;
-		if ( getModuleId(p) != languageRef && getFunctionId(p) != passRef){
-			for(j= p->retc ; j< p->argc; j++)
-				used[getArg(p,j)] = 0;
-			}
-#endif
 		if ( p->token == ENDsymbol)
 			break;
 	}
@@ -88,25 +68,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	//mnstr_printf(cntxt->fdout,"garbacollector limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
-#ifndef NDEBUG
-		GDKfree(used);
-#endif
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
-#ifndef NDEBUG
-	/* Leave a message behind when we have created variables and not used them */
-	for(i=0; i< vlimit; i++)
-	if( used[i]){
-		p = getInstrPtr(mb, used[i]);
-		if( p){
-			str msg = instruction2str(mb, NULL, p, LIST_MAL_ALL);
-			snprintf(buf,1024,"Unused variable %s: %s", getVarName(mb, i), msg);
-			GDKfree(msg);
-			newComment(mb,buf);
-		}
-	}
-	GDKfree(used);
-#endif
+	/* move sanity check to other optimizer */
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 
 	/* leave a consistent scope admin behind */
@@ -122,10 +86,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
-	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

@@ -509,7 +509,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= MAL_SUCCEED;
 	}
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);

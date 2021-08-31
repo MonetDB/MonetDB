@@ -54,7 +54,7 @@ typedef enum {
 	singleton_region, // always a single statement
 	dataflow_region,  // statements without or with controlled side effects, in parallel
 	existing_region,  // existing barrier..exit region, copied as-is
-	sql_region,       // region of nonconflicting sql.append/sql.updates only
+	sql_region,	   // region of nonconflicting sql.append/sql.updates only
 } region_type;
 
 typedef struct {
@@ -184,21 +184,21 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 		return false;
 
 	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,8, arg("",int),
-	//              arg("mvc",int),
-	//              arg("sname",str),
-	//              arg("tname",str),
-	//              arg("cname",str),
-	//              arg("offset",lng),
-	//              batarg("pos",oid),
-	//              argany("ins",0))),
+	//			  arg("mvc",int),
+	//			  arg("sname",str),
+	//			  arg("tname",str),
+	//			  arg("cname",str),
+	//			  arg("offset",lng),
+	//			  batarg("pos",oid),
+	//			  argany("ins",0))),
 
  	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int),
-	//              arg("mvc",int),
-	//              arg("sname",str),
-	//              arg("tname",str),
-	//              arg("cname",str),
-	//              argany("rids",0),
-	//              argany("upd",0)))
+	//			  arg("mvc",int),
+	//			  arg("sname",str),
+	//			  arg("tname",str),
+	//			  arg("cname",str),
+	//			  argany("rids",0),
+	//			  argany("upd",0)))
 
 	if ((p->fcnname == appendRef && p->argc != 8) || (p->fcnname == updateRef && p->argc != 7))
 		return false;
@@ -313,7 +313,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
 		// Special case. Unless they're from the sql module, instructions with
 		// names like 'append', 'update', 'delete', 'grow', etc., are expected
 		// to express their side effects as data dependencies, for example,
-		//     X5 := bat.append(X_5, ...)
+		//	 X5 := bat.append(X_5, ...)
 		state->type = dataflow_region;
 	} else if (hasSideEffects(mb, p, false)) {
 		state->type = singleton_region;
@@ -330,23 +330,21 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
    executed, either sequentially or in parallel */
 
 str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k, start, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
-	InstrPtr *old = NULL, q;
+	InstrPtr p, *old = NULL, q;
 	int limit, vlimit;
 	States states = NULL;
-	char  buf[256];
 	region_state state = { singleton_region };
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1)
 		goto wrapup;
 
-	if ( optimizerIsApplied(mb,"dataflow"))
+	if ( optimizerIsApplied(mb,dataflowRef))
 		goto wrapup;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
@@ -440,24 +438,20 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* take the remainder as is */
 	for (; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-
+			pushInstruction(mb, old[i]);
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
 wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
+
 	if(states) GDKfree(states);
-	if(old)    GDKfree(old);
+	if(old)	GDKfree(old);
 	return msg;
 }

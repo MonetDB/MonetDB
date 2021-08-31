@@ -9,4 +9,6 @@ y:= user.welcome3(1)
 
 statement error
 io.print(y)
+----
+nil
 
