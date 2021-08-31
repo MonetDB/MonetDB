@@ -423,25 +423,29 @@ BATcheckstrimps(BAT *b)
 					uint64_t npairs;
 					uint64_t hsize;
 					/* Read the 8 byte long strimp
-					 * descriptor and make sure that
-					 * the number of pairs is either
-					 * 32 or 64.
+					 * descriptor.
+					 *
+					 * NPAIRS must be 64 in the
+					 * current implementation.
+					 *
+					 * HSIZE must be between 200 and
+					 * 584 (inclusive): 8 bytes the
+					 * descritor, 64 bytes the pair
+					 * sizes and n*64 bytes the
+					 * actual pairs where 2 <= n <=
+					 * 8.
 					 */
 					if (read(fd, &desc, 8) == 8
 					    && (desc & 0xff) == STRIMP_VERSION
-					    && ((npairs = NPAIRS(desc)) == 32 || npairs == 64)
-					    && (hsize = HSIZE(desc)) >= 96 && hsize <= 640
+					    && ((npairs = NPAIRS(desc)) == 64)
+					    && (hsize = HSIZE(desc)) >= 200 && hsize <= 584
 					    && ((desc >> 32) & 0xff) == 1 /* check the persistence byte */
 					    && fstat(fd, &st) == 0
 					    && st.st_size >= (off_t) (hp->strimps.free = hp->strimps.size =
-								      /* descriptor */
-								      8 +
-								      /* header size (offsets + pairs) */
+								      /* header size (desc + offsets + pairs) */
 								      hsize +
-								      /* padding to 4 or 8 byte boundary */
-								      hsize%(npairs/8) == (npairs/8)? 0 : (npairs/8+((npairs/8) - hsize%(npairs/8))) +
 								      /* bitmasks */
-								      BATcount(b)*(npairs/8))
+								      BATcount(b)*sizeof(uint64_t))
 					    && HEAPload(&hp->strimps, nme, "tstrimps", false) == GDK_SUCCEED) {
 						hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
 						hp->pairs_base = hp->sizes_base + npairs;         /* pairs just after the offsets */
