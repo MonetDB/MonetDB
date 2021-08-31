@@ -621,8 +621,6 @@ persistStrimp(BAT *b)
 		TRC_DEBUG(ACCELERATOR, "persistStrimp(" ALGOBATFMT "): NOT persisting strimp\n", ALGOBATPAR(b));
 }
 
-static ATOMIC_TYPE STRMPnthread = ATOMIC_VAR_INIT(0);
-
 /* Create */
 gdk_return
 STRMPcreate(BAT *b, BAT *s)
@@ -643,7 +641,6 @@ STRMPcreate(BAT *b, BAT *s)
 		return GDK_FAIL;
 	}
 
-	(void)ATOMIC_INC(&STRMPnthread);
 	/* Disable this before merging to default */
         if (VIEWtparent(b)) {
 		pb = BBP_cache(VIEWtparent(b));
@@ -678,10 +675,8 @@ STRMPcreate(BAT *b, BAT *s)
 	MT_lock_unset(&b->batIdxLock);
 
 	/* The thread that reaches this point last needs to write the strimp to disk. */
-	(void)ATOMIC_DEC(&STRMPnthread);
-	if (STRMPnthread == 0) {
+	if (STRIMP_COMPLETE(pb))
 		persistStrimp(pb);
-	}
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
