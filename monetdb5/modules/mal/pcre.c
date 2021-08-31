@@ -1886,13 +1886,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if (use_strimps) {
+	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD) {
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
 			BAT *tmp_s;
 			tmp_s = STRMPfilter(b, s, *pat);
-			if(s)
+			if (tmp_s && s) {
 				BBPunfix(s->batCacheid);
-			s = tmp_s;
+				s = tmp_s;
+			}
 		} /* If we cannot create the strimp just continue normally */
 
 	}
