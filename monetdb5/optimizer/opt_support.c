@@ -40,7 +40,7 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
  * requires inspection of the pipeline attached to a MAL block.
  */
 int
-isOptimizerEnabled(MalBlkPtr mb, str opt)
+isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 {
 	int i;
 	InstrPtr q;

@@ -149,7 +149,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors)
 		return MAL_SUCCEED;
 
-	no_mito = !isOptimizerEnabled(mb, "mitosis");
+	no_mito = !isOptimizerEnabled(mb, mitosisRef);
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
