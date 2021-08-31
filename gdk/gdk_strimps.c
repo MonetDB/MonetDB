@@ -77,8 +77,8 @@
 /* Macros for accessing metadada of a strimp. These are recorded in the
  * first 8 bytes of the heap.
  */
-#define NPAIRS(d) ((d) >> 8) & 0xff
-#define HSIZE(d) ((d) >> 16) & 0xffff
+#define NPAIRS(d) (((d) >> 8) & 0xff)
+#define HSIZE(d) (((d) >> 16) & 0xffff)
 
 #undef UTF8STRINGS 		/* Not using utf8 for now */
 #ifdef UTF8STRINGS
@@ -371,9 +371,10 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 			r->pairs_base = h2 = (uint8_t *)h1 + STRIMP_HEADER_SIZE;
 
 			for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
-				*(h1 + i) = hpairs[i].psize;
-				memcpy(h2, hpairs[i].pbytes, hpairs[i].psize);
-				h2 += hpairs[i].psize;
+				uint8_t psize = hpairs[i].psize;
+				h1[i] = psize;
+				memcpy(h2, hpairs[i].pbytes, psize);
+				h2 += psize;
 			}
 			r->strimps_base = h2;
 			r->strimps.free = sz;
@@ -386,12 +387,20 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
         return b->tstrimps;
 }
 
+#define STRIMP_COMPLETE(b) \
+	b->tstrimps != NULL &&\
+	(b->tstrimps->strimps.free - ((char *)b->tstrimps->strimps_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount
+
 static bool
 BATcheckstrimps(BAT *b)
 {
 	bool ret;
 	lng t = GDKusec();
 
+	if (b == NULL)
+		return false;
+
+	assert(b->batCacheid > 0);
 	if (b->tstrimps == (Strimps *)1) {
 		assert(!GDKinmemory(b->theap->farmid));
 		MT_lock_set(&b->batIdxLock);
@@ -422,7 +431,7 @@ BATcheckstrimps(BAT *b)
 					    && (desc & 0xff) == STRIMP_VERSION
 					    && ((npairs = NPAIRS(desc)) == 32 || npairs == 64)
 					    && (hsize = HSIZE(desc)) >= 96 && hsize <= 640
-					    && ((desc & ((uint64_t)0xff << 32)) >> 32) == 1
+					    && ((desc >> 32) & 0xff) == 1 /* check the persistence byte */
 					    && fstat(fd, &st) == 0
 					    && st.st_size >= (off_t) (hp->strimps.free = hp->strimps.size =
 								      /* descriptor */
@@ -460,12 +469,15 @@ BATcheckstrimps(BAT *b)
 	 * not null and the number of bitstrings is equal to the bat
 	 * count.
 	 */
-        ret = b->tstrimps != NULL &&
-		(b->tstrimps->strimps.free - ((char *)b->tstrimps->strimps_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount;
-	if (ret)
-		TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
+	assert(!b->tstrimps || (b->tstrimps->strimps.free - HSIZE(((uint64_t *)b->tstrimps->strimps.base)[0]))/sizeof(uint64_t) <= b->batCount);
+	ret = STRIMP_COMPLETE(b);
+        if (ret) {
+		TRC_DEBUG(ACCELERATOR,
+			  "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n",
+			  ALGOBATPAR(b), GDKusec() - t);
+	}
 
-	return ret;
+        return ret;
 }
 
 /* Filter a BAT b using a string q. Return the result as a candidate
@@ -582,7 +594,7 @@ BATstrimpsync(void *arg)
 					failed = "";
 				}
 			}
-			TRC_DEBUG(ACCELERATOR, "BATstrimpsync(%s): strimps persisted"
+			TRC_DEBUG(ACCELERATOR, "BATstrimpsync(%s): strimp persisted"
 				  " (" LLFMT " usec)%s\n",
 				  BATgetId(b), GDKusec() - t0, failed);
 		}
