@@ -1150,6 +1150,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			freeException(msg);
+			VALclear(cst);	// it could contain allocated space
 			return -1;
 		} else {
 			assert(cst->vtype == type);
