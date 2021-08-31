@@ -233,7 +233,7 @@ resetMalBlk(MalBlkPtr mb)
 	mb->stop = 0;
 
 	for(i=0; i< mb->vtop; i++){
-		if (isVarConstant(mb, i) || isVarDisabled(mb, i))
+		if (isVarConstant(mb, i))
 			VALclear(&getVarConstant(mb,i));
 	}
 
@@ -267,6 +267,7 @@ freeMalBlk(MalBlkPtr mb)
 		}
 	mb->stop = 0;
 	for(i=0; i< mb->vtop; i++)
+	if( isVarConstant(mb,i))
 		VALclear(&getVarConstant(mb,i));
 	mb->vtop = 0;
 	mb->vid = 0;
@@ -454,30 +455,6 @@ getMalBlkOptimized(MalBlkPtr mb, const char *name)
 		h = h->history;
 	}
 	return 0;
-}
-
-
-/* Before compiling a large string, it makes sense to allocate
- * approximately enough space to keep the intermediate
- * code. Otherwise, we end up with a repeated extend on the MAL block,
- * which really consumes a lot of memcpy resources. The average MAL
- * string length could been derived from the test cases. An error in
- * the estimate is more expensive than just counting the lines.
- */
-int
-prepareMalBlk(MalBlkPtr mb, str s)
-{
-	int cnt = STMT_INCREMENT;
-
-	while (s) {
-		s = strchr(s, '\n');
-		if (s) {
-			s++;
-			cnt++;
-		}
-	}
-	cnt = (int) (cnt * 1.1);
-	return resizeMalBlk(mb, cnt);
 }
 
 /* The MAL records should be managed from a pool to
