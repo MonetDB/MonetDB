@@ -176,7 +176,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			p= pushLng(mb, p, clk);
 			codes[i].calls++;
 			if (msg) {
-				throw(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
+				str newmsg = createException(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
+				freeException(msg);
+				return newmsg;
 			}
 			addtoMalBlkHistory(mb);
 			break;
