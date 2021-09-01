@@ -32,25 +32,47 @@
 #define geom_export extern
 #endif
 
+
+/** 
+* 
+* Geographic update code start
+*
+**/
+
 /* Geographic data types */
+//Bounding box of a geographic shape
+typedef struct BoundingBox {
+    double xmin;
+    double ymin;
+    double zmin;
+    double xmax;
+    double ymax;
+    double zmax;
+} BoundingBox;
+
+//Geographic point
 typedef struct GeoPoint
 {
     double lat;
     double lon;
 } GeoPoint;
 
+//Geographic line segment
 typedef struct GeoLine
 {
     GeoPoint start;
     GeoPoint end;
 } GeoLine;
 
+//Geographic line (multiple segments)
 typedef struct GeoLines
 {
     GeoLine *segments;
     int segmentCount;
+    BoundingBox* bbox;
 } GeoLines;
 
+//Cartesian representation of a geographic point (converted from Latitude/Longitude)
 typedef struct CartPoint
 {
     double x;
@@ -62,6 +84,17 @@ typedef struct CartPoint
 str wkbDistanceGeographic(dbl *out, wkb **a, wkb **b);
 str wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl distance);
 str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b);
+
+str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+str wkbUnionAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str wkbUnionAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid);
+
+/** 
+* 
+* Geographic update code end
+*
+**/
+
 
 /* general functions */
 geom_export str geoHasZ(int *res, int *info);

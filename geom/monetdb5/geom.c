@@ -15,28 +15,33 @@
 #include "gdk_logger.h"
 #include "mal_exception.h"
 
+static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
+
+/** 
+* 
+* Geographic update code start
+*
+**/
+
 /**
- *  Convertions 
- * 
- **/
+*  Convertions 
+* 
+**/
 
 const double earth_radius = 6371.009;
 const double earth_radius_meters = 6371009;
 
-/**
- *  Converts a longitude value in degrees to radians 
- *  The normalization part was taken from PostGIS
- */
+/* Converts a longitude value in degrees to radians */
 static double deg2RadLongitude(double lon_degrees)
 {
 	//Convert
 	double lon = M_PI * lon_degrees / 180.0;
 	//Normalize
+	//TODO PostGIS code, refactor
 	if (lon == -1.0 * M_PI)
 		return M_PI;
 	if (lon == -2.0 * M_PI)
 		return 0.0;
-
 	if (lon > 2.0 * M_PI)
 		lon = remainder(lon, 2.0 * M_PI);
 
@@ -55,15 +60,13 @@ static double deg2RadLongitude(double lon_degrees)
 	return lon;
 }
 
-/**
- *  Converts a latitude value in degrees to radians 
- *  The normalization part was taken from PostGIS
- */
+/* Converts a latitude value in degrees to radians */
 static double deg2RadLatitude(double lat_degrees)
 {
 	//Convert
 	double lat = M_PI * lat_degrees / 180.0;
 	//Normalize
+	//TODO PostGIS code, refactor
 	if (lat > 2.0 * M_PI)
 		lat = remainder(lat, 2.0 * M_PI);
 
@@ -93,17 +96,15 @@ static GeoPoint deg2RadPoint(GeoPoint geo)
 	return geo;
 }
 
-#if 0
-
 /**
  *  Converts a longitude value in radians to degrees
- *  The normalization part was taken from PostGIS
  */
 static double rad2DegLongitude(double lon_radians)
 {
 	//Convert
 	double lon = lon_radians * 180.0 / M_PI;
 	//Normalize
+	//TODO PostGIS code, refactor
 	if (lon > 360.0)
 		lon = remainder(lon, 360.0);
 
@@ -127,13 +128,13 @@ static double rad2DegLongitude(double lon_radians)
 
 /**
  *  Converts a latitude value in radians to degrees
- *  The normalization part was taken from PostGIS
  */
 static double rad2DegLatitude(double lat_radians)
 {
 	//Convert
 	double lat = lat_radians * 180.0 / M_PI;
 	//Normalize
+	//TODO PostGIS code, refactor
 	if (lat > 360.0)
 		lat = remainder(lat, 360.0);
 
@@ -154,14 +155,16 @@ static double rad2DegLatitude(double lat_radians)
 
 	return lat;
 }
-/* Converts the GeoPoint from degrees to radians latitude and longitude*/
-static void rad2DegPoint(GeoPoint *geo)
-{
-	geo->lon = rad2DegLongitude(geo->lon);
-	geo->lat = rad2DegLatitude(geo->lat);
-}
-#endif
 
+/* Converts the GeoPoint from degrees to radians latitude and longitude*/
+static GeoPoint rad2DegPoint(GeoPoint geo)
+{
+	geo.lon = rad2DegLongitude(geo.lon);
+	geo.lat = rad2DegLatitude(geo.lat);
+	return geo;
+}
+
+/* Converts the a GEOSGeom Point into a GeoPoint */
 static GeoPoint geoPointFromGeom(GEOSGeom geom)
 {
 	GeoPoint geo;
@@ -170,16 +173,7 @@ static GeoPoint geoPointFromGeom(GEOSGeom geom)
 	return geo;
 }
 
-/*static GeoLine geoLineFromGeom(GEOSGeom geom)
-{
-	GeoLine geo;
-	GEOSGeomGetX(GEOSGeomGetStartPoint(geom), &(geo.start.lon));
-	GEOSGeomGetY(GEOSGeomGetStartPoint(geom), &(geo.start.lat));
-	GEOSGeomGetX(GEOSGeomGetEndPoint(geom), &(geo.end.lon));
-	GEOSGeomGetY(GEOSGeomGetEndPoint(geom), &(geo.end.lat));
-	return geo;
-}*/
-
+/* Converts the a GEOSGeom Line into GeoLines (one or more line segments) */
 static GeoLines geoLinesFromGeom(GEOSGeom geom)
 {
 	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
@@ -193,6 +187,7 @@ static GeoLines geoLinesFromGeom(GEOSGeom geom)
 		GEOSCoordSeq_getXY(gcs, i, &geo.segments[i].start.lon, &geo.segments[i].start.lat);
 		GEOSCoordSeq_getXY(gcs, i + 1, &geo.segments[i].end.lon, &geo.segments[i].end.lat);
 	}
+	geo.bbox = NULL;
 	return geo;
 }
 
@@ -230,7 +225,7 @@ static str wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom 
 	{
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
 	}
-	else if (GEOSGetSRID((*ga)) != GEOSGetSRID((*gb)))
+	else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb))
 	{
 		GEOSGeom_destroy(*ga);
 		GEOSGeom_destroy(*gb);
@@ -240,7 +235,8 @@ static str wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom 
 }
 
 /**
-* Convert spherical coordinates to cartesian coordinates on unit sphere
+* Convert spherical coordinates to cartesian coordinates on unit sphere.
+* The inputs have to be in radians.
 */
 static CartPoint geo2cart(GeoPoint geo)
 {
@@ -252,20 +248,15 @@ static CartPoint geo2cart(GeoPoint geo)
 }
 
 /**
-* Convert spherical coordinates to cartesian coordinates
+* Convert spherical coordinates to cartesian coordinates on unit sphere.
+* The inputs have to be in degrees.
 */
-static CartPoint geo2cart_r(GeoPoint geo)
+static CartPoint geo2cartFromDegrees(GeoPoint geo)
 {
-	CartPoint cart;
-	cart.x = earth_radius * cos(geo.lat) * cos(geo.lon);
-	cart.y = earth_radius * cos(geo.lat) * sin(geo.lon);
-	cart.z = earth_radius * sin(geo.lat);
-	return cart;
+	return geo2cart(deg2RadPoint(geo));
 }
 
-/**
-* Convert cartesian coordinates to spherical coordinates on unit sphere
-*/
+/* Convert cartesian coordinates to spherical coordinates on unit sphere */
 static GeoPoint cart2geo(CartPoint cart)
 {
 	GeoPoint geo;
@@ -274,25 +265,163 @@ static GeoPoint cart2geo(CartPoint cart)
 	return geo;
 }
 
-/**
-* Convert cartesian coordinates to spherical coordinates
-*/
-/*static GeoPoint cart2geo_r(CartPoint cart)
+/* Converts two lat/lon points into cartesian coordinates and creates a Line geometry */
+static GEOSGeom cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 {
-	GeoPoint geo;
-	geo.lon = atan2(cart.y, cart.x);
-	geo.lat = asin(cart.z / earth_radius);
-	return geo;
-}*/
+	CartPoint p1_cart, p2_cart;
+	p1_cart = geo2cartFromDegrees(p1);
+	p2_cart = geo2cartFromDegrees(p2);
+	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create(2, 3);
+	GEOSCoordSeq_setXYZ(lineSeq, 0, p1_cart.x, p1_cart.y, p1_cart.z);
+	GEOSCoordSeq_setXYZ(lineSeq, 1, p2_cart.x, p2_cart.y, p2_cart.z);
+	return GEOSGeom_createLineString(lineSeq);
+}
+
+/**
+*  Bounding Box functions 
+* 
+**/
+/* Adds a Cartesian Point to the BoundingBox */
+static void boundingBoxAddPoint(BoundingBox *bb, CartPoint p)
+{
+	if (bb->xmin > p.x)
+		bb->xmin = p.x;
+	if (bb->xmax < p.x)
+		bb->xmax = p.x;
+	if (bb->ymin > p.y)
+		bb->ymin = p.y;
+	if (bb->ymax < p.y)
+		bb->ymax = p.y;
+	if (bb->zmin > p.z)
+		bb->zmin = p.z;
+	if (bb->zmax < p.z)
+		bb->zmax = p.z;
+}
+
+/* Builds the BoundingBox for a GeoLines geometry */
+static BoundingBox* boundingBoxLines(GeoLines lines)
+{
+	CartPoint c;
+	BoundingBox *bb = GDKzalloc(sizeof(BoundingBox));
+
+	//If there are no segments, return NULL
+	if (lines.segmentCount == 0)
+	{
+		return NULL;
+	}
+
+	c = geo2cartFromDegrees(lines.segments[0].start);
+
+	//Initialize the bounding box with the first point
+	bb->xmin = bb->xmax = c.x;
+	bb->ymin = bb->ymax = c.y;
+	bb->zmin = bb->zmax = c.z;
+
+	for (int i = 0; i < lines.segmentCount; i++)
+	{
+		c = geo2cartFromDegrees(lines.segments[i].end);
+		boundingBoxAddPoint(bb, c);
+	}
+	return bb;
+}
+
+static int boundingBoxContainsPoint(BoundingBox bb, CartPoint pt)
+{
+	return bb.xmin <= pt.x && bb.xmax >= pt.x && bb.ymin <= pt.y && bb.ymax >= pt.y && bb.zmin <= pt.z && bb.zmax >= pt.z;
+}
+
+static BoundingBox boundingBoxCopy (BoundingBox bb) {
+	BoundingBox* copy = GDKmalloc(sizeof(BoundingBox));
+	copy->xmin = bb.xmin;
+	copy->xmax = bb.xmax;
+	copy->ymin = bb.ymin;
+	copy->ymax = bb.ymax;
+	copy->zmin = bb.zmin;
+	copy->zmax = bb.zmax;
+	return *copy;
+}
+
+/* Returns a point outside of the polygon's bounding box, for Point-In-Polygon calculation */
+static GeoPoint pointOutsidePolygon(GeoLines polygonRing)
+{
+	//If the geometry doesn't have its BoundingBox calculated, calculate it
+	if (polygonRing.bbox == NULL) {
+		polygonRing.bbox = boundingBoxLines(polygonRing);
+	}
+	BoundingBox bb = *polygonRing.bbox;
+	BoundingBox bb2 = boundingBoxCopy(*polygonRing.bbox);
+
+	//TODO: From POSTGIS -> CHANGE
+	double grow = M_PI / 180.0 / 60.0;
+	CartPoint corners[8];
+	while (grow < M_PI)
+	{
+		if (bb.xmin > -1)
+			bb.xmin -= grow;
+		if (bb.ymin > -1)
+			bb.ymin -= grow;
+		if (bb.zmin > -1)
+			bb.zmin -= grow;
+		if (bb.xmax < 1)
+			bb.xmax += grow;
+		if (bb.ymax < 1)
+			bb.ymax += grow;
+		if (bb.zmax < 1)
+			bb.zmax += grow;
+
+		corners[0].x = bb.xmin;
+		corners[0].y = bb.ymin;
+		corners[0].z = bb.zmin;
+
+		corners[1].x = bb.xmin;
+		corners[1].y = bb.ymax;
+		corners[1].z = bb.zmin;
+
+		corners[2].x = bb.xmin;
+		corners[2].y = bb.ymin;
+		corners[2].z = bb.zmax;
+
+		corners[3].x = bb.xmax;
+		corners[3].y = bb.ymin;
+		corners[3].z = bb.zmin;
+
+		corners[4].x = bb.xmax;
+		corners[4].y = bb.ymax;
+		corners[4].z = bb.zmin;
+
+		corners[5].x = bb.xmax;
+		corners[5].y = bb.ymin;
+		corners[5].z = bb.zmax;
+
+		corners[6].x = bb.xmin;
+		corners[6].y = bb.ymax;
+		corners[6].z = bb.zmax;
+
+		corners[7].x = bb.xmax;
+		corners[7].y = bb.ymax;
+		corners[7].z = bb.zmax;
+
+		for (int i = 0; i < 8; i++)
+		{
+			if (!boundingBoxContainsPoint(bb2, corners[i]))
+			{
+				CartPoint pt_cart = corners[i];
+				return rad2DegPoint(cart2geo(pt_cart));
+			}
+		}
+		grow *= 2.0;
+	}
+	return geoPointFromLatLon(0, 0);
+}
 
 /** 
- * Distance functions 
- * 
- **/
-
+* Distance functions 
+* 
+**/
 /**
- * The haversine formula calculate the distance in meters between two lat/lon points in radians.
- * This formula assumes a spherical model of the earth, which can lead to an error of about 0.3% compared to a ellipsoidal model.
+* The haversine formula calculate the distance in meters between two lat/lon points
+* The points must be measured in radians. 
+* This formula assumes a spherical model of the earth, which can lead to an error of about 0.3% compared to a ellipsoidal model.
 */
 static double haversine(GeoPoint a, GeoPoint b)
 {
@@ -309,22 +438,20 @@ static double geoDistancePointPoint(GeoPoint a, GeoPoint b)
 	return haversine(deg2RadPoint(a), deg2RadPoint(b));
 }
 
-//TODO Improve this function, there may be a easier way (vector operations?)
 static double calculatePerpendicular(GeoPoint p_geo, GeoLine l_geo)
 {
 	CartPoint l1, l2, p, projection;
 	GeoPoint projection_geo;
 
 	//First, convert the points to 3D cartesian coordinates
-	l1 = geo2cart(deg2RadPoint(l_geo.start));
-	l2 = geo2cart(deg2RadPoint(l_geo.end));
-	p = geo2cart(deg2RadPoint(p_geo));
+	l1 = geo2cartFromDegrees(l_geo.start);
+	l2 = geo2cartFromDegrees(l_geo.end);
+	p = geo2cartFromDegrees(p_geo);
 
 	//Calculate the projection of point into the line
 	double d_ab = (l2.z - l1.z) * (l2.z - l1.z) + (l2.y - l1.y) * (l2.y - l1.y) + (l2.x - l1.x) * (l2.x - l1.x);
 	double t = (((p.x - l1.x) * (l2.x - l1.x)) + ((p.y - l1.y) * (l2.y - l1.y)) + ((p.z - l1.z) * (l2.z - l1.z))) / d_ab;
 
-	//TODO Check if this is correct
 	//If t is not between 0 and 1, the projected point is not in the line, so there is no perpendicular, return huge number
 	if (t < 0 || t > 1)
 		return INT_MAX;
@@ -332,7 +459,7 @@ static double calculatePerpendicular(GeoPoint p_geo, GeoLine l_geo)
 	//If the projection is in the line segment, build the point -> projection = l1 + t * (l2-l1)
 	projection = cartPointFromXYZ(l1.x + t * (l2.x - l1.x), l1.y + t * (l2.y - l1.y), l1.z + t * (l2.z - l1.z));
 
-	//Convert into geographic coordinates
+	//Convert into geographic coordinates (radians)
 	projection_geo = cart2geo(projection);
 
 	//Calculate distance from original point to the projection
@@ -340,7 +467,7 @@ static double calculatePerpendicular(GeoPoint p_geo, GeoLine l_geo)
 }
 
 /* Distance between Point and a simple Line (only one Line segment). 
-   The returned distance is the minimum between the distance between the point and the line vertices 
+   The returned distance is the minimum distance between the point and the line vertices 
    and the perpendicular projection of the point in the line segment.  */
 static double geoDistancePointLineInternal(GeoPoint point, GeoLine line)
 {
@@ -394,9 +521,7 @@ static double geoDistanceLineLineInternal(GeoLines line1, GeoLines line2)
 			min_distance = distance;
 	}
 	distance = geoDistancePointLine(line1.segments[line1.segmentCount - 1].end, line2);
-	if (distance < min_distance)
-		min_distance = distance;
-	return min_distance;
+	return distance < min_distance ? distance : min_distance;
 }
 
 /* Distance between two Lines. */
@@ -411,21 +536,6 @@ static double geoDistanceLineLine(GeoLines line1, GeoLines line2)
 	return distance1 < distance2 ? distance1 : distance2;
 }
 
-/* Converts two lat/lon points into cartesian coordinates and creates a Line geometry */
-//TODO Change geo2cart_r to geo2cart?
-static GEOSGeom cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
-{
-	CartPoint p1_cart, p2_cart;
-	p1_cart = geo2cart_r(p1);
-	p2_cart = geo2cart_r(p2);
-	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create(2, 3);
-	GEOSCoordSeq_setXYZ(lineSeq, 0, p1_cart.x, p1_cart.y, p1_cart.z);
-	GEOSCoordSeq_setXYZ(lineSeq, 1, p2_cart.x, p2_cart.y, p2_cart.z);
-	return GEOSGeom_createLineString(lineSeq);
-}
-
-//TODO Fix this
-//TODO For fast testing, we could use the polygon's minimum bounding box
 //TODO Implement intersection ourselves so we don't use GEOS?
 static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 {
@@ -433,9 +543,15 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 	GEOSGeometry *segmentPolygon, *intersectionPoints;
 
 	//Get an point that's outside the polygon
-	//TODO Get the outside point using the polygon's bounding box, instead of being static
-	double lat_o = 48.193, lon_o = -4.551;
-	GeoPoint outsidePoint = geoPointFromLatLon(lon_o, lat_o);
+	GeoPoint outsidePoint = pointOutsidePolygon(polygonRing);
+
+	//No outside point was found, return false
+	if (outsidePoint.lat == 0 && outsidePoint.lon == 0) {
+		return false;
+	}
+	
+	/*printf("Outside point: (%f %f)\n",outsidePoint.lon, outsidePoint.lat);
+	fflush(stdout);*/
 
 	//Construct a line between the outside point and the input point
 	GEOSGeometry *outInLine = cartesianLineFromGeoPoints(point, outsidePoint);
@@ -450,8 +566,7 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 		if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
 		{
 			intersectionNum++;
-			/*printf("Cross!\n");
-			CartPoint pDegrees;
+			/*CartPoint pDegrees;
 			GeoPoint pRadians;
 			double x, y, z;
 			GEOSGeomGetX(intersectionPoints, &x);
@@ -460,10 +575,10 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 			pDegrees.x = x;
 			pDegrees.y = y;
 			pDegrees.z = z;
-			pRadians = cart2geo_r(pDegrees);
+			pRadians = rad2DegPoint(cart2geo(pDegrees));
 			printf("Intersection Num: %d\n", intersectionNum);
-			printf("Intersection Point (%f %f)\n", pRadians.lon, pRadians.lat);
-			printf("Line (%f %f)->(%f %f)\nLine (%f %f)->(%f %f)\n", lon_o, lat_o, point.lon, point.lat, polygonRing.segments[i].start.lon, polygonRing.segments[i].start.lat, polygonRing.segments[i].end.lon, polygonRing.segments[i].end.lat);
+			printf("Intersection Point (Degrees) (%f %f)\n", pRadians.lon, pRadians.lat);
+			printf("Line (%f %f)->(%f %f)\nLine (%f %f)->(%f %f)\n", outsidePoint.lon, outsidePoint.lat, point.lon, point.lat, polygonRing.segments[i].start.lon, polygonRing.segments[i].start.lat, polygonRing.segments[i].end.lon, polygonRing.segments[i].end.lat);
 			fflush(stdout);*/
 		}
 
@@ -485,8 +600,6 @@ static double geoDistancePointPolygon(GeoPoint point, GeoLines polygonRing)
 	//Check if point is in polygon
 	if (pointWithinPolygon(point, polygonRing))
 	{
-		printf("Point within Polygon\n");
-		fflush(stdout);
 		return 0;
 	}
 
@@ -502,6 +615,11 @@ static double geoDistanceLinePolygon(GeoLines line, GeoLines polygon)
 	for (int i = 0; i < line.segmentCount; i++)
 	{
 		distance = geoDistancePointPolygon(line.segments[i].start, polygon);
+		
+		//Short-cut in case the point is within the polygon
+		if (distance == 0)
+			return 0;
+
 		if (distance < min_distance)
 			min_distance = distance;
 	}
@@ -663,13 +781,202 @@ str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 }
 
 /**
-* End of Geographic update code
+* Union (Group By implementation) 
+* 
+**/ 
+/* Group By operation.
+   Joins geometries together in the same group into a MultiGeometry */
+str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
+	str msg = MAL_SUCCEED;
+	oid min, max;
+	BUN ngrp, ncand;
+	struct canditer ci;
+	const char *err;
+	const oid *gids = NULL;
+	BATiter bi;
+	wkb **unions = NULL;
+	GEOSGeom *unionsGEOS = NULL;
+	(void)skip_nils;
+
+	//Get the BAT descriptors for the value bat + the other 3 optional BATs
+	if ((b = BATdescriptor(*bid)) == NULL ||
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
+	{
+		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
+		return msg;
+	}
+
+	//Fill in the values of the group aggregate operation
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
+	{
+		msg = createException(MAL, "geom.Union", "%s", err);
+		goto free;
+	}
+
+	if (ngrp == 0) {
+		msg = createException(MAL, "geom.Union", "Number of groups is equal to 0");
+		goto free;
+	}
+
+	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	bi = bat_iterator(b);
+
+	//Allocate space for the intermediate unions
+	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		bat_iterator_end(&bi);
+		goto free;
+	}
+
+	if ((unionsGEOS = GDKzalloc(sizeof(GEOSGeom) * ngrp)) == NULL)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		bat_iterator_end(&bi);
+		goto free;
+	}
+
+	if (g && !BATtdense(g))
+		gids = (const oid *)Tloc(g, 0);
+
+	for (BUN i = 0; i < ncand; i++)
+	{
+		oid o = canditer_next(&ci);
+		BUN p = o - b->hseqbase;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+
+#ifndef NDEBUG
+		/*char *geomSTR;
+		wkbAsText(&geomSTR, &inWKB, NULL);
+		printf("Row %zu: %s\n", i, geomSTR);
+		fflush(stdout);
+		GDKfree(geomSTR);*/
+#endif
+		//Instead of converting back and forth with the wkbUnion() func, convert only once from wkb to GEOS
+		if (unionsGEOS[grp] == NULL)
+		{
+			if (!is_wkb_nil(inWKB))
+			{
+				unionsGEOS[grp] = wkb2geos(inWKB);
+			}
+		}
+		else
+		{
+			if (!is_wkb_nil(inWKB))
+			{
+				GEOSGeom nextUnion = wkb2geos(inWKB);
+				if (GEOSGetSRID(nextUnion) == GEOSGetSRID(unionsGEOS[grp]))
+				{
+					//TODO: This operation is really slow.
+					unionsGEOS[grp] = GEOSUnion(unionsGEOS[grp], nextUnion);
+				}
+			}
+		}
+	}
+
+	//Convert Geos results to WKB for returning result
+	for (BUN i = 0; i < ngrp; i++)
+	{
+		unions[i] = geos2wkb(unionsGEOS[i]);
+	}
+
+	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED)
+	{
+		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		bat_iterator_end(&bi);
+		goto free;
+	}
+
+	for (BUN i = 0; i < ngrp; i++)
+		GDKfree(unions[i]);
+	GDKfree(unions);
+
+	BBPkeepref(*outid = out->batCacheid);
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return MAL_SUCCEED;
+free:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (unions)
+	{
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(unions[i]);
+		GDKfree(unions);
+	}
+	return msg;
+}
+
+str wkbUnionAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
+}
+
+str wkbUnionAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
+{
+	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
+}
+
+/**
+* Unused code 
+* 
+**/
+
+#if 0
+/**
+* Convert spherical coordinates to cartesian coordinates
+*/
+static CartPoint geo2cart_r(GeoPoint geo)
+{
+	CartPoint cart;
+	cart.x = earth_radius * cos(geo.lat) * cos(geo.lon);
+	cart.y = earth_radius * cos(geo.lat) * sin(geo.lon);
+	cart.z = earth_radius * sin(geo.lat);
+	return cart;
+}
+
+/**
+* Convert cartesian coordinates to spherical coordinates
+*/
+static GeoPoint cart2geo_r(CartPoint cart)
+{
+	GeoPoint geo;
+	geo.lon = atan2(cart.y, cart.x);
+	geo.lat = asin(cart.z / earth_radius);
+	return geo;
+}
+#endif
+
+/** 
+* 
+* Geographic update code end
 *
 **/
 
 int TYPE_mbr;
-
-static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
 
 static inline int
 geometryHasZ(int info)
@@ -730,7 +1037,7 @@ radians2degrees(double *x, double *y, double *z)
 	*z *= val;
 }
 
-//Uses projPJ object
+
 static str
 transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence *gcs_old, GEOSCoordSeq gcs_new)
 {
@@ -771,7 +1078,7 @@ transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_ds
 	return MAL_SUCCEED;
 }
 
-//Uses projPJ object
+
 static str
 transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
 {
@@ -814,7 +1121,7 @@ transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeome
 	return MAL_SUCCEED;
 }
 
-//Uses projPJ object
+
 static str
 transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
 {
@@ -855,7 +1162,7 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ pr
 	return MAL_SUCCEED;
 }
 
-//Uses projPJ object
+
 static str
 transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
 {
@@ -880,7 +1187,7 @@ transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-//Uses projPJ object
+
 static str
 transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
 {
@@ -905,7 +1212,7 @@ transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-//Uses projPJ object
+
 static str
 transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid)
 {
@@ -975,7 +1282,7 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 	return ret;
 }
 
-//Uses projPJ object
+
 static str
 transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid, int geometryType)
 {
@@ -1043,7 +1350,7 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 	return ret;
 }
 
-//Uses projPJ object
+
 /* the following function is used in postgis to get projPJ from str.
  * it is necessary to do it in a detailed way like that because pj_init_plus
  * does not set all parameters correctly and I cannot test whether the
@@ -1089,7 +1396,7 @@ projFromStr(const char *projStr)
 }
 #endif
 
-//Uses projPJ object
+
 /* It gets a geometry and transforms its coordinates to the provided srid */
 str wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
 {
@@ -5240,153 +5547,6 @@ str wkbUnionAggr(wkb **outWKB, const bat *inBAT_id)
 	return err;
 }
 
-//TODO This is very slow. Is it because of the constant wkbToGEOS and GEOSToWkb transformations?
-static str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
-{
-	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
-	str msg = MAL_SUCCEED;
-	oid min, max;
-	BUN ngrp, ncand;
-	struct canditer ci;
-	const char *err;
-	const oid *gids = NULL;
-	BATiter bi;
-	wkb **unions = NULL;
-
-	//TODO Do we need to use skip_nils?
-	(void)skip_nils;
-
-	//Get the BAT descriptors for the value bat + the other 3 optional BATs
-	if ((b = BATdescriptor(*bid)) == NULL ||
-		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
-		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
-		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
-	{
-		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
-		return msg;
-	}
-
-	//Fill in the values of the group aggregate operation
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
-	{
-		msg = createException(MAL, "geom.Union", "%s", err);
-		goto free;
-	}
-
-	//TODO Add check if the ngrp/ncand is 0, or the GDKzalloc below will crash mserver
-
-	//Create a new BAT column of wkb type, with lenght equal to the number of groups
-	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL)
-	{
-		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto free;
-	}
-
-	bi = bat_iterator(b);
-	//Allocate space for the intermediate unions of wkb's
-	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL)
-	{
-		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto free;
-	}
-
-	if (g && !BATtdense(g))
-		gids = (const oid *)Tloc(g, 0);
-
-	//Loop through the input rows and do the union operation for each different group
-	for (BUN i = 0; i < ncand; i++)
-	{
-		//Get the index of the next candidate
-		oid o = canditer_next(&ci);
-		BUN p = o - b->hseqbase;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
-		//Determine the group id
-		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
-
-#ifndef NDEBUG
-		/*char *geomSTR;
-		wkbAsText(&geomSTR, &inWKB, NULL);
-		printf("Row %zu: %s\n", i, geomSTR);
-		fflush(stdout);
-		GDKfree(geomSTR);*/
-		if (i % 100 == 0) {
-			printf("Processed %zu records, on group %zu\n", i,grp);
-			time_t t = time(NULL);
-  			struct tm tm = *localtime(&t);
-  			printf("%d-%02d-%02d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-			fflush(stdout);
-		}
-#endif
-
-		if (unions[grp] == NULL)
-		{
-			//First value for a group, copy input wkb
-			if ((msg = wkbFromWKB(&(unions[grp]), &inWKB)) != MAL_SUCCEED)
-			{
-				msg = createException(MAL, "geom.Union", "%s", msg);
-				goto free;
-			}
-		}
-		else
-		{
-			if ((err = wkbUnion(&(unions[grp]), &(unions[grp]), &inWKB)) != MAL_SUCCEED)
-			{
-				msg = createException(MAL, "geom.Union", "%s", err);
-				goto free;
-			}
-		}
-		//printf("Candidate %d\no = %zu\ngrp = %zu\n", (int)i, o, grp);
-		//printf("outWKB Len: %d\ninWKB Len: %d\n", unions[grp]->len, inWKB->len);
-	}
-
-	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED)
-	{
-		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
-		goto free;
-	}
-
-	for (BUN i = 0; i < ngrp; i++)
-		GDKfree(unions[i]);
-	GDKfree(unions);
-
-	BBPkeepref(*outid = out->batCacheid);
-	BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	return MAL_SUCCEED;
-free:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (unions)
-	{
-		for (BUN i = 0; i < ngrp; i++)
-			GDKfree(unions[i]);
-		GDKfree(unions);
-	}
-	return msg;
-}
-
-//static str wkbUnionAggrSubGrouped(wkb **outWKB, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
-static str wkbUnionAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
-{
-	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
-}
-
-static str wkbUnionAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
-{
-	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
-}
-
 str wkbDifference(wkb **out, wkb **a, wkb **b)
 {
 	return wkbanalysis(out, a, b, GEOSDifference, "geom.Difference");
@@ -6362,7 +6522,7 @@ wkbPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkb_size(val->len));
 	base = b->tvheap->base;
-	if (*bun != (var_t) -1)
+	if (*bun != (var_t)-1)
 	{
 		memcpy(&base[*bun], val, wkb_size(val->len));
 		b->tvheap->dirty = true;
@@ -6856,7 +7016,7 @@ wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 
 	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
 	base = b->tvheap->base;
-	if (*bun != (var_t) -1)
+	if (*bun != (var_t)-1)
 	{
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
 		b->tvheap->dirty = true;
@@ -6934,8 +7094,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
 	BATiter bpxi = bat_iterator(bpx);
 	BATiter bpyi = bat_iterator(bpy);
-	px = (dbl *) bpxi.base;
-	py = (dbl *) bpyi.base;
+	px = (dbl *)bpxi.base;
+	py = (dbl *)bpyi.base;
 
 	nv = nvert - 1;
 	cnt = BATcount(bpx);
@@ -7011,8 +7171,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
 	BATiter bpxi = bat_iterator(bpx);
 	BATiter bpyi = bat_iterator(bpy);
-	px = (dbl *) bpxi.base;
-	py = (dbl *) bpyi.base;
+	px = (dbl *)bpxi.base;
+	py = (dbl *)bpyi.base;
 	cnt = BATcount(bpx);
 	cs = (bit *)Tloc(bo, 0);
 	for (i = 0; i < cnt; i++)
