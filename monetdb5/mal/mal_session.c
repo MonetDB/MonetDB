@@ -480,7 +480,7 @@ MSresetVariables(MalBlkPtr mb)
 	int i;
 
 	if (mb->errors == MAL_SUCCEED)
-		for (i = sig->argc; i < mb->vtop; i++) 
+		for (i = sig->argc; i < mb->vtop; i++)
 			if( isVarConstant(mb,i)){
 				VALclear(&getVarConstant(mb,i));
 				clrVarConstant(mb, i);
