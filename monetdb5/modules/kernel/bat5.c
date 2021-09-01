@@ -790,7 +790,7 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		const Type *restrict in = (Type*)bi.base;	\
+		const Type *in = (Type*)bi.base;			\
 		Type *restrict r = (Type*)Tloc(bn, 0);		\
 		for (;p<q; oidx++, p++) {					\
 			if ( o < ol && *o == oidx ){			\
@@ -870,6 +870,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 			const int8_t *restrict src = (int8_t*) bi.base;
 			int8_t *restrict dst = (int8_t*) Tloc(bn, 0);
 
+			assert(b->ttype != TYPE_oid); /* because of 'restrict', the oid case can't fall here */
 			for (;p<q; oidx++, p++) {
 				if (o < ol && *o == oidx) {
 					o++;
