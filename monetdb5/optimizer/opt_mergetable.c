@@ -588,7 +588,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 
 			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k));
 
-			   	ttpe = getArgType(mb, mat[n].mi, 0);
+			ttpe = getArgType(mb, mat[n].mi, 0);
 			for (j=1; j<mat[n].mi->argc; j++) {
 				int ov = 0;
 				if (getBatType(ttpe) != TYPE_oid || (ov = overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)) == 1){

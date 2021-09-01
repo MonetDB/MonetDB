@@ -412,8 +412,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					/* make sure to resolve again */
 					p->token = ASSIGNsymbol;
 					p->typechk = TYPE_UNKNOWN;
-						p->fcn = NULL;
-						p->blk = NULL;
+					p->fcn = NULL;
+					p->blk = NULL;
 					actions++;
 				}
 			} else if ( (GDKdebug & (1<<15)) && isMatJoinOp(p) && p->retc == 2) {
@@ -441,8 +441,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					/* make sure to resolve again */
 					p->token = ASSIGNsymbol;
 					p->typechk = TYPE_UNKNOWN;
-						p->fcn = NULL;
-						p->blk = NULL;
+					p->fcn = NULL;
+					p->blk = NULL;
 					actions++;
 				}
 			}
@@ -576,7 +576,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
 				nvars[getArg(p,0)] =  getArg(r, 0) =
-					newTmpVariable(mb, getArgType(mb, r, 0));
+				newTmpVariable(mb, getArgType(mb, r, 0));
 				slices[getArg(q, 1)] = getArg(p, 0);
 
 				setVarCList(mb,getArg(r,0));
@@ -584,7 +584,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pushInstruction(mb,r);
 
 				nvars[getArg(q,0)] =  getArg(s, 0) =
-					newTmpVariable(mb, getArgType(mb, s, 0));
+				newTmpVariable(mb, getArgType(mb, s, 0));
 				getArg(s, 1) = getArg(r, 0); /* use result of slice */
 				pushInstruction(mb, s);
 				oclean[i] = 1;
@@ -627,7 +627,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						getArg(t, 1) = nvars[getArg(r, 0)]; /* use result of slice */
 						rslices[col] = 1;
 						nvars[getArg(s,0)] =  getArg(t, 0) =
-								newTmpVariable(mb, getArgType(mb, t, 0));
+						newTmpVariable(mb, getArgType(mb, t, 0));
 						pushInstruction(mb, t);
 						if (u) { /* add again */
 							if((t = copyInstruction(u)) == NULL) {
@@ -751,8 +751,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
 				s->typechk = TYPE_UNKNOWN;
-					s->fcn = NULL;
-					s->blk = NULL;
+				s->fcn = NULL;
+				s->blk = NULL;
 				pushInstruction(mb,s);
 
 				setFunctionId(u, subdeltaRef);
@@ -763,8 +763,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				u = pushArgument(mb, u, getArg(s,0)); /* selected updated values ids */
 				u->token = ASSIGNsymbol;
 				u->typechk = TYPE_UNKNOWN;
-					u->fcn = NULL;
-					u->blk = NULL;
+				u->fcn = NULL;
+				u->blk = NULL;
 				pushInstruction(mb,u);
 				oclean[i] = 1;
 				continue;
