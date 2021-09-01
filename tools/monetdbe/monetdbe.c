@@ -1316,14 +1316,15 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	}
 
 	MalBlkPtr mb = prg->def;
+	ValRecord v;
+	ptr vp;
+	columnar_result_callback* rcb;
+	InstrPtr f = getInstrPtr(mb, 0), r, p, e, o;
 
-	InstrPtr f = getInstrPtr(mb, 0);
 	f->retc = f->argc = 0;
-
-	InstrPtr o = newStmt(mb, remoteRef, putRef);
+	o = newStmt(mb, remoteRef, putRef);
 	o = pushStr(mb, o, mdbe->mid);
 	o = pushBit(mb, o, TRUE);
-
 
 	if (prepare_id) {
 		size_t query_len, input_query_len, prep_len = 0;
@@ -1335,7 +1336,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		char *nq = NULL;
 		if (!(nq = GDKmalloc(query_len))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_remote", "Could not setup query stream");
-			return mdbe->msg;
+			goto finalize;
 		}
 		strcpy(nq, PREPARE);
 		strcpy(nq + prep_len, query);
@@ -1343,12 +1344,12 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		query = nq;
 	}
 
-	InstrPtr p = newStmt(mb, remoteRef, putRef);
+	p = newStmt(mb, remoteRef, putRef);
 	p = pushStr(mb, p, mdbe->mid);
 	p = pushStr(mb, p, query);
 
 
-	InstrPtr e = newInstruction(mb, remoteRef, execRef);
+	e = newInstruction(mb, remoteRef, execRef);
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, sqlRef);
@@ -1358,7 +1359,12 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	 * prepare the call back routine and its context
 	 * and pass it over as a pointer to remote.exec.
 	 */
-	columnar_result_callback* rcb = GDKzalloc(sizeof(columnar_result_callback));
+	rcb = GDKzalloc(sizeof(columnar_result_callback));
+	if (!rcb) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_remote", "Could not setup query stream");
+		goto finalize;
+	}
+
 	if (!prepare_id) {
 		struct callback_context* ccontext;
 		ccontext		= GDKzalloc(sizeof(struct callback_context));
@@ -1374,10 +1380,13 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		rcb->context			= ccontext;
 		rcb->call				= monetdbe_prepare_cb;
 	}
+	if (!rcb->context) {
+		GDKfree(rcb);
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_remote", "Could not setup query stream");
+		goto finalize;
+	}
 
-	ValRecord v;
-	ptr vp = (ptr) rcb;
-
+	vp = (ptr) rcb;
 	VALset(&v, TYPE_ptr, &vp);
 	e = pushValue(mb, e, &v);
 
@@ -1386,7 +1395,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 
 	pushInstruction(mb, e);
 
-	InstrPtr r = newInstruction(mb, NULL, NULL);
+	r = newInstruction(mb, NULL, NULL);
 	r->barrier= RETURNsymbol;
 	r->argc= r->retc=0;
 	pushInstruction(mb, r);
@@ -1549,7 +1558,13 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 		}
 		VALset(&stmt_internal->data[i], tpe, b);
 	} else if (tpe == TYPE_str) {
-		VALset(&stmt_internal->data[i], tpe, GDKstrdup(data));
+		char *val = GDKstrdup(data);
+
+		if (val == NULL) {
+			stmt_internal->mdbe->msg = createException(MAL, "monetdbe.monetdbe_bind", MAL_MALLOC_FAIL);
+			return stmt_internal->mdbe->msg;
+		}
+		VALset(&stmt_internal->data[i], tpe, val);
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
