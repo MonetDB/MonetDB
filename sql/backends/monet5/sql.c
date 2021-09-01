@@ -319,39 +319,36 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	str msg = MAL_SUCCEED;
 
 	if (store_readonly(sql->session->tr->store))
-		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
+		throw(SQL, "sql.catalog", SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
-		return sql_error(sql, 02, SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
 	if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP)))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'",
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'",
 						 action, obj, get_string_global_var(sql, "current_user"), s->base.name);
 	if ((ot = mvc_bind_table(sql, s, t->base.name))) {
 		if (replace) {
 			if (ot->type != t->type)
-				return sql_error(sql, 02, SQLSTATE(42000) "%s %s: unable to drop %s '%s': is a %s",
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: unable to drop %s '%s': is a %s",
 								 action, obj, obj, t->base.name, TABLE_TYPE_DESCRIPTION(ot->type, ot->properties));
 			if (ot->system)
-				return sql_error(sql, 02, SQLSTATE(42000) "%s %s: cannot replace system %s '%s'", action, obj, obj, t->base.name);
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: cannot replace system %s '%s'", action, obj, obj, t->base.name);
 			if (mvc_check_dependency(sql, ot->base.id, isView(ot) ? VIEW_DEPENDENCY : TABLE_DEPENDENCY, NULL))
-				return sql_error(sql, 02, SQLSTATE(42000) "%s %s: cannot replace %s '%s', there are database objects which depend on it",
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: cannot replace %s '%s', there are database objects which depend on it",
 								 action, obj, obj, t->base.name);
-			if ((msg = mvc_drop_table(sql, s, ot, 0)) != MAL_SUCCEED) {
-				sql_error(sql, 02, "%s", msg);
-				freeException(msg);
-				return NULL;
-			}
+			if ((msg = mvc_drop_table(sql, s, ot, 0)) != MAL_SUCCEED)
+				return msg;
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
+			throw(SQL, "sql.catalog", SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
 		}
 	}
 	if (temp == SQL_DECLARED_TABLE && ol_length(t->keys))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
 								t->sz, t->properties);
 	if (!nt)
-		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
 
 	osa = sql->sa;
 	sql->sa = sql->ta;
@@ -578,11 +575,11 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
@@ -595,30 +592,30 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		else {
 			sql_subtype *t = sql_bind_localtype(atoname);
 			if (!t)
-				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
+				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
 		}
 
 		if (columns[i].name && columns[i].name[0] == '%')
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
 		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
+			throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 	}
 	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0)) != MAL_SUCCEED)
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 	BUN offset;
 	BAT *pos = NULL;
 	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: Could not insert data");
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: Could not insert data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
 			bat_destroy(pos);
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		}
 		if ((msg = mvc_append_column(sql->session->tr, col, offset, pos, b)) != MAL_SUCCEED) {
 			bat_destroy(pos);
@@ -646,20 +643,20 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 	BUN offset;
 	BAT *pos = NULL;
 	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: Could not append data");
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: Could not append data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
 			bat_destroy(pos);
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
+			throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		}
 		if ((msg = mvc_append_column(sql->session->tr, col, offset, pos, b)) != MAL_SUCCEED) {
 			bat_destroy(pos);
@@ -692,16 +689,6 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 	sqlstore *store = tr->store;
 	b = store->storage_api.bind_col(tr, c, access);
 	return b;
-}
-
-str
-SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return sql_message(SQLSTATE(25006) "Deprecated statement");
 }
 
 /* setVariable(int *ret, str *sname, str *name, any value) */
