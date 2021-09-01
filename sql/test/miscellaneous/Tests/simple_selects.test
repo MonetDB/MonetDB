@@ -853,6 +853,15 @@ select nasty()
 3
 
 statement ok
+create view v0(c0) as (select 1)
+
+statement ok
+create view v1(c0) as (select 1 + c0 from v0)
+
+statement error 42000!CREATE OR REPLACE VIEW: cannot replace VIEW 'v0', there are database objects which depend on it
+create or replace view v0(c0) as (select 'nope')
+
+statement ok
 rollback
 
 statement error CREATE FUNCTION: missing return statement
