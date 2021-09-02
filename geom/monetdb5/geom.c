@@ -173,7 +173,8 @@ static GeoPoint geoPointFromGeom(GEOSGeom geom)
 	return geo;
 }
 
-/* Converts the a GEOSGeom Line into GeoLines (one or more line segments) */
+/* Converts the a GEOSGeom Line into GeoLines (one or more line segments) 
+   Argument must be a Line, use geoLinesFromGeomPolygon for Polygons. */
 static GeoLines geoLinesFromGeom(GEOSGeom geom)
 {
 	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
@@ -189,6 +190,11 @@ static GeoLines geoLinesFromGeom(GEOSGeom geom)
 	}
 	geo.bbox = NULL;
 	return geo;
+}
+
+static GeoLines geoLinesFromGeomPolygon(GEOSGeom geom)
+{
+	return geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(geom));
 }
 
 static GeoPoint geoPointFromLatLon(double lon, double lat)
@@ -433,12 +439,14 @@ static double haversine(GeoPoint a, GeoPoint b)
 	return earth_radius_meters * c;
 }
 
+/* Distance between two Points */
 static double geoDistancePointPoint(GeoPoint a, GeoPoint b)
 {
 	return haversine(deg2RadPoint(a), deg2RadPoint(b));
 }
 
-static double calculatePerpendicular(GeoPoint p_geo, GeoLine l_geo)
+/* Calculates the distance between the perpendicular projection of a point in the Line */
+static double calculatePerpendicularDistance(GeoPoint p_geo, GeoLine l_geo)
 {
 	CartPoint l1, l2, p, projection;
 	GeoPoint projection_geo;
@@ -473,8 +481,8 @@ static double geoDistancePointLineInternal(GeoPoint point, GeoLine line)
 {
 	double distancePerpendicular, distanceStart, distanceEnd;
 
-	/* Calculate perpendicular of point in Line */
-	distancePerpendicular = calculatePerpendicular(point, line);
+	/* Calculate distance of the perpendicular of point in Line to the Line */
+	distancePerpendicular = calculatePerpendicularDistance(point, line);
 
 	/* Calculate distance of point to start and end points of line */
 	distanceStart = geoDistancePointPoint(point, line.start);
@@ -537,7 +545,9 @@ static double geoDistanceLineLine(GeoLines line1, GeoLines line2)
 }
 
 //TODO Implement intersection ourselves so we don't use GEOS?
-static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
+//TODO This still produces some false positives -> Is it only for Polygons where the Point is in a hole?
+/* Checks if a Point is within a Polygon */
+static bool pointWithinPolygon(GeoLines polygonRing,GeoPoint point)
 {
 	int intersectionNum = 0;
 	GEOSGeometry *segmentPolygon, *intersectionPoints;
@@ -559,8 +569,10 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 	//Count the number of intersections between the polygon and the constructed line
 	for (int i = 0; i < polygonRing.segmentCount; i++)
 	{
+		
 		segmentPolygon = cartesianLineFromGeoPoints(polygonRing.segments[i].start, polygonRing.segments[i].end);
 		intersectionPoints = GEOSIntersection(segmentPolygon, outInLine);
+		//printf("Segment (%d): (%f %f)->(%f %f)\n",i,polygonRing.segments[i].start.lon, polygonRing.segments[i].start.lat, polygonRing.segments[i].end.lon, polygonRing.segments[i].end.lat);
 
 		//If there is an intersection, a point will be returned (line when there is none)
 		if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
@@ -576,7 +588,7 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 			pDegrees.y = y;
 			pDegrees.z = z;
 			pRadians = rad2DegPoint(cart2geo(pDegrees));
-			printf("Intersection Num: %d\n", intersectionNum);
+			printf("Intersection Num %d on Segment Num %d\n", intersectionNum,i);
 			printf("Intersection Point (Degrees) (%f %f)\n", pRadians.lon, pRadians.lat);
 			printf("Line (%f %f)->(%f %f)\nLine (%f %f)->(%f %f)\n", outsidePoint.lon, outsidePoint.lat, point.lon, point.lat, polygonRing.segments[i].start.lon, polygonRing.segments[i].start.lat, polygonRing.segments[i].end.lon, polygonRing.segments[i].end.lat);
 			fflush(stdout);*/
@@ -598,7 +610,7 @@ static bool pointWithinPolygon(GeoPoint point, GeoLines polygonRing)
 static double geoDistancePointPolygon(GeoPoint point, GeoLines polygonRing)
 {
 	//Check if point is in polygon
-	if (pointWithinPolygon(point, polygonRing))
+	if (pointWithinPolygon(polygonRing,point))
 	{
 		return 0;
 	}
@@ -671,27 +683,27 @@ static double geoDistanceSingle(GEOSGeom a, GEOSGeom b)
 	else if (dimA == 0 && dimB == 2)
 	{
 		/* Point and Polygon */
-		return geoDistancePointPolygon(geoPointFromGeom(a), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(b)));
+		return geoDistancePointPolygon(geoPointFromGeom(a), geoLinesFromGeomPolygon(b));
 	}
 	else if (dimA == 2 && dimB == 0)
 	{
 		/* Polygon and Point */
-		return geoDistancePointPolygon(geoPointFromGeom(b), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(a)));
+		return geoDistancePointPolygon(geoPointFromGeom(b), geoLinesFromGeomPolygon(a));
 	}
 	else if (dimA == 1 && dimB == 2)
 	{
 		/* Line/LinearRing and Polygon */
-		return geoDistanceLinePolygon(geoLinesFromGeom(a), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(b)));
+		return geoDistanceLinePolygon(geoLinesFromGeom(a), geoLinesFromGeomPolygon(b));
 	}
 	else if (dimA == 2 && dimB == 1)
 	{
 		/* Polygon and Line/LinearRing */
-		return geoDistanceLinePolygon(geoLinesFromGeom(b), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(a)));
+		return geoDistanceLinePolygon(geoLinesFromGeom(b), geoLinesFromGeomPolygon(a));
 	}
 	else if (dimA == 2 && dimB == 2)
 	{
 		/* Polygon and Polygon */
-		return geoDistancePolygonPolygon(geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(a)), geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(b)));
+		return geoDistancePolygonPolygon(geoLinesFromGeomPolygon(a), geoLinesFromGeomPolygon(b));
 	}
 	return INT_MAX;
 }
@@ -780,12 +792,141 @@ str wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 	return err;
 }
 
+/* Checks if a Polygon covers a Line geometry */
+static bool geoPolygonCoversLine(GeoLines polygon, GeoLines lines) {
+	for (int i = 0; i < lines.segmentCount; i++)
+	{
+		if (pointWithinPolygon(polygon, lines.segments[i].start) == false)
+			return false;
+	}
+	return pointWithinPolygon(polygon, lines.segments[lines.segmentCount - 1].end);
+}
+
+/* Compares two GeoPoints, returns true if they're equal */
+static bool geoPointEquals (GeoPoint pointA, GeoPoint pointB) {
+	return (pointA.lat == pointB.lat) && (pointA.lon = pointB.lon);
+}
+
+#if 0
+//TODO: Can we calculate the perpendicular of the Point in the Line and check if it is the same as the point?
+//Probably not, this must be wrong
+static bool geoLineCoversPoint (GeoLines lines, GeoPoint point) {
+	GeoPoint perpendicularPoint;
+	for (int i = 0; i < lines.segmentCount; i++) {
+		perpendicularPoint = calculatePerpendicular(point,lines.segments[i]);
+		if (geoPointEquals(perpendicularPoint,point))
+			return true;
+	}
+	return false;
+}
+
+static bool geoLineCoversLine (GeoLines linesA, GeoLines linesB) {
+	for (int i = 0; i < linesB.segmentCount; i++)
+	{
+		if (geoLineCoversPoint(linesA, linesB.segments[i].start) == false)
+			return false;
+	}
+	return geoLineCoversPoint(linesA, linesB.segments[linesB.segmentCount - 1].end);	
+}
+#endif
+
+static bool geoCoversSingle(GEOSGeom a, GEOSGeom b) {
+	int dimA = GEOSGeom_getDimensions(a), dimB = GEOSGeom_getDimensions(b);
+	if (dimA < dimB) {
+		//If the dimension of A is smaller than B, then it must not cover it
+		return false;
+	}
+
+	if (dimA == 0) {
+		//A and B are Points
+		GeoPoint pointA = geoPointFromGeom(a);
+		GeoPoint pointB = geoPointFromGeom(b);
+		return geoPointEquals(pointA,pointB);
+	}
+	else if (dimA == 1) {
+		//A is Line
+		//GeoLines lineA = geoLinesFromGeom(a);
+		if (dimB == 0) {
+			//B is Point
+			//GeoPoint pointB = geoPointFromGeom(b);
+			//return geoLineCoversPoint(lineA,pointB);
+			return false;
+		}
+		else {
+			//B is Line
+			//GeoLines lineB = geoLinesFromGeom(b);
+			//return geoLineCoversLine(lineA, lineB);
+			return false;
+		}
+	}
+	else if (dimA == 2) {
+		//A is Polygon
+		GeoLines polygonA = geoLinesFromGeomPolygon(a);
+		if (dimB == 0) {
+			//B is Point
+			GeoPoint pointB = geoPointFromGeom(b);
+			return pointWithinPolygon(polygonA, pointB);
+		}
+		else if (dimB == 1) {
+			//B is Line
+			GeoLines lineB = geoLinesFromGeom(b);
+			return geoPolygonCoversLine(polygonA, lineB);
+		}
+		else {
+			//B is Polygon
+			GeoLines polygonB = geoLinesFromGeomPolygon(b);
+			return geoPolygonCoversLine(polygonA, polygonB);
+		}
+ 	}
+	else {
+		return false;
+	}
+
+}
+
+static bool geoCoversInternal(GEOSGeom a, GEOSGeom b)
+{
+	int numGeomsA = GEOSGetNumGeometries(a), numGeomsB = GEOSGetNumGeometries(b);
+	GEOSGeometry *geo1, *geo2;
+	for (int i = 0; i < numGeomsA; i++)
+	{
+		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a, i);
+		for (int j = 0; j < numGeomsB; j++)
+		{
+			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
+			if (geoCoversSingle(geo1, geo2) == 0)
+				return 0;
+		}
+	}
+	return 1;
+}
+
+/**
+* Covers
+* 
+**/
+/* Checks if no point of Geometry B is outside Geometry A */
+str wkbCoversGeographic(bit *out, wkb **a, wkb **b)
+{
+	str err = MAL_SUCCEED;
+	GEOSGeom ga, gb;
+	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	if (ga && gb)
+	{
+		(*out) = geoCoversInternal(ga, gb);
+	}
+
+	GEOSGeom_destroy(ga);
+	GEOSGeom_destroy(gb);
+
+	return err;
+}
+
 /**
 * Union (Group By implementation) 
 * 
 **/ 
-/* Group By operation.
-   Joins geometries together in the same group into a MultiGeometry */
+/* Group By operation. Joins geometries together in the same group into a MultiGeometry */
 str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
@@ -7833,6 +7974,12 @@ static mel_func geom_init_funcs[] = {
 	command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
 	command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
 	command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
+	command("geom", "CoversGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+
+	command("geom", "Union", wkbUnionAggrGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
+	command("geom", "subUnion", wkbUnionAggrSubGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+	command("geom", "subUnion", wkbUnionAggrSubGroupedCand, false, "Gets a BAT with geometries and returns their union", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
+
 	command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1, 3, arg("", str), arg("flags", int), arg("format", int))),
@@ -7872,15 +8019,8 @@ static mel_func geom_init_funcs[] = {
 	command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring", args(1, 2, arg("", dbl), arg("w", wkb))),
 	command("geom", "ConvexHull", wkbConvexHull, false, "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.", args(1, 2, arg("", wkb), arg("w", wkb))),
 	command("geom", "Intersection", wkbIntersection, false, "Returns a geometry that represents the point set intersection of the Geometries a, b", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
-
 	command("geom", "Union", wkbUnion, false, "Returns a geometry that represents the point set union of the Geometries a, b", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
 	command("geom", "Union", wkbUnionAggr, false, "Gets a BAT with geometries and returns their union", args(1, 2, arg("", wkb), batarg("a", wkb))),
-
-	command("geom", "Union", wkbUnionAggrGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
-	//command("geom", "subUnion", wkbUnionAggrSubGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 6, arg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), arg("skip_nils", bit), arg("abort_on_error", bit))),
-	command("geom", "subUnion", wkbUnionAggrSubGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
-	command("geom", "subUnion", wkbUnionAggrSubGroupedCand, false, "Gets a BAT with geometries and returns their union", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
-
 	command("geom", "Difference", wkbDifference, false, "Returns a geometry that represents that part of geometry A that does not intersect with geometry B", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
 	command("geom", "SymDifference", wkbSymDifference, false, "Returns a geometry that represents the portions of A and B that do not intersect", args(1, 3, arg("", wkb), arg("a", wkb), arg("b", wkb))),
 	command("geom", "Buffer", wkbBuffer, false, "Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.", args(1, 3, arg("", wkb), arg("a", wkb), arg("distance", dbl))),
