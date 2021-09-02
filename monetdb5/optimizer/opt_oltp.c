@@ -33,12 +33,9 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p, q, lcks;
 	int actions = 0;
 	InstrPtr *old;
-	lng usec = GDKusec();
 	OLTPlocks wlocks, rlocks;
-	char buf[256];
 	str msg = MAL_SUCCEED;
 
-	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
@@ -125,20 +122,17 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for(; i<slimit; i++)
 		if( old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	//if (!msg)
 	//	msg = chkFlow(mb);
 	//if (!msg)
 	//	msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

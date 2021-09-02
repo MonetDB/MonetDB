@@ -138,7 +138,6 @@ mal_export void resetMalBlk(MalBlkPtr mb);
 mal_export void resetMalTypes(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
-mal_export int prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);

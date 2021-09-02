@@ -25,25 +25,24 @@ rel_set_exps(sql_rel *rel, list *exps)
 
 /* some projections results are order dependend (row_number etc) */
 int
-project_unsafe(sql_rel *rel, int allow_identity, int allow_self_reference)
+project_unsafe(sql_rel *rel, int allow_identity)
 {
 	sql_rel *sub = rel->l;
-	node *n;
 
 	if (need_distinct(rel) || rel->r /* order by */)
 		return 1;
-	if (!rel->exps)
+	if (list_empty(rel->exps))
 		return 0;
 	/* projects without sub and projects around ddl's cannot be changed */
-	if (!sub || (sub && sub->op == op_ddl))
+	if (!sub || sub->op == op_ddl)
 		return 1;
-	for(n = rel->exps->h; n; n = n->next) {
+	for(node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data, *ne;
 
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity))
 			return 1;
-		if (!allow_self_reference && (ne = rel_find_exp(rel, e)) && ne != e)
+		if ((ne = rel_find_exp(rel, e)) && ne != e)
 			return 1; /* no self referencing */
 	}
 	return 0;

@@ -561,6 +561,32 @@ project (
 | ) [ "x"."x", "x"."y" ]
 ) [ "x"."x", "x"."y" ]
 
+query T nosort
+plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
+----
+project (
+| distinct union (
+| | project (
+| | | group by (
+| | | | project (
+| | | | | select (
+| | | | | | table("sys"."t1") [ "t1"."a" ] COUNT 
+| | | | | ) [ "t1"."a" > int "2" ]
+| | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
+| | | ) [ "b", "c" ] [ "b", "c" ]
+| | ) [ "b" as "x"."x", "c" as "x"."y" ],
+| | project (
+| | | group by (
+| | | | project (
+| | | | | select (
+| | | | | | table("sys"."t2") [ "t2"."a" ] COUNT 
+| | | | | ) [ "t2"."a" > int "2" ]
+| | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
+| | | ) [ "z", "d" ] [ "z", "d" ]
+| | ) [ "z" as "x"."x", "d" as "x"."y" ]
+| ) [ "x"."x", "x"."y" ]
+) [ "x"."x", "x"."y" ]
+
 statement ok
 rollback
 

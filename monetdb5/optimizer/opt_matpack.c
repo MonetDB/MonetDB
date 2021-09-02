@@ -20,17 +20,12 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old = NULL;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	if( isOptimizerUsed(mb, "mergetable") <= 0){
+	if( isOptimizerUsed(mb, pci, mergetableRef) <= 0){
 		goto wrapup;
 	}
 
-	//if ( !optimizerIsApplied(mb,"multiplex") )
-		//return 0;
-	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	for( i = 1; i < mb->stop; i++)
@@ -74,23 +69,19 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	for(; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
 wrapup:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions, usec);
-    newComment(mb,buf);
-	if( actions >= 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

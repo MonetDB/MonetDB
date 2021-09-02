@@ -1766,11 +1766,11 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	list *mts;
 
 	if (!copy_allowed(sql, 1))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-				"binary COPY INTO requires database administrator rights");
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: insufficient privileges: "
+				"COPY LOADER INTO requires database administrator rights");
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
+	if (insert_allowed(sql, t, tname, "COPY LOADER INTO", "copy loader into") == NULL)
 		return NULL;
 	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
