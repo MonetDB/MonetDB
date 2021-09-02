@@ -25,7 +25,8 @@
 typedef struct global_props {
 	int cnt[ddl_maxops];
 	uint8_t
-		has_mergetable:1;
+		has_mergetable:1,
+		needs_distinct:1;
 } global_props;
 
 static int
@@ -337,6 +338,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+		gp->needs_distinct |= need_distinct(rel);
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		break;
@@ -2593,7 +2595,7 @@ is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test 
 	return NULL;
 }
 
-static inline sql_rel *
+static sql_rel *
 rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
@@ -2894,7 +2896,7 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 	    prj && prj->op == op_project && !(rel_is_ref(prj)) && !prj->r) {
 		int all = 1;
 
-		if (project_unsafe(rel,0,0) || project_unsafe(prj,0,0) || exps_share_expensive_exp(rel->exps, prj->exps))
+		if (project_unsafe(rel,0) || project_unsafe(prj,0) || exps_share_expensive_exp(rel->exps, prj->exps))
 			return rel;
 
 		/* here we need to fix aliases */
@@ -3396,8 +3398,8 @@ rel_merge_union(visitor *v, sql_rel *rel)
 	sql_rel *ref = NULL;
 
 	if (is_union(rel->op) &&
-	    l && is_project(l->op) && !project_unsafe(l,0,0) &&
-	    r && is_project(r->op) && !project_unsafe(r,0,0) &&
+	    l && is_project(l->op) && !project_unsafe(l,0) &&
+	    r && is_project(r->op) && !project_unsafe(r,0) &&
 	    (ref = rel_find_ref(l)) != NULL && ref == rel_find_ref(r)) {
 		/* Find selects and try to merge */
 		sql_rel *ls = rel_find_select(l);
@@ -4686,8 +4688,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	if (is_select(rel->op) && r && r->op == op_project && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l;
-		/* we cannot push through rank (row_number etc) functions or projects with distinct */
-		if (pl && !project_unsafe(r, 1, 1)) {
+		/* we cannot push through window functions (for safety I disabled projects over DDL too) */
+		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 1)) {
 			/* introduce selects under the project (if needed) */
 			set_processed(pl);
 			for (n = exps->h; n;) {
@@ -4712,51 +4714,30 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 
 	/* try push select under set relation */
-	if (is_select(rel->op) && r && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
-		sql_rel *u = r, *ou = u;
-		sql_rel *ul = u->l;
-		sql_rel *ur = u->r;
+	if (is_select(rel->op) && r && is_set(r->op) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+		sql_rel *u = r, *ul = u->l, *ur = u->r;
 
-		if (!rel_is_ref(u) && !is_single(u) && u->op == op_project)
-			u = u->l;
+		ul = rel_dup(ul);
+		ur = rel_dup(ur);
+		if (!is_project(ul->op))
+			ul = rel_project(v->sql->sa, ul,
+				rel_projections(v->sql, ul, NULL, 1, 1));
+		if (!is_project(ur->op))
+			ur = rel_project(v->sql->sa, ur,
+				rel_projections(v->sql, ur, NULL, 1, 1));
+		rel_rename_exps(v->sql, u->exps, ul->exps);
+		rel_rename_exps(v->sql, u->exps, ur->exps);
 
-		if (u && is_set(u->op) && !is_single(u) && !list_empty(u->exps) && !rel_is_ref(u)) {
-			ul = u->l;
-			ur = u->r;
+		/* introduce selects under the set */
+		ul = rel_select(v->sql->sa, ul, NULL);
+		ul->exps = exps_copy(v->sql, exps);
+		ur = rel_select(v->sql->sa, ur, NULL);
+		ur->exps = exps_copy(v->sql, exps);
 
-			ul = rel_dup(ul);
-			ur = rel_dup(ur);
-			if (!is_project(ul->op))
-				ul = rel_project(v->sql->sa, ul,
-					rel_projections(v->sql, ul, NULL, 1, 1));
-			if (!is_project(ur->op))
-				ur = rel_project(v->sql->sa, ur,
-					rel_projections(v->sql, ur, NULL, 1, 1));
-			rel_rename_exps(v->sql, u->exps, ul->exps);
-			rel_rename_exps(v->sql, u->exps, ur->exps);
-
-			if (u != ou) {
-				ul = rel_project(v->sql->sa, ul, NULL);
-				ul->exps = exps_copy(v->sql, ou->exps);
-				rel_rename_exps(v->sql, ou->exps, ul->exps);
-				set_processed(ul);
-				ur = rel_project(v->sql->sa, ur, NULL);
-				ur->exps = exps_copy(v->sql, ou->exps);
-				rel_rename_exps(v->sql, ou->exps, ur->exps);
-				set_processed(ur);
-			}
-
-			/* introduce selects under the set */
-			ul = rel_select(v->sql->sa, ul, NULL);
-			ul->exps = exps_copy(v->sql, exps);
-			ur = rel_select(v->sql->sa, ur, NULL);
-			ur->exps = exps_copy(v->sql, exps);
-
-			rel = rel_inplace_setop(v->sql, rel, ul, ur, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
-			if (need_distinct(u))
-				set_distinct(rel);
-			v->changes++;
-		}
+		rel = rel_inplace_setop(v->sql, rel, ul, ur, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
+		if (need_distinct(u))
+			set_distinct(rel);
+		v->changes++;
 	}
 
 	return try_remove_empty_select(v, rel);
@@ -5552,7 +5533,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0,0))
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
 			return rel;
 		/* don't push project down union of single values */
 		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
@@ -6360,8 +6341,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
-		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op),0))) ||
-		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0,0))))))
+		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
+		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))
 			return rel;
 
 		if (l->op == op_project && l->l) {
@@ -6687,7 +6668,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 	}
 	/* for count/rank we need atleast one column */
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
-		(is_simple_project(rel->op) && project_unsafe(rel, 0, 0))) {
+		(is_simple_project(rel->op) && project_unsafe(rel, 0))) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}
@@ -9504,7 +9485,6 @@ static sql_rel *
 rel_first_level_optimizations(visitor *v, sql_rel *rel)
 {
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
-	rel = rel_distinct_project2groupby(v, rel);
 	/* rel_simplify_math optimizer requires to clear the hash, so make sure it runs last in this batch */
 	if (v->value_based_opt)
 		rel = rel_simplify_math(v, rel);
@@ -9797,6 +9777,9 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_topn_and_sample_down);
+
+	if (level <= 0 && gp.needs_distinct && gp.cnt[op_project])
+		rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
 
 	if (gp.has_mergetable)
 		rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);

@@ -11,11 +11,10 @@
 #include "mal_interpreter.h"
 
 str
-OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	InstrPtr p=0;
 	int actions = 0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	(void)cntxt;
@@ -26,22 +25,18 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	trimMalVariables(mb,0);
 	actions = actions - mb->vtop;
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	/* plan is not changed */
 	/* plan is not changed */
-    //if( actions > 0){
-        //msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        //if (!msg)
+	//if( actions > 0){
+		//msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		//if (!msg)
 	//	msg = chkFlow(mb);
-        //if (!msg)
-        // 	msg = chkDeclarations(mb);
-    //}
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reduce",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+		//if (!msg)
+		// 	msg = chkDeclarations(mb);
+	//}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 
 	return msg;
 }

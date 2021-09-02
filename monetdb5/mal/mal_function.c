@@ -734,8 +734,7 @@ chkDeclarations(MalBlkPtr mb){
 				 */
 				if( p->barrier == CATCHsymbol){
 					setVarScope(mb, l, blks[0]);
-				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
-					!isVarInit(mb,l) ) {
+				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) && !isVarInit(mb,l) ) {
 					throw(MAL,"chkFlow",  "%s.%s '%s' may not be used before being initialized",  getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
 				}
 			} else if( !isVarInit(mb,l) ){

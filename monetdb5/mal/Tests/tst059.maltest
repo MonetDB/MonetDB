@@ -1,15 +1,15 @@
 statement ok
 function threevaluedlogic(B:bit):bit;
 	threevaluedlogic:int:= nil:int ;
-	barrier X_2 := B;
+	barrier GLB_2 := B;
 		return threevaluedlogic:int  := 1:int;
-	exit X_2;
-	barrier X_8 := calc.isnil(B);
+	exit GLB_2;
+	barrier GLB_8 := calc.isnil(B);
 		return threevaluedlogic:int  := nil:int;
-	exit X_8;
-	barrier X_6 := calc.not(B);
+	exit GLB_8;
+	barrier GLB_6 := calc.not(B);
 		return threevaluedlogic:int  := 0:int;
-	exit X_6;
+	exit GLB_6;
 	return threevaluedlogic:int;
 end threevaluedlogic
 
