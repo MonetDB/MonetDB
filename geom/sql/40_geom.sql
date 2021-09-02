@@ -4590,3 +4590,5 @@ CREATE FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance do
 GRANT EXECUTE ON FUNCTION ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
 CREATE FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."IntersectsGeographic";
 GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
+CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
+GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;

@@ -48,9 +48,21 @@ command heap() address wkbaHEAP; #create heap
 
 module geom;
 
+# Geographic update
+# TODO: Add descriptions
 command DistanceGeographic(a:wkb, b:wkb) :dbl address wkbDistanceGeographic
 command DWithinGeographic(a:wkb, b:wkb, d:dbl) :bit address wkbDWithinGeographic
 command IntersectsGeographic(a:wkb, b:wkb) :bit address wkbIntersectsGeographic
+command CoversGeographic(a:wkb, b:wkb) :bit address wkbCoversGeographic
+
+# TODO: Fix descriptions
+command Union(val:bat[:wkb], g:bat[:oid], e:bat[:any_1]) :bat[:wkb] address wkbUnionAggrGrouped
+comment "Gets a BAT with geometries and returns their union"; 
+command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:oid], skip_nils:bit) :bat[:wkb] address wkbUnionAggrSubGrouped
+comment "Gets a BAT with geometries and returns their union"; 
+command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], s:bat[:oid], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbUnionAggrSubGroupedCand
+comment "Gets a BAT with geometries and returns their union"; 
+
 
 command hasZ(flags:int) :int address geoHasZ
 comment "returns 1 if the geometry has z coordinate";
@@ -154,22 +166,10 @@ command ConvexHull(w:wkb) :wkb address wkbConvexHull
 comment "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.";
 command Intersection(a:wkb, b:wkb) :wkb address wkbIntersection
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
-
 command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
 command Union(a:bat[:wkb]) :wkb address wkbUnionAggr
 comment "Gets a BAT with geometries and returns their union"; 
-
-# TODO: Fix descriptions
-command Union(val:bat[:wkb], g:bat[:oid], e:bat[:any_1]) :bat[:wkb] address wkbUnionAggrGrouped
-comment "Gets a BAT with geometries and returns their union"; 
-# TODO: Find out why there is only one bit value
-# command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbUnionAggrSubGrouped
-command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:oid], skip_nils:bit) :bat[:wkb] address wkbUnionAggrSubGrouped
-comment "Gets a BAT with geometries and returns their union"; 
-command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], s:bat[:oid], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbUnionAggrSubGroupedCand
-comment "Gets a BAT with geometries and returns their union"; 
-
 command Difference(a:wkb, b:wkb) :wkb address wkbDifference
 comment "Returns a geometry that represents that part of geometry A that does not intersect with geometry B";
 command SymDifference(a:wkb, b:wkb) :wkb address wkbSymDifference
