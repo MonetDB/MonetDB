@@ -546,6 +546,18 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client");
 		goto cleanup;
 	}
+	/* MCinitClientThread can't be exported on Jul2021, so use this workaround for now */
+	mdbe->c->errbuf = GDKerrbuf;
+	if (mdbe->c->errbuf == NULL) {
+		char *n = GDKzalloc(GDKMAXERRLEN);
+		if ( n == NULL){
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+		GDKsetbuf(n);
+		mdbe->c->errbuf = GDKerrbuf;
+	} else
+		mdbe->c->errbuf[0] = 0;
 	mdbe->c->curmodule = mdbe->c->usermodule = userModule();
 	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
 	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
