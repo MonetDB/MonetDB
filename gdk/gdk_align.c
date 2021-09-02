@@ -178,7 +178,6 @@ BATmaterialize(BAT *b)
 	cnt = BATcapacity(b);
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
-	*tail = *b->theap;
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
@@ -253,7 +252,6 @@ BATmaterialize(BAT *b)
 	HEAPdecref(b->theap, false);
 	b->theap = tail;
 	b->tbaseoff = 0;
-	b->theap->dirty = true;
 	BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){is_oid_nil(t) ? 1 : b->batCount});
 	BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){is_oid_nil(t) ? 1.0 : (dbl)b->batCount});
 	MT_lock_unset(&b->theaplock);

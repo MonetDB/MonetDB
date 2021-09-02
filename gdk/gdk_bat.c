@@ -1644,9 +1644,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	MT_lock_set(&b->theaplock);
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
+	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
 }
