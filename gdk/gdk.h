@@ -2384,4 +2384,24 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 			CALLBACK;		\
 	} while (0)
 
+typedef struct gdk_callback {
+	char *name;
+	int argc;
+	int delay;  // units sec or ms??
+	lng last_called; // timestamp GDKusec
+	gdk_return (*func)(int argc, void *argv[]);
+	gdk_return (*argsfree)(int argc, void *argv[]);
+	struct gdk_callback *next;
+	void *argv[];
+} gdk_callback;
+
+typedef struct gdk_callback_list {
+	int cnt;
+	MT_Lock lock;
+	gdk_callback *head;
+} gdk_callback_list;
+
+int gdk_add_callback(gdk_callback *);
+int gdk_remove_callback(char *);
+
 #endif /* _GDK_H_ */

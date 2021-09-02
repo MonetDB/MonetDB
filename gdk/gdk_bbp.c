@@ -4126,3 +4126,31 @@ gdk_bbp_reset(void)
 	backup_dir = 0;
 	backup_subdir = 0;
 }
+
+static gdk_callback_list callback_list = {
+	.cnt = 0,
+	.head = NULL,
+	.lock=MT_LOCK_INITIALIZER(GDKCallbackListLock),
+};
+
+/*
+ * @- Add a callback
+ * Adds new callback to the callback list.
+ * Returns the count of the callbacks in the callback_list.
+ */
+int gdk_add_callback(gdk_callback *callback) {
+	// TODO
+	(void) callback;
+	return callback_list.cnt;
+}
+
+/*
+ * @- Remove a callback
+ * Removes a callback from the callback list with a given name as an argument.
+ * Returns the count of the callbacks in the callback_list.
+ */
+int gdk_remove_callback(char *cb_name) {
+	// TODO
+	(void) cb_name;
+	return callback_list.cnt;
+}
