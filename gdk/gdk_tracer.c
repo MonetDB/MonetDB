@@ -454,6 +454,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	      const char *syserr,
 	      const char *fmt, ...)
 {
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
+		return;
+
 	int bytes_written;
 	char buffer[512];	/* should be plenty big enough for a message */
 	va_list va;
@@ -498,8 +501,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 	va_end(va);
 	if (bytes_written < 0) {
-		if ((adapter_t) ATOMIC_GET(&cur_adapter) != MBEDDED)
-			GDK_TRACER_EXCEPTION("Failed to write logs\n");
+		GDK_TRACER_EXCEPTION("Failed to write logs\n");
 		return;
 	}
 	char *p;
@@ -518,10 +520,6 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 				 syserr ? syserr : "");
 		}
 	}
-
-	/* don't write to file on embedded case, but set the GDK error buffer */
-	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
-		return;
 
 	if (level <= M_WARNING) {
 		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
