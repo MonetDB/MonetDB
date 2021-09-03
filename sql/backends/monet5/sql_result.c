@@ -699,21 +699,17 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	*bats =0;	// initialize the receiver
 
-	if (!bs) {
-		sql_error(m, 500, "no stream (pointer) provided");
-		return NULL;
-	}
+	if (!bs)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
 	if (mnstr_errnr(bs->s)) {
 		mnstr_error_kind errnr = mnstr_errnr(bs->s);
-		char *msg = mnstr_error(bs->s);
-		sql_error(m, 500, "stream not open %s: %s", mnstr_error_kind_name(errnr), msg ? msg : "unknown error");
-		free(msg);
-		return NULL;
+		char *stream_msg = mnstr_error(bs->s);
+		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
+		free(stream_msg);
+		return msg;
 	}
-	if (offset < 0 || offset > (lng) BUN_MAX) {
-		sql_error(m, 500, "offset out of range");
-		return NULL;
-	}
+	if (offset < 0 || offset > (lng) BUN_MAX)
+		throw(IO, "sql.copy_from", SQLSTATE(42000) "Offset out of range");
 
 	if (offset > 0)
 		offset--;
@@ -730,10 +726,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			.filename = m->scanner.rs == bs ? NULL : "",
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-		if (fmt == NULL) {
-			sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return NULL;
-		}
+		if (fmt == NULL)
+			throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		as.format = fmt;
 		if (!isa_block_stream(bs->s))
 			out = NULL;
@@ -758,8 +752,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					BBPunfix(fmt[j].c->batCacheid);
 				}
 				GDKfree(fmt[i].data);
-				sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
-				return NULL;
+				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
@@ -782,15 +775,14 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
-					sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 					TABLETdestroy_format(&as);
-					return NULL;
+					throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				msg = TABLETcollect(*bats,&as);
 			}
 		}
 		if (as.error) {
-			if( !best) sql_error(m, 500, "%s", getExceptionMessage(as.error));
+			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
 			freeException(as.error);
 			as.error = NULL;
 		}
@@ -1377,7 +1369,6 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	if(fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
 		GDKfree(tres);
-		sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
