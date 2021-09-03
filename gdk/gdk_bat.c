@@ -93,6 +93,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 		.batRole = role,
 		.batTransient = true,
+		.batRestricted = BAT_WRITE,
 	};
 	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
