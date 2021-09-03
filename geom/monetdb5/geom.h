@@ -72,6 +72,15 @@ typedef struct GeoLines
     BoundingBox* bbox;
 } GeoLines;
 
+//Geographic polygon 
+typedef struct GeoPolygon
+{
+    GeoLines exteriorRing;
+    GeoLines *interiorRings;
+    int interiorRingsCount;
+    BoundingBox* bbox;
+} GeoPolygon;
+
 //Cartesian representation of a geographic point (converted from Latitude/Longitude)
 typedef struct CartPoint
 {
