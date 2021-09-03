@@ -3086,9 +3086,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
-	}
+	if (onclient && !cntxt->filetrans)
+		throw(MAL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
 
 	be = cntxt->sqlcontext;
 	/* The CSV parser expects ssep to have the value 0 if the user does not
@@ -3145,6 +3144,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			size_t *widths;
 			char* val_start = fixed_widths;
 			size_t width_len = strlen(fixed_widths);
+			stream *ns;
+
 			for (i = 0; i < width_len; i++) {
 				if (fixed_widths[i] == '|') {
 					ncol++;
@@ -3166,30 +3167,37 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tsep = fwftsep;
 			rsep = fwfrsep;
 
-			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
+			ns = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
+			if (ns == NULL || mnstr_errnr(ns)) {
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+				close_stream(ss);
+				free(widths);
+				return msg;
+			}
+			ss = ns;
 		}
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
 #else
 		s = bstream_create(ss, 0x200000);
 #endif
-		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
-			if (onclient) {
-				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-				be->mvc->scanner.rs->eof = s->eof;
-				s->s = NULL;
-			}
-			bstream_destroy(s);
+		if (s == NULL) {
+			close_stream(ss);
+			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
+		if (onclient) {
+			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
+			be->mvc->scanner.rs->eof = s->eof;
+			s->s = NULL;
+		}
+		bstream_destroy(s);
 	}
-	if (fname && s == NULL)
-		throw(IO, "bstreams.create", SQLSTATE(42000) "Failed to create block stream");
-	if (b == NULL)
-		throw(SQL, "importTable", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, be->mvc->errstr);
-	bat2return(stk, pci, b);
-	GDKfree(b);
+	if (b) {
+		bat2return(stk, pci, b);
+		GDKfree(b);
+	}
 	return msg;
 }
 
