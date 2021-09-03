@@ -4011,7 +4011,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
-		trans_add(tr, &col->base, d, &tc_gc_col, &commit_create_col, &log_update_col);
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
 	sqlid id = col->base.id;
 	bat bid = d->cs.bid;
 	lock_column(tr->store, id);
