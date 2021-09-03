@@ -21,7 +21,6 @@
 gdk_return
 unshare_varsized_heap(BAT *b)
 {
-	assert(b->batCacheid > 0);
 	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
@@ -651,7 +650,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	assert(b->batCacheid > 0);
 	assert(b->theap->parentid == b->batCacheid);
 
 	TRC_DEBUG_IF(ALGO) {
