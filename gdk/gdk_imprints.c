@@ -775,7 +775,6 @@ IMPSfree(BAT *b)
 	Imprints *imprints;
 
 	if (b && b->timprints) {
-		assert(b->batCacheid > 0);
 		MT_lock_set(&b->batIdxLock);
 		imprints = b->timprints;
 		if (imprints != NULL && imprints != (Imprints *) 1) {

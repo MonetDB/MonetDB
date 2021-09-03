@@ -2148,9 +2148,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * correct for the reversed view.
  */
 #define isVIEW(x)							\
-	(assert((x)->batCacheid > 0),					\
-	 (((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
+	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
+	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
 
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)

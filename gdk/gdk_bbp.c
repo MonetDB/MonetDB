@@ -1991,7 +1991,6 @@ BBPcacheit(BAT *bn, bool lock)
 		if (bn->tvheap)
 			bn->tvheap->parentid = i;
 	}
-	assert(bn->batCacheid > 0);
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));

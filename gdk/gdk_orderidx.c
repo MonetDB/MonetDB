@@ -76,7 +76,6 @@ BATcheckorderidx(BAT *b)
 
 	if (b == NULL)
 		return false;
-	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */

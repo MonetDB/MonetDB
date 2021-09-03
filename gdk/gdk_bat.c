@@ -112,8 +112,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.
 	 */
-	assert(bn->batCacheid > 0);
-
 	if (heapnames) {
 		assert(bn->theap != NULL);
 		*bn->theap = (Heap) {
@@ -657,7 +655,6 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	assert(b->batCacheid > 0);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
@@ -1910,7 +1907,6 @@ gdk_return
 BATkey(BAT *b, bool flag)
 {
 	BATcheck(b, GDK_FAIL);
-	assert(b->batCacheid > 0);
 	if (b->ttype == TYPE_void) {
 		if (BATtdense(b) && !flag) {
 			GDKerror("dense column must be unique.\n");
@@ -1951,7 +1947,6 @@ BAThseqbase(BAT *b, oid o)
 	if (b != NULL) {
 		assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
 		assert(o + BATcount(b) <= GDK_oid_max);
-		assert(b->batCacheid > 0);
 		if (b->hseqbase != o) {
 			b->batDirtydesc = true;
 			b->hseqbase = o;
@@ -1966,7 +1961,6 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
-	assert(b->batCacheid > 0);
 	if (b->tseqbase != o) {
 		b->batDirtydesc = true;
 	}
