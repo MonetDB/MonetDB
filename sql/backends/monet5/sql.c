@@ -5004,30 +5004,90 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c = NULL;
 
 	if((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if((t = mvc_bind_table(m, s, tname)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
 	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
-		throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
 	// vacuum only string bats
 	if (ATOMstorage(b->ttype) == TYPE_str) {
 		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
-			throw(SQL, "sql.column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
+			throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
 		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
 			BBPreclaim(bn);
 			if (res == LOG_CONFLICT)
-				throw(SQL, "sql.column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+				throw(SQL, "sql.str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 			if (res == LOG_ERR)
-				throw(SQL, "sql.column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			throw(SQL, "sql.column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+				throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 		}
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+static gdk_return
+do_str_column_vacuum(int argc, void *argv[]) {
+	char *sname = (char *) argv[0];
+	char *tname = (char *) argv[1];
+	char *cname = (char *) argv[2];
+	(void) sname;
+	(void) tname;
+	(void) cname;
+	(void) argc;
+	// TODO
+	return GDK_SUCCEED;
+}
+
+str
+SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	gdk_callback *callback = NULL;
+	char *sname = *getArgReference_str(stk, pci, 1);
+	char *tname = *getArgReference_str(stk, pci, 2);
+	char *cname = *getArgReference_str(stk, pci, 3);
+	int interval = *getArgReference_int(stk, pci, 4);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+	if((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+	// register callback
+	if (!(callback = GDKmalloc(sizeof(gdk_callback))))
+		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	*callback = (gdk_callback) {
+		.name = "str_column_vacuum",
+		.argc = 3,
+		.interval = interval,
+		.func = do_str_column_vacuum,
+	};
+
+	if (!(*callback->argv = GDKmalloc(sizeof(char *[3]))))
+		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	callback->argv[0] = sname;
+	callback->argv[1] = tname;
+	callback->argv[2] = cname;
+	gdk_add_callback(callback);
+
+	return MAL_SUCCEED;
+}
+
 
 #include "wlr.h"
 #include "sql_cat.h"
@@ -6112,6 +6172,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
 #endif
  pattern("sql", "vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_column_auto_vacuum, false, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
  { .imp=NULL }
 };
 #include "mal_import.h"
