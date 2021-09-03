@@ -3194,10 +3194,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bstream_destroy(s);
 	}
-	if (b) {
+	if (b && !msg)
 		bat2return(stk, pci, b);
-		GDKfree(b);
-	}
+	GDKfree(b);
 	return msg;
 }
 
