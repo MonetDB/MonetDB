@@ -533,7 +533,6 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, 4);
 	lng cnt = *(lng*)getArgReference_lng(stk, pci, 5);
 	BAT *pos = NULL;
-
 	sql_schema *s;
 	sql_table *t;
 
@@ -549,6 +548,8 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+	if (!isTable(t))
+		throw(SQL, "sql.claim", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
 		*res = bat_nil;
 		if (pos)
@@ -646,6 +647,8 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+	if (!isTable(t))
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "APPEND TABLE: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	BUN offset;
 	BAT *pos = NULL;
 	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
@@ -680,7 +683,7 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 	if (s == NULL)
 		return NULL;
 	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
+	if (t == NULL || !isTable(t))
 		return NULL;
 	c = mvc_bind_column(m, t, cname);
 	if (c == NULL)
@@ -1284,7 +1287,7 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 	if (s == NULL)
 		return NULL;
 	i = mvc_bind_idx(m, s, iname);
-	if (i == NULL)
+	if (i == NULL || !isTable(i->t))
 		return NULL;
 
 	(void) tname;
@@ -1850,12 +1853,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
 	if (Pos != bat_nil && (pos = BATdescriptor(Pos)) == NULL)
-		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append positions descriptor");
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
 		bat_destroy(pos);
-		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append values descriptor");
 	}
 	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
@@ -1873,6 +1874,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(b);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
 	}
+	if (!isTable(t)) {
+		bat_destroy(pos);
+		bat_destroy(b);
+		throw(SQL, "sql.append", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	}
 	if (b)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
@@ -1880,6 +1886,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, tpe);
+	} else {
+		bat_destroy(pos);
+		bat_destroy(b);
+		throw(SQL, "sql.append", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
 	bat_destroy(pos);
 	bat_destroy(b);
@@ -1917,15 +1927,12 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		assert(0);
 	if (tpe != TYPE_bat)
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-		sname,tname,cname);
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Update values is not a BAT input");
 	if ((tids = BATdescriptor(Tids)) == NULL)
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access update positions descriptor");
 	if ((upd = BATdescriptor(Upd)) == NULL) {
 		BBPunfix(tids->batCacheid);
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access update values descriptor");
 	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
@@ -1939,11 +1946,20 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(upd->batCacheid);
 		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
+	if (!isTable(t)) {
+		BBPunfix(tids->batCacheid);
+		BBPunfix(upd->batCacheid);
+		throw(SQL, "sql.update", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	}
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+	} else {
+		BBPunfix(tids->batCacheid);
+		BBPunfix(upd->batCacheid);
+		throw(SQL, "sql.update", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
 	BBPunfix(tids->batCacheid);
 	BBPunfix(upd->batCacheid);
@@ -1975,6 +1991,8 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.clear_table", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	clear_res = mvc_clear_table(m, t);
 	if (clear_res >= BUN_NONE - 1)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
@@ -2022,6 +2040,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (b)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+	}
+	if (!isTable(t)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		throw(SQL, "sql.delete", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	}
 	sqlstore *store = m->session->tr->store;
 	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
