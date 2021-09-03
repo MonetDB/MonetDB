@@ -2058,7 +2058,12 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static inline BAT *
 setwritable(BAT *b)
 {
-	return BATsetaccess(b, BAT_WRITE);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BBPunfix(b->batCacheid);
+		b = bn;
+	}
+	return b;
 }
 
 str
