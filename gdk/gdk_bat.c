@@ -2184,8 +2184,7 @@ HEAPchangeaccess(Heap *hp, int dstmode, bool existing)
 	if (dstmode == BAT_WRITE) {
 		if (hp->storage != STORE_PRIV)
 			hp->dirty = true;	/* exception c does not make it dirty */
-//		return STORE_PRIV;	/* 4=>6,5=>7,c=>6 persistent BAT_WRITE needs STORE_PRIV */
-		return STORE_MMAP;
+		return STORE_PRIV;	/* 4=>6,5=>7,c=>6 persistent BAT_WRITE needs STORE_PRIV */
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = true;
@@ -2213,8 +2212,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 
 	if (hp->newstorage == STORE_MMAP)
 		hp->dirty = true;	/* 2=>6 */
-//	return STORE_PRIV;	/* 1=>5,2=>6,3=>7,a=>c,b=>6 states */
-	return STORE_MMAP;
+	return STORE_PRIV;	/* 1=>5,2=>6,3=>7,a=>c,b=>6 states */
 }
 
 
