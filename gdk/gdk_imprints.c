@@ -321,6 +321,7 @@ BATcheckimprints(BAT *b)
 				strconcat_len(imprints->imprints.filename,
 					      sizeof(imprints->imprints.filename),
 					      nme, ".timprints", NULL);
+				imprints->imprints.storage = imprints->imprints.newstorage = STORE_INVALID;
 				/* check whether a persisted imprints index
 				 * can be found */
 				if ((fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb", "timprints")) >= 0) {

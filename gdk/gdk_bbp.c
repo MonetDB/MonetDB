@@ -495,8 +495,8 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap->size = (size_t) size;
 	b->theap->base = NULL;
 	settailname(b->theap, filename, t, width);
-	b->theap->storage = (storage_t) storage;
-	b->theap->newstorage = (storage_t) storage;
+	b->theap->storage = STORE_INVALID;
+	b->theap->newstorage = STORE_INVALID;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
@@ -535,10 +535,10 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, i
 			.free = (size_t) free,
 			.size = (size_t) size,
 			.base = NULL,
-			.storage = (storage_t) storage,
+			.storage = STORE_INVALID,
 			.hashash = hashash != 0,
 			.cleanhash = true,
-			.newstorage = (storage_t) storage,
+			.newstorage = STORE_INVALID,
 			.dirty = false,
 			.parentid = bid,
 			.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
@@ -1386,7 +1386,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       b->tseqbase,
 		       free,
 		       b->theap->size,
-		       (int) b->theap->newstorage,
+		       0,
 		       minprop && minprop->val.oval < b->hseqbase + size ? minprop->val.oval : oid_nil,
 		       maxprop && maxprop->val.oval < b->hseqbase + size ? maxprop->val.oval : oid_nil);
 }
@@ -1396,8 +1396,7 @@ vheap_entry(FILE *fp, Heap *h)
 {
 	if (h == NULL)
 		return 0;
-	return fprintf(fp, " %zu %zu %d",
-		       h->free, h->size, (int) h->newstorage);
+	return fprintf(fp, " %zu %zu %d", h->free, h->size, 0);
 }
 
 static gdk_return

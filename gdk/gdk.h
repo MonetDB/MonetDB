@@ -535,14 +535,14 @@ typedef enum {
 
 /* Heap storage modes */
 typedef enum {
-	STORE_MEM     = 0,	/* load into GDKmalloced memory */
-	STORE_MMAP    = 1,	/* mmap() into virtual memory */
-	STORE_PRIV    = 2,	/* BAT copy of copy-on-write mmap */
-	STORE_CMEM    = 3,	/* load into malloc (not GDKmalloc) memory*/
-	STORE_NOWN    = 4,	/* memory not owned by the BAT */
-	STORE_MMAPABS = 5,	/* mmap() into virtual memory from an
+	STORE_INVALID = 0,	/* invalid value, used to indicate error */
+	STORE_MEM,		/* load into GDKmalloced memory */
+	STORE_MMAP,		/* mmap() into virtual memory */
+	STORE_PRIV,		/* BAT copy of copy-on-write mmap */
+	STORE_CMEM,		/* load into malloc (not GDKmalloc) memory*/
+	STORE_NOWN,		/* memory not owned by the BAT */
+	STORE_MMAPABS,		/* mmap() into virtual memory from an
 				 * absolute path (not part of dbfarm) */
-	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
 typedef struct {
