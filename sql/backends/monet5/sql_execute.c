@@ -102,6 +102,10 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb,batRef,appendRef);
 	q= pushArgument(mb,q,getArg(tbls,0));
 	q= pushStr(mb,q,".trace");
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q,k);
 	q= pushStr(mb,q,".trace");
 
 	resultset= addArgument(mb,resultset, getArg(q,0));
@@ -114,6 +118,10 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb,batRef,appendRef);
 	q= pushArgument(mb,q,getArg(cols,0));
 	q= pushStr(mb,q,"usec");
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, k);
 	q= pushStr(mb,q,"statement");
 
 	resultset= addArgument(mb,resultset, getArg(q,0));
@@ -126,6 +134,10 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb,batRef,appendRef);
 	q= pushArgument(mb,q, getArg(types,0));
 	q= pushStr(mb,q,"bigint");
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, k);
 	q= pushStr(mb,q,"clob");
 
 	resultset= addArgument(mb,resultset, getArg(q,0));
@@ -138,6 +150,10 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb,batRef,appendRef);
 	q= pushArgument(mb,q, getArg(clen,0));
 	q= pushInt(mb,q,64);
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, k);
 	q= pushInt(mb,q,0);
 
 	resultset= addArgument(mb,resultset, getArg(q,0));
@@ -150,6 +166,10 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb,batRef,appendRef);
 	q= pushArgument(mb,q, getArg(scale,0));
 	q= pushInt(mb,q,0);
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb, q, k);
 	q= pushInt(mb,q,0);
 
 	resultset= addArgument(mb,resultset, getArg(q,0));
