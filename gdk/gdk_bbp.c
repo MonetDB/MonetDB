@@ -3792,6 +3792,28 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "tail", 4) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk);
+				if (!delete) {
+					if (b->ttype == TYPE_str) {
+						switch (b->twidth) {
+						case 1:
+							delete = strcmp(p + 1, "tail1") != 0;
+							break;
+						case 2:
+							delete = strcmp(p + 1, "tail2") != 0;
+							break;
+#if SIZEOF_VAR_T == 8
+						case 4:
+							delete = strcmp(p + 1, "tail4") != 0;
+							break;
+#endif
+						default:
+							delete = strcmp(p + 1, "tail") != 0;
+							break;
+						}
+					} else {
+						delete = strcmp(p + 1, "tail") != 0;
+					}
+				}
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
