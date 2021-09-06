@@ -2387,6 +2387,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
+		assert(BBP_lrefs(i) > 0);
 		if (BBP_desc(i)->batSharecnt == 0) {
 			GDKerror("%s: %s does not have any shares.\n", func, BBP_logical(i));
 			assert(0);
@@ -2416,6 +2417,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		} else {
 			refs = --BBP_lrefs(i);
 		}
+		/* cannot release last logical ref if still shared */
+		assert(BBP_desc(i)->batSharecnt == 0 || refs > 0);
 	} else {
 		if (BBP_refs(i) == 0) {
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
