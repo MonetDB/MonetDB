@@ -19,12 +19,9 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p=0, q=0, r=0, *old= NULL;
 	int actions = 0;
 	int *varused=0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
-	(void) pci;
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
@@ -85,22 +82,19 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for(; i<slimit; i++)
 		if( old[i])
-			freeInstruction(old[i]);
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if (!msg)
-		msg = chkFlow(mb);
-        if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+			pushInstruction(mb, old[i]);
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mask",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);

@@ -551,7 +551,6 @@ STRMPfilter(BAT *b, BAT *s, char *q)
         TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	return virtualize(r);
 
-
  sfilter_fail:
 	return NULL;
 }

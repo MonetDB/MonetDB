@@ -14,13 +14,11 @@
 str
 OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, slimit;
+	int i, limit, slimit, actions = 0;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
 	int xtime=0, rtime = 0, tuples=0;
 	InstrPtr defineQuery = NULL;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 
@@ -28,7 +26,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ( !QLOGisset() )
 		return MAL_SUCCEED;
 
-	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
 	/* gather information */
@@ -43,6 +40,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		/* nothing to do */
 		return MAL_SUCCEED;
 
+	actions++;
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -112,7 +110,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb,p);
 			continue;
 		}
-		if ( getModuleId(p) == sqlRef && idcmp(getFunctionId(p),"resultSet")==0  && isaBatType(getVarType(mb,getArg(p,3)))){
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef && isaBatType(getVarType(mb,getArg(p,3)))){
 			q = newStmt(mb, "aggr", "count");
 			getArg(q,0) = tuples;
 			(void) pushArgument(mb,q, getArg(p,3));
@@ -188,18 +186,15 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for( ; i<slimit; i++)
 		if(old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
-	    /* Defense line against incorrect plans */
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	/* Defense line against incorrect plans */
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
-        	msg = chkFlow(mb);
+		msg = chkFlow(mb);
 	if (!msg)
-        	msg = chkDeclarations(mb);
-	/* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
-	newComment(mb,buf);
-	addtoMalBlkHistory(mb);
+		msg = chkDeclarations(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

@@ -42,23 +42,20 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int *empty = NULL;
 	int limit = mb->stop, slimit = mb->ssize;
 	InstrPtr p, q, *old = NULL, *updated = NULL;
-	char buf[256];
-	lng usec = GDKusec();
 	str sch,tbl;
 	int etop= 0, esize= 256;
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
 	(void) cntxt;
-	(void) pci;
 
-	//if ( optimizerIsApplied(mb,"emptybind") )
-		//return 0;
 	// use an instruction reference table to keep
 
-	for( i=0; i< mb->stop; i++)
-		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
-			extras += getInstrPtr(mb,i)->argc;
+	for( i=0; i< mb->stop; i++) {
+		p = getInstrPtr(mb,i);
+		if( getModuleId(p) == sqlRef && (getFunctionId(p) == emptybindRef || getFunctionId(p) == emptybindidxRef))
+			extras += p->argc;
+	}
 	if (extras == 0){
 		goto wrapup;
 	}
@@ -246,22 +243,19 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for(; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 	GDKfree(empty);
 	GDKfree(updated);
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

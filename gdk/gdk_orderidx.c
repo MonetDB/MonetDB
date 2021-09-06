@@ -76,7 +76,6 @@ BATcheckorderidx(BAT *b)
 
 	if (b == NULL)
 		return false;
-	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */
@@ -93,6 +92,7 @@ BATcheckorderidx(BAT *b)
 				strconcat_len(hp->filename,
 					      sizeof(hp->filename),
 					      nme, ".torderidx", NULL);
+				hp->storage = hp->newstorage = STORE_INVALID;
 
 				/* check whether a persisted orderidx can be found */
 				if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {

@@ -63,7 +63,7 @@ sql_export void *sa_zalloc( sql_allocator *sa,  size_t sz );
 extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
-extern char *sa_strdup( sql_allocator *sa, const char *s);
+sql_export char *sa_strdup( sql_allocator *sa, const char *s);
 extern char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2);
 extern size_t sa_size( sql_allocator *sa );
 

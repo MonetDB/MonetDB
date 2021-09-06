@@ -560,7 +560,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
-					GDKerror("short read from heap %s%s\n", nme, ext ? ext : "");
+					GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -789,7 +789,6 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(b->theap->farmid));
-	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
@@ -881,17 +880,8 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			b->batDirtydesc = false;
 		}
 		MT_lock_unset(&b->theaplock);
-		if (MT_rwlock_rdtry(&b->thashlock)) {
-			/* if we can't get the lock, don't bother saving
-			 * the hash (normally, the hash lock should not
-			 * be acquired when the heap lock has already
-			 * been acquired, and here we have the heap
-			 * lock, so we must be careful with the hash
-			 * lock) */
-			if (b->thash && b->thash != (Hash *) 1)
-				BAThashsave(b, dosync);
-			MT_rwlock_rdunlock(&b->thashlock);
-		}
+		if (b->thash && b->thash != (Hash *) 1)
+			BAThashsave(b, dosync);
 	}
 	return err;
 }
@@ -901,11 +891,11 @@ BATsave(BAT *b)
 {
 	gdk_return rc;
 
-	MT_rwlock_rdlock(&b->thashlock);
 	BATiter bi = bat_iterator(b);
+	MT_rwlock_rdlock(&b->thashlock);
 	rc = BATsave_locked(b, &bi, bi.count);
-	bat_iterator_end(&bi);
 	MT_rwlock_rdunlock(&b->thashlock);
+	bat_iterator_end(&bi);
 	return rc;
 }
 
@@ -931,6 +921,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
+		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
@@ -947,6 +938,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
+		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);

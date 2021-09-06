@@ -26,7 +26,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb)
 	InstrPtr p,q,*old = NULL;
 	int limit, slimit;
 	InstrPtr *paths = NULL;
-	int     *alias = NULL;
+	int *alias = NULL;
 
 	(void) cntxt;
 	limit = mb->stop;
@@ -140,24 +140,20 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb)
 #endif
 
 str
-OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k, actions=0, maxprefixlength=0;
 	int *pc = NULL;
-	InstrPtr q,r;
+	InstrPtr p, q, r;
 	InstrPtr *old=0;
 	int *varcnt=  NULL;		/* use count */
 	int limit,slimit;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
 		goto wrapupall;
-	//if ( optimizerIsApplied(mb,"projectionpath") )
-		//return 0;
 
 	for( i = 0; i < mb->stop ; i++){
 		p = getInstrPtr(mb,i);
@@ -280,7 +276,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	for(; i<slimit; i++)
 		if(old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 
 	/* All complete projection paths have been constructed.
 	 * There may be cases where there is a common prefix used multiple times.
@@ -296,21 +292,18 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	}
 #endif
 
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
 wrapupall:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","projectionpath",actions, usec);
-    newComment(mb,buf);
-	if( actions >= 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
+
 	if (pc ) GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);
 	if(old) GDKfree(old);
