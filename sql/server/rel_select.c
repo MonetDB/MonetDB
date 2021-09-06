@@ -525,7 +525,8 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
 	int i = 0;
 
 	for (node *n = types->h; n && i < N; n = n->next) {
-		char *tpe = sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+		sql_subtype *t = (sql_subtype *) n->data;
+		char *tpe = t ? sql_subtype_string(sql->ta, t) : "?";
 
 		if (arg_list) {
 			arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
