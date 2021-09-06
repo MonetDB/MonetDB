@@ -149,21 +149,18 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 	}
 	fsd->in_buf = malloc(fsd->line_len);
 	if (fsd->in_buf == NULL) {
-		close_stream(fsd->s);
 		free(fsd);
 		mnstr_set_open_error(STREAM_FWF_NAME, errno, NULL);
 		return NULL;
 	}
 	fsd->out_buf = malloc(fsd->line_len * 3);
 	if (fsd->out_buf == NULL) {
-		close_stream(fsd->s);
 		free(fsd->in_buf);
 		free(fsd);
 		mnstr_set_open_error(STREAM_FWF_NAME, errno, NULL);
 		return NULL;
 	}
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
-		close_stream(fsd->s);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);

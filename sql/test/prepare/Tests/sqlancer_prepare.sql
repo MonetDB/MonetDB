@@ -67,3 +67,5 @@ ROLLBACK;
 
 PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
+
+PREPARE SELECT 1 FROM idontexist(?,16); --error, function doesn't exist

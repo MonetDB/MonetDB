@@ -789,7 +789,6 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(b->theap->farmid));
-	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
@@ -922,6 +921,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
+		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
@@ -938,6 +938,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
+		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);

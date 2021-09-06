@@ -96,6 +96,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 		.batRole = role,
 		.batTransient = true,
+		.batRestricted = BAT_WRITE,
 	};
 	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
@@ -114,8 +115,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.
 	 */
-	assert(bn->batCacheid > 0);
-
 	if (heapnames) {
 		assert(bn->theap != NULL);
 		*bn->theap = (Heap) {
@@ -662,7 +661,6 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	assert(b->batCacheid > 0);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
@@ -1900,7 +1898,6 @@ gdk_return
 BATkey(BAT *b, bool flag)
 {
 	BATcheck(b, GDK_FAIL);
-	assert(b->batCacheid > 0);
 	if (b->ttype == TYPE_void) {
 		if (BATtdense(b) && !flag) {
 			GDKerror("dense column must be unique.\n");
@@ -1941,7 +1938,6 @@ BAThseqbase(BAT *b, oid o)
 	if (b != NULL) {
 		assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
 		assert(o + BATcount(b) <= GDK_oid_max);
-		assert(b->batCacheid > 0);
 		if (b->hseqbase != o) {
 			b->batDirtydesc = true;
 			b->hseqbase = o;
@@ -1956,7 +1952,6 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
-	assert(b->batCacheid > 0);
 	if (b->tseqbase != o) {
 		b->batDirtydesc = true;
 	}
@@ -2180,8 +2175,7 @@ HEAPchangeaccess(Heap *hp, int dstmode, bool existing)
 	if (dstmode == BAT_WRITE) {
 		if (hp->storage != STORE_PRIV)
 			hp->dirty = true;	/* exception c does not make it dirty */
-//		return STORE_PRIV;	/* 4=>6,5=>7,c=>6 persistent BAT_WRITE needs STORE_PRIV */
-		return STORE_MMAP;
+		return STORE_PRIV;	/* 4=>6,5=>7,c=>6 persistent BAT_WRITE needs STORE_PRIV */
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = true;
@@ -2209,8 +2203,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 
 	if (hp->newstorage == STORE_MMAP)
 		hp->dirty = true;	/* 2=>6 */
-//	return STORE_PRIV;	/* 1=>5,2=>6,3=>7,a=>c,b=>6 states */
-	return STORE_MMAP;
+	return STORE_PRIV;	/* 1=>5,2=>6,3=>7,a=>c,b=>6 states */
 }
 
 
