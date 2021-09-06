@@ -20,13 +20,10 @@
 str
 OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
+	int i, actions = 0;
 	InstrPtr p;
-	char buf[BUFSIZ];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	(void) pci;
 	(void) stk;
 	(void) cntxt;
 	/* we only need the beautified version if we plan to emit events */
@@ -77,18 +74,16 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		}
 	}
-    	/* Defense line against incorrect plans */
+	actions = 1;
+	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	//	msg = chkFlow(mb);
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
-	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);
-	newComment(mb,buf);
-	addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

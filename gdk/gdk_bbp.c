@@ -502,8 +502,8 @@ heapinit(BAT *b, const char *buf,
 	b->theap->size = (size_t) size;
 	b->theap->base = NULL;
 	settailname(b->theap, filename, t, width);
-	b->theap->storage = (storage_t) storage;
-	b->theap->newstorage = (storage_t) storage;
+	b->theap->storage = STORE_INVALID;
+	b->theap->newstorage = STORE_INVALID;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
@@ -546,9 +546,9 @@ vheapinit(BAT *b, const char *buf, bat bid, const char *filename, int lineno)
 			.free = (size_t) free,
 			.size = (size_t) size,
 			.base = NULL,
-			.storage = (storage_t) storage,
+			.storage = STORE_INVALID,
 			.cleanhash = true,
-			.newstorage = (storage_t) storage,
+			.newstorage = STORE_INVALID,
 			.dirty = false,
 			.parentid = bid,
 			.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
@@ -1670,7 +1670,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       b->tseqbase,
 		       free,
 		       b->theap->size,
-		       (int) b->theap->newstorage,
+		       0,
 		       b->tminpos < b->hseqbase + size ? (uint64_t) b->tminpos : (uint64_t) oid_nil,
 		       b->tmaxpos < b->hseqbase + size ? (uint64_t) b->tmaxpos : (uint64_t) oid_nil);
 }
@@ -1680,8 +1680,7 @@ vheap_entry(FILE *fp, Heap *h)
 {
 	if (h == NULL)
 		return 0;
-	return fprintf(fp, " %zu %zu %d",
-		       h->free, h->size, (int) h->newstorage);
+	return fprintf(fp, " %zu %zu %d", h->free, h->size, 0);
 }
 
 static gdk_return
@@ -2276,7 +2275,6 @@ BBPcacheit(BAT *bn, bool lock)
 		if (bn->tvheap)
 			bn->tvheap->parentid = i;
 	}
-	assert(bn->batCacheid > 0);
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
@@ -3625,7 +3623,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BATiter bi = bat_iterator(b);
 					if (size > bi.count)
 						size = bi.count;
+					MT_rwlock_rdlock(&b->thashlock);
 					ret = BATsave_locked(b, &bi, size);
+					MT_rwlock_rdunlock(&b->thashlock);
 					bat_iterator_end(&bi);
 					BBP_status_off(i, BBPSAVING);
 				}

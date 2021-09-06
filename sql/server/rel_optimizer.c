@@ -4714,51 +4714,30 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 
 	/* try push select under set relation */
-	if (is_select(rel->op) && r && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
-		sql_rel *u = r, *ou = u;
-		sql_rel *ul = u->l;
-		sql_rel *ur = u->r;
+	if (is_select(rel->op) && r && is_set(r->op) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+		sql_rel *u = r, *ul = u->l, *ur = u->r;
 
-		if (!rel_is_ref(u) && !is_single(u) && u->op == op_project)
-			u = u->l;
+		ul = rel_dup(ul);
+		ur = rel_dup(ur);
+		if (!is_project(ul->op))
+			ul = rel_project(v->sql->sa, ul,
+				rel_projections(v->sql, ul, NULL, 1, 1));
+		if (!is_project(ur->op))
+			ur = rel_project(v->sql->sa, ur,
+				rel_projections(v->sql, ur, NULL, 1, 1));
+		rel_rename_exps(v->sql, u->exps, ul->exps);
+		rel_rename_exps(v->sql, u->exps, ur->exps);
 
-		if (u && is_set(u->op) && !is_single(u) && !list_empty(u->exps) && !rel_is_ref(u)) {
-			ul = u->l;
-			ur = u->r;
+		/* introduce selects under the set */
+		ul = rel_select(v->sql->sa, ul, NULL);
+		ul->exps = exps_copy(v->sql, exps);
+		ur = rel_select(v->sql->sa, ur, NULL);
+		ur->exps = exps_copy(v->sql, exps);
 
-			ul = rel_dup(ul);
-			ur = rel_dup(ur);
-			if (!is_project(ul->op))
-				ul = rel_project(v->sql->sa, ul,
-					rel_projections(v->sql, ul, NULL, 1, 1));
-			if (!is_project(ur->op))
-				ur = rel_project(v->sql->sa, ur,
-					rel_projections(v->sql, ur, NULL, 1, 1));
-			rel_rename_exps(v->sql, u->exps, ul->exps);
-			rel_rename_exps(v->sql, u->exps, ur->exps);
-
-			if (u != ou) {
-				ul = rel_project(v->sql->sa, ul, NULL);
-				ul->exps = exps_copy(v->sql, ou->exps);
-				rel_rename_exps(v->sql, ou->exps, ul->exps);
-				set_processed(ul);
-				ur = rel_project(v->sql->sa, ur, NULL);
-				ur->exps = exps_copy(v->sql, ou->exps);
-				rel_rename_exps(v->sql, ou->exps, ur->exps);
-				set_processed(ur);
-			}
-
-			/* introduce selects under the set */
-			ul = rel_select(v->sql->sa, ul, NULL);
-			ul->exps = exps_copy(v->sql, exps);
-			ur = rel_select(v->sql->sa, ur, NULL);
-			ur->exps = exps_copy(v->sql, exps);
-
-			rel = rel_inplace_setop(v->sql, rel, ul, ur, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
-			if (need_distinct(u))
-				set_distinct(rel);
-			v->changes++;
-		}
+		rel = rel_inplace_setop(v->sql, rel, ul, ur, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
+		if (need_distinct(u))
+			set_distinct(rel);
+		v->changes++;
 	}
 
 	return try_remove_empty_select(v, rel);

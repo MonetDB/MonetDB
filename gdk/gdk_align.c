@@ -178,7 +178,6 @@ BATmaterialize(BAT *b)
 	cnt = BATcapacity(b);
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
-	*tail = *b->theap;
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
@@ -279,7 +278,6 @@ VIEWunlink(BAT *b)
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
 
-		assert(b->batCacheid > 0);
 		if (tp)
 			tpb = BBP_cache(tp);
 		if (tp && !vtp)

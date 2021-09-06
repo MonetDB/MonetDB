@@ -430,33 +430,61 @@ MSresetInstructions(MalBlkPtr mb, int start)
 }
 
 /*
- * Determine the variables being used and clear non-used onces.
+ * MAL instructions generate variables.
+ * The values of temporary variables should be cleaned at the end of a call
+ * The values of global variables are retained.
+ * Global variables should not start with C_ or X_
  */
 void
-MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
+MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 {
-	int i;
+	InstrPtr sig = getInstrPtr(mb, 0);
+	int i, k = sig->argc;
 
-	for (i = 0; i < start && i < mb->vtop ; i++)
-		setVarUsed(mb,i);
-	if (mb->errors == MAL_SUCCEED)
-		for (i = start; i < mb->vtop; i++) {
-			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
-				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
-				setVarUsed(mb,i);
-			}
-			if (glb && i < glb->stktop && !isVarUsed(mb,i)) {
-				if (isVarConstant(mb, i))
-					garbageElement(cntxt, &glb->stk[i]);
+	if (mb->errors == MAL_SUCCEED){
+		for (i = sig->argc; i < mb->vtop; i++) {
+			if (glb && i < glb->stktop && isTmpVar(mb,i) ) {
 				/* clean stack entry */
+				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
 				glb->stk[i].len = 0;
 				glb->stk[i].val.pval = 0;
+			} else {
+				/* compress the global variable list and stack */
+				mb->var[k] = mb->var[i];
+				glb->stk[k] = glb->stk[i];
+				setVarUsed(mb, k);
+				setVarInit(mb, k);
+				if( i != k){
+					glb->stk[i].vtype = TYPE_int;
+					glb->stk[i].len = 0;
+					glb->stk[i].val.pval = 0;
+					clrVarConstant(mb,i);
+					clrVarCleanup(mb,i);
+				}
+				k++;
 			}
 		}
+	}
+	mb->vtop = k;
+}
+
+/* The symbol table be become filled with constant values to be garbage collected 
+* The signature is always left behind.
+*/
+
+void
+MSresetVariables(MalBlkPtr mb)
+{
+	InstrPtr sig = getInstrPtr(mb, 0);
+	int i;
 
 	if (mb->errors == MAL_SUCCEED)
-		trimMalVariables_(mb, glb);
+		for (i = sig->argc; i < mb->vtop; i++)
+			if( isVarConstant(mb,i)){
+				VALclear(&getVarConstant(mb,i));
+				clrVarConstant(mb, i);
+			}
 }
 
 /*
@@ -520,6 +548,8 @@ MSserveClient(Client c)
 		c->backup = 0;
 	}
 
+	if( c->curprg && c->curprg->def)
+		resetMalBlk(c->curprg->def);
 	/*
 	if (c->curprg) {
 		freeSymbol(c->curprg);
@@ -587,16 +617,37 @@ MALreader(Client c)
 	return MAL_SUCCEED;
 }
 
+/* Before compiling a large string, it makes sense to allocate
+ * approximately enough space to keep the intermediate
+ * code. Otherwise, we end up with a repeated extend on the MAL block,
+ * which really consumes a lot of memcpy resources. The average MAL
+ * string length could been derived from the test cases. An error in
+ * the estimate is more expensive than just counting the lines.
+ */
+static int
+prepareMalBlk(MalBlkPtr mb, str s)
+{
+	int cnt = STMT_INCREMENT;
+
+	while (s) {
+		s = strchr(s, '\n');
+		if (s) {
+			s++;
+			cnt++;
+		}
+	}
+	cnt = (int) (cnt * 1.1);
+	return resizeMalBlk(mb, cnt);
+}
+
 str
 MALparser(Client c)
 {
 	InstrPtr p;
-	MalBlkRecord oldstate;
 	str msg= MAL_SUCCEED;
 
 	assert(c->curprg->def->errors == NULL);
 	c->curprg->def->errors = 0;
-	oldstate = *c->curprg->def;
 
 	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
@@ -620,7 +671,7 @@ MALparser(Client c)
 	if (p->token != FUNCTIONsymbol) {
 		msg =c->curprg->def->errors;
 		c->curprg->def->errors = 0;
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
@@ -628,7 +679,7 @@ MALparser(Client c)
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
@@ -674,8 +725,6 @@ MALengine(Client c)
 {
 	Symbol prg;
 	str msg = MAL_SUCCEED;
-	MalBlkRecord oldstate = *c->curprg->def;
-	oldstate.stop = 0;
 
 	if (c->blkmode)
 		return MAL_SUCCEED;
@@ -688,7 +737,7 @@ MALengine(Client c)
 	if (prg->def->errors != MAL_SUCCEED) {
 		msg = prg->def->errors;
 		prg->def->errors = NULL;
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
 	}
@@ -723,7 +772,7 @@ MALengine(Client c)
 			msg = MAL_SUCCEED;
 		}
 	}
-	MSresetVariables(c, prg->def, c->glb, 0);
+	MSresetStack(c, prg->def, c->glb);
 	resetMalTypes(prg->def, 1);
 	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */

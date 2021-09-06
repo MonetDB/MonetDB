@@ -96,6 +96,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 		.batRole = role,
 		.batTransient = true,
+		.batRestricted = BAT_WRITE,
 	};
 	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
 		GDKfree(bn);
@@ -114,8 +115,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.
 	 */
-	assert(bn->batCacheid > 0);
-
 	if (heapnames) {
 		assert(bn->theap != NULL);
 		*bn->theap = (Heap) {
@@ -662,7 +661,6 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	assert(b->batCacheid > 0);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
@@ -1636,10 +1634,10 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	MT_lock_set(&b->theaplock);
 	b->tminpos = minpos;
 	b->tmaxpos = maxpos;
-	MT_lock_unset(&b->theaplock);
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
+	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
 }
@@ -1900,7 +1898,6 @@ gdk_return
 BATkey(BAT *b, bool flag)
 {
 	BATcheck(b, GDK_FAIL);
-	assert(b->batCacheid > 0);
 	if (b->ttype == TYPE_void) {
 		if (BATtdense(b) && !flag) {
 			GDKerror("dense column must be unique.\n");
@@ -1941,7 +1938,6 @@ BAThseqbase(BAT *b, oid o)
 	if (b != NULL) {
 		assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
 		assert(o + BATcount(b) <= GDK_oid_max);
-		assert(b->batCacheid > 0);
 		if (b->hseqbase != o) {
 			b->batDirtydesc = true;
 			b->hseqbase = o;
@@ -1956,7 +1952,6 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
-	assert(b->batCacheid > 0);
 	if (b->tseqbase != o) {
 		b->batDirtydesc = true;
 	}
@@ -2128,7 +2123,7 @@ BATroles(BAT *b, const char *tnme)
 /* rather than deleting X.new, we comply with the commit protocol and
  * move it to backup storage */
 static gdk_return
-backup_new(Heap *hp)
+backup_new(Heap *hp, bool lock)
 {
 	int batret, bakret, ret = -1;
 	char *batpath, *bakpath;
@@ -2139,7 +2134,8 @@ backup_new(Heap *hp)
 	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
-		MT_lock_set(&GDKtmLock);
+		if (lock)
+			MT_lock_set(&GDKtmLock);
 
 		batret = MT_stat(batpath, &st);
 		bakret = MT_stat(bakpath, &st);
@@ -2159,7 +2155,8 @@ backup_new(Heap *hp)
 		} else {
 			ret = 0;
 		}
-		MT_lock_unset(&GDKtmLock);
+		if (lock)
+			MT_lock_unset(&GDKtmLock);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
@@ -2182,7 +2179,7 @@ HEAPchangeaccess(Heap *hp, int dstmode, bool existing)
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = true;
-		return backup_new(hp) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
+		return backup_new(hp, true) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 	}
 	return hp->storage;	/* 7=>5 */
 }
@@ -2194,7 +2191,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 	if (existing) {		/* existing, ie will become transient */
 		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) {	/* 6=>2 */
 			hp->dirty = true;
-			return backup_new(hp) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
+			return backup_new(hp, false) != GDK_SUCCEED ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 		}
 		return hp->newstorage;	/* 4=>0,5=>1,7=>3,c=>a no change */
 	}
@@ -2210,7 +2207,7 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 }
 
 
-#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
+#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str /*|| GDK_ELIMDOUBLES(h) */)
 
 /* change the heap modes at a commit */
 gdk_return

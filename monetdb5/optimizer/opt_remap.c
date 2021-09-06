@@ -185,10 +185,10 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			}
 		/* nil:type -> nil:bat[:oid,:type] */
 		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
-		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) &&
-		    upgrade[getArg(q,0)] &&
+			q->argc == 2 && isVarConstant(mq, getArg(q,1)) &&
+			upgrade[getArg(q,0)] &&
 			getArgType(mq,q,0) == TYPE_void &&
-		    !isaBatType(getArgType(mq, q, 1)) ){
+			!isaBatType(getArgType(mq, q, 1)) ){
 				/* handle nil assignment */
 				if( ATOMcmp(getArgGDKType(mq, q, 1),
 					VALptr(&getVar(mq, getArg(q,1))->value),
@@ -342,9 +342,9 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 	(void) scope;
 
 	if( !isMultiplex(pci) &&
-	    !isVarConstant(mb,getArg(pci,1)) &&
-	    !isVarConstant(mb,getArg(pci,2)) &&
-	    !isVarConstant(mb,getArg(pci,4)) &&
+		!isVarConstant(mb,getArg(pci,1)) &&
+		!isVarConstant(mb,getArg(pci,2)) &&
+		!isVarConstant(mb,getArg(pci,4)) &&
 		pci->argc != 5)
 			return 0;
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
@@ -372,10 +372,8 @@ str
 OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
-	int i, limit, slimit, doit= 0;
+	int i, limit, slimit, actions= 0;
 	Module scope = cntxt->usermodule;
-	lng usec = GDKusec();
-	char buf[256];
 	str msg = MAL_SUCCEED;
 
 	for( i=0; i< mb->stop; i++){
@@ -388,7 +386,6 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup;
 	}
 
-	(void) pci;
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -412,12 +409,12 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (s && s->def->inlineProp ){
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) ){
-					doit++;
+					actions++;
 				}
 			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
 				freeInstruction(p);
-				doit++;
+				actions++;
 			} else {
 				pushInstruction(mb, p);
 			}
@@ -483,25 +480,21 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for(; i<slimit; i++)
 		if( old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
-	if (doit)
+	if (actions)
 		msg = chkTypes(cntxt->usermodule,mb,TRUE);
-    /* Defense line against incorrect plans */
-    if( msg == MAL_SUCCEED && doit > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
+	/* Defense line against incorrect plans */
+	if( msg == MAL_SUCCEED && actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
 wrapup:
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit, usec);
-    newComment(mb,buf);
-	if( doit >= 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

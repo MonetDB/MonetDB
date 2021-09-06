@@ -24,11 +24,8 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	old= mb->stmt;
@@ -73,21 +70,17 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for(; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

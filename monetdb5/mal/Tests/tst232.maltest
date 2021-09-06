@@ -40,5 +40,5 @@ statement ok
 query T rowsort
 	io.printf("lrefcount =%d\n",j)
 ----
-lrefcount =2
+lrefcount =1
 

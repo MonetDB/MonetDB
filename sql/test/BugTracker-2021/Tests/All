@@ -26,3 +26,5 @@ distinct-union.Bug-7148
 HAVE_LIBPY3?python-aggregates-empty.Bug-7158
 remote-join-idxs.Bug-7165
 shutdown-force.Bug-7167
+merge-table-join.Bug-7172
+truncate-restart.Bug-7173
