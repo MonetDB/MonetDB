@@ -115,6 +115,41 @@ static struct PIPELINES {
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
+	{"strimps_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.costModel();"
+	 "optimizer.coercions();"
+	 "optimizer.aliases();"
+	 "optimizer.evaluate();"
+	 "optimizer.emptybind();"
+	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
+	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
+	 "optimizer.mitosis();"
+	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.commonTerms();"
+	 "optimizer.projectionpath();"
+	 "optimizer.deadcode();"
+	 "optimizer.matpack();"
+	 "optimizer.reorder();"
+	 "optimizer.dataflow();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.strimps();"
+	 "optimizer.generator();"
+	 "optimizer.profiler();"
+	 "optimizer.candidates();"
+	 //"optimizer.mask();"
+	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
+//	 "optimizer.jit();" awaiting the new batcalc api
+	 "optimizer.wlc();"
+	 "optimizer.garbageCollector();",
+	 "stable", NULL, 1},
 	{"default_fast",
 	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
