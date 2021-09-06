@@ -12,11 +12,10 @@
  * A string imprint is an index that can be used as a prefilter in LIKE
  * queries. It has 2 components:
  *
- * - a header of 32 or 64 string element pairs.
+ * - a header of 64 string element pairs.
  *
- * - a 32 or 64 bit mask for each string in the BAT that encodes the
- *   presence or absence of each element of the header in the specific
- *   item.
+ * - a 64 bit mask for each string in the BAT that encodes the presence
+ *   or absence of each element of the header in the specific item.
  *
  * A string imprint is stored in a new Heap in the BAT, aligned in 8
  * byte (64 bit) words.
@@ -24,40 +23,45 @@
  * The first 64 bit word, the header descriptor, describes how the
  * header of the strimp is encoded. The least significant byte (v in the
  * schematic below) is the version number. The second (np) is the number
- * of pairs in the header. The next 2 bytes (hs) is the size of the
- * header in bytes. Finally the fifth byte is the persistence byte. The
- * last 3 bytes needed to align to the 8 byte boundary should be zero,
- * and are reserved for future use.
+ * of pairs in the header. In the current implementation this is always
+ * 64. The next 2 bytes (hs) is the total size of the header in
+ * bytes. Finally the fifth byte is the persistence byte. The last 3
+ * bytes needed to align to the 8 byte boundary should be zero, and are
+ * reserved for future use.
  *
  * The following np bytes are the sizes of the pairs. These can have
  * values from 2 to 8 and are the number of bytes that the corresponding
  * pair takes up. Following that there are the bytes encoding the actual
  * pairs.
  *
- * |   v   |  np   |      hs      |   p   |      reserved      |  8bytes
- * |                                                           |             ---
- *                         Strimp Header                                      |
- * | psz_0 | psz_1 | ...                                       |              |
- * |                                                           |  ---         |
- * |                                                           |np bytes      |
- * |                                               ... | psz_n |  ---      hs bytes
- * |             pair_0          |           pair_1            |              |
- * |                            ...                            |              |
- * |                 pair_k-1                   |   pair_k     |              |
- * |                          pair_n                           |              |
- * |                                                           |             ---
+ * | 1byte | 1byte | 1byte | 1byte | 1byte | 1byte | 1byte | 1byte |
+ * |---------------------------------------------------------------|
+ * |   v   |  np   |      hs       |   p   |      reserved         |  8bytes     ---
+ * |---------------------------------------------------------------|  ___         |
+ * | psz_0 | psz_1 | ...                                           |   |          |
+ * |                                                               |   |          |
+ * |                                                               |np bytes      |
+ * |                                                               |   |          |
+ * |                                                   ... | psz_n |   |       hs bytes
+ * |---------------------------------------------------------------|  ___         |
+ * |             pair_0            |             pair_1            |              |
+ * |                              ...                              |              |
+ * |                 pair_k-1                   |   pair_k         |              |
+ * |                          pair_n                               |              |
+ * |---------------------------------------------------------------|             ---
  *
  *
- * The bitmasks for each string in the BAT follow after this.
+ * The bitmasks for each string in the BAT follow after this, aligned to
+ * the string BAT.
  *
  * Strimp creation goes as follows:
  *
  * - Construct a histogram of the element (byte or character) pairs for
  *   all the strings in the BAT.
  *
- * - Take the 32/64 most frequent pairs as the Strimp Header.
+ * - Take the 64 most frequent pairs as the Strimp Header.
  *
- * - For each string in the bat construct a 32/64 bit mask that encodes
+ * - For each string in the bat construct a 64 bit mask that encodes
  *   the presence or absence of each member of the header in the string.
  */
 
@@ -80,8 +84,8 @@
 #define NPAIRS(d) (((d) >> 8) & 0xff)
 #define HSIZE(d) (((d) >> 16) & 0xffff)
 
-#undef UTF8STRINGS 		/* Not using utf8 for now */
-#ifdef UTF8STRINGS
+#undef UTF8STRIMPS 		/* Not using utf8 for now */
+#ifdef UTF8STRIMPS
 static bool
 pair_equal(CharPair *p1, CharPair *p2) {
 	if(p1->psize != p2->psize)
@@ -94,7 +98,11 @@ pair_equal(CharPair *p1, CharPair *p2) {
 	return true;
 }
 #else
-/* BytePairs implementation */
+/* BytePairs implementation.
+ *
+ * All the of the following functions and macros up to #endif need to be
+ * implemented for the UTF8 case.
+ */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define pairToIndex(b1, b2) (uint16_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
@@ -129,7 +137,7 @@ next_pair(PairIterator *pi) {
 	return true;
 }
 
-#endif // UTF8STRINGS
+#endif // UTF8STRIMPS
 
 static int8_t
 STRMPpairLookup(Strimps *s, CharPair *p) {
@@ -154,8 +162,6 @@ ignored(CharPair *p, uint8_t elm) {
 	assert(elm == 0 || elm == 1);
 	return isIgnored(p->pbytes[elm]);
 }
-
-#define MAX_PAIR_SIZE 8
 
 /* Given a strimp header and a string compute the bitstring of which
  * digrams are present in the string. The strimp header is a map from
@@ -202,9 +208,6 @@ STRMPmakebitstring(const str s, Strimps *r)
  * largest elements. This depends on the size of the histogram n. For
  * some small n sorting might be more efficient, but for such inputs the
  * difference should not be noticeable.
- *
- * In the current implementation each index is a DataPair value that is
- * constructed by pairToIndex from 2 consecutive bytes in the input.
  */
 static void
 STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
@@ -330,7 +333,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	return true;
 }
 
-/* Create the heap for a string imprint. Returns NULL on failure. */
+/* Create the heap for a string imprint. Returns NULL on failure. This
+ * follows closely the Heap creation for the order index.
+ */
 static Strimps *
 STRMPcreateStrimpHeap(BAT *b, BAT *s)
 {
@@ -387,9 +392,15 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
         return b->tstrimps;
 }
 
-#define STRIMP_COMPLETE(b) \
-	b->tstrimps != NULL &&\
-	(b->tstrimps->strimps.free - ((char *)b->tstrimps->strimps_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount
+/* This macro takes a bat and checks if the strimp construction has been
+ * completed. It is completed when the strimp pointer is not null and it
+ * is either 1 (i.e. it exists on disk) or the number of bitstrings
+ * computed is the same as the number of elements in the BAT.
+ */
+#define STRIMP_COMPLETE(b)			\
+	b->tstrimps != NULL &&			\
+		(b->tstrimps == (Strimps *)1 ||				\
+		 (b->tstrimps->strimps.free - ((char *)b->tstrimps->strimps_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount)
 
 static bool
 BATcheckstrimps(BAT *b)
@@ -441,6 +452,7 @@ BATcheckstrimps(BAT *b)
 					    && (hsize = HSIZE(desc)) >= 200 && hsize <= 584
 					    && ((desc >> 32) & 0xff) == 1 /* check the persistence byte */
 					    && fstat(fd, &st) == 0
+					    /* TODO: We might need padding in the UTF-8 case. */
 					    && st.st_size >= (off_t) (hp->strimps.free = hp->strimps.size =
 								      /* header size (desc + offsets + pairs) */
 								      hsize +
