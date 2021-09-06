@@ -23,14 +23,13 @@
 str
 OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, slimit, needed =0, actions=0;
+	int i, limit, slimit, actions=0;
+	bool needed = false;
 	// int mvcvar = -1;
 	InstrPtr p, q, *old = mb->stmt;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	/* int res, nvar; */
-	/* ValRecord cst; */
 	int res;
 
 	(void) pci;
@@ -44,8 +43,11 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	for(i=0; i < limit; i++) {
 		p = old[i];
-		if (getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef)
-			needed = 1;
+		if (getModuleId(p) == algebraRef &&
+			getFunctionId(p) == likeselectRef) {
+			needed = true;
+			break;
+		}
 	}
 
 	if (!needed)
@@ -65,31 +67,31 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 		/* Look for bind operations on strings, because for those we migh need strimps */
 
-		if (getModuleId(p) == algebraRef && getFunctionId(p) == likeselectRef) {
-
-			/* cst.vtype = TYPE_bit; */
-			/* nvar = defConstant(mb, TYPE_bit, &cst); */
+		if (getModuleId(p) == algebraRef &&
+			getFunctionId(p) == likeselectRef) {
 			q = newInstruction(mb, strimpsRef, strimpFilterSelectRef);
 			res = newTmpVariable(mb, newBatType(TYPE_oid));
 			setDestVar(q, res);
-			q = addArgument(mb, q, getArg(p, 1));
-			q = addArgument(mb, q, getArg(p, 2));
-			q = addArgument(mb, q, getArg(p, 3));
-			q = addArgument(mb, q, getArg(p, 6));
+			q = pushArgument(mb, q, getArg(p, 1));
+			q = pushArgument(mb, q, getArg(p, 2));
+			q = pushArgument(mb, q, getArg(p, 3));
+			q = pushArgument(mb, q, getArg(p, 6));
 
 			pushInstruction(mb, q);
-			typeChecker(cntxt->usermodule, mb, q, mb->stop-1, TRUE);
+			typeChecker(cntxt->usermodule, mb, q, mb->stop - 1, TRUE);
 
-			p = setArgument(mb, p, 2, getArg(q, 0));
+			getArg(p, 2) = res;
+			// setArgument(mb, p, 2, res);
 
 			actions++;
+			/* continue; */
 		}
 		pushInstruction(mb, p);
 	}
 	(void)slimit;
-	/* for (; i < slimit; i++) */
-	/* 	if (old[i]) */
-	/* 		freeInstruction(old[i]); */
+	for (; i < slimit; i++)
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
