@@ -966,9 +966,16 @@ BATprojectchain(BAT **bats)
 	if (nonil && ATOMstorage(tpe) == TYPE_str && b->batRestricted == BAT_READ) {
 		stringtrick = true;
 		tpe = bi.width == 1 ? TYPE_bte : (bi.width == 2 ? TYPE_sht : (bi.width == 4 ? TYPE_int : TYPE_lng));
+		bn = COLnew_intern(ba[0].hlo, TYPE_str, ba[0].cnt, TRANSIENT, bi.width);
+		if (bn && bn->tvheap) {
+			/* no need to remove any files since they were
+			 * never created for this bat */
+			HEAPdecref(bn->tvheap, false);
+			bn->tvheap = NULL;
+		}
+	} else {
+		bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	}
-
-	bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	if (bn == NULL) {
 		bat_iterator_end(&bi);
 		goto bunins_failed;
@@ -1051,8 +1058,8 @@ BATprojectchain(BAT **bats)
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);
-			bn->ttype = b->ttype;
-			bn->tvarsized = true;
+			assert(bn->ttype == b->ttype);
+			assert(bn->tvarsized);
 			assert(bn->twidth == bi.width);
 			assert(bn->tshift == bi.shift);
 		}
