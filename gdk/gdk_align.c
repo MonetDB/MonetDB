@@ -193,8 +193,7 @@ BATmaterialize(BAT *b)
 		.parentid = b->batCacheid,
 		.dirty = true,
 	};
-	strconcat_len(tail->filename, sizeof(tail->filename),
-		      BBP_physical(b->batCacheid), ".tail", NULL);
+	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
 	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;

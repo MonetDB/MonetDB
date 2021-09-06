@@ -23,12 +23,14 @@ unshare_varsized_heap(BAT *b)
 {
 	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
-		Heap *h = GDKzalloc(sizeof(Heap));
+		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
 		MT_thread_setalgorithm("unshare vheap");
-		h->parentid = b->batCacheid;
-		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
+		*h = (Heap) {
+			.parentid = b->batCacheid,
+			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
+		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
@@ -418,13 +420,15 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	/* b and n do not share their vheap, so we need to copy data */
 	if (b->tvheap->parentid != b->batCacheid) {
 		/* if b shares its vheap with some other bat, unshare it */
-		Heap *h = GDKzalloc(sizeof(Heap));
+		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
-		h->parentid = b->batCacheid;
-		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
+		*h = (Heap) {
+			.parentid = b->batCacheid,
+			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {

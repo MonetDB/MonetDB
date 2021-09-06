@@ -179,20 +179,21 @@ BATsetdims(BAT *b)
 const char *
 gettailname(const BAT *b)
 {
-	if (b->ttype != TYPE_str)
-		return "tail";
-	switch (b->twidth) {
-	case 1:
-		return "tail1";
-	case 2:
-		return "tail2";
+	if (b->ttype == TYPE_str) {
+		switch (b->twidth) {
+		case 1:
+			return "tail1";
+		case 2:
+			return "tail2";
 #if SIZEOF_VAR_T == 8
-	case 4:
-		return "tail4";
+		case 4:
+			return "tail4";
 #endif
-	default:
-		return "tail";
+		default:
+			break;
+		}
 	}
+	return "tail";
 }
 
 void
