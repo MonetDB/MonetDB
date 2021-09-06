@@ -532,21 +532,23 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci);
 		if ((bitstring_array[x] & qbmask) == qbmask) {
-			if (BUNappend(r, &x, false) != GDK_SUCCEED) {
-				BBPunfix(r->batCacheid);
-				goto sfilter_fail;
-			}
-		}
-	}
+                  if (BUNappend(r, &x, false) != GDK_SUCCEED) {
+                    BBPunfix(r->batCacheid);
+                    goto sfilter_fail;
+                  }
+                }
+        }
 
-	r->tkey = true;
-	r->tsorted = true;
-	r->trevsorted = BATcount(r) <= 1;
-	r->tnil = false;
-	r->tnonil = true;
-	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " LLFMT
-		  " items took " LLFMT " usec\n", ncand, GDKusec()-t0);
-	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
+        r->tkey = true;
+        r->tsorted = true;
+        r->trevsorted = BATcount(r) <= 1;
+        r->tnil = false;
+        r->tnonil = true;
+        TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " LLFMT
+		  " items took " LLFMT " usec. Keeping " LLFMT
+		  " items (%.2f%%).\n", ncand, GDKusec()-t0, r->batCount,
+		  100*r->batCount/(double)ncand);
+        TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	return virtualize(r);
 
 
