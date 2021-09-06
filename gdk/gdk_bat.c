@@ -2464,6 +2464,7 @@ BATassertProps(BAT *b)
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
+	char filename[sizeof(b->theap->filename)];
 
 	/* do the complete check within a lock */
 	MT_lock_set(&b->theaplock);
@@ -2506,6 +2507,22 @@ BATassertProps(BAT *b)
 			assert(b->theap->size >= 4 * ((b->batCapacity + 31) / 32));
 		} else
 			assert(b->theap->size >> b->tshift >= b->batCapacity);
+	}
+	strconcat_len(filename, sizeof(filename),
+		      BBP_physical(b->theap->parentid),
+		      b->ttype == TYPE_str ? b->twidth == 1 ? ".tail1" : b->twidth == 2 ? ".tail2" :
+#if SIZEOF_VAR_T == 8
+		      b->twidth == 4 ? ".tail4" :
+#endif
+		      ".tail" : ".tail",
+		      NULL);
+	assert(strcmp(b->theap->filename, filename) == 0);
+	if (b->tvheap) {
+		strconcat_len(filename, sizeof(filename),
+			      BBP_physical(b->tvheap->parentid),
+			      ".theap",
+			      NULL);
+		assert(strcmp(b->tvheap->filename, filename) == 0);
 	}
 
 	/* void and str imply varsized */
