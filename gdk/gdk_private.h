@@ -199,8 +199,6 @@ gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemma
 gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
-	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPgrow(MT_Lock *lock, Heap **old, size_t size, bool mayshare)
