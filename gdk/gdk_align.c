@@ -278,7 +278,6 @@ VIEWunlink(BAT *b)
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
 
-		assert(b->batCacheid > 0);
 		if (tp)
 			tpb = BBP_cache(tp);
 		if (tp && !vtp)

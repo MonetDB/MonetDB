@@ -292,7 +292,12 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			}
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
+				gdk_return rc = GDKextendf(fd, size, nme);
 				close(fd);
+				if (rc != GDK_SUCCEED) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && GDKextendf() != GDK_SUCCEED";
+					goto failed;
+				}
 				h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
 				/* make sure we really MMAP */
 				if (must_mmap && h->newstorage == STORE_MEM)
@@ -746,7 +751,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	h->storage = h->newstorage = h->size < GDK_mmap_minsize_persistent ? STORE_MEM : STORE_MMAP;
+	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID)
+		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ? STORE_MEM : STORE_MMAP;
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)
