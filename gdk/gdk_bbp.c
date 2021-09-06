@@ -751,6 +751,34 @@ BBPcheckbats(unsigned bbpversion)
 			path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
 			if (path == NULL)
 				return GDK_FAIL;
+#if 1
+			/* first check string offset heap with width,
+			 * then without */
+			if (MT_stat(path, &statb) < 0) {
+#ifdef GDKLIBRARY_TAILN
+				if (b->ttype == TYPE_str &&
+				    b->twidth < SIZEOF_VAR_T) {
+					size_t taillen = strlen(path) - 1;
+					char tailsave = path[taillen];
+					path[taillen] = 0;
+					if (MT_stat(path, &statb) < 0) {
+						GDKsyserror("cannot stat file %s%c or %s (expected size %zu)\n",
+							    path, tailsave, path, b->theap->free);
+						GDKfree(path);
+						return GDK_FAIL;
+					}
+				} else
+#endif
+				{
+					GDKsyserror("cannot stat file %s (expected size %zu)\n",
+						    path, b->theap->free);
+					GDKfree(path);
+					return GDK_FAIL;
+				}
+			}
+#else
+			/* first check string offset heap without widht,
+			 * then with */
 #ifdef GDKLIBRARY_TAILN
 			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
 			 * exist with either name .tail1 (etc) or .tail, if <=
@@ -780,6 +808,7 @@ BBPcheckbats(unsigned bbpversion)
 				GDKfree(path);
 				return GDK_FAIL;
 			}
+#endif
 			if ((size_t) statb.st_size < b->theap->free) {
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
 				GDKfree(path);
