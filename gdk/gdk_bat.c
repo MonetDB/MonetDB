@@ -62,7 +62,7 @@ BATinit_idents(BAT *bn)
 }
 
 BAT *
-BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
+BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
 	BAT *bn;
 
@@ -120,8 +120,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		};
 
 		const char *nme = BBP_physical(bn->batCacheid);
-		strconcat_len(bn->theap->filename, sizeof(bn->theap->filename),
-			      nme, ".tail", NULL);
+		settailname(bn->theap, nme, tt, width);
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
@@ -261,7 +260,7 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
 
-	bn = BATcreatedesc(hseq, tt, true, role);
+	bn = BATcreatedesc(hseq, tt, true, role, width);
 	if (bn == NULL)
 		return NULL;
 
@@ -271,8 +270,12 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
 	else if (tt == TYPE_str) {
-		if (width != 0)
+		if (width != 0) {
+			/* power of two and not too large */
+			assert((width & (width - 1)) == 0);
+			assert(width <= sizeof(var_t));
 			bn->twidth = width;
+		}
 		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
 	}
 

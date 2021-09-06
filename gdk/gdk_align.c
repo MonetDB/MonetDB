@@ -91,7 +91,7 @@ VIEWcreate(oid seq, BAT *b)
 		return BATdense(seq, b->tseqbase, b->batCount);
 	}
 
-	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
+	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT, 0);
 	if (bn == NULL)
 		return NULL;
 	assert(bn->theap == NULL);
