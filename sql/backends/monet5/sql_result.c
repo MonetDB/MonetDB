@@ -1738,7 +1738,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		return -4;
 
 	/* row count, min(count, reply_size) */
-	if (mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
+	/* the columnar protocol ignores the reply size by fetching the entire resultset at once, so don't set it */
+	if (mvc_send_int(s, (b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
 		return -4;
 
 	// export query id
