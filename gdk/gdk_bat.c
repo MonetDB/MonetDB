@@ -62,7 +62,7 @@ BATinit_idents(BAT *bn)
 }
 
 BAT *
-BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
+BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
 	BAT *bn;
 
@@ -123,8 +123,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		};
 
 		const char *nme = BBP_physical(bn->batCacheid);
-		strconcat_len(bn->theap->filename, sizeof(bn->theap->filename),
-			      nme, ".tail", NULL);
+		settailname(bn->theap, nme, tt, width);
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
@@ -183,20 +182,21 @@ BATsetdims(BAT *b)
 const char *
 gettailname(const BAT *b)
 {
-	if (b->ttype != TYPE_str)
-		return "tail";
-	switch (b->twidth) {
-	case 1:
-		return "tail1";
-	case 2:
-		return "tail2";
+	if (b->ttype == TYPE_str) {
+		switch (b->twidth) {
+		case 1:
+			return "tail1";
+		case 2:
+			return "tail2";
 #if SIZEOF_VAR_T == 8
-	case 4:
-		return "tail4";
+		case 4:
+			return "tail4";
 #endif
-	default:
-		return "tail";
+		default:
+			break;
+		}
 	}
+	return "tail";
 }
 
 void
@@ -264,7 +264,7 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
 
-	bn = BATcreatedesc(hseq, tt, true, role);
+	bn = BATcreatedesc(hseq, tt, true, role, width);
 	if (bn == NULL)
 		return NULL;
 
@@ -274,8 +274,12 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
 	else if (tt == TYPE_str) {
-		if (width != 0)
+		if (width != 0) {
+			/* power of two and not too large */
+			assert((width & (width - 1)) == 0);
+			assert(width <= sizeof(var_t));
 			bn->twidth = width;
+		}
 		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
 	}
 
@@ -2452,6 +2456,7 @@ BATassertProps(BAT *b)
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
+	char filename[sizeof(b->theap->filename)];
 
 	/* do the complete check within a lock */
 	MT_lock_set(&b->theaplock);
@@ -2494,6 +2499,22 @@ BATassertProps(BAT *b)
 			assert(b->theap->size >= 4 * ((b->batCapacity + 31) / 32));
 		} else
 			assert(b->theap->size >> b->tshift >= b->batCapacity);
+	}
+	strconcat_len(filename, sizeof(filename),
+		      BBP_physical(b->theap->parentid),
+		      b->ttype == TYPE_str ? b->twidth == 1 ? ".tail1" : b->twidth == 2 ? ".tail2" :
+#if SIZEOF_VAR_T == 8
+		      b->twidth == 4 ? ".tail4" :
+#endif
+		      ".tail" : ".tail",
+		      NULL);
+	assert(strcmp(b->theap->filename, filename) == 0);
+	if (b->tvheap) {
+		strconcat_len(filename, sizeof(filename),
+			      BBP_physical(b->tvheap->parentid),
+			      ".theap",
+			      NULL);
+		assert(strcmp(b->tvheap->filename, filename) == 0);
 	}
 
 	/* void and str imply varsized */
