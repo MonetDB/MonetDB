@@ -1052,6 +1052,7 @@ struct callback_context {
 static str
 monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
 	monetdbe_database_internal *mdbe = ((struct callback_context*) context)->mdbe;
+	str msg = MAL_SUCCEED;
 
 	if (nr_results == 0)
 		return MAL_SUCCEED; // No work to do.
@@ -1060,36 +1061,55 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
 		return mdbe->msg;
 
-	BAT* order = BATdescriptor(results[0].id);
-	if (!order) {
-		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
+	BAT *b_0 = BATdescriptor(results[0].id);
+	if (!b_0) {
+		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor");
 		return mdbe->msg;
 	}
 
-	mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
+	BAT *order = BATdense(0, 0, BATcount(b_0));
+	if (!order) {
+		BBPunfix(b_0->batCacheid);
+		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return mdbe->msg;
+	}
 
-	for (unsigned  i = 0; i < nr_results; i++) {
+	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
+	BBPunfix(order->batCacheid);
+	if (res < 0) {
+		BBPunfix(b_0->batCacheid);
+		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY013) "Cannot create result table");
+		return mdbe->msg;
+	}
+
+	for (size_t i = 0; i < nr_results; i++) {
 		BAT *b = NULL;
-		if (i > 0) {
+		if (i > 0)
 			b = BATdescriptor(results[i].id);
-		}
 		else
-			b = order; // We already fetched this first column
+			b = b_0; // We already fetched this first column
 
 		char* colname	= results[i].colname;
 		char* tpename	= results[i].tpename;
 		int digits		= results[i].digits;
 		int scale		= results[i].scale;
 
-		if ( b == NULL)
-			mdbe->msg= createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
-		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-		if( b)
-			BBPkeepref(b->batCacheid);
+		if (b == NULL) {
+			msg = mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor");
+			break;
+		}
+
+		int res = mvc_result_column(be, tblname, colname, tpename, digits, scale, b);
+		BBPunfix(b->batCacheid);
+		if (res) {
+			msg = mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			break;
+		}
 	}
 
-	return MAL_SUCCEED;
+	if (msg)
+		res_tables_destroy(be->results);
+	return msg;
 }
 
 struct prepare_callback_context {
@@ -1140,7 +1160,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		!(btable	= BATdescriptor(results[4].id))	||
 		!(bcolumn	= BATdescriptor(results[5].id)))
 	{
-		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Cannot access prepare result");
+		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto cleanup;
 	}
 
@@ -1154,7 +1174,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		nparams + 1 != BATcount(btable) ||
 		nparams 	!= BATcount(bcolumn))
 	{
-		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "prepare results are incorrect.");
+		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Prepare results are incorrect");
 		goto cleanup;
 	}
 
