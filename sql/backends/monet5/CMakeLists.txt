@@ -14,6 +14,7 @@ set(sql_public_headers
 add_library(sql SHARED)
 
 set(include_sql_files
+  10_sys_schema_extension
   12_url
   13_date
   14_inet
@@ -32,7 +33,6 @@ set(include_sql_files
   42_md5sum
   45_uuid
   46_profiler
-  51_sys_schema_extension
   52_describe
   58_hot_snapshot
   60_wlcr
