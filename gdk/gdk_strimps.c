@@ -225,7 +225,7 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		if (max_counts[cmin_max] < hist[i].cnt) {
 			max_counts[cmin_max] = hist[i].cnt;
 			indices[cmin_max] = i;
-                        for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
+			for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
 				swp(max_counts, hidx, hidx-1, uint64_t);
 				swp(indices, hidx, hidx-1, size_t);
 			}
@@ -350,7 +350,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	if (b->tstrimps == NULL) {
 		MT_lock_set(&b->batIdxLock);
 		/* Make sure no other thread got here first */
-                if (b->tstrimps == NULL &&
+		if (b->tstrimps == NULL &&
 		    STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put the result in hpairs */
 			sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and the pair sizes */
 			for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
@@ -389,7 +389,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		}
 		MT_lock_unset(&b->batIdxLock);
 	}
-        return b->tstrimps;
+	return b->tstrimps;
 }
 
 /* This macro takes a bat and checks if the strimp construction has been
@@ -480,20 +480,20 @@ BATcheckstrimps(BAT *b)
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
 		MT_lock_unset(&b->batIdxLock);
-        }
+	}
 	/* The string imprint is initialized if the strimp pointer is
 	 * not null and the number of bitstrings is equal to the bat
 	 * count.
 	 */
 	assert(!b->tstrimps || (b->tstrimps->strimps.free - HSIZE(((uint64_t *)b->tstrimps->strimps.base)[0]))/sizeof(uint64_t) <= b->batCount);
 	ret = STRIMP_COMPLETE(b);
-        if (ret) {
+	if (ret) {
 		TRC_DEBUG(ACCELERATOR,
 			  "BATcheckstrimps(" ALGOBATFMT "): already has strimps, waited " LLFMT " usec\n",
 			  ALGOBATPAR(b), GDKusec() - t);
 	}
 
-        return ret;
+	return ret;
 }
 
 /* Filter a BAT b using a string q. Return the result as a candidate
@@ -544,23 +544,23 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci);
 		if ((bitstring_array[x] & qbmask) == qbmask) {
-                  if (BUNappend(r, &x, false) != GDK_SUCCEED) {
-                    BBPunfix(r->batCacheid);
-                    goto sfilter_fail;
-                  }
-                }
-        }
+			if (BUNappend(r, &x, false) != GDK_SUCCEED) {
+				BBPunfix(r->batCacheid);
+				goto sfilter_fail;
+			}
+		}
+	}
 
-        r->tkey = true;
-        r->tsorted = true;
-        r->trevsorted = BATcount(r) <= 1;
-        r->tnil = false;
-        r->tnonil = true;
-        TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " LLFMT
+	r->tkey = true;
+	r->tsorted = true;
+	r->trevsorted = BATcount(r) <= 1;
+	r->tnil = false;
+	r->tnonil = true;
+	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " LLFMT
 		  " items took " LLFMT " usec. Keeping " LLFMT
 		  " items (%.2f%%).\n", ncand, GDKusec()-t0, r->batCount,
 		  100*r->batCount/(double)ncand);
-        TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
+	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	return virtualize(r);
 
  sfilter_fail:
@@ -659,7 +659,7 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 
 	/* Disable this before merging to default */
-        if (VIEWtparent(b)) {
+	if (VIEWtparent(b)) {
 		pb = BBP_cache(VIEWtparent(b));
 		assert(pb);
 	} else {
@@ -669,7 +669,7 @@ STRMPcreate(BAT *b, BAT *s)
 	if (BATcheckstrimps(pb))
 		return GDK_SUCCEED;
 
-        if ((h = STRMPcreateStrimpHeap(pb, s)) == NULL) {
+	if ((h = STRMPcreateStrimpHeap(pb, s)) == NULL) {
 		return GDK_FAIL;
 	}
 	dh = (uint64_t *)h->strimps_base + b->hseqbase;
@@ -871,7 +871,7 @@ STRMPndigrams(BAT *b, size_t *n)
 	*n = 0;
 	for (i = 0; i < b->batCount; i++) {
 		s = (char *)BUNtail(bi, i);
-                // *n += STRMP_strlen(s) - 1;
+		// *n += STRMP_strlen(s) - 1;
 		*n += strlen(s) - 1;
 		// TRC_DEBUG(ACCELERATOR, "s["LLFMT"]=%s\n", i, s);
 	}
