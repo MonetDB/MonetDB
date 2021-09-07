@@ -248,8 +248,11 @@ static str RMTconnectScen(
 	if (columnar && *columnar) {
 		char set_protocol_query_buf[50];
 		snprintf(set_protocol_query_buf, 50, "sql.set_protocol(%d:int);", PROTOCOL_COLUMNAR);
-		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf)))
+		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf))) {
+			mapi_destroy(m);
+			MT_lock_unset(&mal_remoteLock);
 			return msg;
+		}
 	}
 
 	/* connection established, add to list */
@@ -1404,6 +1407,8 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					BBPkeepref(results[j].id);
 				assert(rcb->context);
 				tmp = rcb->call(rcb->context, mapi_get_table(mhdl, 0), results, fields);
+				for (int j = 0; j < i; j++)
+					BBPrelease(results[j].id);
 			}
 			GDKfree(results);
 		}
