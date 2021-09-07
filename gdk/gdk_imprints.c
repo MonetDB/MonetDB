@@ -321,6 +321,7 @@ BATcheckimprints(BAT *b)
 				strconcat_len(imprints->imprints.filename,
 					      sizeof(imprints->imprints.filename),
 					      nme, ".timprints", NULL);
+				imprints->imprints.storage = imprints->imprints.newstorage = STORE_INVALID;
 				/* check whether a persisted imprints index
 				 * can be found */
 				if ((fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb", "timprints")) >= 0) {
@@ -774,7 +775,6 @@ IMPSfree(BAT *b)
 	Imprints *imprints;
 
 	if (b && b->timprints) {
-		assert(b->batCacheid > 0);
 		MT_lock_set(&b->batIdxLock);
 		imprints = b->timprints;
 		if (imprints != NULL && imprints != (Imprints *) 1) {

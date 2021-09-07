@@ -65,6 +65,7 @@ virtualize(BAT *bn)
 				return NULL;
 			}
 			*h = *bn->theap;
+			settailname(h, BBP_physical(bn->batCacheid), TYPE_oid, 0);
 			h->parentid = bn->batCacheid;
 			h->base = NULL;
 			ATOMIC_INIT(&h->refs, 1);

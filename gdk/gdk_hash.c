@@ -474,6 +474,10 @@ BATcheckhash(BAT *b)
 				strconcat_len(h->heapbckt.filename,
 					      sizeof(h->heapbckt.filename),
 					      nme, ".thashb", NULL);
+				h->heaplink.storage = STORE_INVALID;
+				h->heaplink.newstorage = STORE_INVALID;
+				h->heapbckt.storage = STORE_INVALID;
+				h->heapbckt.newstorage = STORE_INVALID;
 
 				/* check whether a persisted hash can be found */
 				if ((fd = GDKfdlocate(h->heapbckt.farmid, nme, "rb+", "thashb")) >= 0) {
@@ -993,7 +997,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 gdk_return
 BAThash(BAT *b)
 {
-	assert(b->batCacheid > 0);
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
 		GDKerror("No hash on msk type bats\n");
 		return GDK_FAIL;

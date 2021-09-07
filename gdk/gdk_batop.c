@@ -21,15 +21,16 @@
 gdk_return
 unshare_varsized_heap(BAT *b)
 {
-	assert(b->batCacheid > 0);
 	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
-		Heap *h = GDKzalloc(sizeof(Heap));
+		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
 		MT_thread_setalgorithm("unshare vheap");
-		h->parentid = b->batCacheid;
-		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
+		*h = (Heap) {
+			.parentid = b->batCacheid,
+			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
+		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
@@ -329,7 +330,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	BATsetcount(b, oldcnt + ci->ncand);
 	bat_iterator_end(&ni);
 	assert(b->batCapacity >= b->batCount);
-	b->theap->dirty = true;
 	/* maintain hash */
 	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
@@ -402,7 +402,6 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
-		b->theap->dirty = true;
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		/* maintain hash table */
 		MT_rwlock_wrlock(&b->thashlock);
@@ -418,13 +417,15 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	/* b and n do not share their vheap, so we need to copy data */
 	if (b->tvheap->parentid != b->batCacheid) {
 		/* if b shares its vheap with some other bat, unshare it */
-		Heap *h = GDKzalloc(sizeof(Heap));
+		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL) {
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
-		h->parentid = b->batCacheid;
-		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
+		*h = (Heap) {
+			.parentid = b->batCacheid,
+			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
@@ -459,7 +460,6 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	MT_rwlock_wrunlock(&b->thashlock);
 	BATsetcount(b, r);
 	bat_iterator_end(&ni);
-	b->theap->dirty = true;
 	return GDK_SUCCEED;
 }
 
@@ -650,7 +650,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	assert(b->batCacheid > 0);
 	assert(b->theap->parentid == b->batCacheid);
 
 	TRC_DEBUG_IF(ALGO) {
@@ -873,7 +872,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
 		BATsetcount(b, b->batCount + ci.ncand);
-		b->theap->dirty = true;
 	}
 
   doreturn:
@@ -1131,9 +1129,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	bool anynil = false;
 	bool locked = false;
 
-	b->theap->dirty = true;
 	if (b->tvarsized) {
-		b->tvheap->dirty = true;
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
@@ -1280,6 +1276,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			MT_rwlock_wrunlock(&b->thashlock);
 			locked = false;
 		}
+		MT_lock_set(&b->theaplock);
+		b->tvheap->dirty = true;
+		MT_lock_unset(&b->theaplock);
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
 		for (BUN i = 0; i < ni.count; i++) {
@@ -1561,6 +1560,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	MT_lock_set(&b->theaplock);
 	b->tminpos = minpos;
 	b->tmaxpos = maxpos;
+	b->theap->dirty = true;
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG(ALGO,
 		  "BATreplace(" ALGOBATFMT "," ALGOOPTBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",

@@ -789,7 +789,6 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(b->theap->farmid));
-	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
@@ -922,6 +921,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
+		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
@@ -938,6 +938,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
+		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
@@ -984,7 +985,6 @@ void
 BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
-	const char *o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
 
 	assert(bid > 0);
@@ -995,24 +995,9 @@ BATdelete(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
-	if (b->batCopiedtodisk || (b->theap->storage != STORE_MEM)) {
-		if (b->ttype != TYPE_void &&
-		    HEAPdelete(b->theap, o, gettailname(b)) != GDK_SUCCEED &&
-		    b->batCopiedtodisk)
-			TRC_DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->theap->base) {
-		HEAPfree(b->theap, true);
-	}
-	if (b->tvheap) {
-		assert(b->tvheap->parentid == bid);
-		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
-			    b->batCopiedtodisk)
-				TRC_DEBUG(IO_, "BATdelete(%s): tail heap\n", BATgetId(b));
-		} else {
-			HEAPfree(b->tvheap, true);
-		}
-	}
+	HEAPfree(b->theap, true);
+	if (b->tvheap)
+		HEAPfree(b->tvheap, true);
 	b->batCopiedtodisk = false;
 }
 
