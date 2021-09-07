@@ -2031,6 +2031,9 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		.singleuser = singleuser,
 		.debug = debug,
 		.transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE),
+		.nr_active = ATOMIC_VAR_INIT(0),
+		.timestamp = ATOMIC_VAR_INIT(0),
+		.lastactive = ATOMIC_VAR_INIT(0),
 		.sa = pa,
 	};
 
@@ -2264,6 +2267,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 	store->oldest_pending = oldest_changes;
 }
 
+#define IDLE_TIME	30			/* in seconds */
+
 void
 store_manager(sqlstore *store)
 {
@@ -2275,7 +2280,8 @@ store_manager(sqlstore *store)
 	for (;;) {
 		int res;
 
-		if (store->debug&128 && ATOMIC_GET(&store->nr_active) == 0) {
+		if (ATOMIC_GET(&store->nr_active) == 0 &&
+			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME < (ATOMIC_BASE_TYPE) (GDKusec() / 1000000))) {
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -2285,6 +2291,7 @@ store_manager(sqlstore *store)
 			store_unlock(store);
 			MT_lock_set(&store->flush);
 			store->logger_api.activate(store); /* rotate to new log file */
+			ATOMIC_SET(&store->lastactive, GDKusec() / 1000000);
 		}
 
 		if (GDKexiting())
@@ -6739,6 +6746,7 @@ sql_trans_end(sql_session *s, int ok)
 	sqlstore *store = s->tr->store;
 	store_lock(store);
 	list_remove_data(store->active, NULL, s);
+	ATOMIC_SET(&store->lastactive, GDKusec() / 1000000);
 	(void) ATOMIC_DEC(&store->nr_active);
 	ulng oldest = store_get_timestamp(store);
 	if (store->active && store->active->h) {
