@@ -91,7 +91,7 @@ VIEWcreate(oid seq, BAT *b)
 		return BATdense(seq, b->tseqbase, b->batCount);
 	}
 
-	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
+	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT, 0);
 	if (bn == NULL)
 		return NULL;
 	assert(bn->theap == NULL);
@@ -178,7 +178,6 @@ BATmaterialize(BAT *b)
 	cnt = BATcapacity(b);
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
-	*tail = *b->theap;
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
@@ -194,8 +193,7 @@ BATmaterialize(BAT *b)
 		.parentid = b->batCacheid,
 		.dirty = true,
 	};
-	strconcat_len(tail->filename, sizeof(tail->filename),
-		      BBP_physical(b->batCacheid), ".tail", NULL);
+	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
 	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;
@@ -279,7 +277,6 @@ VIEWunlink(BAT *b)
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
 
-		assert(b->batCacheid > 0);
 		if (tp)
 			tpb = BBP_cache(tp);
 		if (tp && !vtp)

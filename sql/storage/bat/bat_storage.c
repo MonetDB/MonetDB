@@ -3085,12 +3085,12 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 {
-	int ok = LOG_OK;
-	if (ok == LOG_OK && s->cs.cleared)
-		return tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
+	int ok = LOG_OK, cleared = s->cs.cleared;
+	if (ok == LOG_OK && cleared)
+		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, id);
-	if (ok == LOG_OK)
+	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs);
 	return ok;
 }

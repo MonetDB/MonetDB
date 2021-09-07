@@ -1063,19 +1063,24 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 	}
 
 	BAT* order = BATdense(0, 0, BATcount(b_0));
-	if (mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order) < 0) {
-		BBPreclaim(order);
+	if (!order) {
+		BBPunfix(b_0->batCacheid);
+		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) MAL_MALLOC_FAIL);
+		return error;
+	}
+
+	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
+	BBPunfix(order->batCacheid);
+	if (res < 0) {
 		BBPunfix(b_0->batCacheid);
 		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
 		return error;
 	}
 
-	unsigned  i = 0;
-	for (i = 0; i < nr_results; i++) {
+	for (size_t i = 0; i < nr_results; i++) {
 		BAT *b = NULL;
-		if (i > 0) {
+		if (i > 0)
 			b = BATdescriptor(results[i].id);
-		}
 		else
 			b = b_0; // We already fetched this first column
 
@@ -1084,26 +1089,22 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		int digits		= results[i].digits;
 		int scale		= results[i].scale;
 
-		if ( b == NULL) {
-			error= createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot access column descriptor ");
+		if (b == NULL) {
+			error = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor");
 			break;
 		}
-		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b)) {
-			error = createException(SQL, "monetdbe.monetdbe_set_remote_results", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-			BBPunfix(b->batCacheid);
-			break;
-		}
+
+		int res = mvc_result_column(be, tblname, colname, tpename, digits, scale, b);
 		BBPunfix(b->batCacheid);
+		if (res) {
+			error = createException(MAL,"monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			break;
+		}
 	}
 
-	BBPunfix(order->batCacheid);
-
-	if (error) {
+	if (error)
 		res_tables_destroy(be->results);
-		return error;
-	}
-
-	return MAL_SUCCEED;
+	return error;
 }
 
 static str
@@ -1172,7 +1173,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		!(bcolumn	= BATdescriptor(results[5].id))	||
 		!(bimpl		= BATdescriptor(results[6].id)))
 	{
-		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Cannot access prepare result");
+		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto cleanup;
 	}
 
@@ -1185,7 +1186,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		nparams 	!= BATcount(btable) ||
 		nparams 	!= BATcount(bcolumn))
 	{
-		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "prepare results are incorrect.");
+		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Prepare results are incorrect");
 		goto cleanup;
 	}
 
@@ -1635,7 +1636,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
 		goto cleanup;
 
-	if (b->results && b->rowcnt >= 0 && affected_rows)
+	if (b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
 	if (result) {

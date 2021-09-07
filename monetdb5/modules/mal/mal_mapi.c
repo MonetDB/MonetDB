@@ -1857,12 +1857,11 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		/* generate a tuple batch */
 		/* and reload it into the proper format */
 		str ht,tt;
-		BAT *b= BATdescriptor(BBPindex(*nme));
+		BAT *b = BBPquickdesc(BBPindex(*nme));
 		size_t len;
 
-		if( b== NULL){
-			throw(MAL,"mapi.put","Can not access BAT");
-		}
+		if (!b)
+			throw(MAL, "mapi.put", RUNTIME_OBJECT_MISSING);
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
@@ -1876,8 +1875,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			mapi_close_handle(SERVERsessions[i].hdl);
 		SERVERsessions[i].hdl= mapi_query(mid, buf);
 
-		GDKfree(ht); GDKfree(tt);
-		BBPrelease(b->batCacheid);
+		GDKfree(ht);
+		GDKfree(tt);
 		break;
 		}
 	case TYPE_str:

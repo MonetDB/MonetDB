@@ -188,8 +188,13 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		restrict_t mode = (restrict_t) b->batRestricted;
+		BBPunfix(b->batCacheid);
+		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+	}
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -250,8 +255,13 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		restrict_t mode = (restrict_t) b->batRestricted;
+		BBPunfix(b->batCacheid);
+		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+	}
 	derefStr(b, u);
 	if (BUNappend(b, u, force ? *force : false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
