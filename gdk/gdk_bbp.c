@@ -4247,8 +4247,21 @@ static gdk_callback_list callback_list = {
  * Returns the count of the callbacks in the callback_list.
  */
 int gdk_add_callback(gdk_callback *callback) {
-	// TODO
-	(void) callback;
+	gdk_callback *p = callback_list.head;
+	if (p) {
+		int cnt = 1;
+		do {
+			cnt += 1;
+			if (p->next == NULL) {
+			   	p->next = callback;
+				p = callback->next;
+			}
+		} while(p);
+		callback_list.cnt = cnt;
+	} else {
+		callback_list.cnt = 1;
+		callback_list.head = callback;
+	}
 	return callback_list.cnt;
 }
 
@@ -4258,7 +4271,23 @@ int gdk_add_callback(gdk_callback *callback) {
  * Returns the count of the callbacks in the callback_list.
  */
 int gdk_remove_callback(char *cb_name) {
-	// TODO
-	(void) cb_name;
+	gdk_callback *curr = callback_list.head;
+	gdk_callback *prev = NULL;
+	while(curr) {
+		if (strcmp(cb_name, curr->name) == 0) {
+			if (curr == callback_list.head && prev == NULL) {
+				callback_list.head = curr->next;
+			} else {
+				prev->next = curr->next;
+			}
+			if (curr->argsfree) curr->argsfree(curr->argc, curr->argv);
+			GDKfree(curr);
+			curr = NULL;
+			callback_list.cnt -=1;
+		} else {
+			prev = curr;
+			curr = curr->next;
+		}
+	}
 	return callback_list.cnt;
 }
