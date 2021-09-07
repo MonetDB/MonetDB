@@ -4979,18 +4979,44 @@ finalize:
 	return ret;
 }
 
+static str
+do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char *tname, char *cname) {
+	int res;
+	BAT* b = NULL;
+	BAT* bn = NULL;
+	sqlstore *store = tr->store;
+
+	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
+		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
+	// vacuum only string bats
+	if (ATOMstorage(b->ttype) == TYPE_str) {
+		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
+		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
+			BBPreclaim(bn);
+			if (res == LOG_CONFLICT)
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			if (res == LOG_ERR)
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		}
+	}
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 str
 SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	BAT* b = NULL;
-	BAT* bn = NULL;
+	//BAT* b = NULL;
+	//BAT* bn = NULL;
 	str msg = NULL;
 	int access = 0;
-	int res = 0;
-	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *tname = *getArgReference_str(stk, pci, 2);
-	const char *cname = *getArgReference_str(stk, pci, 3);
+	// int res = 0;
+	char *sname = *getArgReference_str(stk, pci, 1);
+	char *tname = *getArgReference_str(stk, pci, 2);
+	char *cname = *getArgReference_str(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4998,7 +5024,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	sql_trans *tr = m->session->tr;
-	sqlstore *store = tr->store;
+	// sqlstore *store = tr->store;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
@@ -5010,37 +5036,70 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
-	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
-	// vacuum only string bats
-	if (ATOMstorage(b->ttype) == TYPE_str) {
-		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
-			throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
-		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
-			BBPreclaim(bn);
-			if (res == LOG_CONFLICT)
-				throw(SQL, "sql.str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			if (res == LOG_ERR)
-				throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-		}
-	}
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	// if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
+	// 	throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
+	// // vacuum only string bats
+	// if (ATOMstorage(b->ttype) == TYPE_str) {
+	// 	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
+	// 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
+	// 	if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
+	// 		BBPreclaim(bn);
+	// 		if (res == LOG_CONFLICT)
+	// 			throw(SQL, "sql.str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+	// 		if (res == LOG_ERR)
+	// 			throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+	// 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+	// 	}
+	// }
+	// BBPunfix(b->batCacheid);
+	return do_str_column_vacuum(tr, c, access, sname, tname, cname);
 }
 
+
 static gdk_return
-do_str_column_vacuum(int argc, void *argv[]) {
-	char *sname = (char *) argv[0];
-	char *tname = (char *) argv[1];
-	char *cname = (char *) argv[2];
-	(void) sname;
-	(void) tname;
-	(void) cname;
+str_column_vacuum_callback(int argc, void *argv[]) {
+	mvc *m = (mvc *) argv[0];
+	char *sname = (char *) argv[1];
+	char *tname = (char *) argv[2];
+	char *cname = (char *) argv[3];
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+	sql_trans *tr = NULL;
+	int access = 0;
+	char *msg;
+	gdk_return res = GDK_SUCCEED;
+
 	(void) argc;
-	// TODO
-	return GDK_SUCCEED;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
+		return GDK_FAIL;
+	}
+
+	if((t = mvc_bind_table(m, s, tname)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing table %s!", tname);
+		return GDK_FAIL;
+	}
+
+	if ((c = mvc_bind_column(m, t, cname)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing column %s!", cname);
+		return GDK_FAIL;
+	}
+
+	if((tr = sql_trans_create(m->store, NULL, NULL)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create transaction!");
+		return GDK_FAIL;
+	}
+
+	if((msg=do_str_column_vacuum(tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
+		res = GDK_FAIL;
+	}
+	sql_trans_destroy(tr);
+	return res;
 }
+
 
 str
 SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -5073,13 +5132,14 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*callback = (gdk_callback) {
 		.name = "str_column_vacuum",
-		.argc = 3,
+		.argc = 4,
 		.interval = interval,
-		.func = do_str_column_vacuum,
+		.func = str_column_vacuum_callback,
 	};
 
 	if (!(*callback->argv = GDKmalloc(sizeof(char *[3]))))
 		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	callback->argv[0] = m; // mvc
 	callback->argv[0] = sname;
 	callback->argv[1] = tname;
 	callback->argv[2] = cname;
