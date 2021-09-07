@@ -354,6 +354,8 @@ WLRprocessBatch(Client cntxt)
 					msg = chkFlow(mb);
 				if (!msg)
 					msg = chkDeclarations(mb);
+				if (!msg)
+					setVariableScope(mb);
 				wlr_tag =  tag; // remember which transaction we executed
 				snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
 				if(!msg && mb->errors == 0){
