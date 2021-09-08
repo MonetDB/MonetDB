@@ -17,6 +17,7 @@
 #include "sql_qc.h"
 #include "sql_parser.h"		/* sql_error */
 
+extern int mvc_affrows(mvc *c, stream *s, lng val, str w, oid query_id, lng last_id, lng starttime, lng maloptimizer, lng reloptimizer);
 extern int mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer);
 extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng maloptimizer);
 extern int mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime, lng maloptimizer);
@@ -42,5 +43,6 @@ extern int mvc_result_value(backend *be, const char *tn, const char *name, const
 extern const char *mvc_export_error(backend *be, stream *s, int err_code);
 
 extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len);
+extern int mvc_export(mvc *m, stream *s, res_table *t, BUN nr);
 
 #endif /* sql_result_H */
