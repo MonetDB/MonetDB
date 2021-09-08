@@ -262,3 +262,24 @@ SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on
 statement ok
 ROLLBACK
 
+statement ok
+CREATE TABLE t1(c1 BLOB)
+
+statement ok
+ALTER TABLE t1 ADD CONSTRAINT con2 PRIMARY KEY(c1)
+
+statement ok rowcount 4
+INSERT INTO t1(c1) VALUES(BLOB 'D8d4F0'), (BLOB 'B135'), (BLOB 'C0'), (BLOB '')
+
+statement ok rowcount 4
+UPDATE t1 SET c1 = t1.c1
+
+statement ok
+ALTER TABLE t1 DROP CONSTRAINT con2
+
+statement ok rowcount 4
+UPDATE t1 SET c1 = t1.c1
+
+statement ok
+DROP TABLE t1
+
