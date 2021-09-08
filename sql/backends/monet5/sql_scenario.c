@@ -402,11 +402,9 @@ SQLinit(Client c)
 		return MAL_SUCCEED;
 	}
 
-	be_funcs = (backend_functions) {
-		.fcode = &monet5_freecode,
-		.fresolve_function = &monet5_resolve_function,
-		.fhas_module_function = &monet5_has_module,
-	};
+	be_funcs.fcode = &monet5_freecode,
+	be_funcs.fresolve_function = &monet5_resolve_function,
+	be_funcs.fhas_module_function = &monet5_has_module,
 	monet5_user_init(&be_funcs);
 
 	if (debug_str)
@@ -1177,6 +1175,17 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
+			if (be->subbackend && be->subbackend->check(be->subbackend, r)) {
+				res_table *rt = NULL;
+				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+					if (rt) {
+						rt->next = be->results;
+						be->results = rt;
+					}
+					return NULL;
+				}
+			}
+
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
@@ -1307,6 +1316,8 @@ str
 SQLengine(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
+	if (be && be->subbackend)
+		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
 }
 
