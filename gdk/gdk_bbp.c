@@ -74,6 +74,9 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "mutils.h"
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #ifndef F_OK
 #define F_OK 0
