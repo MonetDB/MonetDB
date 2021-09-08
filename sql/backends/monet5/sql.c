@@ -5113,10 +5113,12 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 		return GDK_FAIL;
 	}
 
-	if ((session = sql_session_create(store, sa, 1)) == NULL) {
+	if ((session = sql_session_create(store, sa, 0)) == NULL) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create session!");
 		return GDK_FAIL;
 	}
+
+	sql_trans_begin(session);
 
 	if((s = find_sql_schema(session->tr, sname)) == NULL) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
@@ -5133,7 +5135,6 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 		return GDK_FAIL;
 	}
 
-	sql_trans_begin(session);
 	if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
 		res = GDK_FAIL;
