@@ -456,6 +456,7 @@ typedef struct sqlstore {
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
+	ATOMIC_TYPE lastactive;	/* timestamp of last active client */
     ATOMIC_TYPE timestamp;	/* timestamp counter */
     ATOMIC_TYPE transaction;/* transaction id counter */
 	ulng oldest;

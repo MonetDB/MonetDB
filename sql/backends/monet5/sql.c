@@ -75,10 +75,10 @@ exp_is_point_select(sql_exp *e)
 }
 
 static int
-rel_no_mitosis(sql_rel *rel)
+rel_no_mitosis(mvc *sql, sql_rel *rel)
 {
-	int is_point = 0;
-
+	if (mvc_highwater(sql))
+		return 0;
 	if (!rel || is_basetable(rel->op))
 		return 1;
 	/* use mitosis on order topn */
@@ -88,20 +88,17 @@ rel_no_mitosis(sql_rel *rel)
 			return 0;
 	}
 	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
-		return rel_no_mitosis(rel->l);
-	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
-		if (is_delete(rel->op) || is_merge(rel->op))
-			return 1;
-		return rel_no_mitosis(rel->r);
-	}
-	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
-		is_point = 0;
+		return rel_no_mitosis(sql, rel->l);
+	if ((is_delete(rel->op) || is_truncate(rel->op)) && rel->card <= CARD_AGGR)
+		return 1;
+	if ((is_insert(rel->op) || is_update(rel->op)) && rel->card <= CARD_AGGR)
+		return rel_no_mitosis(sql, rel->r);
+	if (is_select(rel->op) && rel_is_table(rel->l) && !list_empty(rel->exps)) {
 		/* just one point expression makes this a point query */
-		if (rel->exps->h)
-			if (exp_is_point_select(rel->exps->h->data))
-				is_point = 1;
+		if (exp_is_point_select(rel->exps->h->data))
+			return 1;
 	}
-	return is_point;
+	return 0;
 }
 
 static int
@@ -109,16 +106,14 @@ rel_need_distinct_query(sql_rel *rel)
 {
 	int need_distinct = 0;
 
-	while (!need_distinct && rel && is_simple_project(rel->op))
+	while (rel && is_simple_project(rel->op))
 		rel = rel->l;
-	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps && !rel->r) {
+	if (rel && is_groupby(rel->op) && !list_empty(rel->exps) && list_empty(rel->r)) {
 		for (node *n = rel->exps->h; n && !need_distinct; n = n->next) {
 			sql_exp *e = n->data;
-			if (e->type == e_aggr) {
 
-				if (need_distinct(e))
-					need_distinct = 1;
-			}
+			if (e->type == e_aggr && need_distinct(e))
+				need_distinct = 1;
 		}
 	}
 	return need_distinct;
@@ -140,7 +135,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_distribute(be->mvc, rel);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
-	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
+	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
 	return rel;
