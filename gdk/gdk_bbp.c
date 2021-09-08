@@ -4251,11 +4251,16 @@ int gdk_add_callback(gdk_callback *callback) {
 	if (p) {
 		int cnt = 1;
 		do {
-			cnt += 1;
+			// check if already added
+			if (strcmp(callback->name, p->name) == 0)
+				return callback_list.cnt;
 			if (p->next == NULL) {
 			   	p->next = callback;
 				p = callback->next;
+			} else {
+				p = p->next;
 			}
+			cnt += 1;
 		} while(p);
 		callback_list.cnt = cnt;
 	} else {
@@ -4275,6 +4280,7 @@ int gdk_remove_callback(char *cb_name) {
 	gdk_callback *prev = NULL;
 	while(curr) {
 		if (strcmp(cb_name, curr->name) == 0) {
+			MT_lock_set(&(callback_list.lock));
 			if (curr == callback_list.head && prev == NULL) {
 				callback_list.head = curr->next;
 			} else {
@@ -4282,8 +4288,9 @@ int gdk_remove_callback(char *cb_name) {
 			}
 			if (curr->argsfree) curr->argsfree(curr->argc, curr->argv);
 			GDKfree(curr);
-			curr = NULL;
 			callback_list.cnt -=1;
+			curr = NULL;
+			MT_lock_unset(&(callback_list.lock));
 		} else {
 			prev = curr;
 			curr = curr->next;
