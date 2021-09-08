@@ -841,6 +841,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_profileLock);
  	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
+		GDKfree(stmt);
 		return;
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
