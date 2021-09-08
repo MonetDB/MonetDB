@@ -1153,7 +1153,10 @@ bailout:
 			} \
 		} else { \
 			TPE_IN next = *(TPE_IN*)getArgReference(stk, pci, 1); \
-			FUNC(*ret, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+			if (is_##TPE_IN##_nil(next)) \
+				*ret = TPE_OUT##_nil;	\
+			else	\
+				FUNC(*ret, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 		} \
 	} while(0)
 

@@ -2050,7 +2050,7 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 		if (exp_has_rel(e)) {
 			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
-			xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			xp = xp ? rel_crossproduct(sa, xp, r, op_full) : r;
 		}
 	}
 	return xp;

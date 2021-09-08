@@ -871,3 +871,6 @@ BEGIN
 		RETURN 1;
 	END WHILE;
 END
+
+statement error 42000!Null step size not allowed
+select * from generate_series(timestamp '2010-01-01', timestamp '2010-01-01', null)
