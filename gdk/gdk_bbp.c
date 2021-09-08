@@ -292,10 +292,8 @@ BBPunlock(void)
 
 
 static gdk_return
-BBPinithash(int j)
+BBPinithash(int j, bat size)
 {
-	bat i = (bat) ATOMIC_GET(&BBPsize);
-
 	assert(j >= 0 && j <= BBP_THREADMASK);
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
@@ -305,16 +303,16 @@ BBPinithash(int j)
 	}
 	BBP_mask--;
 
-	while (--i > 0) {
-		const char *s = BBP_logical(i);
+	while (--size > 0) {
+		const char *s = BBP_logical(size);
 
 		if (s) {
 			if (*s != '.' && !BBPtmpcheck(s)) {
-				BBP_insert(i);
+				BBP_insert(size);
 			}
 		} else {
-			BBP_next(i) = BBP_free(j);
-			BBP_free(j) = i;
+			BBP_next(size) = BBP_free(j);
+			BBP_free(j) = size;
 			if (++j > BBP_THREADMASK)
 				j = 0;
 		}
@@ -350,16 +348,16 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 }
 
 static gdk_return
-BBPextend(int idx, bool buildhash)
+BBPextend(int idx, bool buildhash, bat newsize)
 {
-	if ((bat) ATOMIC_GET(&BBPsize) >= N_BBPINIT * BBPINIT) {
+	if (newsize >= N_BBPINIT * BBPINIT) {
 		GDKerror("trying to extend BAT pool beyond the "
 			 "limit (%d)\n", N_BBPINIT * BBPINIT);
 		return GDK_FAIL;
 	}
 
 	/* make sure the new size is at least BBPsize large */
-	while (BBPlimit < (bat) ATOMIC_GET(&BBPsize)) {
+	while (BBPlimit < newsize) {
 		BUN limit = BBPlimit >> BBPINITLOG;
 		assert(BBP[limit] == NULL);
 		BBP[limit] = GDKzalloc(BBPINIT * sizeof(BBPrec));
@@ -381,7 +379,7 @@ BBPextend(int idx, bool buildhash)
 		BBP_hash = NULL;
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			BBP_free(i) = 0;
-		if (BBPinithash(idx) != GDK_SUCCEED)
+		if (BBPinithash(idx, newsize) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -619,9 +617,10 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(&BBPsize)) {
+			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
+			    BBPextend(0, false, batid + 1) != GDK_SUCCEED)
+				return GDK_FAIL;
 			ATOMIC_SET(&BBPsize, batid + 1);
-			if ((bat) ATOMIC_GET(&BBPsize) >= BBPlimit)
-				BBPextend(0, false);
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
@@ -737,7 +736,7 @@ static gdk_return
 BBPcheckbats(unsigned bbpversion)
 {
 	(void) bbpversion;
-	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+	for (bat bid = 1, size = (bat) ATOMIC_GET(&BBPsize); bid < size; bid++) {
 		struct stat statb;
 		BAT *b;
 		char *path;
@@ -847,7 +846,7 @@ BBPcheckbats(unsigned bbpversion)
 #endif
 
 static unsigned
-BBPheader(FILE *fp, int *lineno)
+BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -904,8 +903,8 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	sz = (int) (sz * BATMARGIN);
-	if (sz > (bat) ATOMIC_GET(&BBPsize))
-		ATOMIC_SET(&BBPsize, sz);
+	if (sz > *bbpsize)
+		*bbpsize = sz;
 	if (bbpversion > GDKLIBRARY_MINMAX_POS) {
 		if (fgets(buf, sizeof(buf), fp) == NULL) {
 			TRC_CRITICAL(GDK, "short BBP");
@@ -1077,7 +1076,7 @@ BBPtrim(bool aggressive)
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
 	if (!aggressive)
 		flag |= BBPHOT;
-	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
@@ -1110,7 +1109,7 @@ BBPmanager(void *dummy)
 
 	for (;;) {
 		int n = 0;
-		for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+		for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 			MT_lock_set(&GDKswapLock(bid));
 			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
 				n += (BBP_status(bid) & BBPHOT) != 0;
@@ -1243,27 +1242,30 @@ BBPinit(void)
 	/* scan the BBP.dir to obtain current size */
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
-	ATOMIC_SET(&BBPsize, 1);
 
+	bat bbpsize;
+	bbpsize = 1;
 	if (GDKinmemory(0)) {
 		bbpversion = GDKLIBRARY;
 	} else {
-		bbpversion = BBPheader(fp, &lineno);
+		bbpversion = BBPheader(fp, &lineno, &bbpsize);
 		if (bbpversion == 0)
 			return GDK_FAIL;
 	}
 
-	BBPextend(0, false);		/* allocate BBP records */
+	/* allocate BBP records */
+	if (BBPextend(0, false, bbpsize) != GDK_SUCCEED)
+		return GDK_FAIL;
+	ATOMIC_SET(&BBPsize, bbpsize);
 
 	if (!GDKinmemory(0)) {
-		ATOMIC_SET(&BBPsize, 1);
 		if (BBPreadEntries(fp, bbpversion, lineno) != GDK_SUCCEED)
 			return GDK_FAIL;
 		fclose(fp);
 	}
 
 	MT_lock_set(&BBPnameLock);
-	if (BBPinithash(0) != GDK_SUCCEED) {
+	if (BBPinithash(0, (bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
 		MT_lock_unset(&BBPnameLock);
 		return GDK_FAIL;
@@ -1910,7 +1912,12 @@ BBPgetsubdir(str s, bat i)
  * enough list can be found, we create a new entry by either just
  * increasing BBPsize (up to BBPlimit) or extending the BBP (which
  * increases BBPlimit).  Every time this function is called we start
- * searching in a following free list (variable "last"). */
+ * searching in a following free list (variable "last").
+ *
+ * Note that this is the only place in normal, multi-threaded operation
+ * where BBPsize is assigned a value (never decreasing), that the
+ * assignment happens after any necessary memory was allocated and
+ * initialized, and that this happens when the BBPnameLock is held. */
 static gdk_return
 maybeextend(int idx)
 {
@@ -1941,26 +1948,25 @@ maybeextend(int idx)
 		BBP_free(idx) = i;
 	} else {
 		/* let the longest list alone, get a fresh entry */
-		if ((bat) ATOMIC_ADD(&BBPsize, 1) >= BBPlimit) {
-			if (BBPextend(idx, true) != GDK_SUCCEED) {
-				/* undo add */
-				ATOMIC_SUB(&BBPsize, 1);
-				/* couldn't extend; if there is any
-				 * free entry, take it from the
-				 * longest list after all */
-				if (l > 0) {
-					i = BBP_free(m);
-					BBP_free(m) = BBP_next(i);
-					BBP_next(i) = 0;
-					BBP_free(idx) = i;
-					GDKclrerr();
-				} else {
-					/* nothing available */
-					return GDK_FAIL;
-				}
+		bat size = (bat) ATOMIC_GET(&BBPsize);
+		if (size >= BBPlimit &&
+		    BBPextend(idx, true, size + 1) != GDK_SUCCEED) {
+			/* couldn't extend; if there is any
+			 * free entry, take it from the
+			 * longest list after all */
+			if (l > 0) {
+				i = BBP_free(m);
+				BBP_free(m) = BBP_next(i);
+				BBP_next(i) = 0;
+				BBP_free(idx) = i;
+				GDKclrerr();
+			} else {
+				/* nothing available */
+				return GDK_FAIL;
 			}
 		} else {
-			BBP_free(idx) = (bat) ATOMIC_GET(&BBPsize) - 1;
+			ATOMIC_SET(&BBPsize, size + 1);
+			BBP_free(idx) = size;
 		}
 	}
 	last = (last + 1) & BBP_THREADMASK;
