@@ -5131,7 +5131,12 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
 		res = GDK_FAIL;
 	}
-	sql_trans_destroy(tr);
+
+	if (sql_trans_commit(tr) != SQL_OK) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to commit transaction!");
+		res = GDK_FAIL;
+	}
+	// sql_trans_destroy(tr);
 	return res;
 }
 
@@ -5175,10 +5180,12 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (!(*callback->argv = GDKmalloc(sizeof(char *[3]))))
 		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	callback->argv[0] = m; // mvc
-	callback->argv[0] = sname;
-	callback->argv[1] = tname;
-	callback->argv[2] = cname;
+	callback->argv[1] = sname;
+	callback->argv[2] = tname;
+	callback->argv[3] = cname;
 	gdk_add_callback(callback);
+	// TODO REMOVE test the callback
+	callback->func(callback->argc, callback->argv);
 
 	return MAL_SUCCEED;
 }
