@@ -5093,50 +5093,54 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static gdk_return
 str_column_vacuum_callback(int argc, void *argv[]) {
-	mvc *m = (mvc *) argv[0];
+	sqlstore *store = (sqlstore *) argv[0];
 	char *sname = (char *) argv[1];
 	char *tname = (char *) argv[2];
 	char *cname = (char *) argv[3];
+	sql_allocator *sa = NULL;
+	sql_session *session = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
-	sql_trans *tr = NULL;
 	int access = 0;
 	char *msg;
 	gdk_return res = GDK_SUCCEED;
 
 	(void) argc;
 
-	if((s = mvc_bind_schema(m, sname)) == NULL) {
+	if ((sa = sa_create(NULL)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create sql_allocator!");
+		return GDK_FAIL;
+	}
+
+	if ((session = sql_session_create(store, sa, 1)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create session!");
+		return GDK_FAIL;
+	}
+
+	if((s = find_sql_schema(session->tr, sname)) == NULL) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
 		return GDK_FAIL;
 	}
 
-	if((t = mvc_bind_table(m, s, tname)) == NULL) {
+	if((t = find_sql_table(session->tr, s, tname)) == NULL) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing table %s!", tname);
 		return GDK_FAIL;
 	}
 
-	if ((c = mvc_bind_column(m, t, cname)) == NULL) {
+	if ((c = find_sql_column(t, cname)) == NULL) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing column %s!", cname);
 		return GDK_FAIL;
 	}
 
-	if((tr = sql_trans_create(m->store, NULL, NULL)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create transaction!");
-		return GDK_FAIL;
-	}
-
-	if((msg=do_str_column_vacuum(tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
+	sql_trans_begin(session);
+	if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
 		res = GDK_FAIL;
 	}
-
-	if (sql_trans_commit(tr) != SQL_OK) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to commit transaction!");
-		res = GDK_FAIL;
-	}
-	// sql_trans_destroy(tr);
+	sql_trans_end(session, SQL_OK);
+	sql_session_destroy(session);
+	sa_destroy(sa);
 	return res;
 }
 
@@ -5177,13 +5181,14 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		.func = str_column_vacuum_callback,
 	};
 
-	if (!(*callback->argv = GDKmalloc(sizeof(char *[3]))))
+	if (!(*callback->argv = GDKmalloc(sizeof(char *[callback->argc]))))
 		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	callback->argv[0] = m; // mvc
+	callback->argv[0] = m->store;
 	callback->argv[1] = sname;
 	callback->argv[2] = tname;
 	callback->argv[3] = cname;
 	gdk_add_callback(callback);
+
 	// TODO REMOVE test the callback
 	callback->func(callback->argc, callback->argv);
 

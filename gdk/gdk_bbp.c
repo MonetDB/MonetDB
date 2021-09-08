@@ -4248,6 +4248,7 @@ static gdk_callback_list callback_list = {
  */
 int gdk_add_callback(gdk_callback *callback) {
 	gdk_callback *p = callback_list.head;
+	MT_lock_set(&(callback_list.lock));
 	if (p) {
 		int cnt = 1;
 		do {
@@ -4267,6 +4268,7 @@ int gdk_add_callback(gdk_callback *callback) {
 		callback_list.cnt = 1;
 		callback_list.head = callback;
 	}
+	MT_lock_unset(&(callback_list.lock));
 	return callback_list.cnt;
 }
 
