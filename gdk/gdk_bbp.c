@@ -2559,15 +2559,18 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (GDKvm_cursize() < GDK_vm_maxsize &&
 	     ((b && b->theap ? b->theap->size : 0) + (b && b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
 		chkflag |= BBPHOT;
-	if (BBP_refs(i) > 0 ||
-	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL ||
-	      BATdirty(b) ||
-	      (BBP_status(i) & chkflag) ||
-	      !(BBP_status(i) & BBPPERSISTENT) ||
-	      GDKinmemory(farmid)))) {
-		/* bat cannot be swapped out */
-	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
+	/* only consider unloading if refs is 0; if, in addition, lrefs
+	 * is 0, we can definitely unload, else only if some more
+	 * conditions are met */
+	if (BBP_refs(i) == 0 &&
+	    (BBP_lrefs(i) == 0 ||
+	     (b != NULL
+	      ? (!BATdirty(b) &&
+		 !(BBP_status(i) & chkflag) &&
+		 (BBP_status(i) & BBPPERSISTENT) &&
+		 !GDKinmemory(farmid) &&
+		 b->batSharecnt == 0)
+	      : (BBP_status(i) & BBPTMP)))) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
 		 * available anymore */
@@ -2575,7 +2578,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		TRC_DEBUG(BAT_, "%s set to unloading BAT %d (status %u, lrefs %d)\n", func, i, BBP_status(i), BBP_lrefs(i));
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
-	}
+	} /* else: bat cannot be swapped out */
 	lrefs = BBP_lrefs(i);
 
 	/* unlock before re-locking in unload; as saving a dirty
