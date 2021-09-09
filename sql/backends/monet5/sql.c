@@ -5020,10 +5020,15 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char
 		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
 	// vacuum only string bats
 	if (ATOMstorage(b->ttype) == TYPE_str) {
-		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
+		// TODO check for num of updates on the BAT against some threshold
+		// and decide whether to proceed
+		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
+			BBPunfix(b->batCacheid);
 			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
+		}
 		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
 			BBPreclaim(bn);
+			BBPunfix(b->batCacheid);
 			if (res == LOG_CONFLICT)
 				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 			if (res == LOG_ERR)
