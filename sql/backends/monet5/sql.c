@@ -5110,30 +5110,38 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
 		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create session!");
+		sa_destroy(sa);
 		return GDK_FAIL;
 	}
 
 	sql_trans_begin(session);
 
-	if((s = find_sql_schema(session->tr, sname)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
-		return GDK_FAIL;
-	}
+	do {
+		if((s = find_sql_schema(session->tr, sname)) == NULL) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
+			res = GDK_FAIL;
+			break;
+		}
 
-	if((t = find_sql_table(session->tr, s, tname)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing table %s!", tname);
-		return GDK_FAIL;
-	}
+		if((t = find_sql_table(session->tr, s, tname)) == NULL) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing table %s!", tname);
+			res = GDK_FAIL;
+			break;
+		}
 
-	if ((c = find_sql_column(t, cname)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing column %s!", cname);
-		return GDK_FAIL;
-	}
+		if ((c = find_sql_column(t, cname)) == NULL) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing column %s!", cname);
+			res = GDK_FAIL;
+			break;
+		}
 
-	if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
-		res = GDK_FAIL;
-	}
+		if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
+			res = GDK_FAIL;
+		}
+
+	} while(0);
+
 	sql_trans_end(session, SQL_OK);
 	sql_session_destroy(session);
 	sa_destroy(sa);
