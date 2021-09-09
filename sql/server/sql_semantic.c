@@ -951,7 +951,6 @@ sql_subtype *
 result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 {
 	int lclass = l->type->eclass, rclass = r->type->eclass;
-	int lc=0, rc=0;
 
 	/* case a strings */
 	if (EC_VARCHAR(lclass) || EC_VARCHAR(rclass)) {
@@ -970,11 +969,8 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		}
 		sql_find_subtype(super, tpe, digits, 0);
 	/* case b blob */
-	} else if ((lc=strcmp(l->type->base.name, "blob")) == 0 || (rc=strcmp(r->type->base.name, "blob")) == 0) {
-		if (!lc)
-			*super = *l;
-		else
-			*super = *r;
+	} else if (lclass == EC_BLOB || rclass == EC_BLOB) {
+		*super = (lclass == EC_BLOB) ? *l : *r;
 	/* case c all exact numeric */
 	} else if (EC_EXACTNUM(lclass) && EC_EXACTNUM(rclass)) {
 		char *tpe = (l->type->base.id > r->type->base.id)?l->type->base.name:r->type->base.name;
