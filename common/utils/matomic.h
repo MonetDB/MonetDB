@@ -75,7 +75,7 @@ typedef volatile atomic_ulong ATOMIC_TYPE;
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_DESTROY(var)		((void) 0)
-#define ATOMIC_GET(var)			atomic_load(var)
+#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) atomic_load(var))
 #define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_CAS(var, exp, des)	atomic_compare_exchange_strong(var, exp, (ATOMIC_BASE_TYPE) (des))
@@ -134,7 +134,7 @@ typedef __declspec(align(8)) volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
 #if SIZEOF_SIZE_T == 8
 
 #ifdef __INTEL_COMPILER
-#define ATOMIC_GET(var)			_InterlockedExchangeAdd64(var, 0)
+#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, 0))
 #else
 #define ATOMIC_GET(var)			(*(var))
 /* should we use _InterlockedExchangeAdd64(var, 0) instead? */
@@ -162,7 +162,7 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 #else
 
 #ifdef DECLSPEC_NOINITALL
-#define ATOMIC_GET(var)			_InlineInterlockedExchangeAdd64(var, 0)
+#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InlineInterlockedExchangeAdd64(var, 0))
 #define ATOMIC_SET(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_ADD(var, val)	_InlineInterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
@@ -172,7 +172,7 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 #define ATOMIC_OR(var, val)		_InlineInterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_AND(var, val)	_InlineInterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
 #else
-#define ATOMIC_GET(var)			_InterlockedExchangeAdd64(var, 0)
+#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, 0))
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
@@ -233,7 +233,7 @@ typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_DESTROY(var)	((void) 0)
 
-#define ATOMIC_GET(var)			__atomic_load_n(var, __ATOMIC_SEQ_CST)
+#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) __atomic_load_n(var, __ATOMIC_SEQ_CST))
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_XCG(var, val)	__atomic_exchange_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_CAS(var, exp, des)	__atomic_compare_exchange_n(var, exp, (ATOMIC_BASE_TYPE) (des), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
