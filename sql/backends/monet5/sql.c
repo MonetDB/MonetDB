@@ -5039,11 +5039,8 @@ str
 SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	//BAT* b = NULL;
-	//BAT* bn = NULL;
 	str msg = NULL;
 	int access = 0;
-	// int res = 0;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
@@ -5054,7 +5051,6 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	sql_trans *tr = m->session->tr;
-	// sqlstore *store = tr->store;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
@@ -5066,22 +5062,6 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
-	// if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
-	// 	throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s",sname, tname, cname);
-	// // vacuum only string bats
-	// if (ATOMstorage(b->ttype) == TYPE_str) {
-	// 	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
-	// 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "COLcopy failed %s.%s.%s", sname, tname, cname);
-	// 	if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
-	// 		BBPreclaim(bn);
-	// 		if (res == LOG_CONFLICT)
-	// 			throw(SQL, "sql.str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-	// 		if (res == LOG_ERR)
-	// 			throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-	// 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-	// 	}
-	// }
-	// BBPunfix(b->batCacheid);
 	return do_str_column_vacuum(tr, c, access, sname, tname, cname);
 }
 
