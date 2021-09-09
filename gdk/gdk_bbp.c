@@ -618,9 +618,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(&BBPsize)) {
 			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
-			    BBPextend(0, false, bid + 1) != GDK_SUCCEED)
+			    BBPextend(0, false, batid + 1) != GDK_SUCCEED)
 				return GDK_FAIL;
-			ATOMIC_SET(&BBPsize, bid + 1);
+			ATOMIC_SET(&BBPsize, batid + 1);
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
@@ -1288,32 +1288,36 @@ BBPinit(void)
 
 #ifdef GDKLIBRARY_TAILN
 	char *needstrbatmove;
-	needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
-	if (bbpversion <= GDKLIBRARY_TAILN) {
-		/* create signal file that we need to rename string
-		 * offset heaps */
-		int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
-		if (fd < 0) {
-			TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
-			GDKfree(needstrbatmove);
-			return GDK_FAIL;
-		}
-		close(fd);
+	if (GDKinmemory(0)) {
+		needstrbatmove = NULL;
 	} else {
-		/* check signal file whether we need to rename string
-		 * offset heaps */
-		int fd = MT_open(needstrbatmove, O_RDONLY);
-		if (fd >= 0) {
-			/* yes, we do */
+		needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
+		if (bbpversion <= GDKLIBRARY_TAILN) {
+			/* create signal file that we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
+			if (fd < 0) {
+				TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
+				GDKfree(needstrbatmove);
+				return GDK_FAIL;
+			}
 			close(fd);
-		} else if (errno == ENOENT) {
-			/* no, we don't: set var to NULL */
-			GDKfree(needstrbatmove);
-			needstrbatmove = NULL;
 		} else {
-			GDKsyserror("unexpected error opening %s\n", needstrbatmove);
-			GDKfree(needstrbatmove);
-			return GDK_FAIL;
+			/* check signal file whether we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_RDONLY);
+			if (fd >= 0) {
+				/* yes, we do */
+				close(fd);
+			} else if (errno == ENOENT) {
+				/* no, we don't: set var to NULL */
+				GDKfree(needstrbatmove);
+				needstrbatmove = NULL;
+			} else {
+				GDKsyserror("unexpected error opening %s\n", needstrbatmove);
+				GDKfree(needstrbatmove);
+				return GDK_FAIL;
+			}
 		}
 	}
 #endif
