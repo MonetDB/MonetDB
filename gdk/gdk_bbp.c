@@ -1562,32 +1562,36 @@ BBPinit(void)
 
 #ifdef GDKLIBRARY_TAILN
 	char *needstrbatmove;
-	needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
-	if (bbpversion <= GDKLIBRARY_TAILN) {
-		/* create signal file that we need to rename string
-		 * offset heaps */
-		int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
-		if (fd < 0) {
-			TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
-			GDKfree(needstrbatmove);
-			return GDK_FAIL;
-		}
-		close(fd);
+	if (GDKinmemory(0)) {
+		needstrbatmove = NULL;
 	} else {
-		/* check signal file whether we need to rename string
-		 * offset heaps */
-		int fd = MT_open(needstrbatmove, O_RDONLY);
-		if (fd >= 0) {
-			/* yes, we do */
+		needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
+		if (bbpversion <= GDKLIBRARY_TAILN) {
+			/* create signal file that we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
+			if (fd < 0) {
+				TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
+				GDKfree(needstrbatmove);
+				return GDK_FAIL;
+			}
 			close(fd);
-		} else if (errno == ENOENT) {
-			/* no, we don't: set var to NULL */
-			GDKfree(needstrbatmove);
-			needstrbatmove = NULL;
 		} else {
-			GDKsyserror("unexpected error opening %s\n", needstrbatmove);
-			GDKfree(needstrbatmove);
-			return GDK_FAIL;
+			/* check signal file whether we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_RDONLY);
+			if (fd >= 0) {
+				/* yes, we do */
+				close(fd);
+			} else if (errno == ENOENT) {
+				/* no, we don't: set var to NULL */
+				GDKfree(needstrbatmove);
+				needstrbatmove = NULL;
+			} else {
+				GDKsyserror("unexpected error opening %s\n", needstrbatmove);
+				GDKfree(needstrbatmove);
+				return GDK_FAIL;
+			}
 		}
 	}
 #endif
