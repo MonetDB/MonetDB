@@ -556,8 +556,8 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	r->trevsorted = BATcount(r) <= 1;
 	r->tnil = false;
 	r->tnonil = true;
-	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " LLFMT
-		  " items took " LLFMT " usec. Keeping " LLFMT
+	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " BUNFMT
+		  " items took " LLFMT " usec. Keeping " BUNFMT
 		  " items (%.2f%%).\n", ncand, GDKusec()-t0, r->batCount,
 		  100*r->batCount/(double)ncand);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
