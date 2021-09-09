@@ -618,9 +618,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(&BBPsize)) {
 			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
-			    BBPextend(0, false, batid + 1) != GDK_SUCCEED)
+			    BBPextend(0, false, bid + 1) != GDK_SUCCEED)
 				return GDK_FAIL;
-			ATOMIC_SET(&BBPsize, batid + 1);
+			ATOMIC_SET(&BBPsize, bid + 1);
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
