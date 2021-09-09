@@ -2281,7 +2281,7 @@ store_manager(sqlstore *store)
 		int res;
 
 		if (ATOMIC_GET(&store->nr_active) == 0 &&
-			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME < (ATOMIC_BASE_TYPE) (GDKusec() / 1000000))) {
+			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME * 1000000 < (ATOMIC_BASE_TYPE) GDKusec())) {
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -2291,7 +2291,7 @@ store_manager(sqlstore *store)
 			store_unlock(store);
 			MT_lock_set(&store->flush);
 			store->logger_api.activate(store); /* rotate to new log file */
-			ATOMIC_SET(&store->lastactive, GDKusec() / 1000000);
+			ATOMIC_SET(&store->lastactive, GDKusec());
 		}
 
 		if (GDKexiting())
@@ -6746,7 +6746,7 @@ sql_trans_end(sql_session *s, int ok)
 	sqlstore *store = s->tr->store;
 	store_lock(store);
 	list_remove_data(store->active, NULL, s);
-	ATOMIC_SET(&store->lastactive, GDKusec() / 1000000);
+	ATOMIC_SET(&store->lastactive, GDKusec());
 	(void) ATOMIC_DEC(&store->nr_active);
 	ulng oldest = store_get_timestamp(store);
 	if (store->active && store->active->h) {
