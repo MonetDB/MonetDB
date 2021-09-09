@@ -118,6 +118,7 @@ static gdk_return BBPprepare(bool subcommit);
 static BAT *getBBPdescriptor(bat i, bool lock);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
 static gdk_return BBPdir_init(void);
+static void BBPcallbacks(void);
 
 static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
 static lng BBPtransid;
@@ -1392,6 +1393,7 @@ BBPmanager(void *dummy)
 				return;
 		}
 		BBPtrim(false);
+		BBPcallbacks();
 		if (GDKexiting())
 			return;
 	}
@@ -4302,4 +4304,22 @@ int gdk_remove_callback(char *cb_name) {
 		}
 	}
 	return callback_list.cnt;
+}
+
+inline static gdk_return do_callback(gdk_callback *cb) {
+	// TODO check interval and other contstraints
+	return cb->func(cb->argc, cb->argv);
+}
+
+static void
+BBPcallbacks(void)
+{
+	gdk_callback *next = NULL;
+
+	MT_lock_set(&(callback_list.lock));
+	while ((next=callback_list.head)) {
+		do_callback(next);
+		next = next->next;
+	}
+	MT_lock_unset(&(callback_list.lock));
 }
