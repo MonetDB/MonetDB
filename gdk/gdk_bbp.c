@@ -4293,8 +4293,8 @@ int gdk_remove_callback(char *cb_name) {
 			}
 			if (curr->argsfree) curr->argsfree(curr->argc, curr->argv);
 			GDKfree(curr);
-			callback_list.cnt -=1;
 			curr = NULL;
+			callback_list.cnt -=1;
 			MT_lock_unset(&(callback_list.lock));
 		} else {
 			prev = curr;
