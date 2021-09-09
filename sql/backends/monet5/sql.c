@@ -5143,7 +5143,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
-	int interval = *getArgReference_int(stk, pci, 4);
+	int interval = *getArgReference_int(stk, pci, 4); // in sec
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5170,16 +5170,16 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		.func = str_column_vacuum_callback,
 	};
 
-	if (!(*callback->argv = GDKmalloc(sizeof(char *[callback->argc]))))
+	if (!(*callback->argv = GDKmalloc(sizeof(void *[callback->argc]))))
 		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	callback->argv[0] = m->store;
-	callback->argv[1] = sname;
-	callback->argv[2] = tname;
-	callback->argv[3] = cname;
+	callback->argv[1] = strdup(sname);
+	callback->argv[2] = strdup(tname);
+	callback->argv[3] = strdup(cname);
 	gdk_add_callback(callback);
 
 	// TODO REMOVE test the callback
-	callback->func(callback->argc, callback->argv);
+	// callback->func(callback->argc, callback->argv);
 
 	return MAL_SUCCEED;
 }
