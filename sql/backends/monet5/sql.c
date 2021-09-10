@@ -5161,7 +5161,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	// register callback
-	if (!(callback = GDKmalloc(sizeof(gdk_callback))))
+	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * 4)))
 		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*callback = (gdk_callback) {
 		.name = "str_column_vacuum",
