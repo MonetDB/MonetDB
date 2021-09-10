@@ -87,3 +87,21 @@ project (
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" BINARY LARGE OBJECT,"c1" DECIMAL(18,3))
+
+statement ok rowcount 3
+INSERT INTO "t2" VALUES (BINARY LARGE OBJECT 'D4A0', 1.000),(NULL, 1.000),(BINARY LARGE OBJECT '', 1.000)
+
+statement ok
+create view v0(vc0) as (values (interval '0' month)) with check option
+
+statement ok rowcount 3
+UPDATE t2 SET c1 = 1 FROM v0 WHERE NOT ((NULLIF("netmask"('243.197.122.2'), "hostmask"('186.223.199.22'))) IS NULL)
+
+statement ok
+ROLLBACK
+
