@@ -1865,6 +1865,15 @@ relcond = {
     'PREVCHAINRELEMPTY': ('prevchainrelempty.zip', 'previous chained empty'),
     'PREVHGECHAINRELEMPTY': ('prevhgechainrelempty.zip',
                              'previous hugeint chained empty'),
+    'LASTREL': ('lastrel.zip', 'last'),
+    'LASTHGEREL': ('lasthgerel.zip', 'last hugeint'),
+    'LASTCHAINREL': ('lastchainrel.zip', 'last chained'),
+    'LASTHGECHAINREL': ('lasthgechainrel.zip', 'last hugeint chained'),
+    'LASTRELEMPTY': ('lastrelempty.zip', 'last empty'),
+    'LASTHGERELEMPTY': ('lasthgerelempty.zip', 'last hugeint empty'),
+    'LASTCHAINRELEMPTY': ('lastchainrelempty.zip', 'last chained empty'),
+    'LASTHGECHAINRELEMPTY': ('lasthgechainrelempty.zip',
+                             'last hugeint chained empty'),
 }
 
 def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
