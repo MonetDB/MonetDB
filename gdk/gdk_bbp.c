@@ -4251,7 +4251,9 @@ static gdk_callback_list callback_list = {
  * Adds new callback to the callback list.
  * Returns the count of the callbacks in the callback_list.
  */
-int gdk_add_callback(gdk_callback *callback) {
+int
+gdk_add_callback(gdk_callback *callback)
+{
 	gdk_callback *p = callback_list.head;
 	MT_lock_set(&(callback_list.lock));
 	if (p) {
@@ -4282,7 +4284,9 @@ int gdk_add_callback(gdk_callback *callback) {
  * Removes a callback from the callback list with a given name as an argument.
  * Returns the count of the callbacks in the callback_list.
  */
-int gdk_remove_callback(char *cb_name) {
+int
+gdk_remove_callback(char *cb_name)
+{
 	gdk_callback *curr = callback_list.head;
 	gdk_callback *prev = NULL;
 	while(curr) {
@@ -4293,7 +4297,8 @@ int gdk_remove_callback(char *cb_name) {
 			} else {
 				prev->next = curr->next;
 			}
-			if (curr->argsfree) curr->argsfree(curr->argc, curr->argv);
+			if (curr->argsfree)
+			       	curr->argsfree(curr->argc, curr->argv);
 			GDKfree(curr);
 			curr = NULL;
 			callback_list.cnt -=1;
@@ -4306,9 +4311,21 @@ int gdk_remove_callback(char *cb_name) {
 	return callback_list.cnt;
 }
 
-inline static gdk_return do_callback(gdk_callback *cb) {
-	// TODO check interval and other contstraints
+static gdk_return
+do_callback(gdk_callback *cb)
+{
+	cb->last_called = GDKusec();
 	return cb->func(cb->argc, cb->argv);
+}
+
+static bool
+should_call(gdk_callback *cb)
+{
+	if (cb->last_called && cb->interval) {
+		return (cb->last_called + cb->interval * 1000 * 1000) <
+			GDKusec();
+	}
+	return true;
 }
 
 static void
@@ -4318,7 +4335,8 @@ BBPcallbacks(void)
 
 	MT_lock_set(&(callback_list.lock));
 	while ((next=callback_list.head)) {
-		do_callback(next);
+		if(should_call(next))
+			do_callback(next);
 		next = next->next;
 	}
 	MT_lock_unset(&(callback_list.lock));
