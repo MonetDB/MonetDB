@@ -5166,7 +5166,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	*callback = (gdk_callback) {
 		.name = "str_column_vacuum",
 		.argc = 4,
-		.interval = interval,
+		.interval = (int) interval,
 		.func = str_column_vacuum_callback,
 	};
 
