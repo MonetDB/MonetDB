@@ -3190,7 +3190,9 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 	char *dst;
 	const char *end = src + len;
 	bool lower_to_upper = from == UTF8_toUpperFrom;
-	Hash *h = from->thash;
+	const Hash *h = from->thash;
+	const int *restrict fromb = (const int *restrict) from->theap->base;
+	const int *restrict tob = (const int *restrict) to->theap->base;
 	size_t nextlen = len + 1;
 
 	/* the from and to bats are not views */
@@ -3216,8 +3218,8 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 			for (BUN hb = HASHget(h, hash_int(h, &c));
 					hb != BUN_NONE;
 					hb = HASHgetlink(h, hb)) {
-				if (c == ((int *) from->theap->base)[hb]) {
-					c = ((int *) to->theap->base)[hb];
+				if (c == fromb[hb]) {
+					c = tob[hb];
 					break;
 				}
 			}
