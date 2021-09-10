@@ -14,30 +14,13 @@
 /* String Atom Implementation
  *
  * Strings are stored in two parts.  The first part is the normal tail
- * heap which contains a list of offsets.  The second part is the
- * theap which contains the actual strings.  The offsets in the tail
- * heap (a.k.a. offset heap) point into the theap (a.k.a. string
- * heap).  Strings are NULL-terminated and are stored without any
- * escape sequences.  Strings are encoded using the UTF-8 encoding
- * of Unicode.  This means that individual "characters" (really,
- * Unicode code points) can be between one and four bytes long.
- *
- * Because in many typical situations there are lots of duplicated
- * string values that are being stored in a table, but also in many
- * (other) typical situations there are very few duplicated string
- * values stored, a scheme has been introduced to cater to both
- * situations.
- *
- * When the string heap is "small" (defined as less than 64KiB), the
- * string heap is fully duplicate eliminated.  When the string heap
- * grows beyond this size, the heap is not kept free of duplicate
- * strings, but there is then a heuristic that tries to limit the
- * number of duplicates.
- *
- * This is done by having a fixed sized hash table at the start of the
- * string heap, and allocating space for collision lists in the first
- * 64KiB of the string heap.  After the first 64KiB no extra space is
- * allocated for lists, so hash collisions cannot be resolved.
+ * heap (theap) which contains a list of offsets.  The second part is
+ * the tvheap which contains the actual strings.  The offsets in the
+ * tail heap (a.k.a. offset heap) point into the tvheap (a.k.a. string
+ * heap).  Strings are NULL-terminated and are stored without any escape
+ * sequences.  Strings are encoded using the UTF-8 encoding of Unicode.
+ * This means that individual "characters" (really, Unicode code points)
+ * can be between one and four bytes long.
  */
 
 /* some of these macros are duplicates from gdk_atoms.c */
@@ -74,8 +57,10 @@ struct hash {
 	Heap heap;
 };
 
+#define STRHASH_VERSION	1
+#define STRHASH_SYNCED	(UINT64_C(1) << 24)
 #define EMPTY ((uint64_t) -1)
-#define OFFSET 0
+#define OFFSET 1
 #define PSLSHIFT 40
 #define PSLMASK ((UINT64_C(1) << PSLSHIFT) - 1)
 
@@ -90,7 +75,7 @@ hash_str(struct hash *h, const char *value)
 }
 
 static inline var_t
-enter(BAT *b, const char *value)
+str_enter(BAT *b, const char *value)
 {
 	size_t len = strlen(value) + 1;
 	var_t pos = b->tvheap->free;
@@ -109,7 +94,7 @@ enter(BAT *b, const char *value)
 }
 
 static inline void
-reinsert(struct hash *h, BUN hsh, var_t pos)
+str_reinsert(struct hash *h, BUN hsh, var_t pos)
 {
 	uint64_t psl = 0;
 	uint64_t swp = EMPTY;
@@ -140,7 +125,7 @@ reinsert(struct hash *h, BUN hsh, var_t pos)
 }
 
 static inline void
-rmstring(struct hash *h, BUN pos)
+str_remove(struct hash *h, BUN pos)
 {
 	h->buckets[pos] = EMPTY;
 	for (;;) {
@@ -160,7 +145,7 @@ rmstring(struct hash *h, BUN pos)
 }
 
 static inline void
-incpsl(struct hash *h)
+str_incPSL(struct hash *h)
 {
 	uint64_t hsh = 0;
 	for (;;) {
@@ -177,7 +162,7 @@ incpsl(struct hash *h)
 }
 
 static inline gdk_return
-grow1(BAT *b, struct hash *h)
+str_growhash(BAT *b, struct hash *h)
 {
 	BUN oldmask1 = h->mask1;
 	BUN oldnbucket = h->nbucket;
@@ -196,8 +181,8 @@ grow1(BAT *b, struct hash *h)
 	h->growlim = (BUN) (h->nbucket * (0.75 - (h->nbucket & h->mask1) / (2.0 * h->mask2)));
 	assert(h->mask1 < h->nbucket && h->nbucket <= h->mask2);
 
-	incpsl(h);
-	rmstring(h, h->nbucket - 1);
+	str_incPSL(h);
+	str_remove(h, h->nbucket - 1);
 
 	BUN hsh = oldnbucket & oldmask1;
 	uint64_t psl = 0;
@@ -215,8 +200,8 @@ grow1(BAT *b, struct hash *h)
 			BUN c = strHash(v);
 			if ((c & h->mask2) == oldnbucket) {
 				/* this one should be moved */
-				rmstring(h, hsh);
-				reinsert(h, oldnbucket, (var_t) bkt);
+				str_remove(h, hsh);
+				str_reinsert(h, oldnbucket, (var_t) bkt);
 				continue;
 			}
 		}
@@ -228,7 +213,7 @@ grow1(BAT *b, struct hash *h)
 }
 
 static var_t
-insert(BAT *b, struct hash *h, const char *value)
+str_insert(BAT *b, struct hash *h, const char *value)
 {
 	BUN hsh = hash_str(h, value);
 	uint64_t psl = 0;	/* probe sequence length */
@@ -242,7 +227,7 @@ insert(BAT *b, struct hash *h, const char *value)
 			if (swp == EMPTY) {
 				assert(new == (var_t) -1);
 				/* didn't enter value yet, so do it now */
-				new = enter(b, value);
+				new = str_enter(b, value);
 				if (new == (var_t) -1)
 					return (var_t) -1;
 				swp = (uint64_t) new;
@@ -251,7 +236,7 @@ insert(BAT *b, struct hash *h, const char *value)
 			assert(new != (var_t) -1);
 			h->buckets[hsh] = swp | psl << PSLSHIFT;
 			while (h->nentries >= h->growlim)
-				if (grow1(b, h) != GDK_SUCCEED)
+				if (str_growhash(b, h) != GDK_SUCCEED)
 					return (var_t) -1;
 			return new;
 		}
@@ -269,7 +254,7 @@ insert(BAT *b, struct hash *h, const char *value)
 		if (psl > psl2) {
 			if (swp == EMPTY) {
 				assert(new == (var_t) -1);
-				new = enter(b, value);
+				new = str_enter(b, value);
 				if (new == (var_t) -1)
 					return (var_t) -1;
 				swp = (uint64_t) new;
@@ -286,7 +271,7 @@ insert(BAT *b, struct hash *h, const char *value)
 }
 
 static struct hash *
-init(BAT *b)
+str_hashinit(BAT *b)
 {
 	struct hash *hs = GDKmalloc(sizeof(struct hash));
 	if (hs == NULL)
@@ -320,6 +305,7 @@ init(BAT *b)
 		return NULL;
 	}
 	hs->heap.free = (hs->nbucket + OFFSET) * sizeof(uint64_t);
+	*(uint64_t *) hs->heap.base = STRHASH_VERSION;
 	hs->buckets = (uint64_t *) hs->heap.base + OFFSET;
 	for (BUN i = 0; i < minimum; i++)
 		hs->buckets[i] = EMPTY;
@@ -328,10 +314,10 @@ init(BAT *b)
 		const char *v = hp->base + pos;
 		size_t len = strlen(v) + 1;
 		BUN hsh = hash_str(hs, v);
-		reinsert(hs, hsh, pos);
+		str_reinsert(hs, hsh, pos);
 		hs->nentries++;
 		while (hs->nentries >= hs->growlim) {
-			if (grow1(b, hs) != GDK_SUCCEED) {
+			if (str_growhash(b, hs) != GDK_SUCCEED) {
 				HEAPfree(hp, true);
 				GDKfree(hs);
 				return NULL;
@@ -359,9 +345,9 @@ strCleanHash(Heap *h, bool rebuild)
 var_t
 strPut(BAT *b, var_t *dst, const void *v)
 {
-	if (b->strhash == NULL && (b->strhash = init(b)) == NULL)
+	if (b->strhash == NULL && (b->strhash = str_hashinit(b)) == NULL)
 		return (var_t) -1;
-	var_t pos = insert(b, b->strhash, v);
+	var_t pos = str_insert(b, b->strhash, v);
 	if (pos == (var_t) -1)
 		return (var_t) -1;
 	*dst = pos;
@@ -374,7 +360,7 @@ strLocate(BAT *b, const char *value)
 	if (b->tvheap->parentid != b->batCacheid)
 		return strLocate(BBP_cache(b->tvheap->parentid), value);
 
-	if (b->strhash == NULL && (b->strhash = init(b)) == NULL)
+	if (b->strhash == NULL && (b->strhash = str_hashinit(b)) == NULL)
 		return (var_t) -1;
 
 	struct hash *h = b->strhash;
