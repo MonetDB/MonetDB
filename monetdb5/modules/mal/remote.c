@@ -140,19 +140,25 @@ static str RMTresolve(bat *ret, str *pat) {
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
 	if (*mero_uri == '[') {
-		if ((mero_uri = strchr(mero_uri, ']')) == NULL)
+		if ((mero_uri = strchr(mero_uri, ']')) == NULL) {
+			BBPreclaim(list);
 			throw(MAL, "remote.resolve", "illegal IPv6 address on merovingian_uri: %s",
 				  GDKgetenv("merovingian_uri"));
+		}
 	}
-	if ((p = strchr(mero_uri, ':')) == NULL)
+	if ((p = strchr(mero_uri, ':')) == NULL) {
+		BBPreclaim(list);
 		throw(MAL, "remote.resolve", "illegal merovingian_uri setting: %s",
 				GDKgetenv("merovingian_uri"));
+	}
 	port = (unsigned int)atoi(p + 1);
 
 	or = redirs = mapi_resolve(NULL, port, *pat);
 
-	if (redirs == NULL)
+	if (redirs == NULL) {
+		BBPreclaim(list);
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
+	}
 
 	while (*redirs != NULL) {
 		if (BUNappend(list, (ptr)*redirs, false) != GDK_SUCCEED) {

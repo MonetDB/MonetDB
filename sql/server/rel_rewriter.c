@@ -125,7 +125,8 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *l = args->h->data;
 			sql_exp *vals = args->h->next->data;
 
-			ie = exp_in_func(v->sql, l, vals, 1, 0);
+			if (!(ie = exp_in_func(v->sql, l, vals, 1, 0)))
+				return NULL;
 			if (exp_name(e))
 				exp_prop_alias(v->sql->sa, ie, e);
 			v->changes++;

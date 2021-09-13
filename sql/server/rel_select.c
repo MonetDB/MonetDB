@@ -1637,10 +1637,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			assert(!symmetric);
 			if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 				return NULL;
-			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, quantifier?0:anti), quantifier);
-			if (anti && quantifier)
-				if (!(e = rel_unop_(sql, NULL, e, "sys", "not", card_value)))
-					return NULL;
+			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, anti), quantifier);
 		}
 		return rel_select(sql->sa, rel, e);
 	} else if (!rs2) {
@@ -2337,10 +2334,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (exp_is_null(ls) && exp_is_null(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
 
-		ls = exp_compare_func(sql, ls, rs, compare_func(cmp_type, quantifier?0:need_not), quantifier);
-		if (need_not && quantifier)
-			ls = rel_unop_(sql, NULL, ls, "sys", "not", card_value);
-		return ls;
+		return exp_compare_func(sql, ls, rs, compare_func(cmp_type, need_not), quantifier);
 	}
 	/* Set Member ship */
 	case SQL_IN:

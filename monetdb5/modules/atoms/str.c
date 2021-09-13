@@ -3197,23 +3197,39 @@ UTF8_offset(char *restrict s, int n)
 	return s;
 }
 
-static str
+str
+str_case_hash_lock(bool upper)
+{
+	BAT *b = upper ? UTF8_toUpperFrom : UTF8_toLowerFrom;
+
+	if (BAThash(b) != GDK_SUCCEED)
+		throw(MAL, "str.str_case_hash_lock", GDK_EXCEPTION);
+	MT_rwlock_rdlock(&b->thashlock);
+	return MAL_SUCCEED;
+}
+
+void
+str_case_hash_unlock(bool upper)
+{
+	BAT *b = upper ? UTF8_toUpperFrom : UTF8_toLowerFrom;
+	MT_rwlock_rdunlock(&b->thashlock);
+}
+
+static inline str
 convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const char *malfunc)
 {
 	size_t len = strlen(src);
 	char *dst;
 	const char *end = src + len;
 	bool lower_to_upper = from == UTF8_toUpperFrom;
-	Hash *h;
+	const Hash *h = from->thash;
+	const int *restrict fromb = (const int *restrict) from->theap->base;
+	const int *restrict tob = (const int *restrict) to->theap->base;
 	size_t nextlen = len + 1;
 
 	/* the from and to bats are not views */
 	assert(from->tbaseoff == 0);
 	assert(to->tbaseoff == 0);
-	if (BAThash(from) != GDK_SUCCEED)
-		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	MT_rwlock_rdlock(&from->thashlock);
-	h = from->thash;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
 	dst = *buf;
 	while (src < end) {
@@ -3234,8 +3250,8 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 			for (BUN hb = HASHget(h, hash_int(h, &c));
 					hb != BUN_NONE;
 					hb = HASHgetlink(h, hb)) {
-				if (c == ((int *) from->theap->base)[hb]) {
-					c = ((int *) to->theap->base)[hb];
+				if (c == fromb[hb]) {
+					c = tob[hb];
 					break;
 				}
 			}
@@ -3253,7 +3269,6 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const
 		UTF8_PUTCHAR(c, dst);
 	}
 	*dst = 0;
-	MT_rwlock_rdunlock(&from->thashlock);
 	return MAL_SUCCEED;
 illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");
@@ -3571,7 +3586,13 @@ STRLower(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = str_lower(&buf, &buflen, s)) != MAL_SUCCEED) {
+		if ((msg = str_case_hash_lock(false))) {
+			GDKfree(buf);
+			return msg;
+		}
+		msg = str_lower(&buf, &buflen, s);
+		str_case_hash_unlock(false);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(buf);
 			return msg;
 		}
@@ -3603,7 +3624,13 @@ STRUpper(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = str_upper(&buf, &buflen, s)) != MAL_SUCCEED) {
+		if ((msg = str_case_hash_lock(true))) {
+			GDKfree(buf);
+			return msg;
+		}
+		msg = str_upper(&buf, &buflen, s);
+		str_case_hash_unlock(true);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(buf);
 			return msg;
 		}
