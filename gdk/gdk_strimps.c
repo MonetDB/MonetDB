@@ -485,7 +485,7 @@ BATcheckstrimps(BAT *b)
 	 * not null and the number of bitstrings is equal to the bat
 	 * count.
 	 */
-	assert(!b->tstrimps || (b->tstrimps->strimps.free - HSIZE(((uint64_t *)b->tstrimps->strimps.base)[0]))/sizeof(uint64_t) <= b->batCount);
+	// assert(!b->tstrimps || (b->tstrimps->strimps.free - HSIZE(((uint64_t *)b->tstrimps->strimps.base)[0]))/sizeof(uint64_t) <= b->batCount);
 	ret = STRIMP_COMPLETE(b);
 	if (ret) {
 		TRC_DEBUG(ACCELERATOR,
@@ -692,8 +692,9 @@ STRMPcreate(BAT *b, BAT *s)
 	MT_lock_unset(&b->batIdxLock);
 
 	/* The thread that reaches this point last needs to write the strimp to disk. */
-	if (STRIMP_COMPLETE(pb))
+	if (STRIMP_COMPLETE(pb)) {
 		persistStrimp(pb);
+	}
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
