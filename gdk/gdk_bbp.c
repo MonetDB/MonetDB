@@ -110,6 +110,18 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
 static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 static bat BBP_mask = 0;		/* number of buckets = & mask */
+#define BBP_THREADMASK	63
+#if SIZEOF_SIZE_T == 8
+#define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
+#else
+#define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
+#endif
+static struct {
+	MT_Lock cache;
+	bat free;
+} GDKbbpLock[BBP_THREADMASK + 1];
+#define GDKcacheLock(y)	GDKbbpLock[y].cache
+#define BBP_free(y)	GDKbbpLock[y].free
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
@@ -236,6 +248,8 @@ getBBPtransid(void)
  */
 static volatile MT_Id locked_by = 0;
 
+/* use a lock instead of atomic instructions so that we wait for
+ * BBPlock/BBPunlock */
 #define BBP_unload_inc()			\
 	do {					\
 		MT_lock_set(&GDKunloadLock);	\
@@ -1133,7 +1147,7 @@ BBPmanager(void *dummy)
 static MT_Id manager;
 
 gdk_return
-BBPinit(void)
+BBPinit(bool first)
 {
 	FILE *fp = NULL;
 	struct stat st;
@@ -1150,6 +1164,14 @@ BBPinit(void)
 	 * array */
 	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * (sizeof(BBP[0][0].bak) - 5))), "\"bak\" array in BBPrec is too small");
 
+	if (first) {
+		for (i = 0; i <= BBP_THREADMASK; i++) {
+			char name[MT_NAME_LEN];
+			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
+			MT_lock_init(&GDKbbpLock[i].cache, name);
+			GDKbbpLock[i].free = 0;
+		}
+	}
 	if (!GDKinmemory(0)) {
 		str bbpdirstr, backupbbpdirstr;
 
@@ -3954,6 +3976,9 @@ gdk_bbp_reset(void)
 {
 	int i;
 
+	for (i = 0; i <= BBP_THREADMASK; i++) {
+		GDKbbpLock[i].free = 0;
+	}
 	while (BBPlimit > 0) {
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
