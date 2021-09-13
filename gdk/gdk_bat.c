@@ -795,7 +795,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
 	if (!writable &&
-	    role == b->batRole &&
+	    role == TRANSIENT &&
 	    b->batRestricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
