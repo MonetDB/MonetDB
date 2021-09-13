@@ -2107,6 +2107,9 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_or_exp(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		for(node *n=rel->exps->h; n; n=n->next) {
 			sql_exp *e = n->data, *id;
@@ -2139,8 +2142,8 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						n = next;
 					}
 
-					sql_rel *l = rel;
-					sql_rel *r = rel_dup(rel);
+					sql_rel *l = rel, *r = rel_dup(rel);
+					set_processed(rel);
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
 					if (!(l = rewrite_or_exp(v, l)))
@@ -2448,6 +2451,9 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	sql_rel *u = NULL;
 	list *exps = NULL;
 	int freevar = 0;
+
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
@@ -2972,6 +2978,9 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rewrite_join2semi(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
 		sql_rel *j = rel->l;
 		int needed=0;
@@ -2988,8 +2997,12 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 		}
 		if (needed) {
 			list *exps = sa_list(v->sql->sa);
-			sql_rel *l = j->l = rel_select(v->sql->sa, j->l, NULL);
+			sql_rel *l = j->l;
 
+			if (!is_select(l->op)) {
+				set_processed(l);
+				l = j->l = rel_select(v->sql->sa, j->l, NULL);
+			}
 			for (node *n = rel->exps->h; n;) {
 				node *next = n->next;
 				sql_exp *e = n->data;
@@ -3002,7 +3015,8 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 				n = next;
 			}
 			l->exps = exps;
-			j->l = rewrite_join2semi(v, j->l);
+			if (!(j->l = rewrite_join2semi(v, j->l)))
+				return NULL;
 		}
 
 		needed = 0;
@@ -3263,8 +3277,11 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static list *
 rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (list_empty(exps))
 		return exps;
+
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
