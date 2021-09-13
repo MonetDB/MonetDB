@@ -2983,50 +2983,35 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
 		sql_rel *j = rel->l;
-		int needed=0;
+		int needed = 0, changed = 0;
 
 		if (!j || (!is_join(j->op) && !is_semi(j->op)) || !list_empty(j->exps))
 			return rel;
 		/* if needed first push select exps down under the join */
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
-				needed = 1;
-		}
-		if (needed) {
-			list *exps = sa_list(v->sql->sa);
-			sql_rel *l = j->l;
-
-			if (!is_select(l->op)) {
-				set_processed(l);
-				l = j->l = rel_select(v->sql->sa, j->l, NULL);
-			}
-			for (node *n = rel->exps->h; n;) {
-				node *next = n->next;
-				sql_exp *e = n->data;
-				sql_subfunc *sf = e->f;
-
-				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l)) {
-					append(exps, e);
+			if (is_func(e->type) && is_anyequal_func(sf)) {
+				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(j->l, e->l)) {
+					sql_rel *l = j->l;
+					if (!is_select(l->op) || rel_is_ref(l)) {
+						set_processed(l);
+						j->l = l = rel_select(v->sql->sa, j->l, NULL);
+					}
+					rel_select_add_exp(v->sql->sa, l, e);
 					list_remove_node(rel->exps, NULL, n);
+					changed = 1;
+					v->changes++;
+				} else {
+					needed = 1;
 				}
-				n = next;
 			}
-			l->exps = exps;
-			if (!(j->l = rewrite_join2semi(v, j->l)))
-				return NULL;
+			n = next;
 		}
-
-		needed = 0;
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
-			sql_subfunc *sf = e->f;
-
-			if (is_func(e->type) && is_anyequal_func(sf))
-				needed = 1;
-		}
+		if (changed && !(j->l = rewrite_join2semi(v, j->l)))
+			return NULL;
 		if (!needed)
 			return try_remove_empty_select(v, rel);
 		if (!j->exps)
