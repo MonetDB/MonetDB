@@ -74,6 +74,9 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "mutils.h"
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #ifndef F_OK
 #define F_OK 0
@@ -289,10 +292,8 @@ BBPunlock(void)
 
 
 static gdk_return
-BBPinithash(int j)
+BBPinithash(int j, bat size)
 {
-	bat i = (bat) ATOMIC_GET(&BBPsize);
-
 	assert(j >= 0 && j <= BBP_THREADMASK);
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
@@ -302,16 +303,16 @@ BBPinithash(int j)
 	}
 	BBP_mask--;
 
-	while (--i > 0) {
-		const char *s = BBP_logical(i);
+	while (--size > 0) {
+		const char *s = BBP_logical(size);
 
 		if (s) {
 			if (*s != '.' && !BBPtmpcheck(s)) {
-				BBP_insert(i);
+				BBP_insert(size);
 			}
 		} else {
-			BBP_next(i) = BBP_free(j);
-			BBP_free(j) = i;
+			BBP_next(size) = BBP_free(j);
+			BBP_free(j) = size;
 			if (++j > BBP_THREADMASK)
 				j = 0;
 		}
@@ -347,16 +348,16 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 }
 
 static gdk_return
-BBPextend(int idx, bool buildhash)
+BBPextend(int idx, bool buildhash, bat newsize)
 {
-	if ((bat) ATOMIC_GET(&BBPsize) >= N_BBPINIT * BBPINIT) {
+	if (newsize >= N_BBPINIT * BBPINIT) {
 		GDKerror("trying to extend BAT pool beyond the "
 			 "limit (%d)\n", N_BBPINIT * BBPINIT);
 		return GDK_FAIL;
 	}
 
 	/* make sure the new size is at least BBPsize large */
-	while (BBPlimit < (bat) ATOMIC_GET(&BBPsize)) {
+	while (BBPlimit < newsize) {
 		BUN limit = BBPlimit >> BBPINITLOG;
 		assert(BBP[limit] == NULL);
 		BBP[limit] = GDKzalloc(BBPINIT * sizeof(BBPrec));
@@ -378,7 +379,7 @@ BBPextend(int idx, bool buildhash)
 		BBP_hash = NULL;
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			BBP_free(i) = 0;
-		if (BBPinithash(idx) != GDK_SUCCEED)
+		if (BBPinithash(idx, newsize) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -636,9 +637,10 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(&BBPsize)) {
-			ATOMIC_SET(&BBPsize, batid + 1);
-			if ((bat) ATOMIC_GET(&BBPsize) >= BBPlimit)
-				BBPextend(0, false);
+			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
+			    BBPextend(0, false, bid + 1) != GDK_SUCCEED)
+				return GDK_FAIL;
+			ATOMIC_SET(&BBPsize, bid + 1);
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
@@ -775,7 +777,7 @@ static gdk_return
 BBPcheckbats(unsigned bbpversion)
 {
 	(void) bbpversion;
-	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+	for (bat bid = 1, size = (bat) ATOMIC_GET(&BBPsize); bid < size; bid++) {
 		struct stat statb;
 		BAT *b;
 		char *path;
@@ -792,6 +794,34 @@ BBPcheckbats(unsigned bbpversion)
 			path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
 			if (path == NULL)
 				return GDK_FAIL;
+#if 1
+			/* first check string offset heap with width,
+			 * then without */
+			if (MT_stat(path, &statb) < 0) {
+#ifdef GDKLIBRARY_TAILN
+				if (b->ttype == TYPE_str &&
+				    b->twidth < SIZEOF_VAR_T) {
+					size_t taillen = strlen(path) - 1;
+					char tailsave = path[taillen];
+					path[taillen] = 0;
+					if (MT_stat(path, &statb) < 0) {
+						GDKsyserror("cannot stat file %s%c or %s (expected size %zu)\n",
+							    path, tailsave, path, b->theap->free);
+						GDKfree(path);
+						return GDK_FAIL;
+					}
+				} else
+#endif
+				{
+					GDKsyserror("cannot stat file %s (expected size %zu)\n",
+						    path, b->theap->free);
+					GDKfree(path);
+					return GDK_FAIL;
+				}
+			}
+#else
+			/* first check string offset heap without widht,
+			 * then with */
 #ifdef GDKLIBRARY_TAILN
 			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
 			 * exist with either name .tail1 (etc) or .tail, if <=
@@ -821,6 +851,7 @@ BBPcheckbats(unsigned bbpversion)
 				GDKfree(path);
 				return GDK_FAIL;
 			}
+#endif
 			if ((size_t) statb.st_size < b->theap->free) {
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
 				GDKfree(path);
@@ -856,7 +887,7 @@ BBPcheckbats(unsigned bbpversion)
 #endif
 
 static unsigned
-BBPheader(FILE *fp, int *lineno)
+BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -914,8 +945,8 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	sz = (int) (sz * BATMARGIN);
-	if (sz > (bat) ATOMIC_GET(&BBPsize))
-		ATOMIC_SET(&BBPsize, sz);
+	if (sz > *bbpsize)
+		*bbpsize = sz;
 	if (bbpversion > GDKLIBRARY_MINMAX_POS) {
 		if (fgets(buf, sizeof(buf), fp) == NULL) {
 			TRC_CRITICAL(GDK, "short BBP");
@@ -1264,24 +1295,40 @@ movestrbats(void)
 			/* not a valid BAT */
 			continue;
 		}
-		if (b->ttype != TYPE_str || b->twidth == SIZEOF_VAR_T)
+		if (b->ttype != TYPE_str || b->twidth == SIZEOF_VAR_T || b->batCount == 0)
 			continue;
 		char *oldpath = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
 		char *newpath = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		struct stat st;
 		int ret = -1;
 		if (oldpath != NULL && newpath != NULL) {
-			if (MT_stat(oldpath, &st) != 0 && (b->batCount == 0 || MT_stat(newpath, &st) == 0))
-				ret = 0; /* old doesn't exist, but new does or bat is empty: that's ok */
-			else {
+			struct stat oldst, newst;
+			bool oldexist = MT_stat(oldpath, &oldst) == 0;
+			bool newexist = MT_stat(newpath, &newst) == 0;
+			if (newexist) {
+				if (oldexist) {
+					if (oldst.st_mtime > newst.st_mtime) {
+						GDKerror("both %s and %s exist with %s unexpectedly newer: manual intervention required\n", oldpath, newpath, oldpath);
+						ret = -1;
+					} else {
+						TRC_WARNING(GDK, "both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
+						ret = MT_remove(oldpath);
+					}
+				} else {
+					/* already good */
+					ret = 0;
+				}
+			} else if (oldexist) {
+				TRC_DEBUG(IO_, "rename %s to %s\n", oldpath, newpath);
 				ret = MT_rename(oldpath, newpath);
-				if (ret < 0)
-					GDKsyserror("rename %s %s\n", oldpath, newpath);
+			} else {
+				/* neither file exists: may be ok, but
+				 * will be checked later */
+				ret = 0;
 			}
 		}
 		GDKfree(oldpath);
 		GDKfree(newpath);
-		if (ret < 0)
+		if (ret == -1)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1295,7 +1342,7 @@ BBPtrim(bool aggressive)
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
 	if (!aggressive)
 		flag |= BBPHOT;
-	for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
@@ -1328,7 +1375,7 @@ BBPmanager(void *dummy)
 
 	for (;;) {
 		int n = 0;
-		for (bat bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+		for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 			MT_lock_set(&GDKswapLock(bid));
 			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
 				n += (BBP_status(bid) & BBPHOT) != 0;
@@ -1465,20 +1512,23 @@ BBPinit(void)
 	/* scan the BBP.dir to obtain current size */
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
-	ATOMIC_SET(&BBPsize, 1);
 
+	bat bbpsize;
+	bbpsize = 1;
 	if (GDKinmemory(0)) {
 		bbpversion = GDKLIBRARY;
 	} else {
-		bbpversion = BBPheader(fp, &lineno);
+		bbpversion = BBPheader(fp, &lineno, &bbpsize);
 		if (bbpversion == 0)
 			return GDK_FAIL;
 	}
 
-	BBPextend(0, false);		/* allocate BBP records */
+	/* allocate BBP records */
+	if (BBPextend(0, false, bbpsize) != GDK_SUCCEED)
+		return GDK_FAIL;
+	ATOMIC_SET(&BBPsize, bbpsize);
 
 	if (!GDKinmemory(0)) {
-		ATOMIC_SET(&BBPsize, 1);
 		if (BBPreadEntries(fp, bbpversion, lineno
 #ifdef GDKLIBRARY_HASHASH
 				   , &hashbats, &nhashbats
@@ -1489,7 +1539,7 @@ BBPinit(void)
 	}
 
 	MT_lock_set(&BBPnameLock);
-	if (BBPinithash(0) != GDK_SUCCEED) {
+	if (BBPinithash(0, (bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
 		MT_lock_unset(&BBPnameLock);
 		return GDK_FAIL;
@@ -1510,6 +1560,71 @@ BBPinit(void)
 	if (BBPcheckbats(bbpversion) != GDK_SUCCEED)
 		return GDK_FAIL;
 
+#ifdef GDKLIBRARY_TAILN
+	char *needstrbatmove;
+	if (GDKinmemory(0)) {
+		needstrbatmove = NULL;
+	} else {
+		needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
+		if (bbpversion <= GDKLIBRARY_TAILN) {
+			/* create signal file that we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
+			if (fd < 0) {
+				TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
+				GDKfree(needstrbatmove);
+				return GDK_FAIL;
+			}
+			close(fd);
+		} else {
+			/* check signal file whether we need to rename string
+			 * offset heaps */
+			int fd = MT_open(needstrbatmove, O_RDONLY);
+			if (fd >= 0) {
+				/* yes, we do */
+				close(fd);
+			} else if (errno == ENOENT) {
+				/* no, we don't: set var to NULL */
+				GDKfree(needstrbatmove);
+				needstrbatmove = NULL;
+			} else {
+				GDKsyserror("unexpected error opening %s\n", needstrbatmove);
+				GDKfree(needstrbatmove);
+				return GDK_FAIL;
+			}
+		}
+	}
+#endif
+
+#ifdef GDKLIBRARY_HASHASH
+	if (nhashbats > 0 && fixhashash(hashbats, nhashbats) != GDK_SUCCEED)
+		return GDK_FAIL;
+#endif
+
+	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "TMcommit failed\n");
+		return GDK_FAIL;
+	}
+
+#ifdef GDKLIBRARY_TAILN
+	/* we rename the offset heaps after the above commit: in this
+	 * version we accept both the old and new names, but we want to
+	 * convert so that future versions only have the new name */
+	if (needstrbatmove) {
+		/* note, if renaming fails, nothing is lost: a next
+		 * invocation will just try again; an older version of
+		 * mserver will not work because of the TMcommit
+		 * above */
+		if (movestrbats() != GDK_SUCCEED) {
+			GDKfree(needstrbatmove);
+			return GDK_FAIL;
+		}
+		MT_remove(needstrbatmove);
+		GDKfree(needstrbatmove);
+		needstrbatmove = NULL;
+	}
+#endif
+
 	/* cleanup any leftovers (must be done after BBPrecover) */
 	for (i = 0; i < MAXFARMS && BBPfarms[i].dirname != NULL; i++) {
 		int j;
@@ -1529,29 +1644,6 @@ BBPinit(void)
 			GDKfree(d);
 		}
 	}
-
-#ifdef GDKLIBRARY_HASHASH
-	if (nhashbats > 0 && fixhashash(hashbats, nhashbats) != GDK_SUCCEED)
-		return GDK_FAIL;
-#endif
-
-	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "TMcommit failed\n");
-		return GDK_FAIL;
-	}
-#ifdef GDKLIBRARY_TAILN
-	/* we rename the offset heaps after the above commit: in this
-	 * version we accept both the old and new names, but we want to
-	 * convert so that future versions only have the new name */
-	if (bbpversion <= GDKLIBRARY_TAILN) {
-		/* note, if renaming fails, nothing is lost: a next
-		 * invocation will just try again; an older version of
-		 * mserver will not work because of the TMcommit
-		 * above */
-		if (movestrbats() != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-#endif
 
 	manager = THRcreate(BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager");
 	return GDK_SUCCEED;
@@ -2100,7 +2192,12 @@ BBPgetsubdir(str s, bat i)
  * enough list can be found, we create a new entry by either just
  * increasing BBPsize (up to BBPlimit) or extending the BBP (which
  * increases BBPlimit).  Every time this function is called we start
- * searching in a following free list (variable "last"). */
+ * searching in a following free list (variable "last").
+ *
+ * Note that this is the only place in normal, multi-threaded operation
+ * where BBPsize is assigned a value (never decreasing), that the
+ * assignment happens after any necessary memory was allocated and
+ * initialized, and that this happens when the BBPnameLock is held. */
 static gdk_return
 maybeextend(int idx)
 {
@@ -2131,26 +2228,25 @@ maybeextend(int idx)
 		BBP_free(idx) = i;
 	} else {
 		/* let the longest list alone, get a fresh entry */
-		if ((bat) ATOMIC_ADD(&BBPsize, 1) >= BBPlimit) {
-			if (BBPextend(idx, true) != GDK_SUCCEED) {
-				/* undo add */
-				ATOMIC_SUB(&BBPsize, 1);
-				/* couldn't extend; if there is any
-				 * free entry, take it from the
-				 * longest list after all */
-				if (l > 0) {
-					i = BBP_free(m);
-					BBP_free(m) = BBP_next(i);
-					BBP_next(i) = 0;
-					BBP_free(idx) = i;
-					GDKclrerr();
-				} else {
-					/* nothing available */
-					return GDK_FAIL;
-				}
+		bat size = (bat) ATOMIC_GET(&BBPsize);
+		if (size >= BBPlimit &&
+		    BBPextend(idx, true, size + 1) != GDK_SUCCEED) {
+			/* couldn't extend; if there is any
+			 * free entry, take it from the
+			 * longest list after all */
+			if (l > 0) {
+				i = BBP_free(m);
+				BBP_free(m) = BBP_next(i);
+				BBP_next(i) = 0;
+				BBP_free(idx) = i;
+				GDKclrerr();
+			} else {
+				/* nothing available */
+				return GDK_FAIL;
 			}
 		} else {
-			BBP_free(idx) = (bat) ATOMIC_GET(&BBPsize) - 1;
+			ATOMIC_SET(&BBPsize, size + 1);
+			BBP_free(idx) = size;
 		}
 	}
 	last = (last + 1) & BBP_THREADMASK;
@@ -2671,6 +2767,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
+		assert(BBP_lrefs(i) > 0);
 		if (BBP_desc(i)->batSharecnt == 0) {
 			GDKerror("%s: %s does not have any shares.\n", func, BBP_logical(i));
 			assert(0);
@@ -2700,6 +2797,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		} else {
 			refs = --BBP_lrefs(i);
 		}
+		/* cannot release last logical ref if still shared */
+		assert(BBP_desc(i)->batSharecnt == 0 || refs > 0);
 	} else {
 		if (BBP_refs(i) == 0) {
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
@@ -2740,15 +2839,18 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (GDKvm_cursize() < GDK_vm_maxsize &&
 	     ((b && b->theap ? b->theap->size : 0) + (b && b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
 		chkflag |= BBPHOT;
-	if (BBP_refs(i) > 0 ||
-	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL ||
-	      BATdirty(b) ||
-	      (BBP_status(i) & chkflag) ||
-	      !(BBP_status(i) & BBPPERSISTENT) ||
-	      GDKinmemory(farmid)))) {
-		/* bat cannot be swapped out */
-	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
+	/* only consider unloading if refs is 0; if, in addition, lrefs
+	 * is 0, we can definitely unload, else only if some more
+	 * conditions are met */
+	if (BBP_refs(i) == 0 &&
+	    (BBP_lrefs(i) == 0 ||
+	     (b != NULL
+	      ? (!BATdirty(b) &&
+		 !(BBP_status(i) & chkflag) &&
+		 (BBP_status(i) & BBPPERSISTENT) &&
+		 !GDKinmemory(farmid) &&
+		 b->batSharecnt == 0)
+	      : (BBP_status(i) & BBPTMP)))) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
 		 * available anymore */
@@ -2756,7 +2858,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		TRC_DEBUG(BAT_, "%s set to unloading BAT %d (status %u, lrefs %d)\n", func, i, BBP_status(i), BBP_lrefs(i));
 		BBP_status_on(i, BBPUNLOADING);
 		swap = true;
-	}
+	} /* else: bat cannot be swapped out */
 	lrefs = BBP_lrefs(i);
 
 	/* unlock before re-locking in unload; as saving a dirty
@@ -4044,6 +4146,28 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "tail", 4) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk);
+				if (!delete) {
+					if (b->ttype == TYPE_str) {
+						switch (b->twidth) {
+						case 1:
+							delete = strcmp(p + 1, "tail1") != 0;
+							break;
+						case 2:
+							delete = strcmp(p + 1, "tail2") != 0;
+							break;
+#if SIZEOF_VAR_T == 8
+						case 4:
+							delete = strcmp(p + 1, "tail4") != 0;
+							break;
+#endif
+						default:
+							delete = strcmp(p + 1, "tail") != 0;
+							break;
+						}
+					} else {
+						delete = strcmp(p + 1, "tail") != 0;
+					}
+				}
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);

@@ -8,6 +8,7 @@
 
 #[[
 install(FILES
+  10_sys_schema_extension.sql
   12_url.sql
   13_date.sql
   14_inet.sql
@@ -26,7 +27,6 @@ install(FILES
   42_md5sum.sql
   45_uuid.sql
   46_profiler.sql
-  51_sys_schema_extension.sql
   52_describe.sql
   58_hot_snapshot.sql
   60_wlcr.sql

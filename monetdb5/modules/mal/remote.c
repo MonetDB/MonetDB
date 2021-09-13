@@ -248,8 +248,11 @@ static str RMTconnectScen(
 	if (columnar && *columnar) {
 		char set_protocol_query_buf[50];
 		snprintf(set_protocol_query_buf, 50, "sql.set_protocol(%d:int);", PROTOCOL_COLUMNAR);
-		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf)))
+		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf))) {
+			mapi_destroy(m);
+			MT_lock_unset(&mal_remoteLock);
 			return msg;
+		}
 	}
 
 	/* connection established, add to list */
@@ -676,7 +679,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 					} else if (strcmp(nme, "ttype") == 0) {
 						if (lv >= GDKatomcnt)
 							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
+								  "bad %s value: GDK atom number %s doesn't exist", nme, val);
 						bb.Ttype = (int) lv;
 					} else if (strcmp(nme, "tseqbase") == 0) {
 #if SIZEOF_OID < SIZEOF_LNG
@@ -905,12 +908,12 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 
-		if ( (tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED) {
+		if ((tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return tmp;
 		}
 
-		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true)) != NULL) {
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return(tmp);
 		}
@@ -1370,52 +1373,49 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* Temporary hack:
 	 * use a callback to immediately handle columnar results before hdl is destroyed. */
-	if(tmp == MAL_SUCCEED && rcb && mhdl && (mapi_get_querytype(mhdl) == Q_TABLE || mapi_get_querytype(mhdl) == Q_PREPARE)) {
-
+	if (tmp == MAL_SUCCEED && rcb && mhdl && (mapi_get_querytype(mhdl) == Q_TABLE || mapi_get_querytype(mhdl) == Q_PREPARE)) {
 		int fields = mapi_get_field_count(mhdl);
-
 		columnar_result* results = GDKzalloc(sizeof(columnar_result) * fields);
 
-		char buf[256] = {0};
+		if (!results) {
+			tmp = createException(MAL, "remote.exec", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+			int i = 0;
+			char buf[256] = {0};
+			stream *sin = mapi_get_from(c->mconn);
 
-		stream* sin = mapi_get_from(c->mconn);
+			for (; i < fields; i++) {
+				BAT *b = NULL;
 
-		char* tblname = mapi_get_table(mhdl, 0);
+				if ((tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED ||
+					(tmp = RMTinternalcopyfrom(&b, buf, sin, i == fields - 1)) != MAL_SUCCEED) {
+					break;
+				}
 
-		int i;
-		for (i = 0; i < fields; i++) {
-			BAT *b = NULL;
-
-			RMTreadbatheader(sin, buf);
-			RMTinternalcopyfrom(&b, buf, sin, i == fields - 1);
-
-			if ( b == NULL) {
-				tmp= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
-				break;
+				results[i].id = b->batCacheid;
+				results[i].colname = mapi_get_name(mhdl, i);
+				results[i].tpename = mapi_get_type(mhdl, i);
+				results[i].digits = mapi_get_digits(mhdl, i);
+				results[i].scale = mapi_get_scale(mhdl, i);
 			}
 
-			results[i].id = b->batCacheid;
-			results[i].colname = mapi_get_name(mhdl, i);
-			results[i].tpename = mapi_get_type(mhdl, i);
-			results[i].digits = mapi_get_digits(mhdl, i);
-			results[i].scale = mapi_get_scale(mhdl, i);
-			BBPkeepref(results[i].id);
+			if (tmp != MAL_SUCCEED) {
+				for (int j = 0; j < i; j++)
+					BBPunfix(results[j].id);
+			} else {
+				for (int j = 0; j < i; j++)
+					BBPkeepref(results[j].id);
+				assert(rcb->context);
+				tmp = rcb->call(rcb->context, mapi_get_table(mhdl, 0), results, fields);
+				for (int j = 0; j < i; j++)
+					BBPrelease(results[j].id);
+			}
+			GDKfree(results);
 		}
-
-		if (tmp == MAL_SUCCEED) {
-			assert(rcb->context);
-			tmp = rcb->call(rcb->context, tblname, results, fields);
-		}
-
-		for (int j = 0; j < i; j++)
-			BBPrelease(results[j].id);
-
-		GDKfree(results);
 	}
 
 	if (rcb) {
 		GDKfree(rcb->context);
-		rcb->context = NULL;
 		GDKfree(rcb);
 	}
 

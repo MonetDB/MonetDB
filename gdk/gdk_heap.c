@@ -891,27 +891,6 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free)
 	return HEAPsave_intern(h, nme, ext, ".new", dosync, free);
 }
 
-/*
- * @- HEAPdelete
- * Delete any saved heap file. For memory mapped files, also try to
- * remove any remaining X.new
- */
-gdk_return
-HEAPdelete(Heap *h, const char *o, const char *ext)
-{
-	char ext2[64];
-
-	if (h->size <= 0) {
-		assert(h->base == 0);
-		return GDK_SUCCEED;
-	}
-	if (h->base)
-		HEAPfree(h, false);	/* we will do the unlinking */
-	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
-	return ((GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
 int
 HEAPwarm(Heap *h)
 {

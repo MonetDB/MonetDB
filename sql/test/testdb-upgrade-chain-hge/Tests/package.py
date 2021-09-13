@@ -2,7 +2,7 @@ import os, sys, zipfile
 
 dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
-archive = os.path.join(dbfarm, 'prevhgechainrel.zip')
+archive = os.path.join(dbfarm, 'lasthgechainrel.zip')
 rev = os.getenv('REVISION')
 
 if not os.path.exists(db):

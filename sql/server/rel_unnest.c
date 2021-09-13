@@ -824,7 +824,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	}
 
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */
-	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
+	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		/* find constant expressions and move these down */
@@ -834,11 +834,11 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			list *cexps = NULL;
 			sql_rel *l = r->l;
 
-			if (l && is_select(l->op) && !rel_is_ref(l)) {
+			if (l && (is_select(l->op) || l->op == op_join) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
-					if (exp_is_atom(e) || rel_find_exp(l,e)) { /* move down */
+					if (exp_is_atom(e) || rel_find_exp(l->l,e)) { /* move down */
 						if (!cexps)
 							cexps = sa_list(sql->sa);
 						append(cexps, e);
@@ -2498,6 +2498,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		} else {
 			u = rel_setop(sql->sa, u, sq, op_union);
 			rel_setop_set_exps(sql, u, exps, false);
+			set_distinct(u);
 			set_processed(u);
 		}
 		exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
@@ -2648,11 +2649,16 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (sq) {
 					sql_rel *l = NULL, *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_join, &rewrite);
+					if (rsq && lsq->card == CARD_ATOM && rsq->card == CARD_ATOM) { /* add project true */
+						lsq = rel_crossproduct(sql->sa, lsq, rsq, op_full);
+						lsq = rel_crossproduct(sql->sa, rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1)), lsq, op_left);
+						rsq = 0;
+					}
+					(void)rewrite_inner(sql, rel, lsq, rel->card <= CARD_ATOM?op_left:op_join, &rewrite);
 					if (is_left(rewrite->op))
 						reset_has_nil(rewrite, le);
 					l = rel->l;
-					if (l && on_right && !is_join(l->op))
+					if (l && on_right && (!is_join(l->op) || (is_project(rel->op) && lsq->card <= CARD_ATOM && rsq->card <= CARD_ATOM)))
 						on_right = 0;
 				}
 				if (rsq) {
@@ -2717,7 +2723,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			} else {
 				if (lsq) {
 					sql_rel *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_join, &rewrite);
+					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite);
 					if (is_left(rewrite->op))
 						reset_has_nil(rewrite, le);
 				}

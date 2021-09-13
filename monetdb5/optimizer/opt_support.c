@@ -49,7 +49,7 @@ isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 		q= getInstrPtr(mb,i);
 		if ( q->token == ENDsymbol)
 			break;
-		if ( getModuleId(q) == optimizerRef && getFunctionId(q) == opt)
+		if ( q->token != REMsymbol && getModuleId(q) == optimizerRef && getFunctionId(q) == opt)
 			return 1;
 	}
 	return 0;

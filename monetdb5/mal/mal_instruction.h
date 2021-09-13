@@ -22,7 +22,7 @@
 #define DEBUG_MAL_INSTR
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
-#define MAL_VAR_WINDOW  32
+#define MAL_VAR_WINDOW  16 // was 32
 #define MAXLISTING (64*1024)
 
 /* Allocation of space assumes a rather exotic number of

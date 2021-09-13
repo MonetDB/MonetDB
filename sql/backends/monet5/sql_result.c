@@ -1330,15 +1330,14 @@ mvc_export_table_columnar(stream *s, res_table *t)
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	mvc *m = b->mvc;
 	Tablet as;
 	Column *fmt;
 	int i, ok = 0;
 	struct time_res *tres;
-	int csv = (b->output_format == OFMT_CSV);
-	int json = (b->output_format == OFMT_JSON);
+	int csv = (output_format == OFMT_CSV);
+	int json = (output_format == OFMT_JSON);
 	char *bj;
 
 	if (!s || !t)
@@ -1469,6 +1468,28 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		return ok;
 	return 0;
 }
+
+static int
+mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+{
+	return mvc_export_table_(b->mvc, b->output_format, s, t, order, offset, nr, btag, sep, rsep, ssep, ns);
+}
+
+int
+mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
+{
+	backend b;
+	b.mvc = m;
+	b.results = t;
+	b.reloptimizer = 0;
+	t->order = t->cols[0].b;
+	t->nr_rows = nr;
+	BBPretain(t->order);
+	if (mvc_export_head(&b, s, t->id, TRUE, TRUE, 0/*starttime*/, 0/*maloptimizer*/) < 0)
+		return -1;
+	return mvc_export_table_(m, OFMT_CSV, s, t, BBPquickdesc(t->cols[0].b), 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
+}
+
 
 static lng
 get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
@@ -1655,13 +1676,11 @@ mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng mal_optimi
 	return 0;
 }
 
-int
-mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
-{
-	mvc *m = b->mvc;
 
-	b->rowcnt = val;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
+int
+mvc_affrows(mvc *m, stream *s, lng val, str w, oid query_id, lng last_id, lng starttime, lng maloptimizer, lng reloptimizer)
+{
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), val);
 
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
@@ -1674,7 +1693,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    mvc_send_lng(s, val) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
-	    mvc_send_lng(s, b->last_id) != 1 ||
+	    mvc_send_lng(s, last_id) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    mvc_send_lng(s, (lng) query_id) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
@@ -1682,13 +1701,20 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    mvc_send_lng(s, maloptimizer) != 1 ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
-	    mvc_send_lng(s, b->reloptimizer) != 1 ||
+	    mvc_send_lng(s, reloptimizer) != 1 ||
 	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -4;
 	if (mvc_export_warning(s, w) != 1)
 		return -4;
 
 	return 0;
+}
+
+int
+mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
+{
+	b->rowcnt = val;
+	return mvc_affrows(b->mvc, s, val, w, query_id, b->last_id, starttime, maloptimizer, b->reloptimizer);
 }
 
 static int
@@ -1738,7 +1764,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		return -4;
 
 	/* row count, min(count, reply_size) */
-	if (mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
+	/* the columnar protocol ignores the reply size by fetching the entire resultset at once, so don't set it */
+	if (mvc_send_int(s, (b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
 		return -4;
 
 	// export query id

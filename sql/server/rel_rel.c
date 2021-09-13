@@ -898,13 +898,12 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 static void
 exps_has_nil(list *exps)
 {
-	node *m;
+	if (!list_empty(exps))
+		for (node *m = exps->h; m; m = m->next) {
+			sql_exp *e = m->data;
 
-	for (m = exps->h; m; m = m->next) {
-		sql_exp *e = m->data;
-
-		set_has_nil(e);
-	}
+			set_has_nil(e);
+		}
 }
 
 list *
@@ -926,14 +925,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
+		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 		if (rel->op == op_full || rel->op == op_right)
-			exps_has_nil(exps);
+			exps_has_nil(lexps);
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		if (rel->op == op_full || rel->op == op_left)
 			exps_has_nil(rexps);
-		exps = list_merge( exps, rexps, (fdup)NULL);
-		return exps;
+		return list_merge(lexps, rexps, (fdup)NULL);
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
 			list *r = rel->r;
@@ -986,23 +984,25 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			}
 			return exps;
 		}
+		/* I only expect set relations to hit here */
+		assert(is_set(rel->op));
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
-		exps = sa_list(sql->sa);
-		if (lexps && rexps && exps) {
+		if (lexps && rexps) {
 			int label = 0;
 
 			if (!settname)
 				label = ++sql->label;
-			for (node *en = lexps->h, *ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
+			assert(list_length(lexps) == list_length(rexps));
+			for (node *en = lexps->h; en; en = en->next) {
 				sql_exp *e = en->data;
+
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
-				append(exps, e);
 			}
 		}
-		return exps;
+		return lexps;
 	case op_ddl:
 	case op_semi:
 	case op_anti:
