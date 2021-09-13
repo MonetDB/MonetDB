@@ -110,7 +110,7 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
 static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 static bat BBP_mask = 0;		/* number of buckets = & mask */
-#define BBP_THREADMASK	63
+#define BBP_THREADMASK	0		/* originally: 63 */
 #if SIZEOF_SIZE_T == 8
 #define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
 #else
@@ -1947,6 +1947,7 @@ BBPgetsubdir(str s, bat i)
 static gdk_return
 maybeextend(int idx)
 {
+#if BBP_THREADMASK > 0
 	int t, m;
 	int n, l;
 	bat i;
@@ -1973,6 +1974,7 @@ maybeextend(int idx)
 		BBP_next(i) = 0;
 		BBP_free(idx) = i;
 	} else {
+#endif
 		/* let the longest list alone, get a fresh entry */
 		bat size = (bat) ATOMIC_GET(&BBPsize);
 		if (size >= BBPlimit &&
@@ -1980,13 +1982,16 @@ maybeextend(int idx)
 			/* couldn't extend; if there is any
 			 * free entry, take it from the
 			 * longest list after all */
+#if BBP_THREADMASK > 0
 			if (l > 0) {
 				i = BBP_free(m);
 				BBP_free(m) = BBP_next(i);
 				BBP_next(i) = 0;
 				BBP_free(idx) = i;
 				GDKclrerr();
-			} else {
+			} else
+#endif
+			{
 				/* nothing available */
 				return GDK_FAIL;
 			}
@@ -1994,8 +1999,10 @@ maybeextend(int idx)
 			ATOMIC_SET(&BBPsize, size + 1);
 			BBP_free(idx) = size;
 		}
+#if BBP_THREADMASK > 0
 	}
 	last = (last + 1) & BBP_THREADMASK;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -2018,6 +2025,7 @@ BBPinsert(BAT *bn)
 	if (BBP_free(idx) <= 0) {
 		/* we need to extend the BBP */
 		gdk_return r = GDK_SUCCEED;
+#if BBP_THREADMASK > 0
 		if (lock) {
 			/* we must take all locks in a consistent
 			 * order so first unset the one we've already
@@ -2026,6 +2034,7 @@ BBPinsert(BAT *bn)
 			for (i = 0; i <= BBP_THREADMASK; i++)
 				MT_lock_set(&GDKcacheLock(i));
 		}
+#endif
 		MT_lock_set(&BBPnameLock);
 		/* check again in case some other thread extended
 		 * while we were waiting */
@@ -2033,10 +2042,12 @@ BBPinsert(BAT *bn)
 			r = maybeextend(idx);
 		}
 		MT_lock_unset(&BBPnameLock);
+#if BBP_THREADMASK > 0
 		if (lock)
 			for (i = BBP_THREADMASK; i >= 0; i--)
 				if (i != idx)
 					MT_lock_unset(&GDKcacheLock(i));
+#endif
 		if (r != GDK_SUCCEED) {
 			if (lock) {
 				MT_lock_unset(&GDKcacheLock(idx));
