@@ -1007,9 +1007,8 @@ logger_open_output(logger *lg)
 		return GDK_FAIL;
 	}
 
-	if (LOG_DISABLED(lg)) {
-		lg->end = 0;
-	} else {
+	lg->end = 0;
+	if (!LOG_DISABLED(lg)) {
 		char id[32];
 		char *filename;
 
@@ -2428,8 +2427,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (LOG_DISABLED(lg))
-			lg->end += nr;
+		lg->end += nr;
 		if (nr)
 			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
@@ -2523,9 +2521,8 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
-	} else {
-		lg->end++;
 	}
+	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
@@ -2549,9 +2546,8 @@ log_bat_transient(logger *lg, log_id id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
-	} else {
-		lg->end++;
 	}
+	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
@@ -2593,8 +2589,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	nr = (BUNlast(uval));
 	assert(nr);
 
+	lg->end += nr;
 	if (LOG_DISABLED(lg)) {
-		lg->end += nr;
 		/* logging is switched off */
 		logger_unlock(lg);
 		return GDK_SUCCEED;
@@ -2648,8 +2644,8 @@ log_bat_clear(logger *lg, int id)
 {
 	logformat l;
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		logger_lock(lg);
 		gdk_return res = la_bat_update_count(lg, id, 0);
 		logger_unlock(lg);
@@ -2702,8 +2698,8 @@ log_tend(logger *lg)
 		return logger_commit(lg);
 	}
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		return GDK_SUCCEED;
 	}
 
@@ -2909,8 +2905,8 @@ log_tstart(logger *lg, bool flushnow)
 		lg->flushnow = flushnow;
 	}
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		return GDK_SUCCEED;
 	}
 

@@ -24,7 +24,7 @@ CREATE TABLE "t1" ("c2" BIGINT NOT NULL, CONSTRAINT "t1_c2_pkey" PRIMARY KEY ("c
 statement ok rowcount 4
 INSERT INTO "t1" VALUES (69), (-12), (9), (0)
 
-query I rowsort
+query T rowsort
 SELECT -3 < least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) FROM t1
 ----
 True
@@ -40,7 +40,7 @@ SELECT t1.c2 FROM t1 WHERE -3 < least((SELECT 1 WHERE FALSE), (SELECT 2 FROM t1 
 69
 9
 
-query I rowsort
+query T rowsort
 SELECT least((SELECT 1 WHERE FALSE), (SELECT DISTINCT 2 FROM t1)) > -3 FROM t1
 ----
 True
@@ -69,7 +69,7 @@ statement ok rowcount 9
 INSERT INTO "t0" VALUES (INTERVAL '6' SECOND),(INTERVAL '9' SECOND),(INTERVAL '1' SECOND),
 (INTERVAL '0' SECOND),(INTERVAL '9' SECOND),(INTERVAL '4' SECOND),(INTERVAL '6' SECOND),(INTERVAL '1' SECOND),(NULL)
 
-query I rowsort
+query T rowsort
 SELECT (SELECT 2 WHERE FALSE) = ANY(SELECT 3 WHERE FALSE)
 ----
 False
@@ -257,8 +257,29 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT 1 as count FROM t2 JOIN
 query R rowsort
 SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
 ----
-135 values hashing to e55d26263a0004ee5457d82440cc2577
+135 values hashing to 39898748a4604c294a5bcb3435b482a0
 
 statement ok
 ROLLBACK
+
+statement ok
+CREATE TABLE t1(c1 BLOB)
+
+statement ok
+ALTER TABLE t1 ADD CONSTRAINT con2 PRIMARY KEY(c1)
+
+statement ok rowcount 4
+INSERT INTO t1(c1) VALUES(BLOB 'D8d4F0'), (BLOB 'B135'), (BLOB 'C0'), (BLOB '')
+
+statement ok rowcount 4
+UPDATE t1 SET c1 = t1.c1
+
+statement ok
+ALTER TABLE t1 DROP CONSTRAINT con2
+
+statement ok rowcount 4
+UPDATE t1 SET c1 = t1.c1
+
+statement ok
+DROP TABLE t1
 
