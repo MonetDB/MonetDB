@@ -2386,7 +2386,6 @@ typedef struct gdk_callback {
 	int interval;  // units sec
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
-	gdk_return (*argsfree)(int argc, void *argv[]);
 	struct gdk_callback *next;
 	void *argv[FLEXIBLE_ARRAY_MEMBER];
 } gdk_callback;
@@ -2397,7 +2396,11 @@ typedef struct gdk_callback_list {
 	gdk_callback *head;
 } gdk_callback_list;
 
-int gdk_add_callback(gdk_callback *);
-int gdk_remove_callback(char *);
+typedef gdk_return callback_func(int argc, void *argv[]);
+typedef void callback_args_free_func(int argc, void *argv[]);
+
+gdk_return gdk_add_callback(char *name, callback_func *f, int argc, void
+		*argv[], int interval);
+gdk_return gdk_remove_callback(char *, callback_args_free_func *f);
 
 #endif /* _GDK_H_ */

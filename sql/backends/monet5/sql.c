@@ -5133,13 +5133,22 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	return res;
 }
 
+static void
+str_column_vacuum_callback_args_free(int argc, void *argv[])
+{
+	assert(argc == 4);
+	// free up sname, tname, cname
+	GDKfree(argv[1]);
+	GDKfree(argv[2]);
+	GDKfree(argv[3]);
+}
 
 str
 SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
-	gdk_callback *callback = NULL;
+	// gdk_callback *callback = NULL;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
@@ -5160,29 +5169,21 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
-	// register callback
-	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * 4)))
-		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*callback = (gdk_callback) {
-		.name = "str_column_vacuum",
-		.argc = 4,
-		.interval = (int) interval,
-		.func = str_column_vacuum_callback,
-	};
 
-	if (!(*callback->argv = GDKmalloc(sizeof(void *[callback->argc]))))
-		return createException(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	callback->argv[0] = m->store;
-	callback->argv[1] = strdup(sname);
-	callback->argv[2] = strdup(tname);
-	callback->argv[3] = strdup(cname);
-	gdk_add_callback(callback);
+	void *argv[4] = {m->store, strdup(sname), strdup(tname), strdup(cname)};
+
+	gdk_return res;
+	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
+		str_column_vacuum_callback_args_free(4, argv);
+		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
+	}
 
 	// TODO REMOVE test the callback
 	// callback->func(callback->argc, callback->argv);
 
 	return MAL_SUCCEED;
 }
+
 
 
 #include "wlr.h"
