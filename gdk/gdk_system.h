@@ -411,19 +411,17 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do						\
-				_DBG_LOCK_SLEEP(l);			\
-			while (pthread_mutex_lock(&(l)->lock) != 0);	\
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)					\
+	do {						\
+		_DBG_LOCK_COUNT_0(l);			\
+		if (!MT_lock_try(l)) {			\
+			_DBG_LOCK_CONTENTION(l);	\
+			MT_thread_setlockwait(l);	\
+			pthread_mutex_lock(&(l)->lock);	\
+			MT_thread_setlockwait(NULL);	\
+		}					\
+		_DBG_LOCK_LOCKER(l);			\
+		_DBG_LOCK_COUNT_2(l);			\
 	} while (0)
 #else
 #define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
