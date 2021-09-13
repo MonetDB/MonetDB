@@ -1394,6 +1394,7 @@ BBPmanager(void *dummy)
 		}
 		BBPtrim(false);
 		BBPcallbacks();
+		MT_sleep_ms(1000);
 		if (GDKexiting())
 			return;
 	}
@@ -4251,17 +4252,37 @@ static gdk_callback_list callback_list = {
  * Adds new callback to the callback list.
  * Returns the count of the callbacks in the callback_list.
  */
-int
-gdk_add_callback(gdk_callback *callback)
+gdk_return
+gdk_add_callback(char *name, callback_func *f, int argc, void *argv[], int
+		interval)
 {
+
+	gdk_callback *callback = NULL;
 	gdk_callback *p = callback_list.head;
+
+	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * argc))) {
+		TRC_CRITICAL(GDK, "Failed to allocate memory!");
+		return GDK_FAIL;
+	}
+
+	*callback = (gdk_callback) {
+		.name = name,
+		.argc = argc,
+		.interval = interval,
+		.func = f,
+	};
+
+	for (int i=0; i < argc; i++) {
+		callback->argv[i] = argv[i];
+	}
+
 	MT_lock_set(&(callback_list.lock));
 	if (p) {
 		int cnt = 1;
 		do {
 			// check if already added
 			if (strcmp(callback->name, p->name) == 0)
-				return callback_list.cnt;
+				return GDK_FAIL;
 			if (p->next == NULL) {
 			   	p->next = callback;
 				p = callback->next;
@@ -4276,7 +4297,7 @@ gdk_add_callback(gdk_callback *callback)
 		callback_list.head = callback;
 	}
 	MT_lock_unset(&(callback_list.lock));
-	return callback_list.cnt;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -4284,11 +4305,12 @@ gdk_add_callback(gdk_callback *callback)
  * Removes a callback from the callback list with a given name as an argument.
  * Returns the count of the callbacks in the callback_list.
  */
-int
-gdk_remove_callback(char *cb_name)
+gdk_return
+gdk_remove_callback(char *cb_name, callback_args_free_func *argsfree)
 {
 	gdk_callback *curr = callback_list.head;
 	gdk_callback *prev = NULL;
+	gdk_return res = GDK_FAIL;
 	while(curr) {
 		if (strcmp(cb_name, curr->name) == 0) {
 			MT_lock_set(&(callback_list.lock));
@@ -4297,18 +4319,19 @@ gdk_remove_callback(char *cb_name)
 			} else {
 				prev->next = curr->next;
 			}
-			if (curr->argsfree)
-			       	curr->argsfree(curr->argc, curr->argv);
+			if (argsfree)
+			       	argsfree(curr->argc, curr->argv);
 			GDKfree(curr);
 			curr = NULL;
 			callback_list.cnt -=1;
+			res = GDK_SUCCEED;
 			MT_lock_unset(&(callback_list.lock));
 		} else {
 			prev = curr;
 			curr = curr->next;
 		}
 	}
-	return callback_list.cnt;
+	return res;
 }
 
 static gdk_return
