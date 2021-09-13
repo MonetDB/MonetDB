@@ -698,12 +698,18 @@ BATdestroy(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	GDKfree(b->tvheap);
+	if (b->tvheap) {
+		ATOMIC_DESTROY(&b->tvheap->refs);
+		GDKfree(b->tvheap);
+	}
 	PROPdestroy(b);
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
-	GDKfree(b->theap);
+	if (b->theap) {
+		ATOMIC_DESTROY(&b->theap->refs);
+		GDKfree(b->theap);
+	}
 	GDKfree(b);
 }
 
