@@ -157,3 +157,8 @@ SELECT 1 FROM t1 WHERE 2 IN (3, (SELECT 4 FROM (select 1) as v0(c0))) AND '8' <>
 
 statement ok
 DROP TABLE t1
+
+query T nosort
+SELECT json."text"(JSON '""', '344567')
+----
+
