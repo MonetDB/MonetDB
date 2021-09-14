@@ -5137,10 +5137,10 @@ static gdk_return
 str_column_vacuum_callback_args_free(int argc, void *argv[])
 {
 	(void) argc;
-	// free up sname, tname, cname
-	GDKfree(argv[1]);
-	GDKfree(argv[2]);
-	GDKfree(argv[3]);
+	// free up sname, tname, cname. First pointer points to sqlstore so leave it.
+	GDKfree(argv[1]); // sname
+	GDKfree(argv[2]); // tname
+	GDKfree(argv[3]); // cname
 	return GDK_SUCCEED;
 }
 
@@ -5170,7 +5170,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
-	void *argv[4] = {m->store, strdup(sname), strdup(tname), strdup(cname)};
+	void *argv[4] = {m->store, GDKstrdup(sname), GDKstrdup(tname), GDKstrdup(cname)};
 
 	gdk_return res;
 	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
