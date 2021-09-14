@@ -2413,6 +2413,20 @@ JSONgroupStr(str *ret, const bat *bid)
 	throw(MAL, "json.agg", "%s", err);
 }
 
+#define JSON_AGGR_CHECK_NEXT_LENGTH(EXTRA)	\
+	do {	\
+		len = strlen(v) + EXTRA;	\
+		if (len >= maxlen - buflen) {	\
+			maxlen = (maxlen + len + BUFSIZ + 8191) & ~8191;	\
+			buf2 = GDKrealloc(buf, maxlen);	\
+			if (buf2 == NULL) {	\
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	\
+				goto bunins_failed;	\
+			}	\
+			buf = buf2;	\
+		}	\
+	} while (0)
+
 static const char *
 JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 {
@@ -2450,14 +2464,14 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (s) {
 		b = BATproject(s, b);
 		if (b == NULL) {
-			err = "internal project failed";
+			err = GDK_EXCEPTION;
 			goto out;
 		}
 		freeb = 1;
 		if (g) {
 			g = BATproject(s, g);
 			if (g == NULL) {
-				err = "internal project failed";
+				err = GDK_EXCEPTION;
 				goto out;
 			}
 			freeg = 1;
@@ -2528,21 +2542,13 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						isnil = 1;
 					}
 				} else {
-					len = strlen(v);
-					if (len + 7 >= maxlen) {
-						maxlen += len + BUFSIZ;
-						buf2 = GDKrealloc(buf, maxlen);
-						if (buf2 == NULL) {
-							err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-							goto bunins_failed;
-						}
-						buf = buf2;
-					}
 					switch (b->ttype) {
 					case TYPE_str:
+						JSON_AGGR_CHECK_NEXT_LENGTH(7);
 						snprintf(buf, maxlen, "[ \"%s\" ]", v);
 						break;
 					case TYPE_dbl:
+						JSON_AGGR_CHECK_NEXT_LENGTH(5);
 						snprintf(buf, maxlen, "[ %s ]", v);
 						break;
 					}
@@ -2581,8 +2587,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				if (p == q)
 					break;
 				prev = grps[p];
-				strncpy(buf + buflen, "[ ", maxlen - buflen);
-				buflen += 2;
+				strcpy(buf, "[ ");
+				buflen = 2;
 				isnil = 0;
 			}
 			if (isnil)
@@ -2604,34 +2610,28 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
-				strncpy(buf, str_nil, buflen);
+				strcpy(buf, str_nil);
 				isnil = 1;
 			} else {
-				len = strlen(v);
-				if (len >= maxlen - buflen) {
-					maxlen += len + BUFSIZ;
-					buf2 = GDKrealloc(buf, maxlen);
-					if (buf2 == NULL) {
-						err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-						goto bunins_failed;
-					}
-					buf = buf2;
-				}
 				switch (b->ttype) {
 				case TYPE_str:
 					if (buflen == 2) {
+						JSON_AGGR_CHECK_NEXT_LENGTH(3);
 						len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
 						buflen += len;
 					} else {
+						JSON_AGGR_CHECK_NEXT_LENGTH(5);
 						len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
 						buflen += len;
 					}
 					break;
 				case TYPE_dbl:
 					if (buflen == 2) {
+						JSON_AGGR_CHECK_NEXT_LENGTH(1);
 						len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
 						buflen += len;
 					} else {
+						JSON_AGGR_CHECK_NEXT_LENGTH(3);
 						len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
 						buflen += len;
 					}
@@ -2661,35 +2661,29 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
-				strncpy(buf, str_nil, buflen);
+				strcpy(buf, str_nil);
 				nils++;
 				break;
-			}
-			len = strlen(v);
-			if (len >= maxlen - buflen) {
-				maxlen += len + BUFSIZ;
-				buf2 = GDKrealloc(buf, maxlen);
-				if (buf2 == NULL) {
-					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-					goto bunins_failed;
-				}
-				buf = buf2;
 			}
 			switch (b->ttype) {
 			case TYPE_str:
 				if (buflen == 2) {
+					JSON_AGGR_CHECK_NEXT_LENGTH(3);
 					len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
 					buflen += len;
 				} else {
+					JSON_AGGR_CHECK_NEXT_LENGTH(5);
 					len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
 					buflen += len;
 				}
 				break;
 			case TYPE_dbl:
 				if (buflen == 2) {
+					JSON_AGGR_CHECK_NEXT_LENGTH(1);
 					len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
 					buflen += len;
 				} else {
+					JSON_AGGR_CHECK_NEXT_LENGTH(3);
 					len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
 					buflen += len;
 				}
