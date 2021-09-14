@@ -161,4 +161,5 @@ DROP TABLE t1
 query T nosort
 SELECT json."text"(JSON '""', '344567')
 ----
+(empty)
 
