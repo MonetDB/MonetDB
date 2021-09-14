@@ -1171,6 +1171,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 
 			const void *old = BUNtvar(bi, updid);
+
+			if (atomcmp(old, new) == 0) {
+				/* replacing with the same value:
+				 * nothing to do */
+				continue;
+			}
+
 			bool isnil = atomcmp(new, nil) == 0;
 			anynil |= isnil;
 			if (b->tnil &&
