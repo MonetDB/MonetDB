@@ -5136,7 +5136,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 static gdk_return
 str_column_vacuum_callback_args_free(int argc, void *argv[])
 {
-	assert(argc == 4);
+	(void) argc;
 	// free up sname, tname, cname
 	GDKfree(argv[1]);
 	GDKfree(argv[2]);
