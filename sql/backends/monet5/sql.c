@@ -5133,7 +5133,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	return res;
 }
 
-static void
+static gdk_return
 str_column_vacuum_callback_args_free(int argc, void *argv[])
 {
 	assert(argc == 4);
@@ -5141,6 +5141,7 @@ str_column_vacuum_callback_args_free(int argc, void *argv[])
 	GDKfree(argv[1]);
 	GDKfree(argv[2]);
 	GDKfree(argv[3]);
+	return GDK_SUCCEED;
 }
 
 str
@@ -5148,7 +5149,6 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	mvc *m = NULL;
 	str msg = NULL;
-	// gdk_callback *callback = NULL;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
@@ -5178,12 +5178,39 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
 	}
 
-	// TODO REMOVE test the callback
-	// callback->func(callback->argc, callback->argv);
-
 	return MAL_SUCCEED;
 }
 
+str
+SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	char *sname = *getArgReference_str(stk, pci, 1);
+	char *tname = *getArgReference_str(stk, pci, 2);
+	char *cname = *getArgReference_str(stk, pci, 3);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+	if((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+
+	if(gdk_remove_callback("str_column_vacuum", str_column_vacuum_callback_args_free) != GDK_SUCCEED)
+		throw(SQL, "sql.str_column_stop_vacuum", "removing vacuum callback failed!");
+
+	return MAL_SUCCEED;
+}
 
 
 #include "wlr.h"
@@ -6270,6 +6297,7 @@ static mel_func sql_init_funcs[] = {
 #endif
  pattern("sql", "vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "vacuum", SQLstr_column_auto_vacuum, false, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
+ pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, false, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
