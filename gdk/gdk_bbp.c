@@ -1394,7 +1394,6 @@ BBPmanager(void *dummy)
 		}
 		BBPtrim(false);
 		BBPcallbacks();
-		MT_sleep_ms(1000);
 		if (GDKexiting())
 			return;
 	}
@@ -4352,10 +4351,10 @@ should_call(gdk_callback *cb)
 static void
 BBPcallbacks(void)
 {
-	gdk_callback *next = NULL;
+	gdk_callback *next = callback_list.head;
 
 	MT_lock_set(&(callback_list.lock));
-	while ((next=callback_list.head)) {
+	while (next) {
 		if(should_call(next))
 			do_callback(next);
 		next = next->next;
