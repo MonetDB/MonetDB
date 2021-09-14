@@ -1288,7 +1288,8 @@ static str
 JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, size_t sep_len)
 {
 	int i;
-	unsigned int j, u;
+	size_t j, next_len, next_concat_len;
+	unsigned int u;
 	str msg = MAL_SUCCEED;
 
 	switch (jt->elm[idx].kind) {
@@ -1309,17 +1310,23 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		break;
 	case JSON_STRING:
 		// Make sure there is enough space for the value plus the separator plus the NULL byte
-		if (*l < jt->elm[idx].valuelen - 2 + sep_len + 1) {
-			char *p = *r - *ilen + *l, *nr;
-			*ilen *= 2;
+		next_len = jt->elm[idx].valuelen;
+		next_concat_len = next_len - 2 + sep_len + 1;
+		if (*l < next_concat_len) {
+			size_t prev_ilen = *ilen, prev_l = *l;
+			char *p = *r - (prev_ilen - prev_l), *nr;
+
+			*ilen = (prev_ilen * 2) + next_concat_len; /* make sure sep_len + 1 is always included */
 			if (!(nr = GDKrealloc(p, *ilen))) {
 				*r = p;
 				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			*r = nr + *l;
-			*l = *ilen - *l;
+			*r = nr + (prev_ilen - prev_l);
+			*l = *ilen - prev_ilen + prev_l;
 		}
-		for (j = 1; j < jt->elm[idx].valuelen - 1; j++) {
+		assert(next_len >= 2);
+		next_len--;
+		for (j = 1; j < next_len; j++) {
 			if (jt->elm[idx].value[j] == '\\') {
 				switch (jt->elm[idx].value[++j]) {
 				case '"':
@@ -1395,20 +1402,23 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		*r += sep_len;
 		break;
 	default:
-		if (*l < jt->elm[idx].valuelen + sep_len + 1) {
-			size_t offset = *ilen - *l;
-			char *p = *r - offset, *nr;
-			*ilen *= 2;
+		next_len = jt->elm[idx].valuelen;
+		next_concat_len = next_len + sep_len + 1;
+		if (*l < next_concat_len) {
+			size_t prev_ilen = *ilen, prev_l = *l;
+			char *p = *r - (prev_ilen - prev_l), *nr;
+
+			*ilen = (prev_ilen * 2) + next_concat_len; /* make sure sep_len + 1 is always included */
 			if (!(nr = GDKrealloc(p, *ilen))) {
 				*r = p;
 				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			*r = nr + offset;
-			*l = *ilen - offset;
+			*r = nr + (prev_ilen - prev_l);
+			*l = *ilen - prev_ilen + prev_l;
 		}
-		memcpy(*r, jt->elm[idx].value, jt->elm[idx].valuelen);
-		*l -= jt->elm[idx].valuelen;
-		*r += jt->elm[idx].valuelen;
+		memcpy(*r, jt->elm[idx].value, next_len);
+		*l -= next_len;
+		*r += next_len;
 		memcpy(*r, sep, sep_len);
 		*l -= sep_len;
 		*r += sep_len;
