@@ -251,8 +251,12 @@ JSONdumpInternal(JSON *jt, int depth)
 	size_t buflen = 1024;
 	char *buffer = GDKmalloc(buflen);
 	BAT *bn = COLnew(0, TYPE_str, 0, TRANSIENT);
-	if (bn == NULL)
+
+	if (!buffer || !bn) {
+		GDKfree(buffer);
+		BBPreclaim(bn);
 		return NULL;
+	}
 
 	for (idx = 0; idx < jt->free; idx++) {
 		size_t datlen = 0;
@@ -1280,34 +1284,39 @@ JSONfilter(json *ret, json *js, str *expr)
 // glue all values together with an optional separator
 // The json string should be valid
 
-static char *
+static str
 JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, size_t sep_len)
 {
 	int i;
 	unsigned int j, u;
+	str msg = MAL_SUCCEED;
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
-			if (jt->elm[i].child)
-				*r = JSONplaintext(r, l, ilen, jt, jt->elm[i].child, sep, sep_len);
+			if (jt->elm[i].child && (msg = JSONplaintext(r, l, ilen, jt, jt->elm[i].child, sep, sep_len)))
+				return msg;
 		break;
 	case JSON_ARRAY:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
-			*r = JSONplaintext(r, l, ilen, jt, i, sep, sep_len);
+			if ((msg = JSONplaintext(r, l, ilen, jt, i, sep, sep_len)))
+				return msg;
 		break;
 	case JSON_ELEMENT:
 	case JSON_VALUE:
-		if (jt->elm[idx].child)
-			*r = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep, sep_len);
+		if (jt->elm[idx].child && (msg = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep, sep_len)))
+			return msg;
 		break;
 	case JSON_STRING:
 		// Make sure there is enough space for the value plus the separator plus the NULL byte
 		if (*l < jt->elm[idx].valuelen - 2 + sep_len + 1) {
-			char *p = *r - *ilen + *l;
+			char *p = *r - *ilen + *l, *nr;
 			*ilen *= 2;
-			*r = GDKrealloc(p, *ilen);
-			*r += *l;
+			if (!(nr = GDKrealloc(p, *ilen))) {
+				*r = p;
+				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			*r = nr + *l;
 			*l = *ilen - *l;
 		}
 		for (j = 1; j < jt->elm[idx].valuelen - 1; j++) {
@@ -1388,10 +1397,13 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 	default:
 		if (*l < jt->elm[idx].valuelen + sep_len + 1) {
 			size_t offset = *ilen - *l;
-			char *p = *r - offset;
+			char *p = *r - offset, *nr;
 			*ilen *= 2;
-			*r = GDKrealloc(p, *ilen);
-			*r += offset;
+			if (!(nr = GDKrealloc(p, *ilen))) {
+				*r = p;
+				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			*r = nr + offset;
 			*l = *ilen - offset;
 		}
 		memcpy(*r, jt->elm[idx].value, jt->elm[idx].valuelen);
@@ -1403,33 +1415,34 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 	}
 	assert(*l > 0);
 	**r = 0;
-	return *r;
+	return MAL_SUCCEED;
 }
 
 static str
 JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
-	JSON *jt;
 	size_t l, ilen, sep_len;
-	str s;
-
-	jt = JSONparse(*js);
+	str s, msg;
+	JSON *jt = JSONparse(*js);
 
 	CHECK_JSON(jt);
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
-	s = GDKmalloc(l);
-	if(s == NULL) {
+	if (!(s = GDKmalloc(l))) {
 		JSONfree(jt);
 		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	s = JSONplaintext(&s, &l, &ilen, jt, 0, *sep, sep_len);
+	msg = JSONplaintext(&s, &l, &ilen, jt, 0, *sep, sep_len);
+	JSONfree(jt);
+	if (msg) {
+		GDKfree(s);
+		return msg;
+	}
 	s -= ilen - l;
 	l = strlen(s);
 	if (l && sep_len)
 		s[l - sep_len] = 0;
 	*ret = s;
-	JSONfree(jt);
 	return MAL_SUCCEED;
 }
 
