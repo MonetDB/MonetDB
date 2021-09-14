@@ -418,8 +418,8 @@ struct Strimps {
 	Heap strimps;
 	uint8_t *sizes_base;	/* pointer into strimps heap (pair sizes)  */
 	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
-	void *strimps_base;	/* pointer into strimps heap (strimps start) */
-	/* strimps_base is a pointer to either a uint32_t or a uint64_t */
+	void *bitstrings_base;	/* pointer into strimps heap (bitstrings start) */
+	/* bitstrings_base is a pointer to uint64_t */
 };
 
 typedef struct {
