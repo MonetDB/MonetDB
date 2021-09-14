@@ -381,7 +381,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 				memcpy(h2, hpairs[i].pbytes, psize);
 				h2 += psize;
 			}
-			r->strimps_base = h2;
+			r->bitstrings_base = h2;
 			r->strimps.free = sz;
 
 			b->tstrimps = r;
@@ -400,7 +400,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 #define STRIMP_COMPLETE(b)			\
 	b->tstrimps != NULL &&			\
 		(b->tstrimps == (Strimps *)1 ||				\
-		 (b->tstrimps->strimps.free - ((char *)b->tstrimps->strimps_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount)
+		 (b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount)
 
 static bool
 BATcheckstrimps(BAT *b)
@@ -461,7 +461,7 @@ BATcheckstrimps(BAT *b)
 					    && HEAPload(&hp->strimps, nme, "tstrimps", false) == GDK_SUCCEED) {
 						hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
 						hp->pairs_base = hp->sizes_base + npairs;         /* pairs just after the offsets */
-						hp->strimps_base = hp->strimps.base + hsize;        /* bitmasks just after the pairs */
+						hp->bitstrings_base = hp->strimps.base + hsize;        /* bitmasks just after the pairs */
 
 						close(fd);
 						hp->strimps.parentid = b->batCacheid;
@@ -539,7 +539,7 @@ STRMPfilter(BAT *b, BAT *s, char *q)
 	 * (see the macro isIgnored).
 	 */
 	qbmask = STRMPmakebitstring(q, strmps);
-	bitstring_array = (uint64_t *)strmps->strimps_base;
+	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 
 	for (i = 0; i < ncand; i++) {
 		x = canditer_next(&ci);
@@ -672,7 +672,7 @@ STRMPcreate(BAT *b, BAT *s)
 	if ((h = STRMPcreateStrimpHeap(pb, s)) == NULL) {
 		return GDK_FAIL;
 	}
-	dh = (uint64_t *)h->strimps_base + b->hseqbase;
+	dh = (uint64_t *)h->bitstrings_base + b->hseqbase;
 
 	ncand = canditer_init(&ci, b, s);
 
