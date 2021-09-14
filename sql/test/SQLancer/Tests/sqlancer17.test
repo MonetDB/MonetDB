@@ -87,3 +87,73 @@ project (
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" BINARY LARGE OBJECT,"c1" DECIMAL(18,3))
+
+statement ok rowcount 3
+INSERT INTO "t2" VALUES (BINARY LARGE OBJECT 'D4A0', 1.000),(NULL, 1.000),(BINARY LARGE OBJECT '', 1.000)
+
+statement ok
+create view v0(vc0) as (values (interval '0' month)) with check option
+
+statement ok rowcount 3
+UPDATE t2 SET c1 = 1 FROM v0 WHERE NOT ((NULLIF("netmask"('243.197.122.2'), "hostmask"('186.223.199.22'))) IS NULL)
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE "t1" ("c0" BINARY LARGE OBJECT,"c1" INTERVAL SECOND,"c2" CHARACTER LARGE OBJECT)
+
+statement ok rowcount 8
+COPY 8 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+10	532548976.000	"3#*"
+NULL	NULL	"3)y_쁩4"
+NULL	1856447053.000	NULL
+NULL	479496423.000	NULL
+NULL	1330303297.000	NULL
+NULL	98123216.000	NULL
+NULL	1010163365.000	NULL
+5BCD	6.000	NULL
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" INTEGER,"c2" INET,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok rowcount 7
+COPY 7 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+-993571553	159.130.67.123
+1321672995	NULL
+0	247.170.21.12/1
+1612467504	219.100.91.237
+40	9.223.250.28
+1070403840	133.137.205.71
+861414840	NULL
+
+statement ok
+create view v4(vc0) as (values ("insert"(r'2', ((5)|(1571515754)), nullif(68, 0.681765350302749428834658829146064817905426025390625), r' ') not ilike
+nullif(case (select interval '1807439388' month from t1 as tt1l4n0, t2 as tt2l4n1) when sql_sub(interval '16' month, interval '169164132' month) then
+(select r'0.9840143051690606' from t1 as tt1l4n0 where false) when sql_sub(interval '2140361559' month, interval '1731030991' month) then least(r'yh', r'')
+when sql_add(interval '323468641' month, interval '484732283' month) then cast(interval '340353783' second as string(241)) when sql_min(null, interval '351381849' month)
+then "right"(r'0.6603113972580116', 1409573249) when abs(interval '41293241' month) then cast(1654332323 as string(452)) else nullif(r'', r'i') end, r'EI')))
+
+statement error GDK reported error: BATsubcross: more than one match
+UPDATE t1 SET c2 = 1 FROM v4 WHERE ((((((((INTERVAL '1' MONTH NOT IN ((SELECT INTERVAL '3' MONTH FROM v4)))AND(sys.md5(t1.c2) <> ANY(SELECT '1'))))
+AND (CASE WHEN (r'1810575798') BETWEEN '1' AND ((SELECT r'' WHERE TRUE)) THEN false ELSE true END))))))
+
+statement ok
+ROLLBACK
+
+query I rowsort
+SELECT 1 FROM t1 WHERE 2 IN (3, (SELECT 4 FROM (select 1) as v0(c0))) AND '8' <> ANY(SELECT '1') AND ('2' > (SELECT '' WHERE TRUE)) IS NULL
+----
+
+statement ok
+DROP TABLE t1
