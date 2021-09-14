@@ -4250,10 +4250,9 @@ static gdk_callback_list callback_list = {
 /*
  * @- Add a callback
  * Adds new callback to the callback list.
- * Returns the count of the callbacks in the callback_list.
  */
 gdk_return
-gdk_add_callback(char *name, callback_func *f, int argc, void *argv[], int
+gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 		interval)
 {
 
@@ -4303,10 +4302,9 @@ gdk_add_callback(char *name, callback_func *f, int argc, void *argv[], int
 /*
  * @- Remove a callback
  * Removes a callback from the callback list with a given name as an argument.
- * Returns the count of the callbacks in the callback_list.
  */
 gdk_return
-gdk_remove_callback(char *cb_name, callback_args_free_func *argsfree)
+gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 {
 	gdk_callback *curr = callback_list.head;
 	gdk_callback *prev = NULL;

@@ -2396,11 +2396,10 @@ typedef struct gdk_callback_list {
 	gdk_callback *head;
 } gdk_callback_list;
 
-typedef gdk_return callback_func(int argc, void *argv[]);
-typedef void callback_args_free_func(int argc, void *argv[]);
+typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
-gdk_return gdk_add_callback(char *name, callback_func *f, int argc, void
+gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
 		*argv[], int interval);
-gdk_return gdk_remove_callback(char *, callback_args_free_func *f);
+gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
 
 #endif /* _GDK_H_ */
