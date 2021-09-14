@@ -1312,8 +1312,10 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		if (*l < jt->elm[idx].valuelen - 2 + sep_len + 1) {
 			char *p = *r - *ilen + *l, *nr;
 			*ilen *= 2;
-			if (!(nr = GDKrealloc(p, *ilen)))
+			if (!(nr = GDKrealloc(p, *ilen))) {
+				*r = p;
 				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 			*r = nr + *l;
 			*l = *ilen - *l;
 		}
@@ -1397,8 +1399,10 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			size_t offset = *ilen - *l;
 			char *p = *r - offset, *nr;
 			*ilen *= 2;
-			if (!(nr = GDKrealloc(p, *ilen)))
+			if (!(nr = GDKrealloc(p, *ilen))) {
+				*r = p;
 				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 			*r = nr + offset;
 			*l = *ilen - offset;
 		}
