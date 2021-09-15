@@ -2377,93 +2377,30 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return JSONfoldKeyValue(ret, id, key, val);
 }
 
-static str
-JSONgroupStr(str *ret, const bat *bid)
-{
-	BAT *b;
-	BUN p, q;
-	const char *t = NULL;
-	size_t len, size = BUFSIZ, offset, cnt = 0;
-	str buf = GDKmalloc(size);
-	BATiter bi;
-	const char *err = NULL;
-	char temp[128] = "";
-	const double *val = NULL;
-
-	if (buf == NULL)
-		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(buf);
-		throw(MAL, "json.agg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
-
-	strcpy(buf, str_nil);
-	offset = 0;
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		int n = 0, nil = 0;
-
-		switch (b->ttype) {
-		case TYPE_str:
-			t = (const char *) BUNtvar(bi, p);
-			nil = (strNil(t));
-			break;
-		case TYPE_dbl:
-			val = (const double *) BUNtloc(bi, p);
-			nil = is_dbl_nil(*val);
-			if (!nil)
-				snprintf(temp, sizeof(temp), "%f", *val);
-			t = (const char *) temp;
-			break;
-		}
-
-		if (nil)
-			continue;
-		if (!cnt)
-			offset = snprintf(buf, size, "[ ");
-		len = strlen(t) + 1 + 4; /* closing bracket and optional ',' */
-		if (len >= size - offset) {
-			str nbuf;
-			size += len + 128;
-			nbuf = GDKrealloc(buf, size);
-			if (nbuf == NULL) {
-				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-				goto failed;
-			}
-			buf = nbuf;
-		}
-		if (cnt)
-			offset += snprintf(buf + offset, size - offset, ", ");
-		switch (b->ttype) {
-		case TYPE_str:
-			n = snprintf(buf + offset, size - offset, "\"%s\"", t);
-			break;
-		case TYPE_dbl:
-			n = snprintf(buf + offset, size - offset, "%s", t);
-			break;
-		}
-		cnt++;
-		offset += n;
-	}
-	bat_iterator_end(&bi);
-	if (cnt)
-		offset += snprintf(buf + offset, size - offset, " ]");
-	BBPunfix(b->batCacheid);
-	*ret = buf;
-	return MAL_SUCCEED;
-  failed:
-	bat_iterator_end(&bi);
-	BBPunfix(b->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "json.agg", "%s", err);
-}
-
-#define JSON_AGGR_CHECK_NEXT_LENGTH(EXTRA)	\
+#define JSON_STR_CPY	\
 	do {	\
-		len = strlen(v) + EXTRA;	\
+		for (; *v; v++) {	\
+			switch (*v) {	\
+			case '"':	\
+			case '\\':	\
+				*dst++ = '\\';	\
+				/* fall through */	\
+			default:	\
+				*dst++ = *v;	\
+				break;	\
+			case '\n':	\
+				*dst++ = '\\';	\
+				*dst++ = 'n';	\
+				break;	\
+			}	\
+		}	\
+	} while (0)
+
+#define JSON_AGGR_CHECK_NEXT_LENGTH(CALC)	\
+	do {	\
+		len = CALC;	\
 		if (len >= maxlen - buflen) {	\
-			maxlen = (maxlen + len + BUFSIZ + 8191) & ~8191;	\
+			maxlen = maxlen + len + BUFSIZ;	\
 			buf2 = GDKrealloc(buf, maxlen);	\
 			if (buf2 == NULL) {	\
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	\
@@ -2473,28 +2410,95 @@ JSONgroupStr(str *ret, const bat *bid)
 		}	\
 	} while (0)
 
+static str
+JSONgroupStr(str *ret, const bat *bid)
+{
+	BAT *b;
+	BUN p, q;
+	size_t len, maxlen = BUFSIZ, buflen = 0;
+	char *buf = GDKmalloc(maxlen), *buf2;
+	BATiter bi;
+	const char *err = NULL;
+	dbl *restrict vals;
+
+	if (buf == NULL)
+		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		GDKfree(buf);
+		throw(MAL, "json.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
+
+	bi = bat_iterator(b);
+	vals = (dbl*) Tloc(b, 0);
+	switch (b->ttype) {
+		case TYPE_str:
+			for (p = 0, q = BATcount(b); p < q; p++) {
+				const char *v = (const char *) BUNtvar(bi, p);
+
+				if (strNil(v))
+					continue;
+				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5); /* opening bracket and optional ',' */
+				char *dst = buf + buflen, *odst = dst;
+				if (buflen == 0)
+					*dst++ = '[';
+				else
+					*dst++ = ',';
+				*dst++ = ' ';
+				*dst++ = '"';
+				JSON_STR_CPY;
+				*dst++ = '"';
+				*dst = '\0';
+				buflen += (dst - odst);
+			}
+			break;
+		case TYPE_dbl:
+			for (p = 0, q = BATcount(b); p < q; p++) {
+				dbl val = vals[p];
+
+				if (is_dbl_nil(val))
+					continue;
+				JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3); /* opening bracket and optional ',' */
+				len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
+				buflen += len;
+			}
+			break;
+		default:
+			assert(0);
+	}
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	assert(maxlen > buflen + 3);
+	if (buflen > 0)
+		buflen += snprintf(buf + buflen, maxlen - buflen, " ]");
+	else
+		strcpy(buf, str_nil);
+	*ret = GDKstrdup(buf);
+	GDKfree(buf);
+	if (!*ret) /* Don't return a too large string */
+		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+  bunins_failed:
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "json.group", "%s", err);
+}
+
 static const char *
 JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 {
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
-	oid min, max;
-	BUN ngrp;
-	BUN nils = 0;
-	int isnil;
+	oid min, max, mapoff = 0, prev;
+	BUN ngrp, nils = 0, p, q, ncand;
 	struct canditer ci;
-	BUN ncand;
-	const char *v = NULL;
+	const char *err = NULL;
 	const oid *grps, *map;
-	oid mapoff = 0;
-	oid prev;
-	BUN p, q;
-	int freeb = 0, freeg = 0;
+	int freeb = 0, freeg = 0, isnil = 0;
 	char *buf = NULL, *buf2;
-	size_t buflen, maxlen, len;
-	const char *err;
-	char temp[128] = "";
-	const double *val = NULL;
+	size_t buflen, maxlen = BUFSIZ, len;
+	dbl *restrict vals;
 
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
@@ -2524,7 +2528,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 	}
 
-	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
 		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
@@ -2536,6 +2539,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	bi = bat_iterator(b);
+	vals = (dbl*) Tloc(b, 0);
 	if (g) {
 		/* stable sort g */
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, true) != GDK_SUCCEED) {
@@ -2554,53 +2558,64 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			mapoff = t2->tseqbase;
 		}
 		if (g && BATtdense(g)) {
-			for (p = 0, q = BATcount(g); p < q; p++) {
-				switch (b->ttype) {
-				case TYPE_str:
-					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
-					break;
-				case TYPE_dbl:
-					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] - mapoff : p));
-					if (!is_dbl_nil(*val)) {
-						snprintf(temp, sizeof(temp), "%f", *val);
-						v = (const char *) temp;
-					} else {
-						v = NULL;
-					}
-					break;
-				}
-				if (strNil(v)) {
-					if (skip_nils) {
-						/*
-						 * if q is 1 and the value is
-						 * null, then we need to fill
-						 * in a value. Otherwise
-						 * BATproject will fail.
-						 */
-						if ((p == 0) && (q == 1)) {
-							strcpy(buf, "[ null ]");
-							isnil = 1;
+			switch (b->ttype) {
+			case TYPE_str:
+				for (p = 0, q = BATcount(g); p < q; p++) {
+					const char *v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
+					if (strNil(v)) {
+						if (skip_nils) {
+							/*
+							* if q is 1 and the value is
+							* null, then we need to fill
+							* in a value. Otherwise
+							* BATproject will fail.
+							*/
+							if (p == 0 && q == 1)
+								strcpy(buf, "[ null ]");
+							else
+								continue;
 						} else {
-							continue;
+							strcpy(buf, str_nil);
+							nils = 1;
 						}
 					} else {
-						strcpy(buf, str_nil);
-						isnil = 1;
+						JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
+						char *dst = buf;
+						*dst++ = '[';
+						*dst++ = ' ';
+						*dst++ = '"';
+						JSON_STR_CPY;
+						*dst++ = '"';
+						*dst++ = ' ';
+						*dst++ = ']';
+						*dst = '\0';
 					}
-				} else {
-					switch (b->ttype) {
-					case TYPE_str:
-						JSON_AGGR_CHECK_NEXT_LENGTH(7);
-						snprintf(buf, maxlen, "[ \"%s\" ]", v);
-						break;
-					case TYPE_dbl:
-						JSON_AGGR_CHECK_NEXT_LENGTH(5);
-						snprintf(buf, maxlen, "[ %s ]", v);
-						break;
-					}
+					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
+						goto bunins_failed;
 				}
-				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
-					goto bunins_failed;
+				break;
+			case TYPE_dbl:
+				for (p = 0, q = BATcount(g); p < q; p++) {
+					dbl val = vals[(map ? (BUN) map[p] - mapoff : p)];
+					if (is_dbl_nil(val)) {
+						if (skip_nils) {
+							if (p == 0 && q == 1)
+								strcpy(buf, "[ null ]");
+							else
+								continue;
+						} else {
+							strcpy(buf, str_nil);
+							nils = 1;
+						}
+					} else {
+						snprintf(buf, maxlen, "[ %f ]", val);
+					}
+					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+				break;
+			default:
+				assert(0);
 			}
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
@@ -2611,130 +2626,121 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
-		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
-			if (p == 0) {
-				strncpy(buf + buflen, "[ ", maxlen - buflen);
-				buflen += 2;
-			}
 			if (p == q || grps[p] != prev) {
-				strncpy(buf + buflen, " ]", maxlen - buflen);
-				buflen += 2;
+				assert(maxlen > buflen + 3);
+				if (isnil) {
+					strcpy(buf, str_nil);
+					nils = 1;
+				} else if (buflen == 0) {
+					strcpy(buf + buflen, "[  ]");
+				} else {
+					strcpy(buf + buflen, " ]");
+				}
 				while (BATcount(bn) < prev - min) {
 					if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 						goto bunins_failed;
-					nils++;
+					nils = 1;
 				}
 				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
-				nils += strNil(buf);
-				strncpy(buf + buflen, str_nil, maxlen - buflen);
-				buflen = 0;
 				if (p == q)
 					break;
-				prev = grps[p];
-				strcpy(buf, "[ ");
-				buflen = 2;
+				buflen = 0;
 				isnil = 0;
+				prev = grps[p];
 			}
 			if (isnil)
 				continue;
 			switch (b->ttype) {
-			case TYPE_str:
-				v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
-				break;
-			case TYPE_dbl:
-				val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] : p + mapoff));
-				if (!is_dbl_nil(*val)) {
-					snprintf(temp, sizeof(temp), "%f", *val);
-					v = (const char *) temp;
+			case TYPE_str: {
+				const char *v = (const char *) BUNtvar(bi, p);
+				if (strNil(v)) {
+					if (skip_nils)
+						continue;
+					isnil = 1;
 				} else {
-					v = NULL;
+					JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5);
+					char *dst = buf + buflen, *odst = dst;
+					if (buflen == 0)
+						*dst++ = '[';
+					else
+						*dst++ = ',';
+					*dst++ = ' ';
+					*dst++ = '"';
+					JSON_STR_CPY;
+					*dst++ = '"';
+					*dst = '\0';
+					buflen += (dst - odst);
 				}
-				break;
-			}
-			if (strNil(v)) {
-				if (skip_nils)
-					continue;
-				strcpy(buf, str_nil);
-				isnil = 1;
-			} else {
-				switch (b->ttype) {
-				case TYPE_str:
-					if (buflen == 2) {
-						JSON_AGGR_CHECK_NEXT_LENGTH(3);
-						len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
-						buflen += len;
-					} else {
-						JSON_AGGR_CHECK_NEXT_LENGTH(5);
-						len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
-						buflen += len;
-					}
-					break;
-				case TYPE_dbl:
-					if (buflen == 2) {
-						JSON_AGGR_CHECK_NEXT_LENGTH(1);
-						len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
-						buflen += len;
-					} else {
-						JSON_AGGR_CHECK_NEXT_LENGTH(3);
-						len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
-						buflen += len;
-					}
-					break;
+			} break;
+			case TYPE_dbl: {
+				dbl val = vals[p];
+				if (is_dbl_nil(val)) {
+					if (skip_nils)
+						continue;
+					isnil = 1;
+				} else {
+					JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3);
+					len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
+					buflen += len;
 				}
+			} break;
+			default:
+				assert(0);
 			}
 		}
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = 0, q = p + BATcount(b); p < q; p++) {
-			switch (b->ttype) {
-			case TYPE_str:
-				v = (const char *) BUNtvar(bi, p);
-				break;
-			case TYPE_dbl:
-				val = (const double *) BUNtloc(bi, p);
-				if (!is_dbl_nil(*val)) {
-					snprintf(temp, sizeof(temp), "%f", *val);
-					v = (const char *) temp;
-				} else {
-					v = NULL;
+		switch (b->ttype) {
+		case TYPE_str:
+			for (p = 0, q = p + BATcount(b); p < q; p++) {
+				const char *v = (const char *) BUNtvar(bi, p);
+				if (strNil(v)) {
+					if (skip_nils)
+						continue;
+					nils = 1;
+					break;
 				}
-				break;
+				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5);
+				char *dst = buf + buflen, *odst = dst;
+				if (buflen == 0)
+					*dst++ = '[';
+				else
+					*dst++ = ',';
+				*dst++ = ' ';
+				*dst++ = '"';
+				JSON_STR_CPY;
+				*dst++ = '"';
+				*dst = '\0';
+				buflen += (dst - odst);
 			}
-
-			if (strNil(v)) {
-				if (skip_nils)
-					continue;
-				strcpy(buf, str_nil);
-				nils++;
-				break;
-			}
-			switch (b->ttype) {
-			case TYPE_str:
-				if (buflen == 2) {
-					JSON_AGGR_CHECK_NEXT_LENGTH(3);
-					len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
-					buflen += len;
-				} else {
-					JSON_AGGR_CHECK_NEXT_LENGTH(5);
-					len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
-					buflen += len;
+			break;
+		case TYPE_dbl:
+			for (p = 0, q = p + BATcount(b); p < q; p++) {
+				dbl val = vals[p];
+				if (is_dbl_nil(val)) {
+					if (skip_nils)
+						continue;
+					nils = 1;
+					break;
 				}
-				break;
-			case TYPE_dbl:
-				if (buflen == 2) {
-					JSON_AGGR_CHECK_NEXT_LENGTH(1);
-					len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
-					buflen += len;
-				} else {
-					JSON_AGGR_CHECK_NEXT_LENGTH(3);
-					len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
-					buflen += len;
-				}
-				break;
+				JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3);
+				len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
+				buflen += len;
 			}
+			break;
+		default:
+			assert(0);
+		}
+		assert(maxlen > buflen + 3);
+		if (nils) {
+			strcpy(buf, str_nil);
+		} else if (buflen == 0) {
+			strcpy(buf + buflen, "[  ]");
+		} else {
+			strcpy(buf + buflen, " ]");
 		}
 		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
@@ -2755,8 +2761,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(b->batCacheid);
 	if (freeg)
 		BBPunfix(g->batCacheid);
-	if (buf)
-		GDKfree(buf);
+	GDKfree(buf);
 	if (err && bn) {
 		BBPreclaim(bn);
 		bn = NULL;
