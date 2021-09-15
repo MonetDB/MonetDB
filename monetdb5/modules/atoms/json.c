@@ -396,7 +396,9 @@ JSONjson2str(str *ret, json *j)
 static str
 JSON2json(json *ret, const json *j)
 {
-	*ret = *j;
+	*ret = GDKstrdup(*j);
+	if (*ret == NULL)
+		throw(MAL, "json.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
