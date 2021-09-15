@@ -11126,6 +11126,7 @@
 [ "calc",	"iszero",	"pattern calc.iszero(X_0:int):bit ",	"CMDvarISZERO;",	"Unary check for zero of V"	]
 [ "calc",	"iszero",	"pattern calc.iszero(X_0:lng):bit ",	"CMDvarISZERO;",	"Unary check for zero of V"	]
 [ "calc",	"iszero",	"pattern calc.iszero(X_0:sht):bit ",	"CMDvarISZERO;",	"Unary check for zero of V"	]
+[ "calc",	"json",	"command calc.json(X_0:json):json ",	"JSON2json;",	"Convert JSON to JSON"	]
 [ "calc",	"json",	"command calc.json(X_0:str):json ",	"JSONstr2json;",	"Convert string to its JSON. Dealing with escape characters"	]
 [ "calc",	"length",	"command calc.length(X_0:str):int ",	"CMDstrlength;",	"Length of STRING"	]
 [ "calc",	"lng",	"pattern calc.lng(X_0:bit):lng ",	"CMDvarCONVERT;",	"Cast VALUE to lng"	]
