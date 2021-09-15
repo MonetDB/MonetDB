@@ -198,7 +198,7 @@ typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
-typedef void (*temp_del_tab_fptr) (sql_table *ft, ulng tid);
+typedef void (*temp_del_tab_fptr) (sql_trans *tr, sql_table *ft);
 
 /* backing struct for this interface */
 typedef struct store_functions {
