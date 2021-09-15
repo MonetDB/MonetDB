@@ -163,6 +163,16 @@ SELECT json."text"(JSON '""', '344567')
 ----
 (empty)
 
+query T nosort
+select json.text(json '[1,2,3,4]', null)
+----
+NULL
+
+query T nosort
+select json.text(null, '23131')
+----
+NULL
+
 statement ok
 START TRANSACTION
 
