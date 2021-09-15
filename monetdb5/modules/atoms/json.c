@@ -394,6 +394,13 @@ JSONjson2str(str *ret, json *j)
 }
 
 static str
+JSON2json(json *ret, const json *j)
+{
+	*ret = *j;
+	return MAL_SUCCEED;
+}
+
+static str
 JSONstr2json(json *ret, str *j)
 {
 	JSON *jt = JSONparse(*j);
@@ -645,7 +652,7 @@ JSONglue(str res, str r, char sep)
 	return n;
 }
 
-/* return NULL on no match, return (str) -1 on (malloc) failure */
+/* return NULL on no match, return (str) -1 on (malloc) failure, (str) -2 on stack overflow */
 static str
 JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 {
@@ -653,6 +660,8 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 	int i;
 	int cnt;
 
+	if (THRhighwater())
+		return (str) -2;
 	if (ti >= MAXTERMS)
 		return res;
 
@@ -697,7 +706,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 						r = (str) -1;
 				} else
 					r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1);
-				if (r == (str) -1) {
+				if (r == (str) -1 || r == (str) -2) {
 					GDKfree(res);
 					return r;
 				}
@@ -724,7 +733,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 							r = (str) -1;
 					} else
 						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1);
-					if (r == (str) -1) {
+					if (r == (str) -1 || r == (str) -2) {
 						GDKfree(res);
 						return r;
 					}
@@ -733,7 +742,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 				cnt++;
 			} else if (terms[ti].token == ANY_STEP && jt->elm[i].child) {
 				r = JSONmatch(jt, jt->elm[i].child, terms, ti);
-				if (r == (str) -1) {
+				if (r == (str) -1 || r == (str) -2) {
 					GDKfree(res);
 					return r;
 				}
@@ -777,12 +786,20 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
+	if (s == (char *) -2) {
+		msg = createException(MAL, "JSONfilterInternal", SQLSTATE(42000) "Expression too complex to parse");
+		goto bailout;
+	}
 	// process all other PATH expression
 	for (tidx++; tidx < MAXTERMS && terms[tidx].token; tidx++)
 		if (terms[tidx].token == END_STEP && tidx + 1 < MAXTERMS && terms[tidx + 1].token) {
 			s = JSONmatch(jt, 0, terms, ++tidx);
 			if (s == (char *) -1) {
 				msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (s == (char *) -2) {
+				msg = createException(MAL, "JSONfilterInternal", SQLSTATE(42000) "Expression too complex to parse");
 				goto bailout;
 			}
 			result = JSONglue(result, s, ',');
@@ -991,7 +1008,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 	if (jt->error)
 		return idx;
 	if (THRhighwater()) {
-		jt->error = createException(MAL, "json.parser", "expression too complex to parse");
+		jt->error = createException(MAL, "json.parser", SQLSTATE(42000) "Expression too complex to parse");
 		return idx;
 	}
 	skipblancs(j);
@@ -1191,8 +1208,14 @@ static str
 JSONlength(int *ret, json *j)
 {
 	int i, cnt = 0;
-	JSON *jt = JSONparse(*j);
+	JSON *jt;
 
+	if (strNil(*j)) {
+		*ret = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	jt = JSONparse(*j);
 	CHECK_JSON(jt);
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
@@ -1291,6 +1314,11 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 	size_t j, next_len, next_concat_len;
 	unsigned int u;
 	str msg = MAL_SUCCEED;
+
+	if (THRhighwater()) {
+		*r = *r - (*ilen - *l);
+		throw(MAL,"JSONplaintext", SQLSTATE(42000) "Expression too complex to parse");
+	}
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
@@ -1433,8 +1461,15 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
 	size_t l, ilen, sep_len;
 	str s, msg;
-	JSON *jt = JSONparse(*js);
+	JSON *jt;
 
+	if (strNil(*js) || strNil(*sep)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
+	jt = JSONparse(*js);
 	CHECK_JSON(jt);
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
@@ -1531,14 +1566,17 @@ JSONjson2number(dbl *ret, json *js)
 	dbl val = 0;
 	dbl *val_ptr = &val;
 	str tmp;
-	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper));
 
-	if (val_ptr == NULL) {
+	if (strNil(*js)) {
 		*ret = dbl_nil;
+		return MAL_SUCCEED;
 	}
-	else {
+
+	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper));
+	if (val_ptr == NULL)
+		*ret = dbl_nil;
+	else
 		*ret = val;
-	}
 
 	return MAL_SUCCEED;
 }
@@ -1550,13 +1588,16 @@ JSONjson2integer(lng *ret, json *js)
 	lng *val_ptr = &val;
 	str tmp;
 
-	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper));
-	if (val_ptr == NULL) {
+	if (strNil(*js)) {
 		*ret = lng_nil;
+		return MAL_SUCCEED;
 	}
-	else {
+
+	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper));
+	if (val_ptr == NULL)
+		*ret = lng_nil;
+	else
 		*ret = val;
-	}
 
 	return MAL_SUCCEED;
 }
@@ -1729,6 +1770,12 @@ JSONkeyArray(json *ret, json *js)
 	int i;
 	JSON *jt;
 
+	if (strNil(*js)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
 	jt = JSONparse(*js);		// already validated
 
 	CHECK_JSON(jt);
@@ -1825,6 +1872,12 @@ JSONvalueArray(json *ret, json *js)
 	str r;
 	int i;
 	JSON *jt;
+
+	if (strNil(*js)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 
 	jt = JSONparse(*js);		// already validated
 
@@ -2331,86 +2384,112 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return JSONfoldKeyValue(ret, id, key, val);
 }
 
+#define JSON_STR_CPY	\
+	do {	\
+		for (; *v; v++) {	\
+			switch (*v) {	\
+			case '"':	\
+			case '\\':	\
+				*dst++ = '\\';	\
+				/* fall through */	\
+			default:	\
+				*dst++ = *v;	\
+				break;	\
+			case '\n':	\
+				*dst++ = '\\';	\
+				*dst++ = 'n';	\
+				break;	\
+			}	\
+		}	\
+	} while (0)
+
+#define JSON_AGGR_CHECK_NEXT_LENGTH(CALC)	\
+	do {	\
+		len = CALC;	\
+		if (len >= maxlen - buflen) {	\
+			maxlen = maxlen + len + BUFSIZ;	\
+			buf2 = GDKrealloc(buf, maxlen);	\
+			if (buf2 == NULL) {	\
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	\
+				goto bunins_failed;	\
+			}	\
+			buf = buf2;	\
+		}	\
+	} while (0)
+
 static str
 JSONgroupStr(str *ret, const bat *bid)
 {
 	BAT *b;
 	BUN p, q;
-	const char *t = NULL;
-	size_t len, size = BUFSIZ, offset, cnt = 0;
-	str buf = GDKmalloc(size);
+	size_t len, maxlen = BUFSIZ, buflen = 0;
+	char *buf = GDKmalloc(maxlen), *buf2;
 	BATiter bi;
 	const char *err = NULL;
-	char temp[128] = "";
-	const double *val = NULL;
+	dbl *restrict vals;
 
 	if (buf == NULL)
 		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
-		throw(MAL, "json.agg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "json.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 
-	strcpy(buf, str_nil);
-	offset = 0;
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		int n = 0, nil = 0;
-
-		switch (b->ttype) {
+	vals = (dbl*) Tloc(b, 0);
+	switch (b->ttype) {
 		case TYPE_str:
-			t = (const char *) BUNtvar(bi, p);
-			nil = (strNil(t));
-			break;
-		case TYPE_dbl:
-			val = (const double *) BUNtloc(bi, p);
-			nil = is_dbl_nil(*val);
-			if (!nil)
-				snprintf(temp, sizeof(temp), "%f", *val);
-			t = (const char *) temp;
-			break;
-		}
+			for (p = 0, q = BATcount(b); p < q; p++) {
+				const char *v = (const char *) BUNtvar(bi, p);
 
-		if (nil)
-			continue;
-		if (!cnt)
-			offset = snprintf(buf, size, "[ ");
-		len = strlen(t) + 1 + 4; /* closing bracket and optional ',' */
-		if (len >= size - offset) {
-			str nbuf;
-			size += len + 128;
-			nbuf = GDKrealloc(buf, size);
-			if (nbuf == NULL) {
-				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-				goto failed;
+				if (strNil(v))
+					continue;
+				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5); /* opening bracket and optional ',' */
+				char *dst = buf + buflen, *odst = dst;
+				if (buflen == 0)
+					*dst++ = '[';
+				else
+					*dst++ = ',';
+				*dst++ = ' ';
+				*dst++ = '"';
+				JSON_STR_CPY;
+				*dst++ = '"';
+				*dst = '\0';
+				buflen += (dst - odst);
 			}
-			buf = nbuf;
-		}
-		if (cnt)
-			offset += snprintf(buf + offset, size - offset, ", ");
-		switch (b->ttype) {
-		case TYPE_str:
-			n = snprintf(buf + offset, size - offset, "\"%s\"", t);
 			break;
 		case TYPE_dbl:
-			n = snprintf(buf + offset, size - offset, "%s", t);
+			for (p = 0, q = BATcount(b); p < q; p++) {
+				dbl val = vals[p];
+
+				if (is_dbl_nil(val))
+					continue;
+				JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3); /* opening bracket and optional ',' */
+				len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
+				buflen += len;
+			}
 			break;
-		}
-		cnt++;
-		offset += n;
+		default:
+			assert(0);
 	}
 	bat_iterator_end(&bi);
-	if (cnt)
-		offset += snprintf(buf + offset, size - offset, " ]");
 	BBPunfix(b->batCacheid);
-	*ret = buf;
+	assert(maxlen > buflen + 3);
+	if (buflen > 0)
+		buflen += snprintf(buf + buflen, maxlen - buflen, " ]");
+	else
+		strcpy(buf, str_nil);
+	*ret = GDKstrdup(buf);
+	GDKfree(buf);
+	if (!*ret) /* Don't return a too large string */
+		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
-  failed:
+  bunins_failed:
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "json.agg", "%s", err);
+	throw(MAL, "json.group", "%s", err);
 }
 
 static const char *
@@ -2418,23 +2497,15 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 {
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
-	oid min, max;
-	BUN ngrp;
-	BUN nils = 0;
-	int isnil;
+	oid min, max, mapoff = 0, prev;
+	BUN ngrp, nils = 0, p, q, ncand;
 	struct canditer ci;
-	BUN ncand;
-	const char *v = NULL;
+	const char *err = NULL;
 	const oid *grps, *map;
-	oid mapoff = 0;
-	oid prev;
-	BUN p, q;
-	int freeb = 0, freeg = 0;
+	int freeb = 0, freeg = 0, isnil = 0;
 	char *buf = NULL, *buf2;
-	size_t buflen, maxlen, len;
-	const char *err;
-	char temp[128] = "";
-	const double *val = NULL;
+	size_t buflen, maxlen = BUFSIZ, len;
+	dbl *restrict vals;
 
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
@@ -2450,21 +2521,20 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (s) {
 		b = BATproject(s, b);
 		if (b == NULL) {
-			err = "internal project failed";
+			err = GDK_EXCEPTION;
 			goto out;
 		}
 		freeb = 1;
 		if (g) {
 			g = BATproject(s, g);
 			if (g == NULL) {
-				err = "internal project failed";
+				err = GDK_EXCEPTION;
 				goto out;
 			}
 			freeg = 1;
 		}
 	}
 
-	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
 		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
@@ -2476,6 +2546,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	bi = bat_iterator(b);
+	vals = (dbl*) Tloc(b, 0);
 	if (g) {
 		/* stable sort g */
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, true) != GDK_SUCCEED) {
@@ -2494,61 +2565,64 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			mapoff = t2->tseqbase;
 		}
 		if (g && BATtdense(g)) {
-			for (p = 0, q = BATcount(g); p < q; p++) {
-				switch (b->ttype) {
-				case TYPE_str:
-					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
-					break;
-				case TYPE_dbl:
-					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] - mapoff : p));
-					if (!is_dbl_nil(*val)) {
-						snprintf(temp, sizeof(temp), "%f", *val);
-						v = (const char *) temp;
-					} else {
-						v = NULL;
-					}
-					break;
-				}
-				if (strNil(v)) {
-					if (skip_nils) {
-						/*
-						 * if q is 1 and the value is
-						 * null, then we need to fill
-						 * in a value. Otherwise
-						 * BATproject will fail.
-						 */
-						if ((p == 0) && (q == 1)) {
-							strcpy(buf, "[ null ]");
-							isnil = 1;
+			switch (b->ttype) {
+			case TYPE_str:
+				for (p = 0, q = BATcount(g); p < q; p++) {
+					const char *v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
+					if (strNil(v)) {
+						if (skip_nils) {
+							/*
+							* if q is 1 and the value is
+							* null, then we need to fill
+							* in a value. Otherwise
+							* BATproject will fail.
+							*/
+							if (p == 0 && q == 1)
+								strcpy(buf, "[ null ]");
+							else
+								continue;
 						} else {
-							continue;
+							strcpy(buf, str_nil);
+							nils = 1;
 						}
 					} else {
-						strcpy(buf, str_nil);
-						isnil = 1;
+						JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
+						char *dst = buf;
+						*dst++ = '[';
+						*dst++ = ' ';
+						*dst++ = '"';
+						JSON_STR_CPY;
+						*dst++ = '"';
+						*dst++ = ' ';
+						*dst++ = ']';
+						*dst = '\0';
 					}
-				} else {
-					len = strlen(v);
-					if (len + 7 >= maxlen) {
-						maxlen += len + BUFSIZ;
-						buf2 = GDKrealloc(buf, maxlen);
-						if (buf2 == NULL) {
-							err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-							goto bunins_failed;
-						}
-						buf = buf2;
-					}
-					switch (b->ttype) {
-					case TYPE_str:
-						snprintf(buf, maxlen, "[ \"%s\" ]", v);
-						break;
-					case TYPE_dbl:
-						snprintf(buf, maxlen, "[ %s ]", v);
-						break;
-					}
+					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
+						goto bunins_failed;
 				}
-				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
-					goto bunins_failed;
+				break;
+			case TYPE_dbl:
+				for (p = 0, q = BATcount(g); p < q; p++) {
+					dbl val = vals[(map ? (BUN) map[p] - mapoff : p)];
+					if (is_dbl_nil(val)) {
+						if (skip_nils) {
+							if (p == 0 && q == 1)
+								strcpy(buf, "[ null ]");
+							else
+								continue;
+						} else {
+							strcpy(buf, str_nil);
+							nils = 1;
+						}
+					} else {
+						snprintf(buf, maxlen, "[ %f ]", val);
+					}
+					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+				break;
+			default:
+				assert(0);
 			}
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
@@ -2559,142 +2633,121 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
-		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
-			if (p == 0) {
-				strncpy(buf + buflen, "[ ", maxlen - buflen);
-				buflen += 2;
-			}
 			if (p == q || grps[p] != prev) {
-				strncpy(buf + buflen, " ]", maxlen - buflen);
-				buflen += 2;
+				assert(maxlen > buflen + 3);
+				if (isnil) {
+					strcpy(buf, str_nil);
+					nils = 1;
+				} else if (buflen == 0) {
+					strcpy(buf + buflen, "[  ]");
+				} else {
+					strcpy(buf + buflen, " ]");
+				}
 				while (BATcount(bn) < prev - min) {
 					if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED)
 						goto bunins_failed;
-					nils++;
+					nils = 1;
 				}
 				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
-				nils += strNil(buf);
-				strncpy(buf + buflen, str_nil, maxlen - buflen);
-				buflen = 0;
 				if (p == q)
 					break;
-				prev = grps[p];
-				strncpy(buf + buflen, "[ ", maxlen - buflen);
-				buflen += 2;
+				buflen = 0;
 				isnil = 0;
+				prev = grps[p];
 			}
 			if (isnil)
 				continue;
 			switch (b->ttype) {
-			case TYPE_str:
-				v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
-				break;
-			case TYPE_dbl:
-				val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] : p + mapoff));
-				if (!is_dbl_nil(*val)) {
-					snprintf(temp, sizeof(temp), "%f", *val);
-					v = (const char *) temp;
+			case TYPE_str: {
+				const char *v = (const char *) BUNtvar(bi, p);
+				if (strNil(v)) {
+					if (skip_nils)
+						continue;
+					isnil = 1;
 				} else {
-					v = NULL;
+					JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5);
+					char *dst = buf + buflen, *odst = dst;
+					if (buflen == 0)
+						*dst++ = '[';
+					else
+						*dst++ = ',';
+					*dst++ = ' ';
+					*dst++ = '"';
+					JSON_STR_CPY;
+					*dst++ = '"';
+					*dst = '\0';
+					buflen += (dst - odst);
 				}
-				break;
-			}
-			if (strNil(v)) {
-				if (skip_nils)
-					continue;
-				strncpy(buf, str_nil, buflen);
-				isnil = 1;
-			} else {
-				len = strlen(v);
-				if (len >= maxlen - buflen) {
-					maxlen += len + BUFSIZ;
-					buf2 = GDKrealloc(buf, maxlen);
-					if (buf2 == NULL) {
-						err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-						goto bunins_failed;
-					}
-					buf = buf2;
+			} break;
+			case TYPE_dbl: {
+				dbl val = vals[p];
+				if (is_dbl_nil(val)) {
+					if (skip_nils)
+						continue;
+					isnil = 1;
+				} else {
+					JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3);
+					len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
+					buflen += len;
 				}
-				switch (b->ttype) {
-				case TYPE_str:
-					if (buflen == 2) {
-						len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
-						buflen += len;
-					} else {
-						len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
-						buflen += len;
-					}
-					break;
-				case TYPE_dbl:
-					if (buflen == 2) {
-						len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
-						buflen += len;
-					} else {
-						len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
-						buflen += len;
-					}
-					break;
-				}
+			} break;
+			default:
+				assert(0);
 			}
 		}
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = 0, q = p + BATcount(b); p < q; p++) {
-			switch (b->ttype) {
-			case TYPE_str:
-				v = (const char *) BUNtvar(bi, p);
-				break;
-			case TYPE_dbl:
-				val = (const double *) BUNtloc(bi, p);
-				if (!is_dbl_nil(*val)) {
-					snprintf(temp, sizeof(temp), "%f", *val);
-					v = (const char *) temp;
-				} else {
-					v = NULL;
+		switch (b->ttype) {
+		case TYPE_str:
+			for (p = 0, q = p + BATcount(b); p < q; p++) {
+				const char *v = (const char *) BUNtvar(bi, p);
+				if (strNil(v)) {
+					if (skip_nils)
+						continue;
+					nils = 1;
+					break;
 				}
-				break;
+				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5);
+				char *dst = buf + buflen, *odst = dst;
+				if (buflen == 0)
+					*dst++ = '[';
+				else
+					*dst++ = ',';
+				*dst++ = ' ';
+				*dst++ = '"';
+				JSON_STR_CPY;
+				*dst++ = '"';
+				*dst = '\0';
+				buflen += (dst - odst);
 			}
-
-			if (strNil(v)) {
-				if (skip_nils)
-					continue;
-				strncpy(buf, str_nil, buflen);
-				nils++;
-				break;
-			}
-			len = strlen(v);
-			if (len >= maxlen - buflen) {
-				maxlen += len + BUFSIZ;
-				buf2 = GDKrealloc(buf, maxlen);
-				if (buf2 == NULL) {
-					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
-					goto bunins_failed;
+			break;
+		case TYPE_dbl:
+			for (p = 0, q = p + BATcount(b); p < q; p++) {
+				dbl val = vals[p];
+				if (is_dbl_nil(val)) {
+					if (skip_nils)
+						continue;
+					nils = 1;
+					break;
 				}
-				buf = buf2;
+				JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3);
+				len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
+				buflen += len;
 			}
-			switch (b->ttype) {
-			case TYPE_str:
-				if (buflen == 2) {
-					len = snprintf(buf + buflen, maxlen - buflen, "\"%s\"", v);
-					buflen += len;
-				} else {
-					len = snprintf(buf + buflen, maxlen - buflen, ", \"%s\"", v);
-					buflen += len;
-				}
-				break;
-			case TYPE_dbl:
-				if (buflen == 2) {
-					len = snprintf(buf + buflen, maxlen - buflen, "%s", v);
-					buflen += len;
-				} else {
-					len = snprintf(buf + buflen, maxlen - buflen, ", %s", v);
-					buflen += len;
-				}
-				break;
-			}
+			break;
+		default:
+			assert(0);
+		}
+		assert(maxlen > buflen + 3);
+		if (nils) {
+			strcpy(buf, str_nil);
+		} else if (buflen == 0) {
+			strcpy(buf + buflen, "[  ]");
+		} else {
+			strcpy(buf + buflen, " ]");
 		}
 		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
@@ -2715,8 +2768,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(b->batCacheid);
 	if (freeg)
 		BBPunfix(g->batCacheid);
-	if (buf)
-		GDKfree(buf);
+	GDKfree(buf);
 	if (err && bn) {
 		BBPreclaim(bn);
 		bn = NULL;
@@ -2777,6 +2829,7 @@ static mel_atom json_init_atoms[] = {
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
+ command("calc", "json", JSON2json, false, "Convert JSON to JSON", args(1,2, arg("",json),arg("s",json))),
  command("calc", "json", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
  command("json", "str", JSONjson2str, false, "Convert JSON to its string equivalent. Dealing with escape characters", args(1,2, arg("",str),arg("j",json))),
  command("json", "text", JSONjson2text, false, "Convert JSON values to their plain string equivalent.", args(1,2, arg("",str),arg("j",json))),
