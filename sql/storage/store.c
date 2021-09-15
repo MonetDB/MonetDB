@@ -3553,6 +3553,11 @@ sql_trans_destroy(sql_trans *tr)
 	sqlstore *store = tr->store;
 	store_lock(store);
 	cs_destroy(&tr->localtmps, tr->store);
+	struct os_iter oi;
+	os_iterator(&oi, tr->tmp->tables, tr, NULL);
+	for (sql_table *t = (sql_table *) oi_next(&oi); t; t = (sql_table *) oi_next(&oi)) {
+		store->storage_api.temp_del_tab(t, tr->tid);
+	}
 	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
 	_DELETE(tr);

@@ -198,6 +198,8 @@ typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
+typedef void (*temp_del_tab_fptr) (sql_table *ft, ulng tid);
+
 /* backing struct for this interface */
 typedef struct store_functions {
 
@@ -245,6 +247,8 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
+
+	temp_del_tab_fptr temp_del_tab;
 } store_functions;
 
 typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
