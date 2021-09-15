@@ -945,7 +945,6 @@ GDKinit(opt *set, int setlen, bool embedded)
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}
-		first = false;
 	} else {
 		/* BBP was locked by BBPexit() */
 		BBPunlock();
@@ -996,6 +995,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	if (BBPinit(first) != GDK_SUCCEED)
 		return GDK_FAIL;
+	first = false;
 
 	if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 		GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
