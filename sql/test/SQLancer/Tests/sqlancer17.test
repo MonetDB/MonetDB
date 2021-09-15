@@ -173,6 +173,11 @@ select json.text(null, '23131')
 ----
 NULL
 
+query T nosort
+select json.isvalid(json.tojsonarray(x)) from (values ('a"'),('"b'),('c"')) x(x)
+----
+True
+
 statement ok
 START TRANSACTION
 
