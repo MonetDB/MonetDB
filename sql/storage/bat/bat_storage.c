@@ -3996,6 +3996,42 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	return segments2cands(s->segs->h, tr, t, start, end);
 }
 
+static void
+temp_del_tab(sql_table *t, ulng tid)
+{
+	for (storage *d = ATOMIC_PTR_GET(&t->data), *p = NULL, *n = NULL; d; d = n) {
+		n = d->next;
+		if (d->cs.ts == tid) {
+			if (p == NULL) {
+				ATOMIC_PTR_SET(&t->data, n);
+			} else {
+				p->next = n;
+			}
+			d->next = NULL;
+			destroy_storage(d);
+		} else {
+			p = d;
+		}
+	}
+	for (node *nd = t->columns->l->h; nd; nd = nd->next) {
+		sql_column *c = nd->data;
+		for (sql_delta *d = ATOMIC_PTR_GET(&c->data), *p = NULL, *n = NULL; d; d = n) {
+			n = d->next;
+			if (d->cs.ts == tid) {
+				if (p == NULL) {
+					ATOMIC_PTR_SET(&c->data, n);
+				} else {
+					p->next = n;
+				}
+				d->next = NULL;
+				destroy_delta(d, false);
+			} else {
+				p = d;
+			}
+		}
+	}
+}
+
 void
 bat_storage_init( store_functions *sf)
 {
@@ -4040,6 +4076,8 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
+
+	sf->temp_del_tab = &temp_del_tab;
 }
 
 #if 0
