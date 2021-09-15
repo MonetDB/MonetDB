@@ -3997,8 +3997,10 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 }
 
 static void
-temp_del_tab(sql_table *t, ulng tid)
+temp_del_tab(sql_trans *tr, sql_table *t)
 {
+	ulng tid = tr->tid;
+	lock_table(tr->store, t->base.id);
 	for (storage *d = ATOMIC_PTR_GET(&t->data), *p = NULL, *n = NULL; d; d = n) {
 		n = d->next;
 		if (d->cs.ts == tid) {
@@ -4013,8 +4015,10 @@ temp_del_tab(sql_table *t, ulng tid)
 			p = d;
 		}
 	}
+	unlock_table(tr->store, t->base.id);
 	for (node *nd = t->columns->l->h; nd; nd = nd->next) {
 		sql_column *c = nd->data;
+		lock_column(tr->store, c->base.id);
 		for (sql_delta *d = ATOMIC_PTR_GET(&c->data), *p = NULL, *n = NULL; d; d = n) {
 			n = d->next;
 			if (d->cs.ts == tid) {
@@ -4029,6 +4033,7 @@ temp_del_tab(sql_table *t, ulng tid)
 				p = d;
 			}
 		}
+		unlock_column(tr->store, c->base.id);
 	}
 }
 
