@@ -645,7 +645,7 @@ JSONglue(str res, str r, char sep)
 	return n;
 }
 
-/* return NULL on no match, return (str) -1 on (malloc) failure */
+/* return NULL on no match, return (str) -1 on (malloc) failure, (str) -2 on stack overflow */
 static str
 JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 {
@@ -653,6 +653,8 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 	int i;
 	int cnt;
 
+	if (THRhighwater())
+		return (str) -2;
 	if (ti >= MAXTERMS)
 		return res;
 
@@ -697,7 +699,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 						r = (str) -1;
 				} else
 					r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1);
-				if (r == (str) -1) {
+				if (r == (str) -1 || r == (str) -2) {
 					GDKfree(res);
 					return r;
 				}
@@ -724,7 +726,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 							r = (str) -1;
 					} else
 						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1);
-					if (r == (str) -1) {
+					if (r == (str) -1 || r == (str) -2) {
 						GDKfree(res);
 						return r;
 					}
@@ -733,7 +735,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 				cnt++;
 			} else if (terms[ti].token == ANY_STEP && jt->elm[i].child) {
 				r = JSONmatch(jt, jt->elm[i].child, terms, ti);
-				if (r == (str) -1) {
+				if (r == (str) -1 || r == (str) -2) {
 					GDKfree(res);
 					return r;
 				}
@@ -777,12 +779,20 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
+	if (s == (char *) -2) {
+		msg = createException(MAL, "JSONfilterInternal", SQLSTATE(42000) "Expression too complex to parse");
+		goto bailout;
+	}
 	// process all other PATH expression
 	for (tidx++; tidx < MAXTERMS && terms[tidx].token; tidx++)
 		if (terms[tidx].token == END_STEP && tidx + 1 < MAXTERMS && terms[tidx + 1].token) {
 			s = JSONmatch(jt, 0, terms, ++tidx);
 			if (s == (char *) -1) {
 				msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (s == (char *) -2) {
+				msg = createException(MAL, "JSONfilterInternal", SQLSTATE(42000) "Expression too complex to parse");
 				goto bailout;
 			}
 			result = JSONglue(result, s, ',');
@@ -991,7 +1001,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 	if (jt->error)
 		return idx;
 	if (THRhighwater()) {
-		jt->error = createException(MAL, "json.parser", "expression too complex to parse");
+		jt->error = createException(MAL, "json.parser", SQLSTATE(42000) "Expression too complex to parse");
 		return idx;
 	}
 	skipblancs(j);
@@ -1191,8 +1201,14 @@ static str
 JSONlength(int *ret, json *j)
 {
 	int i, cnt = 0;
-	JSON *jt = JSONparse(*j);
+	JSON *jt;
 
+	if (strNil(*j)) {
+		*ret = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	jt = JSONparse(*j);
 	CHECK_JSON(jt);
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
@@ -1291,6 +1307,11 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 	size_t j, next_len, next_concat_len;
 	unsigned int u;
 	str msg = MAL_SUCCEED;
+
+	if (THRhighwater()) {
+		*r = *r - (*ilen - *l);
+		throw(MAL,"JSONplaintext", SQLSTATE(42000) "Expression too complex to parse");
+	}
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
@@ -1433,8 +1454,15 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
 	size_t l, ilen, sep_len;
 	str s, msg;
-	JSON *jt = JSONparse(*js);
+	JSON *jt;
 
+	if (strNil(*js) || strNil(*sep)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
+	jt = JSONparse(*js);
 	CHECK_JSON(jt);
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
@@ -1531,14 +1559,17 @@ JSONjson2number(dbl *ret, json *js)
 	dbl val = 0;
 	dbl *val_ptr = &val;
 	str tmp;
-	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper));
 
-	if (val_ptr == NULL) {
+	if (strNil(*js)) {
 		*ret = dbl_nil;
+		return MAL_SUCCEED;
 	}
-	else {
+
+	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper));
+	if (val_ptr == NULL)
+		*ret = dbl_nil;
+	else
 		*ret = val;
-	}
 
 	return MAL_SUCCEED;
 }
@@ -1550,13 +1581,16 @@ JSONjson2integer(lng *ret, json *js)
 	lng *val_ptr = &val;
 	str tmp;
 
-	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper));
-	if (val_ptr == NULL) {
+	if (strNil(*js)) {
 		*ret = lng_nil;
+		return MAL_SUCCEED;
 	}
-	else {
+
+	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper));
+	if (val_ptr == NULL)
+		*ret = lng_nil;
+	else
 		*ret = val;
-	}
 
 	return MAL_SUCCEED;
 }
@@ -1729,6 +1763,12 @@ JSONkeyArray(json *ret, json *js)
 	int i;
 	JSON *jt;
 
+	if (strNil(*js)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
 	jt = JSONparse(*js);		// already validated
 
 	CHECK_JSON(jt);
@@ -1825,6 +1865,12 @@ JSONvalueArray(json *ret, json *js)
 	str r;
 	int i;
 	JSON *jt;
+
+	if (strNil(*js)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 
 	jt = JSONparse(*js);		// already validated
 
