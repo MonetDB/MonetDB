@@ -394,6 +394,13 @@ JSONjson2str(str *ret, json *j)
 }
 
 static str
+JSON2json(json *ret, const json *j)
+{
+	*ret = *j;
+	return MAL_SUCCEED;
+}
+
+static str
 JSONstr2json(json *ret, str *j)
 {
 	JSON *jt = JSONparse(*j);
@@ -2822,6 +2829,7 @@ static mel_atom json_init_atoms[] = {
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
+ command("calc", "json", JSON2json, false, "Convert JSON to JSON", args(1,2, arg("",json),arg("s",json))),
  command("calc", "json", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
  command("json", "str", JSONjson2str, false, "Convert JSON to its string equivalent. Dealing with escape characters", args(1,2, arg("",str),arg("j",json))),
  command("json", "text", JSONjson2text, false, "Convert JSON values to their plain string equivalent.", args(1,2, arg("",str),arg("j",json))),

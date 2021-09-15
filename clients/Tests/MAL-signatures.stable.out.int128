@@ -11134,6 +11134,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "calc",	"iszero",	"pattern calc.iszero(X_0:int):bit ",	"CMDvarISZERO;",	""	]
 [ "calc",	"iszero",	"pattern calc.iszero(X_0:lng):bit ",	"CMDvarISZERO;",	""	]
 [ "calc",	"iszero",	"pattern calc.iszero(X_0:sht):bit ",	"CMDvarISZERO;",	""	]
+[ "calc",	"json",	"command calc.json(X_0:json):json ",	"JSON2json;",	""	]
 [ "calc",	"json",	"command calc.json(X_0:str):json ",	"JSONstr2json;",	""	]
 [ "calc",	"length",	"command calc.length(X_0:str):int ",	"CMDstrlength;",	""	]
 [ "calc",	"lng",	"pattern calc.lng(X_0:bit):lng ",	"CMDvarCONVERT;",	""	]
