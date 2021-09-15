@@ -2530,13 +2530,12 @@ create_del(sql_trans *tr, sql_table *t)
 	if (!bat) {
 		new = 1;
 		bat = ZNEW(storage);
-		ATOMIC_PTR_SET(&t->data, bat);
 		if(!bat)
 			return LOG_ERR;
+		ATOMIC_PTR_SET(&t->data, bat);
 		bat->cs.refcnt = 1;
-	}
-	if (new)
 		bat->cs.ts = tr->tid;
+	}
 
 	if (!isNew(t) && !isTempTable(t)) {
 		bat->cs.ts = tr->ts;
