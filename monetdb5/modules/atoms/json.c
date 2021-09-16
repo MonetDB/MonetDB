@@ -2436,6 +2436,7 @@ JSONgroupStr(str *ret, const bat *bid)
 		GDKfree(buf);
 		throw(MAL, "json.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	assert(maxlen > 256); /* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 
 	bi = bat_iterator(b);
@@ -2447,7 +2448,8 @@ JSONgroupStr(str *ret, const bat *bid)
 
 				if (strNil(v))
 					continue;
-				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5); /* opening bracket and optional ',' */
+				/* '[' or ',' plus space and null terminator and " ]" final string */
+				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
 				char *dst = buf + buflen, *odst = dst;
 				if (buflen == 0)
 					*dst++ = '[';
@@ -2457,7 +2459,6 @@ JSONgroupStr(str *ret, const bat *bid)
 				*dst++ = '"';
 				JSON_STR_CPY;
 				*dst++ = '"';
-				*dst = '\0';
 				buflen += (dst - odst);
 			}
 			break;
@@ -2467,9 +2468,16 @@ JSONgroupStr(str *ret, const bat *bid)
 
 				if (is_dbl_nil(val))
 					continue;
-				JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3); /* opening bracket and optional ',' */
-				len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
-				buflen += len;
+				/* '[' or ',' plus space and null terminator and " ]" final string */
+				JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
+				char *dst = buf + buflen;
+				if (buflen == 0)
+					*dst++ = '[';
+				else
+					*dst++ = ',';
+				*dst++ = ' ';
+				buflen += 2;
+				buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
 			}
 			break;
 		default:
@@ -2477,9 +2485,8 @@ JSONgroupStr(str *ret, const bat *bid)
 	}
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
-	assert(maxlen > buflen + 3);
 	if (buflen > 0)
-		buflen += snprintf(buf + buflen, maxlen - buflen, " ]");
+		strcpy(buf + buflen, " ]");
 	else
 		strcpy(buf, str_nil);
 	*ret = GDKstrdup(buf);
@@ -2509,6 +2516,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	size_t buflen, maxlen = BUFSIZ, len;
 	dbl *restrict vals;
 
+	assert(maxlen > 256); /* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		return err;
@@ -2617,7 +2625,13 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 							nils = 1;
 						}
 					} else {
-						snprintf(buf, maxlen, "[ %f ]", val);
+						char *dst = buf;
+						*dst++ = '[';
+						*dst++ = ' ';
+						dst += sprintf(dst, "%f", val);
+						*dst++ = ' ';
+						*dst++ = ']';
+						*dst = '\0';
 					}
 					if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 						goto bunins_failed;
@@ -2637,12 +2651,11 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		prev = grps[0];
 		for (p = 0, q = BATcount(g); p <= q; p++) {
 			if (p == q || grps[p] != prev) {
-				assert(maxlen > buflen + 3);
 				if (isnil) {
 					strcpy(buf, str_nil);
 					nils = 1;
 				} else if (buflen == 0) {
-					strcpy(buf + buflen, "[  ]");
+					strcpy(buf, "[  ]");
 				} else {
 					strcpy(buf + buflen, " ]");
 				}
@@ -2669,7 +2682,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						continue;
 					isnil = 1;
 				} else {
-					JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5);
+					/* '[' or ',' plus space and null terminator and " ]" final string */
+					JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
 					char *dst = buf + buflen, *odst = dst;
 					if (buflen == 0)
 						*dst++ = '[';
@@ -2679,7 +2693,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					*dst++ = '"';
 					JSON_STR_CPY;
 					*dst++ = '"';
-					*dst = '\0';
 					buflen += (dst - odst);
 				}
 			} break;
@@ -2690,9 +2703,16 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						continue;
 					isnil = 1;
 				} else {
-					JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3);
-					len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
-					buflen += len;
+					/* '[' or ',' plus space and null terminator and " ]" final string */
+					JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
+					char *dst = buf + buflen;
+					if (buflen == 0)
+						*dst++ = '[';
+					else
+						*dst++ = ',';
+					*dst++ = ' ';
+					buflen += 2;
+					buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
 				}
 			} break;
 			default:
@@ -2712,7 +2732,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					nils = 1;
 					break;
 				}
-				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 5);
+				/* '[' or ',' plus space and null terminator and " ]" final string */
+				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
 				char *dst = buf + buflen, *odst = dst;
 				if (buflen == 0)
 					*dst++ = '[';
@@ -2722,7 +2743,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				*dst++ = '"';
 				JSON_STR_CPY;
 				*dst++ = '"';
-				*dst = '\0';
 				buflen += (dst - odst);
 			}
 			break;
@@ -2735,19 +2755,25 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					nils = 1;
 					break;
 				}
-				JSON_AGGR_CHECK_NEXT_LENGTH(128 + 3);
-				len = snprintf(buf + buflen, maxlen - buflen, "%c %f", buflen == 0 ? '[' : ',', val);
-				buflen += len;
+				/* '[' or ',' plus space and null terminator and " ]" final string */
+				JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
+				char *dst = buf + buflen;
+				if (buflen == 0)
+					*dst++ = '[';
+				else
+					*dst++ = ',';
+				*dst++ = ' ';
+				buflen += 2;
+				buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
 			}
 			break;
 		default:
 			assert(0);
 		}
-		assert(maxlen > buflen + 3);
 		if (nils) {
 			strcpy(buf, str_nil);
 		} else if (buflen == 0) {
-			strcpy(buf + buflen, "[  ]");
+			strcpy(buf, "[  ]");
 		} else {
 			strcpy(buf + buflen, " ]");
 		}
