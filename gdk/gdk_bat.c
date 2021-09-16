@@ -701,12 +701,18 @@ BATdestroy(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	GDKfree(b->tvheap);
+	if (b->tvheap) {
+		ATOMIC_DESTROY(&b->tvheap->refs);
+		GDKfree(b->tvheap);
+	}
 	PROPdestroy(b);
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
-	GDKfree(b->theap);
+	if (b->theap) {
+		ATOMIC_DESTROY(&b->theap->refs);
+		GDKfree(b->theap);
+	}
 	GDKfree(b);
 }
 
@@ -797,7 +803,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
 	if (!writable &&
-	    role == b->batRole &&
+	    role == TRANSIENT &&
 	    b->batRestricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||

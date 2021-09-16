@@ -340,11 +340,15 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	if (temp == SQL_DECLARED_TABLE && ol_length(t->keys))
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
 
-	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
-								t->sz, t->properties);
-	if (!nt)
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
-
+	switch (sql_trans_create_table(&nt, sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action, t->sz, t->properties)) {
+		case -1:
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
+		default:
+			break;
+	}
 	osa = sql->sa;
 	sql->sa = sql->ta;
 	/* first check default values */
@@ -416,7 +420,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		}
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
-	if (check == -1) {
+	if (check == -4) {
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
@@ -558,8 +562,8 @@ str
 create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
-	sql_table *t;
-	sql_schema *s;
+	sql_table *t = NULL;
+	sql_schema *s = NULL;
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -574,8 +578,15 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)))
-		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
+	switch (mvc_create_table(&t, sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)) {
+		case -1:
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: transaction conflict detected");
+		default:
+			break;
+	}
 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
@@ -594,8 +605,15 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 		if (columns[i].name && columns[i].name[0] == '%')
 			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
-		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe)))
-			throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
+		switch (mvc_create_column(&col, sql, t, columns[i].name, &tpe)) {
+			case -1:
+				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: transaction conflict detected");
+			default:
+				break;
+		}
 	}
 	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0)) != MAL_SUCCEED)
 		return msg;
