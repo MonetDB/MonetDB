@@ -275,17 +275,19 @@ static void
 monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
 	sql_schema *sys;
-	sql_table *t, *uinfo;
+	sql_table *t = NULL, *uinfo = NULL;
+	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
 	list *res, *ops;
+	sql_func *f = NULL;
 
 	/* create the authorisation related tables */
-	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
-	mvc_create_column_(m, t, "name", "varchar", 1024);
-	mvc_create_column_(m, t, "fullname", "varchar", 2048);
-	mvc_create_column_(m, t, "default_schema", "int", 9);
-	mvc_create_column_(m, t, "schema_path", "clob", 0);
+	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
+	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
+	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
+	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -295,7 +297,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
+	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "
@@ -308,10 +310,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 		return ;
 	}
 
-	mvc_create_column_(m, t, "name", "varchar", 2048);
-	mvc_create_column_(m, t, "fullname", "varchar", 2048);
-	mvc_create_column_(m, t, "default_schema", "int", 9);
-	mvc_create_column_(m, t, "schema_path", "clob", 0);
+	mvc_create_column_(&col, m, t, "name", "varchar", 2048);
+	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
+	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
+	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	schema_id = sys->base.id;
