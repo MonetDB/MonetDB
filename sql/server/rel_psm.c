@@ -940,7 +940,15 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE)) {
+				case -1:
+					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+				default:
+					break;
+			}
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: %s function %s.%s not bound", F, slang, s->base.name, fname);
 		}
@@ -951,7 +959,16 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		if (create) { /* needed for recursive functions */
 			q = query_cleaned(sql->ta, q);
-			sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE);
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE)) {
+				case -1:
+					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+				default:
+					break;
+			}
+			sql->forward = f;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: SQL function %s.%s not bound", F, s->base.name, fname);
 		}
@@ -981,7 +998,15 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->params = NULL;
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE)) {
+				case -1:
+					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
+				default:
+					break;
+			}
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 		} else {
