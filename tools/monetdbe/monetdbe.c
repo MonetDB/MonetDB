@@ -1941,8 +1941,14 @@ append_create_remote_append_mal_program(
 		return createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 	}
 
-	if (!(*t = sql_trans_create_table(m->session->tr, *s, table, NULL, tt_table, false, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
-		return createException(SQL, "monetdbe.monetdbe_append", "Cannot create temporary table");
+	switch (sql_trans_create_table(t, m->session->tr, *s, table, NULL, tt_table, false, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)) {
+		case -1:
+			return createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			return createException(SQL, "monetdbe.monetdbe_append", "Table name '%s' conflicts", table);
+		default:
+			break;
 	}
 
 	assert(prg);
@@ -1987,16 +1993,22 @@ append_create_remote_append_mal_program(
 
 	sqlstore *store = m->session->tr->store;
 	for (size_t i = 0; i < ccount; i++) {
-
+		sql_column *col = NULL;
 		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
 		tpe->localtype = monetdbe_type((monetdbe_types) ctypes[i]);
 		sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
 		sql_init_subtype(st, tpe, 0, 0);
 
-		sql_column* col;
-		if (!(col = mvc_create_column(m, *t, cnames[i], st))) {
-			msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-			goto cleanup;
+		switch (mvc_create_column(&col, m, *t, cnames[i], st)) {
+			case -1:
+				msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+				goto cleanup;
+			case -2:
+			case -3:
+				msg = createException(SQL, "monetdbe.monetdbe_append", "Column name '%s' conflicts", cnames[i]);
+				goto cleanup;
+			default:
+				break;
 		}
 
 		if (store->storage_api.create_col(m->session->tr, col) != LOG_OK) {

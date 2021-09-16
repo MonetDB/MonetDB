@@ -80,7 +80,7 @@ int
 sql_create_env(mvc *m, sql_schema *s)
 {
 	list *res, *ops;
-	sql_func *f;
+	sql_func *f = NULL;
 
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));

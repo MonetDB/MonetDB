@@ -144,6 +144,7 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 			char *cname = n->data.sval;
 			sql_exp *e = m->data;
 			sql_subtype *tp = exp_subtype(e);
+			sql_column *col = NULL;
 
 			if (tt != tt_view && cname && cname[0] == '%') {
 				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
@@ -152,7 +153,17 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
-			mvc_create_column(sql, t, cname, tp);
+			switch (mvc_create_column(&col, sql, t, cname, tp)) {
+				case -1:
+					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				case -2:
+				case -3:
+					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", msg);
+					return -1;
+				default:
+					break;
+			}
 		}
 		if (n || m) {
 			sql_error(sql, 01, SQLSTATE(21S02) "%s: number of columns does not match", msg);
@@ -165,6 +176,7 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 			sql_exp *e = m->data;
 			const char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
+			sql_column *col = NULL;
 
 			if (tt != tt_view && cname && cname[0] == '%') {
 				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
@@ -176,7 +188,17 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
-			mvc_create_column(sql, t, cname, tp);
+			switch (mvc_create_column(&col, sql, t, cname, tp)) {
+				case -1:
+					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				case -2:
+				case -3:
+					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", msg);
+					return -1;
+				default:
+					break;
+			}
 		}
 	}
 	return 0;
@@ -185,11 +207,24 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 sql_table *
 mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action, const char *action)
 {
+	sql_table *t = NULL;
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
 		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
-	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0);
+	switch (mvc_create_table(&t, sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0)) {
+		case -1:
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: transaction conflict detected", action);
+		case -4:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: the partition's expression is too long", action);
+		case -5:
+			return NULL;
+		default:
+			break;
+	}
 	if (as_subquery(sql, t, tt, sq, column_spec, action) != 0)
 		return NULL;
 	return t;
@@ -810,8 +845,18 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(42S21) "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
-		cs = mvc_create_column(sql, t, cname, ctype);
-		if (!cs || column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
+		switch (mvc_create_column(&cs, sql, t, cname, ctype)) {
+			case -1:
+				sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: transaction conflict detected", (alter)?"ALTER":"CREATE");
+				return SQL_ERR;
+			default:
+				break;
+		}
+		if (column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
 	}
 	return res;
@@ -1004,7 +1049,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, false)))
 			return SQL_ERR;
 		for (node *n = ol_first_node(ot->columns); n; n = n->next) {
-			sql_column *oc = n->data;
+			sql_column *oc = n->data, *nc = NULL;
 
 			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
 				sql_error(sql, 02, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", action);
@@ -1013,7 +1058,17 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				sql_error(sql, 02, SQLSTATE(42S21) "%s: a column named '%s' already exists\n", action, oc->base.name);
 				return SQL_ERR;
 			}
-			(void)mvc_create_column(sql, t, oc->base.name, &oc->type);
+			switch (mvc_create_column(&nc, sql, t, oc->base.name, &oc->type)) {
+				case -1:
+					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
+					return SQL_ERR;
+				default:
+					break;
+			}
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
@@ -1189,6 +1244,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		/* table element list */
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
+		int res = LOG_OK;
 
 		if (tt == tt_remote) {
 			char *local_user = get_string_global_var(sql, "current_user");
@@ -1201,12 +1257,23 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 			if (reg_credentials != 0) {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);
 			}
-			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
+			res = mvc_create_remote(&t, sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
-			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
+			res = mvc_create_table(&t, sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
 		}
-		if (!t)
-			return NULL;
+		switch (res) {
+			case -1:
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: transaction conflict detected", action);
+			case -4:
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: the partition's expression is too long", action);
+			case -5:
+				return NULL;
+			default:
+				break;
+		}
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -1310,8 +1377,16 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
-			if (as_subquery(sql, t, tt_view, sq, column_spec, "CREATE VIEW") != 0) {
+			switch (mvc_create_view(&t, sql, s, name, SQL_DECLARED_TABLE, q, 0)) {
+				case -1:
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
+				default:
+					break;
+			}
+			if (as_subquery(sql, t, tt_view, sq, column_spec, base) != 0) {
 				rel_destroy(sq);
 				return NULL;
 			}
