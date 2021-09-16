@@ -3508,11 +3508,14 @@ SQLupgrades(Client c, mvc *m)
 	sqlstore *store = m->session->tr->store;
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(m->session->tr, s, "privileges");
-		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
+		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0, res;
 
-		store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
+		if ((res = store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero)) != LOG_OK) {
+			TRC_CRITICAL(SQL_PARSER, "Privilege creation during upgrade failed\n");
+			GDKfree(prev_schema);
+			return -1;
+		}
 	}
-
 
 	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
 	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)

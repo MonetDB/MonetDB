@@ -279,6 +279,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
 	list *res, *ops;
+	sql_func *f;
 
 	/* create the authorisation related tables */
 	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
@@ -295,7 +296,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
+	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "

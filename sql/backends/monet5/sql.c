@@ -416,7 +416,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		}
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
-	if (check == -1) {
+	if (check == -4) {
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {

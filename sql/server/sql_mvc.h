@@ -197,7 +197,7 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 extern int mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern int mvc_create_func(sql_func **f, mvc *m, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
@@ -221,19 +221,19 @@ extern int mvc_is_sorted(mvc *c, sql_column *col);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 
-extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);
-extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);
-extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, const char *kname, key_type kt, sql_key *rk, int on_delete, int on_update);
-extern sql_key *mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
-extern sql_fkey *mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c);
+extern int mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt);
+extern int mvc_create_ukey_done(mvc *m, sql_key *k);
+extern int mvc_create_fkey(sql_fkey **kres, mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
+extern int mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
+extern int mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c);
 
 extern int mvc_drop_key(mvc *c, sql_schema *s, sql_key *key, int drop_action);
 
-extern sql_idx *mvc_create_idx(mvc *m, sql_table *t, const char *iname, idx_type it);
-extern sql_idx *mvc_create_ic(mvc *m, sql_idx * i, sql_column *c);
+extern int mvc_create_idx(sql_idx **i, mvc *m, sql_table *t, const char *name, idx_type it);
+extern int mvc_create_ic(mvc *m, sql_idx * i, sql_column *c);
 extern int mvc_drop_idx(mvc *c, sql_schema *s, sql_idx * i);
 
-extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
+extern int mvc_create_trigger(sql_trigger **tri, mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement);
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 /*dependency control*/

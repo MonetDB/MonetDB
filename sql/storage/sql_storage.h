@@ -339,7 +339,7 @@ extern int sql_trans_commit(sql_trans *tr);
 extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern int sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -383,19 +383,19 @@ extern void column_destroy(struct sqlstore *store, sql_column *c);
 extern void idx_destroy(struct sqlstore *store, sql_idx * i);
 extern void table_destroy(struct sqlstore *store, sql_table *t);
 
-extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt);
-extern sql_key * sql_trans_key_done(sql_trans *tr, sql_key *k);
+extern int sql_trans_create_ukey(sql_key **res, sql_trans *tr, sql_table *t, const char *name, key_type kt);
+extern int sql_trans_key_done(sql_trans *tr, sql_key *k);
 
-extern sql_fkey *sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
-extern sql_key *sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options such as trunc */ );
-extern sql_fkey *sql_trans_create_fkc(sql_trans *tr, sql_fkey *k, sql_column *c /*, extra options such as trunc */ );
+extern int sql_trans_create_fkey(sql_fkey **res, sql_trans *tr, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
+extern int sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c);
+extern int sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c);
 extern int sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
-extern sql_idx *sql_trans_create_idx(sql_trans *tr, sql_table *t, const char *name, idx_type it);
-extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options such as trunc */ );
+extern int sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name, idx_type it);
+extern int sql_trans_create_ic(sql_trans *tr, sql_idx *i, sql_column *c);
 extern int sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
-extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
+extern int sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,sht time, sht orientation, sht event, const char *old_name, const char *new_name,const char *condition, const char *statement);
 extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
 extern sql_sequence *create_sql_sequence(struct sqlstore *store, sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
@@ -422,7 +422,7 @@ extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid id);
 
 extern sql_table *create_sql_table(struct sqlstore *store, sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);
 extern sql_column *create_sql_column(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
-extern sql_ukey *create_sql_ukey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
+extern sql_key *create_sql_ukey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(struct sqlstore *store, sql_allocator *sa, sql_key *k, sql_column *c);
 extern sql_key * key_create_done(struct sqlstore *store, sql_allocator *sa, sql_key *k);
