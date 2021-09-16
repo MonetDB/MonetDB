@@ -351,7 +351,7 @@ extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_i
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
-sql_export sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
+sql_export int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
@@ -367,7 +367,7 @@ extern int sql_trans_drop_table_id(sql_trans *tr, sql_schema *s, sqlid id, int d
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
-extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
+extern int sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
 extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name);
 extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action);
 extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);

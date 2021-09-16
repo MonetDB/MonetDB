@@ -5179,12 +5179,12 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 			goto finish;
 	}
 
-	if (!update)
-		res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
+	if (!update && (res = os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))))
+		goto finish;
 	if ((res = sql_trans_propagate_dependencies_parents(tr, mt, NULL)))
-		return res;
-	if ((res = sql_trans_propagate_dependencies_children(tr, pt, true)))
-		return res;
+		goto finish;
+	res = sql_trans_propagate_dependencies_children(tr, pt, true);
+
 finish:
 	VALclear(&vmin);
 	VALclear(&vmax);
@@ -5398,8 +5398,8 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	return res;
 }
 
-sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system,
+int
+sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system,
 					   int persistence, int commit_action, int sz, bte properties)
 {
 	sqlstore *store = tr->store;
@@ -5407,6 +5407,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(tr, syss, "_tables");
 	sht ca;
+	int res = LOG_OK;
 
 	/* temps all belong to a special tmp schema and only views/remote have a query */
 	assert( (isTable(t) ||
@@ -5418,18 +5419,17 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (sz < 0)
 		t->sz = COLSIZE;
 	if (isGlobal(t)) {
-		if (os_add(s->tables, tr, t->base.name, &t->base)) {
-			return NULL;
-		}
+		if ((res = os_add(s->tables, tr, t->base.name, &t->base)))
+			return res;
 	} else
 		cs_add(&tr->localtmps, t, true);
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
 	if (isTable(t))
-		if (store->storage_api.create_del(tr, t) != LOG_OK) {
+		if ((res = store->storage_api.create_del(tr, t))) {
 			ATOMIC_PTR_DESTROY(&t->data);
-			return NULL;
+			return res;
 		}
 	if (isPartitionedByExpressionTable(t)) {
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
@@ -5440,13 +5440,14 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	ca = t->commit_action;
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
-		if (store->table_api.table_insert(tr, systable, &t->base.id, &t->base.name, &s->base.id,
-										  (t->query) ? &t->query : &strnil, &t->type, &t->system, &ca, &t->access)) {
+		if ((res = store->table_api.table_insert(tr, systable, &t->base.id, &t->base.name, &s->base.id,
+										  (t->query) ? &t->query : &strnil, &t->type, &t->system, &ca, &t->access))) {
 			ATOMIC_PTR_DESTROY(&t->data);
-			return NULL;
+			return res;
 		}
 	}
-	return t;
+	*tres = t;
+	return res;
 }
 
 int
@@ -5678,8 +5679,8 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 	return store->storage_api.clear_table(tr, t);
 }
 
-sql_column *
-sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe)
+int
+sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	sqlstore *store = tr->store;
 	sql_column *col;
@@ -5688,32 +5689,34 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	int res = LOG_OK;
 
 	if (!tpe)
-		return NULL;
+		return -1; /* TODO not sure what to do here */
 
 	col = create_sql_column_with_id(tr->sa, next_oid(tr->store), t, name, tpe);
 
 	if (isTable(col->t))
-		if (store->storage_api.create_col(tr, col) != LOG_OK) {
+		if ((res = store->storage_api.create_col(tr, col))) {
 			ATOMIC_PTR_DESTROY(&col->data);
-			return NULL;
+			return res;
 		}
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
-		if (store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &col->type.digits, &col->type.scale,
-										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil)) {
+		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &col->type.digits, &col->type.scale,
+										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))) {
 			ATOMIC_PTR_DESTROY(&col->data);
-			return NULL;
+			return res;
 		}
 	}
 
 	if (tpe->type->s) {/* column depends on type */
-		sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY);
+		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY)))
+			return res;
 		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl))) {
 			ATOMIC_PTR_DESTROY(&col->data);
-			return NULL;
+			return res;
 		}
 	}
-	return col;
+	*rcol = col;
+	return res;
 }
 
 void
