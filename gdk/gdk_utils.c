@@ -941,17 +941,10 @@ GDKinit(opt *set, int setlen, bool embedded)
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
 		}
-		for (i = 0; i <= BBP_THREADMASK; i++) {
-			char name[MT_NAME_LEN];
-			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
-			MT_lock_init(&GDKbbpLock[i].cache, name);
-			GDKbbpLock[i].free = 0;
-		}
 		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}
-		first = false;
 	} else {
 		/* BBP was locked by BBPexit() */
 		BBPunlock();
@@ -1000,8 +993,9 @@ GDKinit(opt *set, int setlen, bool embedded)
 	else
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	if (BBPinit() != GDK_SUCCEED)
+	if (BBPinit(first) != GDK_SUCCEED)
 		return GDK_FAIL;
+	first = false;
 
 	if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 		GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
@@ -1293,9 +1287,6 @@ GDKreset(int status)
 		ATOMIC_SET(&GDKnrofthreads, 0);
 		close_stream((stream *) THRdata[0]);
 		close_stream((stream *) THRdata[1]);
-		for (int i = 0; i <= BBP_THREADMASK; i++) {
-			GDKbbpLock[i].free = 0;
-		}
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
@@ -1331,7 +1322,6 @@ GDKexit(int status)
  */
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
-bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
 
 /* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */

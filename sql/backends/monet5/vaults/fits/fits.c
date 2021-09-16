@@ -38,48 +38,49 @@ FITSinitCatalog(mvc *m)
 {
 	sql_schema *sch;
 	sql_table *fits_tp, *fits_fl, *fits_tbl, *fits_col;
+	sql_column *col = NULL;
 
 	sch = mvc_bind_schema(m, "sys");
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
 	if (fits_fl == NULL) {
-		fits_fl = mvc_create_table(m, sch, "fits_files", tt_table, 0, SQL_PERSIST, 0, 2, 0);
-		mvc_create_column_(m, fits_fl, "id", "int", 32);
-		mvc_create_column_(m, fits_fl, "name", "varchar", 80);
+		mvc_create_table(&fits_fl, m, sch, "fits_files", tt_table, 0, SQL_PERSIST, 0, 2, 0);
+		mvc_create_column_(&col, m, fits_fl, "id", "int", 32);
+		mvc_create_column_(&col, m, fits_fl, "name", "varchar", 80);
 	}
 
 	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
 	if (fits_tbl == NULL) {
-		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 8, 0);
-		mvc_create_column_(m, fits_tbl, "id", "int", 32);
-		mvc_create_column_(m, fits_tbl, "name", "varchar", 80);
-		mvc_create_column_(m, fits_tbl, "columns", "int", 32);
-		mvc_create_column_(m, fits_tbl, "file_id", "int", 32);
-		mvc_create_column_(m, fits_tbl, "hdu", "int", 32);
-		mvc_create_column_(m, fits_tbl, "date", "varchar", 80);
-		mvc_create_column_(m, fits_tbl, "origin", "varchar", 80);
-		mvc_create_column_(m, fits_tbl, "comment", "varchar", 80);
+		mvc_create_table(&fits_tbl, m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 8, 0);
+		mvc_create_column_(&col, m, fits_tbl, "id", "int", 32);
+		mvc_create_column_(&col, m, fits_tbl, "name", "varchar", 80);
+		mvc_create_column_(&col, m, fits_tbl, "columns", "int", 32);
+		mvc_create_column_(&col, m, fits_tbl, "file_id", "int", 32);
+		mvc_create_column_(&col, m, fits_tbl, "hdu", "int", 32);
+		mvc_create_column_(&col, m, fits_tbl, "date", "varchar", 80);
+		mvc_create_column_(&col, m, fits_tbl, "origin", "varchar", 80);
+		mvc_create_column_(&col, m, fits_tbl, "comment", "varchar", 80);
 	}
 
 	fits_col = mvc_bind_table(m, sch, "fits_columns");
 	if (fits_col == NULL) {
-		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6, 0);
-		mvc_create_column_(m, fits_col, "id", "int", 32);
-		mvc_create_column_(m, fits_col, "name", "varchar", 80);
-		mvc_create_column_(m, fits_col, "type", "varchar", 80);
-		mvc_create_column_(m, fits_col, "units", "varchar", 80);
-		mvc_create_column_(m, fits_col, "number", "int", 32);
-		mvc_create_column_(m, fits_col, "table_id", "int", 32);
+		mvc_create_table(&fits_col, m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6, 0);
+		mvc_create_column_(&col, m, fits_col, "id", "int", 32);
+		mvc_create_column_(&col, m, fits_col, "name", "varchar", 80);
+		mvc_create_column_(&col, m, fits_col, "type", "varchar", 80);
+		mvc_create_column_(&col, m, fits_col, "units", "varchar", 80);
+		mvc_create_column_(&col, m, fits_col, "number", "int", 32);
+		mvc_create_column_(&col, m, fits_col, "table_id", "int", 32);
 	}
 
 	fits_tp = mvc_bind_table(m, sch, "fits_table_properties");
 	if (fits_tp == NULL) {
-		fits_tp = mvc_create_table(m, sch, "fits_table_properties", tt_table, 0, SQL_PERSIST, 0, 5, 0);
-		mvc_create_column_(m, fits_tp, "table_id", "int", 32);
-		mvc_create_column_(m, fits_tp, "xtension", "varchar", 80);
-		mvc_create_column_(m, fits_tp, "bitpix", "int", 32);
-		mvc_create_column_(m, fits_tp, "stilvers", "varchar", 80);
-		mvc_create_column_(m, fits_tp, "stilclas", "varchar", 80);
+		mvc_create_table(&fits_tp, m, sch, "fits_table_properties", tt_table, 0, SQL_PERSIST, 0, 5, 0);
+		mvc_create_column_(&col, m, fits_tp, "table_id", "int", 32);
+		mvc_create_column_(&col, m, fits_tp, "xtension", "varchar", 80);
+		mvc_create_column_(&col, m, fits_tp, "bitpix", "int", 32);
+		mvc_create_column_(&col, m, fits_tp, "stilvers", "varchar", 80);
+		mvc_create_column_(&col, m, fits_tp, "stilclas", "varchar", 80);
 	}
 }
 
@@ -980,7 +981,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*	col = mvc_bind_column(m, fits_tbl, "columns");
 	   cnum = *(int*) store->table_api.column_find_value(m->session->tr, col, rid); */
 	fits_get_num_cols(fptr, &cnum, &status);
-	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
+	mvc_create_table(&tbl, m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
 
 	// TODO: Check that the allocations succeeded
 	tpcode = (int *)GDKzalloc(sizeof(int) * cnum);
@@ -989,6 +990,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cname = (char **)GDKzalloc(sizeof(char *) * cnum);
 
 	for (j = 1; j <= cnum; j++) {
+		sql_column *col = NULL;
 		/*		fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status); */
 		snprintf(keywrd, 80, "TTYPE%d", j);
 		fits_read_key(fptr, TSTRING, keywrd, nm, NULL, &status);
@@ -1002,7 +1004,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		TRC_DEBUG(FITS, "%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->base.name);
 
-		mvc_create_column(m, tbl, cname[j - 1], &tpe);
+		mvc_create_column(&col, m, tbl, cname[j - 1], &tpe);
 	}
 
 	/* data load */

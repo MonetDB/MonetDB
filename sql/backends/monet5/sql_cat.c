@@ -555,41 +555,46 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 				break;
 		}
 	}
-	if ((tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query))) {
-		char *buf;
-		sql_rel *r = NULL;
-		sql_allocator *sa = sql->sa;
+	switch (mvc_create_trigger(&tri, sql, t, triggername, time, orientation, event, old_name, new_name, condition, query)) {
+		case -1:
+			throw(SQL,"sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_trigger", SQLSTATE(42000) "%s: transaction conflict detected", base);
+		default: {
+			char *buf;
+			sql_rel *r = NULL;
+			sql_allocator *sa = sql->sa;
 
-		if (!(sql->sa = sa_create(sql->pa))) {
-			sql->sa = sa;
-			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if (!(buf = sa_strdup(sql->sa, query))) {
-			sa_destroy(sql->sa);
-			sql->sa = sa;
-			throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		r = rel_parse(sql, s, buf, m_deps);
-		if (r)
-			r = sql_processrelation(sql, r, 0, 0);
-		if (r) {
-			list *blist = rel_dependencies(sql, r);
-			if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+			if (!(sql->sa = sa_create(sql->pa))) {
+				sql->sa = sa;
+				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if (!(buf = sa_strdup(sql->sa, query))) {
 				sa_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			r = rel_parse(sql, s, buf, m_deps);
+			if (r)
+				r = sql_processrelation(sql, r, 0, 0);
+			if (r) {
+				list *blist = rel_dependencies(sql, r);
+				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+					sa_destroy(sql->sa);
+					sql->sa = sa;
+					throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+			sa_destroy(sql->sa);
+			sql->sa = sa;
+			if (!r) {
+				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+					throw(SQL, "sql.create_trigger", "%s", sql->errstr);
+				else
+					throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
+			}
 		}
-		sa_destroy(sql->sa);
-		sql->sa = sa;
-		if (!r) {
-			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
-				throw(SQL, "sql.create_trigger", "%s", sql->errstr);
-			else
-				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
-		}
-	} else {
-		throw(SQL,"sql.create_trigger", SQLSTATE(42000) "%s: transaction conflict detected", base);
 	}
 	return MAL_SUCCEED;
 }
@@ -955,7 +960,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	sql_func *nf;
 	sql_subfunc *sf;
 	sql_schema *s = NULL;
-	int clientid = sql->clientid, res = 0;
+	int clientid = sql->clientid;
 	char *F = NULL, *fn = NULL, *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
 	FUNC_TYPE_STR(f->type, F, fn)
@@ -1008,7 +1013,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 
 			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
-			switch ((res = mvc_drop_func(sql, s, sff, 0))) {
+			switch (mvc_drop_func(sql, s, sff, 0)) {
 				case -1:
 					throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1023,8 +1028,15 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		}
 	}
 
-	if (!(nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)))
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: transaction conflict detected", base, F);
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)) {
+		case -1:
+			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: transaction conflict detected", base, F);
+		default:
+			break;
+	}
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */

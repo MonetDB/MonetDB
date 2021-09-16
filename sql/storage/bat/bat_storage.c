@@ -2530,13 +2530,12 @@ create_del(sql_trans *tr, sql_table *t)
 	if (!bat) {
 		new = 1;
 		bat = ZNEW(storage);
-		ATOMIC_PTR_SET(&t->data, bat);
 		if(!bat)
 			return LOG_ERR;
+		ATOMIC_PTR_SET(&t->data, bat);
 		bat->cs.refcnt = 1;
-	}
-	if (new)
 		bat->cs.ts = tr->tid;
+	}
 
 	if (!isNew(t) && !isTempTable(t)) {
 		bat->cs.ts = tr->ts;
@@ -3997,6 +3996,47 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	return segments2cands(s->segs->h, tr, t, start, end);
 }
 
+static void
+temp_del_tab(sql_trans *tr, sql_table *t)
+{
+	ulng tid = tr->tid;
+	lock_table(tr->store, t->base.id);
+	for (storage *d = ATOMIC_PTR_GET(&t->data), *p = NULL, *n = NULL; d; d = n) {
+		n = d->next;
+		if (d->cs.ts == tid) {
+			if (p == NULL) {
+				ATOMIC_PTR_SET(&t->data, n);
+			} else {
+				p->next = n;
+			}
+			d->next = NULL;
+			destroy_storage(d);
+		} else {
+			p = d;
+		}
+	}
+	unlock_table(tr->store, t->base.id);
+	for (node *nd = t->columns->l->h; nd; nd = nd->next) {
+		sql_column *c = nd->data;
+		lock_column(tr->store, c->base.id);
+		for (sql_delta *d = ATOMIC_PTR_GET(&c->data), *p = NULL, *n = NULL; d; d = n) {
+			n = d->next;
+			if (d->cs.ts == tid) {
+				if (p == NULL) {
+					ATOMIC_PTR_SET(&c->data, n);
+				} else {
+					p->next = n;
+				}
+				d->next = NULL;
+				destroy_delta(d, false);
+			} else {
+				p = d;
+			}
+		}
+		unlock_column(tr->store, c->base.id);
+	}
+}
+
 static int
 swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
@@ -4072,6 +4112,7 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
+	sf->temp_del_tab = &temp_del_tab;
 	sf->swap_bats = &swap_bats;
 }
 
