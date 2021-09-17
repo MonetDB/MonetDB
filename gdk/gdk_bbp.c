@@ -2005,6 +2005,7 @@ BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf)
 	}
 	if (fclose(nbbpf) == EOF) {
 		GDKsyserror("Closing BBP.dir file failed\n");
+		nbbpf = NULL;	/* can't close again */
 		goto bailout;
 	}
 
@@ -2862,7 +2863,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			if (b->tvheap)
 				b->tvheap->dirty = true;
 		}
-		farmid = b->theap->farmid;
+		if (b->theap)
+			farmid = b->theap->farmid;
 		MT_lock_unset(&b->theaplock);
 	}
 

@@ -1950,6 +1950,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	bn = COLnew(0, TYPE_oid, estimate, TRANSIENT);
 	if (bn == NULL) {
+		if (havehash)
+			MT_rwlock_rdunlock(&b->thashlock);
 		bat_iterator_end(&bi);
 		return NULL;
 	}

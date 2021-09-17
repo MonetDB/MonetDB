@@ -845,7 +845,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				lhs = &backup[i];
 				if (BATatoms[lhs->vtype].atomUnfix &&
 					(*BATatoms[lhs->vtype].atomUnfix)(VALget(lhs)) != GDK_SUCCEED) {
-					ret = createException(MAL, "mal.propertyCheck", GDK_EXCEPTION);
+					if (ret == MAL_SUCCEED)
+						ret = createException(MAL, "mal.propertyCheck", GDK_EXCEPTION);
 				}
 				if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
