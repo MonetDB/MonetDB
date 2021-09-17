@@ -2899,16 +2899,24 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 
-	if (swap && b != NULL) {
-		if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
-			/* free memory (if loaded) and delete from
-			 * disk (if transient but saved) */
-			BBPdestroy(b);
+	if (swap) {
+		if (b != NULL) {
+			if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+				/* free memory (if loaded) and delete from
+				 * disk (if transient but saved) */
+				BBPdestroy(b);
+			} else {
+				TRC_DEBUG(BAT_, "%s unload and free bat %d\n", func, i);
+				/* free memory of transient */
+				if (BBPfree(b) != GDK_SUCCEED)
+					return -1;	/* indicate failure */
+			}
+		} else if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+			if ((b = BBP_desc(i)) != NULL)
+				BATdelete(b);
+			BBPclear(i, true);
 		} else {
-			TRC_DEBUG(BAT_, "%s unload and free bat %d\n", func, i);
-			/* free memory of transient */
-			if (BBPfree(b) != GDK_SUCCEED)
-				return -1;	/* indicate failure */
+			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
 	if (tp)
