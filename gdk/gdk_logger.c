@@ -985,13 +985,14 @@ logger_create_types_file(logger *lg, const char *filename)
 		     && fsync(fileno(fp)) < 0
 #endif
 	    )) {
+		GDKsyserror("flushing log file %s failed", filename);
+		fclose(fp);
 		MT_remove(filename);
-		GDKerror("flushing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
+		GDKsyserror("closing log file %s failed", filename);
 		MT_remove(filename);
-		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;

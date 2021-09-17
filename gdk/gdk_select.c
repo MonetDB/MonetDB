@@ -1893,8 +1893,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	estimate = MIN(estimate, maximum);
 
 	bn = COLnew(0, TYPE_oid, estimate, TRANSIENT);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (havehash)
+			MT_rwlock_rdunlock(&b->thashlock);
 		return NULL;
+	}
 
 	BATiter bi = bat_iterator(b);
 	if (wanthash) {
