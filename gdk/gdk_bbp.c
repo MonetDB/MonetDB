@@ -2636,6 +2636,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 					return -1;	/* indicate failure */
 			}
 		} else if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
+			if ((b = BBP_desc(i)) != NULL)
+				BATdelete(b);
 			BBPclear(i, true);
 		} else {
 			BBP_status_off(i, BBPUNLOADING);
