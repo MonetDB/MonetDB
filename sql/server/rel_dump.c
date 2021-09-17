@@ -966,17 +966,19 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		cname = sa_strdup(sql->sa, cname);
 		*e = old;
 		skipWS(r, pos);
-		if (top_exps) {
-			exp = exps_bind_column2(top_exps, tname, cname, NULL);
-			if (exp)
-				exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
-		}
-		if (!exp && lrel) {
-			exp = rel_bind_column2(sql, lrel, tname, cname, 0);
-			if (!exp && rrel)
-				exp = rel_bind_column2(sql, rrel, tname, cname, 0);
-		} else if (!exp) {
-			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, cname[0] == '%');
+		if (r[*pos] != '(') { /* if there's a function/aggregate call next don't attempt to bind columns */
+			if (top_exps) {
+				exp = exps_bind_column2(top_exps, tname, cname, NULL);
+				if (exp)
+					exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
+			}
+			if (!exp && lrel) {
+				exp = rel_bind_column2(sql, lrel, tname, cname, 0);
+				if (!exp && rrel)
+					exp = rel_bind_column2(sql, rrel, tname, cname, 0);
+			} else if (!exp) {
+				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, cname[0] == '%');
+			}
 		}
 		break;
 	/* atom */
