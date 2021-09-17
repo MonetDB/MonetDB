@@ -778,6 +778,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
+
+	bi = bat_iterator(b);
+	if (sep)
+		bis = bat_iterator(sep);
+	else
+		separator_length = strlen(separator);
+
 	if (bnp) {
 		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
 			rres = GDK_FAIL;
@@ -785,12 +792,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		}
 		*bnp = bn;
 	}
-
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
-		separator_length = strlen(separator);
 
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
