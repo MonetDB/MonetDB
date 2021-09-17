@@ -1674,8 +1674,10 @@ bm_subcommit(logger *lg)
 		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
 		i = subcommit_list_add(i, n, sizes, vals->batCacheid, BATcount(ids));
 
-		r[rcnt++] = lg->seqs_id->batCacheid;
-		r[rcnt++] = lg->seqs_val->batCacheid;
+		if (BBP_lrefs(lg->seqs_id->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_id->batCacheid;
+		if (BBP_lrefs(lg->seqs_val->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_val->batCacheid;
 
 		logbat_destroy(lg->seqs_id);
 		logbat_destroy(lg->seqs_val);
