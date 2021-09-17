@@ -1403,7 +1403,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		*exp = NULL;
 		return rel;
 	}
-	if (!is_simple_project(rel->op) || !list_empty(rel->r))
+	if (!is_simple_project(rel->op) || !list_empty(rel->r) || rel_is_ref(rel))
 		rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
