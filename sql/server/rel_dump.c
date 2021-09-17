@@ -1406,19 +1406,19 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sym = 1;
 			}
 			if (e->type == e_cmp) {
-				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), sym);
-				if (is_anti(exp))
-					set_anti(ne);
+				exp = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), is_symmetric(e));
+				if (is_anti(e))
+					set_anti(exp);
 				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, ne, e);
-				exp_setalias(e, NULL, NULL);
-				exp = ne;
+					exp_prop_alias(sql->sa, exp, e);
 			} else {
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
 				if (is_anti(exp))
 					set_anti(ne);
 				if (is_semantics(exp))
 					set_semantics(ne);
+				if (sym) /* set it, so it gets propagated to the range comparison */
+					set_symmetric(ne);
 				if (exp_name(e)) /* propagate a possible alias already parsed */
 					exp_prop_alias(sql->sa, ne, e);
 				exp_setalias(e, NULL, NULL);

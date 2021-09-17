@@ -38,6 +38,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertRowCount(0)
     cli.execute('SELECT 1 FROM (values (0)) mv(vc0) LEFT OUTER JOIN (SELECT 1 FROM rt1) AS sub0(c0) ON 2 = 0.05488666234725814;') \
         .assertSucceeded().assertDataResultMatch([(1,),])
+    cli.execute('SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN 1 AND NULL;') \
+        .assertSucceeded().assertDataResultMatch([(0,),])
+    cli.execute('SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN SYMMETRIC 1 AND NULL;') \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
