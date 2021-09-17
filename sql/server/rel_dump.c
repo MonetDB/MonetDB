@@ -932,7 +932,7 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
-	int f = -1, not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
+	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
@@ -1224,10 +1224,25 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					}
 				}
 			}
-			if (f)
+			if (f) {
 				exp = exp_op(sql->sa, list_empty(exps) ? NULL : exps, f);
-			else
+				if (is_compare_func(f)) { /* has to parse any/all */
+					skipWS(r,pos);
+					/* [ ANY|ALL ] */
+					if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
+						(*pos)+= (int) strlen("ANY");
+						skipWS(r, pos);
+						exp->flag = 1;
+					}
+					if (strncmp(r+*pos, "ALL",  strlen("ALL")) == 0) {
+						(*pos)+= (int) strlen("ALL");
+						skipWS(r, pos);
+						exp->flag = 2;
+					}
+				}
+			} else {
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Function '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, nops);
+			}
 		}
 	}
 
@@ -1289,70 +1304,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		set_semantics(exp);
 	}
 
-	/* [ ANY|ALL ] */
-	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
-		(*pos)+= (int) strlen("ANY");
-		skipWS(r, pos);
-		exp->flag = 1;
-	}
-	if (strncmp(r+*pos, "ALL",  strlen("ALL")) == 0) {
-		(*pos)+= (int) strlen("ALL");
-		skipWS(r, pos);
-		exp->flag = 2;
-	}
-	/* [ ASC ] */
-	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
-		(*pos)+= (int) strlen("ASC");
-		skipWS(r, pos);
-		set_ascending(exp);
-	}
-	/* [ NULLS LAST ] */
-	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
-		(*pos)+= (int) strlen("NULLS LAST");
-		skipWS(r, pos);
-		set_nulls_last(exp);
-	}
-	/* [ NOT ] NULL */
-	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {
-		(*pos)+= (int) strlen("NOT");
-		skipWS(r, pos);
-		not = 1;
-	}
-	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
-		(*pos)+= (int) strlen("NULL");
-		skipWS(r, pos);
-		if (not)
-			set_has_no_nil(exp);
-	}
-
-	if (!(exp = read_exp_properties(sql, exp, r, pos)))
-		return NULL;
-	skipWS(r,pos);
-
-	/* as alias */
-	if (strncmp(r+*pos, "as", 2) == 0) {
-		(*pos)+=2;
-		skipWS(r, pos);
-
-		tname = r+*pos+1;
-		skipIdent(r, pos);
-		convertIdent(tname);
-		(*pos)++;
-		if (r[*pos] != '.') {
-			cname = tname;
-			exp_setname(sql->sa, exp, NULL, cname);
-			skipWS(r, pos);
-		} else {
-			(*pos)++;
-			cname = r+*pos+1;
-			skipIdent(r, pos);
-			convertIdent(cname);
-			(*pos)++;
-			skipWS(r, pos);
-			exp_setname(sql->sa, exp, tname, cname);
-		}
-	}
-	skipWS(r, pos);
 	switch(r[*pos]) {
 	case 'a':
 		if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
@@ -1416,11 +1367,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			(*pos)++;
 		}
 		break;
-	case ',':
-	case ']':
-	case ')':
 	default:
-		return exp;
+		break;
 	}
 	if (f >= 0) {
 		skipWS(r,pos);
@@ -1428,7 +1376,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			list *exps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0);
 			if (!exps)
 				return NULL;
-			return exp_in(sql->sa, exp, exps, f);
+			sql_exp *ne = exp_in(sql->sa, exp, exps, f);
+			if (is_anti(exp))
+				set_anti(ne);
+			exp = ne;
 		} else {
 			int sym = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0);
@@ -1448,15 +1399,67 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), sym);
 				if (is_anti(exp))
 					set_anti(ne);
-				return ne;
+				if (exp_name(e)) /* propgate a possible alias already parsed */
+					exp_prop_alias(sql->sa, exp, e);
+				exp_setalias(e, NULL, NULL);
+				exp = ne;
 			} else {
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
 				if (is_anti(exp))
 					set_anti(ne);
 				if (is_semantics(exp))
 					set_semantics(ne);
-				return ne;
+				if (exp_name(e)) /* propgate a possible alias already parsed */
+					exp_prop_alias(sql->sa, exp, e);
+				exp_setalias(e, NULL, NULL);
+				exp = ne;
 			}
+		}
+	}
+
+	/* [ ASC ] */
+	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
+		(*pos)+= (int) strlen("ASC");
+		skipWS(r, pos);
+		set_ascending(exp);
+	}
+	/* [ NULLS LAST ] */
+	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
+		(*pos)+= (int) strlen("NULLS LAST");
+		skipWS(r, pos);
+		set_nulls_last(exp);
+	}
+	/* [ NOT NULL ] */
+	if (strncmp(r+*pos, "NOT NULL",  strlen("NOT NULL")) == 0) {
+		(*pos)+= (int) strlen("NOT NULL");
+		skipWS(r, pos);
+		set_has_no_nil(exp);
+	}
+
+	if (!(exp = read_exp_properties(sql, exp, r, pos)))
+		return NULL;
+
+	/* as alias */
+	if (strncmp(r+*pos, "as", 2) == 0) {
+		(*pos)+=2;
+		skipWS(r, pos);
+
+		tname = r+*pos+1;
+		skipIdent(r, pos);
+		convertIdent(tname);
+		(*pos)++;
+		if (r[*pos] != '.') {
+			cname = tname;
+			exp_setname(sql->sa, exp, NULL, cname);
+			skipWS(r, pos);
+		} else {
+			(*pos)++;
+			cname = r+*pos+1;
+			skipIdent(r, pos);
+			convertIdent(cname);
+			(*pos)++;
+			skipWS(r, pos);
+			exp_setname(sql->sa, exp, tname, cname);
 		}
 	}
 	return exp;
