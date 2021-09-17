@@ -367,6 +367,9 @@ select json."isvalid"(CAST(v30.vc0 AS JSON)) FROM v30
 True
 
 statement ok
+ROLLBACK
+
+statement ok
 CREATE TABLE "t3" ("c0" BIGINT,"c1" INTERVAL MONTH)
 
 statement ok rowcount 6
@@ -386,5 +389,7 @@ SELECT json."integer"(JSON '1') FROM rt3
 1
 
 statement ok
-ROLLBACK
+DROP TABLE rt3
 
+statement ok
+DROP TABLE t3
