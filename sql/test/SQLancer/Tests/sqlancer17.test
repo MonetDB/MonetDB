@@ -369,27 +369,3 @@ True
 statement ok
 ROLLBACK
 
-statement ok
-CREATE TABLE "t3" ("c0" BIGINT,"c1" INTERVAL MONTH)
-
-statement ok rowcount 6
-INSERT INTO "t3" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH)
-
-statement ok
-CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:50000/demo/sys/t3'
-
-query I rowsort
-SELECT json."integer"(JSON '1') FROM rt3
-----
-1
-1
-1
-1
-1
-1
-
-statement ok
-DROP TABLE rt3
-
-statement ok
-DROP TABLE t3
