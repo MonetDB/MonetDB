@@ -36,6 +36,8 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(True,),(True,),(True,)])
     cli.execute('MERGE INTO t0 USING (SELECT 1 FROM rt1) AS mergejoined(c0) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (INTERVAL \'5\' SECOND);') \
         .assertSucceeded().assertRowCount(0)
+    cli.execute('SELECT 1 FROM (values (0)) mv(vc0) LEFT OUTER JOIN (SELECT 1 FROM rt1) AS sub0(c0) ON 2 = 0.05488666234725814;') \
+        .assertSucceeded().assertDataResultMatch([(1,),])
     cli.execute("ROLLBACK;")
 
     cli.execute("""

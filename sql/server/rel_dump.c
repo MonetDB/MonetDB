@@ -1293,6 +1293,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		return NULL;
 	}
 
+	/* [ NOT NULL ] */
+	if (strncmp(r+*pos, "NOT NULL",  strlen("NOT NULL")) == 0) {
+		(*pos)+= (int) strlen("NOT NULL");
+		skipWS(r, pos);
+		set_has_no_nil(exp);
+	}
+
+	if (!(exp = read_exp_properties(sql, exp, r, pos)))
+		return NULL;
+
 	if (r[*pos] == '!') {
 		(*pos)++;
 		skipWS(r, pos);
@@ -1429,15 +1439,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		skipWS(r, pos);
 		set_nulls_last(exp);
 	}
-	/* [ NOT NULL ] */
-	if (strncmp(r+*pos, "NOT NULL",  strlen("NOT NULL")) == 0) {
-		(*pos)+= (int) strlen("NOT NULL");
-		skipWS(r, pos);
-		set_has_no_nil(exp);
-	}
-
-	if (!(exp = read_exp_properties(sql, exp, r, pos)))
-		return NULL;
 
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {
