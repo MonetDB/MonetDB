@@ -936,7 +936,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
-	sql_subtype *tpe;
+	sql_type *t = NULL;
+	sql_subtype tpe;
 
 	quote = (r[*pos] == '"');
 	b += quote;
@@ -1060,8 +1061,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				(*pos)++;
 			}
 			convertIdent(tname);
-			if (!(tpe = sql_bind_subtype(sql->sa, tname, d, s)))
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tname, d, s);
+			if (!sql_find_subtype(&tpe, tname, d, s)) {
+				if (!(t = mvc_bind_type(sql, tname))) /* try an external type */
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tname, d, s);
+				sql_init_subtype(&tpe, t, d, s);
+			}
 			skipWS(r, pos);
 			*e = old;
 			if (r[*pos] == '[') { /* convert */
@@ -1073,13 +1077,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
 				(*pos)++;
 				skipWS(r, pos);
-				exp = exp_convert(sql->sa, exp, exp_subtype(exp), tpe);
+				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
 			} else {
 				st = readString(r,pos);
 				if (st && strcmp(st, "NULL") == 0)
-					exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+					exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
 				else
-					exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+					exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, st));
 				skipWS(r, pos);
 			}
 		}
@@ -1088,13 +1092,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		*e = 0;
 		tname = b;
 		convertIdent(tname);
-		if (!(tpe = sql_bind_subtype(sql->sa, tname, 0, 0)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
+		if (!sql_find_subtype(&tpe, tname, 0, 0)) {
+			if (!(t = mvc_bind_type(sql, tname))) /* try an external type */
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
+			sql_init_subtype(&tpe, t, 0, 0);
+		}
 		st = readString(r,pos);
 		if (st && strcmp(st, "NULL") == 0)
-			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+			exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
 		else
-			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+			exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, st));
 		skipWS(r, pos);
 		break;
 	default:
