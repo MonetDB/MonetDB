@@ -194,7 +194,8 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	if (!rel)
 		return rel;
 
-	if (rel_is_ref(rel)) {
+	/* for merge statement join, ignore the multiple references */
+	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
 		if (has_remote_or_replica(rel)) {
 			sql_rel *nrel = rel_copy(sql, rel, 1);
 
@@ -365,7 +366,8 @@ distribute(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 
-	if (rel_is_ref(rel)) {
+	/* for merge statement join, ignore the multiple references */
+	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
 		if (has_remote_or_replica(rel)) {
 			sql_rel *nrel = rel_copy(sql, rel, 1);
 
@@ -433,6 +435,9 @@ distribute(mvc *sql, sql_rel *rel)
 		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			l = rel->l = distribute(sql, replica(sql, rel->l, pr->value));
 		}
+
+		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
+			return rel;
 
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 		    r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
@@ -591,6 +596,13 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
+
+	if (rel_is_ref(rel)) { /* Don't modify the same relation twice */
+		int rused = 1 << 2;
+		if (rel->used & rused)
+			return rel;
+		rel->used |= rused;
+	}
 
 	switch (rel->op) {
 	case op_basetable:
