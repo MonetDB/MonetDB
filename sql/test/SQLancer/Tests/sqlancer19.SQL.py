@@ -30,6 +30,10 @@ with SQLTestCase() as cli:
     cli.execute('SELECT c0 BETWEEN 10 AND 11 FROM rt3;').assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(False,),(False,),(False,)])
     cli.execute('SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM rt3 where rt3.c0 = 1;') \
         .assertSucceeded().assertDataResultMatch([(False,True,False,True)])
+    cli.execute('SELECT c0 BETWEEN 2 AND 5 AS myproj FROM rt3 ORDER BY myproj;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(True,),(True,),(True,),(True,)])
+    cli.execute('SELECT c0 > 4 AS myproj FROM rt3 ORDER BY myproj;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(True,),(True,),(True,)])
     cli.execute('MERGE INTO t0 USING (SELECT 1 FROM rt1) AS mergejoined(c0) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (INTERVAL \'5\' SECOND);') \
         .assertSucceeded().assertRowCount(0)
     cli.execute("ROLLBACK;")

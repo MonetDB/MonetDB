@@ -1399,8 +1399,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), sym);
 				if (is_anti(exp))
 					set_anti(ne);
-				if (exp_name(e)) /* propgate a possible alias already parsed */
-					exp_prop_alias(sql->sa, exp, e);
+				if (exp_name(e)) /* propagate a possible alias already parsed */
+					exp_prop_alias(sql->sa, ne, e);
 				exp_setalias(e, NULL, NULL);
 				exp = ne;
 			} else {
@@ -1409,8 +1409,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					set_anti(ne);
 				if (is_semantics(exp))
 					set_semantics(ne);
-				if (exp_name(e)) /* propgate a possible alias already parsed */
-					exp_prop_alias(sql->sa, exp, e);
+				if (exp_name(e)) /* propagate a possible alias already parsed */
+					exp_prop_alias(sql->sa, ne, e);
 				exp_setalias(e, NULL, NULL);
 				exp = ne;
 			}
