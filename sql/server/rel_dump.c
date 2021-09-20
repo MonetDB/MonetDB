@@ -1198,29 +1198,27 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 				if (f && !execute_priv(sql, f->func))
 					return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
-				/* fix scale of mul function, other type casts are explicit */
-				if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
-					sql_arg *ares = f->func->res->h->data;
+				/* apply scale fixes if needed */
+				if (f && f->func->fix_scale != SCALE_NONE && list_length(exps) == 2) {
+					sql_exp *l = exps->h->data;
+					sql_exp *r = exps->h->next->data;
+					sql_subtype *t1 = ops->h->data;
+					sql_subtype *t2 = ops->h->next->data;
 
-					if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+					if (f->func->fix_scale == SCALE_DIV) {
+						if (!(exps->h->data = exp_scale_algebra(sql, f, NULL, l, r)))
+							return NULL;
+					} else if (f->func->fix_scale == SCALE_MUL) {
+						exp_sum_scales(f, l, r);
+					} else if (f->func->fix_scale == DIGITS_ADD) {
 						sql_subtype *res = f->res->h->data;
-						sql_subtype *lt = ops->h->data;
-						sql_subtype *rt = ops->h->next->data;
-
-						res->digits = lt->digits;
-						res->scale = lt->scale + rt->scale;
-					}
-				}
-				/* fix scale of div function */
-				if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
-					sql_arg *ares = f->func->res->h->data;
-
-					if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
-					sql_subtype *res = f->res->h->data;
-						sql_subtype *lt = ops->h->data;
-						sql_subtype *rt = ops->h->next->data;
-
-						res->scale = lt->scale - rt->scale;
+						if (t1->digits && t2->digits) {
+							res->digits = t1->digits + t2->digits;
+							if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
+								return sql_error(sql, -1, SQLSTATE(42000) "Output number of digits for %s%s%s is too large\n", tname ? tname : "", tname ? "." : "", cname);
+						} else {
+							res->digits = 0;
+						}
 					}
 				}
 			}
