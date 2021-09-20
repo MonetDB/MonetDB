@@ -777,18 +777,21 @@ readInt( char *r, int *pos)
 static char *
 readString( char *r, int *pos)
 {
-	char *st = NULL;
+	char *st = NULL, *parsed;
 
-	if (r[*pos] == '"'){
+	if (r[*pos] == '"') {
 		(*pos)++;
-		st = r+*pos;
+		st = parsed = r+*pos;
 		while (r[*pos] != '"') {
-			if (r[*pos] == '\\' && r[*pos + 1] == '"')
+			if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
+				*parsed++ = r[*pos + 1];
 				(*pos)+=2;
-			else
+			} else {
+				*parsed++ = r[*pos];
 				(*pos)++;
+			}
 		}
-		r[*pos] = 0;
+		*parsed = '\0';
 		(*pos)++;
 	}
 	return st;
