@@ -393,7 +393,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 				if (strcmp(p + 1, MONETDB5_PASSWDHASH) != 0) {
 					fprintf(stderr, "set: passphrase hash '%s' incompatible, "
 							"expected '%s'\n",
-							h, MONETDB5_PASSWDHASH);
+							p + 1, MONETDB5_PASSWDHASH);
 					return(1);
 				}
 				*q = '}';

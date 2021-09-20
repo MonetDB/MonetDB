@@ -2107,6 +2107,9 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_or_exp(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		for(node *n=rel->exps->h; n; n=n->next) {
 			sql_exp *e = n->data, *id;
@@ -2139,8 +2142,8 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						n = next;
 					}
 
-					sql_rel *l = rel;
-					sql_rel *r = rel_dup(rel);
+					sql_rel *l = rel, *r = rel_dup(rel);
+					set_processed(rel);
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
 					if (!(l = rewrite_or_exp(v, l)))
@@ -2448,6 +2451,9 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	sql_rel *u = NULL;
 	list *exps = NULL;
 	int freevar = 0;
+
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
@@ -2972,47 +2978,40 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rewrite_join2semi(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
 		sql_rel *j = rel->l;
-		int needed=0;
+		int needed = 0, changed = 0;
 
 		if (!j || (!is_join(j->op) && !is_semi(j->op)) || !list_empty(j->exps))
 			return rel;
 		/* if needed first push select exps down under the join */
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
-				needed = 1;
-		}
-		if (needed) {
-			list *exps = sa_list(v->sql->sa);
-			sql_rel *l = j->l = rel_select(v->sql->sa, j->l, NULL);
-
-			for (node *n = rel->exps->h; n;) {
-				node *next = n->next;
-				sql_exp *e = n->data;
-				sql_subfunc *sf = e->f;
-
-				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l)) {
-					append(exps, e);
+			if (is_func(e->type) && is_anyequal_func(sf)) {
+				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(j->l, e->l)) {
+					sql_rel *l = j->l;
+					if (!is_select(l->op) || rel_is_ref(l)) {
+						set_processed(l);
+						j->l = l = rel_select(v->sql->sa, j->l, NULL);
+					}
+					rel_select_add_exp(v->sql->sa, l, e);
 					list_remove_node(rel->exps, NULL, n);
+					changed = 1;
+					v->changes++;
+				} else {
+					needed = 1;
 				}
-				n = next;
 			}
-			l->exps = exps;
-			j->l = rewrite_join2semi(v, j->l);
+			n = next;
 		}
-
-		needed = 0;
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
-			sql_subfunc *sf = e->f;
-
-			if (is_func(e->type) && is_anyequal_func(sf))
-				needed = 1;
-		}
+		if (changed && !(j->l = rewrite_join2semi(v, j->l)))
+			return NULL;
 		if (!needed)
 			return try_remove_empty_select(v, rel);
 		if (!j->exps)
@@ -3263,8 +3262,11 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static list *
 rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (list_empty(exps))
 		return exps;
+
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 

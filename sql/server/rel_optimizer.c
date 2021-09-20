@@ -4757,7 +4757,7 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 
 			if (left && rel_rebind_exp(v->sql, rel->l, e)) { /* select expressions on left */
 				sql_rel *l = rel->l;
-				if (!is_select(l->op)) {
+				if (!is_select(l->op) || rel_is_ref(l)) {
 					set_processed(l);
 					rel->l = l = rel_select(v->sql->sa, rel->l, NULL);
 				}
@@ -4767,7 +4767,7 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 			} else if (right && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)) &&
 					   rel_rebind_exp(v->sql, rel->r, e)) { /* select expressions on right */
 				sql_rel *r = rel->r;
-				if (!is_select(r->op)) {
+				if (!is_select(r->op) || rel_is_ref(r)) {
 					set_processed(r);
 					rel->r = r = rel_select(v->sql->sa, rel->r, NULL);
 				}
@@ -4933,7 +4933,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 
 			if (n != rel->exps->h && e->type == e_cmp && rel_rebind_exp(v->sql, rel->l, e)) {
 				sql_rel *l = rel->l;
-				if (!is_select(l->op)) {
+				if (!is_select(l->op) || rel_is_ref(l)) {
 					set_processed(l);
 					rel->l = l = rel_select(v->sql->sa, rel->l, NULL);
 				}

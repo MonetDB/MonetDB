@@ -161,7 +161,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 static sql_rel *
 replica(visitor *v, sql_rel *rel)
 {
-	if (rel_is_ref(rel)) {
+	/* for merge statement join, ignore the multiple references */
+	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
 		if (has_remote_or_replica(rel)) {
 			sql_rel *nrel = rel_copy(v->sql, rel, 1);
 
@@ -192,7 +193,8 @@ distribute(visitor *v, sql_rel *rel)
 	sql_rel *l = rel->l, *r = rel->r;
 	prop *p, *pl, *pr;
 
-	if (rel_is_ref(rel)) {
+	/* for merge statement join, ignore the multiple references */
+	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
 		if (has_remote_or_replica(rel)) {
 			sql_rel *nrel = rel_copy(v->sql, rel, 1);
 
@@ -274,6 +276,9 @@ distribute(visitor *v, sql_rel *rel)
 				return NULL;
 		}
 
+		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
+			return rel;
+
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
 			strcmp(pl->value, pr->value) == 0) {
@@ -330,6 +335,12 @@ rel_remote_func(visitor *v, sql_rel *rel)
 {
 	(void) v;
 
+	if (rel_is_ref(rel)) { /* Don't modify the same relation twice */
+		int rused = 1 << 2;
+		if (rel->used & rused)
+			return rel;
+		rel->used |= rused;
+	}
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		rel = rel_relational_func(v->sql->sa, rel, exps);
