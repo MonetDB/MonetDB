@@ -400,7 +400,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 #define STRIMP_COMPLETE(b)			\
 	b->tstrimps != NULL &&			\
 		(b->tstrimps == (Strimps *)1 ||				\
-		 (b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base))/sizeof(uint64_t) == b->batCount)
+		 (b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base)) == b->batCount*sizeof(uint64_t))
 
 static bool
 BATcheckstrimps(BAT *b)
@@ -485,7 +485,6 @@ BATcheckstrimps(BAT *b)
 	 * not null and the number of bitstrings is equal to the bat
 	 * count.
 	 */
-	// assert(!b->tstrimps || (b->tstrimps->strimps.free - HSIZE(((uint64_t *)b->tstrimps->strimps.base)[0]))/sizeof(uint64_t) <= b->batCount);
 	ret = STRIMP_COMPLETE(b);
 	if (ret) {
 		TRC_DEBUG(ACCELERATOR,
