@@ -86,7 +86,7 @@ dump_escape_ident(sql_allocator *sa, const char *s)
 
 		res = r;
 		while (*s) {
-			if (*s == '"')
+			if (*s == '"' || *s == '\\')
 				*r++ = '\\';
 			*r++ = *s++;
 		}
@@ -717,8 +717,9 @@ skipIdent( char *r, int *pos)
 {
 	if (r[*pos] == '"') {
 		(*pos)++;
-		while(r[*pos] && r[*pos] != '"') {
-			if (r[*pos] == '\\' && r[*pos + 1] == '"') /* We send escaped '"' character, so consider this pair as just one */
+		while (r[*pos] && r[*pos] != '"') {
+			/* We send escaped '"' and '\' characters */
+			if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\'))
 				(*pos)+=2;
 			else
 				(*pos)++;
@@ -729,13 +730,14 @@ skipIdent( char *r, int *pos)
 	}
 }
 
-static void /* We send escaped '"' character, so remove the escape after parsing */
+static void
 convertIdent(char *r)
 {
 	int i = 0, j = 0;
-	while(r[i] && r[i] != '"') {
-		if (r[i] == '\\' && r[i + 1] == '"') {
-			r[j++] = '"';
+	while (r[i] && r[i] != '"') {
+		/* We send escaped '"' and '\' characters */
+		if (r[i] == '\\' && (r[i + 1] == '"' || r[i + 1] == '\\')) {
+			r[j++] = r[i + 1];
 			i+=2;
 		} else {
 			r[j++] = r[i++];
@@ -1717,7 +1719,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				bool inside_identifier = false;
 
 				while (r[*pos] && (inside_identifier || r[*pos] != '\n')) { /* the input parameters must be parsed after the input relation, skip them for now  */
-					if (inside_identifier && r[*pos] == '\\' && r[*pos + 1] == '"') {
+					if (inside_identifier && r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
 						(*pos)+=2;
 					} else if (r[*pos] == '"') {
 						inside_identifier = !inside_identifier;
