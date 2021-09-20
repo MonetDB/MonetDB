@@ -52,7 +52,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = newInstruction(0, NULL, NULL);
 			q->barrier = RETURNsymbol;
 			getArg(q,0)= getArg(p,0);
-			addArgument(mb,q,j);
+			q = addArgument(mb,q,j);
 			pushInstruction(mb,q);
 			actions++;
 			continue;
