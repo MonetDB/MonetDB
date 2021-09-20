@@ -42,6 +42,8 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(0,),])
     cli.execute('SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN SYMMETRIC 1 AND NULL;') \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute('SELECT 1 FROM (SELECT TIME \'01:00:00\' FROM rt1) va(vc1) WHERE greatest(va.vc1, TIME \'01:01:01\') <= TIME \'01:01:02\';') \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
