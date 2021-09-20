@@ -193,6 +193,7 @@ extern int is_identity( sql_exp *e, sql_rel *r);
 
 extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
+extern sql_exp *exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r);
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern int exp_aggr_is_count(sql_exp *e);

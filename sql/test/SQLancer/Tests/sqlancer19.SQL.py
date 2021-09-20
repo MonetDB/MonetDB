@@ -16,14 +16,19 @@ with SQLTestCase() as cli:
     INSERT INTO "t1" VALUES (NULL, 1),(NULL, 6),(NULL, 0),(BINARY LARGE OBJECT '50', NULL),(BINARY LARGE OBJECT 'ACBC2EDEF0', NULL),
     (BINARY LARGE OBJECT '65', NULL),(BINARY LARGE OBJECT 'EF43C0', NULL),(BINARY LARGE OBJECT '90', NULL),(BINARY LARGE OBJECT '', NULL);
 
+    CREATE TABLE "t2" ("c0" TINYINT NOT NULL,"c2" DATE);
+    INSERT INTO "t2" VALUES (-7, NULL),(0, NULL),(-11, DATE '1970-01-01'),(8, DATE '1970-01-01'),(5, DATE '1970-01-01'),(1, DATE '1970-01-01'),
+    (0, NULL),(1, NULL),(7, NULL),(5, NULL);
+
     CREATE TABLE "t3" ("c0" BIGINT,"c1" INTERVAL MONTH);
     INSERT INTO "t3" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH);
     COMMIT;
 
     START TRANSACTION;
     CREATE REMOTE TABLE "rt1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT) ON 'mapi:monetdb://localhost:%s/%s/sys/t1';
+    CREATE REMOTE TABLE "rt2" ("c0" TINYINT NOT NULL,"c2" DATE) ON 'mapi:monetdb://localhost:%s/%s/sys/t2';
     CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t3';
-    COMMIT;""" % (port, db, port, db)).assertSucceeded()
+    COMMIT;""" % (port, db, port, db, port, db)).assertSucceeded()
 
     cli.execute("START TRANSACTION;")
     cli.execute('SELECT json."integer"(JSON \'1\') FROM rt3;').assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
@@ -44,13 +49,17 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute('SELECT 1 FROM (SELECT TIME \'01:00:00\' FROM rt1) va(vc1) WHERE greatest(va.vc1, TIME \'01:01:01\') <= TIME \'01:01:02\';') \
         .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute('SELECT 3 > (rt2.c0 ^ CAST(2 AS TINYINT)) * rt2.c0 FROM rt2;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(True,),(False,),(False,),(False,),(False,),(True,),(False,),(False,),(False,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
     START TRANSACTION;
     DROP TABLE rt1;
+    DROP TABLE rt2;
     DROP TABLE rt3;
     DROP TABLE t0;
     DROP TABLE t1;
+    DROP TABLE t2;
     DROP TABLE t3;
     COMMIT;""").assertSucceeded()

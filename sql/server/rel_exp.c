@@ -2839,6 +2839,50 @@ exp_flatten(mvc *sql, sql_exp *e)
 	return NULL;
 }
 
+sql_exp *
+exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r)
+{
+	sql_subtype *lt = exp_subtype(l);
+	sql_subtype *rt = exp_subtype(r);
+
+	if (lt->type->scale == SCALE_FIX && rt->scale &&
+		strcmp(f->func->imp, "/") == 0) {
+		sql_subtype *res = f->res->h->data;
+		unsigned int scale, digits, digL, scaleL;
+		sql_subtype nlt;
+
+		/* scale fixing may require a larger type ! */
+		scaleL = (lt->scale < 3) ? 3 : lt->scale;
+		scale = scaleL;
+		scaleL += rt->scale;
+		digL = lt->digits + (scaleL - lt->scale);
+		digits = (digL > rt->digits) ? digL : rt->digits;
+
+		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (res->type->radix == 10 && digits > 39)
+			digits = 39;
+		if (res->type->radix == 2 && digits > 128)
+			digits = 128;
+#else
+		if (res->type->radix == 10 && digits > 19)
+			digits = 19;
+		if (res->type->radix == 2 && digits > 64)
+			digits = 64;
+#endif
+
+		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
+		if (nlt.digits < scaleL) {
+		    sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
+			return NULL;
+		}
+		l = exp_check_type(sql, &nlt, rel, l, type_equal);
+
+		sql_find_subtype(res, lt->type->base.name, digits, scale);
+	}
+	return l;
+}
+
 void
 exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
