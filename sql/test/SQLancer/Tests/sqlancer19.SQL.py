@@ -51,6 +51,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute('SELECT 3 > (rt2.c0 ^ CAST(2 AS TINYINT)) * rt2.c0 FROM rt2;') \
         .assertSucceeded().assertDataResultMatch([(False,),(True,),(False,),(False,),(False,),(False,),(True,),(False,),(False,),(False,)])
+    cli.execute("SELECT r'\"' from t3;") \
+        .assertSucceeded().assertDataResultMatch([("\"",)])
+    cli.execute("SELECT r'\"' from rt3;") \
+        .assertSucceeded().assertDataResultMatch([("\"",)])
+    cli.execute("SELECT r'\\' from t3;") \
+        .assertSucceeded().assertDataResultMatch([("\\",)])
+    cli.execute("SELECT r'\\' from rt3;") \
+        .assertSucceeded().assertDataResultMatch([("\\",)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
