@@ -5475,7 +5475,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.keys",	"table_types",	"table_types_table_type_name_unique",	"Unique Key",	NULL,	-1	]
 % .%2,	.o,	.,	. # table_name
 % %2,	name,	nr,	sub # name
-% char,	varchar,	clob,	clob # type
+% char,	varchar,	clob,	varchar # type
 % 11,	20,	1,	0 # length
 [ "sys.objects",	"dependency_type_id",	"0",	NULL	]
 [ "sys.objects",	"dependency_type_id",	"0",	NULL	]

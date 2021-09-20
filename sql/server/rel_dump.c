@@ -1204,25 +1204,36 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				if (f && !execute_priv(sql, f->func))
 					return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
 				/* apply scale fixes if needed */
-				if (f && f->func->fix_scale != SCALE_NONE && list_length(exps) == 2) {
-					sql_exp *l = exps->h->data;
-					sql_exp *r = exps->h->next->data;
-					sql_subtype *t1 = ops->h->data;
-					sql_subtype *t2 = ops->h->next->data;
+				if (f && f->func->fix_scale != SCALE_NONE) {
+					if (list_length(exps) == 1) {
+						if (f->func->fix_scale == INOUT) {
+							sql_subtype *t = exp_subtype(exps->h->data);
+							sql_subtype *res = f->res->h->data;
 
-					if (f->func->fix_scale == SCALE_DIV) {
-						if (!(exps->h->data = exp_scale_algebra(sql, f, NULL, l, r)))
-							return NULL;
-					} else if (f->func->fix_scale == SCALE_MUL) {
-						exp_sum_scales(f, l, r);
-					} else if (f->func->fix_scale == DIGITS_ADD) {
-						sql_subtype *res = f->res->h->data;
-						if (t1->digits && t2->digits) {
-							res->digits = t1->digits + t2->digits;
-							if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
-								return sql_error(sql, -1, SQLSTATE(42000) "Output number of digits for %s%s%s is too large\n", tname ? tname : "", tname ? "." : "", cname);
-						} else {
-							res->digits = 0;
+							res->digits = t->digits;
+							res->scale = t->scale;
+						}
+					} else if (list_length(exps) == 2) {
+						sql_exp *l = exps->h->data;
+						sql_exp *r = exps->h->next->data;
+
+						if (f->func->fix_scale == SCALE_DIV) {
+							if (!(exps->h->data = exp_scale_algebra(sql, f, NULL, l, r)))
+								return NULL;
+						} else if (f->func->fix_scale == SCALE_MUL) {
+							exp_sum_scales(f, l, r);
+						} else if (f->func->fix_scale == DIGITS_ADD) {
+							sql_subtype *t1 = exp_subtype(l);
+							sql_subtype *t2 = exp_subtype(r);
+							sql_subtype *res = f->res->h->data;
+
+							if (t1->digits && t2->digits) {
+								res->digits = t1->digits + t2->digits;
+								if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
+									return sql_error(sql, -1, SQLSTATE(42000) "Output number of digits for %s%s%s is too large\n", tname ? tname : "", tname ? "." : "", cname);
+							} else {
+								res->digits = 0;
+							}
 						}
 					}
 				}

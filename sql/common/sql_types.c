@@ -377,8 +377,10 @@ is_subtype(sql_subtype *sub, sql_subtype *super)
 		return 0;
 	if (super->digits > 0 && sub->digits > super->digits)
 		return 0;
-	if (super->digits == 0 && super->type->eclass == EC_STRING &&
-	    (sub->type->eclass == EC_STRING || sub->type->eclass == EC_CHAR))
+	/* while binding a function, 'char' types match each other */
+	if (super->digits == 0 && 
+		((super->type->eclass == EC_STRING && EC_VARCHAR(sub->type->eclass)) ||
+		 (super->type->eclass == EC_CHAR && sub->type->eclass == EC_CHAR)))
 		return 1;
 	if (super->digits != sub->digits && sub->type->eclass == EC_CHAR)
 		return 0;
