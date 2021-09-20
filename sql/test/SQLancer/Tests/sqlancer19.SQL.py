@@ -59,6 +59,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("\\",)])
     cli.execute("SELECT r'\\' from rt3;") \
         .assertSucceeded().assertDataResultMatch([("\\",)])
+    cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from t3;") \
+        .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
+    cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from rt3;") \
+        .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
