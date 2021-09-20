@@ -932,7 +932,7 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
-	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
+	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
@@ -1306,12 +1306,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	if (r[*pos] == '!') {
 		(*pos)++;
 		skipWS(r, pos);
-		set_anti(exp);
+		anti = 1;
 	}
 	if (r[*pos] == '*') {
 		(*pos)++;
 		skipWS(r, pos);
-		set_semantics(exp);
+		sem = 1;
 	}
 
 	switch(r[*pos]) {
@@ -1386,10 +1386,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			list *exps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0);
 			if (!exps)
 				return NULL;
-			sql_exp *ne = exp_in(sql->sa, exp, exps, f);
-			if (is_anti(exp))
-				set_anti(ne);
-			exp = ne;
+			exp = exp_in(sql->sa, exp, exps, f);
+			if (anti)
+				set_anti(exp);
 		} else {
 			int sym = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0);
@@ -1412,17 +1411,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				if (exp_name(e)) /* propagate a possible alias already parsed */
 					exp_prop_alias(sql->sa, exp, e);
 			} else {
-				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
-				if (is_anti(exp))
-					set_anti(ne);
-				if (is_semantics(exp))
-					set_semantics(ne);
+				exp = exp_compare(sql->sa, exp, e, f);
+				if (anti)
+					set_anti(exp);
+				if (sem)
+					set_semantics(exp);
 				if (sym) /* set it, so it gets propagated to the range comparison */
-					set_symmetric(ne);
+					set_symmetric(exp);
 				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, ne, e);
+					exp_prop_alias(sql->sa, exp, e);
 				exp_setalias(e, NULL, NULL);
-				exp = ne;
 			}
 		}
 	}
