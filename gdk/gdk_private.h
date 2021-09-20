@@ -102,7 +102,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(void)
+gdk_return BBPinit(bool first)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
@@ -395,7 +395,6 @@ ilog2(BUN x)
 	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	((1 << (SIZEOF_SIZE_T + 5)) - 1)
-#define BBP_THREADMASK	63
 
 struct PROPrec {
 	enum prop_t id;
@@ -426,11 +425,6 @@ typedef struct {
 	MT_Lock swap;
 } batlock_t;
 
-typedef struct {
-	MT_Lock cache;
-	bat free;
-} bbplock_t;
-
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
 
 #define MAXFARMS       32
@@ -442,7 +436,6 @@ extern struct BBPfarm_t {
 } BBPfarms[MAXFARMS];
 
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
-extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
@@ -465,13 +458,6 @@ extern MT_Lock GDKtmLock;
 	} while (0)
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
-#if SIZEOF_SIZE_T == 8
-#define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
-#else
-#define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
-#endif
-#define GDKcacheLock(y)	GDKbbpLock[y].cache
-#define BBP_free(y)	GDKbbpLock[y].free
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */

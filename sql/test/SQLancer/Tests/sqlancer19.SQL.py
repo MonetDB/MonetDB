@@ -1,0 +1,54 @@
+import os
+
+from MonetDBtesting.sqltest import SQLTestCase
+
+port = os.environ['MAPIPORT']
+db = os.environ['TSTDB']
+
+with SQLTestCase() as cli:
+    cli.connect(username="monetdb", password="monetdb")
+    cli.execute("""
+    START TRANSACTION;
+    CREATE TABLE "t0" ("c0" INTERVAL SECOND NOT NULL, "c1" JSON);
+    INSERT INTO "t0" VALUES (INTERVAL '9' SECOND, '""');
+
+    CREATE TABLE "t1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT);
+    INSERT INTO "t1" VALUES (NULL, 1),(NULL, 6),(NULL, 0),(BINARY LARGE OBJECT '50', NULL),(BINARY LARGE OBJECT 'ACBC2EDEF0', NULL),
+    (BINARY LARGE OBJECT '65', NULL),(BINARY LARGE OBJECT 'EF43C0', NULL),(BINARY LARGE OBJECT '90', NULL),(BINARY LARGE OBJECT '', NULL);
+
+    CREATE TABLE "t3" ("c0" BIGINT,"c1" INTERVAL MONTH);
+    INSERT INTO "t3" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH);
+    COMMIT;
+
+    START TRANSACTION;
+    CREATE REMOTE TABLE "rt1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT) ON 'mapi:monetdb://localhost:%s/%s/sys/t1';
+    CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t3';
+    COMMIT;""" % (port, db, port, db)).assertSucceeded()
+
+    cli.execute("START TRANSACTION;")
+    cli.execute('SELECT json."integer"(JSON \'1\') FROM rt3;').assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute('SELECT c0 BETWEEN 10 AND 11 FROM rt3;').assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(False,),(False,),(False,)])
+    cli.execute('SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM rt3 where rt3.c0 = 1;') \
+        .assertSucceeded().assertDataResultMatch([(False,True,False,True)])
+    cli.execute('SELECT c0 BETWEEN 2 AND 5 AS myproj FROM rt3 ORDER BY myproj;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(True,),(True,),(True,),(True,)])
+    cli.execute('SELECT c0 > 4 AS myproj FROM rt3 ORDER BY myproj;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(True,),(True,),(True,)])
+    cli.execute('MERGE INTO t0 USING (SELECT 1 FROM rt1) AS mergejoined(c0) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (INTERVAL \'5\' SECOND);') \
+        .assertSucceeded().assertRowCount(0)
+    cli.execute('SELECT 1 FROM (values (0)) mv(vc0) LEFT OUTER JOIN (SELECT 1 FROM rt1) AS sub0(c0) ON 2 = 0.05488666234725814;') \
+        .assertSucceeded().assertDataResultMatch([(1,),])
+    cli.execute('SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN 1 AND NULL;') \
+        .assertSucceeded().assertDataResultMatch([(0,),])
+    cli.execute('SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN SYMMETRIC 1 AND NULL;') \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("ROLLBACK;")
+
+    cli.execute("""
+    START TRANSACTION;
+    DROP TABLE rt1;
+    DROP TABLE rt3;
+    DROP TABLE t0;
+    DROP TABLE t1;
+    DROP TABLE t3;
+    COMMIT;""").assertSucceeded()

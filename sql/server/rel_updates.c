@@ -1542,14 +1542,22 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
-		dnode *n;
 
-		nt = mvc_create_table(sql, t->s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0);
-		for (n = headers->h; n; n = n->next) {
+		switch (mvc_create_table(&nt, sql, t->s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)) {
+			case -1:
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: transaction conflict detected");
+			default:
+				break;
+		}
+		for (dnode *n = headers->h; n; n = n->next) {
 			dnode *dn = n->data.lval->h;
 			char *cname = dn->data.sval;
 			char *format = NULL;
 			sql_column *cs = NULL;
+			int res = LOG_OK;
 
 			if (dn->next)
 				format = dn->next->data.sval;
@@ -1560,16 +1568,24 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 
 				name = sa_alloc(sql->sa, len);
 				snprintf(name, len, "%%cname");
-				cs = mvc_create_column(sql, nt, name, ctype);
+				res = mvc_create_column(&cs, sql, nt, name, ctype);
 			} else if (!format) {
 				cs = find_sql_column(t, cname);
-				cs = mvc_create_column(sql, nt, cname, &cs->type);
+				res = mvc_create_column(&cs, sql, nt, cname, &cs->type);
 			} else { /* load as string, parse later */
 				sql_subtype *ctype = sql_bind_localtype("str");
-				cs = mvc_create_column(sql, nt, cname, ctype);
+				res = mvc_create_column(&cs, sql, nt, cname, ctype);
 				has_formats = 1;
 			}
-			(void)cs;
+			switch (res) {
+				case -1:
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: transaction conflict detected");
+				default:
+					break;
+			}
 		}
 		if (!has_formats)
 			headers = NULL;
