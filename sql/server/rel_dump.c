@@ -952,7 +952,7 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 			lng value = a->data.val.lval;
 			const lng one = 1;
 #endif
-			int bits = (int) digits2bits(strlen(st)), obits = bits;
+			int bits = (int) digits2bits((unsigned) strlen(st)), obits = bits;
 
 			while (bits > 0 && (bits == sizeof(value) * 8 || (one << (bits - 1)) > value))
 				bits--;
