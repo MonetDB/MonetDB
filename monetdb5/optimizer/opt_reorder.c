@@ -93,12 +93,15 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
 				assert( k < MAXSLICES);
 				depth[getArg(p,0)] = k;
-			} 
+			}
 		} else{
 			for(j= p->retc; j <p->argc; j++){
 				if (depth[getArg(p,j)] > k)
 					k = depth[getArg(p,j)];
 			}
+			if (blockExit(p)) /* The barrier exit has a return variable which matches the result of the blockBegin
+								 output, ie we need too use that for the depth */
+				k = depth[getArg(p,0)];
 			for(j=0; j< p->retc; j++)
 				if( depth[getArg(p,j)] == 0)
 					depth[getArg(p,j)] = k;
