@@ -935,10 +935,43 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 }
 
 static sql_exp*
+parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
+{
+	sql_exp *exp = NULL;
+	char *st = readString(r,pos);
+
+	if (st && strcmp(st, "NULL") == 0) {
+		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+	} else {
+		atom *a = atom_general(sql->sa, tpe, st);
+		if (tpe->type->eclass == EC_NUM) { /* needs to set the number of digits */
+#ifdef HAVE_HGE
+			hge value = a->data.val.hval;
+			const hge one = 1;
+#else
+			lng value = a->data.val.lval;
+			const lng one = 1;
+#endif
+			int bits = (int) digits2bits(strlen(st)), obits = bits;
+
+			while (bits > 0 && (bits == sizeof(value) * 8 || (one << (bits - 1)) > value))
+				bits--;
+			if (bits != obits && (bits == 8 || bits == 16 || bits == 32 || bits == 64))
+				bits++;
+			a->tpe.digits = bits;
+		} else if (tpe->type->eclass == EC_FLT || tpe->type->eclass == EC_DEC) {
+			assert(a->tpe.digits > 0);
+		}
+		exp = exp_atom(sql->sa, a);
+	}
+	return exp;
+}
+
+static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
 	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
-	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
+	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
 	sql_type *t = NULL;
@@ -1086,11 +1119,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				skipWS(r, pos);
 				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
 			} else {
-				st = readString(r,pos);
-				if (st && strcmp(st, "NULL") == 0)
-					exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
-				else
-					exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, st));
+				exp = parse_atom(sql, r, pos, &tpe);
 				skipWS(r, pos);
 			}
 		}
@@ -1104,11 +1133,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
 			sql_init_subtype(&tpe, t, 0, 0);
 		}
-		st = readString(r,pos);
-		if (st && strcmp(st, "NULL") == 0)
-			exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
-		else
-			exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, st));
+		exp = parse_atom(sql, r, pos, &tpe);
 		skipWS(r, pos);
 		break;
 	default:
