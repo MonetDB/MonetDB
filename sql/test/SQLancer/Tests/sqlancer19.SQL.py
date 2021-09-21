@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from MonetDBtesting.sqltest import SQLTestCase
 
@@ -71,6 +72,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(18,)])
     cli.execute("SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(18,)])
+    cli.execute("SELECT 3 / 0.84 FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
+    cli.execute("SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""

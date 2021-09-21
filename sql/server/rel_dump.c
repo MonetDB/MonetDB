@@ -1242,9 +1242,33 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						sql_exp *l = exps->h->data;
 						sql_exp *r = exps->h->next->data;
 
+						/* Find converted value type for division and update function output type */
 						if (f->func->fix_scale == SCALE_DIV) {
-							if (!(exps->h->data = exp_scale_algebra(sql, f, NULL, l, r)))
-								return NULL;
+							sql_subtype *lt = is_convert(l->type) ? ((sql_subtype*)exp_fromtype(l)) : exp_subtype(l);
+							sql_subtype *rt = exp_subtype(r);
+
+							if (lt->type->scale == SCALE_FIX && rt->scale && strcmp(f->func->imp, "/") == 0) {
+								sql_subtype *res = f->res->h->data;
+								unsigned int scaleL = (lt->scale < 3) ? 3 : lt->scale;
+								unsigned int scale = scaleL;
+								scaleL += rt->scale;
+								unsigned int digL = lt->digits + (scaleL - lt->scale);
+								unsigned int digits = (digL > rt->digits) ? digL : rt->digits;
+
+#ifdef HAVE_HGE
+								if (res->type->radix == 10 && digits > 39)
+									digits = 39;
+								if (res->type->radix == 2 && digits > 128)
+									digits = 128;
+#else
+								if (res->type->radix == 10 && digits > 19)
+									digits = 19;
+								if (res->type->radix == 2 && digits > 64)
+									digits = 64;
+#endif
+
+								sql_find_subtype(res, lt->type->base.name, digits, scale);
+							}
 						} else if (f->func->fix_scale == SCALE_MUL) {
 							exp_sum_scales(f, l, r);
 						} else if (f->func->fix_scale == DIGITS_ADD) {
