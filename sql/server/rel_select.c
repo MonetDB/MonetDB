@@ -501,8 +501,9 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 				if (nvalue < rdigits || nvalue >= (unsigned int) INT32_MAX)
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", sf->func->base.name);
 				rdigits = nvalue;
-			} else if (sf->func->fix_scale == INOUT && n == exps->h) {
-				rdigits = tdigits;
+			} else if (sf->func->fix_scale == INOUT) {
+				if (n == exps->h)
+					rdigits = tdigits;
 			} else {
 				rdigits = sql_max(rdigits, tdigits);
 			}
