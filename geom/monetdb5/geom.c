@@ -531,11 +531,13 @@ static double geoDistancePointLineInternal(GeoPoint point, GeoLine line)
 static double geoDistancePointLine(GeoPoint point, GeoLines lines)
 {
 	double distance, min_distance = INT_MAX;
+	fflush(stdout);
 	for (int i = 0; i < lines.segmentCount; i++)
 	{
 		distance = geoDistancePointLineInternal(point, lines.segments[i]);
 		if (distance < min_distance)
 			min_distance = distance;
+			
 	}
 	return min_distance;
 }
@@ -762,6 +764,7 @@ static double geoDistanceInternal(GEOSGeom a, GEOSGeom b)
 			distance = geoDistanceSingle(geo1, geo2);
 			if (distance < min_distance)
 				min_distance = distance;
+				
 		}
 	}
 	return min_distance;
@@ -849,14 +852,44 @@ static bool geoPointEquals(GeoPoint pointA, GeoPoint pointB)
 	return (pointA.lat == pointB.lat) && (pointA.lon = pointB.lon);
 }
 
+//POSTgis Calculate Perpendicular of Point
+/*
+normal_cart = cross_product(line->start, line->end)
+point_cart = geo2cart(p)
+dot = dot_product(normal,pt)
+
+vector_scale(&n, dot_product(&p, &n));
+vector_difference(&p, &n, &k);
+normalize(&k);
+cart2geog(&k, &gk);
+edge_contains_point(e, &gk)
+*/
+
+//POSTgis Calculate Point in Edge
+/*
+e -> edge // p -> point
+geog2cart(&(e->start), &vs);
+geog2cart(&(e->end), &ve);
+if ( vs.x == -1.0 * ve.x && vs.y == -1.0 * ve.y && vs.z == -1.0 * ve.z )
+	return LW_TRUE;
+geog2cart(p, &vp);
+vector_sum(&vs, &ve, &vcp);
+normalize(&vcp);
+vs_dot_vcp = dot_product(&vs, &vcp);
+
+POINT ON PLANE (Plane defined by Edge)
+normal_cart = cross_product(line->start, line->end)
+point_cart = geo2cart(p)
+dot = dot_product(normal,pt)
+return dot == 0
+*/
+
+//TODO If a line covers a point, it must have 0 distance to one of the segments (is this true?)
 #if 0
-//TODO: Can we calculate the perpendicular of the Point in the Line and check if it is the same as the point?
-//Probably not, this must be wrong
 static bool geoLineCoversPoint (GeoLines lines, GeoPoint point) {
 	GeoPoint perpendicularPoint;
 	for (int i = 0; i < lines.segmentCount; i++) {
-		perpendicularPoint = calculatePerpendicular(point,lines.segments[i]);
-		if (geoPointEquals(perpendicularPoint,point))
+		if (geoDistancePointLineInternal(point,lines.segments[i]) == 0)
 			return true;
 	}
 	return false;
@@ -872,6 +905,7 @@ static bool geoLineCoversLine (GeoLines linesA, GeoLines linesB) {
 }
 #endif
 
+//TODO Check if this works correctly
 static bool geoCoversSingle(GEOSGeom a, GEOSGeom b)
 {
 	int dimA = GEOSGeom_getDimensions(a), dimB = GEOSGeom_getDimensions(b);
@@ -975,23 +1009,76 @@ str wkbCoversGeographic(bit *out, wkb **a, wkb **b)
 	return err;
 }
 
+//TODO I confused the Union with the Collect. The Collect operation keeps the input geometries but creates a Collection.
+//The union operation (which is the GEOS function I'm using here) merges the input geometries
+//TODO Fix this, possibly by using the GEOSGeom_createCollection() function with all the collected geometries 
 /**
-* Union (Group By implementation) 
+* Collect (Group By implementation) 
 * 
 **/
+static str alignedInputWithGroups (BAT *b, BAT *g, BAT *b_ordered) {
+	BAT *sortedgroups, *sortedorder;
+	BATiter bi = bat_iterator(b);
+	str msg = MAL_SUCCEED;
+	//Sort the groups
+	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
+		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
+	}
+
+	const oid * sortedgroupsids = NULL, *sortedorderids = NULL;
+	oid sortedordercounter;
+
+	if (sortedgroups && !BATtdense(sortedgroups))
+		sortedgroupsids = (const oid *)Tloc(sortedgroups, 0);
+	//TODO Else, if it is a dense BAT
+	
+	if (sortedorder && !BATtdense(sortedorder))
+		sortedorderids = (const oid *)Tloc(sortedorder, 0);
+	else if (BATtdense(sortedorder))
+		sortedordercounter = sortedorder->tseqbase;
+
+	wkb** borderedvalues = NULL;
+	//Project new order onto input bat IF the sortedorder isn't dense -> in which case, the original input order is correct
+	if (sortedorderids ) {
+		//TODO Is this how the in-order BAT should be created?
+		if ((b_ordered = COLnew(b->hseqbase, ATOMindex("wkb"), BATcount(b), TRANSIENT)) == NULL)
+		{
+			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if ((borderedvalues = GDKzalloc(sizeof(wkb *) * BATcount(b))) == NULL)
+		{
+			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		for (BUN i = 0; i < BATcount(b); i++) {
+			oid is = i + sortedorder->hseqbase;
+			borderedvalues[i] = (wkb*) BUNtail(bi,sortedorderids[is]);
+		}
+		if (BUNappendmulti(b_ordered, borderedvalues, BATcount(b), false) != GDK_SUCCEED)
+		{
+			msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		}
+	}
+	bat_iterator_end(&bi);
+	return msg;
+}
+
+
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
-str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+str wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
+	BATiter bi;
+	const oid *gids = NULL;
+	wkb **unions = NULL;
+	GEOSGeom *unionGroup = NULL;
+	
 	str msg = MAL_SUCCEED;
+	const char *err;
+
 	oid min, max;
 	BUN ngrp, ncand;
 	struct canditer ci;
-	const char *err;
-	const oid *gids = NULL;
-	BATiter bi;
-	wkb **unions = NULL;
-	GEOSGeom *unionsGEOS = NULL;
+
 	(void)skip_nils;
 
 	//Get the BAT descriptors for the value bat + the other 3 optional BATs
@@ -1000,91 +1087,98 @@ str wkbUnionAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const
 		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL))
 	{
-		msg = createException(MAL, "geom.Union", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
 		return msg;
 	}
+
+	//TODO Check this
+	/*BAT *b_ordered = NULL;
+	if((msg = alignedInputWithGroups(b,g,b_ordered)) == MAL_SUCCEED) {
+		b = b_ordered;
+	}*/
+	alignedInputWithGroups(b,g,NULL);
 
 	//Fill in the values of the group aggregate operation
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
 	{
-		msg = createException(MAL, "geom.Union", "%s", err);
+		msg = createException(MAL, "geom.Collect", "%s", err);
 		goto free;
 	}
 
 	if (ngrp == 0)
 	{
-		msg = createException(MAL, "geom.Union", "Number of groups is equal to 0");
+		msg = createException(MAL, "geom.Collect", "Number of groups is equal to 0");
 		goto free;
 	}
 
 	//Create a new BAT column of wkb type, with lenght equal to the number of groups
 	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL)
 	{
-		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
-	bi = bat_iterator(b);
-
-	//Allocate space for the intermediate unions
+	//All unions for output BAT
 	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL)
 	{
-		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		bat_iterator_end(&bi);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
-	if ((unionsGEOS = GDKzalloc(sizeof(GEOSGeom) * ngrp)) == NULL)
+	//Intermediate array for all the geometries in a group
+	//TODO Change allocation size
+	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL)
 	{
-		msg = createException(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		bat_iterator_end(&bi);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
+	bi = bat_iterator(b);
 
+	oid lastGrp = -1;
+	int lastType = -1, geomCount = 0;
 	for (BUN i = 0; i < ncand; i++)
 	{
 		oid o = canditer_next(&ci);
 		BUN p = o - b->hseqbase;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
-
-#ifndef NDEBUG
-		/*char *geomSTR;
-		wkbAsText(&geomSTR, &inWKB, NULL);
-		printf("Row %zu: %s\n", i, geomSTR);
-		fflush(stdout);
-		GDKfree(geomSTR);*/
-#endif
-		//Instead of converting back and forth with the wkbUnion() func, convert only once from wkb to GEOS
-		if (unionsGEOS[grp] == NULL)
-		{
-			if (!is_wkb_nil(inWKB))
-			{
-				unionsGEOS[grp] = wkb2geos(inWKB);
-			}
-		}
-		else
-		{
-			if (!is_wkb_nil(inWKB))
-			{
-				GEOSGeom nextUnion = wkb2geos(inWKB);
-				if (GEOSGetSRID(nextUnion) == GEOSGetSRID(unionsGEOS[grp]))
+		wkb* inWKB = (wkb *)BUNtvar(bi, p);
+		GEOSGeom inGEOM = wkb2geos(inWKB);
+		
+		if (grp != lastGrp) {
+			if (lastGrp != (oid)-1) {
+				//Finish the previous group, move on to the next one
+				unions[lastGrp] = geos2wkb(GEOSGeom_createCollection(lastType,unionGroup,geomCount));
+				GDKfree(unionGroup);
+				//TODO Change allocation size
+				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL)
 				{
-					//TODO: This operation is really slow.
-					unionsGEOS[grp] = GEOSUnion(unionsGEOS[grp], nextUnion);
+					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					bat_iterator_end(&bi);
+					goto free;
 				}
+				geomCount = 0;
 			}
+			else {
+				//First group
+				//Type + 4 equals to a collection of that type (Point is 0, MultiPoint is 4)
+				lastType = GEOSGeomTypeId(inGEOM) + 4;
+				geomCount = 0;
+			}
+			lastGrp = grp;
+		}
+
+		unionGroup[geomCount] = inGEOM;
+		geomCount += 1;
+		if (lastType != GEOS_GEOMETRYCOLLECTION && GEOSGeomTypeId(inGEOM) + 4 != lastType) {
+			lastType = GEOS_GEOMETRYCOLLECTION;
 		}
 	}
-
-	//Convert Geos results to WKB for returning result
-	for (BUN i = 0; i < ngrp; i++)
-	{
-		unions[i] = geos2wkb(unionsGEOS[i]);
-	}
+	//Last collection
+	unions[lastGrp] = geos2wkb(GEOSGeom_createCollection(lastType,unionGroup,geomCount));
+	GDKfree(unionGroup);
 
 	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED)
 	{
@@ -1122,17 +1216,19 @@ free:
 			GDKfree(unions[i]);
 		GDKfree(unions);
 	}
+	if (unionGroup)
+		GDKfree(unionGroup);
 	return msg;
 }
 
-str wkbUnionAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
-	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
+	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
 }
 
-str wkbUnionAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
+str wkbCollectAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
 {
-	return wkbUnionAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
+	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
 }
 
 /**
@@ -8016,14 +8112,16 @@ static mel_atom geom_init_atoms[] = {
 	},
 	{.cmp = NULL}};
 static mel_func geom_init_funcs[] = {
+	//TODO Fill in descriptions
 	command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
 	command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
 	command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
 	command("geom", "CoversGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
-
-	command("geom", "Union", wkbUnionAggrGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
-	command("geom", "subUnion", wkbUnionAggrSubGrouped, false, "Gets a BAT with geometries and returns their union", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
-	command("geom", "subUnion", wkbUnionAggrSubGroupedCand, false, "Gets a BAT with geometries and returns their union", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
+	
+	//TODO: Change name to Collect
+	command("geom", "Union", wkbCollectAggrGrouped, false, "TODO", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
+	command("geom", "subUnion", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+	command("geom", "subUnion", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
 
 	command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1, 2, arg("", int), arg("flags", int))),
 	command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1, 2, arg("", int), arg("flags", int))),

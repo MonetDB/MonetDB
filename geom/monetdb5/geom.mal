@@ -54,14 +54,10 @@ command DistanceGeographic(a:wkb, b:wkb) :dbl address wkbDistanceGeographic
 command DWithinGeographic(a:wkb, b:wkb, d:dbl) :bit address wkbDWithinGeographic
 command IntersectsGeographic(a:wkb, b:wkb) :bit address wkbIntersectsGeographic
 command CoversGeographic(a:wkb, b:wkb) :bit address wkbCoversGeographic
-
-# TODO: Fix descriptions
-command Union(val:bat[:wkb], g:bat[:oid], e:bat[:any_1]) :bat[:wkb] address wkbUnionAggrGrouped
-comment "Gets a BAT with geometries and returns their union"; 
-command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:oid], skip_nils:bit) :bat[:wkb] address wkbUnionAggrSubGrouped
-comment "Gets a BAT with geometries and returns their union"; 
-command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], s:bat[:oid], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbUnionAggrSubGroupedCand
-comment "Gets a BAT with geometries and returns their union"; 
+# TODO: Change name to Collect
+command Union(val:bat[:wkb], g:bat[:oid], e:bat[:any_1]) :bat[:wkb] address wkbCollectAggrGrouped
+command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:oid], skip_nils:bit) :bat[:wkb] address wkbCollectAggrSubGrouped
+command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], s:bat[:oid], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbCollectAggrSubGroupedCand
 
 
 command hasZ(flags:int) :int address geoHasZ
