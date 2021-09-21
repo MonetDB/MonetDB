@@ -181,21 +181,18 @@ checksize(matlist_t *ml, int v)
 
 		unsigned int nvsize = ml->vsize * 2;
 		nhorigin = (int*) GDKrealloc(ml->horigin, sizeof(int)* nvsize);
-		ntorigin = (int*) GDKrealloc(ml->torigin, sizeof(int)* nvsize);
-		nvars = (int*) GDKrealloc(ml->vars, sizeof(int)* nvsize);
-		if(!nhorigin || !ntorigin || !nvars) {
-			if(nhorigin)
-				GDKfree(nhorigin);
-			if(ntorigin)
-				GDKfree(ntorigin);
-			if(nvars)
-				GDKfree(nvars);
+		if (nhorigin == NULL)
 			return -1;
-		}
-		ml->vsize = nvsize;
 		ml->horigin = nhorigin;
+		ntorigin = (int*) GDKrealloc(ml->torigin, sizeof(int)* nvsize);
+		if (ntorigin == NULL)
+			return -1;
 		ml->torigin = ntorigin;
+		nvars = (int*) GDKrealloc(ml->vars, sizeof(int)* nvsize);
+		if (nvars == NULL)
+			return -1;
 		ml->vars = nvars;
+		ml->vsize = nvsize;
 
 		for (i = sz; i < ml->vsize; i++) {
 			ml->horigin[i] = ml->torigin[i] = -1;

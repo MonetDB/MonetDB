@@ -43,6 +43,12 @@
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	5,	1,	0,	2,	2 # length
+[ "hugeint",	128,	0,	"",	"%3",	"%3"	]
+[ "hugeint",	128,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT round(-'b', ?);
 #PREPARE SELECT round(-'b', ?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
