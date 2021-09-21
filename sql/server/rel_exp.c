@@ -2872,10 +2872,8 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 #endif
 
 		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
-		if (nlt.digits < scaleL) {
-		    sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
-			return NULL;
-		}
+		if (nlt.digits < scaleL)
+			return sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
 		l = exp_check_type(sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->base.name, digits, scale);
