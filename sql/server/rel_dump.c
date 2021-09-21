@@ -86,7 +86,7 @@ dump_escape_ident(sql_allocator *sa, const char *s)
 
 		res = r;
 		while (*s) {
-			if (*s == '"')
+			if (*s == '"' || *s == '\\')
 				*r++ = '\\';
 			*r++ = *s++;
 		}
@@ -717,8 +717,9 @@ skipIdent( char *r, int *pos)
 {
 	if (r[*pos] == '"') {
 		(*pos)++;
-		while(r[*pos] && r[*pos] != '"') {
-			if (r[*pos] == '\\' && r[*pos + 1] == '"') /* We send escaped '"' character, so consider this pair as just one */
+		while (r[*pos] && r[*pos] != '"') {
+			/* We send escaped '"' and '\' characters */
+			if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\'))
 				(*pos)+=2;
 			else
 				(*pos)++;
@@ -729,13 +730,14 @@ skipIdent( char *r, int *pos)
 	}
 }
 
-static void /* We send escaped '"' character, so remove the escape after parsing */
+static void
 convertIdent(char *r)
 {
 	int i = 0, j = 0;
-	while(r[i] && r[i] != '"') {
-		if (r[i] == '\\' && r[i + 1] == '"') {
-			r[j++] = '"';
+	while (r[i] && r[i] != '"') {
+		/* We send escaped '"' and '\' characters */
+		if (r[i] == '\\' && (r[i + 1] == '"' || r[i + 1] == '\\')) {
+			r[j++] = r[i + 1];
 			i+=2;
 		} else {
 			r[j++] = r[i++];
@@ -777,18 +779,21 @@ readInt( char *r, int *pos)
 static char *
 readString( char *r, int *pos)
 {
-	char *st = NULL;
+	char *st = NULL, *parsed;
 
-	if (r[*pos] == '"'){
+	if (r[*pos] == '"') {
 		(*pos)++;
-		st = r+*pos;
+		st = parsed = r+*pos;
 		while (r[*pos] != '"') {
-			if (r[*pos] == '\\' && r[*pos + 1] == '"')
+			if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
+				*parsed++ = r[*pos + 1];
 				(*pos)+=2;
-			else
+			} else {
+				*parsed++ = r[*pos];
 				(*pos)++;
+			}
 		}
-		r[*pos] = 0;
+		*parsed = '\0';
 		(*pos)++;
 	}
 	return st;
@@ -930,10 +935,43 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 }
 
 static sql_exp*
+parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
+{
+	sql_exp *exp = NULL;
+	char *st = readString(r,pos);
+
+	if (st && strcmp(st, "NULL") == 0) {
+		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+	} else {
+		atom *a = atom_general(sql->sa, tpe, st);
+		if (tpe->type->eclass == EC_NUM) { /* needs to set the number of digits */
+#ifdef HAVE_HGE
+			hge value = a->data.val.hval;
+			const hge one = 1;
+#else
+			lng value = a->data.val.lval;
+			const lng one = 1;
+#endif
+			int bits = (int) digits2bits(strlen(st)), obits = bits;
+
+			while (bits > 0 && (bits == sizeof(value) * 8 || (one << (bits - 1)) > value))
+				bits--;
+			if (bits != obits && (bits == 8 || bits == 16 || bits == 32 || bits == 64))
+				bits++;
+			a->tpe.digits = bits;
+		} else if (tpe->type->eclass == EC_FLT || tpe->type->eclass == EC_DEC) {
+			assert(a->tpe.digits > 0);
+		}
+		exp = exp_atom(sql->sa, a);
+	}
+	return exp;
+}
+
+static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
-	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
-	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
+	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
+	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
 	sql_type *t = NULL;
@@ -1081,11 +1119,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				skipWS(r, pos);
 				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
 			} else {
-				st = readString(r,pos);
-				if (st && strcmp(st, "NULL") == 0)
-					exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
-				else
-					exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, st));
+				exp = parse_atom(sql, r, pos, &tpe);
 				skipWS(r, pos);
 			}
 		}
@@ -1099,11 +1133,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
 			sql_init_subtype(&tpe, t, 0, 0);
 		}
-		st = readString(r,pos);
-		if (st && strcmp(st, "NULL") == 0)
-			exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
-		else
-			exp = exp_atom(sql->sa, atom_general(sql->sa, &tpe, st));
+		exp = parse_atom(sql, r, pos, &tpe);
 		skipWS(r, pos);
 		break;
 	default:
@@ -1198,29 +1228,62 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 				if (f && !execute_priv(sql, f->func))
 					return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
-				/* fix scale of mul function, other type casts are explicit */
-				if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
-					sql_arg *ares = f->func->res->h->data;
+				/* apply scale fixes if needed */
+				if (f && f->func->fix_scale != SCALE_NONE) {
+					if (list_length(exps) == 1) {
+						if (f->func->fix_scale == INOUT) {
+							sql_subtype *t = exp_subtype(exps->h->data);
+							sql_subtype *res = f->res->h->data;
 
-					if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
-						sql_subtype *res = f->res->h->data;
-						sql_subtype *lt = ops->h->data;
-						sql_subtype *rt = ops->h->next->data;
+							res->digits = t->digits;
+							res->scale = t->scale;
+						}
+					} else if (list_length(exps) == 2) {
+						sql_exp *l = exps->h->data;
+						sql_exp *r = exps->h->next->data;
 
-						res->digits = lt->digits;
-						res->scale = lt->scale + rt->scale;
-					}
-				}
-				/* fix scale of div function */
-				if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
-					sql_arg *ares = f->func->res->h->data;
+						/* Find converted value type for division and update function output type */
+						if (f->func->fix_scale == SCALE_DIV) {
+							sql_subtype *lt = is_convert(l->type) ? ((sql_subtype*)exp_fromtype(l)) : exp_subtype(l);
+							sql_subtype *rt = exp_subtype(r);
 
-					if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
-					sql_subtype *res = f->res->h->data;
-						sql_subtype *lt = ops->h->data;
-						sql_subtype *rt = ops->h->next->data;
+							if (lt->type->scale == SCALE_FIX && rt->scale && strcmp(f->func->imp, "/") == 0) {
+								sql_subtype *res = f->res->h->data;
+								unsigned int scaleL = (lt->scale < 3) ? 3 : lt->scale;
+								unsigned int scale = scaleL;
+								scaleL += rt->scale;
+								unsigned int digL = lt->digits + (scaleL - lt->scale);
+								unsigned int digits = (digL > rt->digits) ? digL : rt->digits;
 
-						res->scale = lt->scale - rt->scale;
+#ifdef HAVE_HGE
+								if (res->type->radix == 10 && digits > 39)
+									digits = 39;
+								if (res->type->radix == 2 && digits > 128)
+									digits = 128;
+#else
+								if (res->type->radix == 10 && digits > 19)
+									digits = 19;
+								if (res->type->radix == 2 && digits > 64)
+									digits = 64;
+#endif
+
+								sql_find_subtype(res, lt->type->base.name, digits, scale);
+							}
+						} else if (f->func->fix_scale == SCALE_MUL) {
+							exp_sum_scales(f, l, r);
+						} else if (f->func->fix_scale == DIGITS_ADD) {
+							sql_subtype *t1 = exp_subtype(l);
+							sql_subtype *t2 = exp_subtype(r);
+							sql_subtype *res = f->res->h->data;
+
+							if (t1->digits && t2->digits) {
+								res->digits = t1->digits + t2->digits;
+								if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
+									return sql_error(sql, -1, SQLSTATE(42000) "Output number of digits for %s%s%s is too large\n", tname ? tname : "", tname ? "." : "", cname);
+							} else {
+								res->digits = 0;
+							}
+						}
 					}
 				}
 			}
@@ -1306,12 +1369,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	if (r[*pos] == '!') {
 		(*pos)++;
 		skipWS(r, pos);
-		set_anti(exp);
+		anti = 1;
 	}
 	if (r[*pos] == '*') {
 		(*pos)++;
 		skipWS(r, pos);
-		set_semantics(exp);
+		sem = 1;
 	}
 
 	switch(r[*pos]) {
@@ -1386,10 +1449,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			list *exps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0);
 			if (!exps)
 				return NULL;
-			sql_exp *ne = exp_in(sql->sa, exp, exps, f);
-			if (is_anti(exp))
-				set_anti(ne);
-			exp = ne;
+			exp = exp_in(sql->sa, exp, exps, f);
+			if (anti)
+				set_anti(exp);
 		} else {
 			int sym = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0);
@@ -1412,17 +1474,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				if (exp_name(e)) /* propagate a possible alias already parsed */
 					exp_prop_alias(sql->sa, exp, e);
 			} else {
-				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
-				if (is_anti(exp))
-					set_anti(ne);
-				if (is_semantics(exp))
-					set_semantics(ne);
+				exp = exp_compare(sql->sa, exp, e, f);
+				if (anti)
+					set_anti(exp);
+				if (sem)
+					set_semantics(exp);
 				if (sym) /* set it, so it gets propagated to the range comparison */
-					set_symmetric(ne);
+					set_symmetric(exp);
 				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, ne, e);
+					exp_prop_alias(sql->sa, exp, e);
 				exp_setalias(e, NULL, NULL);
-				exp = ne;
 			}
 		}
 	}
@@ -1718,7 +1779,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				bool inside_identifier = false;
 
 				while (r[*pos] && (inside_identifier || r[*pos] != '\n')) { /* the input parameters must be parsed after the input relation, skip them for now  */
-					if (inside_identifier && r[*pos] == '\\' && r[*pos + 1] == '"') {
+					if (inside_identifier && r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
 						(*pos)+=2;
 					} else if (r[*pos] == '"') {
 						inside_identifier = !inside_identifier;

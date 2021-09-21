@@ -43,6 +43,12 @@
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 6,	3,	1,	0,	2,	2 # length
+[ "bigint",	64,	0,	"",	"%3",	"%3"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
 #PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name

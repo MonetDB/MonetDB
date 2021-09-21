@@ -227,8 +227,10 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	ok = t->bootstrap?
 		store->storage_api.claim_tab(tr, t, 1, &offset, NULL):
 		store->storage_api.key_claim_tab(tr, t, 1, &offset, NULL);
-	if (ok != LOG_OK)
+	if (ok != LOG_OK) {
+		va_end(va);
 		return ok;
+	}
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
