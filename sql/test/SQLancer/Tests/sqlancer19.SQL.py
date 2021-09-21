@@ -76,6 +76,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
     cli.execute("SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
+    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('69',)])
+    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('69',)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
