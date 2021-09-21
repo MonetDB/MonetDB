@@ -4479,7 +4479,6 @@ GRANT EXECUTE ON FUNCTION ST_Length2D(Geometry) TO PUBLIC;
 --collect is the same to union. POstGIS just has a more efficient implementation for it compared to union
 CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
 GRANT EXECUTE ON FUNCTION ST_Collect(Geometry, Geometry) TO PUBLIC;
-CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."Union";
 --CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_DelaunayTriangles(geom Geometry, tolerance double, flags integer) RETURNS Geometry EXTERNAL NAME geom."DelaunayTriangles";
 GRANT EXECUTE ON FUNCTION ST_DelaunayTriangles(Geometry, double, integer) TO PUBLIC;
@@ -4592,3 +4591,5 @@ CREATE FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) RETURNS 
 GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
 GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;
+
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."Union";
