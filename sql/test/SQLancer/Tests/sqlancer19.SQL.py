@@ -67,6 +67,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("11",),("22",),("22",),("3",),("3",),("3",)])
     cli.execute("SELECT sql_min(rt3.c0 || rt3.c0, 3) as x from rt3 ORDER BY x;") \
         .assertSucceeded().assertDataResultMatch([("11",),("22",),("22",),("3",),("3",),("3",)])
+    cli.execute("SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(18,)])
+    cli.execute("SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(18,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
