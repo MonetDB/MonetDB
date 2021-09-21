@@ -565,7 +565,7 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 				node *nn = n->next;
 
 				if (!execute_priv(sql, sf->func))
-					list_remove_node(funcs, NULL, n);
+					list_remove_node(ff, NULL, n);
 				n = nn;
 			}
 		}
@@ -1758,7 +1758,7 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 				node *nn = n->next;
 
 				if (!execute_priv(sql, sf->func))
-					list_remove_node(funcs, NULL, n);
+					list_remove_node(ff, NULL, n);
 				n = nn;
 			}
 		}
