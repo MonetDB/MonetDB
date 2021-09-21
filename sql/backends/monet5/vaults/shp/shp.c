@@ -214,7 +214,7 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 
 	//Build the CREATE TABLE command
 	snprintf(buf, size, CRTTBL, schemaTable, temp_buf);
-
+	//And execute it
 	msg = SQLstatementIntern(cntxt, buf, "shp.load", TRUE, FALSE, NULL);
 
 	GDKfree(buf);
@@ -482,6 +482,10 @@ str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	shp_conn = *shp_conn_ptr;
 	spatial_info = GDALWGetSpatialInfo(shp_conn);
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
+
+	/* Convert schema and table name to lower case*/
+	schemaname = toLower(schemaname);
+	tablename = toLower(tablename);
 
 	/* Create table for outputting shapefile data */
 	if ((msg = createSHPtable(cntxt, schemaname, tablename, shp_conn, field_definitions)) != MAL_SUCCEED)
