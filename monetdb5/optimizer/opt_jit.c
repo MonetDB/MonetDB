@@ -11,9 +11,9 @@
  * candidate lists into MAL operations where possible.
  * It should be ran after the candidates optimizer.
  * Specific snippets to be replaced
- *     C_1:bat[:oid] := sql.tid(X_0,"sys","t");
- *     X_4:bat[:int] := sql.bind(X_0,"sys","t","i",0);
- *     X_13 := algebra.projection(C_1,X_4);
+ *	 C_1:bat[:oid] := sql.tid(X_0,"sys","t");
+ *	 X_4:bat[:int] := sql.bind(X_0,"sys","t","i",0);
+ *	 X_13 := algebra.projection(C_1,X_4);
  * projection can be avoided
  *
  * A candidate list can be pushed into the calculations
@@ -26,15 +26,12 @@ str
 OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, actions = 0;
-	int limit = mb->stop;
+	int limit = mb->stop, slimit = mb->ssize;
 	InstrPtr p, q, *old = mb->stmt;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
 	(void) cntxt;
-	(void) pci;
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -66,19 +63,18 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		pushInstruction(mb,p);
 	}
+	for(; i< slimit; i++)
+		if( old[i])
+			pushInstruction(mb, old[i]);
 
 	GDKfree(old);
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

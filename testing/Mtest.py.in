@@ -48,6 +48,9 @@ initdb = None
 single_in_memory = False
 restart = False
 
+# extra mserver5 options
+mserver5_opts = []
+
 global_timeout = 0
 start_time = time.time()
 
@@ -1327,7 +1330,7 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                     return td, elem, max(FdOut, FdErr), interrupted
                 z.close()
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
@@ -1352,10 +1355,10 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                                 inmem = False
                                 break
                         if inmem:
-                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + options
+                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + mserver5_opts + options
                             pollfile = None
                         else:
-                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
+                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + options
                             pollfile = os.path.join(LogDBdir, '.started')
                         if env.get('MULTIFARM'):
                             cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
@@ -1371,6 +1374,9 @@ def PerformDir(env, testdir, testlist, all_tests = False) :
                                             pollfile)
                         os.chdir(TSTTRGDIR)
                         pSrvr.LaunchIt()
+                        if pSrvr.port is None:
+                            print('\nFailed to start server.\n')
+                            break
                         os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                         SetExecEnv(env['exe'],pSrvr.port,verbose)
                     if global_timeout and start_time + global_timeout < time.time():
@@ -1633,6 +1639,7 @@ def GetBitsAndModsAndThreads(env) :
         cmd.append('--dbextra=in-memory')
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+    cmd.extend(mserver5_opts)
     setpgrp = True
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
                        stderr=process.PIPE, text=True) as proc:
@@ -1858,6 +1865,15 @@ relcond = {
     'PREVCHAINRELEMPTY': ('prevchainrelempty.zip', 'previous chained empty'),
     'PREVHGECHAINRELEMPTY': ('prevhgechainrelempty.zip',
                              'previous hugeint chained empty'),
+    'LASTREL': ('lastrel.zip', 'last'),
+    'LASTHGEREL': ('lasthgerel.zip', 'last hugeint'),
+    'LASTCHAINREL': ('lastchainrel.zip', 'last chained'),
+    'LASTHGECHAINREL': ('lasthgechainrel.zip', 'last hugeint chained'),
+    'LASTRELEMPTY': ('lastrelempty.zip', 'last empty'),
+    'LASTHGERELEMPTY': ('lasthgerelempty.zip', 'last hugeint empty'),
+    'LASTCHAINRELEMPTY': ('lastchainrelempty.zip', 'last chained empty'),
+    'LASTHGECHAINRELEMPTY': ('lasthgechainrelempty.zip',
+                             'last hugeint chained empty'),
 }
 
 def RunTest(env, TST, COND, oktests, length, all_tests, pSrvr) :
@@ -2757,8 +2773,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
                     Srvr.append('--dbextra=in-memory')
+                Srvr.extend(mserver5_opts)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
+                if pSrvr.port is None:
+                    print('\nFailed to start server.\n')
+                    return 'serverfail'
                 os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                 SetExecEnv(exe,pSrvr.port,verbose)
             else:
@@ -3374,7 +3394,8 @@ def main(argv) :
     parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
     parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
-    parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
+    parser.add_argument('--mserver_set', action='append', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
+    parser.add_argument('--loadmodule', action='append', dest='loadmodule', metavar='<module_name>', help="Pass on loadmodule to mserver5")
     parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
     parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
     parser.add_argument('--releaserun', action='store_true', dest='releaserun', help='run tests as if for a release test')
@@ -3432,13 +3453,14 @@ def main(argv) :
     a = opts.dbg
     if a is not None:
         env['DBG'] = a
-    a = opts.mserver_set
-    if a is not None:
-        env['MSERVER_SET'] = "--set " + a
-        if a == 'sql_debug=128':
-            CONDITIONALS['NOWAL'] = True
-    else:
-        env['MSERVER_SET'] = ""
+    if opts.mserver_set:
+        for a in opts.mserver_set:
+            mserver5_opts.extend(['--set', a])
+            if a == 'sql_debug=128':
+                CONDITIONALS['NOWAL'] = True
+    if opts.loadmodule:
+        for a in opts.loadmodule:
+            mserver5_opts.extend(['--loadmodule', a])
     a = opts.no_clean
     if a:
         env['NOCLEAN'] = a
@@ -3755,8 +3777,8 @@ def main(argv) :
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s %s' % \
-                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
+        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
+                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '')
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')

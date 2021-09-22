@@ -39,7 +39,6 @@ BATunique(BAT *b, BAT *s)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 	struct canditer ci;
-	const ValRecord *prop;
 	const char *algomsg = "";
 	lng t0 = 0;
 
@@ -57,7 +56,7 @@ BATunique(BAT *b, BAT *s)
 
 	if (b->tkey || cnt <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
-		bn = canditer_slice(&ci, 0, ci.ncand);
+		bn = canditer_slice(&ci, 0, cnt);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 			  " (already unique, slice candidates -- "
@@ -90,10 +89,8 @@ BATunique(BAT *b, BAT *s)
 		MT_rwlock_rdunlock(&b->thashlock);
 		if (initsize == BUN_NONE) {
 			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-				initsize = prop->val.oval;
-			else if ((prop = BATgetprop_nolock(b, GDK_UNIQUE_ESTIMATE)) != NULL)
-				initsize = (BUN) prop->val.dval;
+			if (b->tunique_est != 0)
+				initsize = (BUN) b->tunique_est;
 			MT_lock_unset(&b->theaplock);
 		}
 	}
@@ -114,7 +111,7 @@ BATunique(BAT *b, BAT *s)
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
-		for (i = 0; i < ci.ncand; i++) {
+		for (i = 0; i < cnt; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
@@ -133,7 +130,7 @@ BATunique(BAT *b, BAT *s)
 		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
 			goto bunins_failed;
-		for (i = 0; i < ci.ncand; i++) {
+		for (i = 0; i < cnt; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
@@ -159,7 +156,7 @@ BATunique(BAT *b, BAT *s)
 		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
 			goto bunins_failed;
-		for (i = 0; i < ci.ncand; i++) {
+		for (i = 0; i < cnt; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);
@@ -195,7 +192,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		for (i = 0; i < ci.ncand; i++) {
+		for (i = 0; i < cnt; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			BUN p;
@@ -257,7 +254,7 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		for (i = 0; i < ci.ncand; i++) {
+		for (i = 0; i < cnt; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 			o = canditer_next(&ci);

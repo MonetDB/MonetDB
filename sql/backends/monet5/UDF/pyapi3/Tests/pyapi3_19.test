@@ -12,17 +12,17 @@ CREATE FUNCTION mapped_query() returns table (i integer) LANGUAGE PYTHON_MAP
 statement error
 SELECT * FROM mapped_query()
 
-statement error
+statement error 25005!Current transaction is aborted (please ROLLBACK)
 SELECT * FROM pyapi19_integers
 
-statement error
+statement error 25005!Current transaction is aborted (please ROLLBACK)
 CREATE FUNCTION mapped_result_query() returns table (i integer) LANGUAGE PYTHON_MAP
 {
     res = _conn.execute('SELECT * FROM pyapi19_integers;')
     return res['i']
 }
 
-statement error
+statement error 25005!Current transaction is aborted (please ROLLBACK)
 SELECT * FROM mapped_result_query()
 
 statement ok
@@ -59,7 +59,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE pyapi19_strings(s STRING)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO pyapi19_strings VALUES ('hello'), ('33'), ('hello world')
 
 statement ok
@@ -81,7 +81,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE pyapi19_dates(d DATE)
 
-statement ok
+statement ok rowcount 3
 INSERT INTO pyapi19_dates VALUES (cast('2014-10-03' as DATE)), (cast('2000-03-24' as DATE)), ('2033-11-22')
 
 statement ok
@@ -100,45 +100,29 @@ ROLLBACK
 statement ok
 START TRANSACTION
 
-statement error
+statement ok
 CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL) LANGUAGE P
 {
-    result = dict()
-
-statement error
-    result['i'] = numpy.arange(100000, 0, -1)
-
-statement error
-    result['j'] = numpy.arange(100000, 0 , -1)
-
-statement error
-    result['k'] = numpy.arange(100000)
-
-statement error
-    result['l'] = numpy.arange(100000, 0 , -1)
-
-statement error
+    result = dict();
+    result['i'] = numpy.arange(100000, 0, -1);
+    result['j'] = numpy.arange(100000, 0 , -1);
+    result['k'] = numpy.arange(100000);
+    result['l'] = numpy.arange(100000, 0 , -1);
     result['m'] = numpy.tile(numpy.arange(100), 1000)
-    result['n'] = numpy.arange(100000, 0 , -1)
-
-statement error
-    result['o'] = numpy.arange(100000)
-
-statement error
-    result['p'] = numpy.arange(100000)
-
-statement error
+    result['n'] = numpy.arange(100000, 0 , -1);
+    result['o'] = numpy.arange(100000);
+    result['p'] = numpy.arange(100000);
     return result
 }
 
-statement error
+statement ok
 CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL) LANGUAGE PYTHON_MAP
 {
     res = _conn.execute('SELECT * FROM pyapi19_integers;')
     return res
 }
 
-statement error
+statement ok
 CREATE TABLE pyapi19_integers AS SELECT * FROM pyapi19_create_table() WITH DATA
 
 statement error

@@ -58,7 +58,7 @@ static void GDKunlockHome(int farmid);
 #undef free
 
 /* when the number of updates to a BAT is less than 1 in this number, we
- * keep the GDK_UNIQUE_ESTIMATE property */
+ * keep the unique_est property */
 BUN GDK_UNIQUE_ESTIMATE_KEEP_FRACTION = 1000; /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
@@ -877,6 +877,8 @@ GDKembedded(void)
 	return Mbedded;
 }
 
+static MT_Id mainpid;
+
 gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
@@ -887,6 +889,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	mainpid = MT_getpid();
 
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
@@ -937,17 +941,10 @@ GDKinit(opt *set, int setlen, bool embedded)
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
 		}
-		for (i = 0; i <= BBP_THREADMASK; i++) {
-			char name[MT_NAME_LEN];
-			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
-			MT_lock_init(&GDKbbpLock[i].cache, name);
-			GDKbbpLock[i].free = 0;
-		}
 		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}
-		first = false;
 	} else {
 		/* BBP was locked by BBPexit() */
 		BBPunlock();
@@ -996,8 +993,9 @@ GDKinit(opt *set, int setlen, bool embedded)
 	else
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	if (BBPinit() != GDK_SUCCEED)
+	if (BBPinit(first) != GDK_SUCCEED)
 		return GDK_FAIL;
+	first = false;
 
 	if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 		GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
@@ -1188,12 +1186,13 @@ GDKexiting(void)
 void
 GDKprepareExit(void)
 {
-	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
-		return;
+	ATOMIC_ADD(&GDKstopped, 1);
 
-	TRC_DEBUG_IF(THRD)
-		dump_threads();
-	join_detached_threads();
+	if (MT_getpid() == mainpid) {
+		TRC_DEBUG_IF(THRD)
+			dump_threads();
+		join_detached_threads();
+	}
 }
 
 void
@@ -1288,9 +1287,6 @@ GDKreset(int status)
 		ATOMIC_SET(&GDKnrofthreads, 0);
 		close_stream((stream *) THRdata[0]);
 		close_stream((stream *) THRdata[1]);
-		for (int i = 0; i <= BBP_THREADMASK; i++) {
-			GDKbbpLock[i].free = 0;
-		}
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
@@ -1326,7 +1322,6 @@ GDKexit(int status)
  */
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
-bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
 
 /* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */
@@ -1855,7 +1850,7 @@ GDKvm_cursize(void)
 /* we allocate extra space and return a pointer offset by this amount */
 #define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
 
-#ifdef NDEBUG
+#if defined(NDEBUG) || defined(SANITIZER)
 #define DEBUG_SPACE	0
 #else
 #define DEBUG_SPACE	16
@@ -1902,7 +1897,7 @@ GDKmalloc_internal(size_t size)
 	/* just before the pointer that we return, write how much we
 	 * asked of malloc */
 	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* just before that, write how much was asked of us */
 	((size_t *) s)[-2] = size;
 	/* write pattern to help find out-of-bounds writes */
@@ -1919,7 +1914,7 @@ GDKmalloc(size_t size)
 
 	if ((s = GDKmalloc_internal(size)) == NULL)
 		return NULL;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* write a pattern to help make sure all data is properly
 	 * initialized by the caller */
 	DEADBEEFCHK memset(s, '\xBD', size);
@@ -1983,7 +1978,7 @@ GDKfree(void *s)
 
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
 	{
@@ -1994,7 +1989,7 @@ GDKfree(void *s)
 	((size_t *) s)[-1] |= 2; /* indicate area is freed */
 #endif
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* overwrite memory that is to be freed with a pattern that
 	 * will help us recognize access to already freed memory in
 	 * the debugger */
@@ -2010,7 +2005,7 @@ void *
 GDKrealloc(void *s, size_t size)
 {
 	size_t nsize, asize;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t osize;
 	size_t *os;
 #endif
@@ -2029,7 +2024,7 @@ GDKrealloc(void *s, size_t size)
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
 	osize = ((size_t *) s)[-2]; /* how much asked for last */
@@ -2047,7 +2042,7 @@ GDKrealloc(void *s, size_t size)
 	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
 		    nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 	if (s == NULL) {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 		os[-1] &= ~2;	/* not freed after all */
 #endif
 		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
@@ -2057,7 +2052,7 @@ GDKrealloc(void *s, size_t size)
 	/* just before the pointer that we return, write how much we
 	 * asked of malloc */
 	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SANITIZER)
 	/* just before that, write how much was asked of us */
 	((size_t *) s)[-2] = size;
 	/* if growing, initialize new memory with debug pattern */

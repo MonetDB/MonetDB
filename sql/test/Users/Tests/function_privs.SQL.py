@@ -18,6 +18,15 @@ with SQLTestCase() as mdb:
     mdb.execute("CREATE SCHEMA my_schema AUTHORIZATION my_role;").assertSucceeded()
     mdb.execute("CREATE USER my_user WITH PASSWORD 'p1' NAME 'my_user' SCHEMA sys;").assertSucceeded()
     mdb.execute("CREATE USER my_user2 WITH PASSWORD 'p2' NAME 'my_user2' SCHEMA sys;").assertSucceeded()
+
+    mdb.execute("""
+        create procedure dontcallme(a int, b int, c int)
+        begin
+          create table x(x int, y int, z int);
+          insert into x values (a,b,c);
+        end;
+    """).assertSucceeded()
+
     mdb.execute("SET SCHEMA my_schema;").assertSucceeded()
     mdb.execute("CREATE TABLE version (name VARCHAR(10), i INT);").assertSucceeded()
     mdb.execute("INSERT INTO version VALUES ('test1', 1);").assertRowCount(1)
@@ -151,6 +160,7 @@ with SQLTestCase() as mdb:
 
         # my_user2 can only indirectly SEL/INS/UPD/DEL the table through the functions
         tc.connect(username="my_user2", password="p2")
+        tc.execute("CALL dontcallme(1,2,3);").assertFailed(err_code="42000", err_message="SELECT: insufficient privileges for operator 'dontcallme'(tinyint, tinyint, tinyint)")
         tc.execute("SET SCHEMA my_schema;").assertSucceeded()
         tc.execute("INSERT INTO version (name, i) VALUES ('test2', 2);").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'")
         tc.execute("UPDATE version SET name = 'test22' WHERE i = 2;").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'my_user2' to update table 'version'")
@@ -214,4 +224,5 @@ with SQLTestCase() as mdb:
         mdb.execute("DROP ROLE my_role;").assertSucceeded()
         mdb.execute("DROP SCHEMA my_schema;").assertSucceeded()
         mdb.execute("DROP SCHEMA your_schema;").assertSucceeded()
+        mdb.execute("DROP PROCEDURE dontcallme;").assertSucceeded()
 

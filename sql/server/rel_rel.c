@@ -28,24 +28,22 @@ int
 project_unsafe(sql_rel *rel, int allow_identity)
 {
 	sql_rel *sub = rel->l;
-	node *n;
 
 	if (need_distinct(rel) || rel->r /* order by */)
 		return 1;
-	if (!rel->exps)
+	if (list_empty(rel->exps))
 		return 0;
 	/* projects without sub and projects around ddl's cannot be changed */
-	if (!sub || (sub && sub->op == op_ddl))
+	if (!sub || sub->op == op_ddl)
 		return 1;
-	for(n = rel->exps->h; n; n = n->next) {
+	for(node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data, *ne;
 
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity))
 			return 1;
-		ne = rel_find_exp(rel, e);
-		if (ne && ne != e) /* no self referencing */
-			return 1;
+		if ((ne = rel_find_exp(rel, e)) && ne != e)
+			return 1; /* no self referencing */
 	}
 	return 0;
 }
@@ -421,7 +419,7 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
-	rel_setop_set_exps(sql, rel, exps);
+	rel_setop_set_exps(sql, rel, exps, false);
 	set_processed(rel);
 	return rel;
 }
@@ -514,7 +512,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 }
 
 void
-rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
+rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 {
 	sql_rel *l = rel->l, *r = rel->r;
 	list *lexps = l->exps, *rexps = r->exps;
@@ -534,7 +532,8 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
-			e->p = NULL; /* remove all the properties on unions */
+			if (!keep_props)
+				e->p = NULL; /* remove all the properties on unions on the general case */
 		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
@@ -555,8 +554,8 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	rel->single = r->single;
-	if (r->single)
+	rel->single = is_single(r);
+	if (is_single(r))
 		reset_single(r);
 	return rel;
 }
@@ -629,7 +628,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
-			if (!e->freevar) {
+			if (!is_freevar(e)) {
 				if (all) {
 					nr = ++sql->label;
 					cnme = number2name(cname, sizeof(cname), nr);
@@ -831,7 +830,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = list_length(e);
 		else
 			rel->nrcols = l->nrcols;
-		rel->single = l->single;
+		rel->single = is_single(l);
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);
@@ -899,13 +898,12 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 static void
 exps_has_nil(list *exps)
 {
-	node *m;
+	if (!list_empty(exps))
+		for (node *m = exps->h; m; m = m->next) {
+			sql_exp *e = m->data;
 
-	for (m = exps->h; m; m = m->next) {
-		sql_exp *e = m->data;
-
-		set_has_nil(e);
-	}
+			set_has_nil(e);
+		}
 }
 
 list *
@@ -927,14 +925,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
+		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 		if (rel->op == op_full || rel->op == op_right)
-			exps_has_nil(exps);
+			exps_has_nil(lexps);
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		if (rel->op == op_full || rel->op == op_left)
 			exps_has_nil(rexps);
-		exps = list_merge( exps, rexps, (fdup)NULL);
-		return exps;
+		return list_merge(lexps, rexps, (fdup)NULL);
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
 			list *r = rel->r;
@@ -987,23 +984,25 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			}
 			return exps;
 		}
+		/* I only expect set relations to hit here */
+		assert(is_set(rel->op));
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
-		exps = sa_list(sql->sa);
-		if (lexps && rexps && exps) {
+		if (lexps && rexps) {
 			int label = 0;
 
 			if (!settname)
 				label = ++sql->label;
-			for (node *en = lexps->h, *ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
+			assert(list_length(lexps) == list_length(rexps));
+			for (node *en = lexps->h; en; en = en->next) {
 				sql_exp *e = en->data;
+
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
-				append(exps, e);
 			}
 		}
-		return exps;
+		return lexps;
 	case op_ddl:
 	case op_semi:
 	case op_anti:
@@ -1344,7 +1343,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 	if (!rel)
 		return NULL;
-	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1), false);
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
@@ -1404,7 +1403,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		*exp = NULL;
 		return rel;
 	}
-	if (!is_simple_project(rel->op) || !list_empty(rel->r))
+	if (!is_simple_project(rel->op) || !list_empty(rel->r) || rel_is_ref(rel))
 		rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));

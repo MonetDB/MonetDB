@@ -371,7 +371,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 }
 
 static BAT *
-project_str(BAT *restrict l, struct canditer *restrict ci,
+project_str(BAT *restrict l, struct canditer *restrict ci, int tpe,
 	    BAT *restrict r1, BAT *restrict r2,
 	    BATiter *restrict r1i, BATiter *restrict r2i,
 	    lng t0)
@@ -386,11 +386,11 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	var_t v;
 	BATiter *ri;
 
-	if ((bn = COLnew(l->hseqbase, TYPE_str, ci ? ci->ncand : BATcount(l),
+	if ((bn = COLnew(l->hseqbase, tpe, ci ? ci->ncand : BATcount(l),
 			 TRANSIENT)) == NULL)
 		return NULL;
 
-	v = (var_t) r1i->vh->free;
+	v = (var_t) r1i->vhfree;
 	if (r1i->vh == r2i->vh) {
 		h1off = 0;
 		BBPshare(r1i->vh->parentid);
@@ -400,18 +400,18 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	} else {
 		v = (v + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		h1off = (BUN) v;
-		v += ((var_t) r2i->vh->free + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+		v += ((var_t) r2i->vhfree + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		if (HEAPextend(bn->tvheap, v, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
-		memcpy(bn->tvheap->base, r1i->vh->base, r1i->vh->free);
+		memcpy(bn->tvheap->base, r1i->vh->base, r1i->vhfree);
 #ifndef NDEBUG
-		if (h1off > r1i->vh->free)
-			memset(bn->tvheap->base + r1i->vh->free, 0, h1off - r1i->vh->free);
+		if (h1off > r1i->vhfree)
+			memset(bn->tvheap->base + r1i->vhfree, 0, h1off - r1i->vhfree);
 #endif
-		memcpy(bn->tvheap->base + h1off, r2i->vh->base, r2i->vh->free);
-		bn->tvheap->free = h1off + r2i->vh->free;
+		memcpy(bn->tvheap->base + h1off, r2i->vh->base, r2i->vhfree);
+		bn->tvheap->free = h1off + r2i->vhfree;
 	}
 
 	if (v >= ((var_t) 1 << (8 << bn->tshift)) &&
@@ -591,7 +591,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	BAT *or1 = r1, *or2 = r2, *ol = l;
 	oid lo, hi;
 	gdk_return res;
-	int tpe = ATOMtype(r1->ttype);
+	int tpe = ATOMtype(r1->ttype), otpe = tpe;
 	bool stringtrick = false;
 	BUN lcount = BATcount(l);
 	struct canditer ci, *lci = NULL;
@@ -690,7 +690,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			 * vheap; this also means that for this case we
 			 * don't care about duplicate elimination: it
 			 * will remain the same */
-			bn = project_str(l, lci, r1, r2, &r1i, &r2i, t0);
+			bn = project_str(l, lci, tpe, r1, r2, &r1i, &r2i, t0);
 			bat_iterator_end(&r1i);
 			bat_iterator_end(&r2i);
 			return bn;
@@ -787,7 +787,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		} else {
 			/* make copy of string heap */
 			bn->tvheap->parentid = bn->batCacheid;
-			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
+			bn->tvheap->farmid = BBPselectfarm(bn->batRole, otpe, varheap);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
@@ -965,10 +965,17 @@ BATprojectchain(BAT **bats)
 	bi = bat_iterator(b);
 	if (nonil && ATOMstorage(tpe) == TYPE_str && b->batRestricted == BAT_READ) {
 		stringtrick = true;
+		bn = COLnew_intern(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT, bi.width);
+		if (bn && bn->tvheap) {
+			/* no need to remove any files since they were
+			 * never created for this bat */
+			HEAPdecref(bn->tvheap, false);
+			bn->tvheap = NULL;
+		}
 		tpe = bi.width == 1 ? TYPE_bte : (bi.width == 2 ? TYPE_sht : (bi.width == 4 ? TYPE_int : TYPE_lng));
+	} else {
+		bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	}
-
-	bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	if (bn == NULL) {
 		bat_iterator_end(&bi);
 		goto bunins_failed;
@@ -1051,8 +1058,8 @@ BATprojectchain(BAT **bats)
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);
-			bn->ttype = b->ttype;
-			bn->tvarsized = true;
+			assert(bn->ttype == b->ttype);
+			assert(bn->tvarsized);
 			assert(bn->twidth == bi.width);
 			assert(bn->tshift == bi.shift);
 		}

@@ -20,8 +20,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	bat bid;
 	BAT *bn, *b, *s = NULL;
 	struct canditer ci;
-	oid x;
-	BUN i;
+	oid x, off;
+	BUN i, ncand;
 	BUN nils = 0;
 	int e = 0, ex = 0;
 	BATiter bi;
@@ -40,9 +40,10 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
-	canditer_init(&ci, b, s);
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
-	if (bn == NULL || ci.ncand == 0) {
+	ncand = canditer_init(&ci, b, s);
+	off = ci.hseq;
+	bn = COLnew(off, b->ttype, ncand, TRANSIENT);
+	if (bn == NULL || ncand == 0) {
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
@@ -58,8 +59,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	case TYPE_flt: {
 		const flt *restrict fsrc = (const flt *) bi.base;
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
-		for (i = 0; i < ci.ncand; i++) {
-			x = canditer_next(&ci) - b->hseqbase;
+		for (i = 0; i < ncand; i++) {
+			x = canditer_next(&ci) - off;
 			if (is_flt_nil(fsrc[x])) {
 				fdst[i] = flt_nil;
 				nils++;
@@ -72,8 +73,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	case TYPE_dbl: {
 		const dbl *restrict dsrc = (const dbl *) bi.base;
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
-		for (i = 0; i < ci.ncand; i++) {
-			x = canditer_next(&ci) - b->hseqbase;
+		for (i = 0; i < ncand; i++) {
+			x = canditer_next(&ci) - off;
 			if (is_dbl_nil(dsrc[x])) {
 				ddst[i] = dbl_nil;
 				nils++;
@@ -106,7 +107,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, malfunc, "Math exception: %s", err);
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tnil = nils != 0;
@@ -127,9 +128,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
 	struct canditer ci1 = (struct canditer){0}, ci2 = (struct canditer){0};
-	oid x1, x2;
-	BUN i;
-	BUN nils = 0;
+	oid x1, x2, off1, off2;
+	BUN i, ncand, nils = 0;
 	int e = 0, ex = 0;
 	BATiter b1i, b2i;
 
@@ -182,28 +182,30 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		canditer_init(&ci1, b1, s1);
 	if (b2)
 		canditer_init(&ci2, b2, s2);
+	ncand = b1 ? ci1.ncand : ci2.ncand;
+	off1 = ci1.hseq;
+	off2 = ci2.hseq;
 
 	if (b1 == NULL &&
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 1)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 1)].val.dval))) {
-		bn = BATconstant(ci2.hseq, tp1, ATOMnilptr(tp1), ci2.ncand, TRANSIENT);
+		bn = BATconstant(off2, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
 	if (b2 == NULL &&
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 2)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 2)].val.dval))) {
-		bn = BATconstant(ci1.hseq, tp1, ATOMnilptr(tp1), ci1.ncand, TRANSIENT);
+		bn = BATconstant(off1, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
 	if (b1)
-		bn = COLnew(ci1.hseq, tp1, ci1.ncand, TRANSIENT);
+		bn = COLnew(off1, tp1, ncand, TRANSIENT);
 	else
-		bn = COLnew(ci2.hseq, tp1, ci2.ncand, TRANSIENT);
-	if (bn == NULL || (b1 ? ci1.ncand : ci2.ncand) == 0) {
+		bn = COLnew(off2, tp1, ncand, TRANSIENT);
+	if (bn == NULL || ncand == 0)
 		goto doreturn;
-	}
 
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
@@ -215,9 +217,9 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			const flt *fsrc1 = (const flt *) b1i.base;
 			const flt *fsrc2 = (const flt *) b2i.base;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
-			for (i = 0; i < ci1.ncand; i++) {
-				x1 = canditer_next(&ci1) - b1->hseqbase;
-				x2 = canditer_next(&ci2) - b2->hseqbase;
+			for (i = 0; i < ncand; i++) {
+				x1 = canditer_next(&ci1) - off1;
+				x2 = canditer_next(&ci2) - off2;
 				if (is_flt_nil(fsrc1[x1]) ||
 					is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
@@ -230,8 +232,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			const flt *restrict fsrc1 = (const flt *) b1i.base;
 			flt fval2 = stk->stk[getArg(pci, 2)].val.fval;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
-			for (i = 0; i < ci1.ncand; i++) {
-				x1 = canditer_next(&ci1) - b1->hseqbase;
+			for (i = 0; i < ncand; i++) {
+				x1 = canditer_next(&ci1) - off1;
 				if (is_flt_nil(fsrc1[x1])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -243,8 +245,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt fval1 = stk->stk[getArg(pci, 1)].val.fval;
 			const flt *restrict fsrc2 = (const flt *) b2i.base;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
-			for (i = 0; i < ci2.ncand; i++) {
-				x2 = canditer_next(&ci2) - b2->hseqbase;
+			for (i = 0; i < ncand; i++) {
+				x2 = canditer_next(&ci2) - off2;
 				if (is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -259,9 +261,9 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			const dbl *dsrc1 = (const dbl *) b1i.base;
 			const dbl *dsrc2 = (const dbl *) b2i.base;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
-			for (i = 0; i < ci1.ncand; i++) {
-				x1 = canditer_next(&ci1) - b1->hseqbase;
-				x2 = canditer_next(&ci2) - b2->hseqbase;
+			for (i = 0; i < ncand; i++) {
+				x1 = canditer_next(&ci1) - off1;
+				x2 = canditer_next(&ci2) - off2;
 				if (is_dbl_nil(dsrc1[x1]) ||
 					is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
@@ -274,8 +276,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			const dbl *restrict dsrc1 = (const dbl *) b1i.base;
 			dbl dval2 = stk->stk[getArg(pci, 2)].val.dval;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
-			for (i = 0; i < ci1.ncand; i++) {
-				x1 = canditer_next(&ci1) - b1->hseqbase;
+			for (i = 0; i < ncand; i++) {
+				x1 = canditer_next(&ci1) - off1;
 				if (is_dbl_nil(dsrc1[x1])) {
 					ddst[i] = dbl_nil;
 					nils++;
@@ -287,8 +289,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl dval1 = stk->stk[getArg(pci, 1)].val.dval;
 			const dbl *restrict dsrc2 = (const dbl *) b2i.base;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
-			for (i = 0; i < ci2.ncand; i++) {
-				x2 = canditer_next(&ci2) - b2->hseqbase;
+			for (i = 0; i < ncand; i++) {
+				x2 = canditer_next(&ci2) - off2;
 				if (is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
 					nils++;
@@ -306,7 +308,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
-	BATsetcount(bn, b1 ? ci1.ncand : ci2.ncand);
+	BATsetcount(bn, ncand);
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tnil = nils != 0;

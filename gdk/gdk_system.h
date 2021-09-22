@@ -419,19 +419,17 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do						\
-				_DBG_LOCK_SLEEP(l);			\
-			while (pthread_mutex_lock(&(l)->lock) != 0);	\
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)					\
+	do {						\
+		_DBG_LOCK_COUNT_0(l);			\
+		if (!MT_lock_try(l)) {			\
+			_DBG_LOCK_CONTENTION(l);	\
+			MT_thread_setlockwait(l);	\
+			pthread_mutex_lock(&(l)->lock);	\
+			MT_thread_setlockwait(NULL);	\
+		}					\
+		_DBG_LOCK_LOCKER(l);			\
+		_DBG_LOCK_COUNT_2(l);			\
 	} while (0)
 #else
 #define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
@@ -449,6 +447,8 @@ typedef struct MT_Lock {
 		pthread_mutex_destroy(&(l)->lock);	\
 	} while (0)
 
+#if !defined(__GLIBC__) || __GLIBC__ > 2 || (__GLIBC__ == 2 && defined(__GLIBC_MINOR__) && __GLIBC_MINOR__ >= 30)
+/* this is the normal implementation of our pthreads-based read-write lock */
 typedef struct MT_RWLock {
 	pthread_rwlock_t lock;
 	char name[MT_NAME_LEN];
@@ -474,6 +474,79 @@ typedef struct MT_RWLock {
 #define MT_rwlock_wrtry(l)	(pthread_rwlock_trywrlock(&(l)->lock) == 0)
 
 #define MT_rwlock_wrunlock(l)	pthread_rwlock_unlock(&(l)->lock)
+
+#else
+/* in glibc before 2.30, there was a deadlock condition in the tryrdlock
+ * and trywrlock functions, we work around that by not using the
+ * implementation at all
+ * see https://sourceware.org/bugzilla/show_bug.cgi?id=23844 for a
+ * discussion and comment 14 for the analysis */
+typedef struct MT_RWLock {
+	pthread_mutex_t lock;
+	ATOMIC_TYPE readers;
+	char name[MT_NAME_LEN];
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)				\
+	{ .lock = PTHREAD_MUTEX_INITIALIZER, .readers = ATOMIC_VAR_INIT(0), .name = #n, }
+
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		pthread_mutex_init(&(l)->lock, 0);		\
+		ATOMIC_INIT(&(l)->readers, 0);			\
+		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+	} while (0)
+
+#define MT_rwlock_destroy(l)				\
+	do {						\
+		pthread_mutex_destroy(&(l)->lock);	\
+		ATOMIC_DESTROY(&(l)->readers);		\
+	} while (0)
+
+#define MT_rwlock_rdlock(l)				\
+	do {						\
+		pthread_mutex_lock(&(l)->lock);		\
+		(void) ATOMIC_INC(&(l)->readers);	\
+		pthread_mutex_unlock(&(l)->lock);	\
+	} while (0)
+
+static inline bool
+MT_rwlock_rdtry(MT_RWLock *l)
+{
+	if (pthread_mutex_trylock(&l->lock) != 0)
+		return false;
+	(void) ATOMIC_INC(&(l)->readers);
+	pthread_mutex_unlock(&l->lock);
+	return true;
+}
+
+#define MT_rwlock_rdunlock(l)				\
+	do {						\
+		(void) ATOMIC_DEC(&(l)->readers);	\
+	} while (0)
+
+#define MT_rwlock_wrlock(l)				\
+	do {						\
+		pthread_mutex_lock(&(l)->lock);		\
+		while (ATOMIC_GET(&(l)->readers) > 0)	\
+			MT_sleep_ms(1);			\
+	} while (0)
+
+static inline bool
+MT_rwlock_wrtry(MT_RWLock *l)
+{
+	if (pthread_mutex_trylock(&l->lock) != 0)
+		return false;
+	if (ATOMIC_GET(&l->readers) > 0) {
+		pthread_mutex_unlock(&l->lock);
+		return false;
+	}
+	return true;
+}
+
+#define MT_rwlock_wrunlock(l)  pthread_mutex_unlock(&(l)->lock);
+
+#endif
 
 #endif
 

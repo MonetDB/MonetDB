@@ -82,6 +82,8 @@ MNDBTables(ODBCStmt *stmt,
 				      "cast(null as varchar(1)) as remarks "
 			       "from sys.env() e "
 			       "where e.name = 'gdk_dbname'");
+		if (query == NULL)
+			goto nomem;
 	} else if (NameLength1 == 0 &&
 		   NameLength3 == 0 &&
 		   SchemaName &&
@@ -96,6 +98,8 @@ MNDBTables(ODBCStmt *stmt,
 				* schema remarks */
 				      "cast(null as varchar(1)) as remarks "
 			       "from sys.schemas order by table_schem");
+		if (query == NULL)
+			goto nomem;
 	} else if (NameLength1 == 0 &&
 		   NameLength2 == 0 &&
 		   NameLength3 == 0 &&
@@ -108,6 +112,8 @@ MNDBTables(ODBCStmt *stmt,
 				      "table_type_name as table_type, "
 				      "cast(null as varchar(1)) as remarks "
 			       "from sys.table_types order by table_type");
+		if (query == NULL)
+			goto nomem;
 	} else {
 		/* no special case argument values */
 		size_t querylen;
@@ -241,8 +247,6 @@ MNDBTables(ODBCStmt *stmt,
 		free(sch);
 	if (tab)
 		free(tab);
-	if (query)
-		free(query);
 	/* Memory allocation error */
 	addStmtError(stmt, "HY001", NULL, 0);
 	return SQL_ERROR;

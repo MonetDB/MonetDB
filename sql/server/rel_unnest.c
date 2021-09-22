@@ -290,7 +290,7 @@ rel_only_freevar(sql_query *query, sql_rel *rel, bool *arguments_correlated, boo
 static int
 freevar_equal( sql_exp *e1, sql_exp *e2)
 {
-	assert(e1 && e2 && e1->freevar && e2->freevar);
+	assert(e1 && e2 && is_freevar(e1) && is_freevar(e2));
 	if (e1 == e2)
 		return 0;
 	if (e1->type != e_column || e2->type != e_column)
@@ -323,7 +323,7 @@ exp_freevar(mvc *sql, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->freevar)
+		if (is_freevar(e))
 			return append(sa_list(sql->sa), e);
 		break;
 	case e_convert:
@@ -497,7 +497,7 @@ rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 		for(n = fvs->h; n; n=n->next) {
 			sql_exp *e = n->data;
 
-			if (e->freevar && (exp_is_atom(e) || rel_find_exp(rel,e)))
+			if (is_freevar(e) && (exp_is_atom(e) || rel_find_exp(rel,e)))
 				reset_freevar(e);
 		}
 	}
@@ -824,7 +824,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	}
 
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */
-	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
+	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		/* find constant expressions and move these down */
@@ -834,11 +834,11 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			list *cexps = NULL;
 			sql_rel *l = r->l;
 
-			if (l && is_select(l->op) && !rel_is_ref(l)) {
+			if (l && (is_select(l->op) || l->op == op_join) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
-					if (exp_is_atom(e) || rel_find_exp(l,e)) { /* move down */
+					if (exp_is_atom(e) || rel_find_exp(l->l,e)) { /* move down */
 						if (!cexps)
 							cexps = sa_list(sql->sa);
 						append(cexps, e);
@@ -884,7 +884,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
 
-				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+				if (!is_freevar(e) || exp_name(e)) { /* only skip full freevars */
 					if (exp_has_freevar(sql, e)) {
 						rel_bind_var(sql, rel->l, e);
 						if (is_left(rel->op)) { /* add ifthenelse */
@@ -908,7 +908,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				for (m=exps->h; m; m = m->next) {
 					sql_exp *e = m->data;
 
-					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+					if (!is_freevar(e) || exp_name(e)) { /* only skip full freevars */
 						if (exp_has_freevar(sql, e))
 							rel_bind_var(sql, rel->l, e);
 					}
@@ -1263,7 +1263,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				rel_destroy(j);
 				j = nj;
@@ -1304,7 +1304,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!rd) {
 				rel->r = rel_dup(jl);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
@@ -1319,7 +1319,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!ld) {
 				rel->r = rel_dup(jr);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
-				if (j->single)
+				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
@@ -2107,6 +2107,9 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_or_exp(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		for(node *n=rel->exps->h; n; n=n->next) {
 			sql_exp *e = n->data, *id;
@@ -2139,8 +2142,8 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						n = next;
 					}
 
-					sql_rel *l = rel;
-					sql_rel *r = rel_dup(rel);
+					sql_rel *l = rel, *r = rel_dup(rel);
+					set_processed(rel);
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
 					if (!(l = rewrite_or_exp(v, l)))
@@ -2151,7 +2154,7 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						return NULL;
 					if (!(rel = rel_setop_check_types(v->sql, l, r, exps_copy(v->sql, exps), exps_copy(v->sql, exps), op_union)))
 						return NULL;
-					rel_setop_set_exps(v->sql, rel, exps);
+					rel_setop_set_exps(v->sql, rel, exps, false);
 					set_processed(rel);
 					rel = rel_distinct(rel);
 					if (tids) /* restore TIDs with identity function references */
@@ -2449,6 +2452,9 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	list *exps = NULL;
 	int freevar = 0;
 
+	if (mvc_highwater(sql))
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
@@ -2497,7 +2503,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 			u = sq;
 		} else {
 			u = rel_setop(sql->sa, u, sq, op_union);
-			rel_setop_set_exps(sql, u, exps);
+			rel_setop_set_exps(sql, u, exps, false);
+			set_distinct(u);
 			set_processed(u);
 		}
 		exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
@@ -2648,11 +2655,16 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (sq) {
 					sql_rel *l = NULL, *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_join, &rewrite);
+					if (rsq && lsq->card == CARD_ATOM && rsq->card == CARD_ATOM) { /* add project true */
+						lsq = rel_crossproduct(sql->sa, lsq, rsq, op_full);
+						lsq = rel_crossproduct(sql->sa, rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1)), lsq, op_left);
+						rsq = 0;
+					}
+					(void)rewrite_inner(sql, rel, lsq, rel->card <= CARD_ATOM?op_left:op_join, &rewrite);
 					if (is_left(rewrite->op))
 						reset_has_nil(rewrite, le);
 					l = rel->l;
-					if (l && on_right && !is_join(l->op))
+					if (l && on_right && (!is_join(l->op) || (is_project(rel->op) && lsq->card <= CARD_ATOM && rsq->card <= CARD_ATOM)))
 						on_right = 0;
 				}
 				if (rsq) {
@@ -2717,7 +2729,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			} else {
 				if (lsq) {
 					sql_rel *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_join, &rewrite);
+					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite);
 					if (is_left(rewrite->op))
 						reset_has_nil(rewrite, le);
 				}
@@ -2966,47 +2978,40 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rewrite_join2semi(visitor *v, sql_rel *rel)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
 		sql_rel *j = rel->l;
-		int needed=0;
+		int needed = 0, changed = 0;
 
 		if (!j || (!is_join(j->op) && !is_semi(j->op)) || !list_empty(j->exps))
 			return rel;
 		/* if needed first push select exps down under the join */
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
-				needed = 1;
-		}
-		if (needed) {
-			list *exps = sa_list(v->sql->sa);
-			sql_rel *l = j->l = rel_select(v->sql->sa, j->l, NULL);
-
-			for (node *n = rel->exps->h; n;) {
-				node *next = n->next;
-				sql_exp *e = n->data;
-				sql_subfunc *sf = e->f;
-
-				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l)) {
-					append(exps, e);
+			if (is_func(e->type) && is_anyequal_func(sf)) {
+				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(j->l, e->l)) {
+					sql_rel *l = j->l;
+					if (!is_select(l->op) || rel_is_ref(l)) {
+						set_processed(l);
+						j->l = l = rel_select(v->sql->sa, j->l, NULL);
+					}
+					rel_select_add_exp(v->sql->sa, l, e);
 					list_remove_node(rel->exps, NULL, n);
+					changed = 1;
+					v->changes++;
+				} else {
+					needed = 1;
 				}
-				n = next;
 			}
-			l->exps = exps;
-			j->l = rewrite_join2semi(v, j->l);
+			n = next;
 		}
-
-		needed = 0;
-		for(node *n = rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
-			sql_subfunc *sf = e->f;
-
-			if (is_func(e->type) && is_anyequal_func(sf))
-				needed = 1;
-		}
+		if (changed && !(j->l = rewrite_join2semi(v, j->l)))
+			return NULL;
 		if (!needed)
 			return try_remove_empty_select(v, rel);
 		if (!j->exps)
@@ -3243,7 +3248,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			set_processed(rsq);
 			rsq = rel_select(v->sql->sa, rsq, exp_or(v->sql->sa, list_append(new_exp_list(v->sql->sa), not_cond), list_append(new_exp_list(v->sql->sa), cond_is_null), 0));
 			usq = rel_setop(v->sql->sa, lsq, rsq, op_union);
-			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)));
+			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)), false);
 			if (single)
 				set_single(usq);
 			set_processed(usq);
@@ -3257,8 +3262,11 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static list *
 rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 {
+	if (mvc_highwater(v->sql))
+		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (list_empty(exps))
 		return exps;
+
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -3472,7 +3480,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					unions = nrel;
 				else {
 					unions = rel_setop(v->sql->sa, unions, nrel, op_union);
-					rel_setop_set_exps(v->sql, unions, rel_projections(v->sql, rel, NULL, 1, 1));
+					rel_setop_set_exps(v->sql, unions, rel_projections(v->sql, rel, NULL, 1, 1), false);
 					set_processed(unions);
 				}
 				if (!unions)
@@ -3551,7 +3559,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(v->sql->sa, nrel, f);
@@ -3560,7 +3568,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
 			v->changes++;
 			return nrel;
@@ -3569,7 +3577,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(v->sql->sa, nrel, f);
@@ -3578,7 +3586,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
 			v->changes++;
 			return nrel;
@@ -3587,7 +3595,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(v->sql->sa, lrel, f);
@@ -3595,7 +3603,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
 			set_processed(except);
 			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(v->sql->sa, rrel, f);
@@ -3603,14 +3611,14 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					rel_project(v->sql->sa, lrel,  rel_projections(v->sql, lrel, NULL, 1, 1)),
 					rel_project(v->sql->sa, rrel, rel_projections(v->sql, rrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(lrel);
 			rel->op = op_join;
 			lrel = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, prel,  rel_projections(v->sql, rel, NULL, 1, 1)),
 					rel_project(v->sql->sa, lrel, rel_projections(v->sql, lrel, NULL, 1, 1)),
 					op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(lrel);
 			v->changes++;
 			return lrel;
@@ -3682,7 +3690,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 			}
 			if (cur) {
 				nrel = rel_setop(v->sql->sa, cur, nrel, op_union);
-				rel_setop_set_exps(v->sql, nrel, exps);
+				rel_setop_set_exps(v->sql, nrel, exps, false);
 				set_processed(nrel);
 			}
 			cur = nrel;

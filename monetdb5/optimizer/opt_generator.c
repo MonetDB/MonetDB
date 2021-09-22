@@ -66,13 +66,10 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	const char *lngRef = getName("lng");
 	const char *fltRef = getName("flt");
 	const char *dblRef = getName("dbl");
-	char buf[256];
-	lng usec= GDKusec();
 	str msg = MAL_SUCCEED;
 	int needed = 0;
 
 	(void) stk;
-	(void) pci;
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -83,11 +80,14 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p = old[i];
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
 			needed = 1;
-		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
-			return 0;
+		/* avoid error in table-udf-column-descriptor */
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol){
+			old = NULL;
+			goto wrapup;
+		}
 	}
 	if (!needed)
-		return 0;
+		goto wrapup;
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
@@ -153,25 +153,24 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 	}
 	for (i++; i < limit; i++)
-        	pushInstruction(mb, old[i]);
-	for (; i < slimit; i++)
+		pushInstruction(mb, old[i]);
+	for (; i < slimit; i++) {
 		if (old[i])
-        		freeInstruction(old[i]);
-    	GDKfree(old);
-    	GDKfree(series);
+			pushInstruction(mb, old[i]);
+	}
+	GDKfree(old);
+	GDKfree(series);
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	// 	msg = chkFlow(mb);
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep all actions taken as a post block comment */
+wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

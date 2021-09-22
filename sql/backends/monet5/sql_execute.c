@@ -238,21 +238,25 @@ SQLrun(Client c, mvc *m)
 #ifdef NDEBUG
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY000) "DEBUG requires compilation for debugging");
 #else
+		setVariableScope(mb);
 		msg = runMALDebugger(c, mb);
 #endif
 	} else {
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
+				setVariableScope(mb);
 				c->idle = 0;
 				c->lastcmd = time(0);
 				msg = runMAL(c, mb, 0, 0);
 				stopTrace(c);
 			}
 		} else {
+			setVariableScope(mb);
 			c->idle = 0;
 			c->lastcmd = time(0);
 			msg = runMAL(c, mb, 0, 0);
 		}
+		resetMalBlk(mb);
 	}
 	/* after the query has been finished we enter the idle state */
 	c->idle = time(0);
@@ -776,7 +780,6 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
 	} else {
-		int oldvtop = c->curprg->def->vtop, oldstop = c->curprg->def->stop, oldvid = c->curprg->def->vid;
 
 		if (*opt && rel)
 			rel = sql_processrelation(m, rel, 1, 1);
@@ -797,10 +800,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		rel_destroy(rel);
 		if( msg == MAL_SUCCEED)
 			msg = SQLrun(c,m);
-		if (!msg) {
-			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-		}
+		resetMalBlk(c->curprg->def);
 	}
 	return RAcommit_statement(be, msg);
 }

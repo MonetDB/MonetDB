@@ -1,6 +1,7 @@
 update-from-count.Bug-7079
 HAVE_PYMONETDB?remote-table-ranges.Bug-7089
 KNOWNFAIL?query-too-complex.Bug-7092
+KNOWNFAIL?remote-table-rollback.Bug-7094
 ntile-wrong-result.Bug-7104
 union-groupby.Bug-7108
 merge-stmt.wrong-error.Bug-7109
@@ -15,6 +16,7 @@ WITH-alias-DELETE-1.deletes-wrong-tuples.Bug-7133
 WITH-alias-DELETE-2.deletes-too-many-tuples.Bug-7133
 merge-delete.Bug-7136
 HAVE_LIBPY3?python-aggregates-void-bat.Bug-7138
+plan-not-optimal-view.Bug-7140
 count-distinct.Bug-7141
 HAVE_LIBPY3?aggregates-tables.Bug-7142
 type-upcasting-INT2BIGINT.Bug-7144
@@ -23,3 +25,7 @@ sum-union.Bug-7147
 distinct-union.Bug-7148
 HAVE_LIBPY3?python-aggregates-empty.Bug-7158
 remote-join-idxs.Bug-7165
+shutdown-force.Bug-7167
+merge-table-join.Bug-7172
+truncate-restart.Bug-7173
+remote-table-large.Bug-7178

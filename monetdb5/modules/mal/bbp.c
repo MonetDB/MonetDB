@@ -419,7 +419,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 	}
 	for (i = 1; i < sz; i++) {
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-			bn = BATdescriptor(i);
+			bn = BBP_desc(i);
 			if (bn) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
@@ -432,26 +432,23 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 					mode = "transient";
 				len = snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
 				if (len == -1 || len >= FILENAME_MAX) {
-					BBPunfix(bn->batCacheid);
 					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY013) "Could not bpp filename path is too large");
 					goto bailout;
 				}
 				if (BUNappend(id, &i, false) != GDK_SUCCEED ||
 					BUNappend(ns, BBP_logical(i), false) != GDK_SUCCEED ||
-					BUNappend(tt, BATatoms[BATttype(bn)].name, false) != GDK_SUCCEED ||
+					BUNappend(tt, BATatoms[bn->ttype].name, false) != GDK_SUCCEED ||
 					BUNappend(cnt, &l, false) != GDK_SUCCEED ||
 					BUNappend(refcnt, &refs, false) != GDK_SUCCEED ||
 					BUNappend(lrefcnt, &lrefs, false) != GDK_SUCCEED ||
 					BUNappend(location, buf, false) != GDK_SUCCEED ||
 					BUNappend(heat, &heat_, false) != GDK_SUCCEED ||
-					BUNappend(dirty, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
+					BUNappend(dirty, BBP_cache(i) ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
 					BUNappend(status, loc, false) != GDK_SUCCEED ||
 					BUNappend(kind, mode, false) != GDK_SUCCEED) {
-					BBPunfix(bn->batCacheid);
 					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
-				BBPunfix(bn->batCacheid);
 			}
 		}
 	}

@@ -385,7 +385,8 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 	assert(pci);
 	/* keep track on the instructions taken in progress for stethoscope*/
-	if( tid < THREADS){
+	if( tid > 0 && tid <= THREADS){
+		tid--;
 		if( malProfileMode) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid].cntxt = cntxt;
@@ -416,7 +417,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	lng ticks = GDKusec();
 
 	/* keep track on the instructions in progress*/
-	if ( tid < THREADS) {
+	if ( tid > 0 && tid <= THREADS) {
+		tid--;
 		if( malProfileMode) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid].cntxt = 0;

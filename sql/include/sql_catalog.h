@@ -485,7 +485,6 @@ typedef struct sql_func {
 	sql_ftype type;
 	list *ops;	/* param list */
 	list *res;	/* list of results */
-	int nr;
 	int sql;	/* 0 native implementation
 			   1 sql
 			   2 sql instantiated proc

@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE pyapi09table(i integer)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO pyapi09table VALUES (1), (2), (3), (4)
 
 statement ok
@@ -32,13 +32,13 @@ DROP TABLE pyapi09table
 statement ok
 CREATE TABLE pyapi09table(i integer)
 
-statement ok
+statement ok rowcount 4
 INSERT INTO pyapi09table VALUES (1), (2), (3), (4)
 
 statement ok
 CREATE TABLE pyapi09multiplication(i integer)
 
-statement ok
+statement ok rowcount 1
 INSERT INTO pyapi09multiplication VALUES (3)
 
 statement ok
@@ -57,7 +57,7 @@ SELECT pyapi09(i) FROM pyapi09table
 6
 9
 
-statement ok
+statement ok rowcount 1
 UPDATE pyapi09multiplication SET i=10
 
 query I rowsort
@@ -163,7 +163,7 @@ SELECT * FROM pyapi09()
 8
 9
 
-statement error
+statement error 25005!Current transaction is aborted (please ROLLBACK)
 SELECT 1
 
 statement ok
