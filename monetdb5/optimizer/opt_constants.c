@@ -29,15 +29,13 @@
 #include "opt_constants.h"
 
 str
-OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k = 1, n  = 0, fnd = 0, actions  = 0, limit = 0;
 	int *alias = NULL, *index = NULL, *cand = NULL;
 	VarPtr x,y, *cst = NULL;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	InstrPtr q;
+	InstrPtr p, q;
 
 	if( isSimpleSQL(mb)){
 		goto wrapup;
@@ -109,20 +107,17 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getArg(p,k) = alias[getArg(p,k)];
 		}
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	// 	msg = chkFlow(mb);
 	// if(!msg)
 	// 	msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
-	newComment(mb,buf);
-	if (actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 
 	if( cand) GDKfree(cand);
 	if( alias) GDKfree(alias);

@@ -985,13 +985,14 @@ logger_create_types_file(logger *lg, const char *filename)
 		     && fsync(fileno(fp)) < 0
 #endif
 	    )) {
+		GDKsyserror("flushing log file %s failed", filename);
+		fclose(fp);
 		MT_remove(filename);
-		GDKerror("flushing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
+		GDKsyserror("closing log file %s failed", filename);
 		MT_remove(filename);
-		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1007,9 +1008,8 @@ logger_open_output(logger *lg)
 		return GDK_FAIL;
 	}
 
-	if (LOG_DISABLED(lg)) {
-		lg->end = 0;
-	} else {
+	lg->end = 0;
+	if (!LOG_DISABLED(lg)) {
 		char id[32];
 		char *filename;
 
@@ -1414,6 +1414,7 @@ bm_get_counts(logger *lg)
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 			BAT *b = BBPquickdesc(bids[p]);
+			assert(b);
 			cnt = BATcount(b);
 		} else {
 			deleted++;
@@ -1675,8 +1676,10 @@ bm_subcommit(logger *lg)
 		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
 		i = subcommit_list_add(i, n, sizes, vals->batCacheid, BATcount(ids));
 
-		r[rcnt++] = lg->seqs_id->batCacheid;
-		r[rcnt++] = lg->seqs_val->batCacheid;
+		if (BBP_lrefs(lg->seqs_id->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_id->batCacheid;
+		if (BBP_lrefs(lg->seqs_val->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_val->batCacheid;
 
 		logbat_destroy(lg->seqs_id);
 		logbat_destroy(lg->seqs_val);
@@ -2329,9 +2332,12 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (nr)
-			return la_bat_update_count(lg, id, offset+cnt);
-		return GDK_SUCCEED;
+		if (nr) {
+			logger_lock(lg);
+			ok = la_bat_update_count(lg, id, offset+cnt);
+			logger_unlock(lg);
+		}
+		return ok;
 	}
 
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
@@ -2425,8 +2431,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (LOG_DISABLED(lg))
-			lg->end += nr;
+		lg->end += nr;
 		if (nr)
 			return la_bat_update_count(lg, id, offset+cnt);
 		return GDK_SUCCEED;
@@ -2520,9 +2525,8 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
-	} else {
-		lg->end++;
 	}
+	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
@@ -2546,9 +2550,8 @@ log_bat_transient(logger *lg, log_id id)
 			logger_unlock(lg);
 			return GDK_FAIL;
 		}
-	} else {
-		lg->end++;
 	}
+	lg->end++;
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
@@ -2590,8 +2593,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	nr = (BUNlast(uval));
 	assert(nr);
 
+	lg->end += nr;
 	if (LOG_DISABLED(lg)) {
-		lg->end += nr;
 		/* logging is switched off */
 		logger_unlock(lg);
 		return GDK_SUCCEED;
@@ -2645,8 +2648,8 @@ log_bat_clear(logger *lg, int id)
 {
 	logformat l;
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		logger_lock(lg);
 		gdk_return res = la_bat_update_count(lg, id, 0);
 		logger_unlock(lg);
@@ -2699,8 +2702,8 @@ log_tend(logger *lg)
 		return logger_commit(lg);
 	}
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		return GDK_SUCCEED;
 	}
 
@@ -2906,8 +2909,8 @@ log_tstart(logger *lg, bool flushnow)
 		lg->flushnow = flushnow;
 	}
 
+	lg->end++;
 	if (LOG_DISABLED(lg)) {
-		lg->end++;
 		return GDK_SUCCEED;
 	}
 

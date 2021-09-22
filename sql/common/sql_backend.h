@@ -26,6 +26,7 @@ typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 typedef void  (*create_function) (ptr mvc, str name, sql_rel *rel, sql_table *t);
 typedef int  (*resolve_function) (ptr mvc, sql_func *f);
 typedef int  (*has_module_function) (ptr mvc, char *name);
+typedef void *(*create_sub_backend) (void *mvc, void *client);
 
 /* backing struct for this interface */
 typedef struct _backend_functions {
@@ -40,6 +41,7 @@ typedef struct _backend_functions {
 	schema_user_dependencies fschuserdep;
 	resolve_function fresolve_function;
 	has_module_function fhas_module_function;
+	create_sub_backend sub_backend;
 } backend_functions;
 
 extern void backend_freecode(int clientid, const char *name);

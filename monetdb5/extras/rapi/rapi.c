@@ -530,7 +530,7 @@ empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqb
 	void **res = GDKzalloc(retcols * sizeof(void*));
 
 	if (!res) {
-		msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -538,7 +538,7 @@ empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqb
 		if (isaBatType(getArgType(mb, pci, i))) {
 			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
 			if (!b) {
-				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				msg = createException(MAL, "rapi.eval", GDK_EXCEPTION);
 				goto bailout;
 			}
 			((BAT**)res)[i] = b;
@@ -546,7 +546,7 @@ empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqb
 			// return NULL to conform to SQL aggregates
 			int tpe = getArgType(mb, pci, i);
 			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
-				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];

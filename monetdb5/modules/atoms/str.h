@@ -120,8 +120,14 @@ __attribute__((__visibility__("hidden")));
 extern str str_repeat(str *buf, size_t *buflen, str s, int c)
 __attribute__((__visibility__("hidden")));
 
+extern str str_case_hash_lock(bool upper)
+__attribute__((__visibility__("hidden")));
+extern void str_case_hash_unlock(bool upper)
+__attribute__((__visibility__("hidden")));
+/* Make sure the UTF8_toLowerFrom hash is locked! */
 extern str str_lower(str *buf, size_t *buflen, str s)
 __attribute__((__visibility__("hidden")));
+/* Make sure the UTF8_toUpperFrom hash is locked! */
 extern str str_upper(str *buf, size_t *buflen, str s)
 __attribute__((__visibility__("hidden")));
 
