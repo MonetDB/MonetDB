@@ -958,7 +958,6 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize)
 		TRC_CRITICAL(GDK, "no BBPsize value found\n");
 		return 0;
 	}
-	sz = (int) (sz * BATMARGIN);
 	if (sz > *bbpsize)
 		*bbpsize = sz;
 	if (bbpversion > GDKLIBRARY_MINMAX_POS) {

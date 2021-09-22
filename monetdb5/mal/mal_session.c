@@ -449,6 +449,8 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 				glb->stk[i].vtype = TYPE_int;
 				glb->stk[i].len = 0;
 				glb->stk[i].val.pval = 0;
+				if (isVarConstant(mb, i))
+					garbageElement(cntxt, &mb->var[i].value);
 			} else {
 				/* compress the global variable list and stack */
 				mb->var[k] = mb->var[i];
@@ -469,7 +471,7 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 	mb->vtop = k;
 }
 
-/* The symbol table be become filled with constant values to be garbage collected 
+/* The symbol table be become filled with constant values to be garbage collected
 * The signature is always left behind.
 */
 

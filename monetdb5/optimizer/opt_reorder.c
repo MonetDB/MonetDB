@@ -44,12 +44,12 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p= NULL, *old = NULL;
 	int limit, slimit, *depth = NULL;
 	str msg = MAL_SUCCEED;
-	InstrPtr *blocks[MAXSLICES] ={0};
-	int top[MAXSLICES] ={0};
+	InstrPtr *blocks[MAXSLICES] = {0};
+	int top[MAXSLICES] = {0};
+	int barriers[MAXSLICES] = {0}, btop = 0, off = 0;
 
-	(void) blocks;
-	(void) top;
-	for(i=0; i< MAXSLICES; i++) top[i] = 0;
+	for(i=0; i< MAXSLICES; i++)
+		top[i] = 0;
 	if( isOptimizerUsed(mb, pci, mitosisRef) <= 0){
 		goto wrapup;
 	}
@@ -80,12 +80,13 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 		if( p->token == ENDsymbol)
 			break;
-		k = 0;
+		k = off;
 		if( getModuleId(p) == sqlRef && getFunctionId(p) == tidRef && p->argc == 6){
 			if (depth[getArg(p,0)] == 0){
 				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
 				assert( k < MAXSLICES);
 				depth[getArg(p,0)] = k;
+				depth[getArg(p,p->retc)] = k; /* keep order of mvc input var */
 			}
 		} else
 		if( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && p->argc == 8){
@@ -93,15 +94,29 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
 				assert( k < MAXSLICES);
 				depth[getArg(p,0)] = k;
-			} 
-		} else{
+				depth[getArg(p,p->retc)] = k; /* keep order of mvc input var */
+			}
+		} else {
 			for(j= p->retc; j <p->argc; j++){
 				if (depth[getArg(p,j)] > k)
 					k = depth[getArg(p,j)];
 			}
+			assert( k < MAXSLICES);
 			for(j=0; j< p->retc; j++)
 				if( depth[getArg(p,j)] == 0)
 					depth[getArg(p,j)] = k;
+			/* In addition to the input variables of the statements al statements within a barrier also
+			 * depend on the barriers variable */
+			if (blockStart(p)) {
+				assert(btop < MAXSLICES);
+				barriers[btop++] = k;
+				off = k;
+			}
+			if (blockExit(p)) {
+				off = 0;
+				if (btop--)
+					off = barriers[btop];
+			}
 		}
 
 		if( top[k] == 0){

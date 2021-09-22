@@ -1414,6 +1414,7 @@ bm_get_counts(logger *lg)
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 			BAT *b = BBPquickdesc(bids[p]);
+			assert(b);
 			cnt = BATcount(b);
 		} else {
 			deleted++;

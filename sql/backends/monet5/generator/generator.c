@@ -687,7 +687,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				if (is_timestamp_nil(val)) {
 					if (cand)
 						BBPunfix(cand->batCacheid);
-					BBPreclaim(bn); 
+					BBPreclaim(bn);
 					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
@@ -926,10 +926,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( q == NULL){
 		/* p != NULL, hence bl == NULL */
 		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
-		if( br == NULL) {
-			if(bl) BBPunfix(bl->batCacheid);
+		if( br == NULL)
 			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
 	}
 
 	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first
