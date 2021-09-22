@@ -75,10 +75,10 @@ exp_is_point_select(sql_exp *e)
 }
 
 static int
-rel_no_mitosis(sql_rel *rel)
+rel_no_mitosis(mvc *sql, sql_rel *rel)
 {
-	int is_point = 0;
-
+	if (mvc_highwater(sql))
+		return 0;
 	if (!rel || is_basetable(rel->op))
 		return 1;
 	/* use mitosis on order topn */
@@ -88,20 +88,17 @@ rel_no_mitosis(sql_rel *rel)
 			return 0;
 	}
 	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
-		return rel_no_mitosis(rel->l);
-	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
-		if (is_delete(rel->op) || is_merge(rel->op))
-			return 1;
-		return rel_no_mitosis(rel->r);
-	}
-	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
-		is_point = 0;
+		return rel_no_mitosis(sql, rel->l);
+	if ((is_delete(rel->op) || is_truncate(rel->op)) && rel->card <= CARD_AGGR)
+		return 1;
+	if ((is_insert(rel->op) || is_update(rel->op)) && rel->card <= CARD_AGGR)
+		return rel_no_mitosis(sql, rel->r);
+	if (is_select(rel->op) && rel_is_table(rel->l) && !list_empty(rel->exps)) {
 		/* just one point expression makes this a point query */
-		if (rel->exps->h)
-			if (exp_is_point_select(rel->exps->h->data))
-				is_point = 1;
+		if (exp_is_point_select(rel->exps->h->data))
+			return 1;
 	}
-	return is_point;
+	return 0;
 }
 
 static int
@@ -109,16 +106,14 @@ rel_need_distinct_query(sql_rel *rel)
 {
 	int need_distinct = 0;
 
-	while (!need_distinct && rel && is_simple_project(rel->op))
+	while (rel && is_simple_project(rel->op))
 		rel = rel->l;
-	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps && !rel->r) {
+	if (rel && is_groupby(rel->op) && !list_empty(rel->exps) && list_empty(rel->r)) {
 		for (node *n = rel->exps->h; n && !need_distinct; n = n->next) {
 			sql_exp *e = n->data;
-			if (e->type == e_aggr) {
 
-				if (need_distinct(e))
-					need_distinct = 1;
-			}
+			if (e->type == e_aggr && need_distinct(e))
+				need_distinct = 1;
 		}
 	}
 	return need_distinct;
@@ -140,7 +135,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_distribute(be->mvc, rel);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
-	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
+	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
 	return rel;
@@ -307,34 +302,53 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
+create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
-	sql_table *nt = NULL;
+	sql_table *nt = NULL, *ot;
 	node *n;
 	int check = 0;
-	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
+	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : (replace ? "CREATE OR REPLACE" : "CREATE");
 	const char *obj = t->query ? "VIEW" : "TABLE";
+	str msg = MAL_SUCCEED;
 
 	if (store_readonly(sql->session->tr->store))
-		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
+		throw(SQL, "sql.catalog", SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
-		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
-	if (mvc_bind_table(sql, s, t->base.name)) {
-		return sql_message(SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'", action, obj, get_string_global_var(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_DECLARED_TABLE && ol_length(t->keys)) {
-		return sql_message(SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, obj, sname);
+	if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP)))
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: insufficient privileges for user '%s' in schema '%s'",
+						 action, obj, get_string_global_var(sql, "current_user"), s->base.name);
+	if ((ot = mvc_bind_table(sql, s, t->base.name))) {
+		if (replace) {
+			if (ot->type != t->type)
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: unable to drop %s '%s': is a %s",
+								 action, obj, obj, t->base.name, TABLE_TYPE_DESCRIPTION(ot->type, ot->properties));
+			if (ot->system)
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: cannot replace system %s '%s'", action, obj, obj, t->base.name);
+			if (mvc_check_dependency(sql, ot->base.id, isView(ot) ? VIEW_DEPENDENCY : TABLE_DEPENDENCY, NULL))
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: cannot replace %s '%s', there are database objects which depend on it",
+								 action, obj, obj, t->base.name);
+			if ((msg = mvc_drop_table(sql, s, ot, 0)) != MAL_SUCCEED)
+				return msg;
+		} else {
+			throw(SQL, "sql.catalog", SQLSTATE(42S01) "%s %s: name '%s' already in use", action, obj, t->base.name);
+		}
 	}
+	if (temp == SQL_DECLARED_TABLE && ol_length(t->keys))
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' cannot have constraints", action, obj, t->base.name);
 
-	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
-								t->sz, t->properties);
-	if (!nt)
-		return sql_message(SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
-
+	switch (sql_trans_create_table(&nt, sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action, t->sz, t->properties)) {
+		case -1:
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "%s %s: '%s' name conflicts", action, obj, t->base.name);
+		default:
+			break;
+	}
 	osa = sql->sa;
 	sql->sa = sql->ta;
 	/* first check default values */
@@ -406,7 +420,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		}
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
-	if (check == -1) {
+	if (check == -4) {
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
@@ -518,7 +532,6 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, 4);
 	lng cnt = *(lng*)getArgReference_lng(stk, pci, 5);
 	BAT *pos = NULL;
-
 	sql_schema *s;
 	sql_table *t;
 
@@ -534,6 +547,8 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+	if (!isTable(t))
+		throw(SQL, "sql.claim", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
 		*res = bat_nil;
 		if (pos)
@@ -547,8 +562,8 @@ str
 create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
-	sql_table *t;
-	sql_schema *s;
+	sql_table *t = NULL;
+	sql_schema *s = NULL;
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -560,11 +575,18 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	switch (mvc_create_table(&t, sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)) {
+		case -1:
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: transaction conflict detected");
+		default:
+			break;
+	}
 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
@@ -577,30 +599,37 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		else {
 			sql_subtype *t = sql_bind_localtype(atoname);
 			if (!t)
-				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
+				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
 		}
 
 		if (columns[i].name && columns[i].name[0] == '%')
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
-		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+		switch (mvc_create_column(&col, sql, t, columns[i].name, &tpe)) {
+			case -1:
+				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: transaction conflict detected");
+			default:
+				break;
+		}
 	}
-	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0)) != MAL_SUCCEED)
+	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0)) != MAL_SUCCEED)
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 	BUN offset;
 	BAT *pos = NULL;
 	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: Could not insert data");
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: Could not insert data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
 			bat_destroy(pos);
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		}
 		if ((msg = mvc_append_column(sql->session->tr, col, offset, pos, b)) != MAL_SUCCEED) {
 			bat_destroy(pos);
@@ -628,20 +657,22 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+	if (!isTable(t))
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "APPEND TABLE: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	BUN offset;
 	BAT *pos = NULL;
 	if (mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b), &offset, &pos) != LOG_OK)
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: Could not append data");
+		throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: Could not append data");
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
 			bat_destroy(pos);
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
+			throw(SQL, "sql.catalog", SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		}
 		if ((msg = mvc_append_column(sql->session->tr, col, offset, pos, b)) != MAL_SUCCEED) {
 			bat_destroy(pos);
@@ -665,7 +696,7 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 	if (s == NULL)
 		return NULL;
 	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
+	if (t == NULL || !isTable(t))
 		return NULL;
 	c = mvc_bind_column(m, t, cname);
 	if (c == NULL)
@@ -674,16 +705,6 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 	sqlstore *store = tr->store;
 	b = store->storage_api.bind_col(tr, c, access);
 	return b;
-}
-
-str
-SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return sql_message(SQLSTATE(25006) "Deprecated statement");
 }
 
 /* setVariable(int *ret, str *sname, str *name, any value) */
@@ -1279,7 +1300,7 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 	if (s == NULL)
 		return NULL;
 	i = mvc_bind_idx(m, s, iname);
-	if (i == NULL)
+	if (i == NULL || !isTable(i->t))
 		return NULL;
 
 	(void) tname;
@@ -1845,12 +1866,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
 	if (Pos != bat_nil && (pos = BATdescriptor(Pos)) == NULL)
-		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append positions descriptor");
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
 		bat_destroy(pos);
-		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append values descriptor");
 	}
 	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
@@ -1868,6 +1887,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(b);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
 	}
+	if (!isTable(t)) {
+		bat_destroy(pos);
+		bat_destroy(b);
+		throw(SQL, "sql.append", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	}
 	if (b)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
@@ -1875,6 +1899,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, tpe);
+	} else {
+		bat_destroy(pos);
+		bat_destroy(b);
+		throw(SQL, "sql.append", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
 	bat_destroy(pos);
 	bat_destroy(b);
@@ -1912,15 +1940,12 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		assert(0);
 	if (tpe != TYPE_bat)
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-		sname,tname,cname);
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Update values is not a BAT input");
 	if ((tids = BATdescriptor(Tids)) == NULL)
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access update positions descriptor");
 	if ((upd = BATdescriptor(Upd)) == NULL) {
 		BBPunfix(tids->batCacheid);
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access update values descriptor");
 	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
@@ -1934,11 +1959,20 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(upd->batCacheid);
 		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
+	if (!isTable(t)) {
+		BBPunfix(tids->batCacheid);
+		BBPunfix(upd->batCacheid);
+		throw(SQL, "sql.update", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	}
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+	} else {
+		BBPunfix(tids->batCacheid);
+		BBPunfix(upd->batCacheid);
+		throw(SQL, "sql.update", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
 	BBPunfix(tids->batCacheid);
 	BBPunfix(upd->batCacheid);
@@ -1970,6 +2004,8 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.clear_table", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	clear_res = mvc_clear_table(m, t);
 	if (clear_res >= BUN_NONE - 1)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
@@ -2018,6 +2054,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
+	if (!isTable(t)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		throw(SQL, "sql.delete", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	}
 	sqlstore *store = m->session->tr->store;
 	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
@@ -2030,7 +2071,12 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static inline BAT *
 setwritable(BAT *b)
 {
-	return BATsetaccess(b, BAT_WRITE);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BBPunfix(b->batCacheid);
+		b = bn;
+	}
+	return b;
 }
 
 str
@@ -3089,9 +3135,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
-	}
+	if (onclient && !cntxt->filetrans)
+		throw(MAL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
 
 	be = cntxt->sqlcontext;
 	/* The CSV parser expects ssep to have the value 0 if the user does not
@@ -3148,6 +3193,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			size_t *widths;
 			char* val_start = fixed_widths;
 			size_t width_len = strlen(fixed_widths);
+			stream *ns;
+
 			for (i = 0; i < width_len; i++) {
 				if (fixed_widths[i] == '|') {
 					ncol++;
@@ -3169,29 +3216,35 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tsep = fwftsep;
 			rsep = fwfrsep;
 
-			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
+			ns = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
+			if (ns == NULL || mnstr_errnr(ns)) {
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+				close_stream(ss);
+				free(widths);
+				return msg;
+			}
+			ss = ns;
 		}
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
 #else
 		s = bstream_create(ss, 0x200000);
 #endif
-		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
-			if (onclient) {
-				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-				be->mvc->scanner.rs->eof = s->eof;
-				s->s = NULL;
-			}
-			bstream_destroy(s);
+		if (s == NULL) {
+			close_stream(ss);
+			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
+		if (onclient) {
+			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
+			be->mvc->scanner.rs->eof = s->eof;
+			s->s = NULL;
+		}
+		bstream_destroy(s);
 	}
-	if (fname && s == NULL)
-		throw(IO, "bstreams.create", SQLSTATE(42000) "Failed to create block stream");
-	if (b == NULL)
-		throw(SQL, "importTable", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, be->mvc->errstr);
-	bat2return(stk, pci, b);
+	if (b && !msg)
+		bat2return(stk, pci, b);
 	GDKfree(b);
 	return msg;
 }
@@ -5816,7 +5869,7 @@ static mel_func sql_init_funcs[] = {
  pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("wlr", "create_table", WLRgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
- pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
+ pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("tname",str),arg("temp",int),arg("replace",int))),
  pattern("wlr", "drop_table", WLRgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlr", "drop_view", WLRgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
@@ -5839,8 +5892,8 @@ static mel_func sql_init_funcs[] = {
  pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
  pattern("wlr", "drop_index", WLRgeneric, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
  pattern("wlr", "drop_function", WLRgeneric, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,2, arg("sname",str),arg("fname",str))),
- pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("replace",int))),
+ pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
  pattern("wlr", "drop_trigger", WLRgeneric, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
  pattern("wlr", "alter_add_table", WLRgeneric, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("wlr", "alter_del_table", WLRgeneric, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
@@ -5865,7 +5918,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
- pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,5, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int),arg("replace",int))),
  pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_constraint", SQLdrop_constraint, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
@@ -5888,8 +5941,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
  pattern("sqlcatalog", "drop_index", SQLdrop_index, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_function", SQLdrop_function, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("sqlcatalog", "create_function", SQLcreate_function, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("fcn",ptr))),
- pattern("sqlcatalog", "create_trigger", SQLcreate_trigger, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("sqlcatalog", "create_function", SQLcreate_function, false, "Catalog operation create_function", args(0,4, arg("sname",str),arg("fname",str),arg("fcn",ptr),arg("replace",int))),
+ pattern("sqlcatalog", "create_trigger", SQLcreate_trigger, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
  pattern("sqlcatalog", "drop_trigger", SQLdrop_trigger, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
  pattern("sqlcatalog", "alter_add_table", SQLalter_add_table, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("sqlcatalog", "alter_del_table", SQLalter_del_table, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),

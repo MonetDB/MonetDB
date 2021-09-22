@@ -185,7 +185,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	int retcols;
 	bool gstate = 0;
 	int unnamedArgs = 0;
-	bool parallel_aggregation = grouped && mapped;
+	bool parallel_aggregation = grouped && mapped, freeexprStr = false;
 	int argcount = pci->argc;
 
 	char *eval_additional_args[] = {"_columns", "_column_types", "_conn"};
@@ -593,6 +593,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
+			freeexprStr = true;
 			if (fread(exprStr, 1, (size_t) length, fp) != (size_t) length) {
 				msg = createException(MAL, "pyapi3.eval",
 									  SQLSTATE(PY000) "Failed to read from file \"%s\".",
@@ -1342,6 +1343,8 @@ wrapup:
 			GDKfree(args[i]);
 	GDKfree(args);
 	GDKfree(pycall);
+	if (freeexprStr)
+		GDKfree(exprStr);
 
 	return msg;
 }

@@ -39,28 +39,26 @@ str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, actions =0, extras= 0;
-	int *empty;
+	int *empty = NULL;
 	int limit = mb->stop, slimit = mb->ssize;
-	InstrPtr p, q, *old = mb->stmt, *updated;
-	char buf[256];
-	lng usec = GDKusec();
+	InstrPtr p, q, *old = NULL, *updated = NULL;
 	str sch,tbl;
 	int etop= 0, esize= 256;
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
 	(void) cntxt;
-	(void) pci;
 
-	//if ( optimizerIsApplied(mb,"emptybind") )
-		//return 0;
 	// use an instruction reference table to keep
 
-	for( i=0; i< mb->stop; i++)
-		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
-			extras += getInstrPtr(mb,i)->argc;
-	if (extras == 0)
+	for( i=0; i< mb->stop; i++) {
+		p = getInstrPtr(mb,i);
+		if( getModuleId(p) == sqlRef && (getFunctionId(p) == emptybindRef || getFunctionId(p) == emptybindidxRef))
+			extras += p->argc;
+	}
+	if (extras == 0){
 		goto wrapup;
+	}
 
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
@@ -71,9 +69,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	if( updated == 0){
 		GDKfree(empty);
-		return 0;
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
@@ -244,22 +243,19 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for(; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 	GDKfree(empty);
 	GDKfree(updated);
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 wrapup:
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

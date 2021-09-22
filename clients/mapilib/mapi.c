@@ -3113,6 +3113,10 @@ close_connection(Mapi mid)
 	}
 	mid->redircnt = 0;
 	mapi_log_record(mid, "Connection closed\n");
+	if (mid->tracelog) {
+		close_stream(mid->tracelog);
+		mid->tracelog = 0;
+	}
 }
 
 MapiMsg

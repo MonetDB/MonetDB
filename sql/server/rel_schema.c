@@ -47,6 +47,16 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 }
 
 static sql_rel *
+rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr, int replace)
+{
+	sql_rel *rel = rel_table(sql, cat_type, sname, t, nr);
+	if (!rel)
+		return NULL;
+	append(rel->exps, exp_atom_int(sql->sa, replace));
+	return rel;
+}
+
+static sql_rel *
 rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
 {
 	sql_rel *rel = rel_create(sa);
@@ -135,6 +145,7 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 			char *cname = n->data.sval;
 			sql_exp *e = m->data;
 			sql_subtype *tp = exp_subtype(e);
+			sql_column *col = NULL;
 
 			if (tt != tt_view && cname && cname[0] == '%') {
 				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
@@ -143,7 +154,17 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
-			mvc_create_column(sql, t, cname, tp);
+			switch (mvc_create_column(&col, sql, t, cname, tp)) {
+				case -1:
+					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				case -2:
+				case -3:
+					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", msg);
+					return -1;
+				default:
+					break;
+			}
 		}
 		if (n || m) {
 			sql_error(sql, 01, SQLSTATE(21S02) "%s: number of columns does not match", msg);
@@ -156,6 +177,7 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 			sql_exp *e = m->data;
 			const char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
+			sql_column *col = NULL;
 
 			if (tt != tt_view && cname && cname[0] == '%') {
 				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
@@ -167,7 +189,17 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
-			mvc_create_column(sql, t, cname, tp);
+			switch (mvc_create_column(&col, sql, t, cname, tp)) {
+				case -1:
+					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				case -2:
+				case -3:
+					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", msg);
+					return -1;
+				default:
+					break;
+			}
 		}
 	}
 	return 0;
@@ -176,11 +208,24 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 sql_table *
 mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action, const char *action)
 {
+	sql_table *t = NULL;
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
 		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
-	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0);
+	switch (mvc_create_table(&t, sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0)) {
+		case -1:
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: transaction conflict detected", action);
+		case -4:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: the partition's expression is too long", action);
+		case -5:
+			return NULL;
+		default:
+			break;
+	}
 	if (as_subquery(sql, t, tt, sq, column_spec, action) != 0)
 		return NULL;
 	return t;
@@ -315,15 +360,38 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
-		if (!(k = (sql_key*)mvc_create_ukey(sql, t, name, kt))) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
-			return res;
+		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return res;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+				return res;
+			default:
+				break;
 		}
-
-		mvc_create_kc(sql, k, cs);
-		if (!mvc_create_ukey_done(sql, k)) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
-			return res;
+		switch (mvc_create_kc(sql, k, cs)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return res;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+				return res;
+			default:
+				break;
+		}
+		switch (mvc_create_ukey_done(sql, k)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return res;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+				return res;
+			default:
+				break;
 		}
 		res = SQL_OK;
 	} 	break;
@@ -378,11 +446,28 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 			return res;
 		}
-		if (!(fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255))) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
-			return res;
+		switch (mvc_create_fkey(&fk, sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return res;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+				return res;
+			default:
+				break;
 		}
-		mvc_create_fkc(sql, fk, cs);
+		switch (mvc_create_fkc(sql, fk, cs)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return res;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+				return res;
+			default:
+				break;
+		}
 		res = SQL_OK;
 	} 	break;
 	case SQL_NOT_NULL:
@@ -576,9 +661,16 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 			return SQL_ERR;
 		}
-		if (!(fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255))) {
-			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
-			return SQL_ERR;
+		switch (mvc_create_fkey(&fk, sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
 		}
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
@@ -596,7 +688,17 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 				return SQL_ERR;
 			}
-			mvc_create_fkc(sql, fk, cs);
+			switch (mvc_create_fkc(sql, fk, cs)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+			}
 		}
 		if (nms || fnms) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
@@ -628,9 +730,16 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			return SQL_ERR;
 		}
 
-		if (!(k = (sql_key*)mvc_create_ukey(sql, t, name, kt))) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
-			return SQL_ERR;
+		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+				return SQL_ERR;
+			default:
+				break;
 		}
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
@@ -642,11 +751,28 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 						nm, t->base.name);
 				return SQL_ERR;
 			}
-			(void) mvc_create_kc(sql, k, c);
+			switch (mvc_create_kc(sql, k, c)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+					return SQL_ERR;
+				default:
+					break;
+			}
 		}
-		if (!mvc_create_ukey_done(sql, k)) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
-			return SQL_ERR;
+		switch (mvc_create_ukey_done(sql, k)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: transaction conflict detected", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+				return SQL_ERR;
+			default:
+				break;
 		}
 	} 	break;
 	case SQL_FOREIGN_KEY:
@@ -720,8 +846,18 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(42S21) "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
-		cs = mvc_create_column(sql, t, cname, ctype);
-		if (!cs || column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
+		switch (mvc_create_column(&cs, sql, t, cname, ctype)) {
+			case -1:
+				sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: transaction conflict detected", (alter)?"ALTER":"CREATE");
+				return SQL_ERR;
+			default:
+				break;
+		}
+		if (column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
 	}
 	return res;
@@ -914,7 +1050,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, false)))
 			return SQL_ERR;
 		for (node *n = ol_first_node(ot->columns); n; n = n->next) {
-			sql_column *oc = n->data;
+			sql_column *oc = n->data, *nc = NULL;
 
 			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
 				sql_error(sql, 02, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", action);
@@ -923,7 +1059,17 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				sql_error(sql, 02, SQLSTATE(42S21) "%s: a column named '%s' already exists\n", action, oc->base.name);
 				return SQL_ERR;
 			}
-			(void)mvc_create_column(sql, t, oc->base.name, &oc->type);
+			switch (mvc_create_column(&nc, sql, t, oc->base.name, &oc->type)) {
+				case -1:
+					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
+					return SQL_ERR;
+				default:
+					break;
+			}
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
@@ -1099,6 +1245,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		/* table element list */
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
+		int res = LOG_OK;
 
 		if (tt == tt_remote) {
 			char *local_user = get_string_global_var(sql, "current_user");
@@ -1111,12 +1258,23 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 			if (reg_credentials != 0) {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);
 			}
-			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
+			res = mvc_create_remote(&t, sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
-			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
+			res = mvc_create_table(&t, sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
 		}
-		if (!t)
-			return NULL;
+		switch (res) {
+			case -1:
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: transaction conflict detected", action);
+			case -4:
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: the partition's expression is too long", action);
+			case -5:
+				return NULL;
+			default:
+				break;
+		}
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -1185,29 +1343,9 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if (create && !replace && mvc_bind_table(sql, s, name) != NULL)
+		return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
 
-	if (create) {
-		if ((t = mvc_bind_table(sql, s, name))) {
-			if (replace) {
-				if (!isView(t)) {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to drop view '%s': is a table", base, name);
-				} else if (t->system) {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace system view '%s'", base, name);
-				} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
-				} else {
-					str output;
-					if ((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
-						sql_error(sql, 02, SQLSTATE(42000) "%s", output);
-						freeException(output);
-						return NULL;
-					}
-				}
-			} else {
-				return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
-			}
-		}
-	}
 	if (ast) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
@@ -1240,12 +1378,20 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
-			if (as_subquery(sql, t, tt_view, sq, column_spec, "CREATE VIEW") != 0) {
+			switch (mvc_create_view(&t, sql, s, name, SQL_DECLARED_TABLE, q, 0)) {
+				case -1:
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
+				default:
+					break;
+			}
+			if (as_subquery(sql, t, tt_view, sq, column_spec, base) != 0) {
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_table(sql, ddl_create_view, s->base.name, t, SQL_PERSIST);
+			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, SQL_PERSIST, replace);
 		}
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);
@@ -1524,6 +1670,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (isTempSchema(pt->s))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
 								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+		if (isReplicaTable(t) && isMergeTable(pt))
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s",
+							 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
@@ -1937,13 +2086,29 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		sname = t->s->base.name;
 
 	/* add index here */
-	i = mvc_create_idx(sql, nt, iname, itype);
+	switch (mvc_create_idx(&i, sql, nt, iname, itype)) {
+		case -1:
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: transaction conflict detected");
+		default:
+			break;
+	}
 	for (n = column_list->h; n; n = n->next) {
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 
 		if (!c)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CREATE INDEX: no such column '%s'", n->data.sval);
-		mvc_create_ic(sql, i, c);
+		switch (mvc_create_ic(sql, i, c)) {
+			case -1:
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: transaction conflict detected");
+			default:
+				break;
+		}
 	}
 
 	/* new columns need update with default values */

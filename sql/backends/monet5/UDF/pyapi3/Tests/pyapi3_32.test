@@ -6,34 +6,134 @@ CREATE FUNCTION pyapi32_gentbl() RETURNS TABLE(i TINYINT) LANGUAGE PYTHON {
 	return { 'i': numpy.arange(100) }
 }
 
-statement error
+statement ok
 CREATE FUNCTION pyapi32_function(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON {
-	return i * 2
-
-statement error
+	return i * 2;
 }
 
-statement error
+statement ok
 CREATE FUNCTION pyapi32_function_mapped(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON_MAP {
-	return i * 2
-
-statement error
+	return i * 2;
 }
 
-statement error
+statement ok
 CREATE TABLE integers AS SELECT * FROM pyapi32_gentbl() WITH DATA
 
-statement error
+query I rowsort
 SELECT pyapi32_function(i) FROM integers
+----
+100 values hashing to c3672f1a3cbe048603a97455a52b9231
 
-statement error
+query I rowsort
 SELECT pyapi32_function(i) FROM integers WHERE i > 50
+----
+102
+104
+106
+108
+110
+112
+114
+116
+118
+120
+122
+124
+126
+128
+130
+132
+134
+136
+138
+140
+142
+144
+146
+148
+150
+152
+154
+156
+158
+160
+162
+164
+166
+168
+170
+172
+174
+176
+178
+180
+182
+184
+186
+188
+190
+192
+194
+196
+198
 
-statement error
+query I rowsort
 SELECT pyapi32_function_mapped(i) FROM integers
+----
+100 values hashing to c3672f1a3cbe048603a97455a52b9231
 
-statement error
+query I rowsort
 SELECT pyapi32_function_mapped(i) FROM integers WHERE i > 50
+----
+102
+104
+106
+108
+110
+112
+114
+116
+118
+120
+122
+124
+126
+128
+130
+132
+134
+136
+138
+140
+142
+144
+146
+148
+150
+152
+154
+156
+158
+160
+162
+164
+166
+168
+170
+172
+174
+176
+178
+180
+182
+184
+186
+188
+190
+192
+194
+196
+198
 
 statement ok
 ROLLBACK

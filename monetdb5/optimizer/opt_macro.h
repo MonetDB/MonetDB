@@ -9,10 +9,7 @@
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
-extern str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
 extern int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-extern str OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-extern str OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 extern str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 

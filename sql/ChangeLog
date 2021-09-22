@@ -1,6 +1,17 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Sep  7 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The view sys.ids has been changed to give more information about the
+  objects in the system.  In particular, there is an extra column
+  added at the end that indicates whether the object is a system
+  object.
+
+* Mon Aug 23 2021 Sjoerd Mullender <sjoerd@acm.org>
+- The example modules opt_sql_append and udf are no longer loaded by
+  default and no longer part of the binary release.  If installed,
+  they can be loaded using the --loadmodule option.
+
 * Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
 - The built-in SQL functions to produce a dump that were added as a
   proof-of-concept in the previous release have been improved and are
@@ -12,7 +23,7 @@
 - The sys.epoch function has always been confusing.  There are two
   versions, one with an INTEGER argument, and one with a BIGINT
   argument.  The former accepted values as seconds, whereas the
-  latter epected milliseconds.  Also, the construct EXTRACT(EPOCH
+  latter expected milliseconds.  Also, the construct EXTRACT(EPOCH
   FROM value) returns a BIGINT with millisecond precision.  This has
   now been overhauled.  There is no longer a function sys.epoch with
   BIGINT argument, but instead there is a new function sys.epoch with

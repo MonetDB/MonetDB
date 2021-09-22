@@ -345,7 +345,7 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
-	if (!e->semantics && l && !have_nil(l))
+	if (!is_semantics(e) && l && !have_nil(l))
 		set_has_no_nil(e);
 	return e;
 }
@@ -854,7 +854,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 		return NULL;
 	e->l = rel;
 	e->flag = PSM_REL;
-	e->card = rel->single?CARD_ATOM:rel->card;
+	e->card = is_single(rel)?CARD_ATOM:rel->card;
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
@@ -1348,7 +1348,8 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			break;
 		case e_func: {
 			sql_subfunc *e1f = (sql_subfunc*) e1->f;
-			int (*comp)(list*, list*) = !e1f->func->s && is_commutative(e1f->func->base.name) ? exp_match_list : exps_equal;
+			const char *sname = e1f->func->s ? e1f->func->s->base.name : NULL;
+			int (*comp)(list*, list*) = is_commutative(sname, e1f->func->base.name) ? exp_match_list : exps_equal;
 
 			if (!e1f->func->side_effect &&
 				!subfunc_cmp(e1f, e2->f) && /* equal functions */
@@ -1762,9 +1763,9 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 	*/
 	if (e->flag != cmp_equal && e->flag != cmp_notequal)
 		return false;
-	if (e->flag == cmp_equal && !e->anti)
+	if (e->flag == cmp_equal && !is_anti(e))
 		return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
-	if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) )
+	if (((e->flag == cmp_notequal) && !is_anti(e)) || ((e->flag == cmp_equal) && is_anti(e)) )
 		return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
 	return false;
 }
@@ -1795,7 +1796,7 @@ static inline bool
 exp_regular_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
 
-    if (e->semantics)   return exp_is_cmp_exp_is_false(e);
+    if (is_semantics(e))return exp_is_cmp_exp_is_false(e);
     if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(e);
     else                return exp_single_bound_cmp_exp_is_false(e);
 }
@@ -1881,7 +1882,7 @@ exp_is_not_null(sql_exp *e)
 	case e_convert:
 		return exp_is_not_null(e->l);
 	case e_func:
-		if (!e->semantics && e->l) {
+		if (!is_semantics(e) && e->l) {
 			list *l = e->l;
 			for (node *n = l->h; n; n=n->next) {
 				sql_exp *p = n->data;
@@ -1916,7 +1917,7 @@ exp_is_null(sql_exp *e )
 	case e_convert:
 		return exp_is_null(e->l);
 	case e_func:
-		if (!e->semantics && e->l) {
+		if (!is_semantics(e) && e->l) {
 			/* This is a call to a function with no-nil semantics.
 			 * If one of the parameters is null the expression itself is null
 			 */
@@ -2049,7 +2050,7 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 		if (exp_has_rel(e)) {
 			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
-			xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			xp = xp ? rel_crossproduct(sa, xp, r, op_full) : r;
 		}
 	}
 	return xp;
@@ -2836,6 +2837,48 @@ exp_flatten(mvc *sql, sql_exp *e)
 		}
 	}
 	return NULL;
+}
+
+sql_exp *
+exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r)
+{
+	sql_subtype *lt = exp_subtype(l);
+	sql_subtype *rt = exp_subtype(r);
+
+	if (lt->type->scale == SCALE_FIX && rt->scale &&
+		strcmp(f->func->imp, "/") == 0) {
+		sql_subtype *res = f->res->h->data;
+		unsigned int scale, digits, digL, scaleL;
+		sql_subtype nlt;
+
+		/* scale fixing may require a larger type ! */
+		scaleL = (lt->scale < 3) ? 3 : lt->scale;
+		scale = scaleL;
+		scaleL += rt->scale;
+		digL = lt->digits + (scaleL - lt->scale);
+		digits = (digL > rt->digits) ? digL : rt->digits;
+
+		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (res->type->radix == 10 && digits > 39)
+			digits = 39;
+		if (res->type->radix == 2 && digits > 128)
+			digits = 128;
+#else
+		if (res->type->radix == 10 && digits > 19)
+			digits = 19;
+		if (res->type->radix == 2 && digits > 64)
+			digits = 64;
+#endif
+
+		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
+		if (nlt.digits < scaleL)
+			return sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
+		l = exp_check_type(sql, &nlt, rel, l, type_equal);
+
+		sql_find_subtype(res, lt->type->base.name, digits, scale);
+	}
+	return l;
 }
 
 void

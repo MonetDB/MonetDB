@@ -881,10 +881,13 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 		/* remove them and continue the deletion */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK && msg; rid = store->table_api.rids_next(A)) {
 			sqlid nuid = store->table_api.column_find_sqlid(tr, find_sql_column(auths, "id"), rid);
-			char* nname = store->table_api.column_find_value(tr, find_sql_column(auths, "name"), rid);
+			char *nname = store->table_api.column_find_value(tr, find_sql_column(auths, "name"), rid);
 
-			if (!(msg = sql_drop_granted_users(sql, nuid, nname, deleted_users)))
+			if (!nname)
+				msg = createException(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			else if (!(msg = sql_drop_granted_users(sql, nuid, nname, deleted_users)))
 				log_res = store->table_api.table_delete(tr, auths, rid);
+			_DELETE(nname);
 		}
 		store->table_api.rids_destroy(A);
 		if (!msg && log_res != LOG_OK)
@@ -958,28 +961,29 @@ int
 sql_create_privileges(mvc *m, sql_schema *s)
 {
 	int pub, p, zero = 0;
-	sql_table *t, *privs;
-	sql_subfunc *f;
+	sql_table *t = NULL, *privs = NULL;
+	sql_column *col = NULL;
+	sql_subfunc *f = NULL;
 	sql_trans *tr = m->session->tr;
 
 	backend_create_privileges(m, s);
 
-	t = mvc_create_table(m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
-	mvc_create_column_(m, t, "login_id", "int", 32);
-	mvc_create_column_(m, t, "role_id", "int", 32);
+	mvc_create_table(&t, m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&col, m, t, "login_id", "int", 32);
+	mvc_create_column_(&col, m, t, "role_id", "int", 32);
 
 	/* all roles and users are in the auths table */
-	t = mvc_create_table(m, s, "auths", tt_table, 1, SQL_PERSIST, 0, -1, 0);
-	mvc_create_column_(m, t, "id", "int", 32);
-	mvc_create_column_(m, t, "name", "varchar", 1024);
-	mvc_create_column_(m, t, "grantor", "int", 32);
+	mvc_create_table(&t, m, s, "auths", tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&col, m, t, "id", "int", 32);
+	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
+	mvc_create_column_(&col, m, t, "grantor", "int", 32);
 
-	t = mvc_create_table(m, s, "privileges", tt_table, 1, SQL_PERSIST, 0, -1, 0);
-	mvc_create_column_(m, t, "obj_id", "int", 32);
-	mvc_create_column_(m, t, "auth_id", "int", 32);
-	mvc_create_column_(m, t, "privileges", "int", 32);
-	mvc_create_column_(m, t, "grantor", "int", 32);
-	mvc_create_column_(m, t, "grantable", "int", 32);
+	mvc_create_table(&t, m, s, "privileges", tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&col, m, t, "obj_id", "int", 32);
+	mvc_create_column_(&col, m, t, "auth_id", "int", 32);
+	mvc_create_column_(&col, m, t, "privileges", "int", 32);
+	mvc_create_column_(&col, m, t, "grantor", "int", 32);
+	mvc_create_column_(&col, m, t, "grantable", "int", 32);
 
 	/* add roles public and sysadmin and user monetdb */
 	sql_create_auth_id(m, ROLE_PUBLIC, "public");
