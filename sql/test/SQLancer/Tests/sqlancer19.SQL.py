@@ -88,14 +88,30 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
     cli.execute("SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
+    cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
     cli.execute("SELECT t3.c0 FROM t3 INNER JOIN t3 myx ON t3.c0 = myx.c0 ORDER BY t3.c0;") \
         .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
     cli.execute("SELECT rt3.c0 FROM rt3 INNER JOIN rt3 myx ON rt3.c0 = myx.c0 ORDER BY rt3.c0;") \
         .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
+
+    # Issues related to digits and scale propagation in the sql layer
+    cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
+    cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
     cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([('69',)])
     cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([('69',)])
+
+    # Issues related to comparisons not being correctly delimited on plans, which causes ambiguity
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
     cli.execute("SELECT 1 FROM t3 WHERE (t3.c0 BETWEEN t3.c0 AND t3.c0) IS NULL;") \
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT 2 FROM rt3 WHERE (rt3.c0 BETWEEN rt3.c0 AND rt3.c0) IS NULL;") \
