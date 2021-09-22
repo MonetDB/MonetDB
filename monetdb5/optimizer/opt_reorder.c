@@ -86,6 +86,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
 				assert( k < MAXSLICES);
 				depth[getArg(p,0)] = k;
+				depth[getArg(p,p->retc)] = k; /* keep order of mvc input var */
 			}
 		} else
 		if( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && p->argc == 8){
@@ -93,6 +94,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
 				assert( k < MAXSLICES);
 				depth[getArg(p,0)] = k;
+				depth[getArg(p,p->retc)] = k; /* keep order of mvc input var */
 			}
 		} else {
 			for(j= p->retc; j <p->argc; j++){
