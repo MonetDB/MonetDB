@@ -799,7 +799,7 @@ readString( char *r, int *pos)
 	return st;
 }
 
-static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp) ;
+static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp);
 
 static sql_exp*
 read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
@@ -860,7 +860,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 
 		(*pos)++;
 		skipWS( r, pos);
-		e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp);
+		e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp, 0);
 		if (!e && r[*pos] != ebracket) {
 			return sql_error(sql, -1, SQLSTATE(42000) "Missing closing %c\n", ebracket);
 		} else if (!e) {
@@ -876,7 +876,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 
 			(*pos)++;
 			skipWS( r, pos);
-			e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp);
+			e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp, 0);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -968,7 +968,7 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 }
 
 static sql_exp*
-exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
+exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp)
 {
 	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos;
@@ -1111,7 +1111,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (r[*pos] == '[') { /* convert */
 				(*pos)++;
 				skipWS(r, pos);
-				if (!(exp = exp_read(sql, lrel, rrel, top_exps, r, pos, 0)))
+				if (!(exp = exp_read(sql, lrel, rrel, top_exps, r, pos, 0, 0)))
 					return NULL;
 				if (r[*pos] != ']')
 					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
@@ -1452,9 +1452,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			exp = exp_in(sql->sa, exp, exps, f);
 			if (anti)
 				set_anti(exp);
-		} else {
+		} else {	
 			int sym = 0;
-			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0);
+			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0, 1);
 
 			if (!e)
 				return NULL;
@@ -1471,8 +1471,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				exp = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), is_symmetric(e));
 				if (is_anti(e))
 					set_anti(exp);
-				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, exp, e);
 			} else {
 				exp = exp_compare(sql->sa, exp, e, f);
 				if (anti)
@@ -1481,9 +1479,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					set_semantics(exp);
 				if (sym) /* set it, so it gets propagated to the range comparison */
 					set_symmetric(exp);
-				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, exp, e);
-				exp_setalias(e, NULL, NULL);
 			}
 		}
 	}
@@ -1502,7 +1497,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	}
 
 	/* as alias */
-	if (strncmp(r+*pos, "as", 2) == 0) {
+	if (!in_cmp && strncmp(r+*pos, "as", 2) == 0) {
 		(*pos)+=2;
 		skipWS(r, pos);
 
