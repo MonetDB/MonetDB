@@ -175,12 +175,12 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 			setReturnArgument(p, old->argv[idx]);
 			int new_count_var = newTmpVariable(mb, TYPE_oid);
 			pushReturn(mb, p, new_count_var);
-			pushStr(mb, p, method);
-			pushBit(mb, p, byteswap);
-			pushStr(mb, p, path);
-			pushInt(mb, p, onclient);
+			p = pushStr(mb, p, method);
+			p = pushBit(mb, p, byteswap);
+			p = pushStr(mb, p, path);
+			p = pushInt(mb, p, onclient);
 			if (count_var < 0)
-				pushOid(mb, p, 0);
+				p = pushOid(mb, p, 0);
 			else
 				p = pushArgument(mb, p, count_var);
 			return new_count_var;

@@ -808,8 +808,7 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 		BBPunfix(R->batCacheid);
 		if (sl)
 			BBPunfix(sl->batCacheid);
-		if (sr)
-			BBPunfix(sr->batCacheid);
+		/* sr == NULL, so no need to unfix */
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	ret = BATsubcross(&bn1, r ? &bn2 : NULL, L, R, sl, sr,

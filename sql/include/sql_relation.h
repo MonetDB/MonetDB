@@ -283,7 +283,13 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 used:2;	/* used by rewriters at rel_unnest and rel_dce, so a relation is not modified twice */
+	/*
+	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
+	 * The first two bits are used by rel_unnest modifiers and always reset after.
+	 * The first bit is also used by rel_dce and rel_merge_select_rse optimizers.
+	 * The third bit is used by rel_remote_func only and it's not reset.
+	 */
+	 used:3;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

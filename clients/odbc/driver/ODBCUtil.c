@@ -1255,6 +1255,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						strncpy(q, nquery, pr);
 						for (r = func->repl; *r; r++) {
 							if (*r == '\1' || *r == '\2' || *r == '\3' || *r == '\4') {
+								assert(*r <= func->nargs);
 								if (args[*r - 1].argstart[0] == '\'')
 									q[pr++] = 'r';
 								strncpy(q + pr, args[*r - 1].argstart, args[*r - 1].arglen);
