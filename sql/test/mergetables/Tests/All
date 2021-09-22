@@ -18,6 +18,7 @@ KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
+replicas
 transaction-conflict
 
 HAVE_NETCDF&HAVE_NETCDF?mergedb_create

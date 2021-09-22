@@ -166,11 +166,6 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
-	/* 80_udf_hge.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create function fuse(one bigint, two bigint)\n"
-			"returns hugeint external name udf.fuse;\n");
-
 	/* 90_generator_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.generate_series(first hugeint, \"limit\" hugeint)\n"
@@ -244,12 +239,11 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
-			(int) F_FUNC, (int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
+			(int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -3531,6 +3525,53 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
+	/* 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create view sys.malfunctions as select * from sys.malfunctions();\n"
+					"update sys._tables set system = true where system <> true and schema_id = 2000"
+					" and name = 'malfunctions';\n");
+
+	/* 21_dependency_views.sql */
+	t = mvc_bind_table(sql, s, "ids");
+	t->system = 0; /* make it non-system else the drop view will fail */
+	t = mvc_bind_table(sql, s, "dependencies_vw");
+	t->system = 0;	/* make it non-system else the drop view will fail */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"drop view sys.dependencies_vw;\n" /* depends on sys.ids */
+					"drop view sys.ids;\n"
+					"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS\n"
+					"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) AS system FROM sys.auths UNION ALL\n"
+					"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system FROM sys.schemas UNION ALL\n"
+					"SELECT t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system FROM sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id UNION ALL\n"
+					"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+					"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+					"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+					"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL\n"
+					"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+					"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
+					"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+					"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
+					"SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+					"SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+					"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL\n"
+					"SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL\n"
+					"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid')) FROM sys.types WHERE id > 2000\n"
+					" ORDER BY id;\n"
+					"GRANT SELECT ON sys.ids TO PUBLIC;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"CREATE VIEW sys.dependencies_vw AS\n"
+					"SELECT d.id, i1.obj_type, i1.name,\n"
+					"       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+					"       d.depend_type, dt.dependency_type_name\n"
+					"  FROM sys.dependencies d\n"
+					"  JOIN sys.ids i1 ON d.id = i1.id\n"
+					"  JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+					"  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+					" ORDER BY id, depend_id;\n"
+					"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"UPDATE sys._tables SET system = true WHERE name in ('ids', 'dependencies_vw') AND schema_id = 2000;\n");
+
 	/* 52_describe.sql; but we need to drop most everything from
 	 * 76_dump.sql first */
 	t = mvc_bind_table(sql, s, "dump_privileges");
@@ -3859,9 +3900,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"     AND grantor <> 0;\n"
 					"CREATE VIEW sys.dump_create_users AS\n"
 					"  SELECT\n"
-					"    'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||\n"
+					"    'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||\n"
 					"      sys.sq(sys.password_hash(ui.name)) ||\n"
-					"      ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;' stmt,\n"
+					"      ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '\"sys\"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,\n"
 					"    ui.name user_name\n"
 					"    FROM sys.db_user_info ui, sys.schemas s\n"
 					"   WHERE ui.default_schema = s.id\n"
@@ -3869,7 +3910,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"     AND ui.name <> '.snapshot';\n"
 					"CREATE VIEW sys.dump_create_schemas AS\n"
 					"  SELECT\n"
-					"    'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,\n"
+					"    'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,\n"
 					"    s.name schema_name\n"
 					"    FROM sys.schemas s, sys.auths a\n"
 					"   WHERE s.authorization = a.id AND s.system = FALSE;\n"
@@ -4029,7 +4070,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    FROM sys.describe_sequences;\n"
 					"CREATE VIEW sys.dump_start_sequences AS\n"
 					"  SELECT\n"
-					"    'UPDATE sys.sequences seq SET start = ' || s  ||\n"
+					"    'UPDATE sys.sequences seq SET start = ' || s ||\n"
 					"      ' WHERE name = ' || sys.SQ(seq) ||\n"
 					"      ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,\n"
 					"    sch schema_name,\n"
@@ -4089,7 +4130,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    DECLARE _cnt INT;\n"
 					"    SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));\n"
 					"    IF _cnt > 0 THEN\n"
-					"      SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);\n"
+					"      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);\n"
 					"      DECLARE SELECT_DATA_STMT STRING;\n"
 					"      SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);\n"
 					"      DECLARE M INT;\n"
@@ -4102,7 +4143,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"	SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);\n"
 					"      END WHILE;\n"
 					"      SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\\\n'',''\"'';');\n"
-					"      SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);\n"
+					"      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);\n"
 					"      insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);\n"
 					"      CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');\n"
 					"    END IF;\n"
@@ -4173,6 +4214,11 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('dump_create_roles', 'dump_create_users', 'dump_create_schemas', 'dump_add_schemas_to_users', 'dump_grant_user_privileges', 'dump_table_constraint_type', 'dump_table_grants', 'dump_column_grants', 'dump_function_grants', 'dump_indices', 'dump_column_defaults', 'dump_foreign_keys', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'dump_functions', 'dump_tables', 'dump_triggers', 'dump_comments', 'dump_user_defined_types') AND schema_id = 2000;\n");
 
+	/* 80_udf.sql (removed) */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"drop function sys.reverse(string);\n"
+					"drop all function sys.fuse;\n");
+
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
@@ -4216,11 +4262,14 @@ SQLupgrades(Client c, mvc *m)
 	sqlstore *store = m->session->tr->store;
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(m->session->tr, s, "privileges");
-		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
+		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0, res;
 
-		store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
+		if ((res = store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero)) != LOG_OK) {
+			TRC_CRITICAL(SQL_PARSER, "Privilege creation during upgrade failed\n");
+			GDKfree(prev_schema);
+			return -1;
+		}
 	}
-
 
 	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
 	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)

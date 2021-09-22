@@ -90,7 +90,7 @@ query ITII rowsort
 SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids)
 ----
 
-query ITIITTT rowsort
+query ITIITTTI rowsort
 SELECT * FROM sys.ids WHERE obj_type IN ('key', 'index') AND id NOT IN (SELECT id FROM sys.objects)
 ----
 

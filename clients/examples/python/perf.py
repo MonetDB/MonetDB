@@ -20,3 +20,5 @@ c = x.cursor()
 c.arraysize=10000
 c.execute('select * from tables, tables')
 results = c.fetchall()
+c.close()
+x.close()

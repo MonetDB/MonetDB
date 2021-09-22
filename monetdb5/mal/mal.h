@@ -172,6 +172,7 @@ typedef struct {
 typedef struct MALBLK {
 	char binding[IDLENGTH];	/* related C-function */
 	str help;				/* supportive commentary */
+	str statichelp;			/* static help string should not be freed */
 	oid tag;				/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;				/* next free slot */

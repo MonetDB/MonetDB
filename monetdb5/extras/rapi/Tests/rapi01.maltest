@@ -75,4 +75,6 @@ r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b)
 
 statement error
 io.print(r)
+----
+nil
 

@@ -93,14 +93,11 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int actions = 0;
 	const char *calcRef= putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	if( coerce == NULL)
 		throw(MAL,"optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) cntxt;
-	(void) pci;
 	(void) stk;		/* to fool compilers */
 
 	for (i = 1; i < mb->stop; i++) {
@@ -111,9 +108,9 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
  */
 #ifdef HAVE_HGE
 		if ( getModuleId(p) == batcalcRef
-		     && getFunctionId(p) == hgeRef
-		     && p->retc == 1
-		     && ( p->argc == 5
+			 && getFunctionId(p) == hgeRef
+			 && p->retc == 1
+			 && ( p->argc == 5
 				   && isVarConstant(mb,getArg(p,1))
 				   && getArgType(mb,p,1) == TYPE_int
 				   && isVarConstant(mb,getArg(p,3))
@@ -130,14 +127,14 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 #endif
 		if ( getModuleId(p) == batcalcRef
-		     && getFunctionId(p) == dblRef
-		     && p->retc == 1
-		     && ( p->argc == 2
-		          || ( p->argc == 3
-		               && isVarConstant(mb,getArg(p,1))
-		               && getArgType(mb,p,1) == TYPE_int
-		               //to-scale == 0, i.e., no scale change
-		               && *(int*) getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
+			 && getFunctionId(p) == dblRef
+			 && p->retc == 1
+			 && ( p->argc == 2
+				  || ( p->argc == 3
+					   && isVarConstant(mb,getArg(p,1))
+					   && getArgType(mb,p,1) == TYPE_int
+					   //to-scale == 0, i.e., no scale change
+					   && *(int*) getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_dbl;
@@ -161,19 +158,15 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 */
 	GDKfree(coerce);
 
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

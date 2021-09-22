@@ -519,12 +519,12 @@ compileOptimizer(Client cntxt, const char *name)
 str
 compileAllOptimizers(Client cntxt)
 {
-    int i;
-    str msg = MAL_SUCCEED;
+	int i;
+	str msg = MAL_SUCCEED;
 
-    for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
-        msg =compileOptimizer(cntxt,pipes[i].name);
-    }
+	for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
+		msg =compileOptimizer(cntxt,pipes[i].name);
+	}
 	return msg;
 }
 
@@ -568,7 +568,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			// Not needed at this place typeChecker(cntxt->usermodule, mb, p, j, FALSE);
+			// typecheck to get its internal address typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}

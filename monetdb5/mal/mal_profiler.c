@@ -328,7 +328,13 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 				}
 				if(d) {
 					BAT *v;
-					cnt = BATcount(d);
+					MT_lock_set(&d->theaplock);
+					BATiter di = bat_iterator_nolock(d);
+					/* outside the lock we cannot dereference di.h or di.vh,
+					 * but we can use all values without dereference and
+					 * without further locking */
+					MT_lock_unset(&d->theaplock);
+					cnt = di.count;
 					if(isVIEW(d)){
 						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
@@ -339,8 +345,8 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 									VIEWtparent(d),
 									d->hseqbase,
 									v && !v->batTransient ? "persistent" : "transient")) {
-										BBPunfix(d->batCacheid);
-										goto cleanup_and_exit;
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
 						}
 					} else {
 						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
@@ -379,14 +385,15 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			}															\
 		}																\
 	} while (0)
-					keepprop(GDK_MIN_VALUE,"min");
-					keepprop(GDK_MAX_VALUE,"max");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MAX_POS,"maxpos");
-					keepprop(GDK_HASH_BUCKETS,"hbuckets");
-					keepprop(GDK_NUNIQUE,"nunique");
-					keepprop(GDK_UNIQUE_ESTIMATE,"nestimate");
+					if ((di.minpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
+						(di.maxpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
+						(di.unique_est != 0 &&
+						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
+						BBPunfix(d->batCacheid);
+						goto cleanup_and_exit;
+					}
 
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
@@ -398,8 +405,8 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
-					total += cnt << d->tshift;
-					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
+					total += cnt << di.shift;
+					if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
@@ -411,7 +418,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 						goto cleanup_and_exit;
 					}
 					MT_rwlock_rdunlock(&d->thashlock);
-					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
+					if( di.vh && !logadd(&logbuf, ",\"vheap\":" BUNFMT, di.vhfree)) {
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
@@ -877,6 +884,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_profileLock);
  	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
+		GDKfree(stmt);
 		return;
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;

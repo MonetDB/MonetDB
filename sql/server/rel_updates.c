@@ -224,7 +224,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	if (need_nulls) {
 		rel_destroy(ins);
 		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1));
+		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
 		set_processed(rt);
 	} else {
 		inserts->r = nnlls;
@@ -853,7 +853,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (need_nulls) {
 		rel_destroy(ups);
 		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1));
+		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
 		set_processed(rt);
 	} else {
 		updates->r = nnlls;
@@ -1542,14 +1542,22 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
-		dnode *n;
 
-		nt = mvc_create_table(sql, t->s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0);
-		for (n = headers->h; n; n = n->next) {
+		switch (mvc_create_table(&nt, sql, t->s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)) {
+			case -1:
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: transaction conflict detected");
+			default:
+				break;
+		}
+		for (dnode *n = headers->h; n; n = n->next) {
 			dnode *dn = n->data.lval->h;
 			char *cname = dn->data.sval;
 			char *format = NULL;
 			sql_column *cs = NULL;
+			int res = LOG_OK;
 
 			if (dn->next)
 				format = dn->next->data.sval;
@@ -1560,16 +1568,24 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 
 				name = sa_alloc(sql->sa, len);
 				snprintf(name, len, "%%cname");
-				cs = mvc_create_column(sql, nt, name, ctype);
+				res = mvc_create_column(&cs, sql, nt, name, ctype);
 			} else if (!format) {
 				cs = find_sql_column(t, cname);
-				cs = mvc_create_column(sql, nt, cname, &cs->type);
+				res = mvc_create_column(&cs, sql, nt, cname, &cs->type);
 			} else { /* load as string, parse later */
 				sql_subtype *ctype = sql_bind_localtype("str");
-				cs = mvc_create_column(sql, nt, cname, ctype);
+				res = mvc_create_column(&cs, sql, nt, cname, ctype);
 				has_formats = 1;
 			}
-			(void)cs;
+			switch (res) {
+				case -1:
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: transaction conflict detected");
+				default:
+					break;
+			}
 		}
 		if (!has_formats)
 			headers = NULL;
@@ -1766,11 +1782,11 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	list *mts;
 
 	if (!copy_allowed(sql, 1))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-				"binary COPY INTO requires database administrator rights");
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: insufficient privileges: "
+				"COPY LOADER INTO requires database administrator rights");
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
+	if (insert_allowed(sql, t, tname, "COPY LOADER INTO", "copy loader into") == NULL)
 		return NULL;
 	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");

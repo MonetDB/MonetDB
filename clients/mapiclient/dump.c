@@ -382,15 +382,16 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	if (tname != NULL) {
 		char *s = sescape(schema);
 		char *t = sescape(tname);
+		if (s == NULL || t == NULL) {
+			free(s);
+			free(t);
+			goto bailout;
+		}
 		maxquerylen = 1024 + strlen(t) + strlen(s);
 		query = malloc(maxquerylen);
-		if (s == NULL || t == NULL || query == NULL) {
-			if (s)
-				free(s);
-			if (t)
-				free(t);
-			if (query)
-				free(query);
+		if (query == NULL) {
+			free(s);
+			free(t);
 			goto bailout;
 		}
 		snprintf(query, maxquerylen,
@@ -2553,7 +2554,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			squoted_print(toConsole, fullname, '\'', false);
 			mnstr_printf(toConsole, " SCHEMA ");
 			dquoted_print(toConsole, describe ? sname : "sys", NULL);
-			if (spath) {
+			if (spath && strcmp(spath, "\"sys\"") != 0) {
 				mnstr_printf(toConsole, " SCHEMA PATH ");
 				squoted_print(toConsole, spath, '\'', false);
 			}

@@ -48,7 +48,7 @@ DEP_SCHEMA
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
-627 values hashing to ba31ce2ed151ea27b635fb7be420a269
+636 values hashing to 90e2ee5bb64e32ae6e9d2ac0ab8dae7b
 
 query TTT rowsort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
@@ -126,7 +126,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-2178 values hashing to 50df54353d1b5c45b536250115f70c64
+2217 values hashing to 419c161985866d250f6e16deb56ab344
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

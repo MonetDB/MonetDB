@@ -2530,13 +2530,12 @@ create_del(sql_trans *tr, sql_table *t)
 	if (!bat) {
 		new = 1;
 		bat = ZNEW(storage);
-		ATOMIC_PTR_SET(&t->data, bat);
 		if(!bat)
 			return LOG_ERR;
+		ATOMIC_PTR_SET(&t->data, bat);
 		bat->cs.refcnt = 1;
-	}
-	if (new)
 		bat->cs.ts = tr->tid;
+	}
 
 	if (!isNew(t) && !isTempTable(t)) {
 		bat->cs.ts = tr->ts;
@@ -3085,12 +3084,12 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 {
-	int ok = LOG_OK;
-	if (ok == LOG_OK && s->cs.cleared)
-		return tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
+	int ok = LOG_OK, cleared = s->cs.cleared;
+	if (ok == LOG_OK && cleared)
+		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, id);
-	if (ok == LOG_OK)
+	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs);
 	return ok;
 }
@@ -3660,6 +3659,7 @@ add_offsets(BUN slot, size_t nr, size_t total, BUN *offset, BAT **offsets)
 	for(size_t i = 0; i < nr; i++)
 		dst[i] = slot + i;
 	(*offsets)->batCount += nr;
+	(*offsets)->theap->dirty = true;
 	return LOG_OK;
 }
 
@@ -3996,6 +3996,51 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	return segments2cands(s->segs->h, tr, t, start, end);
 }
 
+static void
+temp_del_tab(sql_trans *tr, sql_table *t)
+{
+	ulng tid = tr->tid;
+	lock_table(tr->store, t->base.id);
+  table_retry:
+	for (storage *d = ATOMIC_PTR_GET(&t->data), *p = NULL, *n = NULL; d; d = n) {
+		n = d->next;
+		if (d->cs.ts == tid) {
+			if (p == NULL) {
+				if (!ATOMIC_PTR_CAS(&t->data, (void **) &d, n))
+					goto table_retry;
+			} else {
+				p->next = n;
+			}
+			d->next = NULL;
+			destroy_storage(d);
+		} else {
+			p = d;
+		}
+	}
+	unlock_table(tr->store, t->base.id);
+	for (node *nd = t->columns->l->h; nd; nd = nd->next) {
+		sql_column *c = nd->data;
+		lock_column(tr->store, c->base.id);
+	  column_retry:
+		for (sql_delta *d = ATOMIC_PTR_GET(&c->data), *p = NULL, *n = NULL; d; d = n) {
+			n = d->next;
+			if (d->cs.ts == tid) {
+				if (p == NULL) {
+					if (!ATOMIC_PTR_CAS(&c->data, (void **) &d, n))
+						goto column_retry;
+				} else {
+					p->next = n;
+				}
+				d->next = NULL;
+				destroy_delta(d, false);
+			} else {
+				p = d;
+			}
+		}
+		unlock_column(tr->store, c->base.id);
+	}
+}
+
 void
 bat_storage_init( store_functions *sf)
 {
@@ -4040,6 +4085,8 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
+
+	sf->temp_del_tab = &temp_del_tab;
 }
 
 #if 0

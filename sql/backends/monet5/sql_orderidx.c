@@ -43,8 +43,10 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.createorderindex", SQLSTATE(3FOOO) "Unknown schema %s", sch);
 	if (!mvc_schema_privs(m, s))
 		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-	if (!(t = mvc_bind_table(m, s, tbl)) || !isTable(t))
+	if (!(t = mvc_bind_table(m, s, tbl)))
 		throw(SQL, "sql.createorderindex", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
+	if (!isTable(t))
+		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (!(c = mvc_bind_column(m, t, col)))
 		throw(SQL, "sql.createorderindex", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 	sqlstore *store = m->session->tr->store;
@@ -79,8 +81,10 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.droporderindex", SQLSTATE(3FOOO) "Unknown schema %s", sch);
 	if (!mvc_schema_privs(m, s))
 		throw(SQL, "sql.droporderindex", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-	if (!(t = mvc_bind_table(m, s, tbl)) || !isTable(t))
+	if (!(t = mvc_bind_table(m, s, tbl)))
 		throw(SQL, "sql.droporderindex", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
+	if (!isTable(t))
+		throw(SQL, "sql.droporderindex", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (!(c = mvc_bind_column(m, t, col)))
 		throw(SQL, "sql.droporderindex", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 	sqlstore *store = m->session->tr->store;

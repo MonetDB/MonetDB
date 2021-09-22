@@ -402,11 +402,9 @@ SQLinit(Client c)
 		return MAL_SUCCEED;
 	}
 
-	be_funcs = (backend_functions) {
-		.fcode = &monet5_freecode,
-		.fresolve_function = &monet5_resolve_function,
-		.fhas_module_function = &monet5_has_module,
-	};
+	be_funcs.fcode = &monet5_freecode,
+	be_funcs.fresolve_function = &monet5_resolve_function,
+	be_funcs.fhas_module_function = &monet5_has_module,
 	monet5_user_init(&be_funcs);
 
 	if (debug_str)
@@ -654,13 +652,18 @@ SQLtrans(mvc *m)
 		}
 		s = m->session;
 		if (!s->schema) {
-			if (monet5_user_get_def_schema(m, m->user_id, &s->schema_name) < 0) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
-			}
-			if (!s->schema_name) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			switch (monet5_user_get_def_schema(m, m->user_id, &s->schema_name)) {
+				case -1:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				case -3:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				default:
+					break;
 			}
 			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
 				mvc_cancel_session(m);
@@ -1172,6 +1175,17 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
+			if (be->subbackend && be->subbackend->check(be->subbackend, r)) {
+				res_table *rt = NULL;
+				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+					if (rt) {
+						rt->next = be->results;
+						be->results = rt;
+					}
+					return NULL;
+				}
+			}
+
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
@@ -1302,6 +1316,8 @@ str
 SQLengine(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
+	if (be && be->subbackend)
+		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
 }
 

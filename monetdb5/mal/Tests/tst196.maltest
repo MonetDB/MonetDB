@@ -7,6 +7,6 @@ end welcome5
 statement error
 y:= user.welcome5(1)
 
-statement error
+statement ok
 io.print(y)
 
