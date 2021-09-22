@@ -4001,11 +4001,13 @@ temp_del_tab(sql_trans *tr, sql_table *t)
 {
 	ulng tid = tr->tid;
 	lock_table(tr->store, t->base.id);
+  table_retry:
 	for (storage *d = ATOMIC_PTR_GET(&t->data), *p = NULL, *n = NULL; d; d = n) {
 		n = d->next;
 		if (d->cs.ts == tid) {
 			if (p == NULL) {
-				ATOMIC_PTR_SET(&t->data, n);
+				if (!ATOMIC_PTR_CAS(&t->data, (void **) &d, n))
+					goto table_retry;
 			} else {
 				p->next = n;
 			}
@@ -4019,11 +4021,13 @@ temp_del_tab(sql_trans *tr, sql_table *t)
 	for (node *nd = t->columns->l->h; nd; nd = nd->next) {
 		sql_column *c = nd->data;
 		lock_column(tr->store, c->base.id);
+	  column_retry:
 		for (sql_delta *d = ATOMIC_PTR_GET(&c->data), *p = NULL, *n = NULL; d; d = n) {
 			n = d->next;
 			if (d->cs.ts == tid) {
 				if (p == NULL) {
-					ATOMIC_PTR_SET(&c->data, n);
+					if (!ATOMIC_PTR_CAS(&c->data, (void **) &d, n))
+						goto column_retry;
 				} else {
 					p->next = n;
 				}

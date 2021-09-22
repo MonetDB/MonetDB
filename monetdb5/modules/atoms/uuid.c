@@ -181,9 +181,7 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (msg && bn)
-		BBPreclaim(bn);
-	else if (bn)
+	if (bn)						/* implies msg==MAL_SUCCEED */
 		BBPkeepref(*ret = bn->batCacheid);
 	return msg;
 }
@@ -250,7 +248,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (dst && !msg) {
+	if (dst) {					/* implies msg==MAL_SUCCEED */
 		BATsetcount(dst, q);
 		dst->tnil = nils;
 		dst->tnonil = !nils;
@@ -258,8 +256,7 @@ bailout:
 		dst->tsorted = b->tsorted;
 		dst->trevsorted = b->trevsorted;
 		BBPkeepref(*res = dst->batCacheid);
-	} else if (dst)
-		BBPreclaim(dst);
+	}
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (s)

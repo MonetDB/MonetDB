@@ -985,13 +985,14 @@ logger_create_types_file(logger *lg, const char *filename)
 		     && fsync(fileno(fp)) < 0
 #endif
 	    )) {
+		GDKsyserror("flushing log file %s failed", filename);
+		fclose(fp);
 		MT_remove(filename);
-		GDKerror("flushing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
+		GDKsyserror("closing log file %s failed", filename);
 		MT_remove(filename);
-		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1413,6 +1414,7 @@ bm_get_counts(logger *lg)
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 			BAT *b = BBPquickdesc(bids[p]);
+			assert(b);
 			cnt = BATcount(b);
 		} else {
 			deleted++;
@@ -1674,8 +1676,10 @@ bm_subcommit(logger *lg)
 		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
 		i = subcommit_list_add(i, n, sizes, vals->batCacheid, BATcount(ids));
 
-		r[rcnt++] = lg->seqs_id->batCacheid;
-		r[rcnt++] = lg->seqs_val->batCacheid;
+		if (BBP_lrefs(lg->seqs_id->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_id->batCacheid;
+		if (BBP_lrefs(lg->seqs_val->batCacheid) > 0)
+			r[rcnt++] = lg->seqs_val->batCacheid;
 
 		logbat_destroy(lg->seqs_id);
 		logbat_destroy(lg->seqs_val);
