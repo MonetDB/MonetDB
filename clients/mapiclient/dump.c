@@ -382,15 +382,16 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	if (tname != NULL) {
 		char *s = sescape(schema);
 		char *t = sescape(tname);
+		if (s == NULL || t == NULL) {
+			free(s);
+			free(t);
+			goto bailout;
+		}
 		maxquerylen = 1024 + strlen(t) + strlen(s);
 		query = malloc(maxquerylen);
-		if (s == NULL || t == NULL || query == NULL) {
-			if (s)
-				free(s);
-			if (t)
-				free(t);
-			if (query)
-				free(query);
+		if (query == NULL) {
+			free(s);
+			free(t);
 			goto bailout;
 		}
 		snprintf(query, maxquerylen,
