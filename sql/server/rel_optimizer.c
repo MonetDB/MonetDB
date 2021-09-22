@@ -8272,10 +8272,11 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 static int
 reduce_scale(atom *a)
 {
+	int i = 0;
+
 #ifdef HAVE_HGE
 	if (a->data.vtype == TYPE_hge) {
 		hge v = a->data.val.hval;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8283,12 +8284,10 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.hval = v;
-		return i;
-	}
+	} else
 #endif
 	if (a->data.vtype == TYPE_lng) {
 		lng v = a->data.val.lval;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8296,11 +8295,8 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.lval = v;
-		return i;
-	}
-	if (a->data.vtype == TYPE_int) {
+	} else if (a->data.vtype == TYPE_int) {
 		int v = a->data.val.ival;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8308,11 +8304,8 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.ival = v;
-		return i;
-	}
-	if (a->data.vtype == TYPE_sht) {
+	} else if (a->data.vtype == TYPE_sht) {
 		sht v = a->data.val.shval;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8320,9 +8313,9 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.shval = v;
-		return i;
 	}
-	return 0;
+	a->tpe.scale -= i;
+	return i;
 }
 
 static sql_rel *
