@@ -971,17 +971,17 @@ wkbCoversGeographic(bit *out, wkb **a, wkb **b)
 * 
 **/
 static str 
-alignedInputWithGroups(BAT *b, BAT *g, BAT *b_ordered)
+orderGroupsAndInput(BAT *b, BAT *g, BAT **b_ordered, BAT **g_ordered)
 {
-	BAT *sortedgroups, *sortedorder;
-	BATiter bi = bat_iterator(b);
 	str msg = MAL_SUCCEED;
+	BAT *sortedgroups, *sortedorder;
+	const oid *sortedgroupsids = NULL, *sortedorderids = NULL;
+	oid sortedordercounter;
+	wkb **b_ordered_values = NULL;
+
 	//Sort the groups
 	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED)
 		return createException(MAL, "geom.Collect", "BAT sort failed.");
-
-	const oid *sortedgroupsids = NULL, *sortedorderids = NULL;
-	oid sortedordercounter;
 
 	if (sortedgroups && !BATtdense(sortedgroups))
 		sortedgroupsids = (const oid *)Tloc(sortedgroups, 0);
@@ -992,23 +992,48 @@ alignedInputWithGroups(BAT *b, BAT *g, BAT *b_ordered)
 	else if (BATtdense(sortedorder))
 		sortedordercounter = sortedorder->tseqbase;
 
-	wkb **b_ordered_values = NULL;
 	//Project new order onto input bat IF the sortedorder isn't dense -> in which case, the original input order is correct
 	if (sortedorderids) {
 		//TODO Is this how the in-order BAT should be created?
-		if ((b_ordered = COLnew(b->hseqbase, ATOMindex("wkb"), BATcount(b), TRANSIENT)) == NULL)
-			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((*b_ordered = COLnew(b->hseqbase, ATOMindex("wkb"), BATcount(b), TRANSIENT)) == NULL)
+			return createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((b_ordered_values = GDKzalloc(sizeof(wkb *) * BATcount(b))) == NULL)
-			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		for (BUN i = 0; i < BATcount(b); i++) {
-			oid is = i + sortedorder->hseqbase;
-			b_ordered_values[i] = (wkb *)BUNtail(bi, sortedorderids[is]);
-		}
-		if (BUNappendmulti(b_ordered, b_ordered_values, BATcount(b), false) != GDK_SUCCEED)
-			msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+			return createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		BATiter bi = bat_iterator(b);
+		for (BUN i = 0; i < BATcount(b); i++) 
+			//TODO Is this needed? -> oid is = i + sortedorder->hseqbase;
+			b_ordered_values[i] = (wkb *)BUNtail(bi, sortedorderids[i]);
+		bat_iterator_end(&bi);
+
+		//Assign ordered BATs
+		if (BUNappendmulti(*b_ordered, b_ordered_values, BATcount(b), false) != GDK_SUCCEED)
+			return createException(MAL, "geom.Collect", SQLSTATE(38000) "BUNappend operation failed");
+		*g_ordered = sortedgroups;
+
+		//TODO Free the original b and g BATs
 	}
-	bat_iterator_end(&bi);
+	else {
+		//In the case the original BATs are already ordered
+		*g_ordered = NULL;
+		*b_ordered = NULL;
+	}
 	return msg;
+}
+
+//Gets the type of collection a single geometry should belong to
+static int
+GEOSGeom_getCollectionType (int GEOSGeom_type) {
+	//Single geometries get collected into a Multi* geometry
+	if (GEOSGeom_type == GEOS_POINT)
+		return GEOS_MULTIPOINT;
+	else if (GEOSGeom_type == GEOS_LINESTRING || GEOSGeom_type == GEOS_LINEARRING)
+		return GEOS_MULTILINESTRING;
+	else if (GEOSGeom_type == GEOS_POLYGON)
+		return GEOS_MULTIPOLYGON;
+	//Multi* or GeometryCollections get collected into GeometryCollections
+	else
+		return GEOS_GEOMETRYCOLLECTION;
 }
 
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
@@ -1043,12 +1068,11 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		return msg;
 	}
 
-	//TODO Check this
-	/*BAT *b_ordered = NULL;
-	if((msg = alignedInputWithGroups(b,g,b_ordered)) == MAL_SUCCEED) {
+	BAT *b_ordered, *g_ordered;
+	if(((msg = orderGroupsAndInput(b,g,&b_ordered,&g_ordered)) == MAL_SUCCEED) && b_ordered != NULL && g_ordered != NULL) {
 		b = b_ordered;
-	}*/
-	alignedInputWithGroups(b, g, NULL);
+		g = g_ordered;
+	}
 
 	//Fill in the values of the group aggregate operation
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
@@ -1125,12 +1149,12 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 			}
 			geomCount = 0;
 			lastGrp = grp;
-			geomCollectionType = GEOSGeomTypeId(inGEOM) + 4;
+			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
 		}
 
 		unionGroup[geomCount] = inGEOM;
 		geomCount += 1;
-		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeomTypeId(inGEOM) + 4 != geomCollectionType)
+		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM)) != geomCollectionType)
 			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
 	}
 	//Last collection
