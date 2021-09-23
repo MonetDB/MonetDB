@@ -8254,7 +8254,8 @@ reduce_scale(atom *a)
 			}
 		a->data.val.shval = v;
 	}
-	a->tpe.scale -= i;
+	if (a->tpe.scale)
+		a->tpe.scale -= i;
 	return i;
 }
 

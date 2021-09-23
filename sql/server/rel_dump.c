@@ -1309,40 +1309,41 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		}
 	}
 
-	if (!exp && b != e) { /* simple ident */
-		/*
-		if (!exp) {
-			old = *e;
-			*e = 0;
-			if (stack_find_var(sql, b)) {
-				sql_subtype *tpe = stack_find_type(sql, b);
-				int frame = stack_find_frame(sql, b);
-				exp = exp_param(sql->sa, sa_strdup(sql->sa, b), tpe, frame);
-			}
-			*e = old;
-		}
-		*/
-		if (!exp && lrel) {
-			int amb = 0, mul = 0;
+	if (!exp && lrel && b != e) { /* simple ident */
+		int amb = 0, mul = 0;
 
-			old = *e;
-			*e = 0;
-			convertIdent(b);
-			var_cname = sa_strdup(sql->sa, b);
-			if (top_exps) {
-				exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
-				if (exp)
-					exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
-			}
-			(void)amb;
-			(void)mul;
-			assert(amb == 0 && mul == 0);
-			if (!exp && lrel)
-				exp = rel_bind_column(sql, lrel, var_cname, 0, 1);
-			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
-			*e = old;
-			skipWS(r,pos);
+		old = *e;
+		*e = 0;
+		convertIdent(b);
+		var_cname = sa_strdup(sql->sa, b);
+		if (top_exps) {
+			exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
+			if (exp)
+				exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
+		}
+		(void)amb;
+		(void)mul;
+		assert(amb == 0 && mul == 0);
+		if (!exp && lrel)
+			exp = rel_bind_column(sql, lrel, var_cname, 0, 1);
+		if (!exp && rrel)
+			exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
+		*e = old;
+		skipWS(r,pos);
+	}
+
+	if (!exp && (cname || var_cname)) { /* Try a variable */
+		sql_var *var = NULL;
+		sql_subtype *tpe = NULL;
+		int level = 0;
+		sql_arg *a = NULL;
+		bool has_tname = cname && tname && strcmp(tname, cname) != 0;
+
+		if (find_variable_on_scope(sql, has_tname ? tname : NULL, cname ? cname : var_cname, &var, &a, &tpe, &level, "SELECT")) {
+			if (var) /* if variable is known from the stack or a global var */
+				exp = exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			if (a) /* if variable is a parameter */
+				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, cname), &(a->type), level);
 		}
 	}
 
