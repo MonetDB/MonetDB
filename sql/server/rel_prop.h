@@ -13,7 +13,6 @@ typedef enum rel_prop {
 	PROP_COUNT,
 	PROP_JOINIDX,   /* could use join idx */
 	PROP_HASHIDX,   /* is hash idx */
-	PROP_SORTIDX,   /* is sorted */
 	PROP_HASHCOL,   /* could use hash idx */
 	PROP_FETCH,     /* fetchjoin */
 	PROP_REMOTE,    /* uri for remote execution */

@@ -5629,8 +5629,6 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 		res += 700;
 	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 500;
-	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
-		res += 300;
 	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
 		res += 200;
 
@@ -7425,8 +7423,6 @@ score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 600;
-	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
-		res += 400;
 
 	/* prefer the shorter var types over the longer ones */
 	res += sql_class_base_score(v, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
