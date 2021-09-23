@@ -3620,31 +3620,18 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!sub && !predicate)
 		predicate = rel2bin_predicate(be);
-	if (!rel->exps || !rel->exps->h) {
+	if (list_empty(rel->exps)) {
 		if (sub)
 			return sub;
 		if (predicate)
 			return predicate;
 		assert(0);
-		return stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
 	}
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
 		assert(predicate);
 		append(l, predicate);
 		sub = stmt_list(be, l);
-	}
-	/* handle possible index lookups */
-	/* expressions are in index order ! */
-	if (sub && (en = rel->exps->h) != NULL) {
-		sql_exp *e = en->data;
-		prop *p;
-
-		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_idx *i = p->value;
-
-			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
-		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
