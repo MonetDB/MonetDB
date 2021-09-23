@@ -387,21 +387,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* ops */
 	if (call && call->type == st_list) {
+		char nbuf[IDLENGTH];
+		int i = 0;
+
 		for (node *n = call->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
-			int type = t->type->localtype;
-			int varid = 0;
-			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
-			char *buf = SA_NEW_ARRAY(m->sa, char, strlen(nme) + 2);
+			int type = t->type->localtype, varid = 0;
 
-			if (!buf) {
-				GDKfree(lname);
-				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return -1;
-			}
-			stpcpy(stpcpy(buf, "A"), nme);
-			if ((varid = newVariable(curBlk, buf,strlen(buf), type)) < 0) {
+			sprintf(nbuf, "A%d", i++);
+			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
 				GDKfree(lname);
 				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				return -1;

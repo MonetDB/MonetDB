@@ -76,6 +76,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
     cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
+    cli.execute("SELECT \"current_schema\", current_user from t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("sys","monetdb")])
+    cli.execute("SELECT \"current_schema\", current_user from rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("sys","monetdb")])
     cli.execute("SELECT sql_min(t3.c0 || t3.c0, 3) as x from t3 ORDER BY x;") \
         .assertSucceeded().assertDataResultMatch([("11",),("22",),("22",),("3",),("3",),("3",)])
     cli.execute("SELECT sql_min(rt3.c0 || rt3.c0, 3) as x from rt3 ORDER BY x;") \

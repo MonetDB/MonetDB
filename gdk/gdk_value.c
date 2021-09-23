@@ -156,10 +156,11 @@ VALcopy(ValPtr d, const ValRecord *s)
 		d->vtype = s->vtype;
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
-		d->val.sval = GDKstrdup(s->val.sval);
+		d->len = strLen(s->val.sval);
+		d->val.sval = GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
-		d->len = strLen(d->val.sval);
+		memcpy(d->val.sval, s->val.sval, d->len);
 	} else {
 		ptr p = s->val.pval;
 
@@ -217,15 +218,16 @@ VALinit(ValPtr d, int tpe, const void *s)
 		d->val.uval = *(const uuid *) s;
 		break;
 	case TYPE_str:
-		d->val.sval = GDKstrdup(s);
+		d->len = strLen(s);
+		d->val.sval = GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
-		d->len = strLen(s);
-		break;
+		memcpy(d->val.sval, s, d->len);
+		return d;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
 		d->len = ATOMlen(tpe, *(const ptr *) s);
-		break;
+		return d;
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
@@ -235,7 +237,7 @@ VALinit(ValPtr d, int tpe, const void *s)
 		memcpy(d->val.pval, s, d->len);
 		return d;
 	}
-	d->len = ATOMlen(d->vtype, VALptr(d));
+	d->len = ATOMsize(d->vtype);
 	return d;
 }
 
