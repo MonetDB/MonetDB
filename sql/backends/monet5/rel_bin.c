@@ -3627,11 +3627,24 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return predicate;
 		assert(0);
 	}
+	en = rel->exps->h;
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
 		assert(predicate);
 		append(l, predicate);
 		sub = stmt_list(be, l);
+	}
+	/* handle possible index lookups */
+	/* expressions are in index order ! */
+	if (sub && en) {
+		sql_exp *e = en->data;
+		prop *p;
+
+		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
+			sql_idx *i = p->value;
+
+			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
+		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
