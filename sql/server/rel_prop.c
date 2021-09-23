@@ -71,7 +71,6 @@ propkind2string( prop *p)
 		PT(JOINIDX);
 		PT(HASHIDX);
 		PT(HASHCOL);
-		PT(FETCH);
 		PT(REMOTE);
 		PT(USED);
 		PT(GROUPINGS);

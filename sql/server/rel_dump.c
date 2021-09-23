@@ -915,12 +915,6 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 				exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 			skipWS(r,pos);
 			found = true;
-		} else if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
-			(*pos)+= (int) strlen("FETCH");
-			if (!find_prop(exp->p, PROP_FETCH))
-				exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
-			skipWS(r,pos);
-			found = true;
 		}
 		if (!read_prop(sql, exp, r, pos, &found))
 			return NULL;

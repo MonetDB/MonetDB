@@ -2158,21 +2158,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel;
 		}
-/* TODO */
-#if 0
-		/* duplicate topn/sample + [ project-order ] under join on independend always matching joins */
-		if (r)
-			rp = r->l;
-		if (r && r->exps && is_simple_project(r->op) && !(rel_is_ref(r)) && r->r && r->l &&
-		    rp->op == op_join && rp->exps && rp->exps->h && ((prop*)((sql_exp*)rp->exps->h->data)->p)->kind == PROP_FETCH &&
-		    ((sql_rel *)rp->l)->op != rel->op && ((sql_rel *)rp->r)->op != rel->op) {
-			/* TODO check if order by columns are independend of join conditions */
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel));
-			v->changes++;
-			return rel;
-		}
-#endif
 	}
 	return rel;
 }
