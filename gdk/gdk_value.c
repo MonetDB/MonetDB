@@ -154,16 +154,17 @@ VALcopy(ValPtr d, const ValRecord *s)
 		if (d->val.pval == NULL)
 			return NULL;
 		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, VALptr(d));
 	} else if (s->vtype == TYPE_str) {
+		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
-		d->len = strLen(s->val.sval);
+		d->len = strLen(p);
 		d->val.sval = GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
-		memcpy(d->val.sval, s->val.sval, d->len);
+		memcpy(d->val.sval, p, d->len);
 	} else {
-		ptr p = s->val.pval;
-
+		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = GDKmalloc(d->len);
@@ -171,7 +172,6 @@ VALcopy(ValPtr d, const ValRecord *s)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
-	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
