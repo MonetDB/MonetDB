@@ -2158,21 +2158,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel;
 		}
-/* TODO */
-#if 0
-		/* duplicate topn/sample + [ project-order ] under join on independend always matching joins */
-		if (r)
-			rp = r->l;
-		if (r && r->exps && is_simple_project(r->op) && !(rel_is_ref(r)) && r->r && r->l &&
-		    rp->op == op_join && rp->exps && rp->exps->h && ((prop*)((sql_exp*)rp->exps->h->data)->p)->kind == PROP_FETCH &&
-		    ((sql_rel *)rp->l)->op != rel->op && ((sql_rel *)rp->r)->op != rel->op) {
-			/* TODO check if order by columns are independend of join conditions */
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel));
-			v->changes++;
-			return rel;
-		}
-#endif
 	}
 	return rel;
 }
@@ -5629,8 +5614,6 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 		res += 700;
 	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 500;
-	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
-		res += 300;
 	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
 		res += 200;
 
@@ -7425,8 +7408,6 @@ score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 600;
-	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
-		res += 400;
 
 	/* prefer the shorter var types over the longer ones */
 	res += sql_class_base_score(v, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
@@ -8212,10 +8193,11 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 static int
 reduce_scale(atom *a)
 {
+	int i = 0;
+
 #ifdef HAVE_HGE
 	if (a->data.vtype == TYPE_hge) {
 		hge v = a->data.val.hval;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8223,12 +8205,10 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.hval = v;
-		return i;
-	}
+	} else
 #endif
 	if (a->data.vtype == TYPE_lng) {
 		lng v = a->data.val.lval;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8236,11 +8216,8 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.lval = v;
-		return i;
-	}
-	if (a->data.vtype == TYPE_int) {
+	} else if (a->data.vtype == TYPE_int) {
 		int v = a->data.val.ival;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8248,11 +8225,8 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.ival = v;
-		return i;
-	}
-	if (a->data.vtype == TYPE_sht) {
+	} else if (a->data.vtype == TYPE_sht) {
 		sht v = a->data.val.shval;
-		int i = 0;
 
 		if (v != 0)
 			while( (v/10)*10 == v ) {
@@ -8260,9 +8234,10 @@ reduce_scale(atom *a)
 				v /= 10;
 			}
 		a->data.val.shval = v;
-		return i;
 	}
-	return 0;
+	if (a->tpe.scale)
+		a->tpe.scale -= i;
+	return i;
 }
 
 static sql_rel *
@@ -8677,72 +8652,6 @@ exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusi
 	if ((!max_exclusive && VALcmp(&(emin->data), &(max->data)) > 0) || (max_exclusive && VALcmp(&(emin->data), &(max->data)) >= 0))
 		return 0;
 	return 1;
-}
-
-static sql_rel *
-rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
-{
-	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
-
-	assert(!p->exps);
-	p->exps = sa_list(sql->sa);
-	const char *pname = t->base.name;
-	if (isRemote(t))
-		pname = mapiuri_table(t->query, sql->sa, pname);
-	for (node *n = mt_rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		node *cn = NULL, *ci = NULL;
-		const char *nname = exp_name(e);
-
-		if (strcmp(nname, TID) == 0) {
-			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
-			rel_base_use_tid(sql, p);
-		} else if (nname[0] != '%' && (cn = ol_find_name(mt->columns, nname))) {
-			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
-
-			/* with name find column in merge table, with colnr find column in member */
-			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, 0);
-			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
-				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
-				p->value = rc->t->pkey;
-			} else if (rc->unique == 1) {
-				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
-				p->value = NULL;
-			}
-			set_basecol(ne);
-			rel_base_use(sql, p, rc->colnr);
-			list_append(p->exps, ne);
-		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
-			sql_idx *i = ci->data, *ri = NULL;
-
-			/* indexes don't have a number field like 'colnr', so get the index the old way */
-			for (node *nn = mt->idxs->l->h, *mm = t->idxs->l->h; nn && mm ; nn = nn->next, mm = mm->next) {
-				sql_idx *ii = nn->data;
-
-				if (ii->base.id == i->base.id) {
-					ri = mm->data;
-					break;
-				}
-			}
-
-			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
-			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
-			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
-
-			sql_exp *ne = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), 1);
-			/* index names are prefixed, to make them independent */
-			if (hash_index(ri->type)) {
-				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
-				p->value = ri;
-			} else if (ri->type == join_idx) {
-				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
-				p->value = ri;
-			}
-			list_append(p->exps, ne);
-		}
-	}
-	rel_base_set_mergetable(p, mt);
-	return p;
 }
 
 typedef struct {
