@@ -909,12 +909,6 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 				exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 			skipWS(r,pos);
 			found = true;
-		} else if (strncmp(r+*pos, "SORTIDX",  strlen("SORTIDX")) == 0) {
-			(*pos)+= (int) strlen("SORTIDX");
-			if (!find_prop(exp->p, PROP_SORTIDX))
-				exp->p = prop_create(sql->sa, PROP_SORTIDX, exp->p);
-			skipWS(r,pos);
-			found = true;
 		} else if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
 			(*pos)+= (int) strlen("HASHCOL");
 			if (!find_prop(exp->p, PROP_HASHCOL))

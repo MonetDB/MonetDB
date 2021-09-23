@@ -70,7 +70,6 @@ propkind2string( prop *p)
 		PT(COUNT);
 		PT(JOINIDX);
 		PT(HASHIDX);
-		PT(SORTIDX);
 		PT(HASHCOL);
 		PT(FETCH);
 		PT(REMOTE);
