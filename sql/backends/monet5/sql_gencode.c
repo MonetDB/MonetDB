@@ -326,7 +326,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	const char *local_tbl = prp->value;
 	node *n;
 	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
-	char *lname;
+	size_t len = 1024, nr;
+	char *lname, *buf;
 	sql_rel *r = rel;
 
 	if (local_tbl == NULL) {
@@ -386,23 +387,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* ops */
 	if (call && call->type == st_list) {
-		node *n;
+		char nbuf[IDLENGTH];
+		int i = 0;
 
-		for (n = call->op4.lval->h; n; n = n->next) {
+		for (node *n = call->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
-			int type = t->type->localtype;
-			int varid = 0;
-			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
-			char *buf = SA_NEW_ARRAY(m->sa, char, strlen(nme) + 2);
+			int type = t->type->localtype, varid = 0;
 
-			if (!buf) {
-				GDKfree(lname);
-				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return -1;
-			}
-			stpcpy(stpcpy(buf, "A"), nme);
-			if ((varid = newVariable(curBlk, buf,strlen(buf), type)) < 0) {
+			sprintf(nbuf, "A%d", i++);
+			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
 				GDKfree(lname);
 				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				return -1;
@@ -413,15 +407,17 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 
 	/* declare return variables */
-	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
-		sql_exp *e = n->data;
-		int type = exp_subtype(e)->type->localtype;
+	if (!list_empty(r->exps)) {
+		for (i = 0, n = r->exps->h; n; n = n->next, i++) {
+			sql_exp *e = n->data;
+			int type = exp_subtype(e)->type->localtype;
 
-		type = newBatType(type);
-		p = newFcnCall(curBlk, batRef, newRef);
-		p = pushType(curBlk, p, getBatType(type));
-		setArgType(curBlk, p, 0, type);
-		lret[i] = getArg(p, 0);
+			type = newBatType(type);
+			p = newFcnCall(curBlk, batRef, newRef);
+			p = pushType(curBlk, p, getBatType(type));
+			setArgType(curBlk, p, 0, type);
+			lret[i] = getArg(p, 0);
+		}
 	}
 
 	/* q := remote.connect("schema.table", "msql"); */
@@ -451,99 +447,96 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	o = pushStr(curBlk, o, lname);
 	p = pushArgument(curBlk, p, getArg(o,0));
 
-	{
-	int len = 1024, nr = 0;
-	char *s, *buf = GDKmalloc(len);
-	if (!buf) {
+	if (!(buf = rel2str(m, rel))) {
 		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return -1;
-	}
-	s = rel2str(m, rel);
-	if (!s) {
-		GDKfree(lname);
-		GDKfree(buf);
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
-	o = pushStr(curBlk, o, s);	/* relational plan */
+	o = pushStr(curBlk, o, buf);	/* relational plan */
 	p = pushArgument(curBlk, p, getArg(o,0));
-	free(s);
+	free(buf);
 
-	s = "";
-	if (call && call->type == st_list) { /* Send existing variables in the plan */
-		node *n;
-
-		buf[0] = 0;
-		for (n = call->op4.lval->h; n; n = n->next) {
-			stmt *op = n->data;
-			sql_subtype *t = tail_type(op);
-			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
-
-			if ((nr + 100) > len) {
-				char *tmp = GDKrealloc(buf, len*=2);
-				if (tmp == NULL) {
-					GDKfree(buf);
-					buf = NULL;
-					break;
-				}
-				buf = tmp;
-			}
-
-			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->base.name, t->digits, t->scale, n->next?',':' ');
-		}
-		s = buf;
-	}
-	if (buf) {
-		o = newFcnCall(curBlk, remoteRef, putRef);
-		o = pushArgument(curBlk, o, q);
-		o = pushStr(curBlk, o, s);	/* signature */
-		p = pushArgument(curBlk, p, getArg(o,0));
-	} else {
+	if (!(buf = GDKmalloc(len))) {
 		GDKfree(lname);
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
 	buf[0] = 0;
-	nr = 0;
-	for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
-		sql_exp *e = n->data;
-		sql_subtype *t = exp_subtype(e);
-		str next = sql_subtype_string(m->ta, t);
+	if (call && call->type == st_list) { /* Send existing variables in the plan */
+		char dbuf[32], sbuf[32];
 
-		if (!next) {
-			GDKfree(buf);
-			buf = NULL;
-			break;
-		}
-		if ((nr + 100) > len) {
-			char *tmp = GDKrealloc(buf, len*=2);
-			if (tmp == NULL) {
-				GDKfree(buf);
-				buf = NULL;
-				break;
+		nr = 0;
+		for (node *n = call->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+			sql_subtype *t = tail_type(op);
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+
+			sprintf(dbuf, "%u", t->digits);
+			sprintf(sbuf, "%u", t->scale);
+			size_t nlen = strlen(nme) + strlen(t->type->base.name) + strlen(dbuf) + strlen(sbuf) + 6;
+
+			if ((nr + nlen) > len) {
+				len = (len + nlen) * 2;
+				char *tmp = GDKrealloc(buf, len);
+				if (tmp == NULL) {
+					GDKfree(lname);
+					GDKfree(buf);
+					sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				}
+				buf = tmp;
 			}
-			buf = tmp;
-		}
 
-		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%":"");
+			nr += snprintf(buf+nr, len-nr, "%s %s(%s,%s)%c", nme, t->type->base.name, dbuf, sbuf, n->next?',':' ');
+		}
 	}
-	sa_reset(m->ta);
-	if (buf) {
-		o = newFcnCall(curBlk, remoteRef, putRef);
-		o = pushArgument(curBlk, o, q);
-		o = pushStr(curBlk, o, s);	/* SQL types as a single string */
-		p = pushArgument(curBlk, p, getArg(o,0));
-		GDKfree(buf);
-	} else {
-		GDKfree(lname);
-		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return -1;
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushStr(curBlk, o, buf);	/* signature */
+	p = pushArgument(curBlk, p, getArg(o,0));
+
+	buf[0] = 0;
+	if (!list_empty(r->exps)) {
+		nr = 0;
+		for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+			str next = sql_subtype_string(m->ta, t);
+
+			if (!next) {
+				GDKfree(lname);
+				GDKfree(buf);
+				sa_reset(m->ta);
+				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return -1;
+			}
+
+			size_t nlen = strlen(next) + 2;
+			if ((nr + nlen) > len) {
+				len = (len + nlen) * 2;
+				char *tmp = GDKrealloc(buf, len);
+				if (tmp == NULL) {
+					GDKfree(lname);
+					GDKfree(buf);
+					sa_reset(m->ta);
+					sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				}
+				buf = tmp;
+			}
+
+			nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%":"");
+		}
+		sa_reset(m->ta);
 	}
-	}
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushStr(curBlk, o, buf);	/* SQL types as a single string */
+	GDKfree(buf);
+	p = pushArgument(curBlk, p, getArg(o,0));
 	pushInstruction(curBlk, p);
 
 	char *mal_session_uuid, *err = NULL;
@@ -620,14 +613,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	p = pushStr(curBlk, p, lname);
 	getArg(p, 0) = -1;
 
-	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
-		/* x1 := remote.put(q, :type) */
-		o = newFcnCall(curBlk, remoteRef, putRef);
-		o = pushArgument(curBlk, o, q);
-		o = pushArgument(curBlk, o, lret[i]);
-		v = getArg(o, 0);
-		p = pushReturn(curBlk, p, v);
-		rret[i] = v;
+	if (!list_empty(r->exps)) {
+		for (i = 0, n = r->exps->h; n; n = n->next, i++) {
+			/* x1 := remote.put(q, :type) */
+			o = newFcnCall(curBlk, remoteRef, putRef);
+			o = pushArgument(curBlk, o, q);
+			o = pushArgument(curBlk, o, lret[i]);
+			v = getArg(o, 0);
+			p = pushReturn(curBlk, p, v);
+			rret[i] = v;
+		}
 	}
 
 	/* send arguments to remote */
