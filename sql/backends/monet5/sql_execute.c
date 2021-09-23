@@ -809,6 +809,21 @@ is_a_number(char *v)
 	return 1;
 }
 
+static char *
+parseIdent(char *in, char *out)
+{
+	while (*in && *in != '"') {
+		if (*in == '\\' && (*(in + 1) == '\\' || *(in + 1) == '"')) {
+			*out++ = *(in + 1);
+			in+=2;
+		} else {
+			*out++ = *in++;
+		}
+	}
+	*out++ = '\0';
+	return in;
+}
+
 str
 RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -823,7 +838,6 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	sql_rel *rel;
 	list *refs, *ops;
-	char buf[BUFSIZ];
 
 	if ((msg = getSQLContext(cntxt, mb, &m, &be)) != NULL)
 		return msg;
@@ -836,20 +850,15 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!m->sa)
 		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 
-	/* keep copy of signature and relational expression */
-	snprintf(buf, BUFSIZ, "%s %s", sig, expr);
-
 	if (!stack_push_frame(m, NULL))
 		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	ops = sa_list(m->sa);
 	while (sig && *sig && !isspace((unsigned char) *sig)) {
-		char *vnme = sig, *tnme;
+		char *vnme = sig, *tnme, *nbuf, *sch, *var;
 		char *p = strchr(++sig, (int)' ');
 		int d,s,nr = -1;
-		sql_subtype t;
-		//atom *a;
-
-		assert(0);
+		sql_type *t = NULL;
+		sql_subtype tpe;
 
 		*p++ = 0;
 		/* vnme can be name or number */
@@ -859,29 +868,43 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = strchr(p, (int)'(');
 		*p++ = 0;
 		tnme = sa_strdup(m->sa, tnme);
-		if (!tnme)
-			return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
 
-		sql_find_subtype(&t, tnme, d, s);
-		//a = atom_general(m->sa, &t, NULL);
-		//a->isnull = 0; // disable NULL value optimizations ugh
-		/* the argument list may have holes and maybe out of order, ie
-		 * don't use sql_add_arg, but special numbered version
-		 * sql_set_arg(m, a, nr);
-		 * */
+		if (!sql_find_subtype(&tpe, tnme, d, s)) {
+			if (!(t = mvc_bind_type(m, tnme))) { /* try an external type */
+				stack_pop_frame(m);
+				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tnme, d, s));
+			}
+			sql_init_subtype(&tpe, t, d, s);
+		}
+
 		if (nr >= 0) {
-			append(ops, exp_atom_ref(m->sa, nr, &t));
-			//if (!sql_set_arg(m, nr, a)) {
-			//	sqlcleanup(be, 0);
-			//	return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			//}
+			list_append(ops, exp_atom_ref(m->sa, nr, &tpe));
 		} else {
-			if (!push_global_var(m, "sys", vnme+1, &t))
+			sql_schema *s;
+
+			while (*vnme && isdigit(*vnme)) /* skip digit characters */
+				vnme++;
+
+			nbuf = vnme;
+			sch = nbuf+1;
+			assert(*nbuf == '"');
+			nbuf = parseIdent(nbuf+1, sch);
+			assert(*nbuf == '\0');
+			var = nbuf+2;
+			nbuf = parseIdent(nbuf+2, var);
+
+			if (!(s = mvc_bind_schema(m, sch))) {
+				stack_pop_frame(m);
+				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(3F000) "No such schema '%s'", sch));
+			}
+			if (!find_global_var(m, s, var) && !push_global_var(m, sch, var, &tpe)) {
+				stack_pop_frame(m);
 				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
-			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, 0));
+			}
+			list_append(ops, exp_param_or_declared(m->sa, sa_strdup(m->sa, sch), sa_strdup(m->sa, var), &tpe, 0));
 		}
 		sig = strchr(p, (int)',');
 		if (sig)
@@ -889,7 +912,6 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);
-	stack_pop_frame(m);
 	if (rel)
 		rel = sql_processrelation(m, rel, 1, 1);
 	if (!rel) {
@@ -925,6 +947,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(rel);
+	stack_pop_frame(m);
 	return RAcommit_statement(be, msg);
 }
 
