@@ -221,11 +221,11 @@ VALinit(ValPtr d, int tpe, const void *s)
 		if (d->val.sval == NULL)
 			return NULL;
 		d->len = strLen(s);
-		break;
+		return d;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
 		d->len = ATOMlen(tpe, *(const ptr *) s);
-		break;
+		return d;
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
@@ -235,7 +235,7 @@ VALinit(ValPtr d, int tpe, const void *s)
 		memcpy(d->val.pval, s, d->len);
 		return d;
 	}
-	d->len = ATOMlen(d->vtype, VALptr(d));
+	d->len = ATOMsize(d->vtype);
 	return d;
 }
 
