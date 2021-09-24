@@ -1695,13 +1695,11 @@ static int SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		break;
 	case TYPE_str:
 		if(fld==0 || strcmp(fld,"nil")==0){
-			if((v->val.sval= GDKstrdup(str_nil)) == NULL)
+			if (VALinit(v, TYPE_str, str_nil) == NULL)
 				return -1;
-			v->len = strlen(v->val.sval);
 		} else {
-			if((v->val.sval= GDKstrdup(fld)) == NULL)
+			if (VALinit(v, TYPE_str, fld) == NULL)
 				return -1;
-			v->len = strlen(fld);
 		}
 		break;
 	}
