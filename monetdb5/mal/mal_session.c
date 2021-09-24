@@ -782,7 +782,7 @@ MALengine(Client c)
 	}
 
 	if (prg->def->errors)
-		GDKfree(prg->def->errors);
+		freeException(prg->def->errors);
 	prg->def->errors = NULL;
 	if (c->itrace)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");
