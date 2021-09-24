@@ -335,7 +335,7 @@ rel_remote_func(visitor *v, sql_rel *rel)
 {
 	(void) v;
 
-	int rused = 1 << 2;
+	int rused = 1 << 2; /* Don't modify the same relation twice */
 	if (rel->used & rused)
 		return rel;
 	rel->used |= rused;
