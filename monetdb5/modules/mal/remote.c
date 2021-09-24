@@ -359,8 +359,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg == MAL_SUCCEED) {
 		v = &stk->stk[pci->argv[0]];
-		v->vtype = TYPE_str;
-		if((v->val.sval = GDKstrdup(ret)) == NULL) {
+		if (VALinit(v, TYPE_str, ret) == NULL) {
 			GDKfree(ret);
 			throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -1141,8 +1140,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* return the identifier */
 	v = &stk->stk[pci->argv[0]];
-	v->vtype = TYPE_str;
-	if((v->val.sval = GDKstrdup(ident)) == NULL)
+	if (VALinit(v, TYPE_str, ident) == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
