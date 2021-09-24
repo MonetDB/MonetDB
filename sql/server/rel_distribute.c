@@ -335,12 +335,11 @@ rel_remote_func(visitor *v, sql_rel *rel)
 {
 	(void) v;
 
-	if (rel_is_ref(rel)) { /* Don't modify the same relation twice */
-		int rused = 1 << 2;
-		if (rel->used & rused)
-			return rel;
-		rel->used |= rused;
-	}
+	int rused = 1 << 2;
+	if (rel->used & rused)
+		return rel;
+	rel->used |= rused;
+
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		rel = rel_relational_func(v->sql->sa, rel, exps);
