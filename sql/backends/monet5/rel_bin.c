@@ -1924,7 +1924,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 				stpcpy(stpcpy(stpcpy(stpcpy(buf, levelstr), "\""), nme), "\""); /* escape variable name */
 			}
 			if (!list_find(args, buf, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
+				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, e->flag);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, buf));
 				list_append(args, s);
