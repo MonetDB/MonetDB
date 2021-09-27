@@ -1699,6 +1699,7 @@ str
 ATOMunknown_name(int i)
 {
 	assert(i < 0);
+	assert(-i < MAXATOMS);
 	assert(unknown[-i]);
 	return unknown[-i];
 }
