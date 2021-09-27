@@ -85,6 +85,15 @@ temp_copy(log_bid b, bool renew, bool temp)
 	} else {
 		if (!(o = quick_descriptor(b)))
 			return BID_NIL;
+		if (o->ttype < 0) {
+			/* bat was never loaded and it's type is not yet filled in */
+			if ((o = BATdescriptor(b)) == NULL)
+				return BID_NIL;
+			assert(o->ttype >= 0);
+			BBPunfix(o->batCacheid);
+			o = quick_descriptor(b);
+			assert(o != NULL);
+		}
 		if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT)))
 			return BID_NIL;
 	}
