@@ -828,38 +828,6 @@ geoPointEquals(GeoPoint pointA, GeoPoint pointB)
 	return (pointA.lat == pointB.lat) && (pointA.lon = pointB.lon);
 }
 
-//POSTgis Calculate Perpendicular of Point
-/*
-normal_cart = cross_product(line->start, line->end)
-point_cart = geo2cart(p)
-dot = dot_product(normal,pt)
-
-vector_scale(&n, dot_product(&p, &n));
-vector_difference(&p, &n, &k);
-normalize(&k);
-cart2geog(&k, &gk);
-edge_contains_point(e, &gk)
-*/
-
-//POSTgis Calculate Point in Edge
-/*
-e -> edge // p -> point
-geog2cart(&(e->start), &vs);
-geog2cart(&(e->end), &ve);
-if ( vs.x == -1.0 * ve.x && vs.y == -1.0 * ve.y && vs.z == -1.0 * ve.z )
-	return LW_TRUE;
-geog2cart(p, &vp);
-vector_sum(&vs, &ve, &vcp);
-normalize(&vcp);
-vs_dot_vcp = dot_product(&vs, &vcp);
-
-POINT ON PLANE (Plane defined by Edge)
-normal_cart = cross_product(line->start, line->end)
-point_cart = geo2cart(p)
-dot = dot_product(normal,pt)
-return dot == 0
-*/
-
 //TODO If a line covers a point, it must have 0 distance to one of the segments (is this true?)
 #if 0
 static bool geoLineCoversPoint (GeoLines lines, GeoPoint point) {
@@ -970,57 +938,6 @@ wkbCoversGeographic(bit *out, wkb **a, wkb **b)
 * Collect (Group By implementation) 
 * 
 **/
-static str 
-orderGroupsAndInput(BAT *b, BAT *g, BAT **b_ordered, BAT **g_ordered)
-{
-	str msg = MAL_SUCCEED;
-	BAT *sortedgroups, *sortedorder;
-	const oid *sortedgroupsids = NULL, *sortedorderids = NULL;
-	oid sortedordercounter;
-	wkb **b_ordered_values = NULL;
-
-	//Sort the groups
-	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED)
-		return createException(MAL, "geom.Collect", "BAT sort failed.");
-
-	if (sortedgroups && !BATtdense(sortedgroups))
-		sortedgroupsids = (const oid *)Tloc(sortedgroups, 0);
-	//TODO Else, if it is a dense BAT
-
-	if (sortedorder && !BATtdense(sortedorder))
-		sortedorderids = (const oid *)Tloc(sortedorder, 0);
-	else if (BATtdense(sortedorder))
-		sortedordercounter = sortedorder->tseqbase;
-
-	//Project new order onto input bat IF the sortedorder isn't dense -> in which case, the original input order is correct
-	if (sortedorderids) {
-		//TODO Is this how the in-order BAT should be created?
-		if ((*b_ordered = COLnew(b->hseqbase, ATOMindex("wkb"), BATcount(b), TRANSIENT)) == NULL)
-			return createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((b_ordered_values = GDKzalloc(sizeof(wkb *) * BATcount(b))) == NULL)
-			return createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-		BATiter bi = bat_iterator(b);
-		for (BUN i = 0; i < BATcount(b); i++) 
-			//TODO Is this needed? -> oid is = i + sortedorder->hseqbase;
-			b_ordered_values[i] = (wkb *)BUNtail(bi, sortedorderids[i]);
-		bat_iterator_end(&bi);
-
-		//Assign ordered BATs
-		if (BUNappendmulti(*b_ordered, b_ordered_values, BATcount(b), false) != GDK_SUCCEED)
-			return createException(MAL, "geom.Collect", SQLSTATE(38000) "BUNappend operation failed");
-		*g_ordered = sortedgroups;
-
-		//TODO Free the original b and g BATs
-	}
-	else {
-		//In the case the original BATs are already ordered
-		*g_ordered = NULL;
-		*b_ordered = NULL;
-	}
-	return msg;
-}
-
 //Gets the type of collection a single geometry should belong to
 static int
 GEOSGeom_getCollectionType (int GEOSGeom_type) {
@@ -1041,6 +958,7 @@ str
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
+	BAT *sortedgroups, *sortedorder, *sortedinput;
 	BATiter bi;
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
@@ -1057,21 +975,32 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	GEOSGeom *unionGroup = NULL, collection;
 
 	(void)skip_nils;
+	(void)eid;
+	(void)sid;
 
-	//Get the BAT descriptors for the value bat + the other 3 optional BATs
-	if ((b = BATdescriptor(*bid)) == NULL ||
-		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
-		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
-		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+	//Get the BAT descriptors for the value and group bat
+	if ((b = BATdescriptor(*bid)) == NULL || (gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL)) {
 		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
-		//TODO goto free?
-		return msg;
+		goto free;
 	}
 
-	BAT *b_ordered, *g_ordered;
-	if(((msg = orderGroupsAndInput(b,g,&b_ordered,&g_ordered)) == MAL_SUCCEED) && b_ordered != NULL && g_ordered != NULL) {
-		b = b_ordered;
-		g = g_ordered;
+	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
+		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
+		goto free;
+	}
+		
+	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
+	if (!BATtdense(sortedorder)) {
+		sortedinput = BATproject(sortedorder,b);
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		b = sortedinput;
+		g = sortedgroups;
+		BBPunfix(sortedorder->batCacheid);
+	}
+	else {
+		BBPunfix(sortedgroups->batCacheid);
+		BBPunfix(sortedorder->batCacheid);
 	}
 
 	//Fill in the values of the group aggregate operation
@@ -1082,6 +1011,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 
 	if (ngrp == 0) {
 		msg = createException(MAL, "geom.Collect", "Number of groups is equal to 0");
+		//TODO Return empty BAT?
 		goto free;
 	}
 
@@ -1094,6 +1024,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	//All unions for output BAT
 	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(out->batCacheid);
 		goto free;
 	}
 
@@ -1101,6 +1032,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	//TODO Change allocation size
 	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ncand)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(out->batCacheid);
 		if (unions)
 			GDKfree(unions);
 		goto free;
@@ -1184,20 +1116,12 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 free:
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1212,36 +1136,6 @@ wkbCollectAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
 {
 	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
 }
-
-/**
-* Unused code 
-* 
-**/
-
-#if 0
-/**
-* Convert spherical coordinates to cartesian coordinates
-*/
-static CartPoint geo2cart_r(GeoPoint geo)
-{
-	CartPoint cart;
-	cart.x = earth_radius * cos(geo.lat) * cos(geo.lon);
-	cart.y = earth_radius * cos(geo.lat) * sin(geo.lon);
-	cart.z = earth_radius * sin(geo.lat);
-	return cart;
-}
-
-/**
-* Convert cartesian coordinates to spherical coordinates
-*/
-static GeoPoint cart2geo_r(CartPoint cart)
-{
-	GeoPoint geo;
-	geo.lon = atan2(cart.y, cart.x);
-	geo.lat = asin(cart.z / earth_radius);
-	return geo;
-}
-#endif
 
 /** 
 * 
