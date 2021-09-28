@@ -2234,7 +2234,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (ne->type == e_atom)
 			e = exp_copy(sql, ne);
 		else
-			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 		return exp_propagate(sql->sa, e, ne);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -3813,7 +3813,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 					sql_exp *e2 = m->data;
 
 					if (exp_name(e2) && exp_match_exp(e1, e2) && (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1), NULL) == e1)) {
-						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
+						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_unique(e2), is_intern(e1));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
 						exp_prop_alias(v->sql->sa, ne, e1);
@@ -5769,7 +5769,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							sql_exp *gb = n->data;
 
 							if (scores[l] == -1 && exp_refers(gb, e)) {
-								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_intern(gb));
+								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_unique(gb), is_intern(gb));
 								exp_setname(v->sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								e = rs;
 								fnd = 1;
@@ -5871,7 +5871,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 	for (n = gbes->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		e = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+		e = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 		append(ngbes, e);
 	}
 
@@ -5889,7 +5889,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			append(gbes, v);
 			if (!exp_name(v))
 				exp_label(v->sql->sa, v, ++v->sql->label);
-			v = exp_column(v->sql->sa, exp_find_rel_name(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+			v = exp_column(v->sql->sa, exp_find_rel_name(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 			append(aggrs, v);
 			v = exp_aggr1(v->sql->sa, v, e->f, need_distinct(e), 1, e->card, 1);
 			exp_setname(v->sql->sa, v, exp_find_rel_name(e), exp_name(e));
@@ -5904,7 +5904,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			if (!exp_name(e))
 				exp_label(v->sql->sa, e, ++v->sql->label);
 			set_has_nil(e);
-			v = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			v = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 			v = exp_aggr1(v->sql->sa, v, a, 0, 1, e->card, 1);
 			if (cnt)
 				set_zero_if_empty(v);
@@ -5914,7 +5914,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			if (list_find_exp(gbes, e) || !list_find_exp(naggrs, e)) {
 				append(aggrs, e);
 
-				e = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				e = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 			}
 			append(naggrs, e);
 		}
@@ -6312,6 +6312,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		sql_rel *t;
+		int nlexps = 0, i = 0;
 
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
@@ -6334,14 +6335,12 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
-		   		/* we cannot rewrite projection with atomic values from outer joins */
+				/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
-					if (is_right(rel->op) || is_full(rel->op))
-						set_has_nil(e);
 					list_append(exps, e);
 				} else {
 					return rel;
@@ -6349,10 +6348,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			}
 		} else {
 			exps = rel_projections(v->sql, l, NULL, 1, 1);
-			if (!list_empty(exps) && (is_right(rel->op) || is_full(rel->op)))
-				for (n = exps->h ; n ; n = n->next)
-					set_has_nil((sql_exp*)n->data);
 		}
+		nlexps = list_length(exps);
 		/* also handle right hand of join */
 		if (is_join(rel->op) && r->op == op_project && r->l) {
 			/* Here we also check all expressions of r like above
@@ -6361,14 +6358,12 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			for (n = r->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
-		   		/* we cannot rewrite projection with atomic values from outer joins */
+				/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_left(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
-					if (is_left(rel->op) || is_full(rel->op))
-						set_has_nil(e);
 					list_append(exps, e);
 				} else {
 					return rel;
@@ -6376,10 +6371,6 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			}
 		} else if (is_join(rel->op)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
-			if (!list_empty(r_exps) && (is_left(rel->op) || is_full(rel->op)))
-				for (n = r_exps->h ; n ; n = n->next)
-					set_has_nil((sql_exp*)n->data);
-
 			list_merge(exps, r_exps, (fdup)NULL);
 		}
 		/* Here we should check for ambigious names ? */
@@ -6460,6 +6451,21 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		}
 		/* Done, ie introduce new project */
 		exps_fix_card(exps, rel->card);
+		/* Fix nil flag */
+		for (n = exps->h ; n && i < nlexps ; n = n->next, i++) {
+			sql_exp *e = n->data;
+
+			if (is_right(rel->op) || is_full(rel->op))
+				set_has_nil(e);
+			set_not_unique(e);
+		}
+		for (; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (is_left(rel->op) || is_full(rel->op))
+				set_has_nil(e);
+			set_not_unique(e);
+		}
 		v->changes++;
 		return rel_inplace_project(v->sql->sa, rel, NULL, exps);
 	}
@@ -6499,7 +6505,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 				break;
 			default: /* simple alias */
 				list_append(aexps, e);
-				ne = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 				list_append(pexps, ne);
 				break;
 			}

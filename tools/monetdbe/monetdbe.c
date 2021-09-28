@@ -1281,7 +1281,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 			// output argument
 
 			char* column = BUNtvar(bcolumn_iter, i);
-			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false);
+			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false, false);
 			append(rets, c);
 		}
 	}
