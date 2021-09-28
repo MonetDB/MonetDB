@@ -25,8 +25,6 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-#define OUTER_ZERO 64
-
 static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);

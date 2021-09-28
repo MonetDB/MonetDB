@@ -12,7 +12,7 @@ query T nosort
    plan select id       from fk order by id
 ----
 project (
-| table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL  ]
 ) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 statement ok
