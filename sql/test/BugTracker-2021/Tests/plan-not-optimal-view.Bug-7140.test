@@ -56,14 +56,14 @@ project (
 | | | | group by (
 | | | | | project (
 | | | | | | select (
-| | | | | | | table("sys"."plantest0") [ "plantest0"."id" ] COUNT 
+| | | | | | | table("sys"."plantest0") [ "plantest0"."id" ]
 | | | | | | ) [ "plantest0"."id" >= bigint "150000000" ]
 | | | | | ) [ "sys"."sql_div"("plantest0"."id" as "v"."id", int "10000000") as "t"."id_r" ]
 | | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ],
 | | | | group by (
 | | | | | project (
 | | | | | | select (
-| | | | | | | table("sys"."plantest1") [ "plantest1"."id" ] COUNT 
+| | | | | | | table("sys"."plantest1") [ "plantest1"."id" ]
 | | | | | | ) [ "plantest1"."id" >= bigint "150000000" ]
 | | | | | ) [ "sys"."sql_div"("plantest1"."id" as "v"."id", int "10000000") as "t"."id_r" ]
 | | | | ) [ "t"."id_r" ] [ "t"."id_r", "sys"."count" no nil ("t"."id_r") NOT NULL as "%6"."%6" ]
@@ -116,7 +116,7 @@ project (
 | | | | | project (
 | | | | | | project (
 | | | | | | | select (
-| | | | | | | | table("sys"."plantest0") [ "plantest0"."id" ] COUNT 
+| | | | | | | | table("sys"."plantest0") [ "plantest0"."id" ]
 | | | | | | | ) [ "plantest0"."id" >= bigint "150000000" ]
 | | | | | | ) [ "sys"."sql_div"("plantest0"."id" as "v"."id", int "10000000") as "v"."id_div" ]
 | | | | | ) [ "v"."id_div" as "t"."id_r" ]
@@ -125,7 +125,7 @@ project (
 | | | | | project (
 | | | | | | project (
 | | | | | | | select (
-| | | | | | | | table("sys"."plantest1") [ "plantest1"."id" ] COUNT 
+| | | | | | | | table("sys"."plantest1") [ "plantest1"."id" ]
 | | | | | | | ) [ "plantest1"."id" >= bigint "150000000" ]
 | | | | | | ) [ "sys"."sql_div"("plantest1"."id" as "v"."id", int "10000000") as "v"."id_div" ]
 | | | | | ) [ "v"."id_div" as "t"."id_r" ]
