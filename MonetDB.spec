@@ -846,6 +846,9 @@ else
 fi
 
 %changelog
+* Tue Sep 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.9-20210928
+- Rebuilt.
+
 * Mon Sep 27 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
 - Rebuilt.
 - GH#7140: SQL Query Plan Non Optimal with View
