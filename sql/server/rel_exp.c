@@ -392,6 +392,7 @@ exp_atom(sql_allocator *sa, atom *a)
 	e->l = a;
 	if (!a->isnull)
 		set_has_no_nil(e);
+	set_unique(e);
 	return e;
 }
 
@@ -639,7 +640,7 @@ have_nil(list *exps)
 }
 
 sql_exp *
-exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, unsigned int card, int has_nils, int intern)
+exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern)
 {
 	sql_exp *e = exp_create(sa, e_column);
 
@@ -655,6 +656,8 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 		e->tpe = *t;
 	if (!has_nils)
 		set_has_no_nil(e);
+	if (unique)
+		set_unique(e);
 	if (intern)
 		set_intern(e);
 	return e;
@@ -687,6 +690,8 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_no_nil(ne);
 	if (!has_nil(oe))
 		set_has_no_nil(ne);
+	if (is_unique(oe))
+		set_unique(ne);
 	if (is_basecol(oe))
 		set_basecol(ne);
 	ne->p = prop_copy(sa, oe->p);
@@ -698,7 +703,7 @@ exp_ref(mvc *sql, sql_exp *e)
 {
 	if (!exp_name(e))
 		exp_label(sql->sa, e, ++sql->label);
-	return exp_propagate(sql->sa, exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e)), e);
+	return exp_propagate(sql->sa, exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_unique(e), is_intern(e)), e);
 }
 
 sql_exp *
@@ -717,9 +722,9 @@ exp_ref_save(mvc *sql, sql_exp *e)
 }
 
 sql_exp *
-exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int intern)
+exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern)
 {
-	sql_exp *e = exp_column(sa, org_rname, org_cname, t, card, has_nils, intern);
+	sql_exp *e = exp_column(sa, org_rname, org_cname, t, card, has_nils, unique, intern);
 
 	if (e == NULL)
 		return NULL;
@@ -737,16 +742,16 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 		tname = exp_relname(old);
 
 	if (!cname && exp_name(old) && has_label(old)) {
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_unique(old), is_intern(old));
 		return exp_propagate(sql->sa, ne, old);
 	} else if (!cname) {
 		exp_label(sql->sa, old, ++sql->label);
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_unique(old), is_intern(old));
 		return exp_propagate(sql->sa, ne, old);
 	} else if (cname && !old->alias.name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
-	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_unique(old), is_intern(old));
 	return exp_propagate(sql->sa, ne, old);
 }
 
@@ -2715,7 +2720,7 @@ exp_copy(mvc *sql, sql_exp * e)
 		return NULL;
 	switch(e->type){
 	case e_column:
-		ne = exp_column(sql->sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+		ne = exp_column(sql->sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 		ne->flag = e->flag;
 		break;
 	case e_cmp:

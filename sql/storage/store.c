@@ -424,11 +424,8 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, res_table *rt_idxcols/*, oid rid*/)
 		kc->c->unique = 1;
 	if (hash_index(i->type) && list_length(i->columns) > 1) {
 		/* Correct the unique flag of the keys first column */
-		kc->c->unique = list_length(i->columns);
-		if (kc->c->unique == 2) {
-			sql_kc *ic1 = i->columns->h->data;
-			ic1->c->unique ++;
-		}
+		sql_kc *ic1 = i->columns->h->data;
+		ic1->c->unique = kc->c->unique = 2;
 	}
 }
 
@@ -5552,11 +5549,8 @@ create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
 	(void)store;
 	if (hash_index(i->type) && list_length(i->columns) > 1) {
 		/* Correct the unique flag of the keys first column */
-		c->unique = list_length(i->columns);
-		if (c->unique == 2) {
-			sql_kc *ic1 = i->columns->h->data;
-			ic1->c->unique ++;
-		}
+		sql_kc *ic1 = i->columns->h->data;
+		ic1->c->unique = c->unique = 2;
 	}
 
 	/* should we switch to oph_idx ? */
@@ -6435,11 +6429,8 @@ sql_trans_create_ic(sql_trans *tr, sql_idx *i, sql_column *c)
 
 	if (hash_index(i->type) && list_length(i->columns) > 1) {
 		/* Correct the unique flag of the keys first column */
-		c->unique = list_length(i->columns);
-		if (c->unique == 2) {
-			sql_kc *ic1 = i->columns->h->data;
-			ic1->c->unique ++;
-		}
+		sql_kc *ic1 = i->columns->h->data;
+		ic1->c->unique = c->unique = 2;
 	}
 
 	if ((res = store->table_api.table_insert(tr, sysic, &i->base.id, &ic->c->base.name, &nr, ATOMnilptr(TYPE_int))))

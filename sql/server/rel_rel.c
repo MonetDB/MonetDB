@@ -296,7 +296,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 		assert(is_processed(rel));
 		return NULL;
 	} else if (is_join(rel->op)) {
-		sql_exp *e1 = rel_bind_column(sql, rel->l, cname, f, no_tname), *e2 = NULL;
+		sql_exp *e1 = rel_bind_column(sql, rel->l, cname, f, no_tname), *e2 = NULL, *res;
 
 		if (e1 && (is_right(rel->op) || is_full(rel->op)))
 			set_has_nil(e1);
@@ -307,7 +307,10 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			if (e1 && e2 && !is_dependent(rel))
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		}
-		return e1 ? e1 : e2;
+		res = e1 ? e1 : e2;
+		if (res)
+			set_not_unique(res);
+		return res;
 	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
 		   is_topn(rel->op) ||
@@ -385,6 +388,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
 		}
+		if (e)
+			set_not_unique(e);
 		return e;
 	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
@@ -532,8 +537,10 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
-			if (!keep_props)
+			if (!keep_props) {
 				e->p = NULL; /* remove all the properties on unions on the general case */
+				set_not_unique(e);
+			}
 		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
@@ -896,14 +903,17 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 }
 
 static void
-exps_has_nil(list *exps)
+exps_reset_props(list *exps, bool setnil)
 {
-	if (!list_empty(exps))
+	if (!list_empty(exps)) {
 		for (node *m = exps->h; m; m = m->next) {
 			sql_exp *e = m->data;
 
-			set_has_nil(e);
+			if (setnil)
+				set_has_nil(e);
+			set_not_unique(e);
 		}
+	}
 }
 
 list *
@@ -926,11 +936,9 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_right:
 	case op_full:
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
-		if (rel->op == op_full || rel->op == op_right)
-			exps_has_nil(lexps);
+		exps_reset_props(lexps, is_right(rel->op) || is_full(rel->op));
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
-		if (rel->op == op_full || rel->op == op_left)
-			exps_has_nil(rexps);
+		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
 		return list_merge(lexps, rexps, (fdup)NULL);
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
@@ -1406,9 +1414,11 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	if (!is_simple_project(rel->op) || !list_empty(rel->r) || rel_is_ref(rel))
 		rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
-	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC));
 	set_intern(e);
+	set_has_no_nil(e);
+	set_unique(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	(void) rel_project_add_exp(sql, rel, e);
@@ -1464,7 +1474,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (!e && cname[0] == '%' && !tname)
 			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, 0);
 		if (e && !ambiguous && !multi)
-			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 	}
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
@@ -1482,6 +1492,8 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
 		}
+		if (e)
+			set_not_unique(e);
 		return e;
 	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||

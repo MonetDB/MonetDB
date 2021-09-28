@@ -4154,7 +4154,7 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 	ti->nn = name;
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		append(exps, ne);
 	}
@@ -5103,14 +5103,14 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 		sql_column *c = n->data;
 
 		if (updates[c->colnr]) {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			append(exps, oe);
 			append(exps, ne);
 		} else {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			append(exps, oe);
 			append(exps, ne);
@@ -5377,7 +5377,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, stmt
 	ti->nn = name;
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		append(exps, ne);
 	}
