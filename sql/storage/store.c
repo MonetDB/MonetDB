@@ -3249,7 +3249,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 		sql_kc *okc = n->data, *ic;
 
 		list_append(ni->columns, ic = kc_dup(tr, okc, t));
-		if (i->type == hash_idx)
+		if (i->key && hash_index(i->type))
 			ic->c->unique = (ncols == 1) ? 2 : MAX(ic->c->unique, 1);
 		if ((res = store->table_api.table_insert(tr, sysic, &ni->base.id, &ic->c->base.name, &nr, ATOMnilptr(TYPE_int)))) {
 			idx_destroy(store, ni);
@@ -4022,7 +4022,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;
 
-		if (hash_index(i->type)) { /* update new column's unique value */
+		if (i->key && hash_index(i->type)) { /* update new column's unique value */
 			int unique = 0;
 			sqlid cid = ic->c->base.id;
 			struct os_iter oi;
@@ -4031,7 +4031,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 				sql_idx *ti = (sql_idx*)b;
 
-				if (ti->base.id != i->base.id && hash_index(ti->type)) {
+				if (ti->base.id != i->base.id && ti->key && hash_index(ti->type)) {
 					bool found = false;
 					for (node *m = ti->columns->h; m && !found; m = m->next) {
 						sql_kc *tic = m->data;
@@ -5586,7 +5586,7 @@ create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
 sql_idx *
 create_sql_idx_done(sql_idx *i)
 {
-	if (i && hash_index(i->type)) {
+	if (i && i->key && hash_index(i->type)) {
 		int ncols = list_length(i->columns);
 		for (node *n = i->columns->h ; n ; n = n->next) {
 			sql_kc *kc = n->data;
