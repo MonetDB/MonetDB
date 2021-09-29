@@ -449,7 +449,7 @@ load_idx(sql_trans *tr, sql_table *t, res_table *rt_idx, res_table *rt_idxcols/*
 			break;
 		load_idxcolumn(tr, ni, rt_idxcols);
 	}
-	return create_sql_idx_done(ni);
+	return ni;
 }
 
 static void
@@ -792,6 +792,10 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 			return NULL;
 		}
 	}
+
+	/* after loading keys and idxs, update properties derived from indexes that require keys */
+	for (node *n = t->idxs->l->h; n; n = n->next)
+		create_sql_idx_done(n->data);
 
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
