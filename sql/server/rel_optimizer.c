@@ -2437,7 +2437,7 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 							/* column is the only primary key column of its table */
 							if (find_prop(arg->p, PROP_HASHCOL) && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL && list_length(c->t->pkey->k.columns) == 1)
 								continue;
-							else if (c->unique == 1) /* column has unique constraint */
+							else if (c->unique == 2) /* column has unique constraint */
 								continue;
 							else
 								all_unique = false;
