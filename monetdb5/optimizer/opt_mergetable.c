@@ -2246,8 +2246,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* Handle projection */
-		if (match > 0 && getModuleId(p) == algebraRef &&
-			getFunctionId(p) == projectionRef &&
+		if (match > 0 &&
+				((getModuleId(p) == algebraRef &&
+			getFunctionId(p) == projectionRef) ||
+				(getModuleId(p) == dictRef &&
+			getFunctionId(p) == decompressRef)) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
 			if(mat_projection(mb, p, &ml, m, n)) {
