@@ -76,6 +76,13 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
+				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
+					/* a = b */
+					int l = getArg(p, 0);
+					varisdict[l] = varisdict[k];
+					vardictvalue[l] = vardictvalue[k];
+					done = 1;
+					break;
 				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef) {
 					/* pos = subslice(col, l, h) with col = dict.decompress(o,u)
 					 * pos = subslice(o, l, h) */
