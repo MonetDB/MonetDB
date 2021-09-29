@@ -12,8 +12,8 @@ query T nosort
    plan select id       from fk order by id
 ----
 project (
-| table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL  ]
-) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+| table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
+) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 statement ok
 set optimizer = 'default_pipe'
