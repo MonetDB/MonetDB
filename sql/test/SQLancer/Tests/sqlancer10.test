@@ -384,10 +384,10 @@ project (
 | single left outer join (
 | | table("sys"."t0") [ "t0"."%t0_c3_c0_unique" HASHIDX  ],
 | | project (
-| | | table("sys"."t0") [ "t0"."c0" NOT NULL ]
-| | ) [ "t0"."c0" NOT NULL as "%1"."%1" ]
+| | | table("sys"."t0") [ "t0"."c0" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ "t0"."c0" NOT NULL UNIQUE HASHCOL  as "%1"."%1" ]
 | ) [  ]
-) [ "%1"."%1" ]
+) [ "%1"."%1" HASHCOL  ]
 
 statement ok
 ROLLBACK

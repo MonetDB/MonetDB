@@ -1702,7 +1702,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	/* check for foreign key join */
 	if (list_length(r->exps) != 1)
 		return r;
-	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
+	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)) || je->flag != cmp_equal)
 		return r;
 	/* je->l == foreign expression, je->r == primary expression */
 	if (rel_find_exp(r->l, je->l)) {
@@ -1713,17 +1713,6 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 		return r;
 	}
 
-	(void)sql;
-#if 0
-	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
-		rl = rel_simplify_project_fk_join(sql, rl, pexps, changes);
-		r->l = rl;
-	}
-	if (!fk_left && is_join(rr->op) && !rel_is_ref(rr)) {
-		rr = rel_simplify_project_fk_join(sql, rr, pexps, changes);
-		r->r = rr;
-	}
-#endif
 	/* primary side must be a full table */
 	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) ||
 		(!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
@@ -1763,7 +1752,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	/* check for foreign key join */
 	if (list_length(r->exps) != 1)
 		return r;
-	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
+	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)) || je->flag != cmp_equal)
 		return r;
 	/* je->l == foreign expression, je->r == primary expression */
 	if (rel_find_exp(r->l, je->l)) {
@@ -1829,7 +1818,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 	if (is_simple_project(rel->op))
 		r = rel->l;
 
-	while (is_simple_project(rel->op) && r && list_length(r->exps) == 1 && is_join(r->op) && !(rel_is_ref(r))) {
+	while (is_simple_project(rel->op) && r && list_length(r->exps) == 1 && (is_join(r->op) || r->op == op_semi) && !(rel_is_ref(r))) {
 		sql_rel *or = r;
 
 		r = rel_simplify_project_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
@@ -1845,7 +1834,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 	while(r && is_simple_project(r->op))
 		r = r->l;
 
-	while (is_groupby(rel->op) && !rel_is_ref(rel) && r && is_join(r->op) && list_length(r->exps) == 1 && !(rel_is_ref(r)) &&
+	while (is_groupby(rel->op) && !rel_is_ref(rel) && r && (is_join(r->op) || r->op == op_semi) && list_length(r->exps) == 1 && !(rel_is_ref(r)) &&
 		   /* currently only single count aggregation is handled, no other projects or aggregation */
 		   list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *or = r;
@@ -5270,7 +5259,7 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 static int
 find_projection_for_join2semi(sql_rel *rel)
 {
-	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_basetable(rel->op) || (is_union(rel->op) && need_distinct(rel))) {
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_base(rel->op) || (is_union(rel->op) && need_distinct(rel))) {
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
 			return ALL_VALUES_DISTINCT;
 		if (list_length(rel->exps) == 1) {
