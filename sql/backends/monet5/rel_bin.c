@@ -1573,13 +1573,13 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
-		sc = stmt_project_delta(be, sc, u);
-		if (del)
-			sc = stmt_project(be, del, sc);
 		if (c->storage_type) {
 			stmt *v = stmt_bat(be, c, RD_DICT, part);
 			sc = stmt_dict(be, sc, v);
 		}
+		sc = stmt_project_delta(be, sc, u);
+		if (del)
+			sc = stmt_project(be, del, sc);
 	} else if (del) { /* always handle the deletes */
 		sc = stmt_project(be, del, sc);
 	}

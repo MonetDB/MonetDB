@@ -9,6 +9,15 @@
 #include "monetdb_config.h"
 #include "opt_dict.h"
 
+static InstrPtr
+ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
+{
+	p = pushNil(mb, p, tpe); /* push at end */
+	getArg(p, pos) = getArg(p, p->argc-1);
+	p->argc--;
+	return p;
+}
+
 str
 OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -75,15 +84,43 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
-				//} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef) {
+				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef) {
 					/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
 					 * tp = select(u, nil, l, h, ...)
-					 * tp2 = typeconver(tp) -> bte,sht,int
-					 * pos = semijoin(o, cand, tp2, nil) */
+					 * tp2 = bte/sht/int(tp)
+					 * pos = intersect(o, tp2, cand, nil) */
+
+					int cand = getArg(p, j+1);
+					InstrPtr r = copyInstruction(p);
+					getArg(r, j) = vardictvalue[k];
+					if (cand)
+						r = ReplaceWithNil(mb, r, j+1, TYPE_bat); /* no candidate list */
+					pushInstruction(mb,r);
+
+					int tpe = getVarType(mb, varisdict[k]);
+					InstrPtr s = newInstructionArgs(mb, batcalcRef, putName(ATOMname(getBatType(tpe))), 3);
+					getArg(s, 0) = newTmpVariable(mb, tpe);
+					addArgument(mb, s, getArg(r, 0));
+					s = pushNil(mb, s, TYPE_bat);
+					pushInstruction(mb,s);
+
+					InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 5);
+					getArg(t, 0) = getArg(p, 0);
+					addArgument(mb, t, varisdict[k]);
+					addArgument(mb, t, getArg(s, 0));
+					addArgument(mb, t, cand);
+					t = pushNil(mb, t, TYPE_bat);
+					t = pushBit(mb, t, FALSE);    /* nil matches */
+					t = pushBit(mb, t, TRUE);     /* max_one */
+					t = pushNil(mb, t, TYPE_lng); /* estimate */
+					pushInstruction(mb,t);
+
+					done = 1;
+					break;
 				} else {
 					/* need to decompress */
 					int tpe = getArgType(mb, p, j);
-					InstrPtr r = newInstruction(mb, dictRef, decompressRef);
+					InstrPtr r = newInstructionArgs(mb, dictRef, decompressRef, 3);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
 					r = addArgument(mb, r, varisdict[k]);
 					r = addArgument(mb, r, vardictvalue[k]);
