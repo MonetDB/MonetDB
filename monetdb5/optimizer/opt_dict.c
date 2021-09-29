@@ -42,7 +42,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if( p == 0)
 			continue; //left behind by others?
-		if (p->retc == 1 && getModuleId(p) == sqlRef && getFunctionId(p) == dict_decompressRef) {
+		if (p->retc == 1 && getModuleId(p) == dictRef && getFunctionId(p) == decompressRef) {
 			// remember we have encountered a dict decompress function
 			k =  getArg(p,0);
 			varisdict[k] = getArg(p,1);
@@ -75,10 +75,15 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
+				//} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef) {
+					/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
+					 * tp = select(u, nil, l, h, ...)
+					 * tp2 = typeconver(tp) -> bte,sht,int
+					 * pos = semijoin(o, cand, tp2, nil) */
 				} else {
 					/* need to decompress */
 					int tpe = getArgType(mb, p, j);
-					InstrPtr r = newInstruction(mb, sqlRef, dict_decompressRef);
+					InstrPtr r = newInstruction(mb, dictRef, decompressRef);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
 					r = addArgument(mb, r, varisdict[k]);
 					r = addArgument(mb, r, vardictvalue[k]);
