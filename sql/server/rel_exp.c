@@ -360,6 +360,7 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
+	e->semantics = f->func->semantics;
 	return e;
 }
 
@@ -372,6 +373,7 @@ exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils,
 	e->card = card;
 	e->l = l;
 	e->f = a;
+	e->semantics = a->func->semantics;
 	if (distinct)
 		set_distinct(e);
 	if (no_nils)
