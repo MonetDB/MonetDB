@@ -835,7 +835,7 @@ BBPcheckbats(unsigned bbpversion)
 				}
 			}
 #else
-			/* first check string offset heap without widht,
+			/* first check string offset heap without width,
 			 * then with */
 #ifdef GDKLIBRARY_TAILN
 			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
