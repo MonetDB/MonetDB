@@ -2417,9 +2417,7 @@ rel_is_join_on_pkey(sql_rel *rel, bool pk_fk)
 static inline sql_rel *
 rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 {
-	sql_rel *l = (sql_rel*) rel->l;
-
-	if (is_groupby(rel->op) && (!l || is_base(l->op))) {
+	if (is_groupby(rel->op) && !list_empty(rel->exps)) {
 		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
 
@@ -2429,22 +2427,7 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 				for (node *m = ((list*)exp->l)->h; m && all_unique; m = m->next) {
 					sql_exp *arg = (sql_exp*) m->data;
 
-					if (arg->type == e_column) {
-						fcmp cmp = (fcmp)&kc_column_cmp;
-						sql_column *c = exp_find_column(rel, arg, -2);
-
-						if (c) {
-							/* column is the only primary key column of its table */
-							if (find_prop(arg->p, PROP_HASHCOL) && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL && list_length(c->t->pkey->k.columns) == 1)
-								continue;
-							else if (c->unique == 2) /* column has unique constraint */
-								continue;
-							else
-								all_unique = false;
-						} else
-							all_unique = false;
-					} else
-						all_unique = false;
+					all_unique &= arg->type == e_column && is_unique(arg) && (!is_semantics(exp) || !has_nil(arg));
 				}
 				if (all_unique) {
 					set_nodistinct(exp);
@@ -5335,7 +5318,7 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 		return NULL;
 	if (rel->op == op_join && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
-		int foundr = 0, foundl = 0, found = 0;
+		int foundr = NO_PROJECTION_FOUND, foundl = NO_PROJECTION_FOUND, found = NO_PROJECTION_FOUND;
 		bool ok = false;
 
 		foundr = find_projection_for_join2semi(r);
@@ -5349,8 +5332,7 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 			found = foundl;
 		}
 
-		if ((ok = found > 0)) {
-			ok = false;
+		if (found > NO_PROJECTION_FOUND) {
 			/* if all join expressions can be pushed down or have function calls, then it cannot be rewritten into a semijoin */
 			for (node *n=rel->exps->h; n && !ok; n = n->next) {
 				sql_exp *e = n->data;
