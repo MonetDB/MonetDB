@@ -1,8 +1,8 @@
 statement ok
-create table testkeys (a int primary key, b int unique)
+create table testkeys (a int primary key, b int unique, c int, d int, unique(c, d))
 
 statement ok rowcount 3
-insert into testkeys values (1,1),(2,2),(3,3)
+insert into testkeys values (1,1,1,1),(2,2,2,2),(3,3,3,3)
 
 # The following joins can be converted into semijoins
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
@@ -31,7 +31,7 @@ project (
 | ) [ "y"."y" = "testkeys"."a" NOT NULL HASHCOL  ]
 ) [ "y"."y" ]
 
-# Here the inner join cannot be converted to a semijoin
+# The following joins cannot be converted into semijoins
 query T nosort
 plan select y from (values (NULL),(1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b or (y.y is null and testkeys.b is null)
 ----
@@ -40,6 +40,16 @@ project (
 | |  [  [ int "NULL", int "1", int "2", int "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
 | ) [ "y"."y" * = "testkeys"."b" HASHCOL  ]
+) [ "y"."y" ]
+
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.c or (y.y is null and testkeys.c is null)
+----
+project (
+| join (
+| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."c" ]
+| ) [ "y"."y" * = "testkeys"."c" ]
 ) [ "y"."y" ]
 
 statement ok
@@ -81,6 +91,7 @@ alter table testkeys add constraint testkeys_b_unique unique (b)
 statement ok
 rollback
 
+# The unique properties should not return
 query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
