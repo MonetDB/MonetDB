@@ -100,6 +100,18 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
     cli.execute("SELECT rt3.c0 FROM rt3 INNER JOIN rt3 myx ON rt3.c0 = myx.c0 ORDER BY rt3.c0;") \
         .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
+    cli.execute("""
+    CREATE FUNCTION testremote(a int) RETURNS INT
+    BEGIN
+        DECLARE b INT, "😀" INT, res1 INT, res2 INT;
+        SET b = 2;
+        SET "😀" = 4;
+        SELECT a + b + "😀" + count(*) INTO res1 FROM t3;
+        SELECT a + b + "😀" + count(*) INTO res2 FROM rt3;
+        RETURN res1 + res2;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote(1);").assertSucceeded().assertDataResultMatch([(26,)])
 
     # Issues related to digits and scale propagation in the sql layer
     cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM t3 where t3.c0 = 1;") \

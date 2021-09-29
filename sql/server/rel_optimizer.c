@@ -299,8 +299,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table: {
-		if (!find_prop(rel->p, PROP_COUNT))
-			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
 		if (is_basetable(rel->op)) {
 			sql_table *t = (sql_table *) rel->l;
 			sql_part *pt;
@@ -4301,8 +4299,6 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 				set_has_nil(e);
 				e = exp_ref(v->sql, e);
 				ne = exp_aggr1(v->sql->sa, e, a, need_distinct(e), 1, e->card, 1);
-				if (/* DISABLES CODE */ (0) && cnt)
-					ne->p = prop_create(v->sql->sa, PROP_COUNT, ne->p);
 			} else {
 				ne = exp_copy(v->sql, oa);
 			}

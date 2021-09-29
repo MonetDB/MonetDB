@@ -3218,7 +3218,18 @@ BBPquickdesc(bat bid)
 	}
 	if ((b = BBP_cache(bid)) != NULL)
 		return b;	/* already cached */
-	return BBP_desc(bid);
+	b = BBP_desc(bid);
+	if (b && b->ttype < 0) {
+		const char *aname = ATOMunknown_name(b->ttype);
+		int tt = ATOMindex(aname);
+		if (tt < 0) {
+			TRC_WARNING(GDK, "atom '%s' unknown in bat '%s'.\n",
+				    aname, BBP_physical(bid));
+		} else {
+			b->ttype = tt;
+		}
+	}
+	return b;
 }
 
 /*

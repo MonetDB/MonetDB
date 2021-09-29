@@ -263,7 +263,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 	if (msg) {
 		if (c->curprg->def->errors)
-			GDKfree(msg);
+			freeException(msg);
 		else
 			c->curprg->def->errors = msg;
 	}
@@ -1358,7 +1358,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	if (msg) {
 		if (c->curprg->def->errors)
-			GDKfree(msg);
+			freeException(msg);
 		else
 			c->curprg->def->errors = msg;
 	}
