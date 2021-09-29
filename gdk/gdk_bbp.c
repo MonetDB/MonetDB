@@ -4298,10 +4298,14 @@ gdk_bbp_reset(void)
 	backup_subdir = 0;
 }
 
-static gdk_callback_list callback_list = {
+static MT_Lock GDKCallbackListLock = MT_LOCK_INITIALIZER(GDKCallbackListLock);
+
+static struct {
+	int cnt;
+	gdk_callback *head;
+} callback_list = {
 	.cnt = 0,
 	.head = NULL,
-	.lock=MT_LOCK_INITIALIZER(GDKCallbackListLock),
 };
 
 /*
@@ -4332,7 +4336,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 		callback->argv[i] = argv[i];
 	}
 
-	MT_lock_set(&(callback_list.lock));
+	MT_lock_set(&GDKCallbackListLock);
 	if (p) {
 		int cnt = 1;
 		do {
@@ -4352,7 +4356,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 		callback_list.cnt = 1;
 		callback_list.head = callback;
 	}
-	MT_lock_unset(&(callback_list.lock));
+	MT_lock_unset(&GDKCallbackListLock);
 	return GDK_SUCCEED;
 }
 
@@ -4368,7 +4372,7 @@ gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 	gdk_return res = GDK_FAIL;
 	while(curr) {
 		if (strcmp(cb_name, curr->name) == 0) {
-			MT_lock_set(&(callback_list.lock));
+			MT_lock_set(&GDKCallbackListLock);
 			if (curr == callback_list.head && prev == NULL) {
 				callback_list.head = curr->next;
 			} else {
@@ -4380,7 +4384,7 @@ gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 			curr = NULL;
 			callback_list.cnt -=1;
 			res = GDK_SUCCEED;
-			MT_lock_unset(&(callback_list.lock));
+			MT_lock_unset(&GDKCallbackListLock);
 		} else {
 			prev = curr;
 			curr = curr->next;
@@ -4411,11 +4415,11 @@ BBPcallbacks(void)
 {
 	gdk_callback *next = callback_list.head;
 
-	MT_lock_set(&(callback_list.lock));
+	MT_lock_set(&GDKCallbackListLock);
 	while (next) {
 		if(should_call(next))
 			do_callback(next);
 		next = next->next;
 	}
-	MT_lock_unset(&(callback_list.lock));
+	MT_lock_unset(&GDKCallbackListLock);
 }
