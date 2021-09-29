@@ -5037,6 +5037,7 @@ finalize:
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
+#include "dict.h"
 #include "mel.h"
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
@@ -5167,6 +5168,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "prepared_statements_args", SQLsession_prepared_statements_args, false, "Available prepared statements' arguments in the current session", args(9,9, batarg("statementid",int),batarg("type",str),batarg("digits",int),batarg("scale",int),batarg("inout",bte),batarg("number",int),batarg("schema",str),batarg("table",str),batarg("column",str))),
  pattern("sql", "copy_rejects", COPYrejects, false, "", args(4,4, batarg("rowid",lng),batarg("fldid",int),batarg("msg",str),batarg("inp",str))),
  pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
+ pattern("sql", "dict_compress", DICTcompress, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
+ pattern("sql", "dict_decompress", DICTdecompress, false, "decompress a dictionary compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), batargany("u", 1))),
  command("calc", "dec_round", bte_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",bte),arg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",bte),batarg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,4, batarg("",bte),batarg("v",bte),arg("r",bte),batarg("s",oid))),

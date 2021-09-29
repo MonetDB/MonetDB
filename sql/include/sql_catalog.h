@@ -92,6 +92,7 @@ typedef enum sql_dependency {
 #define RD_UPD_ID 2
 #define RD_UPD_VAL 3
 #define QUICK  4
+#define RD_DICT 5
 
 /* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
