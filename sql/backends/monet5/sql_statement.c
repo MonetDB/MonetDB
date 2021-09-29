@@ -2271,7 +2271,7 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
 
-	q = newStmt(mb, sqlRef, "dict_decompress");
+	q = newStmt(mb, sqlRef, dict_decompressRef);
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
 

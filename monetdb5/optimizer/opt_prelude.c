@@ -107,6 +107,7 @@ const char *deleteRef;
 const char *deltaRef;
 const char *dense_rankRef;
 const char *deregisterRef;
+const char *dict_decompressRef;
 const char *diffcandRef;
 const char *differenceRef;
 const char *disconnectRef;
@@ -417,6 +418,7 @@ void optimizerInit(void)
 	deltaRef = putName("delta");
 	dense_rankRef = putName("dense_rank");
 	deregisterRef = putName("deregister");
+	dict_decompressRef = putName("dict_decompress");
 	diffcandRef= putName("diffcand");
 	differenceRef = putName("difference");
 	disconnectRef= putName("disconnect");
