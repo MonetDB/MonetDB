@@ -46,6 +46,7 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.bincopyfrom();"
+	 "optimizer.emptybind();"
 	 "optimizer.deadcode();"
 	 "optimizer.dict();"
 	 "optimizer.multiplex();"
