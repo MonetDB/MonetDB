@@ -5280,12 +5280,16 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static bool
+#define NO_PROJECTION_FOUND 0
+#define MAY_HAVE_DUPLICATE_NULLS 1
+#define ALL_VALUES_DISTINCT 2
+
+static int
 find_projection_for_join2semi(sql_rel *rel)
 {
-	if (is_project(rel->op) && !is_union(rel->op)) {
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_basetable(rel->op) || (is_union(rel->op) && need_distinct(rel))) {
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
-			return true;
+			return ALL_VALUES_DISTINCT;
 		if (list_length(rel->exps) == 1) {
 			sql_exp *e = rel->exps->h->data;
 			/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
@@ -5295,28 +5299,32 @@ find_projection_for_join2semi(sql_rel *rel)
 				bool underjoin = false;
 
 				/* if just one groupby column is projected or the relation needs distinct values and one column is projected or is a primary key, it will be distinct */
-				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) ||
-					(is_simple_project(rel->op) && need_distinct(rel) && list_length(rel->exps) == 1) || find_prop(e->p, PROP_HASHCOL))
-					return true;
+				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) || (need_distinct(rel) && list_length(rel->exps) == 1))
+					return ALL_VALUES_DISTINCT;
+				if (is_unique(e))
+					return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
 
-				if ((found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
-					if ((is_simple_project(res->op) && need_distinct(res) && list_length(res->exps) == 1) || find_prop(found->p, PROP_HASHCOL))
-						return true;
+				if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op)) &&
+					(found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
+					if (need_distinct(res) && list_length(res->exps) == 1)
+						return ALL_VALUES_DISTINCT;
+					if (is_unique(found))
+						return has_nil(e) ? MAY_HAVE_DUPLICATE_NULLS : ALL_VALUES_DISTINCT;
 					if (found->type == e_column && found->card <= CARD_AGGR) {
 						if (!is_groupby(res->op) && list_length(res->exps) != 1)
-							return false;
+							return NO_PROJECTION_FOUND;
 						for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
 							sql_exp *e = n->data;
 							if (e != found && e->type == e_column)
-								return false;
+								return NO_PROJECTION_FOUND;
 						}
-						return true;
+						return ALL_VALUES_DISTINCT;
 					}
 				}
 			}
 		}
 	}
-	return false;
+	return NO_PROJECTION_FOUND;
 }
 
 static sql_rel *
@@ -5327,23 +5335,28 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 		return NULL;
 	if (rel->op == op_join && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
+		int foundr = 0, foundl = 0, found = 0;
 		bool ok = false;
 
-		if (find_projection_for_join2semi(r)) {
+		foundr = find_projection_for_join2semi(r);
+		if (foundr < ALL_VALUES_DISTINCT)
+			foundl = find_projection_for_join2semi(l);
+		if (foundr && foundr > foundl) {
 			*swap = false;
-			ok = true;
-		} else if (find_projection_for_join2semi(l)) {
+			found = foundr;
+		} else if (foundl) {
 			*swap = true;
-			ok = true;
+			found = foundl;
 		}
 
-		if (ok) {
+		if ((ok = found > 0)) {
 			ok = false;
 			/* if all join expressions can be pushed down or have function calls, then it cannot be rewritten into a semijoin */
 			for (node *n=rel->exps->h; n && !ok; n = n->next) {
 				sql_exp *e = n->data;
 
-				ok |= e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e);
+				ok |= e->type == e_cmp && e->flag == cmp_equal && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e) &&
+					(found == ALL_VALUES_DISTINCT || !is_semantics(e) || (!has_nil((sql_exp *)e->l) && !has_nil((sql_exp *)e->r)));
 			}
 		}
 
@@ -5606,7 +5619,7 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if (find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
+	if (is_unique(e) || find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
 		res += 700;
 	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 500;
