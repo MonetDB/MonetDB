@@ -4021,6 +4021,29 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 		return res;
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;
+
+		if (hash_index(i->type)) { /* update new column's unique value */
+			int unique = 0;
+			sqlid cid = ic->c->base.id;
+			struct os_iter oi;
+
+			os_iterator(&oi, i->t->s->idxs, tr, NULL);
+			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+				sql_idx *ti = (sql_idx*)b;
+
+				if (ti->base.id != i->base.id && hash_index(ti->type)) {
+					bool found = false;
+					for (node *m = ti->columns->h; m && !found; m = m->next) {
+						sql_kc *tic = m->data;
+
+						found |= tic->c->base.id == cid;
+					}
+					if (found)
+						unique = MAX(unique, list_length(ti->columns) == 1 ? 2 : 1);
+				}
+			}
+			ic->c->unique = unique;
+		}
 		if ((res = sys_drop_ic(tr, i, ic)))
 			return res;
 	}
