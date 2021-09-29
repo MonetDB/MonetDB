@@ -5356,7 +5356,7 @@ find_candidate_join2semi(visitor *v, sql_rel *rel, bool *swap)
 				sql_exp *e = n->data;
 
 				ok |= e->type == e_cmp && e->flag == cmp_equal && !exp_has_func(e) && !rel_rebind_exp(v->sql, l, e) && !rel_rebind_exp(v->sql, r, e) &&
-					(found == ALL_VALUES_DISTINCT || !is_semantics(e) || (!has_nil((sql_exp *)e->l) && !has_nil((sql_exp *)e->r)));
+					(found == ALL_VALUES_DISTINCT || !is_semantics(e) || !has_nil((sql_exp *)e->l) || !has_nil((sql_exp *)e->r));
 			}
 		}
 
