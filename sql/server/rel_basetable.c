@@ -157,7 +157,7 @@ bind_col_exp(mvc *sql, char *name, sql_column *c)
 	if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 		p->value = c->t->pkey;
-	} else if (c->unique == 1) {
+	} else if (c->unique == 2) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 		p->value = NULL;
 	}
@@ -325,7 +325,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 			p->value = c->t->pkey;
-		} else if (c->unique == 1) {
+		} else if (c->unique == 2) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 			p->value = NULL;
 		}
@@ -371,7 +371,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 				p->value = c->t->pkey;
-			} else if (c->unique == 1) {
+			} else if (c->unique == 2) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 				p->value = NULL;
 			}
@@ -447,7 +447,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value = rc->t->pkey;
-			} else if (rc->unique == 1) {
+			} else if (rc->unique == 2) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value = NULL;
 			}

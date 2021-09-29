@@ -614,7 +614,7 @@ typedef struct sql_column {
 	int colnr;
 	bit null;
 	char *def;
-	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
+	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
 	int sorted;		/* for DECLARED (dupped tables) we keep order info */
