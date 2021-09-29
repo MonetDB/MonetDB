@@ -969,7 +969,7 @@ parseAtom(Client cntxt)
 		tpe = parseTypeId(cntxt, TYPE_int);
 	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
-			GDKfree(cntxt->curprg->def->errors);
+			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
 	}
 	if( strcmp(modnme,"user"))
@@ -1301,7 +1301,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		if( msg && ! cntxt->curprg->def->errors)
 			cntxt->curprg->def->errors = msg;
 		if(cntxt->curprg->def->errors)
-			GDKfree(cntxt->curprg->def->errors);
+			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;

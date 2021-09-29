@@ -805,17 +805,6 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return RAcommit_statement(be, msg);
 }
 
-static int
-is_a_number(char *v)
-{
-	while(*v) {
-		if (!isdigit((unsigned char) *v))
-			return 0;
-		v++;
-	}
-	return 1;
-}
-
 static char *
 parseIdent(char *in, char *out)
 {
@@ -860,62 +849,70 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!stack_push_frame(m, NULL))
 		return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	ops = sa_list(m->sa);
-	while (sig && *sig && !isspace((unsigned char) *sig)) {
-		char *vnme = sig, *tnme, *nbuf, *sch, *var;
-		char *p = strchr(++sig, (int)' ');
-		int d,s,nr = -1;
+	while (sig && *sig) {
+		sql_schema *sh = NULL;
 		sql_type *t = NULL;
 		sql_subtype tpe;
+		char *p, *vtype = NULL, *sch = NULL, *var = NULL;
+		int d, s, level = strtol(sig, &p, 10);
 
-		*p++ = 0;
-		/* vnme can be name or number */
-		if (is_a_number(vnme+1))
-			nr = strtol(vnme+1, NULL, 10);
-		tnme = p;
-		p = strchr(p, (int)'(');
-		*p++ = 0;
-		tnme = sa_strdup(m->sa, tnme);
+		var = p+1;
+		assert(*p == '"');
+		p = parseIdent(p+1, var);
+		assert(*p == '\0');
+		p++;
+		if (*p == '"') { /* global variable, parse schema and name */
+			sch = var;
+			var = p+1;
+			p = parseIdent(p+1, var);
+			assert(*p == '\0');
+			p++;
+		}
+
+		assert(*p == ' ');
+		p++; /* skip space and get type */
+		vtype = p;
+		p = strchr(p, '(');
+		*p++ = '\0';
+
+		/* get digits and scale */
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
+		p+=2; /* skip ) and , or ' ' */
+		sig = p;
 
-		if (!sql_find_subtype(&tpe, tnme, d, s)) {
-			if (!(t = mvc_bind_type(m, tnme))) { /* try an external type */
+		if (!sql_find_subtype(&tpe, vtype, d, s)) {
+			if (!(t = mvc_bind_type(m, vtype))) { /* try an external type */
 				stack_pop_frame(m);
-				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tnme, d, s));
+				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", vtype, d, s));
 			}
 			sql_init_subtype(&tpe, t, d, s);
 		}
 
-		if (nr >= 0) {
-			list_append(ops, exp_atom_ref(m->sa, nr, &tpe));
-		} else {
-			sql_schema *s;
-
-			while (*vnme && isdigit(*vnme)) /* skip digit characters */
-				vnme++;
-
-			nbuf = vnme;
-			sch = nbuf+1;
-			assert(*nbuf == '"');
-			nbuf = parseIdent(nbuf+1, sch);
-			assert(*nbuf == '\0');
-			var = nbuf+2;
-			nbuf = parseIdent(nbuf+2, var);
-
-			if (!(s = mvc_bind_schema(m, sch))) {
+		if (sch) {
+			assert(level == 0);
+			if (!(sh = mvc_bind_schema(m, sch))) {
 				stack_pop_frame(m);
 				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(3F000) "No such schema '%s'", sch));
 			}
-			if (!find_global_var(m, s, var) && !push_global_var(m, sch, var, &tpe)) {
+			if (!find_global_var(m, sh, var) && !push_global_var(m, sch, var, &tpe)) {
 				stack_pop_frame(m);
 				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 			}
 			list_append(ops, exp_var(m->sa, sa_strdup(m->sa, sch), sa_strdup(m->sa, var), &tpe, 0));
+		} else {
+			char opname[BUFSIZ];
+
+			level = 1; /* TODO multiple levels */
+			if (!frame_push_var(m, var, &tpe)) {
+				stack_pop_frame(m);
+				return RAcommit_statement(be, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+			}
+
+			snprintf(opname, BUFSIZ, "%d%%%s", level, var); /* engineering trick */
+			list_append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, opname), &tpe, level));
 		}
-		sig = strchr(p, (int)',');
-		if (sig)
-			sig++;
 	}
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);

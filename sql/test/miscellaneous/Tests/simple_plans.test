@@ -22,7 +22,7 @@ plan select distinct col1 + col2 from myy order by col1 + col2
 project (
 | group by (
 | | project (
-| | | table("sys"."myy") [ "myy"."col1", "myy"."col2" ] COUNT 
+| | | table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
 | | ) [ "sys"."sql_add"(bigint["myy"."col1"] as "myy"."col1", bigint["myy"."col2"] as "myy"."col2") as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" ] [ "%1"."%1" ASC ]
@@ -31,14 +31,14 @@ query T nosort
 plan select col2 from myy order by col1 ASC, col1 DESC
 ----
 project (
-| table("sys"."myy") [ "myy"."col1", "myy"."col2" ] COUNT 
+| table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
 ) [ "myy"."col2" ] [ "myy"."col1" ASC, "myy"."col1" NULLS LAST ]
 
 query T nosort
 plan select col2 from myy order by col1 DESC, col1 DESC
 ----
 project (
-| table("sys"."myy") [ "myy"."col1", "myy"."col2" ] COUNT 
+| table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
 ) [ "myy"."col2" ] [ "myy"."col1" NULLS LAST, "myy"."col1" NULLS LAST ]
 
 statement ok
@@ -49,7 +49,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x", "myx"."y" ] COUNT 
+| | table("sys"."myx") [ "myx"."x", "myx"."y" ]
 | ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ "myx"."x", "myx"."y" ]
 
@@ -58,7 +58,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is n
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x", "myx"."y" ] COUNT 
+| | table("sys"."myx") [ "myx"."x", "myx"."y" ]
 | ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" * = uuid "NULL") ]
 ) [ "myx"."x", "myx"."y" ]
 
@@ -67,7 +67,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5
 ----
 project (
 | select (
-| | table("sys"."myx") [ "myx"."x", "myx"."y" ] COUNT 
+| | table("sys"."myx") [ "myx"."x", "myx"."y" ]
 | ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL) ]
 ) [ "myx"."x", "myx"."y" ]
 
@@ -95,7 +95,7 @@ plan select 1 from tab0 where col1 = 1 or col1 = 81
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1" ]
 | ) [ "tab0"."col1" in (int "1", int "81") ]
 ) [ tinyint "1" ]
 
@@ -104,7 +104,7 @@ plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1" ]
 | ) [ "tab0"."col1" in (int "1", int "81", int "100") ]
 ) [ tinyint "1" ]
 
@@ -113,7 +113,7 @@ plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ ("tab0"."col1" in (int "1", int "81")) or ("tab0"."col2" < int "0") ]
 ) [ tinyint "1" ]
 
@@ -122,7 +122,7 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 >
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ ("tab0"."col1" in (int "1", int "81", int "100")) or ("tab0"."col2" > int "10") ]
 ) [ tinyint "1" ]
 
@@ -131,7 +131,7 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 =
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ (("tab0"."col1" in (int "1", int "81")) or ("tab0"."col2" = int "100")) or ("tab0"."col1" = int "100") ]
 ) [ tinyint "1" ]
 
@@ -140,7 +140,7 @@ plan select 1 from tab0 where col1 <> 1 and col1 <> 81
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1" ]
 | ) [ "tab0"."col1" notin (int "1", int "81") ]
 ) [ tinyint "1" ]
 
@@ -149,7 +149,7 @@ plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0)
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ "tab0"."col2" < int "0", "tab0"."col1" notin (int "1", int "81") ]
 ) [ tinyint "1" ]
 
@@ -158,7 +158,7 @@ plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ ("tab0"."col1" notin (int "1", int "81")) or ("tab0"."col2" < int "0") ]
 ) [ tinyint "1" ]
 
@@ -167,7 +167,7 @@ plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (c
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ ("tab0"."col1" notin (int "1", int "81", int "100")) or ("tab0"."col2" > int "10") ]
 ) [ tinyint "1" ]
 
@@ -176,7 +176,7 @@ plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (co
 ----
 project (
 | select (
-| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
 | ) [ "tab0"."col1" != int "100", ("tab0"."col1" notin (int "1", int "81")) or ("tab0"."col2" = int "100") ]
 ) [ tinyint "1" ]
 
@@ -325,7 +325,7 @@ PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 ----
 project (
 | select (
-| | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ] COUNT 
+| | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
 | ) [ (int "1" <= "another_t"."col1" <= int "2" BETWEEN ) or ("another_t"."col2" * = int "NULL") ]
 ) [ tinyint "1" ]
 
@@ -334,7 +334,7 @@ PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 ----
 project (
 | select (
-| | table("sys"."another_t") [ "another_t"."col1" ] COUNT 
+| | table("sys"."another_t") [ "another_t"."col1" ]
 | ) [ bigint "1" < bigint["another_t"."col1"] < bigint "2" BETWEEN  ]
 ) [ tinyint "1" ]
 
@@ -342,7 +342,7 @@ query T nosort
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
-| table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ] COUNT 
+| table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
 ) [ "sys"."or"(int "1" <= "another_t"."col1" <= int "2" BETWEEN , "sys"."isnull"("another_t"."col2") NOT NULL) ]
 
 statement ok
@@ -377,18 +377,18 @@ PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN vie
 ----
 project (
 | join (
-| | table("sys"."tabel3") [ "tabel3"."id_nr" as "a"."id_nr" ] COUNT ,
+| | table("sys"."tabel3") [ "tabel3"."id_nr" as "a"."id_nr" ],
 | | project (
 | | | left outer join (
 | | | | join (
 | | | | | project (
-| | | | | | table("sys"."tabel1") [ "tabel1"."id_nr" as "a"."id_nr" ] COUNT 
+| | | | | | table("sys"."tabel1") [ "tabel1"."id_nr" as "a"."id_nr" ]
 | | | | | ) [ "a"."id_nr" as "s"."id_nr" ],
 | | | | | project (
-| | | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ] COUNT 
+| | | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
 | | | | | ) [ "a"."id_nr" as "h"."id_nr" ]
 | | | | ) [ "s"."id_nr" = "h"."id_nr" ],
-| | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ] COUNT 
+| | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
 | | | ) [ "h"."id_nr" = "a"."id_nr" ]
 | | ) [ "s"."id_nr" ]
 | ) [ "a"."id_nr" = "s"."id_nr" ]
@@ -405,8 +405,8 @@ plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or
 ----
 project (
 | join (
-| | table("sys"."integers") [ "integers"."i" as "i1"."i" ] COUNT ,
-| | table("sys"."integers") [ "integers"."i" as "i2"."i" ] COUNT 
+| | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
+| | table("sys"."integers") [ "integers"."i" as "i2"."i" ]
 | ) [ "i1"."i" * = "i2"."i" ]
 ) [ "i1"."i", "i2"."i" ]
 
@@ -427,8 +427,8 @@ plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is 
 ----
 project (
 | full outer join (
-| | table("sys"."integers") [ "integers"."i" as "i1"."i" ] COUNT ,
-| | table("sys"."integers") [ "integers"."i" as "i2"."i" ] COUNT 
+| | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
+| | table("sys"."integers") [ "integers"."i" as "i2"."i" ]
 | ) [ "i1"."i" * = "i2"."i" ]
 ) [ "i1"."i", "i2"."i" ]
 
@@ -449,7 +449,7 @@ plan select i, j from integers where i = j or (i is null and j is null)
 ----
 project (
 | select (
-| | table("sys"."integers") [ "integers"."i", "integers"."j" ] COUNT 
+| | table("sys"."integers") [ "integers"."i", "integers"."j" ]
 | ) [ "integers"."i" * = "integers"."j" ]
 ) [ "integers"."i", "integers"."j" ]
 
@@ -464,7 +464,7 @@ query T nosort
 plan select (34*another_t.col1)*3 from another_t
 ----
 project (
-| table("sys"."another_t") [ "another_t"."col1" ] COUNT 
+| table("sys"."another_t") [ "another_t"."col1" ]
 ) [ "sys"."sql_mul"("another_t"."col1", "sys"."sql_mul"(tinyint "34", tinyint "3") NOT NULL) ]
 
 # testing rel_push_count_down optimizer
@@ -504,10 +504,10 @@ plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.
 project (
 | join (
 | | join (
-| | | table("sys"."t1") [ "t1"."a", "t1"."b" ] COUNT ,
-| | | table("sys"."t2") [ "t2"."a" ] COUNT 
+| | | table("sys"."t1") [ "t1"."a", "t1"."b" ],
+| | | table("sys"."t2") [ "t2"."a" ]
 | | ) [ "t1"."a" = "t2"."a" ],
-| | table("sys"."t3") [ "t3"."b" ] COUNT 
+| | table("sys"."t3") [ "t3"."b" ]
 | ) [ ("t1"."b") FILTER "like" ("t3"."b", clob "", boolean "false") ]
 ) [ "t1"."a", "t1"."b" ]
 
@@ -547,14 +547,14 @@ project (
 | | project (
 | | | project (
 | | | | select (
-| | | | | table("sys"."t1") [ "t1"."a" ] COUNT 
+| | | | | table("sys"."t1") [ "t1"."a" ]
 | | | | ) [ "t1"."a" > int "2" ]
 | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
 | | ) [ "b" as "x"."x", "c" as "x"."y" ],
 | | project (
 | | | project (
 | | | | select (
-| | | | | table("sys"."t2") [ "t2"."a" ] COUNT 
+| | | | | table("sys"."t2") [ "t2"."a" ]
 | | | | ) [ "t2"."a" > int "2" ]
 | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
 | | ) [ "z" as "x"."x", "d" as "x"."y" ]
@@ -570,7 +570,7 @@ project (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."t1") [ "t1"."a" ] COUNT 
+| | | | | | table("sys"."t1") [ "t1"."a" ]
 | | | | | ) [ "t1"."a" > int "2" ]
 | | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
 | | | ) [ "b", "c" ] [ "b", "c" ]
@@ -579,7 +579,7 @@ project (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."t2") [ "t2"."a" ] COUNT 
+| | | | | | table("sys"."t2") [ "t2"."a" ]
 | | | | | ) [ "t2"."a" > int "2" ]
 | | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
 | | | ) [ "z", "d" ] [ "z", "d" ]
