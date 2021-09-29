@@ -558,6 +558,9 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
+	if (access == RD_DICT)
+		partition = 0;
+
 	/* for read access tid.project(col) */
 	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
@@ -579,7 +582,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = newStmtArgs(mb, sqlRef, bindRef, 9);
 	if (q == NULL)
 		return NULL;
-	if (c->storage_type && access != RD_DICT) {
+	if (c->storage_type && access != RD_DICT && access != RD_UPD_ID) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
