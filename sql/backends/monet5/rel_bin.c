@@ -1576,6 +1576,10 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 		sc = stmt_project_delta(be, sc, u);
 		if (del)
 			sc = stmt_project(be, del, sc);
+		if (c->storage_type) {
+			stmt *v = stmt_bat(be, c, RD_DICT, part);
+			sc = stmt_dict(be, sc, v);
+		}
 	} else if (del) { /* always handle the deletes */
 		sc = stmt_project(be, del, sc);
 	}

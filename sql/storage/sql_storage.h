@@ -141,6 +141,7 @@ typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef int (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets);
 typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
+
 /*
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
@@ -191,6 +192,8 @@ typedef int (*drop_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*drop_del_fptr) (sql_trans *tr, sql_table *t);
 
 typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
+
+typedef int (*col_dict_fptr) (sql_trans *tr, sql_column *c, BAT *offsets, BAT *vals);
 
 /*
 -- update_table rollforward the changes made from table ft to table tt
@@ -243,6 +246,7 @@ typedef struct store_functions {
 	drop_del_fptr drop_del;
 
 	clear_table_fptr clear_table;
+	col_dict_fptr col_dict;
 
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;

@@ -579,6 +579,12 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = newStmtArgs(mb, sqlRef, bindRef, 9);
 	if (q == NULL)
 		return NULL;
+	if (c->storage_type && access != RD_DICT) {
+		sql_trans *tr = be->mvc->session->tr;
+		sqlstore *store = tr->store;
+		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+		tt = b->ttype;
+	}
 	if (access == RD_UPD_ID) {
 		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 	} else {
@@ -2256,6 +2262,39 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	return NULL;
 }
 
+stmt *
+stmt_dict(backend *be, stmt *op1, stmt *op2)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (op1->nr < 0 || op2->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, sqlRef, "dict_decompress");
+	q = pushArgument(mb, q, op1->nr);
+	q = pushArgument(mb, q, op2->nr);
+
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_join);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->op1 = op1;
+		s->op2 = op2;
+		s->flag = cmp_project;
+		s->key = 0;
+		s->nrcols = MAX(op1->nrcols,op2->nrcols);
+		s->nr = getDestVar(q);
+		s->q = q;
+		s->tname = op1->tname;
+		s->cname = op1->cname;
+		return s;
+	}
+	return NULL;
+}
 stmt *
 stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int symmetric, int swapped)
 {
