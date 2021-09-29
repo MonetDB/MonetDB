@@ -1166,7 +1166,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					sql_kc *kc = m->data;
 
 					if (kc->c->base.id == c->base.id)
-						throw(SQL,"sql.alter_table", SQLSTATE(40000) "NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column '%s' as its part of the PRIMARY KEY\n", c->base.name);
+						throw(SQL,"sql.alter_table", SQLSTATE(40000) "NOT NULL CONSTRAINT: cannot remove NOT NULL CONSTRAINT for column '%s' part of the PRIMARY KEY\n", c->base.name);
 				}
 			}
 			switch (mvc_null(sql, nc, c->null)) {
