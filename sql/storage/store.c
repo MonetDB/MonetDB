@@ -794,8 +794,9 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	}
 
 	/* after loading keys and idxs, update properties derived from indexes that require keys */
-	for (node *n = t->idxs->l->h; n; n = n->next)
-		create_sql_idx_done(n->data);
+	if (ol_length(t->idxs))
+		for (node *n = ol_first_node(t->idxs); n; n = n->next)
+			create_sql_idx_done(n->data);
 
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
