@@ -3648,9 +3648,24 @@ merge_notequal(mvc *sql, list *exps, int *changes)
 	return nexps;
 }
 
+static int
+is_numeric_upcast(sql_exp *e)
+{
+	if (is_convert(e->type)) {
+		sql_subtype *f = exp_fromtype(e);
+		sql_subtype *t = exp_totype(e);
+
+		if (f->type->eclass == t->type->eclass && EC_COMPUTE(f->type->eclass)) {
+			if (f->type->localtype < t->type->localtype)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 /* optimize (a = b) or (a is null and b is null) -> a = b with null semantics */
 static sql_exp *
-try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
+try_rewrite_equal_or_is_null(mvc *sql, sql_rel *rel, sql_exp *or, list *l1, list *l2)
 {
 	if (list_length(l1) == 1) {
 		bool valid = true, first_is_null_found = false, second_is_null_found = false;
@@ -3658,14 +3673,17 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
 		sql_exp *first = cmp->l, *second = cmp->r;
 
 		if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
+			int fupcast = is_numeric_upcast(first), supcast = is_numeric_upcast(second);
 			for(node *n = l2->h ; n && valid; n = n->next) {
-				sql_exp *e = n->data;
+				sql_exp *e = n->data, *l = e->l;
 
 				if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
 					!is_anti(e) && is_semantics(e) && exp_is_null(e->r)) {
-					if (exp_match_exp(first, e->l))
+					int lupcast = is_numeric_upcast(l);
+
+					if (exp_match_exp(fupcast?first->l:first, lupcast?l->l:l))
 						first_is_null_found = true;
-					else if (exp_match_exp(second, e->l))
+					else if (exp_match_exp(supcast?second->l:second, lupcast?l->l:l))
 						second_is_null_found = true;
 					else
 						valid = false;
@@ -3674,6 +3692,15 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
 				}
 			}
 			if (valid && first_is_null_found && second_is_null_found) {
+				sql_subtype super;
+
+				supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
+				if (!(first = exp_check_type(sql, &super, rel, first, type_equal)) ||
+					!(second = exp_check_type(sql, &super, rel, second, type_equal))) {
+						sql->session->status = 0;
+						sql->errstr[0] = 0;
+						return or;
+					}
 				sql_exp *res = exp_compare(sql->sa, first, second, cmp->flag);
 				set_semantics(res);
 				if (exp_name(or))
@@ -3686,18 +3713,18 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
 }
 
 static list *
-merge_cmp_or_null(mvc *sql, list *exps, int *changes)
+merge_cmp_or_null(mvc *sql, sql_rel *rel, list *exps, int *changes)
 {
 	for (node *n = exps->h; n ; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
-			sql_exp *ne = try_rewrite_equal_or_is_null(sql, e, e->l, e->r);
+			sql_exp *ne = try_rewrite_equal_or_is_null(sql, rel, e, e->l, e->r);
 			if (ne != e) {
 				(*changes)++;
 				n->data = ne;
 			}
-			ne = try_rewrite_equal_or_is_null(sql, e, e->r, e->l);
+			ne = try_rewrite_equal_or_is_null(sql, rel, e, e->r, e->l);
 			if (ne != e) {
 				(*changes)++;
 				n->data = ne;
@@ -3717,7 +3744,7 @@ rel_select_cse(visitor *v, sql_rel *rel)
 		rel->exps = merge_notequal(v->sql, rel->exps, &v->changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps)
-		rel->exps = merge_cmp_or_null(v->sql, rel->exps, &v->changes); /* (a = b) or (a is null and b is null) -> a = b with null semantics */
+		rel->exps = merge_cmp_or_null(v->sql, rel, rel->exps, &v->changes); /* (a = b) or (a is null and b is null) -> a = b with null semantics */
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) {
 		node *n;
@@ -3910,21 +3937,6 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 		}
 	}
 	return nexps;
-}
-
-static int
-is_numeric_upcast(sql_exp *e)
-{
-	if (is_convert(e->type)) {
-		sql_subtype *f = exp_fromtype(e);
-		sql_subtype *t = exp_totype(e);
-
-		if (f->type->eclass == t->type->eclass && EC_COMPUTE(f->type->eclass)) {
-			if (f->type->localtype < t->type->localtype)
-				return 1;
-		}
-	}
-	return 0;
 }
 
 static sql_exp *
