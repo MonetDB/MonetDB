@@ -180,21 +180,18 @@ geoPointFromGeom(GEOSGeom geom)
 	return geo;
 }
 
-/* Converts the a GEOSGeom Line into GeoLines (one or more line segments) 
+/* Converts the a GEOSGeom Line into GeoLines
    Argument must be a Line geometry. */
 static GeoLines 
 geoLinesFromGeom(GEOSGeom geom)
 {
 	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
-	int segmentCount = GEOSGeomGetNumPoints(geom) - 1;
 	GeoLines geo;
-	geo.segmentCount = segmentCount;
+	geo.pointCount = GEOSGeomGetNumPoints(geom);
 	//TODO Malloc fail exception?
-	geo.segments = GDKmalloc(sizeof(GeoLine) * segmentCount);
-	for (int i = 0; i < segmentCount; i++) {
-		GEOSCoordSeq_getXY(gcs, i, &geo.segments[i].start.lon, &geo.segments[i].start.lat);
-		GEOSCoordSeq_getXY(gcs, i + 1, &geo.segments[i].end.lon, &geo.segments[i].end.lat);
-	}
+	geo.points = GDKmalloc(sizeof(GeoPoint) * geo.pointCount);
+	for (int i = 0; i < geo.pointCount; i++)
+		GEOSCoordSeq_getXY(gcs, i, &geo.points[i].lon, &geo.points[i].lat);
 	//TODO Calculate Boundind Box on initializion?
 	geo.bbox = NULL;
 	return geo;
@@ -341,18 +338,18 @@ boundingBoxLines(GeoLines lines)
 	BoundingBox *bb = GDKzalloc(sizeof(BoundingBox));
 
 	//If there are no segments, return NULL
-	if (lines.segmentCount == 0)
+	if (lines.pointCount == 0)
 		return NULL;
 
-	c = geo2cartFromDegrees(lines.segments[0].start);
+	c = geo2cartFromDegrees(lines.points[0]);
 
 	//Initialize the bounding box with the first point
 	bb->xmin = bb->xmax = c.x;
 	bb->ymin = bb->ymax = c.y;
 	bb->zmin = bb->zmax = c.z;
 
-	for (int i = 0; i < lines.segmentCount; i++) {
-		c = geo2cartFromDegrees(lines.segments[i].end);
+	for (int i = 1; i < lines.pointCount; i++) {
+		c = geo2cartFromDegrees(lines.points[i]);
 		boundingBoxAddPoint(bb, c);
 	}
 	return bb;
@@ -478,14 +475,14 @@ geoDistancePointPoint(GeoPoint a, GeoPoint b)
 
 /* Calculates the distance between the perpendicular projection of a point in the Line */
 static double 
-calculatePerpendicularDistance(GeoPoint p_geo, GeoLine l_geo)
+calculatePerpendicularDistance(GeoPoint p_geo, GeoPoint l1_geo, GeoPoint l2_geo)
 {
 	CartPoint l1, l2, p, projection;
 	GeoPoint projection_geo;
 
 	//First, convert the points to 3D cartesian coordinates
-	l1 = geo2cartFromDegrees(l_geo.start);
-	l2 = geo2cartFromDegrees(l_geo.end);
+	l1 = geo2cartFromDegrees(l1_geo);
+	l2 = geo2cartFromDegrees(l2_geo);
 	p = geo2cartFromDegrees(p_geo);
 
 	//Calculate the projection of point into the line
@@ -506,41 +503,16 @@ calculatePerpendicularDistance(GeoPoint p_geo, GeoLine l_geo)
 	return haversine(deg2RadPoint(p_geo), projection_geo);
 }
 
-/* Distance between Point and a simple Line (only one Line segment). 
+/* Distance between Point and Line
    The returned distance is the minimum distance between the point and the line vertices 
-   and the perpendicular projection of the point in the line segment.  */
-//Is this function useless?
-#if 0
-static double 
-geoDistancePointLineSingle(GeoPoint point, GeoLine line)
-{
-	double distancePerpendicular, distanceStart, distanceEnd;
-
-	/* Calculate distance of the perpendicular of point in Line to the Line */
-	distancePerpendicular = calculatePerpendicularDistance(point, line);
-
-	/* Calculate distance of point to start and end points of line */
-	distanceStart = geoDistancePointPoint(point, line.start);
-	distanceEnd = geoDistancePointPoint(point, line.end);
-
-	/* Determine which of the distances is smaller */
-	if (distanceStart < distancePerpendicular && distanceStart < distanceEnd)
-		return distanceStart;
-	else if (distanceEnd < distancePerpendicular && distanceEnd < distanceStart)
-		return distanceEnd;
-	else
-		return distancePerpendicular;
-}
-#endif
-
-/* Distance between Point and Line. The line may have multiple segments. */
+   and the perpendicular projection of the point in each line segment.  */
 static double 
 geoDistancePointLine(GeoPoint point, GeoLines lines)
 {
 	double distancePoint, distancePerpendicular, min_distance = INT_MAX;
-	for (int i = 0; i < lines.segmentCount; i++) {
-		distancePoint = geoDistancePointPoint(point, lines.segments[i].start);
-		distancePerpendicular = calculatePerpendicularDistance(point,lines.segments[i]);
+	for (int i = 0; i < lines.pointCount-1; i++) {
+		distancePoint = geoDistancePointPoint(point, lines.points[i]);
+		distancePerpendicular = calculatePerpendicularDistance(point,lines.points[i],lines.points[i+1]);
 		//TODO Is this the best way of comparing these three distances?
 		if (distancePoint < min_distance)
 			min_distance = distancePoint;
@@ -550,43 +522,32 @@ geoDistancePointLine(GeoPoint point, GeoLines lines)
 		if (min_distance == 0)
 			return 0;
 	}
-	distancePoint = geoDistancePointPoint(point, lines.segments[lines.segmentCount - 1].end);
+	distancePoint = geoDistancePointPoint(point, lines.points[lines.pointCount-1]);
 	return distancePoint < min_distance ? distancePoint : min_distance;
-}
-
-/* Distance between all vertices of the first GeoLines argument and the line segments of the second GeoLines argument.
-   Used by geoDistanceLineLine. */
-static double 
-geoDistanceLineLineInternal(GeoLines line1, GeoLines line2)
-{
-	double distance, min_distance = INT_MAX;
-	//Calculate the distance between start vertices of line1 and segments of line 2
-	for (int i = 0; i < line1.segmentCount; i++) {
-		distance = geoDistancePointLine(line1.segments[i].start, line2);
-		if (distance < min_distance)
-			min_distance = distance;
-		//Shortcut, if the geometries are already at their minimum distance
-		if (min_distance == 0)
-			return 0;
-	}
-	distance = geoDistancePointLine(line1.segments[line1.segmentCount - 1].end, line2);
-	return distance < min_distance ? distance : min_distance;
 }
 
 /* Distance between two Lines. */
 static double 
 geoDistanceLineLine(GeoLines line1, GeoLines line2)
 {
-	double distance1, distance2;
-	//Calculate the distance between all vertices of line1 and segments of line 2
-	distance1 = geoDistanceLineLineInternal(line1, line2);
-	//Shortcut, if the geometries are already at their minimum distance
-	if (distance1 == 0)
-		return 0;
-	//Calculate the distance between all vertices of line2 and segments of line 1
-	distance2 = geoDistanceLineLineInternal(line2, line1);
-	//And return the minimum
-	return distance1 < distance2 ? distance1 : distance2;
+	double distance, min_distance = INT_MAX;
+	for (int i = 0; i < line1.pointCount; i++) {
+		distance = geoDistancePointLine(line1.points[i], line2);
+		if (distance < min_distance)
+			min_distance = distance;
+		//Shortcut, if the geometries are already at their minimum distance
+		if (min_distance == 0)
+			return 0;
+	}
+	for (int i = 0; i < line2.pointCount; i++) {
+		distance = geoDistancePointLine(line2.points[i], line1);
+		if (distance < min_distance)
+			min_distance = distance;
+		//Shortcut, if the geometries are already at their minimum distance
+		if (min_distance == 0)
+			return 0;
+	}
+	return min_distance;
 }
 
 //TODO Implement intersection ourselves so we don't use GEOS?
@@ -614,8 +575,8 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 	//TODO This is producing wrong results, review the intersection conditional
 	//Count the number of intersections between the polygon exterior ring and the constructed line
 	polygonRing = polygon.exteriorRing;
-	for (int i = 0; i < polygonRing.segmentCount; i++) {
-		segmentPolygon = cartesianLineFromGeoPoints(polygonRing.segments[i].start, polygonRing.segments[i].end);
+	for (int i = 0; i < polygonRing.pointCount-1; i++) {
+		segmentPolygon = cartesianLineFromGeoPoints(polygonRing.points[i], polygonRing.points[i+1]);
 		intersectionPoints = GEOSIntersection(segmentPolygon, outInLine);
 
 		//If there is an intersection, a point will be returned (line when there is none)
@@ -631,8 +592,8 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 	//Count the number of intersections between the polygon interior rings and the constructed line
 	for (int j = 0; j < polygon.interiorRingsCount; j++) {
 		polygonRing = polygon.interiorRings[j];
-		for (int i = 0; i < polygonRing.segmentCount; i++) {
-			segmentPolygon = cartesianLineFromGeoPoints(polygonRing.segments[i].start, polygonRing.segments[i].end);
+		for (int i = 0; i < polygonRing.pointCount-1; i++) {
+			segmentPolygon = cartesianLineFromGeoPoints(polygonRing.points[i], polygonRing.points[i+1]);
 			intersectionPoints = GEOSIntersection(segmentPolygon, outInLine);
 
 			//If there is an intersection, a point will be returned (line when there is none)
@@ -683,8 +644,8 @@ geoDistanceLinePolygon(GeoLines line, GeoPolygon polygon)
 {
 	double distance, min_distance = INT_MAX;
 	//Calculate distance to all start vertices of the line
-	for (int i = 0; i < line.segmentCount; i++) {
-		distance = geoDistancePointPolygon(line.segments[i].start, polygon);
+	for (int i = 0; i < line.pointCount; i++) {
+		distance = geoDistancePointPolygon(line.points[i], polygon);
 
 		//Short-cut in case the point is within the polygon
 		if (distance == 0)
@@ -693,9 +654,7 @@ geoDistanceLinePolygon(GeoLines line, GeoPolygon polygon)
 		if (distance < min_distance)
 			min_distance = distance;
 	}
-	//Calculate distance to the last vertice (not covered by the previous loop)
-	distance = geoDistancePointPolygon(line.segments[line.segmentCount - 1].end, polygon);
-	return distance < min_distance ? distance : min_distance;
+	return min_distance;
 }
 
 /* Distance between two Polygons. */
@@ -843,10 +802,10 @@ wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 static bool 
 geoPolygonCoversLine(GeoPolygon polygon, GeoLines lines)
 {
-	for (int i = 0; i < lines.segmentCount; i++)
-		if (pointWithinPolygon(polygon, lines.segments[i].start) == false)
+	for (int i = 0; i < lines.pointCount; i++)
+		if (pointWithinPolygon(polygon, lines.points[i]) == false)
 			return false;
-	return pointWithinPolygon(polygon, lines.segments[lines.segmentCount - 1].end);
+	return true;
 }
 
 /* Compares two GeoPoints, returns true if they're equal */
@@ -855,27 +814,6 @@ geoPointEquals(GeoPoint pointA, GeoPoint pointB)
 {
 	return (pointA.lat == pointB.lat) && (pointA.lon = pointB.lon);
 }
-
-//TODO If a line covers a point, it must have 0 distance to one of the segments (is this true?)
-#if 0
-static bool geoLineCoversPoint (GeoLines lines, GeoPoint point) {
-	GeoPoint perpendicularPoint;
-	for (int i = 0; i < lines.segmentCount; i++) {
-		if (geoDistancePointLineSingle(point,lines.segments[i]) == 0)
-			return true;
-	}
-	return false;
-}
-
-static bool geoLineCoversLine (GeoLines linesA, GeoLines linesB) {
-	for (int i = 0; i < linesB.segmentCount; i++)
-	{
-		if (geoLineCoversPoint(linesA, linesB.segments[i].start) == false)
-			return false;
-	}
-	return geoLineCoversPoint(linesA, linesB.segments[linesB.segmentCount - 1].end);	
-}
-#endif
 
 //TODO Check if this works correctly
 static bool 
@@ -1077,7 +1015,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		GEOSGeom inGEOM = wkb2geos(inWKB);
-		int srid = 0;
+		//int srid = 0;
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
@@ -1113,7 +1051,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 			geomCount = 0;
 			lastGrp = grp;
 			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
-			srid = GEOSGetSRID(inGEOM);
+			//srid = GEOSGetSRID(inGEOM);
 		}
 
 		unionGroup[geomCount] = inGEOM;
