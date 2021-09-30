@@ -2358,18 +2358,6 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 			return rel_is_unique(rel, k);
 		}
 	}
-	/*
-	if ((n = exps->h) != NULL) {
-		sql_exp *e = n->data;
-		prop *p;
-
-		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_ukey *k = p->value;
-			if (k && list_length(k->k.columns) <= 1)
-				return 1;
-		}
-	}
-	*/
 	return 0;
 }
 
@@ -2387,7 +2375,7 @@ exp_is_pkey(sql_rel *rel, sql_exp *e)
 }
 
 static sql_exp *
-rel_is_join_on_pkey(sql_rel *rel, bool pk_fk)
+rel_is_join_on_pkey(sql_rel *rel, bool pk_fk) /* pk_fk is used to verify is a join on pk-fk */
 {
 	if (!rel || !rel->exps)
 		return NULL;
@@ -4205,25 +4193,18 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 
 		/* group by on primary keys which define the partioning scheme
 		 * don't need a finalizing group by */
-		/* how to check if a partion is based on some primary key ?
+		/* how to check if a partition is based on some primary key ?
 		 * */
-		if (rel->r && list_length(rel->r)) {
-			node *n;
+		if (!list_empty(rel->r)) {
+			for (node *n = ((list*)rel->r)->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				sql_column *c = NULL;
 
-			for (n = ((list*)rel->r)->h; n; n = n->next) {
-				sql_exp *gbe = n->data;
-
-				if (find_prop(gbe->p, PROP_HASHCOL)) {
-					fcmp cmp = (fcmp)&kc_column_cmp;
-					sql_rel *bt = NULL;
-					sql_column *c = exp_find_column_(rel, gbe, -2, &bt);
+				if ((c = exp_is_pkey(rel, e)) && partition_find_part(v->sql->session->tr, c->t, NULL)) {
 					/* check if key is partition key */
-					sql_table *mt = (bt)?rel_base_get_mergetable(bt):NULL;
-					if (c && mt && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
-						v->changes++;
-						return rel_inplace_setop(v->sql, rel, ul, ur, op_union,
-					       	       rel_projections(v->sql, rel, NULL, 1, 1));
-					}
+					v->changes++;
+					return rel_inplace_setop(v->sql, rel, ul, ur, op_union,
+											 rel_projections(v->sql, rel, NULL, 1, 1));
 				}
 			}
 		}
