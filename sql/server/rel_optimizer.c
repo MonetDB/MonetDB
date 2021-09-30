@@ -2301,17 +2301,16 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 }
 
 static int
-rel_is_unique( sql_rel *rel, sql_ukey *k)
+rel_is_unique(sql_rel *rel)
 {
 	switch(rel->op) {
-	case op_left:
-	case op_right:
-	case op_full:
-	case op_join:
-		return 0;
 	case op_semi:
 	case op_anti:
-		return rel_is_unique(rel->l, k);
+	case op_inter:
+	case op_except:
+	case op_topn:
+	case op_sample:
+		return rel_is_unique(rel->l);
 	case op_table:
 	case op_basetable:
 		return 1;
@@ -2320,43 +2319,48 @@ rel_is_unique( sql_rel *rel, sql_ukey *k)
 	}
 }
 
+/* WARNING exps_unique doesn't check for duplicate NULL values */
 int
 exps_unique(mvc *sql, sql_rel *rel, list *exps)
 {
-	node *n;
-	char *matched = NULL;
-	int nr = 0;
+	int nr = 0, need_check = 0;
 	sql_ukey *k = NULL;
 
 	if (list_empty(exps))
 		return 0;
-	for(n = exps->h; n && !k; n = n->next) {
+	for(node *n = exps->h; n ; n = n->next) {
 		sql_exp *e = n->data;
 		prop *p;
 
-		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL)
-			k = p->value;
+		if (!is_unique(e)) { /* ignore unique columns */
+			need_check++;
+			if (!k && (p = find_prop(e->p, PROP_HASHCOL))) /* at the moment, use only one k */
+				k = p->value;
+		}
 	}
-	if (!k || list_length(k->k.columns) > list_length(exps))
+	if (!need_check) /* all have unique property return */
+		return 1;
+	if (!k || list_length(k->k.columns) != need_check)
 		return 0;
 	if (rel) {
-		matched = SA_ZNEW_ARRAY(sql->sa, char, list_length(k->k.columns));
-		for(n = exps->h; n; n = n->next) {
+		char *matched = SA_ZNEW_ARRAY(sql->sa, char, list_length(k->k.columns));
+		fcmp cmp = (fcmp)&kc_column_cmp;
+		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			fcmp cmp = (fcmp)&kc_column_cmp;
-			sql_column *c = exp_find_column(rel, e, -2);
+			sql_column *c;
 			node *m;
 
-			if (c && (m=list_find(k->k.columns, c, cmp)) != NULL) {
+			if (is_unique(e))
+				continue;
+			if ((c = exp_find_column(rel, e, -2)) != NULL && (m = list_find(k->k.columns, c, cmp)) != NULL) {
 				int pos = list_position(k->k.columns, m->data);
 				if (!matched[pos])
 					nr++;
 				matched[pos] = 1;
 			}
 		}
-		if (nr == list_length(k->k.columns)) {
-			return rel_is_unique(rel, k);
-		}
+		if (nr == list_length(k->k.columns))
+			return rel_is_unique(rel);
 	}
 	return 0;
 }
@@ -2400,12 +2404,15 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 
 			if (exp->type == e_aggr && need_distinct(exp)) {
 				bool all_unique = true;
+				list *l = exp->l;
 
-				for (node *m = ((list*)exp->l)->h; m && all_unique; m = m->next) {
+				for (node *m = l->h; m && all_unique; m = m->next) {
 					sql_exp *arg = (sql_exp*) m->data;
 
 					all_unique &= arg->type == e_column && is_unique(arg) && (!is_semantics(exp) || !has_nil(arg));
 				}
+				if (!all_unique && exps_card(l) > CARD_ATOM)
+					all_unique = exps_unique(v->sql, rel, l) && (!is_semantics(exp) || !have_nil(l));
 				if (all_unique) {
 					set_nodistinct(exp);
 					v->changes++;
@@ -2555,7 +2562,8 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ])
 	 * into project [ pk ] ( select/semijoin ( table )  */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps)) {
+	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps) &&
+		(!have_semantics(l->exps) || !have_nil(rel->exps))) {
 		set_nodistinct(rel);
 		v->changes++;
 	}
@@ -5469,8 +5477,12 @@ static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
 {
 	/* first remove distinct if already unique */
-	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps))
+	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps) && !have_nil(rel->exps)) {
 		set_nodistinct(rel);
+		if (exps_card(rel->exps) <= CARD_ATOM && rel->card > CARD_ATOM) /* if the projection just contains constants, then no topN is needed */
+			rel->l = rel_topn(v->sql->sa, rel->l, append(sa_list(v->sql->sa), exp_atom_lng(v->sql->sa, 1)));
+		v->changes++;
+	}
 
 	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
 		int need_distinct = need_distinct(rel);
@@ -5495,8 +5507,8 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			ur = rel_project(v->sql->sa, ur,
 				rel_projections(v->sql, ur, NULL, 1, 1));
 		need_distinct = (need_distinct &&
-				(!exps_unique(v->sql, ul, ul->exps) ||
-				 !exps_unique(v->sql, ur, ur->exps)));
+				(!exps_unique(v->sql, ul, ul->exps) || have_nil(ul->exps) ||
+				 !exps_unique(v->sql, ur, ur->exps) || have_nil(ur->exps)));
 		rel_rename_exps(v->sql, u->exps, ul->exps);
 		rel_rename_exps(v->sql, u->exps, ur->exps);
 
@@ -5913,18 +5925,6 @@ static inline sql_rel *
 rel_groupby_distinct(visitor *v, sql_rel *rel)
 {
 	node *n;
-
-	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps && list_empty(rel->r)) {
-		for (n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (exp_aggr_is_count(e) && need_distinct(e)) {
-				/* if count over unique values (ukey/pkey) */
-				if (e->l && exps_unique(v->sql, rel, e->l))
-					set_nodistinct(e);
-			}
-		}
-	}
 
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
@@ -9360,7 +9360,6 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_first_level_optimizations(visitor *v, sql_rel *rel)
 {
-	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	/* rel_simplify_math optimizer requires to clear the hash, so make sure it runs last in this batch */
 	if (v->value_based_opt)
 		rel = rel_simplify_math(v, rel);
@@ -9488,6 +9487,7 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_groupby_order(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
+	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
 	/* only when value_based_opt is on, ie not for dependency resolution */
