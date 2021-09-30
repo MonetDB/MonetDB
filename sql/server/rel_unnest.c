@@ -86,7 +86,7 @@ static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 {
 	int distinct = 0;
-	if (ad && exps_unique(sql, rel, ad ))
+	if (ad && exps_unique(sql, rel, ad) && !have_nil(ad))
 		return 1;
 	if (ad && is_groupby(rel->op) && exp_match_list(rel->r, ad))
 		return 1;

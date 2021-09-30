@@ -641,6 +641,19 @@ have_nil(list *exps)
 	return has_nil;
 }
 
+int
+have_semantics(list *exps)
+{
+	int has_semantics = 0;
+
+	if (exps)
+		for (node *n = exps->h; n && !has_semantics; n = n->next) {
+			sql_exp *e = n->data;
+			has_semantics |= is_compare(e->type) && is_semantics(e);
+		}
+	return has_semantics;
+}
+
 sql_exp *
 exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern)
 {

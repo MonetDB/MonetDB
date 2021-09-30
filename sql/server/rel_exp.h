@@ -85,6 +85,7 @@ extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 extern list * exp_get_values(sql_exp *e); /* get expression list from the values expression */
 extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
+extern int have_semantics(list *exps);
 
 sql_export sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 extern sql_exp * exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe);
