@@ -25,7 +25,7 @@ plan select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
 project (
 | group by (
 | | project (
-| | | table("sys"."groupings") [ "groupings"."aa" ] COUNT 
+| | | table("sys"."groupings") [ "groupings"."aa" ]
 | | ) [ bigint["groupings"."aa"] as "%2"."%2", "sys"."sql_add"("%2"."%2", bigint "1") as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" ]

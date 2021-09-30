@@ -46,17 +46,17 @@ PLAN select * from r
 project (
 | project (
 | | crossproduct (
-| | | table("sys"."v") [ "v"."a1", "v"."a2" ] COUNT ,
+| | | table("sys"."v") [ "v"."a1", "v"."a2" ],
 | | | project (
 | | | | crossproduct (
 | | | | | project (
 | | | | | | select (
-| | | | | | | table("sys"."input_double") [ "input_double"."a1", "input_double"."a2" ] COUNT 
+| | | | | | | table("sys"."input_double") [ "input_double"."a1", "input_double"."a2" ]
 | | | | | | ) [ "input_double"."a1" = clob "latitude" ]
 | | | | | ) [ "input_double"."a2" as "tmp_2"."a2" ],
 | | | | | project (
 | | | | | | select (
-| | | | | | | table("sys"."input_double") [ "input_double"."a1", "input_double"."a2" ] COUNT 
+| | | | | | | table("sys"."input_double") [ "input_double"."a1", "input_double"."a2" ]
 | | | | | | ) [ "input_double"."a1" = clob "longitude" ]
 | | | | | ) [ "input_double"."a2" as "tmp_3"."a2" ]
 | | | | ) [  ]

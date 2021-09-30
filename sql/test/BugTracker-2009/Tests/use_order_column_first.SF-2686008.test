@@ -58,7 +58,7 @@ PLAN select a,b from sorted group by a,b
 ----
 project (
 | group by (
-| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ] COUNT 
+| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ]
 | ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."a", "sorted"."b" ]
 ) [ "sorted"."a", "sorted"."b" ]
 
@@ -67,7 +67,7 @@ PLAN select a,b from sorted group by b,a
 ----
 project (
 | group by (
-| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ] COUNT 
+| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ]
 | ) [ "sorted"."b", "sorted"."a" ] [ "sorted"."b", "sorted"."a" ]
 ) [ "sorted"."a", "sorted"."b" ]
 

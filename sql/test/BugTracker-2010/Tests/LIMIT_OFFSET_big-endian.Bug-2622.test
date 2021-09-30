@@ -20,7 +20,7 @@ query T nosort
    PLAN select * from oblo
 ----
 project (
-| table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| table("sys"."oblo") [ "oblo"."a" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -28,7 +28,7 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ bigint "NULL", bigint "2" ]
 ) [ "oblo"."a" ]
 
@@ -37,7 +37,7 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ bigint "2" ]
 ) [ "oblo"."a" ]
 
@@ -46,7 +46,7 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ bigint "1", bigint "2" ]
 ) [ "oblo"."a" ]
 
@@ -55,7 +55,7 @@ query T nosort
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ bigint "2", bigint "1" ]
 ) [ "oblo"."a" ]
 
@@ -63,7 +63,7 @@ query T nosort
    PLAN select * from oblo ORDER BY a
 ----
 project (
-| table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| table("sys"."oblo") [ "oblo"."a" ]
 ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 
 query T nosort
@@ -71,7 +71,7 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "NULL", bigint "2" ]
 
@@ -80,7 +80,7 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "2" ]
 
@@ -89,7 +89,7 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "2", bigint "1" ]
 
@@ -98,7 +98,7 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ] COUNT 
+| | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "1", bigint "2" ]
 

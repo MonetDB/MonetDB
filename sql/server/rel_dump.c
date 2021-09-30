@@ -799,7 +799,7 @@ readString( char *r, int *pos)
 	return st;
 }
 
-static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp) ;
+static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp);
 
 static sql_exp*
 read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
@@ -860,7 +860,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 
 		(*pos)++;
 		skipWS( r, pos);
-		e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp);
+		e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp, 0);
 		if (!e && r[*pos] != ebracket) {
 			return sql_error(sql, -1, SQLSTATE(42000) "Missing closing %c\n", ebracket);
 		} else if (!e) {
@@ -876,7 +876,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 
 			(*pos)++;
 			skipWS( r, pos);
-			e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp);
+			e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp, 0);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -909,22 +909,10 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 				exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 			skipWS(r,pos);
 			found = true;
-		} else if (strncmp(r+*pos, "SORTIDX",  strlen("SORTIDX")) == 0) {
-			(*pos)+= (int) strlen("SORTIDX");
-			if (!find_prop(exp->p, PROP_SORTIDX))
-				exp->p = prop_create(sql->sa, PROP_SORTIDX, exp->p);
-			skipWS(r,pos);
-			found = true;
 		} else if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
 			(*pos)+= (int) strlen("HASHCOL");
 			if (!find_prop(exp->p, PROP_HASHCOL))
 				exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
-			skipWS(r,pos);
-			found = true;
-		} else if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
-			(*pos)+= (int) strlen("FETCH");
-			if (!find_prop(exp->p, PROP_FETCH))
-				exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 			skipWS(r,pos);
 			found = true;
 		}
@@ -968,7 +956,7 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 }
 
 static sql_exp*
-exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
+exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp)
 {
 	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos;
@@ -1111,7 +1099,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (r[*pos] == '[') { /* convert */
 				(*pos)++;
 				skipWS(r, pos);
-				if (!(exp = exp_read(sql, lrel, rrel, top_exps, r, pos, 0)))
+				if (!(exp = exp_read(sql, lrel, rrel, top_exps, r, pos, 0, 0)))
 					return NULL;
 				if (r[*pos] != ']')
 					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
@@ -1309,40 +1297,41 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		}
 	}
 
-	if (!exp && b != e) { /* simple ident */
-		/*
-		if (!exp) {
-			old = *e;
-			*e = 0;
-			if (stack_find_var(sql, b)) {
-				sql_subtype *tpe = stack_find_type(sql, b);
-				int frame = stack_find_frame(sql, b);
-				exp = exp_param(sql->sa, sa_strdup(sql->sa, b), tpe, frame);
-			}
-			*e = old;
-		}
-		*/
-		if (!exp && lrel) {
-			int amb = 0, mul = 0;
+	if (!exp && lrel && b != e) { /* simple ident */
+		int amb = 0, mul = 0;
 
-			old = *e;
-			*e = 0;
-			convertIdent(b);
-			var_cname = sa_strdup(sql->sa, b);
-			if (top_exps) {
-				exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
-				if (exp)
-					exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
-			}
-			(void)amb;
-			(void)mul;
-			assert(amb == 0 && mul == 0);
-			if (!exp && lrel)
-				exp = rel_bind_column(sql, lrel, var_cname, 0, 1);
-			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
-			*e = old;
-			skipWS(r,pos);
+		old = *e;
+		*e = 0;
+		convertIdent(b);
+		var_cname = sa_strdup(sql->sa, b);
+		if (top_exps) {
+			exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
+			if (exp)
+				exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
+		}
+		(void)amb;
+		(void)mul;
+		assert(amb == 0 && mul == 0);
+		if (!exp && lrel)
+			exp = rel_bind_column(sql, lrel, var_cname, 0, 1);
+		if (!exp && rrel)
+			exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
+		*e = old;
+		skipWS(r,pos);
+	}
+
+	if (!exp && (cname || var_cname)) { /* Try a variable */
+		sql_var *var = NULL;
+		sql_subtype *tpe = NULL;
+		int level = 0;
+		sql_arg *a = NULL;
+		bool has_tname = cname && tname && strcmp(tname, cname) != 0;
+
+		if (find_variable_on_scope(sql, has_tname ? tname : NULL, cname ? cname : var_cname, &var, &a, &tpe, &level, "SELECT")) {
+			if (var) /* if variable is known from the stack or a global var */
+				exp = exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			if (a) /* if variable is a parameter */
+				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, cname), &(a->type), level);
 		}
 	}
 
@@ -1452,9 +1441,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			exp = exp_in(sql->sa, exp, exps, f);
 			if (anti)
 				set_anti(exp);
-		} else {
+		} else {	
 			int sym = 0;
-			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0);
+			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0, 1);
 
 			if (!e)
 				return NULL;
@@ -1471,8 +1460,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				exp = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), is_symmetric(e));
 				if (is_anti(e))
 					set_anti(exp);
-				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, exp, e);
 			} else {
 				exp = exp_compare(sql->sa, exp, e, f);
 				if (anti)
@@ -1481,9 +1468,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					set_semantics(exp);
 				if (sym) /* set it, so it gets propagated to the range comparison */
 					set_symmetric(exp);
-				if (exp_name(e)) /* propagate a possible alias already parsed */
-					exp_prop_alias(sql->sa, exp, e);
-				exp_setalias(e, NULL, NULL);
 			}
 		}
 	}
@@ -1502,7 +1486,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	}
 
 	/* as alias */
-	if (strncmp(r+*pos, "as", 2) == 0) {
+	if (!in_cmp && strncmp(r+*pos, "as", 2) == 0) {
 		(*pos)+=2;
 		skipWS(r, pos);
 

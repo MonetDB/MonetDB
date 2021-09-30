@@ -25,8 +25,6 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-#define OUTER_ZERO 64
-
 static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
@@ -1924,7 +1922,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 				stpcpy(stpcpy(stpcpy(stpcpy(buf, levelstr), "\""), nme), "\""); /* escape variable name */
 			}
 			if (!list_find(args, buf, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
+				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, e->flag);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, buf));
 				list_append(args, s);
@@ -3620,14 +3618,14 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!sub && !predicate)
 		predicate = rel2bin_predicate(be);
-	if (!rel->exps || !rel->exps->h) {
+	if (list_empty(rel->exps)) {
 		if (sub)
 			return sub;
 		if (predicate)
 			return predicate;
 		assert(0);
-		return stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
 	}
+	en = rel->exps->h;
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
 		assert(predicate);
@@ -3636,7 +3634,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 	/* handle possible index lookups */
 	/* expressions are in index order ! */
-	if (sub && (en = rel->exps->h) != NULL) {
+	if (sub && en) {
 		sql_exp *e = en->data;
 		prop *p;
 
