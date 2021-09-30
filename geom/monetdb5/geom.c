@@ -509,8 +509,10 @@ calculatePerpendicularDistance(GeoPoint p_geo, GeoLine l_geo)
 /* Distance between Point and a simple Line (only one Line segment). 
    The returned distance is the minimum distance between the point and the line vertices 
    and the perpendicular projection of the point in the line segment.  */
+//Is this function useless?
+#if 0
 static double 
-geoDistancePointLineInternal(GeoPoint point, GeoLine line)
+geoDistancePointLineSingle(GeoPoint point, GeoLine line)
 {
 	double distancePerpendicular, distanceStart, distanceEnd;
 
@@ -529,21 +531,27 @@ geoDistancePointLineInternal(GeoPoint point, GeoLine line)
 	else
 		return distancePerpendicular;
 }
+#endif
 
 /* Distance between Point and Line. The line may have multiple segments. */
 static double 
 geoDistancePointLine(GeoPoint point, GeoLines lines)
 {
-	double distance, min_distance = INT_MAX;
+	double distancePoint, distancePerpendicular, min_distance = INT_MAX;
 	for (int i = 0; i < lines.segmentCount; i++) {
-		distance = geoDistancePointLineInternal(point, lines.segments[i]);
-		if (distance < min_distance)
-			min_distance = distance;
+		distancePoint = geoDistancePointPoint(point, lines.segments[i].start);
+		distancePerpendicular = calculatePerpendicularDistance(point,lines.segments[i]);
+		//TODO Is this the best way of comparing these three distances?
+		if (distancePoint < min_distance)
+			min_distance = distancePoint;
+		if (distancePerpendicular < min_distance)
+			min_distance = distancePerpendicular;
 		//Shortcut, if the geometries are already at their minimum distance
 		if (min_distance == 0)
 			return 0;
 	}
-	return min_distance;
+	distancePoint = geoDistancePointPoint(point, lines.segments[lines.segmentCount - 1].end);
+	return distancePoint < min_distance ? distancePoint : min_distance;
 }
 
 /* Distance between all vertices of the first GeoLines argument and the line segments of the second GeoLines argument.
@@ -853,7 +861,7 @@ geoPointEquals(GeoPoint pointA, GeoPoint pointB)
 static bool geoLineCoversPoint (GeoLines lines, GeoPoint point) {
 	GeoPoint perpendicularPoint;
 	for (int i = 0; i < lines.segmentCount; i++) {
-		if (geoDistancePointLineInternal(point,lines.segments[i]) == 0)
+		if (geoDistancePointLineSingle(point,lines.segments[i]) == 0)
 			return true;
 	}
 	return false;
