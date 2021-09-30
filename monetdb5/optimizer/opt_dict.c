@@ -18,6 +18,16 @@ ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 	return p;
 }
 
+static int
+allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
+{
+		for(int j=p->retc; j< p->argc; j++) {
+			if (j != except && getArgType(mb, p, j) >= TYPE_any)
+				return 0;
+		}
+		return 1;
+}
+
 str
 OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -124,6 +134,22 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 					done = 1;
 					break;
+				} else if ((isMapOp(p) || isMap2Op(p)) && allConstExcept(mb, p, j)) {
+					/* batcalc.-(1, col) with col = dict.decompress(o,u)
+					 * v1 = batcalc.-(1, u)
+					 * dict.decompress(o, v1) */
+					InstrPtr r = copyInstruction(p);
+					int tpe = getVarType(mb, vardictvalue[k]);
+					int l = getArg(r, 0);
+					getArg(r, 0) = newTmpVariable(mb, tpe);
+					getArg(r, j) = vardictvalue[k];
+
+					varisdict[l] = varisdict[k];
+					vardictvalue[l] = getArg(r,0);
+					pushInstruction(mb,r);
+					done = 1;
+					break;
+
 				} else {
 					/* need to decompress */
 					int tpe = getArgType(mb, p, j);
