@@ -255,11 +255,12 @@ wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
 	(*gb) = wkb2geos(*b);
 	if ((*ga) == NULL || (*gb) == NULL)
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
-	else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
+	//TODO Uncomment this, this is just for the October demo
+	/*else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
 		GEOSGeom_destroy(*ga);
 		GEOSGeom_destroy(*gb);
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
-	}
+	}*/
 	return err;
 }
 
@@ -538,6 +539,9 @@ geoDistancePointLine(GeoPoint point, GeoLines lines)
 		distance = geoDistancePointLineInternal(point, lines.segments[i]);
 		if (distance < min_distance)
 			min_distance = distance;
+		//Shortcut, if the geometries are already at their minimum distance
+		if (min_distance == 0)
+			return 0;
 	}
 	return min_distance;
 }
@@ -553,6 +557,9 @@ geoDistanceLineLineInternal(GeoLines line1, GeoLines line2)
 		distance = geoDistancePointLine(line1.segments[i].start, line2);
 		if (distance < min_distance)
 			min_distance = distance;
+		//Shortcut, if the geometries are already at their minimum distance
+		if (min_distance == 0)
+			return 0;
 	}
 	distance = geoDistancePointLine(line1.segments[line1.segmentCount - 1].end, line2);
 	return distance < min_distance ? distance : min_distance;
@@ -565,6 +572,9 @@ geoDistanceLineLine(GeoLines line1, GeoLines line2)
 	double distance1, distance2;
 	//Calculate the distance between all vertices of line1 and segments of line 2
 	distance1 = geoDistanceLineLineInternal(line1, line2);
+	//Shortcut, if the geometries are already at their minimum distance
+	if (distance1 == 0)
+		return 0;
 	//Calculate the distance between all vertices of line2 and segments of line 1
 	distance2 = geoDistanceLineLineInternal(line2, line1);
 	//And return the minimum
@@ -593,6 +603,7 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 	//Construct a line between the outside point and the input point
 	GEOSGeometry *outInLine = cartesianLineFromGeoPoints(point, outsidePoint);
 
+	//TODO This is producing wrong results, review the intersection conditional
 	//Count the number of intersections between the polygon exterior ring and the constructed line
 	polygonRing = polygon.exteriorRing;
 	for (int i = 0; i < polygonRing.segmentCount; i++) {
@@ -648,6 +659,9 @@ geoDistancePointPolygon(GeoPoint point, GeoPolygon polygon)
 	min_distance = geoDistancePointLine(point, polygon.exteriorRing);
 	//Then, calculate distance to the interior rings
 	for (int i = 0; i < polygon.interiorRingsCount; i++) {
+		//Shortcut, if the geometries are already at their minimum distance
+		if (min_distance == 0)
+			return 0;
 		distance = geoDistancePointLine(point, polygon.interiorRings[i]);
 		if (distance < min_distance)
 			min_distance = distance;
@@ -684,6 +698,9 @@ geoDistancePolygonPolygon(GeoPolygon polygon1, GeoPolygon polygon2)
 	double distance1, distance2;
 	//Calculate the distance between the exterior ring of polygon1 and all segments of polygon2 (including the interior rings)
 	distance1 = geoDistanceLinePolygon(polygon1.exteriorRing, polygon2);
+	//Shortcut, if the geometries are already at their minimum distance
+	if (distance1 == 0)
+		return 0;
 	//Other way around
 	distance2 = geoDistanceLinePolygon(polygon2.exteriorRing, polygon1);
 	//And return the minimum
@@ -738,6 +755,9 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b)
 		for (int j = 0; j < numGeomsB; j++) {
 			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
 			distance = geoDistanceSingle(geo1, geo2);
+			//Shortcut, if the geometries are already at their minimum distance
+			if (distance == 0)
+				return 0;
 			if (distance < min_distance)
 				min_distance = distance;
 		}
@@ -771,7 +791,7 @@ wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 **/
 /* Checks if two geographic geometries are within d meters of one another */
 str 
-wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl d)
+wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl *d)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
@@ -779,7 +799,7 @@ wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl d)
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
 		distance = geoDistanceInternal(ga, gb);
-		(*out) = (distance <= d);
+		(*out) = (distance <= (*d));
 	}
 
 	GEOSGeom_destroy(ga);
@@ -954,6 +974,7 @@ GEOSGeom_getCollectionType (int GEOSGeom_type) {
 }
 
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
+//TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
 str 
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
@@ -1048,11 +1069,13 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		GEOSGeom inGEOM = wkb2geos(inWKB);
+		int srid = 0;
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
 				//Finish the previous group, move on to the next one
 				collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+				//TODO Set SRID for collection
 				//Save collection to unions array as wkb
 				unions[lastGrp] = geos2wkb(collection);
 
@@ -1082,6 +1105,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 			geomCount = 0;
 			lastGrp = grp;
 			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
+			srid = GEOSGetSRID(inGEOM);
 		}
 
 		unionGroup[geomCount] = inGEOM;

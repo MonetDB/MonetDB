@@ -90,7 +90,7 @@ typedef struct CartPoint
 
 /* Geographic functions */
 str wkbDistanceGeographic(dbl* out, wkb** a, wkb** b);
-str wkbDWithinGeographic(bit* out, wkb** a, wkb** b, dbl distance);
+str wkbDWithinGeographic(bit* out, wkb** a, wkb** b, dbl *distance);
 str wkbIntersectsGeographic(bit* out, wkb** a, wkb** b);
 str wkbCoversGeographic(bit* out, wkb** a, wkb** b);
 
