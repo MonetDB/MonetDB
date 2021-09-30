@@ -56,18 +56,11 @@ typedef struct GeoPoint
     double lon;
 } GeoPoint;
 
-//Geographic line segment
-typedef struct GeoLine
-{
-    GeoPoint start;
-    GeoPoint end;
-} GeoLine;
-
-//Geographic line (multiple segments)
+//Geographic line
 typedef struct GeoLines
 {
-    GeoLine *segments;
-    int segmentCount;
+    GeoPoint *points;
+    int pointCount;
     BoundingBox* bbox;
 } GeoLines;
 
