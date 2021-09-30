@@ -6,7 +6,7 @@ timeout_cross
 timeout_join
 timeout_aggr
 timeout_select
-stop
+#stop
 test_vacuum_mal
 test_vacuum
 

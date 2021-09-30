@@ -32,12 +32,24 @@ with SQLTestCase() as cli:
     COMMIT;""" % (port, db, port, db, port, db)).assertSucceeded()
 
     cli.execute("START TRANSACTION;")
-    cli.execute('SELECT json."integer"(JSON \'1\') FROM rt3;').assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
-    cli.execute('SELECT c0 BETWEEN 10 AND 11 FROM rt3;').assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(False,),(False,),(False,)])
+    cli.execute('SELECT json."integer"(JSON \'1\') FROM t3;') \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute('SELECT json."integer"(JSON \'1\') FROM rt3;') \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute('SELECT c0 BETWEEN 10 AND 11 FROM t3;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(False,),(False,),(False,)])
+    cli.execute('SELECT c0 BETWEEN 10 AND 11 FROM rt3;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(False,),(False,),(False,)])
+    cli.execute('SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM t3 where t3.c0 = 1;') \
+        .assertSucceeded().assertDataResultMatch([(False,True,False,True)])
     cli.execute('SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM rt3 where rt3.c0 = 1;') \
         .assertSucceeded().assertDataResultMatch([(False,True,False,True)])
+    cli.execute('SELECT c0 BETWEEN 2 AND 5 AS myproj FROM t3 ORDER BY myproj;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(True,),(True,),(True,),(True,)])
     cli.execute('SELECT c0 BETWEEN 2 AND 5 AS myproj FROM rt3 ORDER BY myproj;') \
         .assertSucceeded().assertDataResultMatch([(False,),(False,),(True,),(True,),(True,),(True,)])
+    cli.execute('SELECT c0 > 4 AS myproj FROM t3 ORDER BY myproj;') \
+        .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(True,),(True,),(True,)])
     cli.execute('SELECT c0 > 4 AS myproj FROM rt3 ORDER BY myproj;') \
         .assertSucceeded().assertDataResultMatch([(False,),(False,),(False,),(True,),(True,),(True,)])
     cli.execute('MERGE INTO t0 USING (SELECT 1 FROM rt1) AS mergejoined(c0) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (INTERVAL \'5\' SECOND);') \
@@ -64,6 +76,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
     cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
+    cli.execute("SELECT \"current_schema\", current_user from t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("sys","monetdb")])
+    cli.execute("SELECT \"current_schema\", current_user from rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("sys","monetdb")])
     cli.execute("SELECT sql_min(t3.c0 || t3.c0, 3) as x from t3 ORDER BY x;") \
         .assertSucceeded().assertDataResultMatch([("11",),("22",),("22",),("3",),("3",),("3",)])
     cli.execute("SELECT sql_min(rt3.c0 || rt3.c0, 3) as x from rt3 ORDER BY x;") \
@@ -76,10 +92,42 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
     cli.execute("SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('3.571'),)])
+    cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT t3.c0 FROM t3 INNER JOIN t3 myx ON t3.c0 = myx.c0 ORDER BY t3.c0;") \
+        .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
+    cli.execute("SELECT rt3.c0 FROM rt3 INNER JOIN rt3 myx ON rt3.c0 = myx.c0 ORDER BY rt3.c0;") \
+        .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
+    cli.execute("""
+    CREATE FUNCTION testremote(a int) RETURNS INT
+    BEGIN
+        DECLARE b INT, "😀" INT, res1 INT, res2 INT;
+        SET b = 2;
+        SET "😀" = 4;
+        SELECT a + b + "😀" + count(*) INTO res1 FROM t3;
+        SELECT a + b + "😀" + count(*) INTO res2 FROM rt3;
+        RETURN res1 + res2;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote(1);").assertSucceeded().assertDataResultMatch([(26,)])
+
+    # Issues related to digits and scale propagation in the sql layer
+    cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
+    cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
     cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([('69',)])
     cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([('69',)])
+
+    # Issues related to comparisons not being correctly delimited on plans, which causes ambiguity
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
     cli.execute("SELECT 1 FROM t3 WHERE (t3.c0 BETWEEN t3.c0 AND t3.c0) IS NULL;") \
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT 2 FROM rt3 WHERE (rt3.c0 BETWEEN rt3.c0 AND rt3.c0) IS NULL;") \

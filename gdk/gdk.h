@@ -2390,12 +2390,6 @@ typedef struct gdk_callback {
 	void *argv[FLEXIBLE_ARRAY_MEMBER];
 } gdk_callback;
 
-typedef struct gdk_callback_list {
-	int cnt;
-	MT_Lock lock;
-	gdk_callback *head;
-} gdk_callback_list;
-
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
 gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void

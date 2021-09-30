@@ -1,3 +1,61 @@
+* Tue Sep 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.9-20210928
+- Rebuilt.
+
+* Mon Sep 27 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- Rebuilt.
+- GH#7140: SQL Query Plan Non Optimal with View
+- GH#7162: Extend sys.var_values table
+- GH#7165: `JOINIDX: missing '.'` when running distributed join query on
+  merged remote tables
+- GH#7172: Unexpected query result with merge tables
+- GH#7173: If truncate is in transaction then after restart of MonetDB the
+  table is empty
+- GH#7178: Remote Table Throws Error - createExceptionInternal: !ERROR:
+  SQLException:RAstatement2:42000!The number of projections don't match
+  between the generated plan and the expected one: 1 != 1200
+
+* Wed Sep 22 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- gdk: Some deadlock and race condition issues were fixed.
+- gdk: Handling of the list of free bats has been improved, leading to less
+  thread contention.
+- gdk: A problem was fixed where the server wouldn't start with a message from
+  BBPcheckbats about files being too small.  The issue was not that the
+  file was too small, but that BBPcheckbats was looking at the wrong file.
+- gdk: An issue was fixed where a "short read" error was produced when memory
+  was getting tight.
+
+* Wed Sep 22 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- sql: If the server has been idle for a while with no active clients, the
+  write-ahead log is now rotated.
+- sql: A problem was fixed where files belonging to bats that had been deleted
+  internally were not cleaned up, leading to a growing database (dbfarm)
+  directory.
+- sql: A leak was fixed where extra bats were created but never cleaned up,
+  each taking up several kilobytes of memory.
+
+* Tue Aug 17 2021 Ying Zhang <y.zhang@cwi.nl> - 11.41.7-20210927
+- sql: [This feature was already released in Jul2021 (11.41.5), but the ChangeLog was missing]
+  Grant indirect privileges.  With "GRANT SELECT ON <my_view> TO
+  <another_user>"  and "GRANT EXECUTE ON FUNCTION <my_func> TO
+  <another_user>", one can grant access to "my_view" and "my_func"
+  to another user who does not have access to the underlying database
+  objects (e.g. tables, views) used in "my_view" and "my_func".  The
+  grantee will only be able to access data revealed by "my_view" or
+  conduct operations provided by "my_func".
+
+* Mon Aug 16 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- sql: Improved error reporting in COPY INTO by giving the line number
+  (starting with one) for the row in which an error was found.  In
+  particular, the sys.rejects() table now lists the line number of the
+  CSV file on which the record started in which an error was found.
+
+* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.7-20210927
+- gdk: When appending to a string bat, we made an optimization where the string
+  heap was sometimes copied completely to avoid having to insert strings
+  individually.  This copying was still done too eagerly, so now the
+  string heap is copied less frequently.  In particular, when appending
+  to an empty bat, the string heap is now not always copied whole.
+
 * Tue Aug 03 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.5-20210803
 - Rebuilt.
 - GH#7161: fix priority

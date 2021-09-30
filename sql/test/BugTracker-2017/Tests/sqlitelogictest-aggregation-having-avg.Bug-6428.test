@@ -13,7 +13,7 @@ project (
 | | group by (
 | | | group by (
 | | | | select (
-| | | | | table("sys"."tab0") [ "tab0"."col0" as "cor0"."col0", "tab0"."col1" as "cor0"."col1" ] COUNT 
+| | | | | table("sys"."tab0") [ "tab0"."col0" as "cor0"."col0", "tab0"."col1" as "cor0"."col1" ]
 | | | | ) [ "cor0"."col0" * = int "NULL" ]
 | | | ) [ "cor0"."col1", "cor0"."col0" ] [ "cor0"."col1", "cor0"."col0" ]
 | | ) [ "cor0"."col1", "cor0"."col0" ] [ "cor0"."col1", "cor0"."col0", "sys"."avg" no nil ("cor0"."col0") as "%1"."%1" ]
