@@ -149,7 +149,16 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
-
+				} else if (getModuleId(p) == groupRef &&
+						(getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
+						 getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)) {
+					/* group.group[done](col) | group.subgroup[done](col, grp) with col = dict.decompress(o,u)
+					 * v1 = group.group[done](o) | group.subgroup[done](o, grp) */
+					InstrPtr r = copyInstruction(p);
+					getArg(r, j) = varisdict[k];
+					pushInstruction(mb,r);
+					done = 1;
+					break;
 				} else {
 					/* need to decompress */
 					int tpe = getArgType(mb, p, j);
