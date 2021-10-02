@@ -5170,6 +5170,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
  pattern("dict", "compress", DICTcompress, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
  pattern("dict", "decompress", DICTdecompress, false, "decompress a dictionary compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), batargany("u", 1))),
+ pattern("dict", "convert", DICTconvert, false, "convert candidate list into compressed offsets", args(1, 2, batargany("", 1), batargany("o", 0))),
  command("calc", "dec_round", bte_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",bte),arg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",bte),batarg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,4, batarg("",bte),batarg("v",bte),arg("r",bte),batarg("s",oid))),
