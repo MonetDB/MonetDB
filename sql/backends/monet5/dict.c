@@ -138,7 +138,7 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter ui = bat_iterator_nolock(u);
 	//if (ATOMvarsized(u->ttype)) {
 	if (o->ttype == TYPE_bte) {
-		bte *op = Tloc(o, 0);
+		unsigned char *op = Tloc(o, 0);
 		BATloop(o, p, q) {
 			BUN up = op[p];
 	        if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
@@ -150,7 +150,7 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else if (o->ttype == TYPE_sht) {
-		sht *op = Tloc(o, 0);
+		unsigned short *op = Tloc(o, 0);
 		BATloop(o, p, q) {
 			BUN up = op[p];
 	        if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
