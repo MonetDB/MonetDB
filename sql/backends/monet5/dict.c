@@ -128,7 +128,7 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *u = BATdescriptor(U);
 	if (!o || !u) {
 		bat_destroy(o);
-		bat_destroy(o);
+		bat_destroy(u);
 		throw(SQL, "sql.dict_compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAT *b = COLnew(0, u->ttype, BATcount(o), TRANSIENT);
@@ -174,5 +174,45 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*r = b->batCacheid);
 	bat_destroy(o);
 	bat_destroy(u);
+	return MAL_SUCCEED;
+}
+
+str
+DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	/* convert candidates into bte,sht,int offsets */
+	(void)cntxt;
+	bat *r = getArgReference_bat(stk, pci, 0);
+	bat O = *getArgReference_bat(stk, pci, 1);
+	int rt = getBatType(getArgType(mb, pci, 0));
+
+	BAT *o = BATdescriptor(O);
+	if (!o)
+		throw(SQL, "sql.dict_compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	BAT *b = COLnew(0, rt, BATcount(o), TRANSIENT);
+	BATiter oi = bat_iterator(o);
+
+	BUN p, q;
+	if (rt == TYPE_bte) {
+		unsigned char *rp = Tloc(b, 0);
+		oid *op = Tloc(o, 0);
+		BATloop(o, p, q) {
+			rp[p] = op[p];
+		}
+	} else if (rt == TYPE_sht) {
+		unsigned short *rp = Tloc(b, 0);
+		oid *op = Tloc(o, 0);
+		BATloop(o, p, q) {
+			rp[p] = op[p];
+		}
+	} else {
+		assert(0);
+	}
+	bat_iterator_end(&oi);
+	BATsetcount(b, BATcount(o));
+	/* TODO correct props and set min/max offset */
+	BBPkeepref(*r = b->batCacheid);
+	bat_destroy(o);
 	return MAL_SUCCEED;
 }

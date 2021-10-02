@@ -101,10 +101,10 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
-				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef) {
+				} else if (isSelect(p)) {
 					/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
 					 * tp = select(u, nil, l, h, ...)
-					 * tp2 = bte/sht/int(tp)
+					 * tp2 = batcalc.bte/sht/int(tp)
 					 * pos = intersect(o, tp2, cand, nil) */
 
 					int cand = getArg(p, j+1);
@@ -115,10 +115,9 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 
 					int tpe = getVarType(mb, varisdict[k]);
-					InstrPtr s = newInstructionArgs(mb, batcalcRef, putName(ATOMname(getBatType(tpe))), 3);
+					InstrPtr s = newInstructionArgs(mb, dictRef, putName("convert"), 3);
 					getArg(s, 0) = newTmpVariable(mb, tpe);
 					addArgument(mb, s, getArg(r, 0));
-					s = pushNil(mb, s, TYPE_bat);
 					pushInstruction(mb,s);
 
 					InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 5);
