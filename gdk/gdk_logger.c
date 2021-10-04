@@ -375,7 +375,7 @@ string_reader(logger *lg, BAT *b, lng nr)
 }
 
 static log_return
-log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
+log_read_updates(logger *lg, trans *tr, logformat *l, log_id id)
 {
 	log_return res = LOG_OK;
 	lng nr, pnr;
@@ -396,6 +396,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		BAT *uid = NULL;
 		BAT *r = NULL;
 		void *(*rt) (ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
+		lng offset;
 
 		assert(nr <= (lng) BUN_MAX);
 		if (!lg->flushing && l->flag == LOG_UPDATE) {
@@ -502,6 +503,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		} else {
 			void *(*rh) (ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
 			void *hv = ATOMnil(TYPE_oid);
+			offset = 0;
 
 			if (hv == NULL)
 				res = LOG_ERR;
@@ -1163,7 +1165,7 @@ logger_read_transaction(logger *lg)
 			if (tr == NULL)
 				err = LOG_EOF;
 			else
-				err = log_read_updates(lg, tr, &l, l.id, 0);
+				err = log_read_updates(lg, tr, &l, l.id);
 			break;
 		case LOG_CREATE:
 			if (tr == NULL)
