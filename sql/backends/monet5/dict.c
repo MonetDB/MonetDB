@@ -25,11 +25,14 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tr = be->mvc->session->tr;
 
 	sql_schema *s = find_sql_schema(tr, sname);
-	assert(s);
+	if (!s)
+		throw(SQL, "sql.dict_compress", SQLSTATE(3F000) "schema '%s' unknown", sname);
 	sql_table *t = find_sql_table(tr, s, tname);
-	assert(t);
+	if (!t)
+		throw(SQL, "sql.dict_compress", SQLSTATE(3F000) "table '%s.%s' unknown", sname, tname);
 	sql_column *c = find_sql_column(t, cname);
-	assert(c);
+	if (!c)
+		throw(SQL, "sql.dict_compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
 
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY);
@@ -61,11 +64,12 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(uv);
 	u = uu;
 
-	BAT *o = COLnew(0, tt, BATcount(b), PERSISTENT);
+	BAT *o = COLnew(b->hseqbase, tt, BATcount(b), PERSISTENT);
 	if (!o || BAThash(u) != GDK_SUCCEED) {
 		bat_destroy(u);
 		throw(SQL, "sql.dict_compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+
 	BUN p, q;
 	BATiter bi = bat_iterator(b);
 	BATiter ui = bat_iterator_nolock(u);
@@ -83,8 +87,10 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o->tnil = b->tnil;
 		o->tnonil = b->tnonil;
 		o->tkey = b->tkey;
-		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || store->storage_api.col_dict(tr, c, o, u) != LOG_OK)
+		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
+			bat_iterator_end(&bi);
 			throw(SQL, "sql.dict_compress", SQLSTATE(HY013) "alter_storage failed");
+		}
 	} else if (tt == TYPE_sht) {
 		sht *op = (sht*)Tloc(o, 0);
 		BATloop(b, p, q) {
@@ -99,8 +105,10 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o->tnil = b->tnil;
 		o->tnonil = b->tnonil;
 		o->tkey = b->tkey;
-		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || store->storage_api.col_dict(tr, c, o, u) != LOG_OK)
+		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
+			bat_iterator_end(&bi);
 			throw(SQL, "sql.dict_compress", SQLSTATE(HY013) "alter_storage failed");
+		}
 	} else {
 		printf("implement int cases \n");
 	}
@@ -131,12 +139,11 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(u);
 		throw(SQL, "sql.dict_compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BAT *b = COLnew(0, u->ttype, BATcount(o), TRANSIENT);
 
+	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), TRANSIENT);
 	BUN p, q;
 	BATiter oi = bat_iterator(o);
 	BATiter ui = bat_iterator_nolock(u);
-	//if (ATOMvarsized(u->ttype)) {
 	if (o->ttype == TYPE_bte) {
 		unsigned char *op = Tloc(o, 0);
 		BATloop(o, p, q) {
@@ -190,10 +197,10 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!o)
 		throw(SQL, "sql.dict_compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	BAT *b = COLnew(0, rt, BATcount(o), TRANSIENT);
-	BATiter oi = bat_iterator(o);
+	BAT *b = COLnew(o->hseqbase, rt, BATcount(o), TRANSIENT);
 
 	BUN p, q;
+	BATiter oi = bat_iterator(o);
 	if (rt == TYPE_bte) {
 		unsigned char *rp = Tloc(b, 0);
 		oid *op = Tloc(o, 0);
