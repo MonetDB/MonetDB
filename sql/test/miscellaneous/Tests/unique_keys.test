@@ -53,6 +53,47 @@ project (
 ) [ "y"."y" ]
 
 statement ok
+start transaction
+
+statement ok
+create table othertable (a int, b int, c int, d int)
+
+statement ok rowcount 3
+insert into othertable values (1,1,1,1),(2,2,2,2),(3,3,3,3)
+
+# here 'othertable.a = 2' can be pushed up
+query T nosort
+plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 2
+----
+project (
+| select (
+| | join (
+| | | select (
+| | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
+| | | ) [ "testkeys"."a" NOT NULL HASHCOL  = int "1" ],
+| | | table("sys"."othertable") [ "othertable"."a" ]
+| | ) [ "testkeys"."a" NOT NULL HASHCOL  = "othertable"."a" ]
+| ) [ "othertable"."a" = int "2" ]
+) [ "othertable"."a" ]
+
+# here 'othertable.a between 2 and 5' can be pushed up too
+plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b = 1 and othertable.a between 2 and 5
+----
+project (
+| select (
+| | join (
+| | | select (
+| | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
+| | | ) [ "testkeys"."b" HASHCOL  = int "1" ],
+| | | table("sys"."othertable") [ "othertable"."a" ]
+| | ) [ "testkeys"."a" NOT NULL HASHCOL  = "othertable"."a" ]
+| ) [ int "2" <= "othertable"."a" <= int "5" BETWEEN  ]
+) [ "testkeys"."a" NOT NULL HASHCOL  ]
+
+statement ok
+rollback
+
+statement ok
 alter table testkeys drop constraint testkeys_a_pkey
 
 statement ok
