@@ -7537,11 +7537,10 @@ static mel_func geom_init_funcs[] = {
  command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
  command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
  command("geom", "CoversGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
-
- //TODO: Change name to Collect
- command("geom", "Union", wkbCollectAggrGrouped, false, "TODO", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
- command("geom", "subUnion", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
- command("geom", "subUnion", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
+ command("geom", "Collect", wkbCollectAggrGrouped, false, "TODO", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
+ command("geom", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+ command("geom", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
+ 
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1,3, arg("",str),arg("flags",int),arg("format",int))),
