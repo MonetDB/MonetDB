@@ -88,8 +88,8 @@ str wkbIntersectsGeographic(bit* out, wkb** a, wkb** b);
 str wkbCoversGeographic(bit* out, wkb** a, wkb** b);
 
 str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
-str wkbCollectAggrSubGrouped(bat* out, const bat* bid, const bat* gid, const bat* eid, const bit* skip_nils);
-str wkbCollectAggrGrouped(bat* out, const bat* bid, const bat* gid, const bat* eid);
+str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str wkbCollectAggr (wkb **out, const bat *bid);
 
 /** 
 * 
