@@ -54,10 +54,9 @@ command DistanceGeographic(a:wkb, b:wkb) :dbl address wkbDistanceGeographic
 command DWithinGeographic(a:wkb, b:wkb, d:dbl) :bit address wkbDWithinGeographic
 command IntersectsGeographic(a:wkb, b:wkb) :bit address wkbIntersectsGeographic
 command CoversGeographic(a:wkb, b:wkb) :bit address wkbCoversGeographic
-# TODO: Change name to Collect
-command Union(val:bat[:wkb], g:bat[:oid], e:bat[:any_1]) :bat[:wkb] address wkbCollectAggrGrouped
-command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:oid], skip_nils:bit) :bat[:wkb] address wkbCollectAggrSubGrouped
-command subUnion(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], s:bat[:oid], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbCollectAggrSubGroupedCand
+command Collect(val:bat[:wkb], g:bat[:oid], e:bat[:any_1]) :bat[:wkb] address wkbCollectAggrGrouped
+command subCollect(val:bat[:wkb], g:bat[:oid], e:bat[:oid], skip_nils:bit) :bat[:wkb] address wkbCollectAggrSubGrouped
+command subCollect(val:bat[:wkb], g:bat[:oid], e:bat[:any_1], s:bat[:oid], skip_nils:bit, abort_on_error:bit) :bat[:wkb] address wkbCollectAggrSubGroupedCand
 
 
 command hasZ(flags:int) :int address geoHasZ
