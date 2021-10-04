@@ -282,7 +282,7 @@ log_read_seq(logger *lg, logformat *l)
 	BUN p;
 
 	assert(!lg->inmemory);
-	if (!mnstr_readLng(lg->input_log, &val)) {
+	if (mnstr_readLng(lg->input_log, &val) != 1) {
 		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
@@ -386,7 +386,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_updates %d %s\n", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
 
-	if (!mnstr_readLng(lg->input_log, &nr) ||
+	if (mnstr_readLng(lg->input_log, &nr) != 1 ||
 	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1)
 		return LOG_ERR;
 
@@ -414,7 +414,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		}
 
 		if (l->flag == LOG_UPDATE_CONST) {
-	    		if (!mnstr_readLng(lg->input_log, &offset)) {
+	    		if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
@@ -432,7 +432,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_BULK) {
-	    		if (!mnstr_readLng(lg->input_log, &offset)) {
+	    		if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
