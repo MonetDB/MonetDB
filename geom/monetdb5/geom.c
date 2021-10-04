@@ -921,10 +921,11 @@ GEOSGeom_getCollectionType (int GEOSGeom_type) {
 
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
 //TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
+//TODO The number of candidates is getting wrong here
 str 
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	BAT *b = NULL, *g = NULL, *e = NULL, *s = NULL, *out = NULL;
+	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
 	BAT *sortedgroups, *sortedorder, *sortedinput;
 	BATiter bi;
 	const oid *gids = NULL;
@@ -941,12 +942,14 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	wkb **unions = NULL;
 	GEOSGeom *unionGroup = NULL, collection;
 
+	//Not using these variables
 	(void)skip_nils;
 	(void)eid;
-	(void)sid;
 
-	//Get the BAT descriptors for the value and group bat
-	if ((b = BATdescriptor(*bid)) == NULL || (gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL)) {
+	//Get the BAT descriptors for the value, group and candidate bats
+	if ((b = BATdescriptor(*bid)) == NULL || 
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
 		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -955,7 +958,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
 		goto free;
 	}
-		
+	
 	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
 		sortedinput = BATproject(sortedorder,b);
@@ -964,6 +967,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		b = sortedinput;
 		g = sortedgroups;
 		BBPunfix(sortedorder->batCacheid);
+		
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -971,14 +975,8 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	}
 
 	//Fill in the values of the group aggregate operation
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		msg = createException(MAL, "geom.Collect", "%s", err);
-		goto free;
-	}
-
-	if (ngrp == 0) {
-		msg = createException(MAL, "geom.Collect", "Number of groups is equal to 0");
-		//TODO Return empty BAT?
 		goto free;
 	}
 
@@ -1025,7 +1023,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 				//Save collection to unions array as wkb
 				unions[lastGrp] = geos2wkb(collection);
 
-				//Frees for the previous group
+				//TODO Frees for the previous group (am I missing the GEOSGeom_destroy call for unionGroup[i])?
 				GEOSGeom_destroy(collection);
 				GDKfree(unionGroup);
 
@@ -1086,12 +1084,16 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 free:
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
@@ -1101,10 +1103,60 @@ wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *ei
 	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
 }
 
-str 
-wkbCollectAggrGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid)
-{
-	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, &(bit){1});
+//TODO Use this for the grouped version, just need to separate the groups and then call this one
+str
+wkbCollectAggr (wkb **out, const bat *bid) {
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL;
+	GEOSGeom *unionGroup = NULL, collection;
+	int geomCollectionType = -1;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		if (b)
+			BBPunfix(b->batCacheid);
+		return msg;
+	}
+
+	BUN count = BATcount(b);
+
+	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * count)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(b->batCacheid);
+		return msg;
+	}
+
+	BATiter bi = bat_iterator(b);
+	for (BUN i = 0; i < count; i++) {
+		oid p = i + b->hseqbase;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		unionGroup[i] = wkb2geos(inWKB);
+
+		//Set collection type on first geometry
+		if (geomCollectionType == -1)
+			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i]));
+		//Then, check if we need to change it a Geometry collection (if the current geometry is different from the previous type)
+		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i])) != geomCollectionType)
+			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
+	}
+	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) count);
+	//Result
+	(*out) = geos2wkb(collection);
+	if (*out == NULL)
+		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
+
+	//Frees
+	bat_iterator_end(&bi);
+	if (unionGroup) {
+		for (BUN i = 0; i < count; i++)
+			if (unionGroup[i])
+				GEOSGeom_destroy(unionGroup[i]);
+		GDKfree(unionGroup);
+	}
+	//TODO This free is causing issues, is it not necessary?
+	//GEOSGeom_destroy(collection);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 
 /** 
@@ -7537,9 +7589,9 @@ static mel_func geom_init_funcs[] = {
  command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
  command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
  command("geom", "CoversGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
- command("geom", "Collect", wkbCollectAggrGrouped, false, "TODO", args(1, 4, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1))),
- command("geom", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
- command("geom", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 7, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit), arg("abort_on_error", bit))),
+ command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
+ command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+ command("aggr", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
  
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
