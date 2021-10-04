@@ -876,7 +876,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	BAT* order		= NULL;
 	node *n;
 
-	const int nr_columns = b->client->protocol == PROTOCOL_COLUMNAR? 7 : 6;
+	const int nr_columns = (b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) ? 7 : 6;
 
 	int len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
 	int len2 = 1, len3 = 1;
@@ -1011,7 +1011,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		goto wrapup;
 	}
 
-	if (b->client->protocol == PROTOCOL_COLUMNAR && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
+	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
 		error = -1;
 
 	wrapup:
