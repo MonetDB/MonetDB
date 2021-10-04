@@ -133,6 +133,20 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 					done = 1;
 					break;
+				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
+						&& varisdict[getArg(p, j+1)] && vardictvalue[k] == vardictvalue[getArg(p, j+1)]) {
+					/* (r1, r2) = join(col1, col2, cand1, cand2, ...) with
+					 *		col1 = dict.decompress(o1,u1), col2 = dict.decompress(o2,u2)
+					 *		iff u1 == u2
+					 *			(r1, r2) = join(o1, o2, cand1, cand2, ...)
+					 *		else go for decompress */
+					int l = getArg(p, j+1);
+					InstrPtr r = copyInstruction(p);
+					getArg(r, j+0) = varisdict[k];
+					getArg(r, j+1) = varisdict[l];
+					pushInstruction(mb,r);
+					done = 1;
+					break;
 				} else if ((isMapOp(p) || isMap2Op(p)) && allConstExcept(mb, p, j)) {
 					/* batcalc.-(1, col) with col = dict.decompress(o,u)
 					 * v1 = batcalc.-(1, u)
