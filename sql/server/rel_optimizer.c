@@ -9664,7 +9664,7 @@ optimize_rel(mvc *sql, sql_rel *rel, visitor *v, global_props *gp)
 	if (gp->cnt[op_topn] || gp->cnt[op_sample])
 		rel = rel_visitor_topdown(v, rel, &rel_push_topn_and_sample_down);
 
-	if (gp->needs_distinct && gp->cnt[op_project])
+	if (level == 0 && gp->needs_distinct && gp->cnt[op_project])
 		rel = rel_visitor_bottomup(v, rel, &rel_distinct_project2groupby);
 
 	if (gp->has_mergetable)
@@ -9745,7 +9745,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt
 	for( ;rel && level < 20 && v.changes; level++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0},};
-		rel_properties(sql, &gp, rel); /* colect relational tree properties */
+		rel_properties(sql, &gp, rel); /* collect relational tree properties */
 		rel = optimize_rel(sql, rel, &v, &gp);
 	}
 #ifndef NDEBUG
