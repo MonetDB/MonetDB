@@ -4737,6 +4737,64 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static bool
+point_select_on_unique_column(sql_rel *rel)
+{
+	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		for (node *n = rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data, *el = e->l, *er = e->r, *found = NULL;
+
+			if (is_compare(e->type) && e->flag == cmp_equal) {
+				if (is_numeric_upcast(el))
+					el = el->l;
+				if (is_alias(el->type) && exp_is_atom(er) && (found = rel_find_exp(rel->l, el)) &&
+					is_unique(found) && (!is_semantics(e) || !has_nil(el) || !has_nil(er)))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+/*
+ * A point select on an unique column reduces the number of rows to 1. If the same select is under a
+ * join, the opposite side's select can be pushed above the join.
+ */
+static sql_rel *
+rel_push_select_up(visitor *v, sql_rel *rel)
+{
+	if ((is_join(rel->op) || is_semi(rel->op)) && !rel_is_ref(rel)) {
+		sql_rel *l = rel->l, *r = rel->r;
+		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l),
+			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_semi(rel->op);
+
+		if (can_pushup_left || can_pushup_right) {
+			if (can_pushup_left)
+				can_pushup_left = point_select_on_unique_column(r);
+			if (can_pushup_right)
+				can_pushup_right = point_select_on_unique_column(l);
+
+			/* if both selects retrieve one row each, it's not worth it to push both up */
+			if (can_pushup_left && !can_pushup_right) {
+				sql_rel *ll = l->l;
+				rel->l = ll;
+				l->l = rel;
+				rel = l;
+				assert(is_select(rel->op));
+				v->changes++;
+			} else if (!can_pushup_left && can_pushup_right) {
+				sql_rel *rl = r->l;
+				rel->r = rl;
+				r->l = rel;
+				rel = r;
+				assert(is_select(rel->op));
+				v->changes++;
+			}
+		}
+	}
+	return rel;
+}
+
 /*
  * Push {semi}joins down, pushes the joins through group by expressions.
  * When the join is on the group by columns, we can push the joins left
@@ -9751,5 +9809,10 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
+	/* Run the following optimizers only once after the others run to avoid an infinite optimization loop */
+	gp = (global_props) {.cnt = {0},};
+	rel_properties(sql, &gp, rel); /* collect relational tree properties */
+	if ((gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_select])
+		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
 	return rel;
 }
