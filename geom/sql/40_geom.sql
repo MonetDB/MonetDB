@@ -4592,4 +4592,4 @@ GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
 GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;
 
-CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."Collect";
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
