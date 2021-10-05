@@ -67,14 +67,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute('SELECT 3 > (rt2.c0 ^ CAST(2 AS TINYINT)) * rt2.c0 FROM rt2;') \
         .assertSucceeded().assertDataResultMatch([(False,),(True,),(False,),(False,),(False,),(False,),(True,),(False,),(False,),(False,)])
-    cli.execute("SELECT r'\"' from t3 where t3.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([("\"",)])
-    cli.execute("SELECT r'\"' from rt3 where rt3.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([("\"",)])
-    cli.execute("SELECT r'\\' from t3 where t3.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([("\\",)])
-    cli.execute("SELECT r'\\' from rt3 where rt3.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([("\\",)])
+    cli.execute("SELECT r'\"', r'\\', ' ', '' as \"'\", '''' as \" \" from t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("\"","\\"," ","","'")])
+    cli.execute("SELECT r'\"', r'\\', ' ', '' as \"'\", '''' as \" \" from rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("\"","\\"," ","","'")])
     cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
     cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from rt3 where rt3.c0 = 1;") \
