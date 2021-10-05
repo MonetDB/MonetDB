@@ -204,6 +204,14 @@ with SQLTestCase() as cli:
     cli.execute("create view v0(vc0, vc1) as (values (interval '2' second, 0.5));").assertSucceeded()
     cli.execute("select 1 from rt1, v0, rt3 where \"right_shift_assign\"(inet '150.117.219.77', inet '1.188.46.21/12');") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("select 1 from t1, v0, t3 where \"right_shift_assign\"(inet '150.117.219.77', inet '1.188.46.21/12');") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("create view v1(vc0) as (select greatest(sql_sub(time '01:00:00', interval '0' second), time '01:00:00') from t3 where false);") \
+        .assertSucceeded()
+    cli.execute("select 1 from (select distinct 1 from v1, rt3) as v1(vc1) where sql_min(true, true);") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("select 1 from (select distinct 1 from v1, t3) as v1(vc1) where sql_min(true, true);") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
