@@ -934,13 +934,28 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		atom *a = atom_general(sql->sa, tpe, st);
 		if (tpe->type->eclass == EC_NUM) { /* needs to set the number of digits */
 #ifdef HAVE_HGE
-			hge value = a->data.val.hval;
+			hge value = 0;
 			const hge one = 1;
 #else
-			lng value = a->data.val.lval;
+			lng value = 0;
 			const lng one = 1;
 #endif
 			int bits = (int) digits2bits((unsigned) strlen(st)), obits = bits;
+
+#ifdef HAVE_HGE
+			if (a->data.vtype == TYPE_hge) {
+				value = a->data.val.hval;
+			} else
+#endif
+			if (a->data.vtype == TYPE_lng) {
+				value = a->data.val.lval;
+			} else if (a->data.vtype == TYPE_int) {
+				value = a->data.val.ival;
+			} else if (a->data.vtype == TYPE_sht) {
+				value = a->data.val.shval;
+			} else {
+				value = a->data.val.btval;
+			}
 
 			while (bits > 0 && (bits == sizeof(value) * 8 || (one << (bits - 1)) > value))
 				bits--;
@@ -1345,6 +1360,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		return NULL;
 	}
 
+	/* [ ASC ] */
+	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
+		(*pos)+= (int) strlen("ASC");
+		skipWS(r, pos);
+		set_ascending(exp);
+	}
+	/* [ NULLS LAST ] */
+	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
+		(*pos)+= (int) strlen("NULLS LAST");
+		skipWS(r, pos);
+		set_nulls_last(exp);
+	}
 	/* [ NOT NULL ] */
 	if (strncmp(r+*pos, "NOT NULL",  strlen("NOT NULL")) == 0) {
 		(*pos)+= (int) strlen("NOT NULL");
@@ -1470,19 +1497,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					set_symmetric(exp);
 			}
 		}
-	}
-
-	/* [ ASC ] */
-	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
-		(*pos)+= (int) strlen("ASC");
-		skipWS(r, pos);
-		set_ascending(exp);
-	}
-	/* [ NULLS LAST ] */
-	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
-		(*pos)+= (int) strlen("NULLS LAST");
-		skipWS(r, pos);
-		set_nulls_last(exp);
 	}
 
 	/* as alias */
