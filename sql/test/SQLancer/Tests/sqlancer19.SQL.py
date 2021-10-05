@@ -197,6 +197,9 @@ with SQLTestCase() as cli:
     """).assertSucceeded()
     cli.execute("SELECT testremote7(2), testremote7(3);") \
         .assertSucceeded().assertDataResultMatch([(7,16)])
+    cli.execute("create view v0(vc0, vc1) as (values (interval '2' second, 0.5));").assertSucceeded()
+    cli.execute("select 1 from rt1, v0, rt3 where \"right_shift_assign\"(inet '150.117.219.77', inet '1.188.46.21/12');") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
