@@ -138,12 +138,32 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* (r1, r2) = join(col1, col2, cand1, cand2, ...) with
 					 *		col1 = dict.decompress(o1,u1), col2 = dict.decompress(o2,u2)
 					 *		iff u1 == u2
-					 *			(r1, r2) = join(o1, o2, cand1, cand2, ...)
-					 *		else go for decompress */
+					 *			(r1, r2) = algebra.join(o1, o2, cand1, cand2, ...) */
 					int l = getArg(p, j+1);
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j+0) = varisdict[k];
 					getArg(r, j+1) = varisdict[l];
+					pushInstruction(mb,r);
+					done = 1;
+					break;
+				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
+						&& varisdict[getArg(p, j+1)] && vardictvalue[k] != vardictvalue[getArg(p, j+1)]) {
+					/* (r1, r2) = join(col1, col2, cand1, cand2, ...) with
+					 *		col1 = dict.decompress(o1,u1), col2 = dict.decompress(o2,u2)
+					 * (r1, r2) = dict.join(o1, u1, o2, u2, cand1, cand2, ...) */
+					int l = getArg(p, j+1);
+					InstrPtr r = newInstructionArgs(mb, dictRef, joinRef, 10);
+					assert(p->argc==8);
+					getArg(r, 0) = getArg(p, 0);
+					r = pushReturn(mb, r, getArg(p, 1));
+					r = addArgument(mb, r, varisdict[k]);
+					r = addArgument(mb, r, vardictvalue[k]);
+					r = addArgument(mb, r, varisdict[l]);
+					r = addArgument(mb, r, vardictvalue[l]);
+					r = addArgument(mb, r, getArg(p, 4));
+					r = addArgument(mb, r, getArg(p, 5));
+					r = addArgument(mb, r, getArg(p, 6));
+					r = addArgument(mb, r, getArg(p, 7));
 					pushInstruction(mb,r);
 					done = 1;
 					break;
