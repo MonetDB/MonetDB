@@ -23,13 +23,16 @@ with SQLTestCase() as cli:
 
     CREATE TABLE "t3" ("c0" BIGINT,"c1" INTERVAL MONTH);
     INSERT INTO "t3" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH);
+    CREATE TABLE "t4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH);
+    INSERT INTO "t4" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(10, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(11, INTERVAL '1' MONTH);
     COMMIT;
 
     START TRANSACTION;
     CREATE REMOTE TABLE "rt1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT) ON 'mapi:monetdb://localhost:%s/%s/sys/t1';
     CREATE REMOTE TABLE "rt2" ("c0" TINYINT NOT NULL,"c2" DATE) ON 'mapi:monetdb://localhost:%s/%s/sys/t2';
     CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t3';
-    COMMIT;""" % (port, db, port, db, port, db)).assertSucceeded()
+    CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t4';
+    COMMIT;""" % (port, db, port, db, port, db, port, db)).assertSucceeded()
 
     cli.execute("START TRANSACTION;")
     cli.execute('SELECT json."integer"(JSON \'1\') FROM t3;') \
@@ -100,6 +103,22 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
     cli.execute("SELECT rt3.c0 FROM rt3 INNER JOIN rt3 myx ON rt3.c0 = myx.c0 ORDER BY rt3.c0;") \
         .assertSucceeded().assertDataResultMatch([(1,),(2,),(2,),(2,),(2,),(5,),(5,),(5,),(5,),(7,)])
+    cli.execute("SELECT t4.c0 FROM t4 ORDER BY t4.c0 DESC NULLS FIRST;") \
+        .assertSucceeded().assertDataResultMatch([(11,),(10,),(7,),(5,),(2,),(1,)])
+    cli.execute("SELECT rt4.c0 FROM rt4 ORDER BY rt4.c0 DESC NULLS FIRST;") \
+        .assertSucceeded().assertDataResultMatch([(11,),(10,),(7,),(5,),(2,),(1,)])
+    cli.execute("SELECT t4.c1 FROM t4 ORDER BY t4.c1 ASC NULLS LAST;") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(6,),(9,),(None,),(None,)])
+    cli.execute("SELECT rt4.c1 FROM rt4 ORDER BY rt4.c1 ASC NULLS LAST;") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(6,),(9,),(None,),(None,)])
+    cli.execute("SELECT t4.c1 + INTERVAL '2' MONTH AS myx FROM t4 ORDER BY myx ASC NULLS LAST;") \
+        .assertSucceeded().assertDataResultMatch([(3,),(3,),(8,),(11,),(None,),(None,)])
+    cli.execute("SELECT rt4.c1 + INTERVAL '2' MONTH AS myx FROM rt4 ORDER BY myx ASC NULLS LAST;") \
+        .assertSucceeded().assertDataResultMatch([(3,),(3,),(8,),(11,),(None,),(None,)])
+    cli.execute("SELECT t4.c1 + INTERVAL '5' MONTH AS myx FROM t4 GROUP BY myx ORDER BY myx;") \
+        .assertSucceeded().assertDataResultMatch([(None,),(6,),(11,),(14,)])
+    cli.execute("SELECT rt4.c1 + INTERVAL '5' MONTH AS myx FROM rt4 GROUP BY myx ORDER BY myx;") \
+        .assertSucceeded().assertDataResultMatch([(None,),(6,),(11,),(14,)])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN
@@ -111,8 +130,77 @@ with SQLTestCase() as cli:
         RETURN res1 + res2;
     END;
     """).assertSucceeded()
-    cli.execute("SELECT testremote(1);").assertSucceeded().assertDataResultMatch([(26,)])
-
+    cli.execute("SELECT testremote(1);") \
+       .assertSucceeded().assertDataResultMatch([(26,)])
+    cli.execute("""
+    CREATE FUNCTION testremote2(a int) RETURNS INT
+    BEGIN
+        DECLARE b INT, res INT;
+        SET b = 2;
+        IF a = 1 THEN
+            DECLARE b INT;
+            SET b = 3;
+            SELECT b + count(*) INTO res FROM rt3;
+        ELSE
+            IF a = 2 THEN
+                SELECT b + count(*) INTO res FROM rt3;
+            ELSE
+                DECLARE c INT;
+                SET c = 5;
+                SELECT c + b + count(*) INTO res FROM rt3;
+            END IF;
+        END IF;
+        RETURN res;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote2(1), testremote2(2), testremote2(3);") \
+        .assertSucceeded().assertDataResultMatch([(9,8,13)])
+    cli.execute("""
+    CREATE FUNCTION testremote3(\" ugh \"\" _ , !😂?, \" INT) RETURNS INT
+    BEGIN
+        DECLARE \" \" INT,\"\"\"\" INT, \"\\\" INT, res INT;
+        SET \" \" = 2;
+        SET \"\"\"\" = 4;
+        SET \"\\\" = 10;
+        SELECT \" \" + \"\"\"\" + \"\\\" + count(*) + \" ugh \"\" _ , !😂?, \"
+                + CASE \"current_user\" WHEN 'monetdb' THEN 7 ELSE 7 END INTO res FROM rt3;
+        RETURN res;
+    END;
+    """).assertSucceeded()
+    cli.execute("""
+    CREATE FUNCTION testremote4(a UUID, b JSON, c INT) RETURNS INT
+    BEGIN
+        RETURN SELECT (CASE a WHEN UUID '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d' THEN 1 END) +
+            (CASE b WHEN JSON '\"\"' THEN 2 END) + (CASE c WHEN 3 THEN 3 END) + count(*) FROM rt3;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote3(1), testremote4(UUID '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', JSON '\"\"', 3);") \
+        .assertSucceeded().assertDataResultMatch([(30,12)])
+    cli.execute("""
+    CREATE FUNCTION testremote5(a INET, b JSON, c DATE) RETURNS INT
+    BEGIN
+        RETURN SELECT (CASE a WHEN INET '192.168.1.0/26' THEN 1 END) +
+            (CASE b WHEN JSON '[1]' THEN 2 END) + (CASE c WHEN DATE '2010-01-01' THEN 3 END) + count(*) FROM rt3;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote5(INET '192.168.1.0/26', JSON '[1]', DATE '2010-01-01'), testremote5(NULL, NULL, NULL);") \
+        .assertSucceeded().assertDataResultMatch([(12,None)])
+    cli.execute("""
+    CREATE FUNCTION testremote6(a BLOB) RETURNS INT
+    BEGIN
+        RETURN SELECT (CASE a WHEN BLOB 'AABB' THEN 1 ELSE 10 END) + count(*) FROM rt3;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote6(BLOB 'AABB'), testremote6(BLOB 'CCDD'), testremote6(NULL);") \
+        .assertSucceeded().assertDataResultMatch([(7,16,16)])
+    cli.execute("""
+    CREATE FUNCTION testremote7("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀" INT) RETURNS INT
+    BEGIN
+        RETURN SELECT (CASE "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀" WHEN 2 THEN 1 ELSE 10 END) + count(*) FROM rt3;
+    END;
+    """).assertSucceeded()
+    cli.execute("SELECT testremote7(2), testremote7(3);") \
+        .assertSucceeded().assertDataResultMatch([(7,16)])
     # Issues related to digits and scale propagation in the sql layer
     cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
@@ -139,8 +227,10 @@ with SQLTestCase() as cli:
     DROP TABLE rt1;
     DROP TABLE rt2;
     DROP TABLE rt3;
+    DROP TABLE rt4;
     DROP TABLE t0;
     DROP TABLE t1;
     DROP TABLE t2;
     DROP TABLE t3;
+    DROP TABLE t4;
     COMMIT;""").assertSucceeded()
