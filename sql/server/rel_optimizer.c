@@ -5504,8 +5504,10 @@ static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
 {
 	/* first remove distinct if already unique */
-	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps))
-		set_nodistinct(rel);
+	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps)) {
+ 		set_nodistinct(rel);
+		v->changes++;
+	}
 
 	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
 		int need_distinct = need_distinct(rel);
@@ -5955,8 +5957,10 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 
 			if (exp_aggr_is_count(e) && need_distinct(e)) {
 				/* if count over unique values (ukey/pkey) */
-				if (e->l && exps_unique(v->sql, rel, e->l))
+				if (e->l && exps_unique(v->sql, rel, e->l)) {
 					set_nodistinct(e);
+					v->changes++;
+				}
 			}
 		}
 	}
