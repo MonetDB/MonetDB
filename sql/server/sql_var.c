@@ -49,6 +49,9 @@ init_global_variables(mvc *sql)
 
 	if (!(sql->global_vars = list_create(destroy_sql_var)))
 		return -1;
+	/* Use hash lookup for global variables */
+	if (!(sql->global_vars->ht = hash_new(NULL, 16, (fkeyvalue)&var_key)))
+		return -1;
 
 	sql_find_subtype(&ctype, "int", 0, 0);
 	SQLglobal(sname, "debug", &sql->debug);
@@ -70,19 +73,6 @@ init_global_variables(mvc *sql)
 	sql_find_subtype(&ctype, "bigint", 0, 0);
 	SQLglobal(sname, "last_id", &sec);
 	SQLglobal(sname, "rowcnt", &sec);
-
-	/* Use hash lookup for global variables. With 9 variables in total it's worth to hash instead of */
-	if (!(sql->global_vars->ht = hash_new(NULL, list_length(sql->global_vars), (fkeyvalue)&var_key)))
-		return -1;
-
-	for (node *n = sql->global_vars->h; n; n = n->next) {
-		sql_var *v = n->data;
-		int key = var_key(v);
-
-		if (!hash_add(sql->global_vars->ht, key, v))
-			return -1;
-	}
-
 	return 0;
 }
 
@@ -115,6 +105,19 @@ push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type
 		return NULL;
 	}
 	return svar;
+}
+
+int
+remove_global_var(mvc *sql, sql_schema *s, const char *name)
+{
+	sql_var *v = find_global_var(sql, s, name);
+
+	if (v) {
+		list_remove_data(sql->global_vars, NULL, v);
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 sql_var*

@@ -12,7 +12,7 @@ project (
 | | project (
 | | | table("sys"."x") [ "x"."y" ]
 | | ) [ "x"."y", double "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2" NOT NULL UNIQUE) as "%1"."%1" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"], "%2"."%2" NOT NULL UNIQUE) as "%1"."%1" ]
 ) [ "%1"."%1" ]
 
 query T nosort
@@ -23,7 +23,7 @@ project (
 | | project (
 | | | table("sys"."x") [ "x"."y" ]
 | | ) [ "x"."y", double "0" as "%2"."%2" ]
-| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2" NOT NULL UNIQUE) as "%1"."%1" ]
+| ) [  ] [ "sys"."quantile" no nil (decimal(18,3)["x"."y"], "%2"."%2" NOT NULL UNIQUE) as "%1"."%1" ]
 ) [ "%1"."%1" ]
 
 statement ok

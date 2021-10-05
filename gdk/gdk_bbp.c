@@ -130,6 +130,7 @@ static gdk_return BBPprepare(bool subcommit);
 static BAT *getBBPdescriptor(bat i, bool lock);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
 static gdk_return BBPdir_init(void);
+static void BBPcallbacks(void);
 
 static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
 static lng BBPtransid;
@@ -1404,6 +1405,7 @@ BBPmanager(void *dummy)
 				return;
 		}
 		BBPtrim(false);
+		BBPcallbacks();
 		if (GDKexiting())
 			return;
 	}
@@ -4305,4 +4307,130 @@ gdk_bbp_reset(void)
 	backup_files = 0;
 	backup_dir = 0;
 	backup_subdir = 0;
+}
+
+static MT_Lock GDKCallbackListLock = MT_LOCK_INITIALIZER(GDKCallbackListLock);
+
+static struct {
+	int cnt;
+	gdk_callback *head;
+} callback_list = {
+	.cnt = 0,
+	.head = NULL,
+};
+
+/*
+ * @- Add a callback
+ * Adds new callback to the callback list.
+ */
+gdk_return
+gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
+		interval)
+{
+
+	gdk_callback *callback = NULL;
+	gdk_callback *p = callback_list.head;
+
+	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * argc))) {
+		TRC_CRITICAL(GDK, "Failed to allocate memory!");
+		return GDK_FAIL;
+	}
+
+	*callback = (gdk_callback) {
+		.name = name,
+		.argc = argc,
+		.interval = interval,
+		.func = f,
+	};
+
+	for (int i=0; i < argc; i++) {
+		callback->argv[i] = argv[i];
+	}
+
+	MT_lock_set(&GDKCallbackListLock);
+	if (p) {
+		int cnt = 1;
+		do {
+			// check if already added
+			if (strcmp(callback->name, p->name) == 0)
+				return GDK_FAIL;
+			if (p->next == NULL) {
+			   	p->next = callback;
+				p = callback->next;
+			} else {
+				p = p->next;
+			}
+			cnt += 1;
+		} while(p);
+		callback_list.cnt = cnt;
+	} else {
+		callback_list.cnt = 1;
+		callback_list.head = callback;
+	}
+	MT_lock_unset(&GDKCallbackListLock);
+	return GDK_SUCCEED;
+}
+
+/*
+ * @- Remove a callback
+ * Removes a callback from the callback list with a given name as an argument.
+ */
+gdk_return
+gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
+{
+	gdk_callback *curr = callback_list.head;
+	gdk_callback *prev = NULL;
+	gdk_return res = GDK_FAIL;
+	while(curr) {
+		if (strcmp(cb_name, curr->name) == 0) {
+			MT_lock_set(&GDKCallbackListLock);
+			if (curr == callback_list.head && prev == NULL) {
+				callback_list.head = curr->next;
+			} else {
+				prev->next = curr->next;
+			}
+			if (argsfree)
+			       	argsfree(curr->argc, curr->argv);
+			GDKfree(curr);
+			curr = NULL;
+			callback_list.cnt -=1;
+			res = GDK_SUCCEED;
+			MT_lock_unset(&GDKCallbackListLock);
+		} else {
+			prev = curr;
+			curr = curr->next;
+		}
+	}
+	return res;
+}
+
+static gdk_return
+do_callback(gdk_callback *cb)
+{
+	cb->last_called = GDKusec();
+	return cb->func(cb->argc, cb->argv);
+}
+
+static bool
+should_call(gdk_callback *cb)
+{
+	if (cb->last_called && cb->interval) {
+		return (cb->last_called + cb->interval * 1000 * 1000) <
+			GDKusec();
+	}
+	return true;
+}
+
+static void
+BBPcallbacks(void)
+{
+	gdk_callback *next = callback_list.head;
+
+	MT_lock_set(&GDKCallbackListLock);
+	while (next) {
+		if(should_call(next))
+			do_callback(next);
+		next = next->next;
+	}
+	MT_lock_unset(&GDKCallbackListLock);
 }

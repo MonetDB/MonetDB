@@ -188,6 +188,7 @@ extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);
 extern void exps_setcard( list *exps, unsigned int card);
 extern int exps_intern(list *exps);
+extern sql_exp *exps_find_one_multi_exp(list *exps);
 
 extern const char *compare_func( comp_type t, int anti );
 extern int is_identity( sql_exp *e, sql_rel *r);

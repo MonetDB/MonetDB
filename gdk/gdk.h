@@ -1252,7 +1252,6 @@ gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__((__warn_unused_result__));
-
 /*
  * @- BAT Input/Output
  * @multitable @columnfractions 0.08 0.7
@@ -2380,5 +2379,21 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 		if (TIMEOFFSET == -1)		\
 			CALLBACK;		\
 	} while (0)
+
+typedef struct gdk_callback {
+	char *name;
+	int argc;
+	int interval;  // units sec
+	lng last_called; // timestamp GDKusec
+	gdk_return (*func)(int argc, void *argv[]);
+	struct gdk_callback *next;
+	void *argv[FLEXIBLE_ARRAY_MEMBER];
+} gdk_callback;
+
+typedef gdk_return gdk_callback_func(int argc, void *argv[]);
+
+gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
+		*argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
 
 #endif /* _GDK_H_ */

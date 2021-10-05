@@ -1536,7 +1536,7 @@ lastexp(sql_rel *rel)
 	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
-	assert(is_project(rel->op));
+	assert(is_project(rel->op) || rel->op == op_table);
 	return rel->exps->t->data;
 }
 

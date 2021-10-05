@@ -23,7 +23,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
-| | ) [ "sys"."sql_add"(bigint["myy"."col1"] as "myy"."col1", bigint["myy"."col2"] as "myy"."col2") as "%1"."%1" ]
+| | ) [ "sys"."sql_add"(bigint["myy"."col1"], bigint["myy"."col2"]) as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" ] [ "%1"."%1" ASC ]
 
