@@ -90,6 +90,20 @@ project (
 | ) [ int "2" <= "othertable"."a" <= int "5" BETWEEN  ]
 ) [ "testkeys"."a" NOT NULL HASHCOL  ]
 
+# here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
+plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b is null and othertable.a > 1
+----
+project (
+| join (
+| | select (
+| | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
+| | ) [ "testkeys"."b" HASHCOL  * = int "NULL" ],
+| | select (
+| | | table("sys"."othertable") [ "othertable"."a" ]
+| | ) [ "othertable"."a" > int "1" ]
+| ) [ "testkeys"."a" NOT NULL HASHCOL  = "othertable"."a" ]
+) [ "testkeys"."a" NOT NULL HASHCOL  ]
+
 statement ok
 rollback
 
