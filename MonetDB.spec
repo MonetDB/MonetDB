@@ -843,6 +843,9 @@ else
 fi
 
 %changelog
+* Thu Sep 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.11-20210930
+- Rebuilt.
+
 * Tue Sep 28 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.9-20210928
 - Rebuilt.
 
