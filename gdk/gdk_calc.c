@@ -16929,12 +16929,14 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 					      0, abort_on_error, &reduce,
 					      scale1, scale2, precision);
 	}
-	if (nils == BUN_NONE + 1) {
-		GDKerror("conversion from type %s to type %s "
-			 "unsupported.\n",
-			 ATOMname(v->vtype), ATOMname(ret->vtype));
+	if (nils >= BUN_NONE) {
+		if (nils == BUN_NONE + 1) {
+			GDKerror("conversion from type %s to type %s "
+				"unsupported.\n",
+				ATOMname(v->vtype), ATOMname(ret->vtype));
+		}
 		return GDK_FAIL;
 	}
 	ret->len = ATOMlen(ret->vtype, VALptr(ret));
-	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
