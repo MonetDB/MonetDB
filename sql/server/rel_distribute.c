@@ -262,7 +262,7 @@ distribute(visitor *v, sql_rel *rel)
 			if (!(r = rel_visitor_bottomup(&rv, r, &replica)) && v->sql->session->status)
 				return NULL;
 			rv.data = NULL;
-			if (!(r = rel->r = rel_visitor_bottomup(&rv, l, &distribute)) && v->sql->session->status)
+			if (!(r = rel->r = rel_visitor_bottomup(&rv, r, &distribute)) && v->sql->session->status)
 				return NULL;
 		} else if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
 			find_prop(l->p, PROP_REMOTE) == NULL &&
