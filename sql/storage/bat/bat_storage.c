@@ -4041,6 +4041,37 @@ temp_del_tab(sql_trans *tr, sql_table *t)
 	}
 }
 
+static int
+swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
+{
+	bool update_conflict = false;
+	int in_transaction = segments_in_transaction(tr, col->t);
+	if (in_transaction) return LOG_CONFLICT;
+	sql_delta *d = NULL;
+	// old delta
+	sql_delta *odelta = ATOMIC_PTR_GET(&col->data);
+
+	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+	assert(d && d->cs.ts == tr->tid);
+	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
+	sqlid id = col->base.id;
+	bat bid = d->cs.bid;
+	lock_column(tr->store, id);
+	d->cs.bid = temp_create(bn);
+	d->cs.uibid = 0;
+	d->cs.uvbid = 0;
+	d->cs.ucnt = 0;
+	d->cs.cleared = 0;
+	d->cs.ts = tr->tid;
+	d->cs.refcnt = 1;
+	temp_destroy(bid);
+	unlock_column(tr->store, id);
+	return LOG_OK;
+}
+
+
 void
 bat_storage_init( store_functions *sf)
 {
@@ -4085,8 +4116,8 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
-
 	sf->temp_del_tab = &temp_del_tab;
+	sf->swap_bats = &swap_bats;
 }
 
 #if 0

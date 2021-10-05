@@ -2787,3 +2787,4 @@ BATassertProps(BAT *b)
 	}
 	MT_lock_unset(&b->theaplock);
 }
+
