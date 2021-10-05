@@ -34,37 +34,6 @@ atom_create( sql_allocator *sa )
 	return a;
 }
 
-static ValPtr
-SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
-{
-	if (sa == NULL)
-		return VALcopy(d, s);
-	if (!ATOMextern(s->vtype)) {
-		*d = *s;
-	} else if (s->val.pval == 0) {
-		d->val.pval = ATOMnil(s->vtype);
-		if (d->val.pval == NULL)
-			return NULL;
-		d->vtype = s->vtype;
-	} else if (s->vtype == TYPE_str) {
-		d->vtype = TYPE_str;
-		d->val.sval = sa_strdup(sa, s->val.sval);
-		if (d->val.sval == NULL)
-			return NULL;
-		d->len = strLen(d->val.sval);
-	} else {
-		ptr p = s->val.pval;
-
-		d->vtype = s->vtype;
-		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = sa_alloc(sa, d->len);
-		if (d->val.pval == NULL)
-			return NULL;
-		memcpy(d->val.pval, p, d->len);
-	}
-	return d;
-}
-
 atom *
 atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 {
@@ -288,36 +257,28 @@ lng scales[19] = {
 atom *
 atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
-	atom *a;
-	ptr p = NULL;
+	atom *a = atom_create(sa);
 
-	if (tpe->type->localtype == TYPE_str)
-		return atom_string(sa, tpe, val);
-	a = atom_create(sa);
 	if(!a)
 		return NULL;
 	a->tpe = *tpe;
-	a->data.val.pval = NULL;
 	a->data.vtype = tpe->type->localtype;
-	a->data.len = 0;
-
 	assert(a->data.vtype >= 0);
 
 	if (!strNil(val)) {
 		int type = a->data.vtype;
 
-		a->isnull = 0;
-		if (ATOMstorage(type) == TYPE_str) {
-			a->isnull = 0;
-			a->data.val.sval = sa_strdup(sa, val);
-			a->data.len = strlen(a->data.val.sval);
+		if (type == TYPE_str) {
+			a->data.len = strLen(val);
+			a->data.val.sval = sa_alloc(sa, a->data.len);
+			memcpy(a->data.val.sval, val, a->data.len);
 		} else {
+			ptr p = NULL;
 			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val, false);
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				if (p)
-					GDKfree(p);
+				GDKfree(p);
 				GDKclrerr();
 				return NULL;
 			}
@@ -362,20 +323,23 @@ atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 atom *
 atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 {
-	atom *a = SA_ZNEW(sa, atom);
-
+	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 	a->tpe = *tpe;
 	a->data.vtype = tpe->type->localtype;
-	if (ATOMstorage(a->data.vtype) == TYPE_str) {
-		if (strNil((char*)v)) {
-			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
-		} else {
-			a->data.val.sval = sa_strdup(sa, v);
-			a->data.len = strlen(a->data.val.sval);
-		}
-	} else {
+	if (!ATOMextern(a->data.vtype)) {
 		VALset(&a->data, a->data.vtype, v);
-	}
+	} else if (a->data.vtype == TYPE_str) {
+		const char *p = (const char*) v;
+		a->data.len = strLen(p);
+		a->data.val.sval = sa_alloc(sa, a->data.len);
+		memcpy(a->data.val.sval, v, a->data.len);
+	} else {
+		a->data.len = ATOMlen(a->data.vtype, v);
+		a->data.val.pval = sa_alloc(sa, a->data.len);
+		memcpy(a->data.val.pval, v, a->data.len);
+	} 
 	a->isnull = VALisnil(&a->data);
 	return a;
 }

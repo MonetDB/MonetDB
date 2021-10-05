@@ -60,9 +60,9 @@ project (
 | | | | | | ) [ "input_double"."a1" = clob "longitude" ]
 | | | | | ) [ "input_double"."a2" as "tmp_3"."a2" ]
 | | | | ) [  ]
-| | | ) [ "sys"."st_point"("tmp_2"."a2" as "tmp"."a1", "tmp_3"."a2" as "tmp"."a2") as "p"."a1" ]
+| | | ) [ "sys"."st_point"("tmp_2"."a2", "tmp_3"."a2") as "p"."a1" ]
 | | ) [  ]
-| ) [ "v"."a1" as "r"."a1", "sys"."st_distance"("v"."a2" as "tmp"."a2", "p"."a1" as "tmp"."a3") as "r"."prob" ]
+| ) [ "v"."a1" as "r"."a1", "sys"."st_distance"("v"."a2", "p"."a1") as "r"."prob" ]
 ) [ "r"."a1", "r"."prob" ]
 
 statement ok

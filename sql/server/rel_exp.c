@@ -2633,6 +2633,28 @@ exps_intern(list *exps)
 	return 0;
 }
 
+sql_exp *
+exps_find_one_multi_exp(list *exps)
+{
+	sql_exp *l = NULL;
+	int skip = 0;
+
+	/* Find one and only 1 expression with card > CARD_ATOM */
+	if (!list_empty(exps)) {
+		for (node *m = exps->h ; m && !skip ; m = m->next) {
+			sql_exp *e = m->data;
+
+			if (e->card > CARD_ATOM) {
+				skip |= l != NULL;
+				l = e;
+			}
+		}
+	}
+	if (skip)
+		l = NULL;
+	return l;
+}
+
 const char *
 compare_func( comp_type t, int anti )
 {

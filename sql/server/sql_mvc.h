@@ -246,6 +246,7 @@ extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ign
 extern int init_global_variables(mvc *sql);
 extern sql_var *find_global_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_var *push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type);
+extern int remove_global_var(mvc *sql, sql_schema *s, const char *name);
 
 extern sql_var* frame_push_var(mvc *sql, const char *name, sql_subtype *type);
 extern sql_local_table* frame_push_table(mvc *sql, sql_table *t);
