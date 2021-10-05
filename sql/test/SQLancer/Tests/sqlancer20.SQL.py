@@ -37,6 +37,8 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT 2 FROM rt1 WHERE (rt1.c0 BETWEEN rt1.c0 AND rt1.c0) IS NULL;") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM rt1 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
 
     cli.execute("""
     START TRANSACTION;
