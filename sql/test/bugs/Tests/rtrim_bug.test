@@ -55,7 +55,7 @@ project (
 | | | ) [ "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "%1"."%1" NOT NULL as "%4"."%4" ]
 | ) [ "%5"."%5" NOT NULL any = "%4"."%4" NOT NULL ]
-) [ "sys"."length"("t1"."m" NOT NULL as "v2"."m") NOT NULL as "data_length", "t1"."m" NOT NULL as "data_value" ]
+) [ "sys"."length"("t1"."m" NOT NULL) NOT NULL as "data_length", "t1"."m" NOT NULL as "data_value" ]
 
 statement ok
 set optimizer = 'sequential_pipe'
