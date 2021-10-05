@@ -328,13 +328,18 @@ atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 		return NULL;
 	a->tpe = *tpe;
 	a->data.vtype = tpe->type->localtype;
-	if (ATOMextern(a->data.vtype)) {
-		a->data.len = ATOMlen(a->data.vtype, v);
+	if (!ATOMextern(a->data.vtype)) {
+		VALset(&a->data, a->data.vtype, v);
+	} else if (a->data.vtype == TYPE_str) {
+		const char *p = (const char*) v;
+		a->data.len = strLen(p);
 		a->data.val.sval = sa_alloc(sa, a->data.len);
 		memcpy(a->data.val.sval, v, a->data.len);
 	} else {
-		VALset(&a->data, a->data.vtype, v);
-	}
+		a->data.len = ATOMlen(a->data.vtype, v);
+		a->data.val.pval = sa_alloc(sa, a->data.len);
+		memcpy(a->data.val.pval, v, a->data.len);
+	} 
 	a->isnull = VALisnil(&a->data);
 	return a;
 }
