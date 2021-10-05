@@ -1460,7 +1460,7 @@ static sql_rel *
 rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti, int ff)
 {
 	node *n;
-	sql_exp *e = NULL;
+	sql_exp *e = NULL, *ll, *rr;
 	sql_subfunc *f = NULL;
 	list *tl = sa_list(sql->sa);
 	bool found = false;
@@ -1539,11 +1539,14 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
-		return push_select_exp(sql, rel, e, l->h->data, ff);
-	} else { /* join */
-		return push_join_exp(sql, rel, e, l->h->data, r->h->data, NULL, ff);
+		if ((ll = exps_find_one_multi_exp(l)))
+			return push_select_exp(sql, rel, e, ll, ff);
+	} else if ((ll = exps_find_one_multi_exp(l)) && (rr = exps_find_one_multi_exp(r))) { /* join */
+		return push_join_exp(sql, rel, e, ll, rr, NULL, ff);
 	}
-	return rel;
+	if (is_outerjoin(rel->op))
+		return rel_select(sql->sa, rel, e);
+	return rel_select_add_exp(sql->sa, rel, e);
 }
 
 static sql_rel *
@@ -2036,10 +2039,13 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 			return push_select_exp(sql, rel, e, ls, f);
 		} else { /* join */
-			sql_exp *rs = rlist ? ((list*)e->r)->h->data : e->r;
-			return push_join_exp(sql, rel, e, ls, rs, NULL, f);
+			sql_exp *rs = rlist ? exps_find_one_multi_exp(e->r) : e->r;
+			if (rs)
+				return push_join_exp(sql, rel, e, ls, rs, NULL, f);
 		}
 	}
+	if (is_outerjoin(rel->op))
+		return rel_select(sql->sa, rel, e);
 	return rel_select_add_exp(sql->sa, rel, e);
 }
 

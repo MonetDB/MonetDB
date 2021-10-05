@@ -1134,6 +1134,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			cst->val.bval = bat_nil;
 		} else {
 			mb->errors = createMalException(mb, 0, TYPE, "BAT coercion error");
+			VALclear(cst);	// it could contain allocated space
 			return -1;
 		}
 	} else if (cst->vtype != type && !isPolyType(type)) {
@@ -1159,8 +1160,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	k = fndConstant(mb, cst, MAL_VAR_WINDOW);
 	if (k >= 0) {
 		/* protect against leaks coming from constant reuse */
-		if (ATOMextern(type) && cst->val.pval)
-			VALclear(cst);
+		VALclear(cst);
 		return k;
 	}
 	k = newTmpVariable(mb, type);
