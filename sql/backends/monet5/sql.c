@@ -5027,6 +5027,210 @@ finalize:
 	return ret;
 }
 
+static str
+do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char *tname, char *cname) {
+	int res;
+	BAT* b = NULL;
+	BAT* bn = NULL;
+	sqlstore *store = tr->store;
+
+	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
+		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
+	// vacuum only string bats
+	if (ATOMstorage(b->ttype) == TYPE_str) {
+		// TODO check for num of updates on the BAT against some threshold
+		// and decide whether to proceed
+		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
+		}
+		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
+			BBPreclaim(bn);
+			BBPunfix(b->batCacheid);
+			if (res == LOG_CONFLICT)
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			if (res == LOG_ERR)
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		}
+	}
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	int access = 0;
+	char *sname = *getArgReference_str(stk, pci, 1);
+	char *tname = *getArgReference_str(stk, pci, 2);
+	char *cname = *getArgReference_str(stk, pci, 3);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sql_trans *tr = m->session->tr;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+	if((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+
+	return do_str_column_vacuum(tr, c, access, sname, tname, cname);
+}
+
+
+static gdk_return
+str_column_vacuum_callback(int argc, void *argv[]) {
+	sqlstore *store = (sqlstore *) argv[0];
+	char *sname = (char *) argv[1];
+	char *tname = (char *) argv[2];
+	char *cname = (char *) argv[3];
+	sql_allocator *sa = NULL;
+	sql_session *session = NULL;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+	int access = 0;
+	char *msg;
+	gdk_return res = GDK_SUCCEED;
+
+	(void) argc;
+
+	if ((sa = sa_create(NULL)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create sql_allocator!");
+		return GDK_FAIL;
+	}
+
+	if ((session = sql_session_create(store, sa, 0)) == NULL) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create session!");
+		sa_destroy(sa);
+		return GDK_FAIL;
+	}
+
+	sql_trans_begin(session);
+
+	do {
+		if((s = find_sql_schema(session->tr, sname)) == NULL) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
+			res = GDK_FAIL;
+			break;
+		}
+
+		if((t = find_sql_table(session->tr, s, tname)) == NULL) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing table %s!", tname);
+			res = GDK_FAIL;
+			break;
+		}
+
+		if ((c = find_sql_column(t, cname)) == NULL) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing column %s!", cname);
+			res = GDK_FAIL;
+			break;
+		}
+
+		if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
+			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
+			res = GDK_FAIL;
+		}
+
+	} while(0);
+
+	sql_trans_end(session, SQL_OK);
+	sql_session_destroy(session);
+	sa_destroy(sa);
+	return res;
+}
+
+static gdk_return
+str_column_vacuum_callback_args_free(int argc, void *argv[])
+{
+	(void) argc;
+	// free up sname, tname, cname. First pointer points to sqlstore so leave it.
+	GDKfree(argv[1]); // sname
+	GDKfree(argv[2]); // tname
+	GDKfree(argv[3]); // cname
+	return GDK_SUCCEED;
+}
+
+str
+SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	char *sname = *getArgReference_str(stk, pci, 1);
+	char *tname = *getArgReference_str(stk, pci, 2);
+	char *cname = *getArgReference_str(stk, pci, 3);
+	int interval = *getArgReference_int(stk, pci, 4); // in sec
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+	if((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+
+	void *argv[4] = {m->store, GDKstrdup(sname), GDKstrdup(tname), GDKstrdup(cname)};
+
+	gdk_return res;
+	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
+		str_column_vacuum_callback_args_free(4, argv);
+		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
+	}
+
+	return MAL_SUCCEED;
+}
+
+str
+SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	char *sname = *getArgReference_str(stk, pci, 1);
+	char *tname = *getArgReference_str(stk, pci, 2);
+	char *cname = *getArgReference_str(stk, pci, 3);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	if((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+	if((t = mvc_bind_table(m, s, tname)) == NULL)
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if ((c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+
+	if(gdk_remove_callback("str_column_vacuum", str_column_vacuum_callback_args_free) != GDK_SUCCEED)
+		throw(SQL, "sql.str_column_stop_vacuum", "removing vacuum callback failed!");
+
+	return MAL_SUCCEED;
+}
+
+
 #include "wlr.h"
 #include "sql_cat.h"
 #include "sql_rank.h"
@@ -6114,6 +6318,9 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
 #endif
+ pattern("sql", "vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_column_auto_vacuum, false, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
+ pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, false, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -4075,30 +4075,67 @@ temp_del_tab(sql_trans *tr, sql_table *t)
 }
 
 static int
-col_dict(sql_trans *tr, sql_column *c, BAT *o, BAT *u)
+swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
 	bool update_conflict = false;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+	int in_transaction = segments_in_transaction(tr, col->t);
 
-	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
+	if (in_transaction)
+		return LOG_CONFLICT;
+
+	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
+
+	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
-	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
-	if (delta) {
-		delta->cs.st = ST_DICT;
-		delta->cs.cleared = true;
-		if (delta->cs.bid) {
-			temp_destroy(delta->cs.bid);
-			delta->cs.bid = o->batCacheid;
-			temp_dup(delta->cs.bid);
-			if (delta->cs.ebid)
-				temp_destroy(delta->cs.ebid);
-			delta->cs.ebid = u->batCacheid;
-			temp_dup(delta->cs.ebid);
-		}
-	}
+	assert(d && d->cs.ts == tr->tid);
+	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
+	sqlid id = col->base.id;
+	bat bid = d->cs.bid;
+	lock_column(tr->store, id);
+	d->cs.bid = temp_create(bn);
+	d->cs.uibid = 0;
+	d->cs.uvbid = 0;
+	d->cs.ucnt = 0;
+	d->cs.cleared = 0;
+	d->cs.ts = tr->tid;
+	d->cs.refcnt = 1;
+	temp_destroy(bid);
+	unlock_column(tr->store, id);
+	return LOG_OK;
+}
+
+static int
+col_dict(sql_trans *tr, sql_column *col, BAT *o, BAT *u)
+{
+	bool update_conflict = false;
+	int in_transaction = segments_in_transaction(tr, col->t);
+
+	if (in_transaction)
+		return LOG_CONFLICT;
+
+	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
+
+	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+	assert(d && d->cs.ts == tr->tid);
+	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
+		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isTempTable(col->t)?NULL:&log_update_col);
+	sqlid id = col->base.id;
+	bat bid = d->cs.bid;
+	lock_column(tr->store, id);
+	d->cs.st = ST_DICT;
+	d->cs.cleared = true;
+	d->cs.bid = temp_create(o);
+	if (d->cs.ebid)
+		temp_destroy(d->cs.ebid);
+	d->cs.ebid = temp_create(u);
+	temp_dup(d->cs.ebid);
+	temp_destroy(bid);
+	unlock_column(tr->store, id);
 	return 0;
 }
+
 
 void
 bat_storage_init( store_functions *sf)
@@ -4144,9 +4181,10 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
-	sf->col_dict = &col_dict;
 
 	sf->temp_del_tab = &temp_del_tab;
+	sf->swap_bats = &swap_bats;
+	sf->col_dict = &col_dict;
 }
 
 #if 0
