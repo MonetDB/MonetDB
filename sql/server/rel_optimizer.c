@@ -6312,6 +6312,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		sql_rel *t;
+		int nlexps = 0, i = 0;
 
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
@@ -6334,14 +6335,12 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
-		   		/* we cannot rewrite projection with atomic values from outer joins */
+				/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
-					if (is_right(rel->op) || is_full(rel->op))
-						set_has_nil(e);
 					list_append(exps, e);
 				} else {
 					return rel;
@@ -6349,10 +6348,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			}
 		} else {
 			exps = rel_projections(v->sql, l, NULL, 1, 1);
-			if (!list_empty(exps) && (is_right(rel->op) || is_full(rel->op)))
-				for (n = exps->h ; n ; n = n->next)
-					set_has_nil((sql_exp*)n->data);
 		}
+		nlexps = list_length(exps);
 		/* also handle right hand of join */
 		if (is_join(rel->op) && r->op == op_project && r->l) {
 			/* Here we also check all expressions of r like above
@@ -6361,14 +6358,12 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			for (n = r->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
-		   		/* we cannot rewrite projection with atomic values from outer joins */
+				/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_left(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
-					if (is_left(rel->op) || is_full(rel->op))
-						set_has_nil(e);
 					list_append(exps, e);
 				} else {
 					return rel;
@@ -6376,10 +6371,6 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			}
 		} else if (is_join(rel->op)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
-			if (!list_empty(r_exps) && (is_left(rel->op) || is_full(rel->op)))
-				for (n = r_exps->h ; n ; n = n->next)
-					set_has_nil((sql_exp*)n->data);
-
 			list_merge(exps, r_exps, (fdup)NULL);
 		}
 		/* Here we should check for ambigious names ? */
@@ -6460,6 +6451,21 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		}
 		/* Done, ie introduce new project */
 		exps_fix_card(exps, rel->card);
+		/* Fix nil flag */
+		if (!list_empty(exps)) {
+			for (n = exps->h ; n && i < nlexps ; n = n->next, i++) {
+				sql_exp *e = n->data;
+
+				if (is_right(rel->op) || is_full(rel->op))
+					set_has_nil(e);
+			}
+			for (; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (is_left(rel->op) || is_full(rel->op))
+					set_has_nil(e);
+			}
+		}
 		v->changes++;
 		return rel_inplace_project(v->sql->sa, rel, NULL, exps);
 	}
