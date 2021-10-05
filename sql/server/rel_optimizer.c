@@ -1032,27 +1032,8 @@ order_joins(visitor *v, list *rels, list *exps)
 				if (is_theta_exp(e->flag)) {
 					nr = rel_push_join(v->sql, top->l, e->l, e->r, e->f, e, 0);
 				} else if (e->flag == cmp_filter || e->flag == cmp_or) {
-					sql_exp *l = NULL, *r = NULL;
-					int skip = 0;
-
-					/* Attempt to push down a filter expression if possible */
-					for (node *m = ((list*)e->l)->h ; m && !skip ; m = m->next) {
-						sql_exp *nl = m->data;
-
-						if (nl->card > CARD_ATOM) {
-							skip |= l != NULL;
-							l = nl;
-						}
-					}
-					for (node *m = ((list*)e->r)->h ; m && !skip ; m = m->next) {
-						sql_exp *nr = m->data;
-
-						if (nr->card > CARD_ATOM) {
-							skip |= r != NULL;
-							r = nr;
-						}
-					}
-					if (l && r && !skip)
+					sql_exp *l = exps_find_one_multi_exp(e->l), *r = exps_find_one_multi_exp(e->r);
+					if (l && r)
 						nr = rel_push_join(v->sql, top->l, l, r, NULL, e, 0);
 				}
 				if (!nr)
