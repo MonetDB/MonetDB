@@ -2638,10 +2638,10 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
-			/* deal with ridiculously long response from client */
-			while (buf[sz - 1] != '\n' &&
-			       (sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 0)
-				;
+			/* discard until client flushes */
+			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
+				/* ignore remainder of error message */
+			}
 			goto wrapup_result_set1;
 		}
 	}
@@ -2869,10 +2869,10 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
-			/* deal with ridiculously long response from client */
-			while (buf[sz - 1] != '\n' &&
-			       (sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 0)
-				;
+			/* discard until client flushes */
+			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
+				/* ignore remainder of error message */
+			}
 			goto wrapup_result_set;
 		}
 	}
@@ -4627,10 +4627,10 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
 		msg = createException(IO, "streams.open", "%s", buf);
-		/* deal with ridiculously long response from client */
-		while (buf[sz - 1] != '\n' &&
-				(sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 0)
-			;
+			/* discard until client flushes */
+			while (mnstr_read(mvc->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
+				/* ignore remainder of error message */
+			}
 		goto end;
 	}
 
