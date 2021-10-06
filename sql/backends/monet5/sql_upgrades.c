@@ -4219,6 +4219,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"drop function sys.reverse(string);\n"
 					"drop all function sys.fuse;\n");
 
+	/* 26_sysmon.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.vacuum(sname string, tname string, cname string)\n"
+					"	external name sql.vacuum;\n"
+					"create procedure sys.vacuum(sname string, tname string, cname string, interval int)\n"
+					"	external name sql.vacuum;\n"
+					"create procedure sys.stop_vacuum(sname string, tname string, cname string)\n"
+					"	external name sql.stop_vacuum;\n");
+
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
