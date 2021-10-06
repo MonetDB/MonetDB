@@ -712,47 +712,47 @@ select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 NULL
 
-query T rowsort
+query T nosort
 plan select nullif(null, null)
 ----
-) [ "sys"."nullif"(smallint "NULL", smallint "NULL") ]
 project (
 |  [ boolean "true" ]
+) [ "sys"."nullif"(smallint "NULL", smallint "NULL") ]
 
-query T rowsort
+query T nosort
 plan select CASE WHEN null = null THEN NULL ELSE null END
 ----
-) [ "sys"."case"(boolean "NULL", smallint "NULL", smallint "NULL") ]
 project (
 |  [ boolean "true" ]
+) [ "sys"."case"(boolean "NULL", smallint "NULL", smallint "NULL") ]
 
-query T rowsort
+query T nosort
 plan select nullif('ac', 'ac')
 ----
-) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
 project (
 |  [ boolean "true" ]
+) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
 
-query T rowsort
+query T nosort
 plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
-) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
 project (
 |  [ boolean "true" ]
+) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char "NULL", char "ac") ]
 
-query T rowsort
+query T nosort
 plan select nullif(9, 9)
 ----
-) [ "sys"."nullif"(tinyint "9", tinyint "9") ]
 project (
 |  [ boolean "true" ]
+) [ "sys"."nullif"(tinyint "9", tinyint "9") ]
 
-query T rowsort
+query T nosort
 plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
-) [ "sys"."case"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
 project (
 |  [ boolean "true" ]
+) [ "sys"."case"("sys"."="(tinyint "9", tinyint "9") NOT NULL, tinyint "NULL", tinyint "9") ]
 
 query T rowsort
 select 'db' between 'abc' and 'db' as tru

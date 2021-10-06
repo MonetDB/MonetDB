@@ -1524,7 +1524,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BBPfix(bid) <= 0)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
-	sendtheap = b->ttype != TYPE_void && b->tvarsized;
+	sendtheap = !BATtvoid(b) && b->tvarsized;
 	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
@@ -1560,10 +1560,10 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATtdense(v),
 			v->batCount,
 			BATtvoid(v) ? 0 : (size_t)v->batCount << v->tshift,
-			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
+			sendtheap && !BATtvoid(v) && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
-	if (v->batCount > 0) {
+	if (!BATtvoid(v) && v->batCount > 0) {
 		BATiter vi = bat_iterator(v);
 		mnstr_write(cntxt->fdout, /* tail */
 					vi.base, vi.count * vi.width, 1);
@@ -1571,7 +1571,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			mnstr_write(cntxt->fdout, /* theap */
 						vi.vh->base, vi.vhfree, 1);
 		bat_iterator_end(&vi);
-	}
+	}	
 	/* flush is done by the calling environment (MAL) */
 
 	if (b != v)
