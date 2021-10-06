@@ -2638,10 +2638,10 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
-			/* deal with ridiculously long response from client */
-			while (buf[sz - 1] != '\n' &&
-			       (sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 0)
-				;
+			/* discard until client flushes */
+			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
+				/* ignore remainder of error message */
+			}
 			goto wrapup_result_set1;
 		}
 	}
@@ -2869,10 +2869,10 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
-			/* deal with ridiculously long response from client */
-			while (buf[sz - 1] != '\n' &&
-			       (sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 0)
-				;
+			/* discard until client flushes */
+			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
+				/* ignore remainder of error message */
+			}
 			goto wrapup_result_set;
 		}
 	}
@@ -4626,10 +4626,10 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
 		msg = createException(IO, "streams.open", "%s", buf);
-		/* deal with ridiculously long response from client */
-		while (buf[sz - 1] != '\n' &&
-				(sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 0)
-			;
+			/* discard until client flushes */
+			while (mnstr_read(mvc->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
+				/* ignore remainder of error message */
+			}
 		goto end;
 	}
 
@@ -5055,6 +5055,8 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char
 		}
 	}
 	BBPunfix(b->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -5078,10 +5080,13 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
-	if((s = mvc_bind_schema(m, sname)) == NULL)
+	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
-	if((t = mvc_bind_table(m, s, tname)) == NULL)
+	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
@@ -5117,7 +5122,12 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 		return GDK_FAIL;
 	}
 
-	sql_trans_begin(session);
+	if (sql_trans_begin(session) < 0) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to begin transaction!");
+		sql_session_destroy(session);
+		sa_destroy(sa);
+		return GDK_FAIL;
+	}
 
 	do {
 		if((s = find_sql_schema(session->tr, sname)) == NULL) {
@@ -5171,6 +5181,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
 	int interval = *getArgReference_int(stk, pci, 4); // in sec
+	char *sname_copy = NULL, *tname_copy = NULL, *cname_copy = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5181,14 +5192,23 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
-	if((s = mvc_bind_schema(m, sname)) == NULL)
+	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
-	if((t = mvc_bind_table(m, s, tname)) == NULL)
+	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
-	void *argv[4] = {m->store, GDKstrdup(sname), GDKstrdup(tname), GDKstrdup(cname)};
+	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || !(cname_copy = GDKstrdup(cname))) {
+		GDKfree(sname_copy);
+		GDKfree(tname_copy);
+		GDKfree(cname_copy);
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
 
 	gdk_return res;
 	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
@@ -5217,10 +5237,13 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
-	if((s = mvc_bind_schema(m, sname)) == NULL)
+	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
-	if((t = mvc_bind_table(m, s, tname)) == NULL)
+	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+	if (!isTable(t))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 

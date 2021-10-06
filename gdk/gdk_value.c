@@ -150,11 +150,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == NULL) {
-		d->val.pval = ATOMnil(s->vtype);
-		if (d->val.pval == NULL)
-			return NULL;
-		d->vtype = s->vtype;
-		d->len = ATOMlen(d->vtype, VALptr(d));
+		return VALinit(d, s->vtype, ATOMnilptr(s->vtype));
 	} else if (s->vtype == TYPE_str) {
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
