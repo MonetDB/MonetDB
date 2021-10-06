@@ -5055,6 +5055,8 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char
 		}
 	}
 	BBPunfix(b->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
