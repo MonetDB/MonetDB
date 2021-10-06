@@ -5120,7 +5120,12 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 		return GDK_FAIL;
 	}
 
-	sql_trans_begin(session);
+	if (sql_trans_begin(session) < 0) {
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to begin transaction!");
+		sql_session_destroy(session);
+		sa_destroy(sa);
+		return GDK_FAIL;
+	}
 
 	do {
 		if((s = find_sql_schema(session->tr, sname)) == NULL) {
