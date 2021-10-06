@@ -6,6 +6,15 @@
 
 #include "dict.h"
 
+static sql_column *
+get_newcolumn(sql_trans *tr, sql_column *c)
+{
+	sql_table *t = find_sql_table_id(tr, c->t->s, c->t->base.id);
+	if (t)
+		return find_sql_column(t, c->base.name);
+	return NULL;
+}
+
 str
 DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -15,6 +24,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
 	const char *cname = *getArgReference_str(stk, pci, 3);
+	const bit ordered = (pci->argc > 4)?*getArgReference_bit(stk, pci, 4):FALSE;
 	backend *be = NULL;
 	sql_trans *tr = NULL;
 
@@ -41,6 +51,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *u = BATunique(b, NULL);
 	if (!u)
 		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	assert(u->tkey);
 
 	BUN cnt = BATcount(u);
 	/* create hash on u */
@@ -51,12 +62,23 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "dict compress: too many values");
 	}
 	BAT *uv = BATproject(u, b); /* get values */
+	uv->tkey = true;
 	bat_destroy(u);
 	if (!uv) {
 		bat_destroy(b);
 		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-    BAT *uu = COLcopy(uv, uv->ttype, true, PERSISTENT);
+    BAT *uu = NULL;
+	if (ordered) {
+			if (BATsort(&uu, NULL, NULL, uv, NULL, NULL, false, false, false) != GDK_SUCCEED) {
+				bat_destroy(uv);
+				throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			bat_destroy(uv);
+			uv = uu;
+	}
+	uu = COLcopy(uv, uv->ttype, true, PERSISTENT);
+	assert(uu->tkey);
 	if (!uu) {
 		bat_destroy(uv);
 		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -87,7 +109,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o->tnil = b->tnil;
 		o->tnonil = b->tnonil;
 		o->tkey = b->tkey;
-		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
+		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
 			bat_iterator_end(&bi);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
@@ -105,7 +127,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o->tnil = b->tnil;
 		o->tnonil = b->tnonil;
 		o->tkey = b->tkey;
-		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
+		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
 			bat_iterator_end(&bi);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
