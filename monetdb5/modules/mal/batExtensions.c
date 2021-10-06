@@ -289,8 +289,10 @@ CMDBATvacuum(bat *r, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.vacuum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL)
+	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.vacuum", GDK_EXCEPTION);
+	}
 
 	BBPkeepref(*r = bn->batCacheid);
 	BBPunfix(b->batCacheid);
