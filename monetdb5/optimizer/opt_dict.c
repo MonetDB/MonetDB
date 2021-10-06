@@ -172,7 +172,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 * v1 = batcalc.-(1, u)
 					 * dict.decompress(o, v1) */
 					InstrPtr r = copyInstruction(p);
-					int tpe = getVarType(mb, vardictvalue[k]);
+					int tpe = getVarType(mb, getArg(p,0));
 					int l = getArg(r, 0);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
 					getArg(r, j) = vardictvalue[k];

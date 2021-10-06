@@ -203,22 +203,35 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter oi = bat_iterator(o);
 	if (rt == TYPE_bte) {
 		unsigned char *rp = Tloc(b, 0);
-		oid *op = Tloc(o, 0);
-		BATloop(o, p, q) {
-			rp[p] = op[p];
+		if (o->ttype == TYPE_void) {
+			BATloop(o, p, q) {
+				rp[p] = p+o->T.seq;
+			}
+		} else {
+			oid *op = Tloc(o, 0);
+			BATloop(o, p, q) {
+				rp[p] = op[p];
+			}
 		}
 	} else if (rt == TYPE_sht) {
 		unsigned short *rp = Tloc(b, 0);
-		oid *op = Tloc(o, 0);
-		BATloop(o, p, q) {
-			rp[p] = op[p];
+		if (o->ttype == TYPE_void) {
+			BATloop(o, p, q) {
+				rp[p] = p+o->T.seq;
+			}
+		} else {
+			oid *op = Tloc(o, 0);
+			BATloop(o, p, q) {
+				rp[p] = op[p];
+			}
 		}
 	} else {
 		assert(0);
 	}
 	bat_iterator_end(&oi);
 	BATsetcount(b, BATcount(o));
-	/* TODO correct props and set min/max offset */
+	b->T.sorted = o->T.sorted;
+	b->T.key = o->T.key;
 	BBPkeepref(*r = b->batCacheid);
 	bat_destroy(o);
 	return MAL_SUCCEED;
@@ -269,31 +282,19 @@ DICTrenumber( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 		BAT *nrc = COLnew(0, rc->ttype, offcnt, TRANSIENT);
 
 		/* create map with holes filled in */
-		if (o->ttype == TYPE_bte) {
-			bte *op = Tloc(nrc, 0);
-			unsigned char *ip = Tloc(rc, 0);
-			unsigned char *lp = Tloc(lc, 0);
-			for(BUN i = 0, j = 0; i<offcnt; i++) {
-				if (lp[j] > i) {
-					op[i] = offcnt;
-				} else {
-					op[i] = ip[j++];
-				}
+		oid *op = Tloc(nrc, 0);
+		oid *ip = Tloc(rc, 0);
+		unsigned char *lp = Tloc(lc, 0);
+		for(BUN i = 0, j = 0; i<offcnt; i++) {
+			if (lp[j] > i) {
+				op[i] = offcnt;
+			} else {
+				op[i] = ip[j++];
 			}
-		} else if (o->ttype == TYPE_sht) {
-			sht *op = Tloc(nrc, 0);
-			unsigned short *ip = Tloc(rc, 0);
-			unsigned short *lp = Tloc(lc, 0);
-			for(BUN i = 0, j = 0; i<offcnt; i++) {
-				if (lp[j] > i) {
-					op[i] = offcnt;
-				} else {
-					op[i] = ip[j++];
-				}
-			}
-		} else {
-			assert(0);
 		}
+		BATsetcount(nrc, offcnt);
+		BATnegateprops(nrc);
+		nrc->tkey = rc->tkey;
 		if (orc != rc)
 			bat_destroy(rc);
 		rc = nrc;
