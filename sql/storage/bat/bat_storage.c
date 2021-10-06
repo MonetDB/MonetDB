@@ -4090,9 +4090,12 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
 		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
-	sqlid id = col->base.id;
-	bat bid = d->cs.bid;
-	lock_column(tr->store, id);
+	if (d->cs.bid)
+		temp_destroy(d->cs.bid);
+	if (d->cs.uibid)
+		temp_destroy(d->cs.uibid);
+	if (d->cs.uvbid)
+		temp_destroy(d->cs.uvbid);
 	d->cs.bid = temp_create(bn);
 	d->cs.uibid = 0;
 	d->cs.uvbid = 0;
@@ -4100,8 +4103,6 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 	d->cs.cleared = 0;
 	d->cs.ts = tr->tid;
 	d->cs.refcnt = 1;
-	temp_destroy(bid);
-	unlock_column(tr->store, id);
 	return LOG_OK;
 }
 
@@ -4121,18 +4122,14 @@ col_dict(sql_trans *tr, sql_column *col, BAT *o, BAT *u)
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
 		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isTempTable(col->t)?NULL:&log_update_col);
-	sqlid id = col->base.id;
-	bat bid = d->cs.bid;
-	lock_column(tr->store, id);
 	d->cs.st = ST_DICT;
 	d->cs.cleared = true;
+	if (d->cs.bid)
+		temp_destroy(d->cs.bid);
 	d->cs.bid = temp_create(o);
 	if (d->cs.ebid)
 		temp_destroy(d->cs.ebid);
 	d->cs.ebid = temp_create(u);
-	temp_dup(d->cs.ebid);
-	temp_destroy(bid);
-	unlock_column(tr->store, id);
 	return 0;
 }
 

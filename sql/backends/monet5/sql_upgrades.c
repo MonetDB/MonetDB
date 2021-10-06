@@ -4227,6 +4227,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"	external name sql.vacuum;\n"
 					"create procedure sys.stop_vacuum(sname string, tname string, cname string)\n"
 					"	external name sql.stop_vacuum;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where system <> true and name in ('vacuum', 'stop_vacuum') and schema_id = 2000 and type = %d;\n", F_PROC);
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);

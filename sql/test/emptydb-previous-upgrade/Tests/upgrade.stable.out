@@ -5154,4 +5154,11 @@ update sys.functions set system = true where system <> true and name in ('dump_t
 update sys._tables set system = true where name in ('dump_create_roles', 'dump_create_users', 'dump_create_schemas', 'dump_add_schemas_to_users', 'dump_grant_user_privileges', 'dump_table_constraint_type', 'dump_table_grants', 'dump_column_grants', 'dump_function_grants', 'dump_indices', 'dump_column_defaults', 'dump_foreign_keys', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'dump_functions', 'dump_tables', 'dump_triggers', 'dump_comments', 'dump_user_defined_types') AND schema_id = 2000;
 drop function sys.reverse(string);
 drop all function sys.fuse;
+create procedure sys.vacuum(sname string, tname string, cname string)
+	external name sql.vacuum;
+create procedure sys.vacuum(sname string, tname string, cname string, interval int)
+	external name sql.vacuum;
+create procedure sys.stop_vacuum(sname string, tname string, cname string)
+	external name sql.stop_vacuum;
+update sys.functions set system = true where system <> true and name in ('vacuum', 'stop_vacuum') and schema_id = 2000 and type = 2;
 
