@@ -248,7 +248,7 @@ str_insert(BAT *b, struct hash *h, const char *value)
 				/* found the value */
 				assert(swp == EMPTY);
 				assert(new == (var_t) -1);
-				return bkt;
+				return (var_t) bkt;
 			}
 		} else
 		if (psl > psl2) {
@@ -368,7 +368,7 @@ strLocate(BAT *b, const char *value)
 	uint64_t psl = 0;	/* probe sequence length */
 
 	for (;;) {
-		var_t bkt = h->buckets[hsh];
+		uint64_t bkt = h->buckets[hsh];
 		if (bkt == EMPTY) {
 			/* found an empty slot */
 			return (var_t) -2;
