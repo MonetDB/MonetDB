@@ -23,10 +23,6 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
     cli.execute("SELECT CAST(2 AS DECIMAL) & CAST(3 AS DOUBLE) FROM rt1 where rt1.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('0.002'),)])
-    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM t1 where t1.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([('69',)])
-    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt1 where rt1.c0 = 1;") \
-        .assertSucceeded().assertDataResultMatch([('69',)])
 
     # Issues related to comparisons not being correctly delimited on plans, which causes ambiguity
     cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM t1 where t1.c0 = 1;") \

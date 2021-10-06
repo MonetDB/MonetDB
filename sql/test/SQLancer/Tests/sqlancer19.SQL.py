@@ -95,6 +95,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
     cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("9910S",)])
+    cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("9910S",)])
+    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('69',)])
+    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('69',)])
     cli.execute("SELECT t3.c0 FROM t3 where (t3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY t3.c0;") \
         .assertSucceeded().assertDataResultMatch([(5,),(5,),(7,)])
     cli.execute("SELECT rt3.c0 FROM rt3 where (rt3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY rt3.c0;") \

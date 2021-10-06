@@ -1235,7 +1235,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				if (f && !execute_priv(sql, f->func))
 					return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
 				/* apply scale fixes if needed */
-				if (f && f->func->fix_scale != SCALE_NONE) {
+				if (f && f->func->type != F_ANALYTIC) {
 					if (list_length(exps) == 1) {
 						if (f->func->fix_scale == INOUT) {
 							sql_subtype *t = exp_subtype(exps->h->data);
@@ -1290,6 +1290,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 								res->digits = 0;
 							}
 						}
+					} else if (list_length(exps) > 2) {
+						if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
+							return NULL;
 					}
 				}
 			}
@@ -1859,6 +1862,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (list_length(outputs) != list_length(sf->func->res))
 					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: the number of output parameters don't match the table ones relation outputs: %d != function outputs: %d\n",
 									 list_length(outputs), list_length(sf->func->res));
+				if (!list_empty(outputs) && !(outputs = check_arguments_and_find_largest_any_type(sql, lrel, outputs, sf, 0)))
+					return NULL;
 				rel = rel_table_func(sql->sa, lrel, tudf, outputs, TABLE_FROM_RELATION);
 			} else {
 				if (r[*pos] != ')')
