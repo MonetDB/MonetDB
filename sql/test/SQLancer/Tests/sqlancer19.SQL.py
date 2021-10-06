@@ -212,6 +212,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("select 1 from (select distinct 1 from v1, t3) as v1(vc1) where sql_min(true, true);") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT count(*) FROM ((select 7 from rt3, (values (1)) y(y)) union (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(2,)])
+    cli.execute("SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(2,)])
+    cli.execute("SELECT count(*) FROM ((select 7 from rt3, (values (1)) y(y)) union all (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(7,)])
+    cli.execute("SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union all (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(7,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""

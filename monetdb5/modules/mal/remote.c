@@ -1512,7 +1512,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
 	BAT *b = BBPquickdesc(bid), *v = b;
-	char sendtheap = 0;
+	char sendtheap = 0, sendtvheap = 0;
 
 	(void)mb;
 	(void)stk;
@@ -1524,8 +1524,9 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BBPfix(bid) <= 0)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
-	sendtheap = !BATtvoid(b) && b->tvarsized;
-	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
+	sendtheap = b->ttype != TYPE_void;
+	sendtvheap = sendtheap && b->tvarsized;
+	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
@@ -1559,19 +1560,19 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->tnonil,
 			BATtdense(v),
 			v->batCount,
-			BATtvoid(v) ? 0 : (size_t)v->batCount << v->tshift,
-			sendtheap && !BATtvoid(v) && v->batCount > 0 ? v->tvheap->free : 0
+			sendtheap ? (size_t)v->batCount << v->tshift : 0,
+			sendtvheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
-	if (!BATtvoid(v) && v->batCount > 0) {
+	if (sendtheap && v->batCount > 0) {
 		BATiter vi = bat_iterator(v);
 		mnstr_write(cntxt->fdout, /* tail */
 					vi.base, vi.count * vi.width, 1);
-		if (sendtheap)
+		if (sendtvheap)
 			mnstr_write(cntxt->fdout, /* theap */
 						vi.vh->base, vi.vhfree, 1);
 		bat_iterator_end(&vi);
-	}	
+	}
 	/* flush is done by the calling environment (MAL) */
 
 	if (b != v)
