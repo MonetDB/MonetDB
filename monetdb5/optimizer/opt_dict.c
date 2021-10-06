@@ -35,6 +35,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p=0, *old=NULL;
 	int actions = 0;
 	int *varisdict=NULL, *vardictvalue=NULL;
+	bit *dictunique=NULL;
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
@@ -45,7 +46,8 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	varisdict = GDKzalloc(2 * mb->vtop * sizeof(int));
 	vardictvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
-	if (varisdict == NULL || vardictvalue == NULL)
+	dictunique = GDKzalloc(2 * mb->vtop * sizeof(bit));
+	if (varisdict == NULL || vardictvalue == NULL || dictunique == NULL)
 		goto wrapup;
 
 	limit = mb->stop;
@@ -66,6 +68,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			k =  getArg(p,0);
 			varisdict[k] = getArg(p,1);
 			vardictvalue[k] = getArg(p, 2);
+			dictunique[k] = 1;
 			continue;
 		}
 		int done = 0;
@@ -83,6 +86,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = varisdict[k];
 					varisdict[l] = getArg(r,0);
 					vardictvalue[l] = vardictvalue[k];
+					dictunique[l] = dictunique[k];
 					pushInstruction(mb,r);
 					done = 1;
 					break;
@@ -91,6 +95,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					int l = getArg(p, 0);
 					varisdict[l] = varisdict[k];
 					vardictvalue[l] = vardictvalue[k];
+					dictunique[l] = dictunique[k];
 					done = 1;
 					break;
 				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef) {
@@ -173,18 +178,20 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 * dict.decompress(o, v1) */
 					InstrPtr r = copyInstruction(p);
 					int tpe = getVarType(mb, getArg(p,0));
-					int l = getArg(r, 0);
+					int l = getArg(r, 0), m = getArg(p, 0);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
 					getArg(r, j) = vardictvalue[k];
 
-					varisdict[l] = varisdict[k];
-					vardictvalue[l] = getArg(r,0);
+					/* new and old result are now dicts */
+					varisdict[l] = varisdict[m] = varisdict[k];
+					vardictvalue[l] = vardictvalue[m] = getArg(r,0);
+					dictunique[l] = 0;
 					pushInstruction(mb,r);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == groupRef &&
 						(getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
-						 getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)) {
+						 getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && dictunique[k]) {
 					/* group.group[done](col) | group.subgroup[done](col, grp) with col = dict.decompress(o,u)
 					 * v1 = group.group[done](o) | group.subgroup[done](o, grp) */
 					InstrPtr r = copyInstruction(p);
@@ -228,5 +235,6 @@ wrapup:
 	GDKfree(old);
 	GDKfree(varisdict);
 	GDKfree(vardictvalue);
+	GDKfree(dictunique);
 	return msg;
 }
