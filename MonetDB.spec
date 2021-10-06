@@ -71,9 +71,6 @@
 %bcond_without fits
 %endif
 
-%{!?__python3: %global __python3 /usr/bin/python3}
-%{!?python3_sitelib: %global python3_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -98,7 +95,7 @@ BuildRequires: hardlink
 BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
-BuildRequires: /usr/bin/python3
+BuildRequires: python3-devel
 %if %{?rhel:1}%{!?rhel:0}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
@@ -682,7 +679,6 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: /usr/bin/python3
 BuildArch: noarch
 
 %description testing-python
@@ -841,6 +837,15 @@ else
     # Fedora 31
     /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
 fi
+
+# update shebang lines for Python scripts
+%if %{?py3_shebang_fix:1}%{!?py3_shebang_fix:0}
+    # Fedora has py3_shebang_fix macro
+    %{py3_shebang_fix} %{buildroot}%{_bindir}/*.py
+%else
+    # EPEL does not, but we can use the script directly
+    /usr/bin/pathfix.py -pni "%{__python3} -s" %{buildroot}%{_bindir}/*.py
+%endif
 
 %changelog
 * Thu Sep 30 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.41.11-20210930

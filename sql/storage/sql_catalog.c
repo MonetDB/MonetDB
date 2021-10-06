@@ -517,11 +517,13 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
-		d->val.pval = ATOMnil(s->vtype);
+		const void *p = ATOMnilptr(s->vtype);
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
-		d->vtype = s->vtype;
-		d->len = ATOMlen(d->vtype, VALptr(d));
+		memcpy(d->val.pval, p, d->len);
 	} else if (s->vtype == TYPE_str) {
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;

@@ -750,7 +750,7 @@
 [ "bat",	"getRole",	"command bat.getRole(X_0:bat[:any_1]):str ",	"BKCgetRole;",	"Returns the rolename of the head column of a BAT."	]
 [ "bat",	"getSequenceBase",	"command bat.getSequenceBase(X_0:bat[:any_1]):oid ",	"BKCgetSequenceBase;",	"Get the sequence base for the void column of a BAT."	]
 [ "bat",	"getSize",	"command bat.getSize(X_0:bat[:any_1]):lng ",	"BKCgetSize;",	"Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes\nrounded to the memory page size (see bbp.getPageSize())."	]
-[ "bat",	"getVHeapSize",	"command bat.getVHeapSize(X_0:bat[:any_1]):lng ",	"BKCgetVHeapSize;",	"Calculate the vheap size for string bats"	]
+[ "bat",	"getVHeapSize",	"command bat.getVHeapSize(X_0:bat[:any_1]):lng ",	"BKCgetVHeapSize;",	"Calculate the vheap size for varsized bats"	]
 [ "bat",	"getorderidx",	"pattern bat.getorderidx(X_0:bat[:any_1]):bat[:oid] ",	"OIDXgetorderidx;",	"Return the order index if it exists"	]
 [ "bat",	"hasorderidx",	"pattern bat.hasorderidx(X_0:bat[:any_1]):bit ",	"OIDXhasorderidx;",	"Return true if order index exists"	]
 [ "bat",	"imprints",	"command bat.imprints(X_0:bat[:bte]):void ",	"CMDBATimprints;",	""	]

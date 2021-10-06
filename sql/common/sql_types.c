@@ -493,7 +493,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 					/* same scale as the input */
 					if (a && a->scale > mscale)
 						mscale = a->scale;
-					if (a && f->fix_scale == INOUT)
+					if (a && f->fix_scale == INOUT && tn == ops->h)
 						mdigits = a->digits;
 				}
 			}
