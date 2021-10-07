@@ -774,20 +774,16 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
+	if (*opt && rel)
+		rel = sql_processrelation(m, rel, 1, 1);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement", "%s", m->errstr);
 		else
 			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
 	} else {
-
-		if (*opt && rel)
-			rel = sql_processrelation(m, rel, 1, 1);
-
-		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED) {
-			rel_destroy(rel);
+		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED)
 			return RAcommit_statement(be, msg);
-		}
 
 		/* generate MAL code, ignoring any code generation error */
 		setVarType(c->curprg->def, 0, 0);
