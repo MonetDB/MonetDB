@@ -247,6 +247,7 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.dict();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
