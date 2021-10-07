@@ -240,6 +240,10 @@ with SQLTestCase() as cli:
         .assertSucceeded()
     cli.execute("select 1 from v4, v5, v6;") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("create view v7(vc0) as (select case '201' when ',' then rt3.c0 when '' then cast(rt3.c0 as bigint) end from rt3);") \
+        .assertSucceeded()
+    cli.execute("SELECT 1 FROM v7 CROSS JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS sub0(c0);") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
