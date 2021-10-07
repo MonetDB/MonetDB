@@ -86,18 +86,19 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ordered) {
 			if (BATsort(&uu, NULL, NULL, uv, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 				bat_destroy(uv);
+				bat_destroy(b);
 				throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			bat_destroy(uv);
 			uv = uu;
 	}
 	uu = COLcopy(uv, uv->ttype, true, PERSISTENT);
+	bat_destroy(uv);
 	assert(uu->tkey);
 	if (!uu) {
-		bat_destroy(uv);
+		bat_destroy(b);
 		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bat_destroy(uv);
 	u = uu;
 
 	BAT *o = COLnew(b->hseqbase, tt, BATcount(b), PERSISTENT);
@@ -125,6 +126,9 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o->tkey = b->tkey;
 		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
 			bat_iterator_end(&bi);
+			bat_destroy(b);
+			bat_destroy(u);
+			bat_destroy(o);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
 	} else if (tt == TYPE_sht) {
@@ -143,6 +147,9 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o->tkey = b->tkey;
 		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
 			bat_iterator_end(&bi);
+			bat_destroy(b);
+			bat_destroy(u);
+			bat_destroy(o);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
 	} else {
@@ -178,6 +185,11 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), TRANSIENT);
+	if (!b) {
+		bat_destroy(o);
+		bat_destroy(u);
+		throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	BUN p, q;
 	BATiter oi = bat_iterator(o);
 	BATiter ui = bat_iterator_nolock(u);
@@ -247,6 +259,10 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.convert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	BAT *b = COLnew(o->hseqbase, rt, BATcount(o), TRANSIENT);
+	if (!b) {
+		bat_destroy(o);
+		throw(SQL, "dict.convert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	BUN p, q;
 	BATiter oi = bat_iterator(o);
@@ -298,13 +314,10 @@ DICTrenumber( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 	BUN cnt = BATcount(o);
 
 	if (!lc->tsorted) {
-		BAT *nlc = NULL, *order = NULL;
-		int ret = BATsort(&nlc, &order, NULL, lc, NULL, NULL, false, false, false);
-		if (ret != GDK_SUCCEED)
-			return no;
-		BAT *nrc = order;
+		BAT *nlc = NULL, *nrc = NULL;
+		int ret = BATsort(&nlc, &nrc, NULL, lc, NULL, NULL, false, false, false);
 
-		if (!nlc || !nrc) {
+		if (ret != GDK_SUCCEED || !nlc || !nrc) {
 			bat_destroy(nlc);
 			bat_destroy(nrc);
 			return no;
@@ -315,6 +328,13 @@ DICTrenumber( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 	/* dense or cheap dense check */
 	if (!BATtdense(lc) && !(lc->tsorted && lc->tkey && BATcount(lc) == offcnt && *(oid*)Tloc(lc, offcnt-1) == offcnt-1)) {
 		BAT *nrc = COLnew(0, rc->ttype, offcnt, TRANSIENT);
+		if (!nrc) {
+			if (lc != olc)
+				bat_destroy(lc);
+			if (rc != orc)
+				bat_destroy(rc);
+			return no;
+		}
 
 		/* create map with holes filled in */
 		oid *op = Tloc(nrc, 0);
@@ -336,6 +356,13 @@ DICTrenumber( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 	}
 
 	no = COLnew(o->hseqbase, o->ttype, cnt, TRANSIENT);
+	if (!no) {
+		if (lc != olc)
+			bat_destroy(lc);
+		if (rc != orc)
+			bat_destroy(rc);
+		return no;
+	}
 	if (o->ttype == TYPE_bte) {
 		bte *op = Tloc(no, 0);
 		unsigned char *ip = Tloc(o, 0);
