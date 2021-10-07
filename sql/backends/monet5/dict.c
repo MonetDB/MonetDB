@@ -573,6 +573,8 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
 	if (op[0] == '=' || ((op[0] == '<' || op[0] == '>') && lv->tsorted)) {
+		if (ATOMvarsized(lv->ttype))
+			v = *(ptr*)v;
 		if (op[0] == '=')
 			p =  BUNfnd(lv, v);
 		else if (op[0] == '<')
@@ -581,7 +583,7 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			p = SORTfndfirst(lv, v);
 		if (p != BUN_NONE) {
 			if (lo->ttype == TYPE_bte) {
-				sht val = p;
+				bte val = p;
 				bn =  BATthetaselect(lo, lc, &val, op);
 			} else if (lo->ttype == TYPE_sht) {
 				sht val = p;
