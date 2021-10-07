@@ -228,6 +228,18 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(7,)])
     cli.execute("SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union all (select 3)) x(x);") \
         .assertSucceeded().assertDataResultMatch([(7,)])
+    cli.execute("create view v2(vc0) as ((select 3 from rt3) intersect (select 2 from t3));") \
+        .assertSucceeded()
+    cli.execute("create view v3(vc0) as (select 1 from rt3, v2 where \"right_shift_assign\"(inet '228.236.62.235/6', inet '82.120.56.164'));") \
+        .assertSucceeded()
+    cli.execute("create view v4(vc0, vc1, vc2) as (select 1, 2, 3);") \
+        .assertSucceeded()
+    cli.execute("create view v5(vc0) as ((select time '01:00:00') intersect (select time '01:00:00' from v3));") \
+        .assertSucceeded()
+    cli.execute("create view v6(vc0) as ((select 1) union all (select 2));") \
+        .assertSucceeded()
+    cli.execute("select 1 from v4, v5, v6;") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
 
     cli.execute("""
