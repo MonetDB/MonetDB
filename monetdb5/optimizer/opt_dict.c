@@ -107,35 +107,47 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					done = 1;
 					break;
 				} else if (isSelect(p)) {
-					/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
-					 * tp = select(u, nil, l, h, ...)
-					 * tp2 = batcalc.bte/sht/int(tp)
-					 * pos = intersect(o, tp2, cand, nil) */
+					if (getFunctionId(p) == thetaselectRef) {
+						InstrPtr r = newInstructionArgs(mb, dictRef, thetaselectRef, 6);
 
-					int cand = getArg(p, j+1);
-					InstrPtr r = copyInstruction(p);
-					getArg(r, j) = vardictvalue[k];
-					if (cand)
-						r = ReplaceWithNil(mb, r, j+1, TYPE_bat); /* no candidate list */
-					pushInstruction(mb,r);
+						getArg(r, 0) = getArg(p, 0);
+						addArgument(mb, r, varisdict[k]);
+						addArgument(mb, r, getArg(p, 2)); /* cand */
+						addArgument(mb, r, vardictvalue[k]);
+						addArgument(mb, r, getArg(p, 3)); /* val */
+						addArgument(mb, r, getArg(p, 4)); /* op */
+						pushInstruction(mb,r);
+					} else {
+						/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
+					 	 * tp = select(u, nil, l, h, ...)
+						 * tp2 = batcalc.bte/sht/int(tp)
+						 * pos = intersect(o, tp2, cand, nil) */
 
-					int tpe = getVarType(mb, varisdict[k]);
-					InstrPtr s = newInstructionArgs(mb, dictRef, putName("convert"), 3);
-					getArg(s, 0) = newTmpVariable(mb, tpe);
-					addArgument(mb, s, getArg(r, 0));
-					pushInstruction(mb,s);
+						int cand = getArg(p, j+1);
+						InstrPtr r = copyInstruction(p);
+						getArg(r, j) = vardictvalue[k];
+						if (cand)
+							r = ReplaceWithNil(mb, r, j+1, TYPE_bat); /* no candidate list */
+						pushInstruction(mb,r);
 
-					InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 5);
-					getArg(t, 0) = getArg(p, 0);
-					addArgument(mb, t, varisdict[k]);
-					addArgument(mb, t, getArg(s, 0));
-					addArgument(mb, t, cand);
-					t = pushNil(mb, t, TYPE_bat);
-					t = pushBit(mb, t, FALSE);    /* nil matches */
-					t = pushBit(mb, t, TRUE);     /* max_one */
-					t = pushNil(mb, t, TYPE_lng); /* estimate */
-					pushInstruction(mb,t);
+						int tpe = getVarType(mb, varisdict[k]);
+						InstrPtr s = newInstructionArgs(mb, dictRef, putName("convert"), 3);
+						getArg(s, 0) = newTmpVariable(mb, tpe);
+						addArgument(mb, s, getArg(r, 0));
+						pushInstruction(mb,s);
 
+						InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 9);
+						//InstrPtr t = newInstructionArgs(mb, dictRef, intersectRef, 9);
+						getArg(t, 0) = getArg(p, 0);
+						addArgument(mb, t, varisdict[k]);
+						addArgument(mb, t, getArg(s, 0));
+						addArgument(mb, t, cand);
+						t = pushNil(mb, t, TYPE_bat);
+						t = pushBit(mb, t, FALSE);    /* nil matches */
+						t = pushBit(mb, t, TRUE);     /* max_one */
+						t = pushNil(mb, t, TYPE_lng); /* estimate */
+						pushInstruction(mb,t);
+					}
 					done = 1;
 					break;
 				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef

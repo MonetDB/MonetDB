@@ -195,14 +195,35 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter ui = bat_iterator_nolock(u);
 	if (o->ttype == TYPE_bte) {
 		unsigned char *op = Tloc(o, 0);
-		BATloop(o, p, q) {
-			BUN up = op[p];
-	        if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
-				bat_iterator_end(&oi);
-				bat_destroy(b);
-				bat_destroy(o);
-				bat_destroy(u);
-				throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		if (ATOMstorage(u->ttype) == TYPE_int) {
+			int *up = Tloc(u, 0);
+			int *bp = Tloc(b, 0);
+
+			BATloop(o, p, q) {
+				bp[p] = up[op[p]];
+			}
+			BATsetcount(b, BATcount(o));
+			BATnegateprops(b);
+		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+			lng *up = Tloc(u, 0);
+			lng *bp = Tloc(b, 0);
+
+			BATloop(o, p, q) {
+				bp[p] = up[op[p]];
+			}
+			BATsetcount(b, BATcount(o));
+			BATnegateprops(b);
+		} else {
+			BATloop(o, p, q) {
+				BUN up = op[p];
+				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+					bat_iterator_end(&oi);
+					bat_destroy(b);
+					bat_destroy(o);
+					bat_destroy(u);
+					throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 			}
 		}
 	} else if (o->ttype == TYPE_sht) {
@@ -211,6 +232,15 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMstorage(u->ttype) == TYPE_int) {
 			int *up = Tloc(u, 0);
 			int *bp = Tloc(b, 0);
+
+			BATloop(o, p, q) {
+				bp[p] = up[op[p]];
+			}
+			BATsetcount(b, BATcount(o));
+			BATnegateprops(b);
+		} else if (ATOMstorage(u->ttype) == TYPE_lng) {
+			lng *up = Tloc(u, 0);
+			lng *bp = Tloc(b, 0);
 
 			BATloop(o, p, q) {
 				bp[p] = up[op[p]];
@@ -474,4 +504,59 @@ DICTjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (err)
 		throw(MAL, "BATjoin", GDK_EXCEPTION);
 	return res;
+}
+
+str
+DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *R0 = getArgReference_bat(stk, pci, 0);
+	bat LO = *getArgReference_bat(stk, pci, 1);
+	bat LC = *getArgReference_bat(stk, pci, 2);
+	bat LV = *getArgReference_bat(stk, pci, 3);
+	ptr v = getArgReference(stk, pci, 4);
+	const char *op = *getArgReference_str(stk, pci, 5);
+
+	BAT *lc = NULL, *bn = NULL;
+	BAT *lo = BATdescriptor(LO);
+	BAT *lv = BATdescriptor(LV);
+	BUN p = BUN_NONE;
+
+	if (!lo || !lv) {
+		bat_destroy(lo);
+		bat_destroy(lv);
+		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if (!is_bat_nil(LC))
+		lc = BATdescriptor(LC);
+	if (op[0] == '=' || ((op[0] == '<' || op[0] == '>') && lv->tsorted)) {
+		if (op[0] == '=')
+			p =  BUNfnd(lv, v);
+		else if (op[0] == '<')
+			p = SORTfndlast(lv, v);
+		else if (op[0] == '>')
+			p = SORTfndfirst(lv, v);
+		if (p != BUN_NONE) {
+			BATiter li = bat_iterator_nolock(lv);
+			ptr v = BUNtail(li, 0);
+			bn =  BATthetaselect(lo, lc, v, op);
+		} else {
+			bn = BATdense(0, 0, 0);
+		}
+	} else { /* select + intersect */
+		bn = BATthetaselect(lv, NULL, v, op);
+		if (bn) {
+			BAT *n = BATintersect(lo, bn, lc, NULL, true, true, BATcount(lo));
+			bat_destroy(bn);
+			bn = n;
+		}
+	}
+	bat_destroy(lo);
+	bat_destroy(lv);
+	bat_destroy(lc);
+	if (!bn)
+		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	BBPkeepref(*R0 = bn->batCacheid);
+	return MAL_SUCCEED;
 }
