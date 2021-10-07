@@ -95,6 +95,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
     cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT sql_min(4, 7 - 0.5207499) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('4.0000000'),)])
+    cli.execute("SELECT sql_min(4, 7 - 0.5207499) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('4.0000000'),)])
     cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("9910S",)])
     cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM rt3 where rt3.c0 = 1;") \
