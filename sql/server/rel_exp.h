@@ -197,7 +197,6 @@ extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
 extern sql_exp *exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r);
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
-extern list *check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one);
 
 extern int exp_aggr_is_count(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
