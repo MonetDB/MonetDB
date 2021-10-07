@@ -70,7 +70,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = BATcount(u);
 	/* create hash on u */
 	int tt = (cnt<256)?TYPE_bte:(cnt<(64*1024))?TYPE_sht:TYPE_int;
-	if (cnt > 2L*1024*1024*1024) {
+	if (cnt > (BUN)2*1024*1024*1024) {
 		bat_destroy(u);
 		bat_destroy(b);
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "dict compress: too many values");
@@ -114,7 +114,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATloop(b, p, q) {
 			BUN up = 0;
 			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
-				op[p] = up;
+				op[p] = (bte)up;
 			}
 		}
 		BATsetcount(o, BATcount(b));
@@ -132,7 +132,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATloop(b, p, q) {
 			BUN up = 0;
 			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
-				op[p] = up;
+				op[p] = (sht)up;
 			}
 		}
 		BATsetcount(o, BATcount(b));
@@ -254,24 +254,24 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		unsigned char *rp = Tloc(b, 0);
 		if (o->ttype == TYPE_void) {
 			BATloop(o, p, q) {
-				rp[p] = p+o->T.seq;
+				rp[p] = (unsigned char) (p+o->T.seq);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
 			BATloop(o, p, q) {
-				rp[p] = op[p];
+				rp[p] = (unsigned char) op[p];
 			}
 		}
 	} else if (rt == TYPE_sht) {
 		unsigned short *rp = Tloc(b, 0);
 		if (o->ttype == TYPE_void) {
 			BATloop(o, p, q) {
-				rp[p] = p+o->T.seq;
+				rp[p] = (unsigned short) (p+o->T.seq);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
 			BATloop(o, p, q) {
-				rp[p] = op[p];
+				rp[p] = (unsigned short) op[p];
 			}
 		}
 	} else {
@@ -341,7 +341,7 @@ DICTrenumber( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 		unsigned char *ip = Tloc(o, 0);
 		oid *c = Tloc(rc, 0);
 		for(BUN i = 0; i<cnt; i++) {
-			op[i] = ip[i]==offcnt?offcnt:c[ip[i]];
+			op[i] = (bte) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
@@ -351,7 +351,7 @@ DICTrenumber( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 		unsigned short *ip = Tloc(o, 0);
 		oid *c = Tloc(rc, 0);
 		for(BUN i = 0; i<cnt; i++) {
-			op[i] = ip[i]==offcnt?offcnt:c[ip[i]];
+			op[i] = (sht) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
@@ -431,7 +431,7 @@ DICTjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (!err) {
-		if (BATjoin(&r0, &r1, lo, ro, lc, rc, TRUE /* nil offset should match */, estimate) != GDK_SUCCEED)
+		if (BATjoin(&r0, &r1, lo, ro, lc, rc, TRUE /* nil offset should match */, is_lng_nil(estimate) ? BUN_NONE : (BUN) estimate) != GDK_SUCCEED)
 			err = 1;
 	}
 	bat_destroy(lo);
