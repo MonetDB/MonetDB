@@ -15,6 +15,20 @@ get_newcolumn(sql_trans *tr, sql_column *c)
 	return NULL;
 }
 
+static void
+BATnegateprops(BAT *b)
+{
+	/* disable all properties here */
+	b->tsorted = false;
+	b->trevsorted = false;
+	b->tnosorted = 0;
+	b->tnorevsorted = 0;
+	b->tseqbase = oid_nil;
+	b->tkey = false;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 0;
+}
+
 str
 DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -142,6 +156,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
+/* improve decompress of int,lng,hge types */
 str
 DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -180,14 +195,26 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else if (o->ttype == TYPE_sht) {
 		unsigned short *op = Tloc(o, 0);
-		BATloop(o, p, q) {
-			BUN up = op[p];
-	        if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
-				bat_iterator_end(&oi);
-				bat_destroy(b);
-				bat_destroy(o);
-				bat_destroy(u);
-				throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		if (ATOMstorage(u->ttype) == TYPE_int) {
+			int *up = Tloc(u, 0);
+			int *bp = Tloc(b, 0);
+
+			BATloop(o, p, q) {
+				bp[p] = up[op[p]];
+			}
+			BATsetcount(b, BATcount(o));
+			BATnegateprops(b);
+		} else {
+			BATloop(o, p, q) {
+				BUN up = op[p];
+			 if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+					bat_iterator_end(&oi);
+					bat_destroy(b);
+					bat_destroy(o);
+					bat_destroy(u);
+					throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 			}
 		}
 	} else if (o->ttype == TYPE_int) {
@@ -257,20 +284,6 @@ DICTconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*r = b->batCacheid);
 	bat_destroy(o);
 	return MAL_SUCCEED;
-}
-
-static void
-BATnegateprops(BAT *b)
-{
-	/* disable all properties here */
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
 }
 
 /* renumber lo iff rv0 is sorted and dense directly lookup in rv1
