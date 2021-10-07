@@ -1675,8 +1675,7 @@ check_projection_on_foreignside(sql_rel *r, list *pexps, int fk_left)
 static sql_rel *
 rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps, int *changes)
 {
-	sql_rel *rl = r->l;
-	sql_rel *rr = r->r;
+	sql_rel *rl = r->l, *rr = r->r, *nr = NULL;
 	sql_exp *je, *le, *nje, *re;
 	int fk_left = 1;
 
@@ -1695,16 +1694,6 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	}
 
 	(void)sql;
-#if 0
-	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
-		rl = rel_simplify_project_fk_join(sql, rl, pexps, changes);
-		r->l = rl;
-	}
-	if (!fk_left && is_join(rr->op) && !rel_is_ref(rr)) {
-		rr = rel_simplify_project_fk_join(sql, rr, pexps, changes);
-		r->r = rr;
-	}
-#endif
 	/* primary side must be a full table */
 	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) ||
 		(!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
@@ -1722,22 +1711,38 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 
 	(*changes)++;
 	/* if the foreign key column doesn't have NULL values, then return it */
-	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op)))
-		return fk_left ? r->l : r->r;
+	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op))) {
+		if (fk_left) {
+			nr = r->l;
+			r->l = NULL;
+		} else {
+			nr = r->r;
+			r->r = NULL;
+		}
+		rel_destroy(r);
+		return nr;
+	}
 
 	/* remove NULL values, ie generate a select not null */
 	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
 	set_anti(nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
-	return rel_select(sql->sa, fk_left ? r->l : r->r, nje);
+	if (fk_left) {
+		nr = r->l;
+		r->l = NULL;
+	} else {
+		nr = r->r;
+		r->r = NULL;
+	}
+	rel_destroy(r);
+	return rel_select(sql->sa, nr, nje);
 }
 
 static sql_rel *
 rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *changes)
 {
-	sql_rel *rl = r->l;
-	sql_rel *rr = r->r;
+	sql_rel *rl = r->l, *rr = r->r, *nr = NULL;
 	sql_exp *je, *le, *nje, *re, *oce;
 	int fk_left = 1;
 
@@ -1785,15 +1790,32 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 
 	(*changes)++;
 	/* if the foreign key column doesn't have NULL values, then return it */
-	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op)))
-		return fk_left ? r->l : r->r;
+	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op))) {
+		if (fk_left) {
+			nr = r->l;
+			r->l = NULL;
+		} else {
+			nr = r->r;
+			r->r = NULL;
+		}
+		rel_destroy(r);
+		return nr;
+	}
 
 	/* remove NULL values, ie generate a select not null */
 	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
 	set_anti(nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
-	return rel_select(sql->sa, fk_left ? r->l : r->r, nje);
+	if (fk_left) {
+		nr = r->l;
+		r->l = NULL;
+	} else {
+		nr = r->r;
+		r->r = NULL;
+	}
+	rel_destroy(r);
+	return rel_select(sql->sa, nr, nje);
 }
 
 /*
