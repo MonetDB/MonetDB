@@ -6008,7 +6008,7 @@ int
 sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
-	if (col && isTable(col->t) && EC_VARCHAR(col->type.type->eclass) && store->storage_api.double_elim_col)
+	if (col && isTable(col->t) && ATOMvarsized(col->type.type->localtype) && store->storage_api.double_elim_col)
 		return store->storage_api.double_elim_col(tr, col);
 	return 0;
 }
