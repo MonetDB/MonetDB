@@ -95,6 +95,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
     cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT sql_min(4, 7 - 0.5207499) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('4.0000000'),)])
+    cli.execute("SELECT sql_min(4, 7 - 0.5207499) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('4.0000000'),)])
     cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("9910S",)])
     cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM rt3 where rt3.c0 = 1;") \
@@ -228,6 +232,22 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(7,)])
     cli.execute("SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union all (select 3)) x(x);") \
         .assertSucceeded().assertDataResultMatch([(7,)])
+    cli.execute("create view v2(vc0) as ((select 3 from rt3) intersect (select 2 from t3));") \
+        .assertSucceeded()
+    cli.execute("create view v3(vc0) as (select 1 from rt3, v2 where \"right_shift_assign\"(inet '228.236.62.235/6', inet '82.120.56.164'));") \
+        .assertSucceeded()
+    cli.execute("create view v4(vc0, vc1, vc2) as (select 1, 2, 3);") \
+        .assertSucceeded()
+    cli.execute("create view v5(vc0) as ((select time '01:00:00') intersect (select time '01:00:00' from v3));") \
+        .assertSucceeded()
+    cli.execute("create view v6(vc0) as ((select 1) union all (select 2));") \
+        .assertSucceeded()
+    cli.execute("select 1 from v4, v5, v6;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("create view v7(vc0) as (select case '201' when ',' then rt3.c0 when '' then cast(rt3.c0 as bigint) end from rt3);") \
+        .assertSucceeded()
+    cli.execute("SELECT 1 FROM v7 CROSS JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS sub0(c0);") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("""

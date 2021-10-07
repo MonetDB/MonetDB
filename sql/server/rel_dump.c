@@ -972,6 +972,31 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 }
 
 static sql_exp*
+function_error_string(mvc *sql, const char *schema, const char *fname, list *exps, bool found, sql_ftype type)
+{
+	char *arg_list = NULL, *F = NULL, *fn = NULL;
+
+	FUNC_TYPE_STR(type, F, fn)
+
+	(void) F;
+	if (!list_empty(exps)) {
+		for (node *n = exps->h; n ; n = n->next) {
+			sql_subtype *t = exp_subtype(n->data);
+			char *tpe = t ? sql_subtype_string(sql->ta, t) : "?";
+
+			if (arg_list) {
+				arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+			} else {
+				arg_list = tpe;
+			}
+		}
+	}
+	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s %s%s%s'%s'(%s)",
+					found ? "Insufficient privileges for" : "No such", fn, schema ? "'":"", schema ? schema : "",
+					schema ? "'.":"", fname, arg_list ? arg_list : "");
+}
+
+static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp)
 {
 	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
@@ -1187,9 +1212,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				a = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
 			}
 			if (!a)
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
+				return function_error_string(sql, tname, cname, exps, false, F_AGGR);
 			if (!execute_priv(sql, a->func))
-				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate: no privilege to call aggregate '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
+				return function_error_string(sql, tname, cname, exps, true, F_AGGR);
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 			if (zero_if_empty)
 				set_zero_if_empty(exp);
@@ -1199,7 +1224,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				/* these functions are bound on a different way */
 				if ((f = sql_find_func(sql, NULL, cname, 2, F_FUNC, NULL))) {
 					if (!execute_priv(sql, f->func))
-						return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
+						return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 					sql_exp *res = exps->t->data;
 					sql_subtype *restype = exp_subtype(res);
 					f->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
@@ -1231,7 +1256,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				}
 
 				if (f && !execute_priv(sql, f->func))
-					return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
+					return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 				/* apply scale fixes if needed */
 				if (f && f->func->type != F_ANALYTIC) {
 					if (list_length(exps) == 1) {
@@ -1311,7 +1336,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					}
 				}
 			} else {
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Function '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, nops);
+				return function_error_string(sql, tname, cname, exps, false, F_FUNC);
 			}
 		}
 	}

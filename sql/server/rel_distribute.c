@@ -190,7 +190,6 @@ replica(visitor *v, sql_rel *rel)
 static sql_rel *
 distribute(visitor *v, sql_rel *rel)
 {
-	sql_rel *l = rel->l, *r = rel->r;
 	prop *p, *pl, *pr;
 
 	/* for merge statement join, ignore the multiple references */
@@ -204,6 +203,7 @@ distribute(visitor *v, sql_rel *rel)
 			return rel;
 		}
 	}
+	sql_rel *l = rel->l, *r = rel->r; /* look on left and right relations after possibly doing rel_copy */
 
 	switch (rel->op) {
 	case op_basetable: {
