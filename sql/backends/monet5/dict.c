@@ -131,6 +131,22 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat_destroy(o);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
+		BUN minpos = BUN_NONE, maxpos = BUN_NONE;
+		BATloop(o, p, q) {
+			if (op[p] == 0) {
+				minpos = p;
+				break;
+			}
+		}
+		bte m = BATcount(u) - 1;
+		BATloop(o, p, q) {
+			if (op[p] == m) {
+				maxpos = p;
+				break;
+			}
+		}
+		o->tminpos = minpos;
+		o->tmaxpos = maxpos;
 	} else if (tt == TYPE_sht) {
 		sht *op = (sht*)Tloc(o, 0);
 		BATloop(b, p, q) {
@@ -152,6 +168,22 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat_destroy(o);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
+		BUN minpos = BUN_NONE, maxpos = BUN_NONE;
+		BATloop(o, p, q) {
+			if (op[p] == 0) {
+				minpos = p;
+				break;
+			}
+		}
+		sht m = BATcount(u) - 1;
+		BATloop(o, p, q) {
+			if (op[p] == m) {
+				maxpos = p;
+				break;
+			}
+		}
+		o->tminpos = minpos;
+		o->tmaxpos = maxpos;
 	} else {
 		printf("implement int cases \n");
 	}
