@@ -9391,11 +9391,12 @@ rel_first_level_optimizations(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, sql_rel *rel)
 {
-	if ((!is_join(rel->op) && !is_semi(rel->op) && !is_select(rel->op)) || list_empty(rel->exps))
+	if (!rel || (!is_join(rel->op) && !is_semi(rel->op) && !is_select(rel->op)) || list_empty(rel->exps))
 		return rel;
 	int level = *(int*) v->data;
 
-	rel->exps = exp_merge_range(v, rel, rel->exps);
+	if (rel)
+		rel->exps = exp_merge_range(v, rel, rel->exps);
 	if (v->value_based_opt)
 		rel = rel_reduce_casts(v, rel);
 	rel = rel_select_cse(v, rel);
@@ -9424,7 +9425,8 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_basecount(visitor *v, sql_rel *rel)
 {
-	if (is_groupby(rel->op) && rel->l && !rel->r && list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->l && list_empty(rel->r) && 
+		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *bt = rel->l;
 		sql_exp *e = rel->exps->h->data;
 		if (is_basetable(bt->op) && list_empty(e->l)) { /* count(*) */
@@ -9441,6 +9443,7 @@ rel_basecount(visitor *v, sql_rel *rel)
 
 			ne = exp_propagate(v->sql->sa, ne, e);
 			exp_setname(v->sql->sa, ne, exp_find_rel_name(e), exp_name(e));
+			rel_destroy(rel);
 			rel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), ne));
 			v->changes++;
 		}
@@ -9501,7 +9504,7 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
 
-	if (!is_groupby(rel->op))
+	if (!rel || !is_groupby(rel->op))
 		return rel;
 
 	rel = rel_push_aggr_down(v, rel);
@@ -9532,13 +9535,13 @@ static sql_rel *
 rel_optimize_semi_and_anti(visitor *v, sql_rel *rel)
 {
 	/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-	if (is_semi(rel->op))
+	if (rel && is_semi(rel->op))
 		rel = rel_rewrite_semijoin(v, rel);
 	/* push semijoin through join */
-	if (is_semi(rel->op) || is_innerjoin(rel->op))
+	if (rel && (is_semi(rel->op) || is_innerjoin(rel->op)))
 		rel = rel_push_semijoin_down_or_up(v, rel);
 	/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
-	if (rel->op == op_anti)
+	if (rel && rel->op == op_anti)
 		rel = rel_rewrite_antijoin(v, rel);
 	return rel;
 }
@@ -9553,7 +9556,7 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 
 	rel = rel_simplify_fk_joins(v, rel);
 	rel = rel_push_select_down(v, rel);
-	if (rel->l && (is_select(rel->op) || is_join(rel->op)))
+	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
 
 	if (!is_select(rel->op) || list_empty(rel->exps))
