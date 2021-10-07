@@ -540,11 +540,6 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
-	if (lc && BATtdense(lc) && BATcount(lc) == BATcount(lo)) {
-		printf("dense\n");
-		bat_destroy(lc);
-		lc = NULL;
-	}
 	if (op[0] == '=' || ((op[0] == '<' || op[0] == '>') && lv->tsorted)) {
 		if (op[0] == '=')
 			p =  BUNfnd(lv, v);
