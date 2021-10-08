@@ -2129,10 +2129,11 @@ double_elim_col(sql_trans *tr, sql_column *col)
 	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
-		if (b && b->tvarsized) /* check double elimination */
+		if (b && ATOMstorage(b->ttype) == TYPE_str) { /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
-		if (de)
-			de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);
+			if (de)
+				de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);
+		}
 		assert(de >= 0 && de <= 16);
 	}
 	return de;
