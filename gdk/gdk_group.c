@@ -813,8 +813,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = GROUPBATINCR;
 	bi = bat_iterator(b);
 
-	if (bi.width <= 2)
+	if (bi.width <= 2) {
 		maxgrps = (BUN) 1 << (8 * bi.width);
+		if (bi.width == 1 && maxgrp < 256)
+			maxgrps *= maxgrp;
+	}
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
