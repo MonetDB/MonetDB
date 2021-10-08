@@ -38,11 +38,11 @@ main(void)
 	int32_t i1 = 42;
 	int32_t i2 = *(int32_t*)monetdbe_null(mdbe, monetdbe_int32_t);
 	int32_t ints[2] = { i1, i2 };
-	monetdbe_column col0 = { .type = monetdbe_int32_t, .data = &ints, .count = 2 };
+	monetdbe_column col0 = { .type.type = monetdbe_int32_t, .data = &ints, .count = 2 };
 
 	// str
 	char* dstr[2] = { "Hello", "World" };
-	monetdbe_column col1 = { .type = monetdbe_str, .data = &dstr, .count = 2 };
+	monetdbe_column col1 = { .type.type = monetdbe_str, .data = &dstr, .count = 2 };
 
 	// timestamp
 	monetdbe_data_date dt = { .day = 2, .month = 3, .year = 2020 };
@@ -50,25 +50,25 @@ main(void)
 	monetdbe_data_timestamp t1 = { .date = dt, .time = tm };
 	monetdbe_data_timestamp t2 = *(monetdbe_data_timestamp*)monetdbe_null(mdbe, monetdbe_timestamp);
 	monetdbe_data_timestamp tss[2] = { t1, t2 };
-	monetdbe_column col2 = { .type = monetdbe_timestamp, .data = &tss, .count = 2 };
+	monetdbe_column col2 = { .type.type = monetdbe_timestamp, .data = &tss, .count = 2 };
 
 	// date
 	monetdbe_data_date d1 = dt;
 	monetdbe_data_date d2 = *(monetdbe_data_date*)monetdbe_null(mdbe, monetdbe_date);
 	monetdbe_data_date dts[2] = { d1, d2 };
-	monetdbe_column col3 = { .type = monetdbe_date, .data = &dts, .count = 2 };
+	monetdbe_column col3 = { .type.type = monetdbe_date, .data = &dts, .count = 2 };
 
 	// time
 	monetdbe_data_time tm1 = tm;
 	monetdbe_data_time tm2 = *(monetdbe_data_time*)monetdbe_null(mdbe, monetdbe_time);
 	monetdbe_data_time tms[2] = { tm1, tm2 };
-	monetdbe_column col4 = { .type = monetdbe_time, .data = &tms, .count = 2 };
+	monetdbe_column col4 = { .type.type = monetdbe_time, .data = &tms, .count = 2 };
 
 	// blob
 	monetdbe_data_blob b1 = { .size = 1, .data = "33" };
 	monetdbe_data_blob b2 = *(monetdbe_data_blob*)monetdbe_null(mdbe, monetdbe_blob);
 	monetdbe_data_blob bs[2] = { b1, b2 };
-	monetdbe_column col5 = { .type = monetdbe_blob, .data = &bs, .count = 2 };
+	monetdbe_column col5 = { .type.type = monetdbe_blob, .data = &bs, .count = 2 };
 
 	monetdbe_column* dcol[6] = { &col0, &col1, &col2, &col3, &col4, &col5 };
 	if ((err = monetdbe_append(mdbe, "sys", "test", (monetdbe_column**) &dcol, 6)) != NULL)
@@ -76,7 +76,7 @@ main(void)
 
 	// str with wrong utf8
 	char* dstr2[2] = { "\xc3\x28", "\xe2\x28\xa1" };
-	monetdbe_column col12 = { .type = monetdbe_str, .data = &dstr2, .count = 2 };
+	monetdbe_column col12 = { .type.type = monetdbe_str, .data = &dstr2, .count = 2 };
 	monetdbe_column* dcol2[6] = { &col0, &col12, &col2, &col3, &col4, &col5 };
 	if ((err = monetdbe_append(mdbe, "sys", "test", (monetdbe_column**) &dcol2, 6)) == NULL)
 		error("Invalid UTF-8 string expected")
@@ -89,7 +89,7 @@ main(void)
 		for (size_t c = 0; c < result->ncols; c++) {
 			if ((err = monetdbe_result_fetch(result, rcol+c, c)) != NULL)
 				error(err)
-			switch (rcol[c]->type) {
+			switch (rcol[c]->type.type) {
 				case monetdbe_int32_t: {
 					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol[c];
 					if (col->data[r] == col->null_value) {

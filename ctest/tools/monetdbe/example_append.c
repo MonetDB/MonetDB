@@ -44,7 +44,7 @@ main(void)
 		for (size_t c = 0; c < result->ncols; c++) {
 			if ((err = monetdbe_result_fetch(result, rcol+c, c)) != NULL)
 				error(err)
-			switch (rcol[c]->type) {
+			switch (rcol[c]->type.type) {
 				case monetdbe_int32_t: {
 					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol[c];
 					if (col->data[r] == col->null_value) {
@@ -129,7 +129,7 @@ main(void)
 		for (size_t c = 0; c < result->ncols; c++) {
 			if ((err = monetdbe_result_fetch(result, rcol+c, c)) != NULL)
 				error(err)
-			switch (rcol[c]->type) {
+			switch (rcol[c]->type.type) {
 				case monetdbe_int32_t: {
 					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol[c];
 					if (col->data[r] == col->null_value) {
