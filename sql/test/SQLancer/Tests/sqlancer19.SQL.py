@@ -250,6 +250,13 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("ROLLBACK;")
 
+    cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
+    # At the moment I take this as a feature. Later we could replace the algebra.fetch call with something more appropriate
+    cli.execute("SELECT 1 FROM rt3 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL;") \
+        .assertFailed(err_message="Illegal argument: cannot fetch a single row from an empty input")
+    cli.execute("SELECT 1 FROM rt3 HAVING mybooludf(min(false));") \
+        .assertFailed(err_message="Illegal argument: cannot fetch a single row from an empty input")
+
     cli.execute("""
     START TRANSACTION;
     DROP TABLE rt1;
@@ -261,4 +268,5 @@ with SQLTestCase() as cli:
     DROP TABLE t2;
     DROP TABLE t3;
     DROP TABLE t4;
+    DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()
