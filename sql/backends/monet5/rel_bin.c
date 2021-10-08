@@ -1294,13 +1294,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (f->func->rel) {
-			if (!(s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION))))
-				return NULL;
-			f->func->rel = s->op4.rel; /* f->func->rel may get rewritten */
-		} else if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f))) {
+		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f)))
 			return NULL;
-		}
 	} 	break;
 	case e_aggr: {
 		list *attr = e->l;

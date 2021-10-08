@@ -1716,7 +1716,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		cmp_type = swap_compare(cmp_type);
 	}
 
-	ls = rel_value_exp(query, &rel, lo, f, ek);
+	ls = rel_value_exp(query, &rel, lo, f|sql_farg, ek);
 	if (!ls)
 		return NULL;
 	if (ls && rel && exp_has_freevar(sql, ls) && is_sql_sel(f))
@@ -1724,7 +1724,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	if (quantifier)
 		ek.card = card_set;
 
-	rs = rel_value_exp(query, &rel, ro, f, ek);
+	rs = rel_value_exp(query, &rel, ro, f|sql_farg, ek);
 	if (!rs)
 		return NULL;
 	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f))
@@ -1833,7 +1833,7 @@ rel_exists_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	exp_kind ek = {type_value, card_exists, FALSE};
 	sql_exp *le, *e;
 
-	le = rel_value_exp(query, rel, sc->data.sym, f, ek);
+	le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
 	if (!le)
 		return NULL;
 	if (!(e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS)))
@@ -1902,7 +1902,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		lo = dl->h->data.sym;
 	}
 	for( ; lo; lo = dn?dn->data.sym:NULL, dn = dn?dn->next:NULL ) {
-		le = rel_value_exp(query, rel, lo, f, ek);
+		le = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!le)
 			return NULL;
 		ek.card = card_set;
@@ -1926,7 +1926,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		n = n->data.lval->h;
 
 		for (; n; n = n->next) {
-			re = rel_value_exp(query, rel, n->data.sym, f, ek);
+			re = rel_value_exp(query, rel, n->data.sym, f|sql_farg, ek);
 			if (!re)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re))
@@ -2172,6 +2172,16 @@ exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_
 	return 0;
 }
 
+static bool
+exp_is_null_no_value_opt(sql_exp *e) 
+{
+	if (!e)
+		return false;
+	while (is_convert(e->type))
+		e = e->l;
+	return e->type == e_atom && e->l && atom_null(e->l);
+}
+
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek)
 {
@@ -2191,9 +2201,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		sql_exp *ls, *rs;
 
-		if (!(ls = rel_logical_value_exp(query, rel, lo, f, ek)))
+		if (!(ls = rel_value_exp(query, rel, lo, f|sql_farg, ek)))
 			return NULL;
-		if (!(rs = rel_logical_value_exp(query, rel, ro, f, ek)))
+		if (!(rs = rel_value_exp(query, rel, ro, f|sql_farg, ek)))
 			return NULL;
 		return rel_binop_(sql, rel ? *rel : NULL, ls, rs, "sys", sc->token == SQL_OR ? "or": "and", card_value);
 	}
@@ -2215,7 +2225,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		for (; ln; ln = ln->next) {
 			symbol *sym = ln->data.sym;
 
-			sql_exp *e = rel_value_exp(query, rel, sym, f, ek);
+			sql_exp *e = rel_value_exp(query, rel, sym, f|sql_farg, ek);
 			if (!e)
 				return NULL;
 			if (!obj_type)
@@ -2226,7 +2236,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		for (; rn; rn = rn->next) {
 			symbol *sym = rn->data.sym;
 
-			sql_exp *e = rel_value_exp(query, rel, sym, f, ek);
+			sql_exp *e = rel_value_exp(query, rel, sym, f|sql_farg, ek);
 			if (!e)
 				return NULL;
 			list_append(exps, e);
@@ -2275,13 +2285,13 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			compare_op = "=";
 		}
 
-		ls = rel_value_exp(query, rel, lo, f, ek);
+		ls = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!ls)
 			return NULL;
 		if (quantifier)
 			ek.card = card_set;
 
-		rs = rel_value_exp(query, rel, ro, f, ek);
+		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
 
@@ -2294,7 +2304,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
-		if (exp_is_null(ls) && exp_is_null(rs))
+		if (exp_is_null_no_value_opt(ls) && exp_is_null_no_value_opt(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
 
 		return exp_compare_func(sql, ls, rs, compare_func(cmp_type, need_not), quantifier);
@@ -2314,7 +2324,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, rel, lo, f, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
+		sql_exp *le = rel_value_exp(query, rel, lo, f|sql_farg, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
 			return NULL;
@@ -2326,7 +2336,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		lo = ro->data.lval->h->data.sym;
 		/* like uses a single string pattern */
 		ek.card = card_value;
-		re = rel_value_exp(query, rel, lo, f, ek);
+		re = rel_value_exp(query, rel, lo, f|sql_farg, ek);
 		if (!re)
 			return NULL;
 		if ((re = exp_check_type(sql, st, rel ? *rel : NULL, re, type_equal)) == NULL)
@@ -2354,11 +2364,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		assert(sc->data.lval->h->next->type == type_int);
 
-		if (!(le = rel_value_exp(query, rel, lo, f, ek)))
+		if (!(le = rel_value_exp(query, rel, lo, f|sql_farg, ek)))
 			return NULL;
-		if (!(re1 = rel_value_exp(query, rel, ro1, f, ek)))
+		if (!(re1 = rel_value_exp(query, rel, ro1, f|sql_farg, ek)))
 			return NULL;
-		if (!(re2 = rel_value_exp(query, rel, ro2, f, ek)))
+		if (!(re2 = rel_value_exp(query, rel, ro2, f|sql_farg, ek)))
 			return NULL;
 
 		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0)
@@ -2378,7 +2388,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
-		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f, ek);
+		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
 			return NULL;
@@ -2393,7 +2403,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 		}
-		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f, ek);
+		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
 			return NULL;
@@ -2430,7 +2440,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
-		sql_exp *le = rel_value_exp(query, rel, sc, f, ek);
+		sql_exp *le = rel_value_exp(query, rel, sc, f|sql_farg, ek);
 		sql_subtype bt;
 
 		if (!le)
@@ -2525,7 +2535,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		for (; ln; ln = ln->next) {
 			symbol *sym = ln->data.sym;
 
-			sql_exp *e = rel_value_exp(query, &rel, sym, f, ek);
+			sql_exp *e = rel_value_exp(query, &rel, sym, f|sql_farg, ek);
 			if (!e)
 				return NULL;
 			list_append(l, e);
@@ -2533,7 +2543,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		for (; rn; rn = rn->next) {
 			symbol *sym = rn->data.sym;
 
-			sql_exp *e = rel_value_exp(query, &rel, sym, f, ek);
+			sql_exp *e = rel_value_exp(query, &rel, sym, f|sql_farg, ek);
 			if (!e)
 				return NULL;
 			list_append(r, e);
@@ -2568,7 +2578,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
+		sql_exp *le = rel_value_exp(query, &rel, lo, f|sql_farg, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
 			return NULL;
@@ -2585,7 +2595,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, "")));
 		}
 		ro = ro->data.lval->h->data.sym;
-		re = rel_value_exp(query, &rel, ro, f, ek);
+		re = rel_value_exp(query, &rel, ro, f|sql_farg, ek);
 		if (!re)
 			return NULL;
 		if ((re = exp_check_type(sql, st, rel, re, type_equal)) == NULL)
@@ -2606,11 +2616,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		assert(sc->data.lval->h->next->type == type_int);
 
-		if (!(le = rel_value_exp(query, &rel, lo, f, ek)))
+		if (!(le = rel_value_exp(query, &rel, lo, f|sql_farg, ek)))
 			return NULL;
-		if (!(re1 = rel_value_exp(query, &rel, ro1, f, ek)))
+		if (!(re1 = rel_value_exp(query, &rel, ro1, f|sql_farg, ek)))
 			return NULL;
-		if (!(re2 = rel_value_exp(query, &rel, ro2, f, ek)))
+		if (!(re2 = rel_value_exp(query, &rel, ro2, f|sql_farg, ek)))
 			return NULL;
 
 		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0)
@@ -2627,7 +2637,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
-		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f, ek);
+		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 		sql_subtype *t;
 
 		if (!le)
@@ -2725,7 +2735,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
-		sql_exp *le = rel_value_exp(query, &rel, sc, f, ek);
+		sql_exp *le = rel_value_exp(query, &rel, sc, f|sql_farg, ek);
 		sql_subtype bt;
 
 		if (!le)
@@ -3992,7 +4002,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	symbol *s = dl->h->data.sym;
 	sql_subtype *tpe = &dl->h->next->data.typeval;
 	exp_kind ek = {type_value, card_column, FALSE};
-	sql_exp *e = rel_value_exp(query, rel, s, f, ek);
+	sql_exp *e = rel_value_exp(query, rel, s, f|sql_farg, ek);
 
 	if (!e)
 		return NULL;
@@ -4608,7 +4618,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			bt = exp_subtype(res);
 		}
-		if (exp_is_null(res))
+		if (exp_is_null_no_value_opt(res))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, bound_tp, p, res, type_equal)))
 			return NULL;

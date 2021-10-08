@@ -38,7 +38,7 @@ main(int argc, char** argv)
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
-			switch (rcol->type) {
+			switch (rcol->type.type) {
 				case monetdbe_int32_t: {
 					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
 					if (col->data[r] == col->null_value) {
