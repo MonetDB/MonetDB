@@ -2172,6 +2172,16 @@ exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_
 	return 0;
 }
 
+static bool
+exp_is_null_no_value_opt(sql_exp *e) 
+{
+	if (!e)
+		return false;
+	while (is_convert(e->type))
+		e = e->l;
+	return e->type == e_atom && e->l && atom_null(e->l);
+}
+
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek)
 {
@@ -2294,7 +2304,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
-		if (exp_is_null(ls) && exp_is_null(rs))
+		if (exp_is_null_no_value_opt(ls) && exp_is_null_no_value_opt(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
 
 		return exp_compare_func(sql, ls, rs, compare_func(cmp_type, need_not), quantifier);
@@ -4608,7 +4618,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			bt = exp_subtype(res);
 		}
-		if (exp_is_null(res))
+		if (exp_is_null_no_value_opt(res))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, bound_tp, p, res, type_equal)))
 			return NULL;
