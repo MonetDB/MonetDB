@@ -510,7 +510,6 @@ typedef struct sql_func {
 	 		*/
 	sql_schema *s;
 	sql_allocator *sa;
-	void *rel;	/* implementation */
 } sql_func;
 
 typedef struct sql_subfunc {
