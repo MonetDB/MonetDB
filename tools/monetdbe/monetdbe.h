@@ -120,7 +120,7 @@ typedef struct {
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
 	typedef struct                                     \
 	{                                                  \
-		monetdbe_types type;                        \
+		monetdbe_type type;                        \
 		ctype *data;                               \
 		size_t count;                              \
 		char *name;				   \

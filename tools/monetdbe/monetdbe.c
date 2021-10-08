@@ -1922,7 +1922,7 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL)); \
 		goto cleanup;													\
 	}																	\
-	bat_data->type = monetdbe_##tpe;									\
+	bat_data->type.type = monetdbe_##tpe;								\
 	bat_data->is_null = tpe##_is_null;									\
 	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale); \
 	column_result = (monetdbe_column*) bat_data;
