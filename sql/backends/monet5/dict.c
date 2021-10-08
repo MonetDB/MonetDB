@@ -601,12 +601,13 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (op[0] == '=' || ((op[0] == '<' || op[0] == '>') && lv->tsorted)) {
 		if (ATOMvarsized(lv->ttype))
 			v = *(ptr*)v;
-		if (op[0] == '=')
+		if (op[0] == '=') {
 			p =  BUNfnd(lv, v);
-		else if (op[0] == '<')
-			p = SORTfndlast(lv, v);
-		else if (op[0] == '>')
+		} else if (op[0] == '<') {
 			p = SORTfndfirst(lv, v);
+		} else if (op[0] == '>') {
+			p = SORTfndlast(lv, v);
+		}
 		if (p != BUN_NONE) {
 			if (lo->ttype == TYPE_bte) {
 				bte val = p;
