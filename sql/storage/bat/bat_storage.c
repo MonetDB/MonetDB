@@ -2261,9 +2261,10 @@ create_col(sql_trans *tr, sql_column *c)
 
 				if (ok == LOG_OK) {
 					sqlstore *store = tr->store;
-					bat->cs.ebid = logger_find_bat(store->logger, -c->base.id);
-					if (!bat->cs.ebid)
+					int bid = logger_find_bat(store->logger, -c->base.id);
+					if (!bid)
 						return LOG_ERR;
+					bat->cs.ebid = temp_dup(bid);
 				}
 				return ok;
 			}
