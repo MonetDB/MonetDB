@@ -88,14 +88,14 @@ monetdbe_mapi_fetch_field(monetdbe_MapiHdl hdl, int fnr)
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			size_t r = (size_t) hdl->current_row - 1;
-			if (rcol->type != monetdbe_str && !hdl->mapi_row[fnr]) {
+			if (rcol->type.type != monetdbe_str && !hdl->mapi_row[fnr]) {
 				hdl->mapi_row[fnr] = MAPIalloc(SIMPLE_TYPE_SIZE);
 				if (!hdl->mapi_row[fnr]) {
 					hdl->msg = "malloc failure";
 					return NULL;
 				}
 			}
-			switch(rcol->type) {
+			switch(rcol->type.type) {
 			case monetdbe_bool: {
 				monetdbe_column_bool *icol = (monetdbe_column_bool*)rcol;
 				if (icol->data[r] == icol->null_value)
@@ -180,7 +180,7 @@ monetdbe_mapi_get_type(monetdbe_MapiHdl hdl, int fnr)
 	if (fnr < (int)hdl->result->ncols) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
-			switch(rcol->type) {
+			switch(rcol->type.type) {
 			case monetdbe_bool:
 				return "boolean";
 			case monetdbe_int8_t:

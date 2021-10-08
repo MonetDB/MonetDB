@@ -38,7 +38,7 @@ main(void)
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
-			switch (rcol->type) {
+			switch (rcol->type.type) {
 				case monetdbe_blob: {
 					monetdbe_column_blob * col = (monetdbe_column_blob *) rcol;
 					if (!col->data[r].data) {
