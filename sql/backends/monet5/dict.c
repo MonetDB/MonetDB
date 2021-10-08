@@ -133,8 +133,10 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BUN minpos = BUN_NONE, maxpos = BUN_NONE;
 		bte m = BATcount(u) - 1;
-		bte minval = m<0?m:0;
+		bte minval = m<0?-128:0;
 		bte maxval = m<0?127:m;
+		o->tnil = m<0?true:false;
+		o->tnonil = m<=0?false:true;
 		BATloop(o, p, q) {
 			if (op[p] == minval) {
 				minpos = p;
@@ -172,8 +174,10 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BUN minpos = BUN_NONE, maxpos = BUN_NONE;
 		sht m = BATcount(u) - 1;
-		sht minval = m<0?m:0;
+		sht minval = m<0?-32768:0;
 		sht maxval = m<0?32767:m;
+		o->tnil = m<0?true:false;
+		o->tnonil = m<=0?false:true;
 		BATloop(o, p, q) {
 			if (op[p] == minval) {
 				minpos = p;
@@ -317,6 +321,7 @@ convert_oid( BAT *o, int rt)
 	BUN p, q;
 	BATiter oi = bat_iterator(o);
 	BAT *b = COLnew(o->hseqbase, rt, BATcount(o), TRANSIENT);
+	int brokenrange = 0, nil = 0;
 
 	if (!b)
 		return NULL;
@@ -324,24 +329,32 @@ convert_oid( BAT *o, int rt)
 		unsigned char *rp = Tloc(b, 0);
 		if (o->ttype == TYPE_void) {
 			BATloop(o, p, q) {
-				rp[p] = (unsigned char) (p+o->T.seq);
+				rp[p] = (unsigned char) (p+o->tseqbase);
+				brokenrange |= ((bte)rp[p] < 0);
+				nil |= ((bte)rp[p] == bte_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
 			BATloop(o, p, q) {
 				rp[p] = (unsigned char) op[p];
+				brokenrange |= ((bte)rp[p] < 0);
+				nil |= ((bte)rp[p] == bte_nil);
 			}
 		}
 	} else if (rt == TYPE_sht) {
 		unsigned short *rp = Tloc(b, 0);
 		if (o->ttype == TYPE_void) {
 			BATloop(o, p, q) {
-				rp[p] = (unsigned short) (p+o->T.seq);
+				rp[p] = (unsigned short) (p+o->tseqbase);
+				brokenrange |= ((short)rp[p] < 0);
+				nil |= ((short)rp[p] == sht_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
 			BATloop(o, p, q) {
 				rp[p] = (unsigned short) op[p];
+				brokenrange |= ((short)rp[p] < 0);
+				nil |= ((short)rp[p] == sht_nil);
 			}
 		}
 	} else {
@@ -349,8 +362,17 @@ convert_oid( BAT *o, int rt)
 	}
 	bat_iterator_end(&oi);
 	BATsetcount(b, BATcount(o));
-	b->T.sorted = o->T.sorted;
-	b->T.key = o->T.key;
+	BATnegateprops(b);
+	if (!brokenrange)
+		b->tsorted = o->tsorted;
+	b->tkey = o->tkey;
+	if (nil) {
+		b->tnil = true;
+		b->tnonil = false;
+	} else {
+		b->tnil = false;
+		b->tnonil = true;
+	}
 	return b;
 }
 
