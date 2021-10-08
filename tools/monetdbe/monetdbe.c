@@ -2627,6 +2627,8 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			} else {
 				bat_data->data[j] = GDKstrdup(t);
 				if (!bat_data->data[j]) {
+					bat_iterator_end(&li);
+					set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL));
 					goto cleanup;
 				}
 			}
