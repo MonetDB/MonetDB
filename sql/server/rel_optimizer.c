@@ -3713,18 +3713,24 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_rel *rel, sql_exp *or, list *l1, list
 		if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
 			int fupcast = is_numeric_upcast(first), supcast = is_numeric_upcast(second);
 			for(node *n = l2->h ; n && valid; n = n->next) {
-				sql_exp *e = n->data, *l = e->l;
+				sql_exp *e = n->data, *l = e->l, *r = e->r;
 
 				if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
-					!is_anti(e) && is_semantics(e) && exp_is_null(e->r)) {
+					!is_anti(e) && is_semantics(e)) {
 					int lupcast = is_numeric_upcast(l);
+					int rupcast = is_numeric_upcast(r);
+					sql_exp *rr = rupcast ? r->l : r;
 
-					if (exp_match_exp(fupcast?first->l:first, lupcast?l->l:l))
-						first_is_null_found = true;
-					else if (exp_match_exp(supcast?second->l:second, lupcast?l->l:l))
-						second_is_null_found = true;
-					else
+					if (rr->type == e_atom && rr->l && atom_null(rr->l)) {
+						if (exp_match_exp(fupcast?first->l:first, lupcast?l->l:l))
+							first_is_null_found = true;
+						else if (exp_match_exp(supcast?second->l:second, lupcast?l->l:l))
+							second_is_null_found = true;
+						else
+							valid = false;
+					} else {
 						valid = false;
+					}
 				} else {
 					valid = false;
 				}
