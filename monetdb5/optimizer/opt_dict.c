@@ -143,7 +143,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						addArgument(mb, t, getArg(s, 0));
 						addArgument(mb, t, cand);
 						t = pushNil(mb, t, TYPE_bat);
-						t = pushBit(mb, t, FALSE);    /* nil matches */
+						t = pushBit(mb, t, TRUE);    /* nil matches */
 						t = pushBit(mb, t, TRUE);     /* max_one */
 						t = pushNil(mb, t, TYPE_lng); /* estimate */
 						pushInstruction(mb,t);

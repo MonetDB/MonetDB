@@ -621,6 +621,8 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATdense(0, 0, 0);
 		}
 	} else { /* select + intersect */
+		if (ATOMvarsized(lv->ttype))
+			v = *(ptr*)v;
 		bn = BATthetaselect(lv, NULL, v, op);
 		/* call dict convert */
 		if (bn) {
