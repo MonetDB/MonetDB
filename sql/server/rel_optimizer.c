@@ -3719,10 +3719,10 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
 
 		if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
 			for(node *n = l2->h ; n && valid; n = n->next) {
-				sql_exp *e = n->data;
+				sql_exp *e = n->data, *r = e->r;
 
 				if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
-					!is_anti(e) && is_semantics(e) && exp_is_null(e->r)) {
+					!is_anti(e) && is_semantics(e) && r->type == e_atom && r->l && atom_null(r->l)) {
 					if (exp_match_exp(first, e->l))
 						first_is_null_found = true;
 					else if (exp_match_exp(second, e->l))
