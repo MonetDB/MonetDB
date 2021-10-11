@@ -132,7 +132,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
 		BUN minpos = BUN_NONE, maxpos = BUN_NONE;
-		bte m = BATcount(u) - 1;
+		bte m = (bte)(BATcount(u) - 1);
 		bte minval = m<0?-128:0;
 		bte maxval = m<0?127:m;
 		o->tnil = m<0?true:false;
@@ -173,7 +173,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
 		BUN minpos = BUN_NONE, maxpos = BUN_NONE;
-		sht m = BATcount(u) - 1;
+		sht m = (sht)(BATcount(u) - 1);
 		sht minval = m<0?-32768:0;
 		sht maxval = m<0?32767:m;
 		o->tnil = m<0?true:false;
@@ -610,10 +610,10 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (p != BUN_NONE) {
 			if (lo->ttype == TYPE_bte) {
-				bte val = p;
+				bte val = (bte)p;
 				bn =  BATthetaselect(lo, lc, &val, op);
 			} else if (lo->ttype == TYPE_sht) {
-				sht val = p;
+				sht val = (sht)p;
 				bn =  BATthetaselect(lo, lc, &val, op);
 			} else
 				assert(0);
