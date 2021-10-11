@@ -241,7 +241,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	 	break;
 	case e_cmp:
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
-			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+			mnstr_printf(fout, "(");
+			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
+			mnstr_printf(fout, ")");
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
@@ -258,30 +260,41 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exps_print(sql, fout, e->l, depth, refs, 0, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			mnstr_printf(fout, " FILTER \"%s\" ", dump_escape_ident(sql->ta, f->func->base.name));
+			mnstr_printf(fout, " FILTER \"%s\".\"%s\"",
+					f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
+					dump_escape_ident(sql->ta, f->func->base.name));
 			exps_print(sql, fout, e->r, depth, refs, 0, 1);
 		} else if (e->f) {
+			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
+			mnstr_printf(fout, ")");
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)) );
+			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)));
+			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
+			mnstr_printf(fout, ")");
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, range2rcompare(e->flag) );
+			cmp_print(sql, fout, range2rcompare(e->flag));
+			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
-			mnstr_printf(fout, " BETWEEN ");
+			mnstr_printf(fout, ")");
 			if (is_symmetric(e))
-				mnstr_printf(fout, " SYM ");
+				mnstr_printf(fout, " SYM");
 		} else {
+			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
+			mnstr_printf(fout, ")");
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			if (is_semantics(e))
 				mnstr_printf(fout, " *");
 			cmp_print(sql, fout, e->flag);
 
+			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
+			mnstr_printf(fout, ")");
 		}
 	 	break;
 	default:
@@ -293,10 +306,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NULLS LAST");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
-	/*
-	if (is_basecol(e))
-		mnstr_printf(fout, " BASECOL");
-		*/
 	if (e->p) {
 		prop *p = e->p;
 		char *pv;
@@ -802,7 +811,7 @@ readString( char *r, int *pos)
 	return st;
 }
 
-static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp);
+static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp);
 
 static sql_exp*
 read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
@@ -863,7 +872,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 
 		(*pos)++;
 		skipWS( r, pos);
-		e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp, 0);
+		e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp);
 		if (!e && r[*pos] != ebracket) {
 			return sql_error(sql, -1, SQLSTATE(42000) "Missing closing %c\n", ebracket);
 		} else if (!e) {
@@ -879,7 +888,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 
 			(*pos)++;
 			skipWS( r, pos);
-			e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp, 0);
+			e = exp_read(sql, lrel, rrel, top ? exps : top_exps, r, pos, grp);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -999,9 +1008,9 @@ function_error_string(mvc *sql, const char *schema, const char *fname, list *exp
 }
 
 static sql_exp*
-exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp, int in_cmp)
+exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
-	int f = -1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0, sem = 0, anti = 0;
+	int old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
@@ -1052,10 +1061,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		break;
 	/* atom */
 	case '(':
-		if (b == (r+*pos)) { /* or */
-			int filter = 0, anti = 0;
-			list *lexps,*rexps;
-			char *fname = NULL;
+		if (b == (r+*pos)) { /* comparison expression */
+			int anti = 0, sym = 0, semantics = 0;
+			comp_type ctype = cmp_all, ctype2 = cmp_all;
+			list *lexps = NULL, *rexps = NULL, *fexps = NULL;
+			char *sname = NULL, *fname = NULL;
 
 			if (!(lexps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0)))
 				return NULL;
@@ -1065,48 +1075,182 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				(*pos)++;
 				skipWS(r, pos);
 			}
-			if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
-				(*pos)+= (int) strlen("or");
-			} else if (strncasecmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
-				(*pos)+= (int) strlen("FILTER");
-				filter = 1;
-			} else {
-				return sql_error(sql, -1, SQLSTATE(42000) "Type: missing 'or'\n");
-			}
-			skipWS(r, pos);
-			if (filter) {
-				fname = r+*pos + 1;
-
-				skipIdent(r,pos);
-				convertIdent(fname);
+			if (r[*pos] == '*') {
+				semantics = 1;
 				(*pos)++;
-				skipWS(r,pos);
+				skipWS(r, pos);
 			}
 
+			switch(r[*pos]) {
+			case 'a':
+				if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
+					(*pos)+= (int) strlen("any =");
+					ctype = mark_in;
+				} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
+					(*pos)+= (int) strlen("all <>");
+					ctype = mark_notin;
+				}
+				break;
+			case 'n':
+				if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
+					(*pos)+= (int) strlen("notin");
+					ctype = cmp_notin;
+				}
+				break;
+			case 'F':
+				if (strncmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
+					(*pos)+= (int) strlen("FILTER");
+					ctype = cmp_filter;
+					skipWS(r, pos);
+					sname = r+*pos + 1;
+					skipIdent(r, pos);
+					convertIdent(sname);
+					(*pos)+=2;
+					fname = r+*pos + 1;
+					skipIdent(r, pos);
+					convertIdent(fname);
+					(*pos)++;
+				}
+				break;
+			case 'i':
+				if (strncmp(r+*pos, "in",  strlen("in")) == 0) {
+					(*pos)+= (int) strlen("in");
+					ctype = cmp_in;
+				}
+				break;
+			case 'o':
+				if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
+					(*pos)+= (int) strlen("or");
+					ctype = cmp_or;
+				}
+				break;
+			case '!':
+				ctype = cmp_notequal;
+				(*pos)++;
+				if (r[(*pos)] == '=')
+					(*pos)++;
+				break;
+			case '=':
+				ctype = cmp_equal;
+				(*pos)++;
+				break;
+			case '<':
+				ctype = cmp_lt;
+				(*pos)++;
+				if (r[(*pos)] == '=') {
+					ctype = cmp_lte;
+					(*pos)++;
+				}
+				break;
+			case '>':
+				ctype = cmp_gt;
+				(*pos)++;
+				if (r[(*pos)] == '=') {
+					ctype = cmp_gte;
+					(*pos)++;
+				}
+				break;
+			default:
+				return sql_error(sql, -1, SQLSTATE(42000) "Type: missing comparison type\n");
+			}
+
+			skipWS(r, pos);
 			if (!(rexps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0)))
 				return NULL;
-			if (filter) {
-				sql_subfunc *f = NULL;
-				list *tl = sa_list(sql->sa);
+			skipWS(r, pos);
 
-				for (node *n = lexps->h; n; n = n->next){
-					sql_exp *e = n->data;
+			switch (ctype) {
+				case cmp_gt:
+				case cmp_gte:
+				case cmp_lte:
+				case cmp_lt:
+				case cmp_equal:
+				case cmp_notequal:
+				case mark_in:
+				case mark_notin:
+					if (r[*pos] == '!' || r[*pos] == '<' || r[*pos] == '>') { /* BETWEEN case */
+						if (r[*pos] == '!') { /* ignore next anti */
+							(*pos)++;
+							skipWS(r, pos);
+						}
+						switch(r[*pos]) {
+						case '<':
+							ctype2 = cmp_lt;
+							(*pos)++;
+							if (r[(*pos)] == '=') {
+								ctype2 = cmp_lte;
+								(*pos)++;
+							}
+							break;
+						case '>':
+							ctype2 = cmp_gt;
+							(*pos)++;
+							if (r[(*pos)] == '=') {
+								ctype2 = cmp_gte;
+								(*pos)++;
+							}
+							break;
+						default:
+							return sql_error(sql, -1, SQLSTATE(42000) "Type: missing comparison type\n");
+						}
+						skipWS(r, pos);
+						if (!(fexps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0)))
+							return NULL;
+						skipWS(r, pos);
+						if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
+							(*pos)+= (int) strlen("SYM");
+							skipWS(r, pos);
+							sym = 1;
+						}
+						exp = exp_compare2(sql->sa, rexps->h->data, lexps->h->data, fexps->h->data, compare2range(swap_compare(ctype), ctype2), sym);
+					} else {
+						exp = exp_compare(sql->sa, lexps->h->data, rexps->h->data, ctype);
+						if (semantics)
+							set_semantics(exp);
+					}
+					if (anti)
+						set_anti(exp);
+					assert(list_length(lexps) == 1 && list_length(rexps) == 1 && (!fexps || list_length(fexps) == 1));
+					break;
+				case cmp_in:
+				case cmp_notin:
+					assert(list_length(lexps) == 1);
+					exp = exp_in(sql->sa, lexps->h->data, rexps, ctype);
+					if (anti)
+						set_anti(exp);
+					break;
+				case cmp_filter: {
+					sql_subfunc *f = NULL;
+					list *tl = sa_list(sql->sa);
 
-					list_append(tl, exp_subtype(e));
-				}
-				for (node *n = rexps->h; n; n = n->next){
-					sql_exp *e = n->data;
+					if (!list_empty(lexps)) {
+						for (node *n = lexps->h; n; n = n->next){
+							sql_exp *e = n->data;
 
-					list_append(tl, exp_subtype(e));
-				}
+							list_append(tl, exp_subtype(e));
+						}
+					}
+					if (!list_empty(rexps)) {
+						for (node *n = rexps->h; n; n = n->next){
+							sql_exp *e = n->data;
 
-				if (!(f = sql_bind_func_(sql, "sys", fname, tl, F_FILT)))
-					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
-				if (!execute_priv(sql, f->func))
-					return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'\n", fname);
-				return exp_filter(sql->sa, lexps, rexps, f, anti);
+							list_append(tl, exp_subtype(e));
+						}
+					}
+
+					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT)))
+						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'.'%s'\n", sname, fname);
+					if (!execute_priv(sql, f->func))
+						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
+					exp = exp_filter(sql->sa, lexps, rexps, f, anti);
+				} break;
+				case cmp_or:
+					exp = exp_or(sql->sa, lexps, rexps, anti);
+					break;
+				default:
+					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing comparison type\n");
 			}
-			return exp_or(sql->sa, lexps, rexps, anti);
+			break;
 		}
 		/* fall through */
 	case '[':
@@ -1142,7 +1286,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (r[*pos] == '[') { /* convert */
 				(*pos)++;
 				skipWS(r, pos);
-				if (!(exp = exp_read(sql, lrel, rrel, top_exps, r, pos, 0, 0)))
+				if (!(exp = exp_read(sql, lrel, rrel, top_exps, r, pos, 0)))
 					return NULL;
 				if (r[*pos] != ']')
 					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
@@ -1413,125 +1557,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	if (!(exp = read_exp_properties(sql, exp, r, pos)))
 		return NULL;
 
-	if (r[*pos] == '!') {
-		(*pos)++;
-		skipWS(r, pos);
-		anti = 1;
-	}
-	if (r[*pos] == '*') {
-		(*pos)++;
-		skipWS(r, pos);
-		sem = 1;
-	}
-
-	switch(r[*pos]) {
-	case 'a':
-		if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
-			(*pos)+= (int) strlen("any =");
-			f = mark_in;
-		} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
-			(*pos)+= (int) strlen("all <>");
-			f = mark_notin;
-		}
-		break;
-	case 'n':
-		if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
-			(*pos)+= (int) strlen("notin");
-			f = cmp_notin;
-		}
-		break;
-	case 'f':
-	case 'F':
-		if (strncasecmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
-			(*pos)+= (int) strlen("FILTER");
-			f = cmp_filter;
-		}
-		break;
-	case 'i':
-		if (strncmp(r+*pos, "in",  strlen("in")) == 0) {
-			(*pos)+= (int) strlen("in");
-			f = cmp_in;
-		}
-		break;
-	case 'o':
-		if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
-			(*pos)+= (int) strlen("or");
-			f = cmp_or;
-		}
-		break;
-	case '!':
-		f = cmp_notequal;
-		(*pos)++;
-		if (r[(*pos)] == '=') {
-			f = cmp_notequal;
-			(*pos)++;
-		}
-		break;
-	case '=':
-		f = cmp_equal;
-		(*pos)++;
-		break;
-	case '<':
-		f = cmp_lt;
-		(*pos)++;
-		if (r[(*pos)] == '=') {
-			f = cmp_lte;
-			(*pos)++;
-		}
-		break;
-	case '>':
-		f = cmp_gt;
-		(*pos)++;
-		if (r[(*pos)] == '=') {
-			f = cmp_gte;
-			(*pos)++;
-		}
-		break;
-	default:
-		break;
-	}
-	if (f >= 0) {
-		skipWS(r,pos);
-		if (f == cmp_in || f == cmp_notin) {
-			list *exps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0);
-			if (!exps)
-				return NULL;
-			exp = exp_in(sql->sa, exp, exps, f);
-			if (anti)
-				set_anti(exp);
-		} else {	
-			int sym = 0;
-			sql_exp *e = exp_read(sql, lrel, rrel, top_exps, r, pos, 0, 1);
-
-			if (!e)
-				return NULL;
-			if (strncmp(r+*pos, "BETWEEN",  strlen("BETWEEN")) == 0) {
-				(*pos)+= (int) strlen("BETWEEN");
-				skipWS(r,pos);
-			}
-			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
-				(*pos)+= (int) strlen("SYM");
-				skipWS(r,pos);
-				sym = 1;
-			}
-			if (e->type == e_cmp) {
-				exp = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag), is_symmetric(e));
-				if (is_anti(e))
-					set_anti(exp);
-			} else {
-				exp = exp_compare(sql->sa, exp, e, f);
-				if (anti)
-					set_anti(exp);
-				if (sem)
-					set_semantics(exp);
-				if (sym) /* set it, so it gets propagated to the range comparison */
-					set_symmetric(exp);
-			}
-		}
-	}
-
 	/* as alias */
-	if (!in_cmp && strncmp(r+*pos, "as", 2) == 0) {
+	if (strncmp(r+*pos, "as", 2) == 0) {
 		(*pos)+=2;
 		skipWS(r, pos);
 

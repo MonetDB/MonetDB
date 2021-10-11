@@ -52,12 +52,12 @@ project (
 | | | | | project (
 | | | | | | select (
 | | | | | | | table("sys"."input_double") [ "input_double"."a1", "input_double"."a2" ]
-| | | | | | ) [ "input_double"."a1" = clob "latitude" ]
+| | | | | | ) [ ("input_double"."a1") = (clob "latitude") ]
 | | | | | ) [ "input_double"."a2" as "tmp_2"."a2" ],
 | | | | | project (
 | | | | | | select (
 | | | | | | | table("sys"."input_double") [ "input_double"."a1", "input_double"."a2" ]
-| | | | | | ) [ "input_double"."a1" = clob "longitude" ]
+| | | | | | ) [ ("input_double"."a1") = (clob "longitude") ]
 | | | | | ) [ "input_double"."a2" as "tmp_3"."a2" ]
 | | | | ) [  ]
 | | | ) [ "sys"."st_point"("tmp_2"."a2", "tmp_3"."a2") as "p"."a1" ]
