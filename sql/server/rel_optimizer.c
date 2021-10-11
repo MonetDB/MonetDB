@@ -7478,8 +7478,7 @@ rel_select_order(visitor *v, sql_rel *rel)
 	int *scores = NULL;
 	sql_exp **exps = NULL;
 
-	assert(is_select(rel->op));
-	if (list_length(rel->exps) > 1) {
+	if (is_select(rel->op) && list_length(rel->exps) > 1) {
 		node *n;
 		int i, nexps = list_length(rel->exps);
 		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
@@ -7501,92 +7500,69 @@ rel_select_order(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_simplify_like_select(visitor *v, sql_rel *rel)
 {
-	list *exps;
-	int needed = 0;
-
-	assert(is_select(rel->op) && !list_empty(rel->exps));
-	for (node *n = rel->exps->h; n && !needed; n = n->next) {
-		sql_exp *e = n->data;
-		list *l = e->l;
-		list *r = e->r;
-
-		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3)
-			needed = 1;
-	}
-
-	if (!needed)
-		return rel;
-
-	exps = sa_list(v->sql->sa);
-	if (exps == NULL)
-		return NULL;
-	for (node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		list *l = e->l;
-		list *r = e->r;
-
-		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3) {
+	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		for (node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			list *l = e->l;
 			list *r = e->r;
-			sql_exp *fmt = r->h->data;
-			sql_exp *esc = r->h->next->data;
-			sql_exp *isen = r->h->next->next->data;
-			int rewrite = 0, isnull = 0;
 
-			if (fmt->type == e_convert)
-				fmt = fmt->l;
-			/* check for simple like expression */
-			if (exp_is_null(fmt)) {
-				isnull = 1;
-			} else if (is_atom(fmt->type)) {
-				atom *fa = NULL;
-
-				if (fmt->l)
-					fa = fmt->l;
-				if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
-					rewrite = 1;
-			}
-			if (rewrite && !isnull) { /* check escape flag */
-				if (exp_is_null(esc)) {
-					isnull = 1;
-				} else {
-					atom *ea = esc->l;
-
-					if (!is_atom(esc->type) || !ea)
-						rewrite = 0;
-					else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
-						rewrite = 0;
-				}
-			}
-			if (rewrite && !isnull) { /* check insensitive flag */
-				if (exp_is_null(isen)) {
-					isnull = 1;
-				} else {
-					atom *ia = isen->l;
-
-					if (!is_atom(isen->type) || !ia)
-						rewrite = 0;
-					else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
-						rewrite = 0;
-				}
-			}
-			if (isnull) {
-				list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
-				v->changes++;
-			} else if (rewrite) { 	/* rewrite to cmp_equal ! */
-				list *l = e->l;
+			if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) == 3) {
 				list *r = e->r;
-				sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, is_anti(e) ? cmp_notequal : cmp_equal);
+				sql_exp *fmt = r->h->data;
+				sql_exp *esc = r->h->next->data;
+				sql_exp *isen = r->h->next->next->data;
+				int rewrite = 0, isnull = 0;
 
-				list_append(exps, ne);
-				v->changes++;
-			} else {
-				list_append(exps, e);
+				if (fmt->type == e_convert)
+					fmt = fmt->l;
+				/* check for simple like expression */
+				if (exp_is_null(fmt)) {
+					isnull = 1;
+				} else if (is_atom(fmt->type)) {
+					atom *fa = NULL;
+
+					if (fmt->l)
+						fa = fmt->l;
+					if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
+						rewrite = 1;
+				}
+				if (rewrite && !isnull) { /* check escape flag */
+					if (exp_is_null(esc)) {
+						isnull = 1;
+					} else {
+						atom *ea = esc->l;
+
+						if (!is_atom(esc->type) || !ea)
+							rewrite = 0;
+						else if (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0)
+							rewrite = 0;
+					}
+				}
+				if (rewrite && !isnull) { /* check insensitive flag */
+					if (exp_is_null(isen)) {
+						isnull = 1;
+					} else {
+						atom *ia = isen->l;
+
+						if (!is_atom(isen->type) || !ia)
+							rewrite = 0;
+						else if (ia->data.vtype != TYPE_bit || ia->data.val.btval == 1)
+							rewrite = 0;
+					}
+				}
+				if (isnull) {
+					rel->exps = list_append(sa_list(v->sql->sa), exp_null(v->sql->sa, sql_bind_localtype("bit")));
+					v->changes++;
+					return rel;
+				} else if (rewrite) {	/* rewrite to cmp_equal ! */
+					list *l = e->l;
+					list *r = e->r;
+					n->data = exp_compare(v->sql->sa, l->h->data, r->h->data, is_anti(e) ? cmp_notequal : cmp_equal);
+					v->changes++;
+				}
 			}
-		} else {
-			list_append(exps, e);
 		}
 	}
-	rel->exps = exps;
 	return rel;
 }
 
@@ -8321,8 +8297,6 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 		sql_exp *e = n->data;
 		sql_exp *le = e->l;
 		sql_exp *re = e->r;
-		int anti = is_anti(e);
-		int semantics = is_semantics(e);
 
 		/* handle the and's in the or lists */
 		if (e->type != e_cmp || !is_theta_exp(e->flag) || e->f)
@@ -8350,6 +8324,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 						atom *a;
 
 						if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
+							int anti = is_anti(e);
 							sql_exp *arg1, *arg2;
 #ifdef HAVE_HGE
 							hge val = 1;
@@ -8378,14 +8353,13 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 								continue;
 							}
 							e = exp_compare(v->sql->sa, le->l, nre, e->flag);
+							if (anti) set_anti(e);
 							v->changes++;
 						}
 					}
 				}
 			}
 		}
-		if (anti) set_anti(e);
-		if (semantics) set_semantics(e);
 		n->data = e;
 	}
 	return rel;
@@ -9449,6 +9423,8 @@ rel_optimize_select_and_joins_bottomup(visitor *v, sql_rel *rel)
 	rel = rel_select_cse(v, rel);
 	if (level == 1)
 		rel = rel_merge_select_rse(v, rel);
+	if (v->value_based_opt && level <= 1)
+		rel = rel_simplify_like_select(v, rel);
 	rel = rewrite_simplify(v, rel);
 	return rel;
 }
@@ -9606,11 +9582,6 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
 
-	if (!is_select(rel->op) || list_empty(rel->exps))
-		return rel;
-
-	if (v->value_based_opt)
-		rel = rel_simplify_like_select(v, rel);
 	rel = rel_select_order(v, rel);
 	return rel;
 }
