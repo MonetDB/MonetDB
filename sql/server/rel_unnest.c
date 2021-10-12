@@ -3463,6 +3463,18 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				if (list_empty(exps))
 					append(exps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
 				nrel->exps = exps;
+				if (!list_empty(rel->r) && !list_empty(nrel->r)) { /* aliases on grouping columns, ugh */
+					for (node *n = ((list*)nrel->r)->h ; n ; n = n->next) {
+						sql_exp *e = n->data;
+						const char *rname = exp_relname(e), *cname = exp_name(e);
+						if (rname && cname) {
+							n->data = exp_copy(v->sql, exps_bind_column2(rel->r, rname, cname, NULL));
+						} else if (cname) {
+							n->data = exp_copy(v->sql, exps_bind_column(rel->r, cname, NULL, NULL, 1));
+						}
+					}
+					list_hash_clear(nrel->r);
+				}
 				set_processed(nrel);
 				if (list_empty(pexps))
 					append(pexps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
