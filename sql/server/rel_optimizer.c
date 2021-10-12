@@ -4807,10 +4807,10 @@ point_select_on_unique_column(sql_rel *rel)
 static sql_rel *
 rel_push_select_up(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) || is_semi(rel->op)) && !rel_is_ref(rel)) {
+	if ((is_join(rel->op) || is_semi(rel->op)) && !rel_is_ref(rel) && !is_single(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
-		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l),
-			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_semi(rel->op);
+		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l),
+			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && !is_semi(rel->op);
 
 		if (can_pushup_left || can_pushup_right) {
 			if (can_pushup_left)
