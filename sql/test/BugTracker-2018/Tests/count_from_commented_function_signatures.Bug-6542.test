@@ -38,17 +38,17 @@ project (
 | | | | | | | | | | | | join (
 | | | | | | | | | | | | | table("sys"."functions") [ "functions"."id" as "f"."id", "functions"."schema_id" as "f"."schema_id" ],
 | | | | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL HASHCOL  as "c"."id" ]
-| | | | | | | | | | | | ) [ "f"."id" = "c"."id" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | ) [ ("f"."id") = ("c"."id" NOT NULL HASHCOL ) ],
 | | | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" as "s"."id" ]
-| | | | | | | | | | | ) [ "f"."schema_id" = "s"."id" ],
+| | | | | | | | | | | ) [ ("f"."schema_id") = ("s"."id") ],
 | | | | | | | | | | | select (
 | | | | | | | | | | | | table("sys"."functions") [ "functions"."id", "functions"."system" ]
-| | | | | | | | | | | ) [ "functions"."system" = boolean "true" ]
-| | | | | | | | | | ) [ "f"."id" = "functions"."id" ],
+| | | | | | | | | | | ) [ ("functions"."system") = (boolean "true") ]
+| | | | | | | | | | ) [ ("f"."id") = ("functions"."id") ],
 | | | | | | | | | | select (
 | | | | | | | | | | | table("sys"."args") [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ]
-| | | | | | | | | | ) [ "p"."inout" = tinyint "1" ]
-| | | | | | | | | ) [ "f"."id" = "p"."func_id" ]
+| | | | | | | | | | ) [ ("p"."inout") = (tinyint "1") ]
+| | | | | | | | | ) [ ("f"."id") = ("p"."func_id") ]
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]

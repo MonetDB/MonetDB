@@ -3450,17 +3450,17 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	if (ops && ops->nr < 0)
 		return NULL;
 
-	p = find_prop(rel->p, PROP_REMOTE);
-	if (p)
+	if ((p = find_prop(rel->p, PROP_REMOTE)))
 		rel->p = prop_remove(rel->p, p);
-	rel = sql_processrelation(be->mvc, rel, 1, 1);
+	if (!(rel = sql_processrelation(be->mvc, rel, 1, 1)))
+		return NULL;
 	if (p) {
 		p->p = rel->p;
 		rel->p = p;
 	}
 
 	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
-		 return NULL;
+		return NULL;
 
 	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);

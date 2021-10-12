@@ -43,7 +43,7 @@ main(void)
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
-			switch (rcol->type) {
+			switch (rcol->type.type) {
 				case monetdbe_bool: {
 					monetdbe_column_bool * col = (monetdbe_column_bool *) rcol;
 					if (col->data[r] == col->null_value) {

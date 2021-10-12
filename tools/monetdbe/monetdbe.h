@@ -67,6 +67,13 @@ typedef enum  {
 
 typedef struct {
 	monetdbe_types type;
+	char* sql_type;
+	unsigned int scale;
+	unsigned int digits;
+} monetdbe_type;
+
+typedef struct {
+	monetdbe_type type;
 	void *data;
 	size_t count;
 	char* name;
@@ -113,7 +120,7 @@ typedef struct {
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
 	typedef struct                                     \
 	{                                                  \
-		monetdbe_types type;                        \
+		monetdbe_type type;                        \
 		ctype *data;                               \
 		size_t count;                              \
 		char *name;				   \
@@ -167,7 +174,7 @@ monetdbe_export char* monetdbe_cleanup_statement(monetdbe_database dbhdl, monetd
 monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count);
 monetdbe_export const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
-monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
+monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, monetdbe_type **column_types);
 
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);
