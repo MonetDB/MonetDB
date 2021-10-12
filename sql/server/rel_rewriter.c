@@ -178,29 +178,29 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 		return rel;
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+		int changes = v->changes, level = *(int*)v->data;
 		rel->exps = exps_simplify_exp(v, rel->exps);
 		/* At a select or inner join relation if the single expression is false, eliminate the inner relations with a dummy projection */
-		if (v->value_based_opt && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
-			if ((is_select(rel->op) || (is_innerjoin(rel->op) && !rel_is_ref(rel->r))) && rel->card > CARD_ATOM && !rel_is_ref(rel->l)) {
-				list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
-				if (is_innerjoin(rel->op))
-					toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);
+		if (v->value_based_opt && (v->changes > changes || level == 0) && (is_select(rel->op) || is_innerjoin(rel->op)) &&
+			!is_single(rel) && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+			list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
+			if (is_innerjoin(rel->op))
+				toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);
 
-				for (node *n = toconvert->h ; n ; n = n->next) {
-					sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
-					exp_prop_alias(v->sql->sa, a, e);
-					list_append(nexps, a);
-				}
-				rel_destroy(rel->l);
-				if (is_innerjoin(rel->op)) {
-					rel_destroy(rel->r);
-					rel->r = NULL;
-					rel->op = op_select;
-				}
-				rel->l = rel_project(v->sql->sa, NULL, nexps);
-				rel->card = CARD_ATOM;
-				v->changes++;
+			for (node *n = toconvert->h ; n ; n = n->next) {
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				exp_prop_alias(v->sql->sa, a, e);
+				list_append(nexps, a);
 			}
+			rel_destroy(rel->l);
+			if (is_innerjoin(rel->op)) {
+				rel_destroy(rel->r);
+				rel->r = NULL;
+				rel->op = op_select;
+			}
+			rel->l = rel_project(v->sql->sa, NULL, nexps);
+			rel->card = CARD_ATOM;
+			v->changes++;
 		}
 	}
 	if (is_join(rel->op) && list_empty(rel->exps))

@@ -1294,11 +1294,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (f->func->rel)
-			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
-		else
-			s = stmt_Nop(be, stmt_list(be, l), sel, f);
-		if (!s)
+		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f)))
 			return NULL;
 	} 	break;
 	case e_aggr: {
@@ -2170,18 +2166,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					s = stmt_alias(be, s, rnme, a->name);
 					list_append(l, s);
 				}
-#if 0
-				if (list_length(f->res) == list_length(f->func->res) + 1) {
-					assert(0);
-					/* add missing %TID% column */
-					sql_subtype *t = f->res->t->data;
-					stmt *s = stmt_rs_column(be, psub, i, t);
-					const char *rnme = exp_find_rel_name(op);
-
-					s = stmt_alias(be, s, rnme, TID);
-					list_append(l, s);
-				}
-#endif
 			}
 		}
 		assert(rel->flag != TABLE_PROD_FUNC || !sub || !(sub->nrcols));
@@ -2199,7 +2183,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		sub = stmt_list(be, l);
 		if (!(sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0)))
 			return NULL;
-		fr = rel->l;
+		fr = rel->l = sub->op4.rel; /* rel->l may get rewritten */
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
 			sql_exp *c = n->data;

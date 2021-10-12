@@ -334,7 +334,7 @@ atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 		const char *p = (const char*) v;
 		a->data.len = strLen(p);
 		a->data.val.sval = sa_alloc(sa, a->data.len);
-		memcpy(a->data.val.sval, v, a->data.len);
+		memcpy(a->data.val.sval, p, a->data.len);
 	} else {
 		a->data.len = ATOMlen(a->data.vtype, v);
 		a->data.val.pval = sa_alloc(sa, a->data.len);

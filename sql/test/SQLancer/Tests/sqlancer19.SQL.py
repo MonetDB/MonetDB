@@ -95,6 +95,18 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
     cli.execute("SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('0.02000'),)])
+    cli.execute("SELECT sql_min(4, 7 - 0.5207499) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('4.0000000'),)])
+    cli.execute("SELECT sql_min(4, 7 - 0.5207499) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(Decimal('4.0000000'),)])
+    cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("9910S",)])
+    cli.execute("SELECT \"insert\"('99', 5, 8, '10S') FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("9910S",)])
+    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('69',)])
+    cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('69',)])
     cli.execute("SELECT t3.c0 FROM t3 where (t3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY t3.c0;") \
         .assertSucceeded().assertDataResultMatch([(5,),(5,),(7,)])
     cli.execute("SELECT rt3.c0 FROM rt3 where (rt3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY rt3.c0;") \
@@ -119,6 +131,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(None,),(6,),(11,),(14,)])
     cli.execute("SELECT rt4.c1 + INTERVAL '5' MONTH AS myx FROM rt4 GROUP BY myx ORDER BY myx;") \
         .assertSucceeded().assertDataResultMatch([(None,),(6,),(11,),(14,)])
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT 1 FROM t3 WHERE (t3.c0 BETWEEN t3.c0 AND t3.c0) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 2 FROM rt3 WHERE (rt3.c0 BETWEEN rt3.c0 AND rt3.c0) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN
@@ -212,7 +232,38 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("select 1 from (select distinct 1 from v1, t3) as v1(vc1) where sql_min(true, true);") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT count(*) FROM ((select 7 from rt3, (values (1)) y(y)) union (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(2,)])
+    cli.execute("SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(2,)])
+    cli.execute("SELECT count(*) FROM ((select 7 from rt3, (values (1)) y(y)) union all (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(7,)])
+    cli.execute("SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union all (select 3)) x(x);") \
+        .assertSucceeded().assertDataResultMatch([(7,)])
+    cli.execute("create view v2(vc0) as ((select 3 from rt3) intersect (select 2 from t3));") \
+        .assertSucceeded()
+    cli.execute("create view v3(vc0) as (select 1 from rt3, v2 where \"right_shift_assign\"(inet '228.236.62.235/6', inet '82.120.56.164'));") \
+        .assertSucceeded()
+    cli.execute("create view v4(vc0, vc1, vc2) as (select 1, 2, 3);") \
+        .assertSucceeded()
+    cli.execute("create view v5(vc0) as ((select time '01:00:00') intersect (select time '01:00:00' from v3));") \
+        .assertSucceeded()
+    cli.execute("create view v6(vc0) as ((select 1) union all (select 2));") \
+        .assertSucceeded()
+    cli.execute("select 1 from v4, v5, v6;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("create view v7(vc0) as (select case '201' when ',' then rt3.c0 when '' then cast(rt3.c0 as bigint) end from rt3);") \
+        .assertSucceeded()
+    cli.execute("SELECT 1 FROM v7 CROSS JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS sub0(c0);") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("ROLLBACK;")
+
+    cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
+    # At the moment I take this as a feature. Later we could replace the algebra.fetch call with something more appropriate
+    cli.execute("SELECT 1 FROM rt3 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL;") \
+        .assertFailed(err_message="Illegal argument: cannot fetch a single row from an empty input")
+    cli.execute("SELECT 1 FROM rt3 HAVING mybooludf(min(false));") \
+        .assertFailed(err_message="Illegal argument: cannot fetch a single row from an empty input")
 
     cli.execute("""
     START TRANSACTION;
@@ -225,4 +276,5 @@ with SQLTestCase() as cli:
     DROP TABLE t2;
     DROP TABLE t3;
     DROP TABLE t4;
+    DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()

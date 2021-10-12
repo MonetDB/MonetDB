@@ -959,9 +959,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				v = &stk->stk[exceptionVar];
 				if (v->val.sval)
 					freeException(v->val.sval);    /* old exception*/
-				v->vtype = TYPE_str;
-				v->val.sval = ret;
-				v->len = strlen(v->val.sval);
+				VALset(v, TYPE_str, ret);
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {

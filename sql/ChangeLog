@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Oct 12 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Many improvements were done for REMOTE table plans. As a consequence,
+  master or slave servers from this feature release are not compatible
+  with older releases.
+
 * Tue Sep  7 2021 Sjoerd Mullender <sjoerd@acm.org>
 - The view sys.ids has been changed to give more information about the
   objects in the system.  In particular, there is an extra column
