@@ -21,10 +21,10 @@ SELECT t2.c0 FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)
 ----
 377 values hashing to 3fcc20c12d29f4847a2af7e1c9e3c51b
 
-query T rowsort
+query I rowsort
 SELECT '' NOT ILIKE 'x' FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)%asin(0.7) FROM t1) AS sub0(c0,c1) ON sub0.c1 <= t2.c0
 ----
-377 values hashing to 19d4c8a836908c70817468cb9b9d7405
+377 values hashing to ef89b4852ebacfce3c2e98d7838b9254
 
 statement ok
 ROLLBACK
@@ -72,16 +72,16 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | |  [ boolean "true" ]
-| | | | | ) [ tinyint "2" ! <= tinyint "1" ! <= tinyint "2" BETWEEN , tinyint "3" <= tinyint "2" <= tinyint "5" BETWEEN  ]
+| | | | | ) [ (tinyint "2") ! <= (tinyint "1") ! <= (tinyint "2"), (tinyint "3") <= (tinyint "2") <= (tinyint "5") ]
 | | | | ) [ tinyint "2" as "v0"."vc0" ],
 | | | | project (
 | | | | | select (
 | | | | | |  [ boolean "true" ]
-| | | | | ) [ tinyint "4" ! <= tinyint "1" ! <= tinyint "4" BETWEEN , tinyint "3" <= tinyint "4" <= tinyint "5" BETWEEN  ]
+| | | | | ) [ (tinyint "4") ! <= (tinyint "1") ! <= (tinyint "4"), (tinyint "3") <= (tinyint "4") <= (tinyint "5") ]
 | | | | ) [ tinyint "4" as "v0"."vc0" ]
 | | | ) [ "v0"."vc0" NOT NULL UNIQUE ]
 | | ) [ "sys"."sql_max"(tinyint "1", tinyint "1") NOT NULL as "v20"."vc0" ]
-| ) [ tinyint "7" > "v20"."vc0" NOT NULL ]
+| ) [ (tinyint "7") > ("v20"."vc0" NOT NULL) ]
 ) [ tinyint "1" ]
 
 statement ok
@@ -173,10 +173,10 @@ select json.text(null, '23131')
 ----
 NULL
 
-query T nosort
+query I nosort
 select json.isvalid(json.tojsonarray(x)) from (values ('a"'),('"b'),('c"')) x(x)
 ----
-True
+1
 
 statement ok
 START TRANSACTION
@@ -361,10 +361,10 @@ SELECT json.tojsonarray('<') FROM t1, t2 GROUP BY t1.c0
 statement ok
 create or replace view v30(vc0) as (select null)
 
-query T nosort
+query I nosort
 select json."isvalid"(CAST(v30.vc0 AS JSON)) FROM v30
 ----
-True
+1
 
 statement ok
 ROLLBACK

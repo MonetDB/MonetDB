@@ -22,7 +22,7 @@ project (
 | left outer join (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ],
 | | table("sys"."pk1") [ "pk1"."v1", "pk1"."%TID%" NOT NULL UNIQUE ]
-| ) [ "fk"."%fk_fk1_fkey" = "pk1"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort
@@ -32,7 +32,7 @@ project (
 | left outer join (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ],
 | | table("sys"."pk2") [ "pk2"."v2", "pk2"."%TID%" NOT NULL UNIQUE ]
-| ) [ "fk"."%fk_fk2_fkey" = "pk2"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort
@@ -56,7 +56,7 @@ project (
 | right outer join (
 | | table("sys"."pk1") [ "pk1"."v1", "pk1"."%TID%" NOT NULL UNIQUE ],
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
-| ) [ "fk"."%fk_fk1_fkey" = "pk1"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort
@@ -66,7 +66,7 @@ project (
 | right outer join (
 | | table("sys"."pk2") [ "pk2"."v2", "pk2"."%TID%" NOT NULL UNIQUE ],
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
-| ) [ "fk"."%fk_fk2_fkey" = "pk2"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort
@@ -90,7 +90,7 @@ project (
 | full outer join (
 | | table("sys"."pk1") [ "pk1"."v1", "pk1"."%TID%" NOT NULL UNIQUE ],
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
-| ) [ "fk"."%fk_fk1_fkey" = "pk1"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC HASHCOL  ]
 
 query T nosort
@@ -100,7 +100,7 @@ project (
 | full outer join (
 | | table("sys"."pk2") [ "pk2"."v2", "pk2"."%TID%" NOT NULL UNIQUE ],
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
-| ) [ "fk"."%fk_fk2_fkey" = "pk2"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC HASHCOL  ]
 
 query T nosort
@@ -110,7 +110,7 @@ project (
 | group by (
 | | select (
 | | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
-| | ) [ "fk"."%fk_fk1_fkey" ! * = oid "NULL" ]
+| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid "NULL") ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -120,7 +120,7 @@ query T nosort
 project (
 | select (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
-| ) [ "fk"."%fk_fk1_fkey" ! * = oid "NULL" ]
+| ) [ ("fk"."%fk_fk1_fkey") ! * = (oid "NULL") ]
 ) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort
@@ -130,7 +130,7 @@ project (
 | join (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ],
 | | table("sys"."pk1") [ "pk1"."v1", "pk1"."%TID%" NOT NULL UNIQUE ]
-| ) [ "fk"."%fk_fk1_fkey" = "pk1"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort
@@ -140,7 +140,7 @@ project (
 | join (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ],
 | | table("sys"."pk2") [ "pk2"."v2", "pk2"."%TID%" NOT NULL UNIQUE ]
-| ) [ "fk"."%fk_fk2_fkey" = "pk2"."%TID%" NOT NULL UNIQUE JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 statement ok

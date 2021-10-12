@@ -131,6 +131,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(None,),(6,),(11,),(14,)])
     cli.execute("SELECT rt4.c1 + INTERVAL '5' MONTH AS myx FROM rt4 GROUP BY myx ORDER BY myx;") \
         .assertSucceeded().assertDataResultMatch([(None,),(6,),(11,),(14,)])
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(True,)])
+    cli.execute("SELECT 1 FROM t3 WHERE (t3.c0 BETWEEN t3.c0 AND t3.c0) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 2 FROM rt3 WHERE (rt3.c0 BETWEEN rt3.c0 AND rt3.c0) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN

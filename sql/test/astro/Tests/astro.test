@@ -72,14 +72,14 @@ update(
 | | | | table("sys"."fluxz") [ "fluxz"."runcat" NOT NULL, "fluxz"."filter" NOT NULL, "fluxz"."%TID%" NOT NULL UNIQUE ],
 | | | | select (
 | | | | | table("sys"."cm_flux") [ "cm_flux"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL, "cm_flux"."active" NOT NULL ]
-| | | | ) [ "cm_flux"."active" NOT NULL = boolean "true", "cm_flux"."filter" NOT NULL = char(1) "g" ]
-| | | ) [ "cm_flux"."runcat" NOT NULL = "fluxz"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL = "fluxz"."filter" NOT NULL ],
+| | | | ) [ ("cm_flux"."active" NOT NULL) = (boolean "true"), ("cm_flux"."filter" NOT NULL) = (char(1) "g") ]
+| | | ) [ ("cm_flux"."runcat" NOT NULL) = ("fluxz"."runcat" NOT NULL), ("cm_flux"."filter" NOT NULL) = ("fluxz"."filter" NOT NULL) ],
 | | | project (
 | | | | select (
 | | | | | table("sys"."cm_flux") [ "cm_flux"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL, "cm_flux"."f_datapoints" NOT NULL, "cm_flux"."active" NOT NULL, "cm_flux"."avg_flux" NOT NULL, "cm_flux"."avg_fluxsq" NOT NULL, "cm_flux"."avg_w" NOT NULL, "cm_flux"."avg_wflux" NOT NULL, "cm_flux"."avg_wfluxsq" NOT NULL, "cm_flux"."avg_dec_zone_deg" NOT NULL ]
-| | | | ) [ "cm_flux"."active" NOT NULL = boolean "true", "cm_flux"."filter" NOT NULL = char(1) "g" ]
+| | | | ) [ ("cm_flux"."active" NOT NULL) = (boolean "true"), ("cm_flux"."filter" NOT NULL) = (char(1) "g") ]
 | | | ) [ "cm_flux"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL, "cm_flux"."filter" NOT NULL as "%1"."%1", "cm_flux"."f_datapoints" NOT NULL as "%2"."%2", "cm_flux"."avg_flux" NOT NULL as "%3"."%3", "cm_flux"."avg_fluxsq" NOT NULL as "%4"."%4", "cm_flux"."avg_w" NOT NULL as "%5"."%5", "cm_flux"."avg_wflux" NOT NULL as "%6"."%6", "cm_flux"."avg_wfluxsq" NOT NULL as "%7"."%7", "cm_flux"."avg_dec_zone_deg" NOT NULL as "%10"."%10" ]
-| | ) [ "cm_flux"."runcat" NOT NULL = "fluxz"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL = "fluxz"."filter" NOT NULL ]
+| | ) [ ("cm_flux"."runcat" NOT NULL) = ("fluxz"."runcat" NOT NULL), ("cm_flux"."filter" NOT NULL) = ("fluxz"."filter" NOT NULL) ]
 | ) [ "fluxz"."%TID%" NOT NULL UNIQUE, "%1"."%1" NOT NULL as "fluxz"."filter", "%2"."%2" NOT NULL as "fluxz"."f_datapoints", "%3"."%3" NOT NULL as "fluxz"."avg_flux", "%4"."%4" NOT NULL as "fluxz"."avg_fluxsq", "%5"."%5" NOT NULL as "fluxz"."avg_w", "%6"."%6" NOT NULL as "fluxz"."avg_wflux", "%7"."%7" NOT NULL as "fluxz"."avg_wfluxsq", "%10"."%10" NOT NULL as "fluxz"."avg_dec_zone_deg" ]
 ) [ "fluxz"."%TID%" NOT NULL UNIQUE, "fluxz"."filter" NOT NULL, "fluxz"."f_datapoints" NOT NULL, "fluxz"."avg_flux" NOT NULL, "fluxz"."avg_fluxsq" NOT NULL, "fluxz"."avg_w" NOT NULL, "fluxz"."avg_wflux" NOT NULL, "fluxz"."avg_wfluxsq" NOT NULL, "fluxz"."avg_dec_zone_deg" NOT NULL ]
 
