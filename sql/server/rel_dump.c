@@ -1238,6 +1238,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						}
 					}
 
+					if (sname && !mvc_bind_schema(sql, sname))
+						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
 					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT)))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'.'%s'\n", sname, fname);
 					if (!execute_priv(sql, f->func))
@@ -1335,33 +1337,29 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		}
 	}
 	if (r[*pos] == '(') {
-		sql_schema *s;
 		sql_subfunc *f = NULL;
-		sql_subfunc *a = NULL;
-		node *n;
 
 		if (!(exps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0)))
 			return NULL;
 		tname = b;
 		*e = 0;
 		convertIdent(tname);
-		s = mvc_bind_schema(sql, tname);
-		if (tname && !s)
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Schema %s not found\n", tname);
+		if (tname && !mvc_bind_schema(sql, tname))
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", tname);
 		if (grp) {
 			if (exps && exps->h) {
 				list *ops = sa_list(sql->sa);
-				for( n = exps->h; n; n = n->next)
+				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
-				a = sql_bind_func_(sql, tname, cname, ops, F_AGGR);
+				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR);
 			} else {
-				a = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
+				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
 			}
-			if (!a)
+			if (!f)
 				return function_error_string(sql, tname, cname, exps, false, F_AGGR);
-			if (!execute_priv(sql, a->func))
+			if (!execute_priv(sql, f->func))
 				return function_error_string(sql, tname, cname, exps, true, F_AGGR);
-			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
+			exp = exp_aggr(sql->sa, exps, f, unique, no_nils, CARD_ATOM, 1);
 			if (zero_if_empty)
 				set_zero_if_empty(exp);
 		} else {
@@ -1377,7 +1375,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				}
 			} else {
 				list *ops = sa_list(sql->sa);
-				for( n = exps->h; n; n = n->next)
+				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
 
 				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC);
@@ -1855,6 +1853,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (!(inputs = read_exps(sql, lrel, NULL, NULL, r, pos, '(', 0, 1)))
 					return NULL;
 
+				if (!mvc_bind_schema(sql, sname))
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
 				if (!(tudf = find_table_function(sql, sname, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION)))
 					return NULL;
 				sf = tudf->f;
