@@ -30,3 +30,4 @@ replace-transaction-conflict.Bug-7168
 merge-table-join.Bug-7172
 truncate-restart.Bug-7173
 remote-table-large.Bug-7178
+grouping-sets-aliases.Bug-7185
