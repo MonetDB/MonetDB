@@ -257,11 +257,21 @@ with SQLTestCase() as cli:
     cli.execute("SELECT 1 FROM v7 CROSS JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS sub0(c0);") \
         .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("""
+        SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT t1.c1 <= CAST(t1.c1 AS INT) FROM t1) AS sub0(c0) ON true WHERE sub0.c0
+        UNION ALL
+        SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT t1.c1 <= CAST(t1.c1 AS INT) FROM t1) AS sub0(c0) ON true;
+        """).assertSucceeded() \
+        .assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute("""
         SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT rt1.c1 <= CAST(rt1.c1 AS INT) FROM rt1) AS sub0(c0) ON true WHERE sub0.c0
         UNION ALL
         SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT rt1.c1 <= CAST(rt1.c1 AS INT) FROM rt1) AS sub0(c0) ON true;
         """).assertSucceeded() \
         .assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute("SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1 from t3) x(x)) v100(vc1), t3 WHERE 5 >= sinh(CAST(v100.vc1 AS REAL));") \
+        .assertSucceeded().assertDataResultMatch([(36,)])
+    cli.execute("SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1 from rt3) x(x)) v100(vc1), rt3 WHERE 5 >= sinh(CAST(v100.vc1 AS REAL));") \
+        .assertSucceeded().assertDataResultMatch([(36,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
