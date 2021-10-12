@@ -254,6 +254,7 @@ monetdbe_destroy_column(monetdbe_column* column)
 				GDKfree(data[j].data);
 		}
 	}
+	GDKfree(column->type.sql_type);
 	GDKfree(column->data);
 	GDKfree(column);
 }
@@ -1924,8 +1925,8 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 	}																	\
 	bat_data->type.type = monetdbe_##tpe;								\
 	if ((bat_data->type.sql_type = GDKstrdup(sqltpe->type->base.name)) == NULL) {\
-				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL)); \
-				goto cleanup;											\
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL)); \
+		goto cleanup;											\
 	}																	\
 	bat_data->type.scale = sqltpe->scale;								\
 	bat_data->type.digits = sqltpe->digits;								\

@@ -129,7 +129,7 @@ PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 project (
 | select (
 | | table("sys"."tab2") [ "tab2"."col0", "tab2"."col2" ]
-| ) [ bigint["tab2"."col2"] = bigint "40" ]
+| ) [ (bigint["tab2"."col2"]) = (bigint "40") ]
 ) [ "tab2"."col0" ]
 
 query I rowsort
@@ -404,7 +404,7 @@ project (
 | | left outer join (
 | | | table("sys"."tab1") [ "tab1"."part" as "myalias0"."part", "tab1"."tet" as "myalias0"."tet" ],
 | | | table("sys"."tab2") [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" as "myalias1"."ups" ]
-| | ) [ "myalias0"."part" = "myalias1"."myk" ]
+| | ) [ ("myalias0"."part") = ("myalias1"."myk") ]
 | ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "myalias0"."part", "track" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
 

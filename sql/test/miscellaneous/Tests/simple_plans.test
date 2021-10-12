@@ -50,7 +50,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
+| ) [ (("myx"."x") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
 ) [ "myx"."x", "myx"."y" ]
 
 query T nosort
@@ -59,7 +59,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is n
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" * = uuid "NULL") ]
+| ) [ (("myx"."x") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y") * = (uuid "NULL")) ]
 ) [ "myx"."x", "myx"."y" ]
 
 query T nosort
@@ -68,7 +68,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL) ]
+| ) [ (("myx"."x") in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
 ) [ "myx"."x", "myx"."y" ]
 
 statement ok
@@ -96,7 +96,7 @@ plan select 1 from tab0 where col1 = 1 or col1 = 81
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1" ]
-| ) [ "tab0"."col1" in (int "1", int "81") ]
+| ) [ ("tab0"."col1") in (int "1", int "81") ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -105,7 +105,7 @@ plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1" ]
-| ) [ "tab0"."col1" in (int "1", int "81", int "100") ]
+| ) [ ("tab0"."col1") in (int "1", int "81", int "100") ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -114,7 +114,7 @@ plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col1" in (int "1", int "81")) or ("tab0"."col2" < int "0") ]
+| ) [ (("tab0"."col1") in (int "1", int "81")) or (("tab0"."col2") < (int "0")) ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -123,7 +123,7 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 >
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col1" in (int "1", int "81", int "100")) or ("tab0"."col2" > int "10") ]
+| ) [ (("tab0"."col1") in (int "1", int "81", int "100")) or (("tab0"."col2") > (int "10")) ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -132,7 +132,7 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 =
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ (("tab0"."col1" in (int "1", int "81")) or ("tab0"."col2" = int "100")) or ("tab0"."col1" = int "100") ]
+| ) [ ((("tab0"."col1") in (int "1", int "81")) or (("tab0"."col2") = (int "100"))) or (("tab0"."col1") = (int "100")) ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -141,7 +141,7 @@ plan select 1 from tab0 where col1 <> 1 and col1 <> 81
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1" ]
-| ) [ "tab0"."col1" notin (int "1", int "81") ]
+| ) [ ("tab0"."col1") notin (int "1", int "81") ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -150,7 +150,7 @@ plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0)
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ "tab0"."col2" < int "0", "tab0"."col1" notin (int "1", int "81") ]
+| ) [ ("tab0"."col2") < (int "0"), ("tab0"."col1") notin (int "1", int "81") ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -159,7 +159,7 @@ plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col1" notin (int "1", int "81")) or ("tab0"."col2" < int "0") ]
+| ) [ (("tab0"."col1") notin (int "1", int "81")) or (("tab0"."col2") < (int "0")) ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -168,7 +168,7 @@ plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (c
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col1" notin (int "1", int "81", int "100")) or ("tab0"."col2" > int "10") ]
+| ) [ (("tab0"."col1") notin (int "1", int "81", int "100")) or (("tab0"."col2") > (int "10")) ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -177,7 +177,7 @@ plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (co
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ "tab0"."col1" != int "100", ("tab0"."col1" notin (int "1", int "81")) or ("tab0"."col2" = int "100") ]
+| ) [ ("tab0"."col1") != (int "100"), (("tab0"."col1") notin (int "1", int "81")) or (("tab0"."col2") = (int "100")) ]
 ) [ tinyint "1" ]
 
 statement ok
@@ -326,7 +326,7 @@ PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 project (
 | select (
 | | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-| ) [ (int "1" <= "another_t"."col1" <= int "2" BETWEEN ) or ("another_t"."col2" * = int "NULL") ]
+| ) [ ((int "1") <= ("another_t"."col1") <= (int "2")) or (("another_t"."col2") * = (int "NULL")) ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -335,7 +335,7 @@ PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 project (
 | select (
 | | table("sys"."another_t") [ "another_t"."col1" ]
-| ) [ bigint "1" < bigint["another_t"."col1"] < bigint "2" BETWEEN  ]
+| ) [ (bigint "1") < (bigint["another_t"."col1"]) < (bigint "2") ]
 ) [ tinyint "1" ]
 
 query T nosort
@@ -343,7 +343,7 @@ PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-) [ "sys"."or"(int "1" <= "another_t"."col1" <= int "2" BETWEEN , "sys"."isnull"("another_t"."col2") NOT NULL) ]
+) [ "sys"."or"((int "1") <= ("another_t"."col1") <= (int "2"), "sys"."isnull"("another_t"."col2") NOT NULL) ]
 
 statement ok
 CREATE TABLE tabel1 (id_nr INT, dt_sur STRING, edg INT, ede DATE, pc_nml_hur STRING, srt_ukr STRING)
@@ -387,11 +387,11 @@ project (
 | | | | | project (
 | | | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
 | | | | | ) [ "a"."id_nr" as "h"."id_nr" ]
-| | | | ) [ "s"."id_nr" = "h"."id_nr" ],
+| | | | ) [ ("s"."id_nr") = ("h"."id_nr") ],
 | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
-| | | ) [ "h"."id_nr" = "a"."id_nr" ]
+| | | ) [ ("h"."id_nr") = ("a"."id_nr") ]
 | | ) [ "s"."id_nr" ]
-| ) [ "a"."id_nr" = "s"."id_nr" ]
+| ) [ ("a"."id_nr") = ("s"."id_nr") ]
 ) [ tinyint "1" ]
 
 statement ok
@@ -407,7 +407,7 @@ project (
 | join (
 | | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
 | | table("sys"."integers") [ "integers"."i" as "i2"."i" ]
-| ) [ "i1"."i" * = "i2"."i" ]
+| ) [ ("i1"."i") * = ("i2"."i") ]
 ) [ "i1"."i", "i2"."i" ]
 
 query II rowsort
@@ -429,7 +429,7 @@ project (
 | full outer join (
 | | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
 | | table("sys"."integers") [ "integers"."i" as "i2"."i" ]
-| ) [ "i1"."i" * = "i2"."i" ]
+| ) [ ("i1"."i") * = ("i2"."i") ]
 ) [ "i1"."i", "i2"."i" ]
 
 query II rowsort
@@ -450,7 +450,7 @@ plan select i, j from integers where i = j or (i is null and j is null)
 project (
 | select (
 | | table("sys"."integers") [ "integers"."i", "integers"."j" ]
-| ) [ "integers"."i" * = "integers"."j" ]
+| ) [ ("integers"."i") * = ("integers"."j") ]
 ) [ "integers"."i", "integers"."j" ]
 
 query II rowsort
@@ -506,9 +506,9 @@ project (
 | | join (
 | | | table("sys"."t1") [ "t1"."a", "t1"."b" ],
 | | | table("sys"."t2") [ "t2"."a" ]
-| | ) [ "t1"."a" = "t2"."a" ],
+| | ) [ ("t1"."a") = ("t2"."a") ],
 | | table("sys"."t3") [ "t3"."b" ]
-| ) [ ("t1"."b") FILTER "like" ("t3"."b", clob "", boolean "false") ]
+| ) [ ("t1"."b") FILTER "sys"."like"("t3"."b", clob "", boolean "false") ]
 ) [ "t1"."a", "t1"."b" ]
 
 query T python .explain.function_histogram
@@ -548,14 +548,14 @@ project (
 | | | project (
 | | | | select (
 | | | | | table("sys"."t1") [ "t1"."a" ]
-| | | | ) [ "t1"."a" > int "2" ]
+| | | | ) [ ("t1"."a") > (int "2") ]
 | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
 | | ) [ "b" as "x"."x", "c" as "x"."y" ],
 | | project (
 | | | project (
 | | | | select (
 | | | | | table("sys"."t2") [ "t2"."a" ]
-| | | | ) [ "t2"."a" > int "2" ]
+| | | | ) [ ("t2"."a") > (int "2") ]
 | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
 | | ) [ "z" as "x"."x", "d" as "x"."y" ]
 | ) [ "x"."x", "x"."y" ]
@@ -571,7 +571,7 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | | table("sys"."t1") [ "t1"."a" ]
-| | | | | ) [ "t1"."a" > int "2" ]
+| | | | | ) [ ("t1"."a") > (int "2") ]
 | | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
 | | | ) [ "b", "c" ] [ "b", "c" ]
 | | ) [ "b" as "x"."x", "c" as "x"."y" ],
@@ -580,7 +580,7 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | | table("sys"."t2") [ "t2"."a" ]
-| | | | | ) [ "t2"."a" > int "2" ]
+| | | | | ) [ ("t2"."a") > (int "2") ]
 | | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
 | | | ) [ "z", "d" ] [ "z", "d" ]
 | | ) [ "z" as "x"."x", "d" as "x"."y" ]

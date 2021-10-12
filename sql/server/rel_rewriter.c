@@ -181,8 +181,8 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 		int changes = v->changes, level = *(int*)v->data;
 		rel->exps = exps_simplify_exp(v, rel->exps);
 		/* At a select or inner join relation if the single expression is false, eliminate the inner relations with a dummy projection */
-		if (v->value_based_opt && (v->changes > changes || level == 0) && list_length(rel->exps) == 1 &&
-			(is_select(rel->op) || is_innerjoin(rel->op)) && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+		if (v->value_based_opt && (v->changes > changes || level == 0) && (is_select(rel->op) || is_innerjoin(rel->op)) &&
+			!is_single(rel) && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
 			list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
 			if (is_innerjoin(rel->op))
 				toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);

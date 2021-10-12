@@ -11,7 +11,7 @@ project (
 | join (
 | | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
 | | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
+| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
 ) [ "t2"."a" ]
 
 query T nosort
@@ -25,7 +25,7 @@ project (
 | join (
 | | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
 | | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
+| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
 ) [ "t2"."a" ]
 
 query T nosort
@@ -39,7 +39,7 @@ project (
 | join (
 | | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
 | | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
+| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
 ) [ "t2"."a" ]
 
 statement ok

@@ -43,7 +43,7 @@ project (
 | group by (
 | | select (
 | | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ]
-| | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | ) [ (int "5") <= ("mt"."i") < (int "100") ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -73,12 +73,12 @@ project (
 | | | group by (
 | | | | select (
 | | | | | table("sys"."sub1") [ "sub1"."i" as "mt"."i" ]
-| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | | ) [ (int "5") <= ("mt"."i") < (int "100") ]
 | | | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ],
 | | | group by (
 | | | | select (
 | | | | | table("sys"."sub2") [ "sub2"."i" as "mt"."i" ]
-| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | | ) [ (int "5") <= ("mt"."i") < (int "100") ]
 | | | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 | | ) [ "%1"."%1" ]
 | ) [  ] [ "sys"."sum" no nil ("%1"."%1") as "%1"."%1" ]

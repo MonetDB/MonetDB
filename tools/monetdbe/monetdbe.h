@@ -68,8 +68,8 @@ typedef enum  {
 typedef struct {
 	monetdbe_types type;
 	char* sql_type;
-	size_t scale;
-	size_t digits;
+	unsigned int scale;
+	unsigned int digits;
 } monetdbe_type;
 
 typedef struct {
