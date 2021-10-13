@@ -17,8 +17,8 @@ query T nosort
 plan select 2 ^ 3 
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query R rowsort
 select 2.0 ^ 3.0 
@@ -29,7 +29,7 @@ query T nosort
 plan select 2.0 ^ 3.0 
 ----
 project (
-|  [ boolean "true" ]
+|  [ boolean(1) "true" ]
 ) [ "sys"."bit_xor"(decimal(2,1) "20", decimal(2,1) "30") NOT NULL ]
 
 statement error
@@ -71,8 +71,8 @@ query T nosort
 plan select 17 ^ 5 
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."bit_xor"(tinyint "17", tinyint "5") NOT NULL ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
 
 query I rowsort
 select 2 ^ 3 
@@ -83,8 +83,8 @@ query T nosort
 plan select 2 ^ 3 
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."bit_xor"(tinyint "2", tinyint "3") NOT NULL ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I rowsort
 select ~1 
@@ -95,8 +95,8 @@ query T nosort
 plan select ~1 
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."bit_not"(tinyint "1") NOT NULL ]
+|  [ boolean(1) "true" ]
+) [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
 
 query I rowsort
 select 1 << 4 
@@ -107,8 +107,8 @@ query T nosort
 plan select 1 << 4 
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."left_shift"(tinyint "1", int "4") NOT NULL ]
+|  [ boolean(1) "true" ]
+) [ "sys"."left_shift"(tinyint(1) "1", int(32) "4") NOT NULL ]
 
 query I rowsort
 select left_shift(1, 4) 
@@ -124,8 +124,8 @@ query T nosort
 plan select 8 >> 2 
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."right_shift"(tinyint "8", int "2") NOT NULL ]
+|  [ boolean(1) "true" ]
+) [ "sys"."right_shift"(tinyint(4) "8", int(32) "2") NOT NULL ]
 
 query I rowsort
 select right_shift(16, 2) 
@@ -332,8 +332,8 @@ query T nosort
 plan select CAST(RAND() as float) / 2147483648
 ----
 project (
-|  [ boolean "true" ]
-) [ "sys"."sql_div"(double["sys"."rand"()], double "2147483648") ]
+|  [ boolean(1) "true" ]
+) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I rowsort
 select rand(0)

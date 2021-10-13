@@ -71,18 +71,18 @@ project (
 | | | intersect (
 | | | | project (
 | | | | | select (
-| | | | | |  [ boolean "true" ]
-| | | | | ) [ (tinyint "2") ! <= (tinyint "1") ! <= (tinyint "2"), (tinyint "3") <= (tinyint "2") <= (tinyint "5") ]
-| | | | ) [ tinyint "2" as "v0"."vc0" ],
+| | | | | |  [ boolean(1) "true" ]
+| | | | | ) [ (tinyint(2) "2") ! <= (tinyint(1) "1") ! <= (tinyint(2) "2"), (tinyint(2) "3") <= (tinyint(2) "2") <= (tinyint(3) "5") ]
+| | | | ) [ tinyint(2) "2" as "v0"."vc0" ],
 | | | | project (
 | | | | | select (
-| | | | | |  [ boolean "true" ]
-| | | | | ) [ (tinyint "4") ! <= (tinyint "1") ! <= (tinyint "4"), (tinyint "3") <= (tinyint "4") <= (tinyint "5") ]
-| | | | ) [ tinyint "4" as "v0"."vc0" ]
+| | | | | |  [ boolean(1) "true" ]
+| | | | | ) [ (tinyint(3) "4") ! <= (tinyint(1) "1") ! <= (tinyint(3) "4"), (tinyint(2) "3") <= (tinyint(3) "4") <= (tinyint(3) "5") ]
+| | | | ) [ tinyint(3) "4" as "v0"."vc0" ]
 | | | ) [ "v0"."vc0" NOT NULL UNIQUE ]
-| | ) [ "sys"."sql_max"(tinyint "1", tinyint "1") NOT NULL as "v20"."vc0" ]
-| ) [ (tinyint "7") > ("v20"."vc0" NOT NULL) ]
-) [ tinyint "1" ]
+| | ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]
+| ) [ (tinyint(3) "7") > ("v20"."vc0" NOT NULL) ]
+) [ tinyint(1) "1" ]
 
 statement ok
 ROLLBACK

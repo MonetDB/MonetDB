@@ -3016,7 +3016,7 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 /* The type setting is not propagated to statements such as st_bat and st_append,
 	because they are not considered projections */
 static void
-tail_set_type(stmt *st, sql_subtype *t)
+tail_set_type(mvc *m, stmt *st, sql_subtype *t)
 {
 	for (;;) {
 		switch (st->type) {
@@ -3048,7 +3048,7 @@ tail_set_type(stmt *st, sql_subtype *t)
 			return;
 		}
 		case st_atom:
-			atom_set_type(st->op4.aval, t);
+			st->op4.aval = atom_set_type(m->sa, st->op4.aval, t);
 			return;
 		case st_convert:
 		case st_temp:
@@ -3089,7 +3089,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		/* trivial string cases */
 		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && (t->digits == 0 || (f->digits > 0 && t->digits >= f->digits))))) {
 		/* set output type. Despite the MAL code already being generated, the output type may still be checked */
-		tail_set_type(v, t);
+		tail_set_type(be->mvc, v, t);
 		return v;
 	}
 
