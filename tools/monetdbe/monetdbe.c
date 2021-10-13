@@ -240,21 +240,21 @@ monetdbe_destroy_column(monetdbe_column* column)
 	if (!column)
 		return;
 
-	if (column->type.type == monetdbe_str) {
+	if (column->type == monetdbe_str) {
 		// FIXME: clean up individual strings
 		char** data = (char**)column->data;
 		for(j = 0; j < column->count; j++) {
 			if (data[j])
 				GDKfree(data[j]);
 		}
-	} else if (column->type.type == monetdbe_blob) {
+	} else if (column->type == monetdbe_blob) {
 		monetdbe_data_blob* data = (monetdbe_data_blob*)column->data;
 		for(j = 0; j < column->count; j++) {
 			if (data[j].data)
 				GDKfree(data[j].data);
 		}
 	}
-	GDKfree(column->type.sql_type);
+	GDKfree(column->sql_type.name);
 	GDKfree(column->data);
 	GDKfree(column);
 }
@@ -1698,17 +1698,16 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 }
 
 static inline void
-cleanup_get_columns_result(size_t column_count, char ** column_names, monetdbe_type* column_types)
+cleanup_get_columns_result(size_t column_count, monetdbe_column* columns)
 {
-		if (column_names) for (size_t c = 0; c < column_count; c++) GDKfree(column_names[c]);
+		if (columns) for (size_t c = 0; c < column_count; c++) {
+			 GDKfree(columns[c].name);
+			 GDKfree(columns[c].sql_type.name);
+		}
 
-		if (column_types) for (size_t c = 0; c < column_count; c++) GDKfree(column_types[c].sql_type);
+		GDKfree(columns);
 
-		GDKfree(column_names);
-		GDKfree(column_types);
-
-		column_names = NULL;
-		column_types = NULL;
+		columns = NULL;
 }
 
 static char *
@@ -1735,7 +1734,7 @@ escape_identifier(const char *s) /* Escapes a SQL identifier string, ie the " an
 
 static char*
 monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema_name, const char *table_name, size_t *column_count,
-					char ***column_names, monetdbe_type **column_types)
+					monetdbe_column **columns)
 {
 	char buf[1024], *escaped_schema_name = NULL, *escaped_table_name = NULL;
 
@@ -1766,11 +1765,10 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	}
 
 	*column_count = result->ncols;
-	*column_names = GDKzalloc(sizeof(char*) * result->ncols);
-	*column_types = GDKzalloc(sizeof(monetdbe_type) * result->ncols);
+	*columns = GDKzalloc(sizeof(monetdbe_column) * result->ncols);
 
 
-	if (*column_names == NULL || *column_types == NULL)
+	if (*columns == NULL)
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL));
 
 	if (!mdbe->msg)
@@ -1780,17 +1778,17 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 				break;
 			}
 
-			if (((*column_names)[c] = GDKstrdup(rcol->name)) == NULL) {
+			if (((*columns)[c].name = GDKstrdup(rcol->name)) == NULL) {
 				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL));
 				break;
 			}
-			if (((*column_types)[c].sql_type = GDKstrdup(rcol->type.sql_type)) == NULL) {
+			if (((*columns)[c].sql_type.name = GDKstrdup(rcol->sql_type.name)) == NULL) {
 				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL));
 				break;
 			}
-			(*column_types)[c].type = rcol->type.type;
-			(*column_types)[c].scale = rcol->type.scale;
-			(*column_types)[c].digits = rcol->type.digits;
+			(*columns)[c].type = rcol->type;
+			(*columns)[c].sql_type.scale = rcol->sql_type.scale;
+			(*columns)[c].sql_type.digits = rcol->sql_type.digits;
 		}
 
 	// cleanup
@@ -1806,20 +1804,18 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	}
 
 	if (mdbe->msg ) {
-		cleanup_get_columns_result(*column_count, *column_names, *column_types);
+		cleanup_get_columns_result(*column_count, *columns);
 	}
 
 	return mdbe->msg;
 }
 
 char*
-monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const char *table_name, size_t *column_count,
-					char ***column_names, monetdbe_type **column_types)
+monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns)
 {
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	mvc *m = NULL;
 	sql_table *t = NULL;
-	int columns = 0;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_columns")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -1828,12 +1824,8 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const cha
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_count is NULL"));
 		return mdbe->msg;
 	}
-	if (!column_names) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_names is NULL"));
-		return mdbe->msg;
-	}
-	if (!column_types) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_types is NULL"));
+	if (!columns) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter columns is NULL"));
 		return mdbe->msg;
 	}
 	if (!table_name) {
@@ -1842,7 +1834,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const cha
 	}
 
 	if (mdbe->mid) {
-		return monetdbe_get_columns_remote(mdbe, schema_name, table_name, column_count, column_names, column_types);
+		return monetdbe_get_columns_remote(mdbe, schema_name, table_name, column_count, columns);
 	}
 
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
@@ -1854,30 +1846,19 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const cha
 		goto cleanup;
 	}
 
-	columns = ol_length(t->columns);
-	*column_count = columns;
-	*column_names = GDKzalloc(sizeof(char*) * columns);
-	*column_types = GDKzalloc(sizeof(int) * columns);
-	if (*column_names == NULL || *column_types == NULL) {
-		if (*column_names) {
-			GDKfree(*column_names);
-			*column_names = NULL;
-		}
-		if (*column_types) {
-			GDKfree(*column_types);
-			*column_types = NULL;
-		}
+	*column_count = ol_length(t->columns);
+	if ((*columns = GDKzalloc(*column_count * sizeof(monetdbe_column))) == NULL ) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}
 
 	for (node *n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *col = n->data;
-		(*column_names)[col->colnr] = col->base.name;
-		if (((*column_types)[col->colnr].sql_type = GDKstrdup(col->type.type->base.name)) == NULL) goto cleanup;
-		(*column_types)[col->colnr].type = embedded_type(col->type.type->localtype);
-		(*column_types)[col->colnr].digits = col->type.type->digits;
-		(*column_types)[col->colnr].scale = col->type.type->scale;
+		(*columns)[col->colnr].name = col->base.name; // TODO Shouldn't this be string dupped?
+		if (((*columns)[col->colnr].sql_type.name = GDKstrdup(col->type.type->base.name)) == NULL) goto cleanup;
+		(*columns)[col->colnr].type = embedded_type(col->type.type->localtype);
+		(*columns)[col->colnr].sql_type.digits = col->type.type->digits;
+		(*columns)[col->colnr].sql_type.scale = col->type.type->scale;
 	}
 
 cleanup:
@@ -1923,13 +1904,13 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL)); \
 		goto cleanup;													\
 	}																	\
-	bat_data->type.type = monetdbe_##tpe;								\
-	if ((bat_data->type.sql_type = GDKstrdup(sqltpe->type->base.name)) == NULL) {\
+	bat_data->type = monetdbe_##tpe;								\
+	if ((bat_data->sql_type.name = GDKstrdup(sqltpe->type->base.name)) == NULL) {\
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL)); \
 		goto cleanup;											\
 	}																	\
-	bat_data->type.scale = sqltpe->scale;								\
-	bat_data->type.digits = sqltpe->digits;								\
+	bat_data->sql_type.scale = sqltpe->scale;								\
+	bat_data->sql_type.digits = sqltpe->digits;								\
 	bat_data->is_null = tpe##_is_null;									\
 	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale); \
 	column_result = (monetdbe_column*) bat_data;
@@ -1958,7 +1939,7 @@ append_create_remote_append_mal_program(
 	Symbol* prg,
 	sql_schema **s,
 	sql_table **t,
-	Client c, const char* schema, const char* table, size_t ccount, char** cnames, monetdbe_type* ctypes) {
+	Client c, const char* schema, const char* table, size_t ccount, monetdbe_column* columns) {
 
 	char* msg					= MAL_SUCCEED;
 	char buf[16]				= {0};
@@ -2031,20 +2012,20 @@ append_create_remote_append_mal_program(
 	for (size_t i = 0; i < ccount; i++) {
 		sql_column *col = NULL;
 		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
-		tpe->base.name = sa_strdup(m->sa, ctypes[i].sql_type);
-		tpe->localtype = monetdbe_2_gdk_type((monetdbe_types) ctypes[i].type);
-		tpe->digits = ctypes[i].digits;
-		tpe->scale = ctypes[i].scale;
+		tpe->base.name = sa_strdup(m->sa, columns[i].name);
+		tpe->localtype = monetdbe_2_gdk_type((monetdbe_types) columns[i].type);
+		tpe->digits = columns[i].sql_type.digits;
+		tpe->scale = columns[i].sql_type.scale;
 		sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
-		sql_init_subtype(st, tpe, ctypes[i].digits, ctypes[i].scale);
+		sql_init_subtype(st, tpe, columns[i].sql_type.digits, columns[i].sql_type.scale);
 
-		switch (mvc_create_column(&col, m, *t, cnames[i], st)) {
+		switch (mvc_create_column(&col, m, *t, columns[i].name, st)) {
 			case -1:
 				msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 				goto cleanup;
 			case -2:
 			case -3:
-				msg = createException(SQL, "monetdbe.monetdbe_append", "Column name '%s' conflicts", cnames[i]);
+				msg = createException(SQL, "monetdbe.monetdbe_append", "Column name '%s' conflicts", columns[i].name);
 				goto cleanup;
 			default:
 				break;
@@ -2063,7 +2044,7 @@ append_create_remote_append_mal_program(
 		a = pushArgument(mb, a, mvc_id);
 		a = pushStr(mb, a, schema ? schema : "sys"); /* TODO this should be better */
 		a = pushStr(mb, a, table);
-		a = pushStr(mb, a, cnames[i]);
+		a = pushStr(mb, a, columns[i].name);
 		a = pushArgument(mb, a, idx);
 
 		mvc_id = getArg(a, 0);
@@ -2132,8 +2113,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 		// We are going to insert the data into a temporary table which is used in the coming remote logic.
 
 		size_t actual_column_count = 0;
-		char** actual_column_names = NULL;
-		monetdbe_type* actual_column_types = NULL;
+		monetdbe_column* columns = NULL;
 		sql_schema* s = NULL;
 
 		if ((mdbe->msg = monetdbe_get_columns_remote(
@@ -2141,8 +2121,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 				schema,
 				table,
 				&actual_column_count,
-				&actual_column_names,
-				&actual_column_types)) != MAL_SUCCEED) {
+				&columns)) != MAL_SUCCEED) {
 			goto remote_cleanup;
 		}
 
@@ -2158,8 +2137,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 							schema,
 							table,
 							actual_column_count,
-							actual_column_names,
-							actual_column_types)) != MAL_SUCCEED) {
+							columns)) != MAL_SUCCEED) {
 			goto remote_cleanup;
 		}
 
@@ -2167,7 +2145,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 
 remote_cleanup:
 		if (mdbe->msg) {
-			cleanup_get_columns_result(actual_column_count, actual_column_names, actual_column_types);
+			cleanup_get_columns_result(actual_column_count, columns);
 			freeSymbol(remote_prg);
 			goto cleanup;
 		}
@@ -2241,7 +2219,7 @@ remote_cleanup:
 
 	for (i = 0, n = ol_first_node(t->columns); i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;
-		int mtype = monetdbe_2_gdk_type(input[i]->type.type);
+		int mtype = monetdbe_2_gdk_type(input[i]->type);
 		const void* nil = (mtype>=0)?ATOMnilptr(mtype):NULL;
 		char *v = input[i]->data;
 
@@ -2263,7 +2241,7 @@ remote_cleanup:
 			BAT *bn = NULL;
 
 			if (mtype != c->type.type->localtype) {
-				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type.type, c->base.name));
+				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name));
 				goto cleanup;
 			}
 

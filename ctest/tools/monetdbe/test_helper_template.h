@@ -29,7 +29,7 @@ bool CHECK_COLUMN_FUNC (
 
     const monetdbe_types expected_type = TPE_ENUM;
 
-    if (rcol->type.type != expected_type) {
+    if (rcol->type != expected_type) {
         printf("Actual column and expected column differ in type.\n");
         return false;
     }
