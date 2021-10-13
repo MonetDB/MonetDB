@@ -2786,7 +2786,7 @@ exp_copy(mvc *sql, sql_exp * e)
 	}
 	case e_atom:
 		if (e->l)
-			ne = exp_atom(sql->sa, e->l);
+			ne = exp_atom(sql->sa, atom_dup(sql->sa, e->l));
 		else if (e->r) {
 			sql_var_name *vname = (sql_var_name*) e->r;
 			ne = exp_param_or_declared(sql->sa, vname->sname, vname->name, &e->tpe, e->flag);
