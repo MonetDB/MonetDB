@@ -467,19 +467,6 @@ project (
 | table("sys"."another_t") [ "another_t"."col1" ]
 ) [ "sys"."sql_mul"("another_t"."col1", "sys"."sql_mul"(tinyint(6) "34", tinyint(2) "3") NOT NULL) ]
 
-# testing rel_push_count_down optimizer
-query T nosort
-plan select count(*) from another_t t1, another_t t2
-----
-project (
-| project (
-| | crossproduct (
-| | |  [ "sys"."cnt"(clob "sys", clob "another_t") NOT NULL as "%2"."%2" ],
-| | |  [ "sys"."cnt"(clob "sys", clob "another_t") NOT NULL as "%3"."%3" ]
-| | ) [  ]
-| ) [ bigint(64)["sys"."sql_mul"("%2"."%2" NOT NULL, "%3"."%3" NOT NULL) NOT NULL] NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
-
 statement ok
 create table t1 (a int, b string)
 
