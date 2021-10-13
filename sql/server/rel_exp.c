@@ -2786,7 +2786,7 @@ exp_copy(mvc *sql, sql_exp * e)
 	}
 	case e_atom:
 		if (e->l)
-			ne = exp_atom(sql->sa, atom_dup(sql->sa, e->l));
+			ne = exp_atom(sql->sa, e->l);
 		else if (e->r) {
 			sql_var_name *vname = (sql_var_name*) e->r;
 			ne = exp_param_or_declared(sql->sa, vname->sname, vname->name, &e->tpe, e->flag);
@@ -2830,14 +2830,14 @@ atom *
 exp_flatten(mvc *sql, sql_exp *e)
 {
 	if (e->type == e_atom) {
-		atom *v =  exp_value(sql, e);
+		atom *v = exp_value(sql, e);
 
 		if (v)
-			return atom_dup(sql->sa, v);
+			return atom_copy(sql->sa, v);
 	} else if (e->type == e_convert) {
 		atom *v = exp_flatten(sql, e->l);
 
-		if (v && atom_cast(sql->sa, v, exp_subtype(e)))
+		if (v && (v = atom_cast(sql->sa, v, exp_subtype(e))))
 			return v;
 		return NULL;
 	} else if (e->type == e_func) {
@@ -3048,26 +3048,10 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
  * This is only done to be able to map more cached queries onto the same
  * interface.
  */
-
-static void
-convert_atom(atom *a, sql_subtype *rt)
-{
-	if (atom_null(a)) {
-		if (a->data.vtype != rt->type->localtype) {
-			const void *p;
-
-			a->data.vtype = rt->type->localtype;
-			p = ATOMnilptr(a->data.vtype);
-			VALset(&a->data, a->data.vtype, (ptr) p);
-		}
-	}
-	a->tpe = *rt;
-}
-
 sql_exp *
 exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
-	atom *a;
+	atom *a, *na;
 
 	/* exclude named variables and variable lists */
 	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */ || !exp->l /* not direct atom */)
@@ -3077,8 +3061,8 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	if (!a->isnull && t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
-	if (a && atom_cast(sql->sa, a, t)) {
-		convert_atom(a, t);
+	if ((na = atom_cast(sql->sa, a, t))) {
+		exp->l = na;
 		exp->tpe = *t;
 		return exp;
 	}

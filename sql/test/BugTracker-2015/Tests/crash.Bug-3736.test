@@ -169,7 +169,7 @@ project (
 | | | | ) [ "%4"."%4" NOT NULL, "o"."open_auction_id" NOT NULL as "%6"."%6" ]
 | | | ) [ ("o"."open_auction_id" NOT NULL) * = ("%6"."%6" NOT NULL) ]
 | | ) [ "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL, "%2"."%2", "%4"."%4" ]
-| ) [ ("sys"."<="("sys"."sql_mul"("%2"."%2", double "2"), "%4"."%4")) = (boolean "true") ]
+| ) [ ("sys"."<="("sys"."sql_mul"("%2"."%2", double(53) "2"), "%4"."%4")) = (boolean(1) "true") ]
 ) [ "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL ]
 
 query ITTTTR rowsort

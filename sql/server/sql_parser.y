@@ -4291,8 +4291,8 @@ atom:
     literal
 	{ 
 		AtomNode *an = (AtomNode*)$1;
-		atom *a = an->a; 
-		an->a = atom_dup(SA, a); 
+		atom *a = an->a;
+		an->a = atom_copy(SA, a);
 		$$ = $1;
 	}
  ;
