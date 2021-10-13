@@ -2,7 +2,7 @@
 % .plan # table_name
 % rel # name
 % clob # type
-% 106 # length
+% 85 # length
 project (
 | project (
 | | crossproduct (
