@@ -1654,116 +1654,116 @@ create table debugme (aa real, bb int)
 statement ok
 insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query T rowsort
+query R rowsort
 select sum(aa) over (partition by bb) from debugme
 ----
-11.0
-11.0
-11.0
-26.0
-26.0
-26.0
-9.0
-9.0
-9.0
+11.000
+11.000
+11.000
+26.000
+26.000
+26.000
+9.000
+9.000
+9.000
 NULL
 
-query T rowsort
+query R rowsort
 select sum(aa) over (partition by bb order by bb asc) from debugme
 ----
-11.0
-11.0
-11.0
-26.0
-26.0
-26.0
-9.0
-9.0
-9.0
+11.000
+11.000
+11.000
+26.000
+26.000
+26.000
+9.000
+9.000
+9.000
 NULL
 
-query T rowsort
+query R rowsort
 select sum(aa) over (partition by bb order by bb desc) from debugme
 ----
-11.0
-11.0
-11.0
-26.0
-26.0
-26.0
-9.0
-9.0
-9.0
+11.000
+11.000
+11.000
+26.000
+26.000
+26.000
+9.000
+9.000
+9.000
 NULL
 
-query T rowsort
+query R rowsort
 select sum(aa) over (order by bb desc) from debugme
 ----
-26.0
-26.0
-26.0
-37.0
-37.0
-37.0
-46.0
-46.0
-46.0
+26.000
+26.000
+26.000
+37.000
+37.000
+37.000
+46.000
+46.000
+46.000
 NULL
 
-query T rowsort
+query R rowsort
 select prod(aa) over (partition by bb) from debugme
 ----
-24.0
-24.0
-24.0
-24.0
-24.0
-24.0
-450.0
-450.0
-450.0
+24.000
+24.000
+24.000
+24.000
+24.000
+24.000
+450.000
+450.000
+450.000
 NULL
 
-query T rowsort
+query R rowsort
 select prod(aa) over (partition by bb order by bb asc) from debugme
 ----
-24.0
-24.0
-24.0
-24.0
-24.0
-24.0
-450.0
-450.0
-450.0
+24.000
+24.000
+24.000
+24.000
+24.000
+24.000
+450.000
+450.000
+450.000
 NULL
 
-query T rowsort
+query R rowsort
 select prod(aa) over (partition by bb order by bb desc) from debugme
 ----
-24.0
-24.0
-24.0
-24.0
-24.0
-24.0
-450.0
-450.0
-450.0
+24.000
+24.000
+24.000
+24.000
+24.000
+24.000
+450.000
+450.000
+450.000
 NULL
 
-query T rowsort
+query R rowsort
 select prod(aa) over (order by bb desc) from debugme
 ----
-10800.0
-10800.0
-10800.0
-259200.0
-259200.0
-259200.0
-450.0
-450.0
-450.0
+10800.000
+10800.000
+10800.000
+259200.000
+259200.000
+259200.000
+450.000
+450.000
+450.000
 NULL
 
 query R rowsort
@@ -1872,7 +1872,7 @@ project (
 | | | | table("sys"."myorders") [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
 | | | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "sys"."month"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL, "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" NOT NULL) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int "0", int "0", int "0", bigint "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int "0", int "5", int "0", bigint "0")) as "%4"."%4" ]
+| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" NOT NULL) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(9) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(9) "0", int(9) "0", int(9) "0", bigint(64) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(9) "0", int(9) "5", int(9) "0", bigint(64) "0")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
 query R rowsort
@@ -1891,7 +1891,7 @@ project (
 | | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
 | | | ) [ "myorders"."o_totalprice" NOT NULL, "sys"."day"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int "1", int "0", int "0", int "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int "1", int "5", int "0", int "0")) as "%3"."%3" ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", int(32) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", int(32) "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 
 query R rowsort
@@ -1910,7 +1910,7 @@ project (
 | | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
 | | | ) [ "myorders"."o_totalprice" NOT NULL, "sys"."year"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL, boolean "true", "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int "2", "sys"."window_bound"("%3"."%3", int "2", int "0", int "0", tinyint "2"), "sys"."window_bound"("%3"."%3", int "2", int "3", int "0", bigint "9223372036854775807")) as "%4"."%4" ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL, boolean(1) "true", "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "2", "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "0", int(9) "0", tinyint(2) "2"), "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "3", int(9) "0", bigint(64) "9223372036854775807")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
 query I rowsort

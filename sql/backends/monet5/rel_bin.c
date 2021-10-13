@@ -1210,7 +1210,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	case e_atom: {
 		if (e->l) { 			/* literals */
 			atom *a = e->l;
-			s = stmt_atom(be, atom_dup(sql->sa, a));
+			s = stmt_atom(be, atom_copy(sql->sa, a));
 		} else if (e->r) { 		/* parameters and declared variables */
 			sql_var_name *vname = (sql_var_name*) e->r;
 			assert(vname->name);

@@ -3420,7 +3420,7 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 		if (tr->parent) { /* propagate to the parent */
 			for(node *n=tr->predicates->h; n && res == LOG_OK ; n = n->next) {
 				pl *p = (pl*) n->data;
-				atom *e1 = p->r ? atom_dup(NULL, p->r) : NULL, *e2 = p->f ? atom_dup(NULL, p->f) : NULL;
+				atom *e1 = p->r ? atom_copy(NULL, p->r) : NULL, *e2 = p->f ? atom_copy(NULL, p->f) : NULL;
 
 				res = sql_trans_add_predicate(tr->parent, p->c, p->cmp, e1, e2, p->anti, p->semantics);
 			}

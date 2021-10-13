@@ -3063,7 +3063,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
 					atom *a = atom_mul(la, ra);
 
-					if (a && atom_cast(sql->sa, a, exp_subtype(e))) {
+					if (a && (a = atom_cast(sql->sa, a, exp_subtype(e)))) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
 							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
@@ -7712,7 +7712,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 							/* change atom's value on right */
 							l = args->h->data;
 							if (!a->isnull)
-								a->data.val.bval = !a->data.val.bval;
+								r = exp_atom_bool(v->sql->sa, !a->data.val.bval);
 							e = exp_compare(v->sql->sa, l, r, e->flag);
 							if (anti) set_anti(e);
 							if (is_semantics) set_semantics(e);
@@ -8199,54 +8199,47 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
  * types).
  */
 
-static int
-reduce_scale(atom *a)
+#define reduce_scale_tpe(tpe, uval) \
+	do { \
+		tpe v = uval; \
+		if (v != 0) { \
+			while( (v/10)*10 == v ) { \
+				i++; \
+				v /= 10; \
+			} \
+			nval = v; \
+		} \
+	} while (0)
+
+static atom *
+reduce_scale(mvc *sql, atom *a)
 {
 	int i = 0;
+	atom *na = a;
+#ifdef HAVE_HGE
+	hge nval = 0;
+#else
+	lng nval = 0;
+#endif
 
 #ifdef HAVE_HGE
 	if (a->data.vtype == TYPE_hge) {
-		hge v = a->data.val.hval;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.hval = v;
+		reduce_scale_tpe(hge, a->data.val.hval);
 	} else
 #endif
 	if (a->data.vtype == TYPE_lng) {
-		lng v = a->data.val.lval;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.lval = v;
+		reduce_scale_tpe(lng, a->data.val.lval);
 	} else if (a->data.vtype == TYPE_int) {
-		int v = a->data.val.ival;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.ival = v;
+		reduce_scale_tpe(int, a->data.val.ival);
 	} else if (a->data.vtype == TYPE_sht) {
-		sht v = a->data.val.shval;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.shval = v;
+		reduce_scale_tpe(sht, a->data.val.shval);
 	}
-	if (a->tpe.scale)
-		a->tpe.scale -= i;
-	return i;
+	if (i) {
+		na = atom_int(sql->sa, &a->tpe, nval);
+		if (na->tpe.scale)
+			na->tpe.scale -= i;
+	}
+	return na;
 }
 
 static sql_rel *
@@ -8269,15 +8262,20 @@ rel_project_reduce_casts(visitor *v, sql_rel *rel)
 					list *args = e->l;
 					sql_exp *h = args->h->data;
 					sql_exp *t = args->t->data;
-					atom *a;
 
-					if ((is_atom(h->type) && (a = exp_value(v->sql, h)) != NULL) ||
-					    (is_atom(t->type) && (a = exp_value(v->sql, t)) != NULL)) {
-						int rs = reduce_scale(a);
+					if ((is_atom(h->type) && h->l) || (is_atom(t->type) && t->l)) {
+						atom *a = (is_atom(h->type) && h->l) ? h->l : t->l;
+						atom *na = reduce_scale(v->sql, a);
 
-						res->scale -= rs;
-						if (rs)
-							v->changes+= rs;
+						if (na != a) {
+							int rs = a->tpe.scale - na->tpe.scale;
+							res->scale -= rs;
+							if (is_atom(h->type) && h->l)
+								h->l = na;
+							else
+								t->l = na;
+							v->changes++;
+						}
 					}
 				}
 			}
@@ -8320,9 +8318,9 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 						list *args = nre->l;
 						sql_exp *ce = args->t->data;
 						sql_subtype *fst = exp_subtype(args->h->data);
-						atom *a;
 
-						if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
+						if (fst->scale && fst->scale == ft->scale && is_atom(ce->type) && ce->l) {
+							atom *a = ce->l;
 							int anti = is_anti(e);
 							sql_exp *arg1, *arg2;
 #ifdef HAVE_HGE
@@ -8331,9 +8329,13 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 							lng val = 1;
 #endif
 							/* multiply with smallest value, then scale and (round) */
-							int scale = (int) tt->scale - (int) ft->scale;
-							int rs = reduce_scale(a);
+							int scale = (int) tt->scale - (int) ft->scale, rs = 0;
+							atom *na = reduce_scale(v->sql, a);
 
+							if (na != a) {
+								rs = a->tpe.scale - na->tpe.scale;
+								ce->l = na;
+							}
 							scale -= rs;
 
 							while(scale > 0) {
