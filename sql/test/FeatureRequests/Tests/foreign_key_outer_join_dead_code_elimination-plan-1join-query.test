@@ -110,7 +110,7 @@ project (
 | group by (
 | | select (
 | | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
-| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid "NULL") ]
+| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) "NULL") ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -120,7 +120,7 @@ query T nosort
 project (
 | select (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
-| ) [ ("fk"."%fk_fk1_fkey") ! * = (oid "NULL") ]
+| ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) "NULL") ]
 ) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T nosort

@@ -557,7 +557,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						if (e && is_atom(e->type)) {
 							atom *a = exp_value(sql, e);
 
-							if (atom_null(a)) {
+							if (a && atom_null(a)) {
 								switch (mvc_default(sql, cs, NULL)) {
 									case -1:
 										(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);

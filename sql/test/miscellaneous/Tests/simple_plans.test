@@ -23,7 +23,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
-| | ) [ "sys"."sql_add"(bigint["myy"."col1"], bigint["myy"."col2"]) as "%1"."%1" ]
+| | ) [ "sys"."sql_add"(bigint(33)["myy"."col1"], bigint(33)["myy"."col2"]) as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" ] [ "%1"."%1" ASC ]
 
@@ -96,8 +96,8 @@ plan select 1 from tab0 where col1 = 1 or col1 = 81
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1" ]
-| ) [ ("tab0"."col1") in (int "1", int "81") ]
-) [ tinyint "1" ]
+| ) [ ("tab0"."col1") in (int(32) "1", int(32) "81") ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
@@ -105,8 +105,8 @@ plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1" ]
-| ) [ ("tab0"."col1") in (int "1", int "81", int "100") ]
-) [ tinyint "1" ]
+| ) [ ("tab0"."col1") in (int(32) "1", int(32) "81", int(32) "100") ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
@@ -114,8 +114,8 @@ plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ (("tab0"."col1") in (int "1", int "81")) or (("tab0"."col2") < (int "0")) ]
-) [ tinyint "1" ]
+| ) [ (("tab0"."col1") in (int(32) "1", int(32) "81")) or (("tab0"."col2") < (int(32) "0")) ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10)
@@ -123,8 +123,8 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 >
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ (("tab0"."col1") in (int "1", int "81", int "100")) or (("tab0"."col2") > (int "10")) ]
-) [ tinyint "1" ]
+| ) [ (("tab0"."col1") in (int(32) "1", int(32) "81", int(32) "100")) or (("tab0"."col2") > (int(32) "10")) ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100)
@@ -132,8 +132,8 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 =
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ((("tab0"."col1") in (int "1", int "81")) or (("tab0"."col2") = (int "100"))) or (("tab0"."col1") = (int "100")) ]
-) [ tinyint "1" ]
+| ) [ ((("tab0"."col1") in (int(32) "1", int(32) "81")) or (("tab0"."col2") = (int(32) "100"))) or (("tab0"."col1") = (int(32) "100")) ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81
@@ -141,8 +141,8 @@ plan select 1 from tab0 where col1 <> 1 and col1 <> 81
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1" ]
-| ) [ ("tab0"."col1") notin (int "1", int "81") ]
-) [ tinyint "1" ]
+| ) [ ("tab0"."col1") notin (int(32) "1", int(32) "81") ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0)
@@ -150,8 +150,8 @@ plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0)
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col2") < (int "0"), ("tab0"."col1") notin (int "1", int "81") ]
-) [ tinyint "1" ]
+| ) [ ("tab0"."col2") < (int(32) "0"), ("tab0"."col1") notin (int(32) "1", int(32) "81") ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
@@ -159,8 +159,8 @@ plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ (("tab0"."col1") notin (int "1", int "81")) or (("tab0"."col2") < (int "0")) ]
-) [ tinyint "1" ]
+| ) [ (("tab0"."col1") notin (int(32) "1", int(32) "81")) or (("tab0"."col2") < (int(32) "0")) ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10)
@@ -168,8 +168,8 @@ plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (c
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ (("tab0"."col1") notin (int "1", int "81", int "100")) or (("tab0"."col2") > (int "10")) ]
-) [ tinyint "1" ]
+| ) [ (("tab0"."col1") notin (int(32) "1", int(32) "81", int(32) "100")) or (("tab0"."col2") > (int(32) "10")) ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 100)
@@ -177,8 +177,8 @@ plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (co
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ("tab0"."col1") != (int "100"), (("tab0"."col1") notin (int "1", int "81")) or (("tab0"."col2") = (int "100")) ]
-) [ tinyint "1" ]
+| ) [ ("tab0"."col1") != (int(32) "100"), (("tab0"."col1") notin (int(32) "1", int(32) "81")) or (("tab0"."col2") = (int(32) "100")) ]
+) [ tinyint(1) "1" ]
 
 statement ok
 CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int)
@@ -326,8 +326,8 @@ PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 project (
 | select (
 | | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-| ) [ ((int "1") <= ("another_t"."col1") <= (int "2")) or (("another_t"."col2") * = (int "NULL")) ]
-) [ tinyint "1" ]
+| ) [ ((int(32) "1") <= ("another_t"."col1") <= (int(32) "2")) or (("another_t"."col2") * = (int(32) "NULL")) ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
@@ -335,15 +335,15 @@ PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 project (
 | select (
 | | table("sys"."another_t") [ "another_t"."col1" ]
-| ) [ (bigint "1") < (bigint["another_t"."col1"]) < (bigint "2") ]
-) [ tinyint "1" ]
+| ) [ (bigint(64) "1") < (bigint(64)["another_t"."col1"]) < (bigint(64) "2") ]
+) [ tinyint(1) "1" ]
 
 query T nosort
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-) [ "sys"."or"((int "1") <= ("another_t"."col1") <= (int "2"), "sys"."isnull"("another_t"."col2") NOT NULL) ]
+) [ "sys"."or"((int(32) "1") <= ("another_t"."col1") <= (int(32) "2"), "sys"."isnull"("another_t"."col2") NOT NULL) ]
 
 statement ok
 CREATE TABLE tabel1 (id_nr INT, dt_sur STRING, edg INT, ede DATE, pc_nml_hur STRING, srt_ukr STRING)
@@ -392,7 +392,7 @@ project (
 | | | ) [ ("h"."id_nr") = ("a"."id_nr") ]
 | | ) [ "s"."id_nr" ]
 | ) [ ("a"."id_nr") = ("s"."id_nr") ]
-) [ tinyint "1" ]
+) [ tinyint(1) "1" ]
 
 statement ok
 CREATE TABLE integers(i INTEGER, j INTEGER)
@@ -465,20 +465,7 @@ plan select (34*another_t.col1)*3 from another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1" ]
-) [ "sys"."sql_mul"("another_t"."col1", "sys"."sql_mul"(tinyint "34", tinyint "3") NOT NULL) ]
-
-# testing rel_push_count_down optimizer
-query T nosort
-plan select count(*) from another_t t1, another_t t2
-----
-project (
-| project (
-| | crossproduct (
-| | |  [ "sys"."cnt"(clob "sys", clob "another_t") NOT NULL as "%2"."%2" ],
-| | |  [ "sys"."cnt"(clob "sys", clob "another_t") NOT NULL as "%3"."%3" ]
-| | ) [  ]
-| ) [ bigint["sys"."sql_mul"("%2"."%2" NOT NULL, "%3"."%3" NOT NULL) NOT NULL] NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
+) [ "sys"."sql_mul"("another_t"."col1", "sys"."sql_mul"(tinyint(6) "34", tinyint(2) "3") NOT NULL) ]
 
 statement ok
 create table t1 (a int, b string)
@@ -508,7 +495,7 @@ project (
 | | | table("sys"."t2") [ "t2"."a" ]
 | | ) [ ("t1"."a") = ("t2"."a") ],
 | | table("sys"."t3") [ "t3"."b" ]
-| ) [ ("t1"."b") FILTER "sys"."like"("t3"."b", clob "", boolean "false") ]
+| ) [ ("t1"."b") FILTER "sys"."like"("t3"."b", clob "", boolean(1) "false") ]
 ) [ "t1"."a", "t1"."b" ]
 
 query T python .explain.function_histogram
@@ -548,15 +535,15 @@ project (
 | | | project (
 | | | | select (
 | | | | | table("sys"."t1") [ "t1"."a" ]
-| | | | ) [ ("t1"."a") > (int "2") ]
-| | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
+| | | | ) [ ("t1"."a") > (int(32) "2") ]
+| | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint(2) "3") as "c" ]
 | | ) [ "b" as "x"."x", "c" as "x"."y" ],
 | | project (
 | | | project (
 | | | | select (
 | | | | | table("sys"."t2") [ "t2"."a" ]
-| | | | ) [ ("t2"."a") > (int "2") ]
-| | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
+| | | | ) [ ("t2"."a") > (int(32) "2") ]
+| | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint(3) "5") as "d" ]
 | | ) [ "z" as "x"."x", "d" as "x"."y" ]
 | ) [ "x"."x", "x"."y" ]
 ) [ "x"."x", "x"."y" ]
@@ -571,8 +558,8 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | | table("sys"."t1") [ "t1"."a" ]
-| | | | | ) [ ("t1"."a") > (int "2") ]
-| | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint "3") as "c" ]
+| | | | | ) [ ("t1"."a") > (int(32) "2") ]
+| | | | ) [ "t1"."a" as "b", "sys"."sql_div"("t1"."a", tinyint(2) "3") as "c" ]
 | | | ) [ "b", "c" ] [ "b", "c" ]
 | | ) [ "b" as "x"."x", "c" as "x"."y" ],
 | | project (
@@ -580,8 +567,8 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | | table("sys"."t2") [ "t2"."a" ]
-| | | | | ) [ ("t2"."a") > (int "2") ]
-| | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint "5") as "d" ]
+| | | | | ) [ ("t2"."a") > (int(32) "2") ]
+| | | | ) [ "t2"."a" as "z", "sys"."sql_div"("t2"."a", tinyint(3) "5") as "d" ]
 | | | ) [ "z", "d" ] [ "z", "d" ]
 | | ) [ "z" as "x"."x", "d" as "x"."y" ]
 | ) [ "x"."x", "x"."y" ]

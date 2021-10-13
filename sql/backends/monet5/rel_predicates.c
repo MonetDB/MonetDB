@@ -59,7 +59,7 @@ rel_find_predicates(visitor *v, sql_rel *rel)
 				} else if (isNew(c)) {
 					continue;
 				} else {
-					atom *e1 = r && r->l ? atom_dup(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_dup(NULL, r2->l) : NULL;
+					atom *e1 = r && r->l ? atom_copy(NULL, r->l) : NULL, *e2 = r2 && r2->l ? atom_copy(NULL, r2->l) : NULL;
 
 					if ((r && r->l && !e1) || (r2 && r2->l && !e2)) {
 						if (e1) {

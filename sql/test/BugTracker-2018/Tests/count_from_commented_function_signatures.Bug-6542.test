@@ -43,16 +43,16 @@ project (
 | | | | | | | | | | | ) [ ("f"."schema_id") = ("s"."id") ],
 | | | | | | | | | | | select (
 | | | | | | | | | | | | table("sys"."functions") [ "functions"."id", "functions"."system" ]
-| | | | | | | | | | | ) [ ("functions"."system") = (boolean "true") ]
+| | | | | | | | | | | ) [ ("functions"."system") = (boolean(1) "true") ]
 | | | | | | | | | | ) [ ("f"."id") = ("functions"."id") ],
 | | | | | | | | | | select (
 | | | | | | | | | | | table("sys"."args") [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ]
-| | | | | | | | | | ) [ ("p"."inout") = (tinyint "1") ]
+| | | | | | | | | | ) [ ("p"."inout") = (tinyint(1) "1") ]
 | | | | | | | | | ) [ ("f"."id") = ("p"."func_id") ]
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | | ) [ "f"."id", "sys"."row_number"("sys"."star"(), boolean "false", "sys"."diff"("sys"."diff"("f"."id"), "p"."number")) as "line" ]
+| | | | | ) [ "f"."id", "sys"."row_number"("sys"."star"(), boolean(1) "false", "sys"."diff"("sys"."diff"("f"."id"), "p"."number")) as "line" ]
 | | | | ) [ "f"."id" as "fid", "line" ]
 | | | ) [ "fid" ] [ "line" ASC ]
 | | ) [ "fid" as "commented_function_signatures_6542"."fid" ]

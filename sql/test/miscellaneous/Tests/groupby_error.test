@@ -129,7 +129,7 @@ PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 project (
 | select (
 | | table("sys"."tab2") [ "tab2"."col0", "tab2"."col2" ]
-| ) [ (bigint["tab2"."col2"]) = (bigint "40") ]
+| ) [ (bigint(64)["tab2"."col2"]) = (bigint(64) "40") ]
 ) [ "tab2"."col0" ]
 
 query I rowsort

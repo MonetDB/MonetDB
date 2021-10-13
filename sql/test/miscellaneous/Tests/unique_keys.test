@@ -10,7 +10,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | semijoin (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 | ) [ ("y"."y") = ("testkeys"."a" NOT NULL HASHCOL ) ]
 ) [ "y"."y" ]
@@ -20,7 +20,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | semijoin (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
 | ) [ ("y"."y") = ("testkeys"."b" HASHCOL ) ]
 ) [ "y"."y" ]
@@ -30,7 +30,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | semijoin (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 | ) [ ("y"."y") = ("testkeys"."a" NOT NULL HASHCOL ) ]
 ) [ "y"."y" ]
@@ -41,7 +41,7 @@ plan select y from (values (NULL),(1),(2),(cast(3 as int))) y(y) inner join test
 ----
 project (
 | join (
-| |  [  [ int "NULL", int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "NULL", int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
 | ) [ ("y"."y") * = ("testkeys"."b" HASHCOL ) ]
 ) [ "y"."y" ]
@@ -51,7 +51,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | join (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."c" ]
 | ) [ ("y"."y") * = ("testkeys"."c") ]
 ) [ "y"."y" ]
@@ -74,10 +74,10 @@ project (
 | | join (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = (int "1") ],
+| | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = (int(32) "1") ],
 | | | table("sys"."othertable") [ "othertable"."a" ]
 | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
-| ) [ ("othertable"."a") = (int "2") ]
+| ) [ ("othertable"."a") = (int(32) "2") ]
 ) [ "othertable"."a" ]
 
 # here 'othertable.a between 2 and 5' can be pushed up too
@@ -89,10 +89,10 @@ project (
 | | join (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."b" HASHCOL ) = (int "1") ],
+| | | ) [ ("testkeys"."b" HASHCOL ) = (int(32) "1") ],
 | | | table("sys"."othertable") [ "othertable"."a" ]
 | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
-| ) [ (int "2") <= ("othertable"."a") <= (int "5") ]
+| ) [ (int(32) "2") <= ("othertable"."a") <= (int(32) "5") ]
 ) [ "testkeys"."a" NOT NULL HASHCOL  ]
 
 # here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
@@ -103,10 +103,10 @@ project (
 | join (
 | | select (
 | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
-| | ) [ ("testkeys"."b" HASHCOL ) * = (int "NULL") ],
+| | ) [ ("testkeys"."b" HASHCOL ) * = (int(32) "NULL") ],
 | | select (
 | | | table("sys"."othertable") [ "othertable"."a" ]
-| | ) [ ("othertable"."a") > (int "1") ]
+| | ) [ ("othertable"."a") > (int(32) "1") ]
 | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
 ) [ "testkeys"."a" NOT NULL HASHCOL  ]
 
@@ -125,7 +125,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | join (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL ]
 | ) [ ("y"."y") = ("testkeys"."a" NOT NULL) ]
 ) [ "y"."y" ]
@@ -135,7 +135,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | join (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" ]
 | ) [ ("y"."y") = ("testkeys"."b") ]
 ) [ "y"."y" ]
@@ -158,7 +158,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | join (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL ]
 | ) [ ("y"."y") = ("testkeys"."a" NOT NULL) ]
 ) [ "y"."y" ]
@@ -168,7 +168,7 @@ plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on
 ----
 project (
 | join (
-| |  [  [ int "1", int "2", int "3" ] as "y"."y" ],
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" ]
 | ) [ ("y"."y") = ("testkeys"."b") ]
 ) [ "y"."y" ]
