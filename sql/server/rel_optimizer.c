@@ -1879,15 +1879,16 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 static list *
 sum_limit_offset(mvc *sql, sql_rel *rel)
 {
-	/* for sample we always propagate */
-	if (is_sample(rel->op))
+	/* for sample we always propagate, or if the expression list only consists of a limit expression, we copy it */
+	if (is_sample(rel->op) || list_length(rel->exps) == 1)
 		return exps_copy(sql, rel->exps);
-	/* if the expression list only consists of a limit expression, we copy it */
-	if (list_length(rel->exps) == 1 && rel->exps->h->data)
-		return list_append(sa_list(sql->sa), rel->exps->h->data);
+	assert(list_length(rel->exps) == 2);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
-	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
+	sql_exp *add = rel_binop_(sql, NULL, exp_copy(sql, rel->exps->h->data), exp_copy(sql, rel->exps->h->next->data), "sys", "sql_add", card_value);
+	/* for remote plans, make sure the output type is a bigint */
+	if (subtype_cmp(lng, exp_subtype(add)) != 0)
+		add = exp_convert(sql->sa, add, exp_subtype(add), lng);
+	return list_append(sa_list(sql->sa), add);
 }
 
 static int
