@@ -1157,7 +1157,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && !is_sql_aggr(f)) {
 				if (query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = query_outer_last_used(query, i);
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 				}
 			}
 			if (exp) {
@@ -1233,7 +1235,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && !is_sql_aggr(f)) {
 				if (query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = query_outer_last_used(query, i);
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 				}
 			}
 			if (exp) {
@@ -1519,7 +1523,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		sql_exp *ls = n->data;
 
 		if (ls->card > rel->card) {
-			if (exp_name(ls))
+			if (exp_name(ls) && !has_label(ls))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ls));
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 		}
@@ -1528,7 +1532,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		sql_exp *rs = n->data;
 
 		if (rs->card > rel->card) {
-			if (exp_name(rs))
+			if (exp_name(rs) && !has_label(rs))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(rs));
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 		}
@@ -1628,7 +1632,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 	/* atom or row => select */
 	if (ls->card > rel->card || rs->card > rel->card || (rs2 && rs2->card > rel->card)) {
 		sql_exp *e = ls->card > rel->card ? ls : rs->card > rel->card ? rs : rs2;
-		if (exp_name(e))
+		if (exp_name(e) && !has_label(e))
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
@@ -1727,10 +1731,16 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	rs = rel_value_exp(query, &rel, ro, f|sql_farg, ek);
 	if (!rs)
 		return NULL;
-	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f))
-		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
-	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f))
-		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
+	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f)) {
+		if (exp_name(ls) && exp_relname(ls) && !has_label(ls))
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+	}
+	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f)) {
+		if (exp_name(rs) && exp_relname(rs) && !has_label(rs))
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+	}
 	return rel_compare_exp(query, rel, ls, rs, compare_op, k.reduce, quantifier, need_not, f);
 }
 
@@ -3482,8 +3492,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 								err = true;
 							if (was_processed)
 								set_processed(outer);
-							if (err)
-								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
+							if (err) {
+								if (exp_name(e) && exp_relname(e) && !has_label(e))
+									return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
+								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
+							}
 						} else if (!is_sql_aggr(of)) {
 							set_outer(outer);
 						}
@@ -3536,7 +3549,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
 				if (lu->type == e_column)
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", (char*)lu->l, (char*)lu->r);
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+				if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 			}
 			if (is_outer(groupby))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
@@ -4395,7 +4410,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 				sql_exp *ee = n->data;
 
 				if (ee->card > r->card) {
-					if (exp_name(ee))
+					if (exp_name(ee) && !has_label(ee))
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
@@ -4479,7 +4494,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						e = exp_ref(sql, e);
 					}
 				} else if (e && exp_card(e) > rel->card) {
-					if (exp_name(e))
+					if (exp_name(e) && !has_label(e))
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
@@ -5367,7 +5382,7 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 					sql_exp *e = n->data;
 
 					if (e->card > groupby->card) {
-						if (exp_name(e))
+						if (exp_name(e) && !has_label(e))
 							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 					}
