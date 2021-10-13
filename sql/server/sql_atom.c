@@ -1377,20 +1377,24 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 	return NULL;
 }
 
-int
-atom_neg(atom *a)
+atom *
+atom_neg(sql_allocator *sa, atom *a)
 {
 	ValRecord dst;
+
 	if (a->isnull)
-		return 0;
-	VALempty(&dst);
+		return a;
 	dst.vtype = a->data.vtype;
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED) {
 		GDKclrerr();
-		return -1;
+		return NULL;
 	}
-	a->data = dst;
-	return 0;
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a->tpe;
+	res->data = dst;
+	return res;
 }
 
 int
@@ -1406,7 +1410,7 @@ atom_cmp(atom *a1, atom *a2)
 }
 
 atom *
-atom_add(atom *a1, atom *a2)
+atom_add(sql_allocator *sa, atom *a1, atom *a2)
 {
 	ValRecord dst;
 
@@ -1419,19 +1423,23 @@ atom_add(atom *a1, atom *a2)
 		a1 = a2;
 		a2 = t;
 	}
+	if (a1->isnull || a2->isnull)
+		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
-	a1->data = dst;
-	if (a1->isnull || a2->isnull)
-		a1->isnull = 1;
-	return a1;
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a1->tpe;
+	res->data = dst;
+	return res;
 }
 
 atom *
-atom_sub(atom *a1, atom *a2)
+atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 {
 	ValRecord dst;
 
@@ -1439,26 +1447,28 @@ atom_sub(atom *a1, atom *a2)
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits))
-		dst.vtype = a2->tpe.type->localtype;
-	else
-		dst.vtype = a1->tpe.type->localtype;
+	     a1->tpe.digits < a2->tpe.digits)) {
+		atom *t = a1;
+		a1 = a2;
+		a2 = t;
+	}
+	if (a1->isnull || a2->isnull)
+		return atom_general(sa, &a1->tpe, NULL);
+	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcsub(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
-	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits))
-		a1 = a2;
-	a1->data = dst;
-	if (a1->isnull || a2->isnull)
-		a1->isnull = 1;
-	return a1;
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a1->tpe;
+	res->data = dst;
+	return res;
 }
 
 atom *
-atom_mul(atom *a1, atom *a2)
+atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 {
 	ValRecord dst;
 
@@ -1471,34 +1481,40 @@ atom_mul(atom *a1, atom *a2)
 		a1 = a2;
 		a2 = t;
 	}
-	if (a1->isnull || a2->isnull) {
-		a1->isnull = 1;
-		return a1;
-	}
+	if (a1->isnull || a2->isnull)
+		return atom_general(sa, &a1->tpe, NULL);
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
 	}
-	a1->data = dst;
-	a1->tpe.digits += a2->tpe.digits;
-	return a1;
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a1->tpe;
+	res->tpe.digits += a2->tpe.digits;
+	res->data = dst;
+	return res;
 }
 
-int
-atom_inc(atom *a)
+atom *
+atom_inc(sql_allocator *sa, atom *a)
 {
 	ValRecord dst;
 
 	if (a->isnull)
-		return -1;
+		return a;
 	dst.vtype = a->data.vtype;
 	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED) {
 		GDKclrerr();
-		return -1;
+		return NULL;
 	}
-	a->data = dst;
-	return 0;
+	atom *res = atom_create(sa);
+	if (!res)
+		return NULL;
+	res->tpe = a->tpe;
+	res->data = dst;
+	return res;
 }
 
 int

@@ -1987,7 +1987,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 						list_append(rel->exps, exp_copy(v->sql, offset2));
 						changed = true;
 					} else if (offset1 && offset2) { /* sum offsets */
-						atom *b1 = (atom *)offset1->l, *b2 = (atom *)offset2->l, *c = atom_add(b1, b2);
+						atom *b1 = (atom *)offset1->l, *b2 = (atom *)offset2->l, *c = atom_add(v->sql->sa, b1, b2);
 
 						if (!c) /* error, don't apply optimization, WARNING because of this the offset optimization must come before the limit one */
 							return rel;
@@ -3061,7 +3061,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
-					atom *a = atom_mul(la, ra);
+					atom *a = atom_mul(sql->sa, la, ra);
 
 					if (a && (a = atom_cast(sql->sa, a, exp_subtype(e)))) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -3105,7 +3105,10 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (exp_equal(re, lle)==0) {
-						if (atom_inc(exp_value(sql, lre))) {
+						atom *a = exp_value(sql, lre);
+						if (a && (a = atom_inc(sql->sa, a))) {
+							lre->l = a;
+							lre->r = NULL;
 							if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
 								le = exp_convert(sql->sa, le, exp_subtype(le), exp_subtype(e));
 							(*changes)++;
@@ -3166,7 +3169,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_add(la, ra);
+					atom *a = atom_add(sql->sa, la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -3233,7 +3236,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_sub(la, ra);
+					atom *a = atom_sub(sql->sa, la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -8233,6 +8236,8 @@ reduce_scale(mvc *sql, atom *a)
 		reduce_scale_tpe(int, a->data.val.ival);
 	} else if (a->data.vtype == TYPE_sht) {
 		reduce_scale_tpe(sht, a->data.val.shval);
+	} else if (a->data.vtype == TYPE_bte) {
+		reduce_scale_tpe(bte, a->data.val.btval);
 	}
 	if (i) {
 		na = atom_int(sql->sa, &a->tpe, nval);
@@ -8262,18 +8267,22 @@ rel_project_reduce_casts(visitor *v, sql_rel *rel)
 					list *args = e->l;
 					sql_exp *h = args->h->data;
 					sql_exp *t = args->t->data;
+					atom *ha = exp_value(v->sql, h), *ta = exp_value(v->sql, t);
 
-					if ((is_atom(h->type) && h->l) || (is_atom(t->type) && t->l)) {
-						atom *a = (is_atom(h->type) && h->l) ? h->l : t->l;
+					if (ha || ta) {
+						atom *a = ha ? ha : ta;
 						atom *na = reduce_scale(v->sql, a);
 
 						if (na != a) {
 							int rs = a->tpe.scale - na->tpe.scale;
 							res->scale -= rs;
-							if (is_atom(h->type) && h->l)
+							if (ha) {
+								h->r = NULL;
 								h->l = na;
-							else
+							} else {
+								t->r = NULL;
 								t->l = na;
+							}
 							v->changes++;
 						}
 					}
