@@ -2422,7 +2422,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) sc;
 		assert(an && an->a);
-		return exp_atom(sql->sa, atom_copy(sql->sa, an->a));
+		return exp_atom(sql->sa, an->a);
 	}
 	case SQL_IDENT:
 	case SQL_COLUMN:
@@ -2679,7 +2679,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		/* TRUE or FALSE */
 		sql_rel *or = rel;
 		AtomNode *an = (AtomNode *) sc;
-		sql_exp *e = exp_atom(sql->sa, atom_copy(sql->sa, an->a));
+		sql_exp *e = exp_atom(sql->sa, an->a);
 
 		if (e) {
 			sql_subtype bt;
