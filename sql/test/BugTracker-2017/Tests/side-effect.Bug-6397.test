@@ -32,6 +32,8 @@ bat.pack
 5
 bat.single
 2
+batcalc.lng
+1
 querylog.define
 1
 sql.my_generate_series

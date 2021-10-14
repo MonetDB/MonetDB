@@ -1594,51 +1594,49 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
 		/* currently only single count aggregation is handled, no other projects or aggregation */
 		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
-		sql_exp *nce, *oce;
-		sql_rel *gbl, *gbr;		/* Group By */
-		sql_rel *cp;			/* Cross Product */
-		sql_subfunc *mult;
-		list *args, *types;
+		sql_exp *nce, *oce, *cnt1 = NULL, *cnt2 = NULL;
+		sql_rel *gbl = NULL, *gbr = NULL;	/* Group By */
+		sql_rel *cp = NULL;					/* Cross Product */
 		sql_rel *srel;
 
 		oce = rel->exps->h->data;
 		if (oce->l) /* we only handle COUNT(*) */
 			return rel;
 
-		args = new_exp_list(v->sql->sa);
 		srel = r->l;
 		{
 			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-			sql_exp *cnt, *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
+			sql_exp *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
-			cnt = exp_ref(v->sql, e);
+			cnt1 = exp_ref(v->sql, e);
 			gbl = rel_groupby(v->sql, rel_dup(srel), NULL);
 			set_processed(gbl);
 			rel_groupby_add_aggr(v->sql, gbl, e);
-			append(args, cnt);
 		}
 
 		srel = r->r;
 		{
 			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-			sql_exp *cnt, *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
+			sql_exp *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
-			cnt = exp_ref(v->sql, e);
+			cnt2 = exp_ref(v->sql, e);
 			gbr = rel_groupby(v->sql, rel_dup(srel), NULL);
 			set_processed(gbr);
 			rel_groupby_add_aggr(v->sql, gbr, e);
-			append(args, cnt);
 		}
 
 		cp = rel_crossproduct(v->sql->sa, gbl, gbr, op_join);
 
-		types = sa_list(v->sql->sa);
-		for(node *n = args->h; n; n = n->next)
-			list_append(types, exp_subtype(n->data));
-		mult = sql_bind_func_(v->sql, "sys", "sql_mul", types, F_FUNC);
-		nce = exp_op(v->sql->sa, args, mult);
+		if (!(nce = rel_binop_(v->sql, NULL, cnt1, cnt2, "sys", "sql_mul", card_value))) {
+			v->sql->session->status = 0;
+			v->sql->errstr[0] = '\0';
+			return rel; /* error, fallback to original expression */
+		}
+		/* because of remote plans, make sure "sql_mul" returns bigint. The cardinality is atomic, so no major performance penalty */
+		if (subtype_cmp(exp_subtype(oce), exp_subtype(nce)) != 0)
+			nce = exp_convert(v->sql->sa, nce, exp_subtype(nce), exp_subtype(oce));
 		if (exp_name(oce))
 			exp_prop_alias(v->sql->sa, nce, oce);
 
@@ -1881,15 +1879,16 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 static list *
 sum_limit_offset(mvc *sql, sql_rel *rel)
 {
-	/* for sample we always propagate */
-	if (is_sample(rel->op))
+	/* for sample we always propagate, or if the expression list only consists of a limit expression, we copy it */
+	if (is_sample(rel->op) || list_length(rel->exps) == 1)
 		return exps_copy(sql, rel->exps);
-	/* if the expression list only consists of a limit expression, we copy it */
-	if (list_length(rel->exps) == 1 && rel->exps->h->data)
-		return list_append(sa_list(sql->sa), rel->exps->h->data);
+	assert(list_length(rel->exps) == 2);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
-	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
+	sql_exp *add = rel_binop_(sql, NULL, exp_copy(sql, rel->exps->h->data), exp_copy(sql, rel->exps->h->next->data), "sys", "sql_add", card_value);
+	/* for remote plans, make sure the output type is a bigint */
+	if (subtype_cmp(lng, exp_subtype(add)) != 0)
+		add = exp_convert(sql->sa, add, exp_subtype(add), lng);
+	return list_append(sa_list(sql->sa), add);
 }
 
 static int
@@ -1988,7 +1987,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 						list_append(rel->exps, exp_copy(v->sql, offset2));
 						changed = true;
 					} else if (offset1 && offset2) { /* sum offsets */
-						atom *b1 = (atom *)offset1->l, *b2 = (atom *)offset2->l, *c = atom_add(b1, b2);
+						atom *b1 = (atom *)offset1->l, *b2 = (atom *)offset2->l, *c = atom_add(v->sql->sa, b1, b2);
 
 						if (!c) /* error, don't apply optimization, WARNING because of this the offset optimization must come before the limit one */
 							return rel;
@@ -3062,9 +3061,9 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
-					atom *a = atom_mul(la, ra);
+					atom *a = atom_mul(sql->sa, la, ra);
 
-					if (a && atom_cast(sql->sa, a, exp_subtype(e))) {
+					if (a && (a = atom_cast(sql->sa, a, exp_subtype(e)))) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
 							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
@@ -3106,7 +3105,10 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (exp_equal(re, lle)==0) {
-						if (atom_inc(exp_value(sql, lre))) {
+						atom *a = exp_value(sql, lre);
+						if (a && (a = atom_inc(sql->sa, a))) {
+							lre->l = a;
+							lre->r = NULL;
 							if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
 								le = exp_convert(sql->sa, le, exp_subtype(le), exp_subtype(e));
 							(*changes)++;
@@ -3167,7 +3169,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_add(la, ra);
+					atom *a = atom_add(sql->sa, la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -3234,7 +3236,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_sub(la, ra);
+					atom *a = atom_sub(sql->sa, la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -7713,7 +7715,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 							/* change atom's value on right */
 							l = args->h->data;
 							if (!a->isnull)
-								a->data.val.bval = !a->data.val.bval;
+								r = exp_atom_bool(v->sql->sa, !a->data.val.bval);
 							e = exp_compare(v->sql->sa, l, r, e->flag);
 							if (anti) set_anti(e);
 							if (is_semantics) set_semantics(e);
@@ -8200,54 +8202,49 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
  * types).
  */
 
-static int
-reduce_scale(atom *a)
+#define reduce_scale_tpe(tpe, uval) \
+	do { \
+		tpe v = uval; \
+		if (v != 0) { \
+			while( (v/10)*10 == v ) { \
+				i++; \
+				v /= 10; \
+			} \
+			nval = v; \
+		} \
+	} while (0)
+
+static atom *
+reduce_scale(mvc *sql, atom *a)
 {
 	int i = 0;
+	atom *na = a;
+#ifdef HAVE_HGE
+	hge nval = 0;
+#else
+	lng nval = 0;
+#endif
 
 #ifdef HAVE_HGE
 	if (a->data.vtype == TYPE_hge) {
-		hge v = a->data.val.hval;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.hval = v;
+		reduce_scale_tpe(hge, a->data.val.hval);
 	} else
 #endif
 	if (a->data.vtype == TYPE_lng) {
-		lng v = a->data.val.lval;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.lval = v;
+		reduce_scale_tpe(lng, a->data.val.lval);
 	} else if (a->data.vtype == TYPE_int) {
-		int v = a->data.val.ival;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.ival = v;
+		reduce_scale_tpe(int, a->data.val.ival);
 	} else if (a->data.vtype == TYPE_sht) {
-		sht v = a->data.val.shval;
-
-		if (v != 0)
-			while( (v/10)*10 == v ) {
-				i++;
-				v /= 10;
-			}
-		a->data.val.shval = v;
+		reduce_scale_tpe(sht, a->data.val.shval);
+	} else if (a->data.vtype == TYPE_bte) {
+		reduce_scale_tpe(bte, a->data.val.btval);
 	}
-	if (a->tpe.scale)
-		a->tpe.scale -= i;
-	return i;
+	if (i) {
+		na = atom_int(sql->sa, &a->tpe, nval);
+		if (na->tpe.scale)
+			na->tpe.scale -= i;
+	}
+	return na;
 }
 
 static sql_rel *
@@ -8270,15 +8267,24 @@ rel_project_reduce_casts(visitor *v, sql_rel *rel)
 					list *args = e->l;
 					sql_exp *h = args->h->data;
 					sql_exp *t = args->t->data;
-					atom *a;
+					atom *ha = exp_value(v->sql, h), *ta = exp_value(v->sql, t);
 
-					if ((is_atom(h->type) && (a = exp_value(v->sql, h)) != NULL) ||
-					    (is_atom(t->type) && (a = exp_value(v->sql, t)) != NULL)) {
-						int rs = reduce_scale(a);
+					if (ha || ta) {
+						atom *a = ha ? ha : ta;
+						atom *na = reduce_scale(v->sql, a);
 
-						res->scale -= rs;
-						if (rs)
-							v->changes+= rs;
+						if (na != a) {
+							int rs = a->tpe.scale - na->tpe.scale;
+							res->scale -= rs;
+							if (ha) {
+								h->r = NULL;
+								h->l = na;
+							} else {
+								t->r = NULL;
+								t->l = na;
+							}
+							v->changes++;
+						}
 					}
 				}
 			}
@@ -8321,9 +8327,9 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 						list *args = nre->l;
 						sql_exp *ce = args->t->data;
 						sql_subtype *fst = exp_subtype(args->h->data);
-						atom *a;
 
-						if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
+						if (fst->scale && fst->scale == ft->scale && is_atom(ce->type) && ce->l) {
+							atom *a = ce->l;
 							int anti = is_anti(e);
 							sql_exp *arg1, *arg2;
 #ifdef HAVE_HGE
@@ -8332,9 +8338,13 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 							lng val = 1;
 #endif
 							/* multiply with smallest value, then scale and (round) */
-							int scale = (int) tt->scale - (int) ft->scale;
-							int rs = reduce_scale(a);
+							int scale = (int) tt->scale - (int) ft->scale, rs = 0;
+							atom *na = reduce_scale(v->sql, a);
 
+							if (na != a) {
+								rs = a->tpe.scale - na->tpe.scale;
+								ce->l = na;
+							}
 							scale -= rs;
 
 							while(scale > 0) {

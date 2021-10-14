@@ -533,8 +533,9 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 	}
 	return d;
 }
+
 atom *
-atom_dup(sql_allocator *sa, atom *a)
+atom_copy(sql_allocator *sa, atom *a)
 {
 	atom *r = sa ?SA_NEW(sa, atom):MNEW(atom);
 	if (!r)

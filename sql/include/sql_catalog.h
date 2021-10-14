@@ -862,7 +862,7 @@ typedef struct atom {
 
 /* duplicate atom */
 extern ValPtr SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s);
-extern atom *atom_dup(sql_allocator *sa, atom *a);
+extern atom *atom_copy(sql_allocator *sa, atom *a);
 
 typedef struct pl {
 	sql_column *c;

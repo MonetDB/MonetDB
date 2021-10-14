@@ -4290,9 +4290,6 @@ opt_alias_name:
 atom:
     literal
 	{ 
-		AtomNode *an = (AtomNode*)$1;
-		atom *a = an->a; 
-		an->a = atom_dup(SA, a); 
 		$$ = $1;
 	}
  ;

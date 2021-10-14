@@ -95,6 +95,20 @@ dump_escape_ident(sql_allocator *sa, const char *s)
 	return res;
 }
 
+static char *
+dump_sql_subtype(sql_allocator *sa, sql_subtype *t)
+{
+	char buf[BUFSIZ];
+
+	if (t->digits && t->scale)
+		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
+	else if (t->digits)
+		snprintf(buf, BUFSIZ, "%s(%u)", t->type->base.name, t->digits);
+	else
+		snprintf(buf, BUFSIZ, "%s", t->type->base.name);
+	return sa_strdup(sa, buf);
+}
+
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets);
 
 static void
@@ -118,7 +132,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
 			const char *rname = exp_relname(e);
-			char *type_str = e->f ? NULL : sql_subtype_string(sql->ta, exp_subtype(e));
+			char *type_str = e->f ? NULL : dump_sql_subtype(sql->ta, exp_subtype(e));
 			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "declare ");
 			if (rname)
@@ -154,7 +168,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	 	break;
 	}
 	case e_convert: {
-		char *to_type = sql_subtype_string(sql->ta, exp_subtype(e));
+		char *to_type = dump_sql_subtype(sql->ta, exp_subtype(e));
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0);
 		mnstr_printf(fout, "]");
@@ -170,7 +184,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 					isReplicaTable(t)?"replica table":"table",
 					dump_escape_ident(sql->ta, t->base.name));
 			} else {
-				char *t = sql_subtype_string(sql->ta, atom_type(a));
+				char *t = dump_sql_subtype(sql->ta, atom_type(a));
 				if (a->isnull)
 					mnstr_printf(fout, "%s \"NULL\"", t);
 				else {
@@ -937,49 +951,13 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 static sql_exp*
 parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 {
-	sql_exp *exp = NULL;
 	char *st = readString(r,pos);
 
 	if (st && strcmp(st, "NULL") == 0) {
-		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
 	} else {
-		atom *a = atom_general(sql->sa, tpe, st);
-		if (tpe->type->eclass == EC_NUM) { /* needs to set the number of digits */
-#ifdef HAVE_HGE
-			hge value = 0;
-			const hge one = 1;
-#else
-			lng value = 0;
-			const lng one = 1;
-#endif
-			int bits = (int) digits2bits((unsigned) strlen(st)), obits = bits;
-
-#ifdef HAVE_HGE
-			if (a->data.vtype == TYPE_hge) {
-				value = a->data.val.hval;
-			} else
-#endif
-			if (a->data.vtype == TYPE_lng) {
-				value = a->data.val.lval;
-			} else if (a->data.vtype == TYPE_int) {
-				value = a->data.val.ival;
-			} else if (a->data.vtype == TYPE_sht) {
-				value = a->data.val.shval;
-			} else {
-				value = a->data.val.btval;
-			}
-
-			while (bits > 0 && (bits == sizeof(value) * 8 || (one << (bits - 1)) > value))
-				bits--;
-			if (bits != obits && (bits == 8 || bits == 16 || bits == 32 || bits == 64))
-				bits++;
-			a->tpe.digits = bits;
-		} else if (tpe->type->eclass == EC_FLT || tpe->type->eclass == EC_DEC) {
-			assert(a->tpe.digits > 0);
-		}
-		exp = exp_atom(sql->sa, a);
+		return exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
 	}
-	return exp;
 }
 
 static sql_exp*

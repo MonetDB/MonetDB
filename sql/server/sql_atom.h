@@ -32,16 +32,15 @@ extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val);
 extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
-extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
 
-/* cast atom a to type tp (success == 1, fail == 0) */
-extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
+/* cast atom a to type tp (success returns not NULL, fail returns NULL) */
+extern atom *atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
 
 extern char *atom2string(sql_allocator *sa, atom *a);
 extern char *atom2sql(sql_allocator *sa, atom *a, int timezone);
 extern sql_subtype *atom_type(atom *a);
-extern void atom_set_type(atom *a, sql_subtype *t);
+extern atom *atom_set_type(sql_allocator *sa, atom *a, sql_subtype *t);
 
 #ifdef HAVE_HGE
 extern hge atom_get_int(atom *a);
@@ -51,10 +50,11 @@ extern lng atom_get_int(atom *a);
 
 extern int atom_cmp(atom *a1, atom *a2);
 
-extern atom *atom_add(atom *a1, atom *a2);
-extern atom *atom_sub(atom *a1, atom *a2);
-extern atom *atom_mul(atom *a1, atom *a2);
-extern int atom_inc(atom *a);
+extern atom *atom_neg(sql_allocator *sa, atom *a);
+extern atom *atom_add(sql_allocator *sa, atom *a1, atom *a2);
+extern atom *atom_sub(sql_allocator *sa, atom *a1, atom *a2);
+extern atom *atom_mul(sql_allocator *sa, atom *a1, atom *a2);
+extern atom *atom_inc(sql_allocator *sa, atom *a);
 extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
