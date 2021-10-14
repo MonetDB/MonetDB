@@ -1504,9 +1504,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	if (!exp) {
 		if (cname) {
 			bool has_tname = tname && strcmp(tname, cname) != 0;
-			return sql_error(sql, -1, SQLSTATE(42000) "Identifier %s%s%s doesn't exist\n", has_tname ? tname : "", has_tname ? "." : "", cname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Identifier %s%s%s doesn't exist\n", has_tname ? tname : "", has_tname ? "." : "", cname);
 		} else if (var_cname) {
-			return sql_error(sql, -1, SQLSTATE(42000) "Identifier %s doesn't exist\n", var_cname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Identifier %s doesn't exist\n", var_cname);
 		}
 		return NULL;
 	}
