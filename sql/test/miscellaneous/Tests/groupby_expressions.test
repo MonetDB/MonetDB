@@ -26,7 +26,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."groupings") [ "groupings"."aa" ]
-| | ) [ bigint["groupings"."aa"] as "%2"."%2", "sys"."sql_add"("%2"."%2", bigint "1") as "%1"."%1" ]
+| | ) [ bigint(33)["groupings"."aa"] as "%2"."%2", "sys"."sql_add"("%2"."%2", bigint(33) "1") as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" ]
 

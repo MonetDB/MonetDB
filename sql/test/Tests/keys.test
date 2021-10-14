@@ -238,7 +238,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL  ]
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", "sys"."sql_add"("%3"."%3" NOT NULL, bigint "1") NOT NULL as "%2"."%2" ]
+| | ) [ bigint(33)["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", "sys"."sql_add"("%3"."%3" NOT NULL, bigint(33) "1") NOT NULL as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -254,7 +254,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ]
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", bigint["dummyme"."b"] as "%4"."%4", "sys"."sql_add"("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
+| | ) [ bigint(33)["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", bigint(33)["dummyme"."b"] as "%4"."%4", "sys"."sql_add"("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
