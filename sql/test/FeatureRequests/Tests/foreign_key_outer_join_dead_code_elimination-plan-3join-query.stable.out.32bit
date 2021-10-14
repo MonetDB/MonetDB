@@ -1,7 +1,7 @@
 % .plan # table_name
 % rel # name
 % clob # type
-% 78 # length
+% 80 # length
 project (
 | group by (
 | | select (
@@ -12,7 +12,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 105 # length
+% 107 # length
 project (
 | select (
 | | table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
@@ -21,7 +21,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 132 # length
+% 134 # length
 project (
 | group by (
 | | select (
@@ -32,7 +32,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 159 # length
+% 161 # length
 project (
 | select (
 | | table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
@@ -41,7 +41,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 161 # length
+% 163 # length
 project (
 | join (
 | | select (
@@ -53,7 +53,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 161 # length
+% 163 # length
 project (
 | join (
 | | select (
