@@ -59,7 +59,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is n
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x", "myx"."y" ]
-| ) [ (("myx"."x") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y") * = (uuid "NULL")) ]
+| ) [ (("myx"."x") = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y") * = (uuid NULL)) ]
 ) [ "myx"."x", "myx"."y" ]
 
 query T nosort
@@ -326,7 +326,7 @@ PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 project (
 | select (
 | | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-| ) [ ((int(32) "1") <= ("another_t"."col1") <= (int(32) "2")) or (("another_t"."col2") * = (int(32) "NULL")) ]
+| ) [ ((int(32) "1") <= ("another_t"."col1") <= (int(32) "2")) or (("another_t"."col2") * = (int(32) NULL)) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
