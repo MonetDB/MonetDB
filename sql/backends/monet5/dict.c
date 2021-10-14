@@ -69,8 +69,8 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BUN cnt = BATcount(u);
 	/* create hash on u */
-	int tt = (cnt<256)?TYPE_bte:(cnt<(64*1024))?TYPE_sht:TYPE_int;
-	if (cnt > (BUN)2*1024*1024*1024) {
+	int tt = (cnt<256)?TYPE_bte:TYPE_sht;
+	if (cnt >= 64*1024) {
 		bat_destroy(u);
 		bat_destroy(b);
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "dict compress: too many values");
@@ -151,7 +151,7 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		o->tminpos = minpos;
 		o->tmaxpos = maxpos;
-	} else if (tt == TYPE_sht) {
+	} else {
 		sht *op = (sht*)Tloc(o, 0);
 		BATloop(b, p, q) {
 			BUN up = 0;
@@ -192,8 +192,6 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		o->tminpos = minpos;
 		o->tmaxpos = maxpos;
-	} else {
-		printf("implement int cases \n");
 	}
 	bat_iterator_end(&bi);
 	bat_destroy(b);
@@ -202,34 +200,14 @@ DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
-/* improve decompress of int,lng,hge types */
-str
-DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* improve decompress of hge types */
+BAT *
+DICTdecompress_(BAT *o, BAT *u)
 {
-	/* b = project(o:bat[:bte], u) */
-	/* b = project(o:bat[:sht], u) */
-	/* b = project(o:bat[:int], u) */
-	(void)cntxt;
-	(void)mb;
-	bat *r = getArgReference_bat(stk, pci, 0);
-	bat O = *getArgReference_bat(stk, pci, 1);
-	bat U = *getArgReference_bat(stk, pci, 2);
-
-	BAT *o = BATdescriptor(O);
-	BAT *u = BATdescriptor(U);
-	if (!o || !u) {
-		bat_destroy(o);
-		bat_destroy(u);
-		throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
 	BAT *b = COLnew(o->hseqbase, u->ttype, BATcount(o), TRANSIENT);
-	if (!b) {
-		bat_destroy(o);
-		bat_destroy(u);
-		throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+
+	if (!b)
+		return NULL;
 	BUN p, q;
 	BATiter oi = bat_iterator(o);
 	BATiter ui = bat_iterator_nolock(u);
@@ -260,13 +238,12 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
-					bat_destroy(o);
-					bat_destroy(u);
-					throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return NULL;
 				}
 			}
 		}
-	} else if (o->ttype == TYPE_sht) {
+	} else {
+		assert(o->ttype == TYPE_sht);
 		unsigned short *op = Tloc(o, 0);
 
 		if (ATOMstorage(u->ttype) == TYPE_int) {
@@ -293,25 +270,37 @@ DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
-					bat_destroy(o);
-					bat_destroy(u);
-					throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return NULL;
 				}
 			}
 		}
-	} else if (o->ttype == TYPE_int) {
-		assert(0);
-	} else {
-		bat_iterator_end(&oi);
-		bat_destroy(b);
-		bat_destroy(o);
-		bat_destroy(u);
-		throw(SQL, "dict.decompress", SQLSTATE(HY013) "unknown offset type");
 	}
 	bat_iterator_end(&oi);
-	BBPkeepref(*r = b->batCacheid);
+	return b;
+}
+
+str
+DICTdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *r = getArgReference_bat(stk, pci, 0);
+	bat O = *getArgReference_bat(stk, pci, 1);
+	bat U = *getArgReference_bat(stk, pci, 2);
+
+	BAT *o = BATdescriptor(O);
+	BAT *u = BATdescriptor(U);
+	if (!o || !u) {
+		bat_destroy(o);
+		bat_destroy(u);
+		throw(SQL, "dict.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BAT *b = DICTdecompress_(o, u);
 	bat_destroy(o);
 	bat_destroy(u);
+	if (!b)
+		throw(SQL, "dict.decompress", SQLSTATE(HY013) "unknown offset type");
+	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -643,4 +632,119 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	BBPkeepref(*R0 = bn->batCacheid);
 	return MAL_SUCCEED;
+}
+
+BAT *
+DICTenlarge(BAT *offsets, BUN cnt, BUN sz)
+{
+	BAT *n = COLnew(offsets->hseqbase, TYPE_sht, sz, TRANSIENT);
+
+	if (!n)
+		return NULL;
+	unsigned char *o = Tloc(offsets, 0);
+	unsigned short *no = Tloc(n, 0);
+	for(BUN i = 0; i<cnt; i++) {
+		no[i] = o[i];
+	}
+	n->tkey = offsets->tkey;
+	BATnegateprops(n);
+	n->tsorted = offsets->tsorted;
+	return n;
+}
+
+/* for each val in vals compute its offset in dict (return via noffsets),
+ * any missing value in dict will be added to the dict.
+ * Possible side-effects:
+ *	dict is nolonger sorted
+ *	increase of the dict could mean the offset type overflows, then the output is
+ *	an offset bat with a larger type, unless the larger type is int then abort.
+ *
+ *	Returns < 0 on error.
+ */
+int
+DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
+{
+	int tt = BATcount(dict)>=256?TYPE_sht:TYPE_bte;
+	BUN sz = BATcount(vals), nf = 0;
+	BAT *n = COLnew(0, tt, sz, TRANSIENT);
+
+	if (!n || BAThash(dict) != GDK_SUCCEED) {
+		bat_destroy(n);
+		return -1;
+	}
+
+	BATiter bi = bat_iterator(vals);
+	BATiter ui = bat_iterator_nolock(dict);
+
+	if (tt == TYPE_bte) {
+		bte *op = (bte*)Tloc(n, 0);
+		for(BUN i = 0; i<sz; i++) {
+			BUN up = 0;
+			int f = 0;
+			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+				op[i] = (bte)up;
+				f = 1;
+			}
+			if (!f) {
+				if (BATcount(dict) >= 255) {
+					BAT *nn = DICTenlarge(n, i, sz);
+					bat_destroy(n);
+					if (!nn) {
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					n = nn;
+					nf = i;
+					tt = TYPE_sht;
+					break;
+				} else {
+					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
+						assert(0);
+						bat_destroy(n);
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					/* reinitialize */
+					ui = bat_iterator_nolock(dict);
+					op[i] = BATcount(dict)-1;
+				}
+			}
+		}
+	}
+	if (tt == TYPE_sht) {
+		sht *op = (sht*)Tloc(n, 0);
+		for(BUN i = nf; i<sz; i++) {
+			BUN up = 0;
+			int f = 0;
+			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+				op[i] = (sht)up;
+				f = 1;
+			}
+			if (!f) {
+				if (BATcount(dict) >= (64*1024)-1) {
+						assert(0);
+					bat_destroy(n);
+					bat_iterator_end(&bi);
+					return -2;
+				} else {
+					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
+						assert(0);
+						bat_destroy(n);
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					/* reinitialize */
+					ui = bat_iterator_nolock(dict);
+					op[i] = BATcount(dict)-1;
+				}
+			}
+		}
+	}
+	bat_iterator_end(&bi);
+	BATsetcount(n, sz);
+	BATnegateprops(n);
+	*noffsets = n;
+	return 0;
 }

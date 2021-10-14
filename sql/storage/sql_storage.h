@@ -516,4 +516,9 @@ extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cm
 extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp);
 sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 
+/* later move intop dict.h on this level */
+extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz);
+extern BAT *DICTdecompress_(BAT *o, BAT *u);
+extern int DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict);
+
 #endif /*SQL_STORAGE_H */
