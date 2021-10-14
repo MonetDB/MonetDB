@@ -243,7 +243,7 @@ plan select 1 from splitted where stamp is null
 project (
 | select (
 | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ]
-| ) [ ("splitted"."stamp") * = (timestamp(7) "NULL") ]
+| ) [ ("splitted"."stamp") * = (timestamp(7) NULL) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -498,7 +498,7 @@ plan select 1 from splitted2 where stamp is null
 project (
 | select (
 | | table("sys"."second_decade2") [ "second_decade2"."stamp" as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp") * = (int(32) "NULL") ]
+| ) [ ("splitted2"."stamp") * = (int(32) NULL) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort

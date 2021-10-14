@@ -187,7 +187,7 @@ project (
 | select (
 | |  [ boolean(1) "true" ]
 | ) [ boolean(1) "false" ]
-) [ double(53) "NULL" as "complete"."x", double(53) "NULL" as "complete"."y", double(53) "NULL" as "complete"."z" ]
+) [ double(53) NULL as "complete"."x", double(53) NULL as "complete"."y", double(53) NULL as "complete"."z" ]
 
 query RRR rowsort
 SELECT * FROM complete where x > 1.0 AND x < 2.0
