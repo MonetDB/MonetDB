@@ -1280,7 +1280,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		break;
 	case '\"':
 	case 'N': /* for NULL values, but 'NOT NULL' and 'NULLS LAST' cannot match here */
-		if (r[*pos] == '\"' || (strncmp(r+*pos, "NULL", strlen("NULL")) == 0 && r[*(pos+4)] != 'S')) {
+		if (r[*pos] == '\"' || (strncmp(r+*pos, "NULL", strlen("NULL")) == 0 && r[*pos+4] != 'S')) {
 			*e = 0;
 			tname = b;
 			convertIdent(tname);
