@@ -1617,6 +1617,63 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 		return LOG_ERR;
 
 	lock_column(tr->store, id);
+	if (bat->cs.st == ST_DICT) {
+		BAT *newoffsets = NULL;
+		BAT *u = temp_descriptor(bat->cs.ebid);
+
+		if (!u) {
+			unlock_column(tr->store, id);
+			return LOG_ERR;
+		}
+		BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
+		if (DICTprepare4append(&newoffsets, i, u) < 0) {
+					assert(0);
+		} else {
+			/* returns new offset bat (ie to be appended), possibly with larger type ! */
+			if (BATcount(u) >= max_cnt) {
+				if (max_cnt == 64*1024) { /* decompress */
+					BAT *b = temp_descriptor(bat->cs.bid);
+					BAT *n = b?DICTdecompress_(b , u):NULL;
+					bat_destroy(b);
+					if (!n) {
+						bat_destroy(u);
+						bat_destroy(n);
+						unlock_column(tr->store, id);
+						return LOG_ERR;
+					}
+					/* TODO change storage type */
+					if (bat->cs.bid)
+						temp_destroy(bat->cs.bid);
+					bat->cs.bid = temp_create(n);
+					bat_destroy(n);
+					if (bat->cs.ebid)
+						temp_destroy(bat->cs.ebid);
+					bat->cs.ebid = 0;
+					bat->cs.st = ST_DEFAULT;
+					bat->cs.cleared = true;
+				} else {
+					BAT *b = temp_descriptor(bat->cs.bid);
+					BAT *n = b?DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i)):NULL;
+					bat_destroy(b);
+					if (!n) {
+						bat_destroy(u);
+						bat_destroy(n);
+						unlock_column(tr->store, id);
+						return LOG_ERR;
+					}
+					if (bat->cs.bid)
+						temp_destroy(bat->cs.bid);
+					bat->cs.bid = temp_create(n);
+					bat->cs.cleared = true;
+					oi = i = newoffsets;
+				}
+			} else { /* append */
+				oi = i = newoffsets;
+			}
+		}
+		bat_destroy(u);
+	}
+
 	b = temp_descriptor(bat->cs.bid);
 	if (b == NULL) {
 		unlock_column(tr->store, id);
@@ -1704,7 +1761,6 @@ append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, BUN offset, BAT *o
 {
 	int ok = LOG_OK;
 
-	assert(delta->cs.st == ST_DEFAULT);
 	delta->cs.merged = 0;
 	if (is_bat) {
 		BAT *bat = incoming_data;
@@ -1725,7 +1781,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN 
 	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
 		return LOG_ERR;
 
-	assert(delta->cs.st == ST_DEFAULT);
+	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT);
 	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(c->t))
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
@@ -2266,6 +2322,7 @@ create_col(sql_trans *tr, sql_column *c)
 					if (!bid)
 						return LOG_ERR;
 					bat->cs.ebid = temp_dup(bid);
+					bat->cs.st = ST_DICT;
 				}
 				return ok;
 			}
