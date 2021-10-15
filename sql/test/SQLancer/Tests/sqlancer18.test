@@ -283,3 +283,37 @@ UPDATE t1 SET c1 = t1.c1
 statement ok
 DROP TABLE t1
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t2" ("c0" TINYINT,"c1" DATE)
+
+statement ok rowcount 8
+INSERT INTO "t2" VALUES (1, DATE '1970-01-01'),(0, DATE '1970-01-01'),(3, DATE '1970-01-01'),(9, NULL),
+(NULL, DATE '1970-01-01'),(NULL, DATE '1970-01-01'),(NULL, DATE '1970-01-01'),(1, NULL)
+
+statement ok
+create view vx(vc0) as (select distinct t2.c1 from t2)
+
+query T rowsort
+SELECT vx.vc0 <> ALL(SELECT vx.vc0 FROM vx) FROM vx
+----
+False
+NULL
+
+query T rowsort
+SELECT vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0) FROM vx
+----
+False
+NULL
+
+query T rowsort
+SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0)
+----
+1970-01-01
+NULL
+
+statement ok
+ROLLBACK
+
