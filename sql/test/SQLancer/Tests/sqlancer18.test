@@ -314,6 +314,9 @@ SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> 
 1970-01-01
 NULL
 
+statement error GDK reported error: BATsubcross: more than one match
+SELECT max((SELECT (SELECT rt2.c1 FROM t2) FROM t2 as rt2))
+
 statement ok
 ROLLBACK
 
