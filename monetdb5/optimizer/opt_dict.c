@@ -117,6 +117,21 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						addArgument(mb, r, getArg(p, 3)); /* val */
 						addArgument(mb, r, getArg(p, 4)); /* op */
 						pushInstruction(mb,r);
+					} else if (getFunctionId(p) == selectRef && p->argc == 9) {
+						/* select (c, s, l, h, li, hi, anti, unknown ) */
+						InstrPtr r = newInstructionArgs(mb, dictRef, selectRef, 10);
+
+						getArg(r, 0) = getArg(p, 0);
+						addArgument(mb, r, varisdict[k]);
+						addArgument(mb, r, getArg(p, 2)); /* cand */
+						addArgument(mb, r, vardictvalue[k]);
+						addArgument(mb, r, getArg(p, 3)); /* l */
+						addArgument(mb, r, getArg(p, 4)); /* h */
+						addArgument(mb, r, getArg(p, 5)); /* li */
+						addArgument(mb, r, getArg(p, 6)); /* hi */
+						addArgument(mb, r, getArg(p, 7)); /* anti */
+						addArgument(mb, r, getArg(p, 8)); /* unknown */
+						pushInstruction(mb,r);
 					} else {
 						/* pos = select(col, cand, l, h, ...) with col = dict.decompress(o,u)
 					 	 * tp = select(u, nil, l, h, ...)
@@ -137,7 +152,6 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						pushInstruction(mb,s);
 
 						InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 9);
-						//InstrPtr t = newInstructionArgs(mb, dictRef, intersectRef, 9);
 						getArg(t, 0) = getArg(p, 0);
 						addArgument(mb, t, varisdict[k]);
 						addArgument(mb, t, getArg(s, 0));

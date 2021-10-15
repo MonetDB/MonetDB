@@ -564,7 +564,7 @@ DICTjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	(void)mb;
@@ -578,7 +578,6 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *lc = NULL, *bn = NULL;
 	BAT *lo = BATdescriptor(LO);
 	BAT *lv = BATdescriptor(LV);
-	BUN p = BUN_NONE;
 
 	if (!lo || !lv) {
 		bat_destroy(lo);
@@ -587,7 +586,9 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
-	if ((lv->tkey && op[0] == '=') || ((op[0] == '<' || op[0] == '>') && lv->tsorted)) {
+	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
+	if ((lv->tkey && op[0] == '=') || ((op[0] == '<' || op[0] == '>') && lv->tsorted && BATcount(lv) < (max_cnt/2))) {
+		BUN p = BUN_NONE;
 		if (ATOMvarsized(lv->ttype))
 			v = *(ptr*)v;
 		if (op[0] == '=') {
@@ -633,6 +634,109 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*R0 = bn->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str
+DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *R0 = getArgReference_bat(stk, pci, 0);
+	bat LO = *getArgReference_bat(stk, pci, 1);
+	bat LC = *getArgReference_bat(stk, pci, 2);
+	bat LV = *getArgReference_bat(stk, pci, 3);
+	ptr l = getArgReference(stk, pci, 4);
+	ptr h = getArgReference(stk, pci, 5);
+	bit li = *getArgReference_bit(stk, pci, 6);
+	bit hi = *getArgReference_bit(stk, pci, 7);
+	bit anti = *getArgReference_bit(stk, pci, 8);
+	bit unknown = *getArgReference_bit(stk, pci, 9);
+
+	if (!unknown ||
+		(li != 0 && li != 1) ||
+		(hi != 0 && hi != 1) ||
+		(anti != 0 && anti != 1)) {
+		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
+	}
+
+	BAT *lc = NULL, *bn = NULL;
+	BAT *lo = BATdescriptor(LO);
+	BAT *lv = BATdescriptor(LV);
+
+	if (!lo || !lv) {
+		bat_destroy(lo);
+		bat_destroy(lv);
+		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if (!is_bat_nil(LC))
+		lc = BATdescriptor(LC);
+
+	if (ATOMvarsized(lv->ttype)) {
+		l = *(ptr*)l;
+		h = *(ptr*)h;
+	}
+
+	/* here we don't need open ended parts with nil */
+	if (!anti) {
+		const void *nilptr = ATOMnilptr(lv->ttype);
+		if (li == 1 && ATOMcmp(lv->ttype, l, nilptr) == 0) {
+			l = h;
+			li = 0;
+		}
+		if (hi == 1 && ATOMcmp(lv->ttype, h, nilptr) == 0) {
+			h = l;
+			hi = 0;
+		}
+		if (ATOMcmp(lv->ttype, l, h) == 0 && ATOMcmp(lv->ttype, h, nilptr) == 0) /* ugh sql nil != nil */
+			anti = 1;
+	}
+	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
+	if (!anti && lv->tkey && lv->tsorted && BATcount(lv) < (max_cnt/2)) { /* ie select(lo, lc, find(lv, l), find(lv, h), ...) */
+		BUN p = li?SORTfndfirst(lv, l):SORTfndlast(lv, l);
+		BUN q = SORTfnd(lv, h);
+
+		if (q == BUN_NONE) {
+			q = SORTfndfirst(lv, h);
+			q--;
+		}
+
+		if (p != BUN_NONE) {
+			if (lo->ttype == TYPE_bte) {
+				bte lpos = (bte)p;
+				bte hpos = (bte)q;
+				bn =  BATselect(lo, lc, &lpos, &hpos, 1, hi, anti);
+			} else if (lo->ttype == TYPE_sht) {
+				sht lpos = (sht)p;
+				sht hpos = (sht)q;
+				bn =  BATselect(lo, lc, &lpos, &hpos, 1, hi, anti);
+			} else
+				assert(0);
+		} else {
+			bn = BATdense(0, 0, 0);
+		}
+	} else {
+		bn = BATselect(lv, NULL, l, h, li, hi, anti);
+
+		/* call dict convert */
+		if (bn) {
+			BAT *c = convert_oid(bn, lo->ttype);
+			bat_destroy(bn);
+			bn = c;
+		}
+		if (bn) {
+			BAT *n = BATintersect(lo, bn, lc, NULL, true, true, BATcount(lo));
+			bat_destroy(bn);
+			bn = n;
+		}
+	}
+	bat_destroy(lo);
+	bat_destroy(lv);
+	bat_destroy(lc);
+	if (!bn)
+		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	BBPkeepref(*R0 = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
 
 BAT *
 DICTenlarge(BAT *offsets, BUN cnt, BUN sz)
