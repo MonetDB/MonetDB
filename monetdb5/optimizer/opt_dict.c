@@ -217,11 +217,33 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					break;
 				} else if (getModuleId(p) == groupRef &&
 						(getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
-						 getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && dictunique[k]) {
+						 getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)) {
 					/* group.group[done](col) | group.subgroup[done](col, grp) with col = dict.decompress(o,u)
 					 * v1 = group.group[done](o) | group.subgroup[done](o, grp) */
+					int input = varisdict[k];
+					if (!dictunique[k]) {
+						/* make new dict and renumber the inputs */
+
+						int tpe = getVarType(mb, varisdict[k]);
+						/*(o,v) = compress(vardictvalue[k]); */
+						InstrPtr r = newInstructionArgs(mb, dictRef, compressRef, 3);
+						/* dynamic type problem ie could be bte or sht, use same type as input dict */
+						getArg(r, 0) = newTmpVariable(mb, tpe);
+						r = pushReturn(mb, r, newTmpVariable(mb, getArgType(mb, p, j)));
+						r = addArgument(mb, r, vardictvalue[k]);
+						pushInstruction(mb,r);
+
+						InstrPtr s = newInstructionArgs(mb, dictRef, renumberRef, 3);
+						//newvar = renumber(varisdict[k], o);
+						getArg(s, 0) = newTmpVariable(mb, tpe);
+						s = addArgument(mb, s, varisdict[k]);
+						s = addArgument(mb, s, getArg(r, 0));
+						pushInstruction(mb,s);
+
+						input = getArg(s, 0);
+					}
 					InstrPtr r = copyInstruction(p);
-					getArg(r, j) = varisdict[k];
+					getArg(r, j) = input;
 					pushInstruction(mb,r);
 					done = 1;
 					break;
