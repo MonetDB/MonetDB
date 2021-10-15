@@ -2368,6 +2368,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+		/* handle dict renumber */
+		if (match == 1 && match == bats-1 && p->retc == 1 && getFunctionId(p) == renumberRef && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
 
 		if (match == bats && p->retc == 1 && (isMap2Op(p) || isMapOp(p) || isFragmentGroup(p) || isFragmentGroup2(p))) {
 			if(mat_apply(mb, p, &ml, match)) {
