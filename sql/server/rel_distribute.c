@@ -11,8 +11,6 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
-#include "rel_dump.h"
 #include "sql_privileges.h"
 
 static int
@@ -158,8 +156,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 	return res;
 }
 
-static sql_rel *
-replica(visitor *v, sql_rel *rel)
+sql_rel *
+rel_rewrite_replica(visitor *v, sql_rel *rel)
 {
 	/* for merge statement join, ignore the multiple references */
 	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
@@ -187,8 +185,8 @@ replica(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-distribute(visitor *v, sql_rel *rel)
+sql_rel *
+rel_rewrite_remote(visitor *v, sql_rel *rel)
 {
 	prop *p, *pl, *pr;
 
@@ -248,9 +246,9 @@ distribute(visitor *v, sql_rel *rel)
 			/* cleanup replica's */
 			visitor rv = { .sql = v->sql };
 
-			l = rel->l = rel_visitor_bottomup(&rv, l, &replica);
+			l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica);
 			rv.data = NULL;
-			r = rel->r = rel_visitor_bottomup(&rv, r, &replica);
+			r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica);
 			if ((!l || !r) && v->sql->session->status) /* if the recursive calls failed */
 				return NULL;
 		}
@@ -259,20 +257,20 @@ distribute(visitor *v, sql_rel *rel)
 			find_prop(r->p, PROP_REMOTE) == NULL) {
 			visitor rv = { .sql = v->sql, .data = pl->value };
 
-			if (!(r = rel_visitor_bottomup(&rv, r, &replica)) && v->sql->session->status)
+			if (!(r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica)) && v->sql->session->status)
 				return NULL;
 			rv.data = NULL;
-			if (!(r = rel->r = rel_visitor_bottomup(&rv, r, &distribute)) && v->sql->session->status)
+			if (!(r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_remote)) && v->sql->session->status)
 				return NULL;
 		} else if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
 			find_prop(l->p, PROP_REMOTE) == NULL &&
 			(pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			visitor rv = { .sql = v->sql, .data = pr->value };
 
-			if (!(l = rel_visitor_bottomup(&rv, l, &replica)) && v->sql->session->status)
+			if (!(l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica)) && v->sql->session->status)
 				return NULL;
 			rv.data = NULL;
-			if (!(l = rel->l = rel_visitor_bottomup(&rv, l, &distribute)) && v->sql->session->status)
+			if (!(l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_remote)) && v->sql->session->status)
 				return NULL;
 		}
 
@@ -330,7 +328,7 @@ distribute(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_remote_func(visitor *v, sql_rel *rel)
 {
 	(void) v;
@@ -344,17 +342,5 @@ rel_remote_func(visitor *v, sql_rel *rel)
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		rel = rel_relational_func(v->sql->sa, rel, exps);
 	}
-	return rel;
-}
-
-sql_rel *
-rel_distribute(mvc *sql, sql_rel *rel)
-{
-	visitor v = { .sql = sql };
-
-	rel = rel_visitor_bottomup(&v, rel, &distribute);
-	v.data = NULL;
-	rel = rel_visitor_bottomup(&v, rel, &replica);
-	rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
 	return rel;
 }

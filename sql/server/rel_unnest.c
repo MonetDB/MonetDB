@@ -17,7 +17,6 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
-#include "rel_remote.h"
 #include "rel_rewriter.h"
 #include "sql_query.h"
 #include "mal_errors.h" /* for SQLSTATE() */

@@ -9,13 +9,10 @@
 #include "monetdb_config.h"
 #include "sql_query.h"
 #include "rel_partition.h"
-#include "rel_optimizer.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
 #include "rel_select.h"
-#include "rel_updates.h"
-#include "sql_env.h"
 
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)
