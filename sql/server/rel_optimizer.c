@@ -16,16 +16,16 @@
 #include "rel_select.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
+#include "rel_distribute.h"
 #include "rel_rewriter.h"
-#include "rel_remote.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
-#include "gdk_time.h"
 
 typedef struct global_props {
 	int cnt[ddl_maxops];
 	uint8_t
-		has_mergetable:1,
+		needs_mergetable_rewrite:1,
+		needs_remote_replica_rewrite:1,
 		needs_distinct:1;
 } global_props;
 
@@ -304,7 +304,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 			sql_part *pt;
 
 			/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
-			gp->has_mergetable |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
+			gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
+			gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
 		}
 		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER)
 			rel_properties(sql, gp, rel->l);
@@ -9755,7 +9756,8 @@ optimize_rel(mvc *sql, sql_rel *rel, visitor *v, global_props *gp)
 	if (level == 0 && gp->needs_distinct && gp->cnt[op_project])
 		rel = rel_visitor_bottomup(v, rel, &rel_distinct_project2groupby);
 
-	if (gp->has_mergetable)
+	/* Some merge table rewrites require two tree iterations. Later I could improve this to use only one iteration */
+	if (gp->needs_mergetable_rewrite)
 		rel = rel_visitor_topdown(v, rel, &rel_merge_table_rewrite);
 
 	return rel;
@@ -9765,7 +9767,7 @@ optimize_rel(mvc *sql, sql_rel *rel, visitor *v, global_props *gp)
 static sql_rel *
 rel_keep_renames(mvc *sql, sql_rel *rel)
 {
-	if (!is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
+	if (!rel || !is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
 		return rel;
 
 	int needed = 0;
@@ -9797,16 +9799,20 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* if only merge table rewrite is needed return 1, else return 2 */
 static int
 need_optimization(mvc *sql, sql_rel *rel)
 {
-	if (rel->card <= CARD_ATOM) {
+	if (rel && rel->card <= CARD_ATOM) {
 		if (is_insert(rel->op)) {
 			sql_rel *l = (sql_rel *) rel->l;
 
 			if (is_basetable(l->op)) {
 				sql_table *t = (sql_table *) l->l;
 				sql_part *pt;
+
+				/* I don't expect inserts on remote or replica tables yet*/
+				assert(!isRemote(t) && !isReplicaTable(t));
 				/* If the plan has a merge table or a child of a partitioned one, then optimization cannot be skipped */
 				if (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))))
 					return 1;
@@ -9816,17 +9822,17 @@ need_optimization(mvc *sql, sql_rel *rel)
 		if (is_simple_project(rel->op))
 			return rel->l ? need_optimization(sql, rel->l) : 0;
 	}
-	return 1;
+	return 2;
 }
 
 sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt)
+rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	int level = 0;
+	int level = 0, opt;
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level, .changes = 1 };
 	global_props gp = (global_props) {.cnt = {0},};
 
-	if (!need_optimization(sql, rel))
+	if (!(opt = need_optimization(sql, rel)))
 		return rel;
 
 	rel = rel_keep_renames(sql, rel);
@@ -9834,15 +9840,26 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0},};
 		rel_properties(sql, &gp, rel); /* collect relational tree properties */
-		rel = optimize_rel(sql, rel, &v, &gp);
+		if (opt == 2) {
+			rel = optimize_rel(sql, rel, &v, &gp);
+		} else { /* the merge table rewriter may have to run */
+			rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
+		}
 	}
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
 	/* Run the following optimizers only once after the others run to avoid an infinite optimization loop */
-	gp = (global_props) {.cnt = {0},};
-	rel_properties(sql, &gp, rel); /* collect relational tree properties */
-	if ((gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_select])
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
+	rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
+
+	/* merge table rewrites may introduce remote or replica tables */
+	if (instantiate && (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite)) {
+		v.data = NULL;
+		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
+		v.data = NULL;
+		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_replica);
+		v.data = &level;
+		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
+	}
 	return rel;
 }

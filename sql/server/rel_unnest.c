@@ -17,7 +17,6 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_select.h"
-#include "rel_remote.h"
 #include "rel_rewriter.h"
 #include "sql_query.h"
 #include "mal_errors.h" /* for SQLSTATE() */
@@ -1222,6 +1221,19 @@ push_up_select_l(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static void
+bind_join_vars(mvc *sql, sql_rel *rel)
+{
+	if (list_empty(rel->exps))
+		return;
+	for(node *n = rel->exps->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_freevar(sql, e))
+			rel_bind_var(sql, rel->l, e);
+	}
+}
+
 static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel, list *ad)
 {
@@ -1231,6 +1243,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 		if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
 			rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
 			j->exps = NULL;
+			bind_join_vars(sql, rel);
 			return rel;
 		}
 	}
@@ -3294,7 +3307,7 @@ rewrite_compare_exp(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 {
-	if (rel->op == op_join && list_empty(rel->exps)) {
+	if (rel->op == op_join && list_empty(rel->exps) && !rel_is_ref(rel)) {
 		sql_rel *r = rel->r;
 
 		if (is_simple_project(r->op) && r->l && !project_unsafe(r, 1)) {
@@ -3304,7 +3317,10 @@ rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 				sql_exp *t = rl->exps->h->data;
 
 				if (is_atom(t->type) && !exp_name(t)) { /* atom with out alias cannot be used later */
-					rel = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+					sql_rel *nrel = rel->l;
+					rel->l = NULL;
+					rel_destroy(rel);
+					rel = rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1));
 					list_merge(rel->exps, r->exps, (fdup)NULL);
 					set_processed(rel);
 					v->changes++;
@@ -3318,15 +3334,18 @@ rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rewrite_remove_xp(visitor *v, sql_rel *rel)
 {
-	if (rel->op == op_join && list_empty(rel->exps)) {
+	if (rel->op == op_join && list_empty(rel->exps) && !rel_is_ref(rel)) {
 		sql_rel *r = rel->r;
 
 		if (is_simple_project(r->op) && !r->l && list_length(r->exps) == 1) {
 			sql_exp *t = r->exps->h->data;
 
 			if (is_atom(t->type) && !exp_name(t)) { /* atom with out alias cannot be used later */
+				sql_rel *nrel = rel->l;
+				rel->l = NULL;
+				rel_destroy(rel);
+				rel = nrel;
 				v->changes++;
-				return rel->l;
 			}
 		}
 	}
@@ -3700,6 +3719,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 			}
 			cur = nrel;
 		}
+		rel_destroy(rel);
 		rel = cur;
 		if (single)
 			set_single(rel);
