@@ -2182,7 +2182,7 @@ exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_
 }
 
 static bool
-exp_is_null_no_value_opt(sql_exp *e) 
+exp_is_null_no_value_opt(sql_exp *e)
 {
 	if (!e)
 		return false;
@@ -3424,7 +3424,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool arguments_correlated = true, all_const = true;
 		list *ungrouped_cols = NULL;
 
-		all_freevar = 1;
+		all_freevar = all_aggr?1:0;
 		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
