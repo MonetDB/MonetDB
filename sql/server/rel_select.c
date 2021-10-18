@@ -22,7 +22,6 @@
 #include "rel_psm.h"
 #include "rel_schema.h"
 #include "rel_unnest.h"
-#include "rel_remote.h"
 #include "rel_sequence.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
@@ -4026,20 +4025,9 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 		sql_subtype *et = exp_subtype(e);
 		/* truncate only if the number of digits are smaller or from clob */
 		if (et && EC_VARCHAR(et->type->eclass) && (tpe->digits < et->digits || et->digits == 0)) {
-			sql_subfunc *f;
-			sql_exp *ne = exp_convert_inplace(sql, tpe, e); /* first try cheap internal (in-place) conversion */
-
-			if (ne) {
-				exp_label(sql->sa, ne, ++sql->label);
-				return ne;
-			}
-			f = sql_bind_func(sql, "sys", "truncate", et, sql_bind_localtype("int"), F_FUNC);
-			assert(f);
-			ne = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), f);
-			/* set output type as the one to be casted */
-			f->res->h->data = sql_create_subtype(sql->sa, tpe->type, tpe->digits, tpe->scale);
-			exp_label(sql->sa, ne, ++sql->label);
-			return ne;
+			sql_subfunc *c = sql_bind_func(sql, "sys", "truncate", et, sql_bind_localtype("int"), F_FUNC);
+			if (c)
+				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
 	}
 	if (e)

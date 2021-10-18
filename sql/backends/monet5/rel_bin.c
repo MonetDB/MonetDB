@@ -16,8 +16,6 @@
 #include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_predicates.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
@@ -3887,7 +3885,7 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, s, query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1, 1)))
+	if ((rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }
@@ -5828,8 +5826,8 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *n;
-	const char *tsep, *rsep, *ssep, *ns;
-	const char *fn   = NULL;
+	const char *tsep, *rsep, *ssep, *ns, *fn = NULL;
+	atom *tatom, *ratom, *satom, *natom;
 	int onclient = 0;
 	stmt *s = NULL, *fns = NULL;
 	list *slist = sa_list(sql->sa);
@@ -5843,10 +5841,14 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	if (!rel->exps)
 		return s;
 	n = rel->exps->h;
-	tsep = sa_strdup(sql->sa, E_ATOM_STRING(n->data));
-	rsep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->data));
-	ssep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->data));
-	ns   = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->next->data));
+	tatom = ((sql_exp*) n->data)->l;
+	tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
+	ratom = ((sql_exp*) n->next->data)->l;
+	rsep  = sa_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
+	satom = ((sql_exp*) n->next->next->data)->l;
+	ssep  = sa_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
+	natom = ((sql_exp*) n->next->next->next->data)->l;
+	ns    = sa_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
 
 	if (n->next->next->next->next) {
 		fn = E_ATOM_STRING(n->next->next->next->next->data);

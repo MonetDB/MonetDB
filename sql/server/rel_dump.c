@@ -186,7 +186,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			} else {
 				char *t = dump_sql_subtype(sql->ta, atom_type(a));
 				if (a->isnull)
-					mnstr_printf(fout, "%s \"NULL\"", t);
+					mnstr_printf(fout, "%s NULL", t);
 				else {
 					char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
 					if (s && *s == '"')
@@ -803,25 +803,24 @@ readInt( char *r, int *pos)
 }
 
 static char *
-readString( char *r, int *pos)
+readAtomString( char *r, int *pos)
 {
 	char *st = NULL, *parsed;
 
-	if (r[*pos] == '"') {
-		(*pos)++;
-		st = parsed = r+*pos;
-		while (r[*pos] != '"') {
-			if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
-				*parsed++ = r[*pos + 1];
-				(*pos)+=2;
-			} else {
-				*parsed++ = r[*pos];
-				(*pos)++;
-			}
+	assert(r[*pos] == '"');
+	(*pos)++;
+	st = parsed = r+*pos;
+	while (r[*pos] != '"') {
+		if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
+			*parsed++ = r[*pos + 1];
+			(*pos)+=2;
+		} else {
+			*parsed++ = r[*pos];
+			(*pos)++;
 		}
-		*parsed = '\0';
-		(*pos)++;
 	}
+	*parsed = '\0';
+	(*pos)++;
 	return st;
 }
 
@@ -951,11 +950,11 @@ read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
 static sql_exp*
 parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 {
-	char *st = readString(r,pos);
-
-	if (st && strcmp(st, "NULL") == 0) {
+	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
+		(*pos)+= (int) strlen("NULL");
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
 	} else {
+		char *st = readAtomString(r,pos);
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
 	}
 }
@@ -1280,16 +1279,19 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		}
 		break;
 	case '\"':
-		*e = 0;
-		tname = b;
-		convertIdent(tname);
-		if (!sql_find_subtype(&tpe, tname, 0, 0)) {
-			if (!(t = mvc_bind_type(sql, tname))) /* try an external type */
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
-			sql_init_subtype(&tpe, t, 0, 0);
+	case 'N': /* for NULL values, but 'NOT NULL' and 'NULLS LAST' cannot match here */
+		if (r[*pos] == '\"' || (strncmp(r+*pos, "NULL", strlen("NULL")) == 0 && r[*pos+4] != 'S')) {
+			*e = 0;
+			tname = b;
+			convertIdent(tname);
+			if (!sql_find_subtype(&tpe, tname, 0, 0)) {
+				if (!(t = mvc_bind_type(sql, tname))) /* try an external type */
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
+				sql_init_subtype(&tpe, t, 0, 0);
+			}
+			exp = parse_atom(sql, r, pos, &tpe);
+			skipWS(r, pos);
 		}
-		exp = parse_atom(sql, r, pos, &tpe);
-		skipWS(r, pos);
 		break;
 	default:
 		(void)sql;
@@ -1504,9 +1506,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	if (!exp) {
 		if (cname) {
 			bool has_tname = tname && strcmp(tname, cname) != 0;
-			return sql_error(sql, -1, SQLSTATE(42000) "Identifier %s%s%s doesn't exist\n", has_tname ? tname : "", has_tname ? "." : "", cname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Identifier %s%s%s doesn't exist\n", has_tname ? tname : "", has_tname ? "." : "", cname);
 		} else if (var_cname) {
-			return sql_error(sql, -1, SQLSTATE(42000) "Identifier %s doesn't exist\n", var_cname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Identifier %s doesn't exist\n", var_cname);
 		}
 		return NULL;
 	}
