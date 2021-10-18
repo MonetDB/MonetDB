@@ -1424,7 +1424,6 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	(void)tr;
 	if (!ocs)
 		return LOG_OK;
-	(void)type;
 	cs->bid = ocs->bid;
 	cs->uibid = ocs->uibid;
 	cs->uvbid = ocs->uvbid;
@@ -1443,12 +1442,6 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
 		return LOG_ERR;
 	return LOG_OK;
-}
-
-static int
-dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type)
-{
-	return dup_cs(tr, &obat->cs, &bat->cs, type, isTempTable(t));
 }
 
 static int
@@ -1495,7 +1488,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 	if(!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if(dup_bat(tr, c->t, obat, bat, c->type.type->localtype) != LOG_OK)
+	if(dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, isTempTable(c->t)) != LOG_OK)
 		return NULL;
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
@@ -1569,7 +1562,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 	if(!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if(dup_bat(tr, i->t, obat, bat, (oid_index(i->type))?TYPE_oid:TYPE_lng) != LOG_OK)
+	if(dup_cs(tr, &obat->cs, &bat->cs, (oid_index(i->type))?TYPE_oid:TYPE_lng, isTempTable(i->t)) != LOG_OK)
 		return NULL;
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
@@ -3032,12 +3025,6 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 }
 
 static int
-tr_log_delta( sql_trans *tr, sql_table *t, sql_delta *cbat, segment *segs, sqlid id)
-{
-	return tr_log_cs( tr, t, &cbat->cs, segs, id);
-}
-
-static int
 log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 {
 	sqlstore *store = tr->store;
@@ -3208,7 +3195,8 @@ log_update_col( sql_trans *tr, sql_change *change)
 
 	if (!isTempTable(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
-		return tr_log_delta(tr, c->t, ATOMIC_PTR_GET(&c->data), s->segs->h, c->base.id);
+		sql_delta *d = ATOMIC_PTR_GET(&c->data);
+		return tr_log_cs(tr, c->t, &d->cs, s->segs->h, c->base.id);
 	}
 	return LOG_OK;
 }
@@ -3316,7 +3304,8 @@ log_update_idx( sql_trans *tr, sql_change *change)
 
 	if (!isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
-		return tr_log_delta(tr, i->t, ATOMIC_PTR_GET(&i->data), s->segs->h, i->base.id);
+		sql_delta *d = ATOMIC_PTR_GET(&i->data);
+		return tr_log_cs(tr, i->t, &d->cs, s->segs->h, i->base.id);
 	}
 	return LOG_OK;
 }
@@ -4047,10 +4036,11 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
 	bool update_conflict = false;
 	int in_transaction = segments_in_transaction(tr, col->t);
-	if (in_transaction) return LOG_CONFLICT;
-	sql_delta *d = NULL;
-	// old delta
-	sql_delta *odelta = ATOMIC_PTR_GET(&col->data);
+
+	if (in_transaction)
+		return LOG_CONFLICT;
+
+	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
 
 	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
@@ -4117,6 +4107,7 @@ bat_storage_init( store_functions *sf)
 	sf->drop_del = &drop_del;
 
 	sf->clear_table = &clear_table;
+
 	sf->temp_del_tab = &temp_del_tab;
 	sf->swap_bats = &swap_bats;
 }
