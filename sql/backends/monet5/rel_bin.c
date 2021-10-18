@@ -16,8 +16,6 @@
 #include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_predicates.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
@@ -3883,7 +3881,7 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, s, query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1, 1)))
+	if ((rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }

@@ -16,8 +16,6 @@
 #include "rel_schema.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
