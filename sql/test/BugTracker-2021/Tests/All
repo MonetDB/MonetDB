@@ -32,3 +32,4 @@ truncate-restart.Bug-7173
 remote-table-large.Bug-7178
 groupby-subquery.Bug-7180
 grouping-sets-aliases.Bug-7185
+copyinto-copyfrom.Bug-7186
