@@ -286,11 +286,38 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 		if (s->start >= nr)
 			break;
 		if (s->ts == tr->tid && s->end != s->start) {
+			BUN cnt = BATcount(b);
+			if (cnt < s->start) { /* first mark as deleted ! */
+				size_t lnr = s->start-cnt;
+				size_t pos = cnt;
+				dst = (uint32_t *) Tloc(b, 0) + (pos/32);
+				uint32_t cur = 0;
+
+				size_t used = pos&31, end = 32;
+				if (used) {
+					if (lnr < (32-used))
+						end = used + lnr;
+					for(size_t j=used; j < end; j++, lnr--)
+						cur |= 1U<<j;
+					*dst++ |= cur;
+					cur = 0;
+				}
+				size_t full = lnr/32;
+				size_t rest = lnr%32;
+				for(size_t i = 0; i<full; i++, lnr-=32)
+					*dst++ = ~0;
+				if (rest) {
+					for(size_t j=0; j < rest; j++, lnr--)
+						cur |= 1U<<j;
+					*dst |= cur;
+				}
+				assert(lnr==0);
+			}
 			b->batDirtydesc = true;
 			b->theap->dirty = true;
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
-			dst = (uint32_t *) Tloc(b, 0) + (s->start/32);
+			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
 			uint32_t cur = 0;
 			if (s->deleted) {
 				size_t used = pos&31, end = 32;
