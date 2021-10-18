@@ -26,10 +26,6 @@
 #include "sql_user.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_partition.h"
-#include "rel_distribute.h"
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -775,7 +771,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	if (*opt && rel)
-		rel = sql_processrelation(m, rel, 1, 1);
+		rel = sql_processrelation(m, rel, 0, 1, 1);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement", "%s", m->errstr);
@@ -971,7 +967,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);
 	if (rel)
-		rel = sql_processrelation(m, rel, 1, 1);
+		rel = sql_processrelation(m, rel, 0, 1, 1);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
