@@ -1220,6 +1220,19 @@ push_up_select_l(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static void
+bind_join_vars(mvc *sql, sql_rel *rel)
+{
+	if (list_empty(rel->exps))
+		return;
+	for(node *n = rel->exps->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_freevar(sql, e))
+			rel_bind_var(sql, rel->l, e);
+	}
+}
+
 static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel, list *ad)
 {
@@ -1229,6 +1242,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 		if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
 			rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
 			j->exps = NULL;
+			bind_join_vars(sql, rel);
 			return rel;
 		}
 	}
