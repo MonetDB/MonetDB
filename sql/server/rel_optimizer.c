@@ -16,16 +16,16 @@
 #include "rel_select.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
+#include "rel_distribute.h"
 #include "rel_rewriter.h"
-#include "rel_remote.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
-#include "gdk_time.h"
 
 typedef struct global_props {
 	int cnt[ddl_maxops];
 	uint8_t
-		has_mergetable:1,
+		needs_mergetable_rewrite:1,
+		needs_remote_replica_rewrite:1,
 		needs_distinct:1;
 } global_props;
 
@@ -304,7 +304,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 			sql_part *pt;
 
 			/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
-			gp->has_mergetable |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
+			gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
+			gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
 		}
 		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER)
 			rel_properties(sql, gp, rel->l);
@@ -9607,42 +9608,40 @@ rel_push_func_and_select_down(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
+optimize_rel(mvc *sql, sql_rel *rel, visitor *v, global_props *gp)
 {
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level };
-	global_props gp = (global_props) {.cnt = {0},};
-	rel_properties(sql, &gp, rel);
+	int level = *(int*)v->data;
 
 	TRC_DEBUG_IF(SQL_REWRITER) {
 		int i;
 		for (i = 0; i < ddl_maxops; i++) {
-			if (gp.cnt[i]> 0)
-				TRC_DEBUG_ENDIF(SQL_REWRITER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+			if (gp->cnt[i]> 0)
+				TRC_DEBUG_ENDIF(SQL_REWRITER, "%s %d\n", op2string((operator_type)i), gp->cnt[i]);
 		}
 	}
 
-	if (level <= 0 && gp.cnt[op_select])
-		rel = rel_split_select(&v, rel, 1);
+	if (level <= 0 && gp->cnt[op_select])
+		rel = rel_split_select(v, rel, 1);
 
 	/* simple merging of projects */
-	if (gp.cnt[op_project] || gp.cnt[op_groupby] || gp.cnt[op_ddl]) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_project_down);
-		rel = rel_visitor_bottomup(&v, rel, &rel_merge_projects);
+	if (gp->cnt[op_project] || gp->cnt[op_groupby] || gp->cnt[op_ddl]) {
+		rel = rel_visitor_bottomup(v, rel, &rel_push_project_down);
+		rel = rel_visitor_bottomup(v, rel, &rel_merge_projects);
 
 		/* push (simple renaming) projections up */
-		if (gp.cnt[op_project])
-			rel = rel_visitor_bottomup(&v, rel, &rel_push_project_up);
-		if (level <= 0 && (gp.cnt[op_project] || gp.cnt[op_groupby]))
-			rel = rel_split_project(&v, rel, 1);
+		if (gp->cnt[op_project])
+			rel = rel_visitor_bottomup(v, rel, &rel_push_project_up);
+		if (level <= 0 && (gp->cnt[op_project] || gp->cnt[op_groupby]))
+			rel = rel_split_project(v, rel, 1);
 		if (level <= 0) {
-			if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti])
-				rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join); /* this optimizer has to run before rel_first_level_optimizations */
-			rel = rel_visitor_bottomup(&v, rel, &rel_first_level_optimizations);
+			if (gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_join] || gp->cnt[op_semi] || gp->cnt[op_anti])
+				rel = rel_visitor_bottomup(v, rel, &rel_remove_redundant_join); /* this optimizer has to run before rel_first_level_optimizations */
+			rel = rel_visitor_bottomup(v, rel, &rel_first_level_optimizations);
 		}
 	}
 
-	if (level <= 1 && value_based_opt)
-		rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
+	if (level <= 1 && v->value_based_opt)
+		rel = rel_exp_visitor_bottomup(v, rel, &rel_simplify_predicates, false);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten
@@ -9650,68 +9649,68 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	 * also joins between a relation and a DICT (which isn't used)
 	 * could be removed.
 	 * */
-	if (gp.cnt[op_join] && gp.cnt[op_project] && /* DISABLES CODE */ (0))
-		rel = rel_visitor_bottomup(&v, rel, &rel_remove_join);
+	if (gp->cnt[op_join] && gp->cnt[op_project] && /* DISABLES CODE */ (0))
+		rel = rel_visitor_bottomup(v, rel, &rel_remove_join);
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_joins_bottomup);
+	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select]) {
+		rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup);
 		if (level == 1)
-			rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used); /* reset used flag, used by rel_merge_select_rse */
+			rel = rel_visitor_bottomup(v, rel, &rewrite_reset_used); /* reset used flag, used by rel_merge_select_rse */
 	}
 
-	if (value_based_opt)
-		rel = rel_project_reduce_casts(&v, rel);
+	if (v->value_based_opt)
+		rel = rel_project_reduce_casts(v, rel);
 
-	if (gp.cnt[op_union])
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_unions_bottomup);
+	if (gp->cnt[op_union])
+		rel = rel_visitor_bottomup(v, rel, &rel_optimize_unions_bottomup);
 
-	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0))
-		rel = rel_visitor_topdown(&v, rel, &rel_split_outerjoin);
+	if ((gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full]) && /* DISABLES CODE */ (0))
+		rel = rel_visitor_topdown(v, rel, &rel_split_outerjoin);
 
-	if (level <= 1 && gp.cnt[op_project])
-		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
+	if (level <= 1 && gp->cnt[op_project])
+		rel = rel_exp_visitor_bottomup(v, rel, &rel_merge_project_rse, false);
 
-	if (gp.cnt[op_groupby] || gp.cnt[op_project] || gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except])
-		rel = rel_visitor_topdown(&v, rel, &rel_optimize_projections);
+	if (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union] || gp->cnt[op_inter] || gp->cnt[op_except])
+		rel = rel_visitor_topdown(v, rel, &rel_optimize_projections);
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
-		rel = rel_visitor_topdown(&v, rel, &rel_optimize_joins);
-		if (!gp.cnt[op_update])
-			rel = rel_join_order(&v, rel);
+	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) {
+		rel = rel_visitor_topdown(v, rel, &rel_optimize_joins);
+		if (!gp->cnt[op_update])
+			rel = rel_join_order(v, rel);
 	}
 
 	/* Important -> Re-write semijoins after rel_join_order */
-	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_semi_and_anti);
+	if (gp->cnt[op_anti] || gp->cnt[op_semi]) {
+		rel = rel_visitor_bottomup(v, rel, &rel_optimize_semi_and_anti);
 		if (level <= 0)
-			rel = rel_visitor_topdown(&v, rel, &rel_semijoin_use_fk);
+			rel = rel_visitor_topdown(v, rel, &rel_semijoin_use_fk);
 	}
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
-		rel = rel_visitor_topdown(&v, rel, &rel_optimize_select_and_joins_topdown);
+	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
+		rel = rel_visitor_topdown(v, rel, &rel_optimize_select_and_joins_topdown);
 
-	if (gp.cnt[op_union])
-		rel = rel_visitor_topdown(&v, rel, &rel_optimize_unions_topdown);
+	if (gp->cnt[op_union])
+		rel = rel_visitor_topdown(v, rel, &rel_optimize_unions_topdown);
 
 	/* Remove unused expressions */
 	if (level <= 0)
 		rel = rel_dce(sql, rel);
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
-		rel = rel_visitor_topdown(&v, rel, &rel_push_func_and_select_down);
+	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
+		rel = rel_visitor_topdown(v, rel, &rel_push_func_and_select_down);
 
-	if (gp.cnt[op_topn] || gp.cnt[op_sample])
-		rel = rel_visitor_topdown(&v, rel, &rel_push_topn_and_sample_down);
+	if (gp->cnt[op_topn] || gp->cnt[op_sample])
+		rel = rel_visitor_topdown(v, rel, &rel_push_topn_and_sample_down);
 
-	if (level <= 0 && gp.needs_distinct && gp.cnt[op_project])
-		rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
+	if (level == 0 && gp->needs_distinct && gp->cnt[op_project])
+		rel = rel_visitor_bottomup(v, rel, &rel_distinct_project2groupby);
 
-	if (gp.has_mergetable)
-		rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
+	/* Some merge table rewrites require two tree iterations. Later I could improve this to use only one iteration */
+	if (gp->needs_mergetable_rewrite)
+		rel = rel_visitor_topdown(v, rel, &rel_merge_table_rewrite);
 
-	*g_changes = v.changes;
 	return rel;
 }
 
@@ -9719,7 +9718,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 static sql_rel *
 rel_keep_renames(mvc *sql, sql_rel *rel)
 {
-	if (!is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
+	if (!rel || !is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
 		return rel;
 
 	int needed = 0;
@@ -9751,16 +9750,20 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* if only merge table rewrite is needed return 1, else return 2 */
 static int
 need_optimization(mvc *sql, sql_rel *rel)
 {
-	if (rel->card <= CARD_ATOM) {
+	if (rel && rel->card <= CARD_ATOM) {
 		if (is_insert(rel->op)) {
 			sql_rel *l = (sql_rel *) rel->l;
 
 			if (is_basetable(l->op)) {
 				sql_table *t = (sql_table *) l->l;
 				sql_part *pt;
+
+				/* I don't expect inserts on remote or replica tables yet*/
+				assert(!isRemote(t) && !isReplicaTable(t));
 				/* If the plan has a merge table or a child of a partitioned one, then optimization cannot be skipped */
 				if (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))))
 					return 1;
@@ -9770,22 +9773,43 @@ need_optimization(mvc *sql, sql_rel *rel)
 		if (is_simple_project(rel->op))
 			return rel->l ? need_optimization(sql, rel->l) : 0;
 	}
-	return 1;
+	return 2;
 }
 
 sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt)
+rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	int level = 0, changes = 1;
+	int level = 0, opt;
+	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level, .changes = 1 };
+	global_props gp = (global_props) {.cnt = {0},};
 
-	if (!need_optimization(sql, rel))
+	if (!(opt = need_optimization(sql, rel)))
 		return rel;
 
 	rel = rel_keep_renames(sql, rel);
-	for( ;rel && level < 20 && changes; level++)
-		rel = optimize_rel(sql, rel, &changes, level, value_based_opt, storage_based_opt);
+	for( ;rel && level < 20 && v.changes; level++) {
+		v.changes = 0;
+		gp = (global_props) {.cnt = {0},};
+		rel_properties(sql, &gp, rel); /* collect relational tree properties */
+		if (opt == 2) {
+			rel = optimize_rel(sql, rel, &v, &gp);
+		} else { /* the merge table rewriter may have to run */
+			rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
+		}
+	}
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
+
+	/* merge table rewrites may introduce remote or replica tables */
+	if (instantiate && (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite)) {
+		v.data = NULL;
+		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
+		v.data = NULL;
+		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_replica);
+		v.data = &level;
+		rel = rel_visitor_bottomup(&v, rel, &rel_remote_func);
+	}
+
 	return rel;
 }
