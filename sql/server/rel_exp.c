@@ -13,9 +13,6 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_prop.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_distribute.h"
 
 comp_type
 compare_str2type(const char *compare_op)

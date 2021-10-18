@@ -16,8 +16,6 @@
 #include "rel_schema.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
@@ -1843,7 +1841,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	mvc *sql = query->sql;
 	const char *tsep = seps->h->data.sval;
 	const char *rsep = seps->h->next->data.sval;
-	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
 	const char *ns = (null_string)?null_string:"null";
 	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e, *oncl_e;
 	exp_kind ek = {type_value, card_relation, TRUE};

@@ -29,7 +29,7 @@ query T nosort
 project (
 | top N (
 | | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ bigint(64) "NULL", bigint(64) "2" ]
+| ) [ bigint(64) NULL, bigint(64) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -73,7 +73,7 @@ top N (
 | project (
 | | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint(64) "NULL", bigint(64) "2" ]
+) [ bigint(64) NULL, bigint(64) "2" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2

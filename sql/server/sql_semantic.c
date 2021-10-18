@@ -20,8 +20,6 @@
 #include <ctype.h>
 
 #include "rel_semantic.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 
 /*
  * For debugging purposes we need to be able to convert sql-tokens to

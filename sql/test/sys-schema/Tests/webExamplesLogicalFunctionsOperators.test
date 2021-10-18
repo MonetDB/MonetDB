@@ -222,7 +222,7 @@ plan select not(true), not(null), not(false), "and"(true, false), "or"(true, fal
 ----
 project (
 |  [ boolean(1) "true" ]
-) [ "sys"."not"(boolean(1) "true") NOT NULL, "sys"."not"(boolean(1) "NULL"), "sys"."not"(boolean(1) "false") NOT NULL, "sys"."and"(boolean(1) "true", boolean(1) "false"), "sys"."or"(boolean(1) "true", boolean(1) "false"), "sys"."xor"(boolean(1) "true", boolean(1) "false") NOT NULL, "sys"."all"(boolean(1) "true", boolean(1) "false", boolean(1) "true"), "sys"."any"(boolean(1) "true", boolean(1) "false", boolean(1) "true") ]
+) [ "sys"."not"(boolean(1) "true") NOT NULL, "sys"."not"(boolean(1) NULL), "sys"."not"(boolean(1) "false") NOT NULL, "sys"."and"(boolean(1) "true", boolean(1) "false"), "sys"."or"(boolean(1) "true", boolean(1) "false"), "sys"."xor"(boolean(1) "true", boolean(1) "false") NOT NULL, "sys"."all"(boolean(1) "true", boolean(1) "false", boolean(1) "true"), "sys"."any"(boolean(1) "true", boolean(1) "false", boolean(1) "true") ]
 
 query III rowsort
 select a, b, coalesce(a, b) as "coalesce(a,b)" from b

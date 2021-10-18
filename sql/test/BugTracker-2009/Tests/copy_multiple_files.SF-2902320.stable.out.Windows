@@ -3,35 +3,35 @@
 % .plan # table_name
 % rel # name
 % clob # type
-% 211 # length
+% 207 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ]
 | union (
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file1", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar "NULL", int(9) "0", int(9) "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "\\file1", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ],
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar "NULL", int(9) "0", int(9) "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "\\file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
-| ) [ int(32) "NULL" ]
+| ) [ int(32) NULL ]
 )
 #plan copy into cm_tmp from E'a:\\file1','Z:/file2';
 % .plan # table_name
 % rel # name
 % clob # type
-% 213 # length
+% 209 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ]
 | union (
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\\file1", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar "NULL", int(9) "0", int(9) "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "a:\\file1", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ],
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar "NULL", int(9) "0", int(9) "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "Z:/file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
-| ) [ int(32) "NULL" ]
+| ) [ int(32) NULL ]
 )

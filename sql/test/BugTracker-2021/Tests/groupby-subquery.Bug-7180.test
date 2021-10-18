@@ -1,0 +1,16 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE table1 (a bigint)
+
+statement ok
+CREATE TABLE table2 (a bigint)
+
+query I rowsort
+SELECT (SELECT max(1) FROM table2 WHERE a=tmp.a) FROM (SELECT a FROM table1 GROUP BY a) tmp
+----
+
+statement ok
+ROLLBACK
+

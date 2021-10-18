@@ -107,6 +107,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([('69',)])
     cli.execute("SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([('69',)])
+    cli.execute("SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR(408)), CAST(trim('14', 'abc') AS CLOB) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('14','14','14')])
+    cli.execute("SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR(408)), CAST(trim('14', 'abc') AS CLOB) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([('14','14','14')])
+    cli.execute("SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(None,'NULL','null',None,'NULL','null')])
+    cli.execute("SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([(None,'NULL','null',None,'NULL','null')])
     cli.execute("SELECT t3.c0 FROM t3 where (t3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY t3.c0;") \
         .assertSucceeded().assertDataResultMatch([(5,),(5,),(7,)])
     cli.execute("SELECT rt3.c0 FROM rt3 where (rt3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY rt3.c0;") \
