@@ -19,10 +19,7 @@
 #include "sql_upgrades.h"
 #include "rel_rel.h"
 #include "rel_semantic.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 
-#include "rel_remote.h"
 #include "mal_authorize.h"
 
 /* this function can be used to recreate the system tables (types,
@@ -850,7 +847,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 				r = rel_parse(sql, s, relt, m_deps);
 				if (r)
-					r = sql_processrelation(sql, r, 0, 0);
+					r = sql_processrelation(sql, r, 0, 0, 0);
 				if (r) {
 					list *id_l = rel_dependencies(sql, r);
 
@@ -886,7 +883,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0, 0);
+						r = sql_processrelation(sql, r, 0, 0, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -914,7 +911,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = sql_processrelation(sql, r, 0, 0);
+							r = sql_processrelation(sql, r, 0, 0, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 

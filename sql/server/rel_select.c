@@ -22,7 +22,6 @@
 #include "rel_psm.h"
 #include "rel_schema.h"
 #include "rel_unnest.h"
-#include "rel_remote.h"
 #include "rel_sequence.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)

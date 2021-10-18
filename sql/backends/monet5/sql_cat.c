@@ -27,14 +27,11 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_bin.h"
 #include "rel_dump.h"
-#include "rel_remote.h"
 #include "orderidx.h"
 
 #define initcontext() \
@@ -577,7 +574,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			}
 			r = rel_parse(sql, s, buf, m_deps);
 			if (r)
-				r = sql_processrelation(sql, r, 0, 0);
+				r = sql_processrelation(sql, r, 0, 0, 0);
 			if (r) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
@@ -1062,7 +1059,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		}
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0, 0);
+			r = sql_processrelation(sql, r, 0, 0, 0);
 		if (r) {
 			node *n;
 			list *blist = rel_dependencies(sql, r);

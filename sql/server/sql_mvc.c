@@ -62,7 +62,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		r = rel_parse(m, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(m, r, 0, 0);
+			r = sql_processrelation(m, r, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(m, r);
 			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
@@ -1518,12 +1518,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 }
 
 sql_rel *
-sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt)
+sql_processrelation(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
 {
 	if (rel)
 		rel = rel_unnest(sql, rel);
 	if (rel)
-		rel = rel_optimizer(sql, rel, value_based_opt, storage_based_opt);
+		rel = rel_optimizer(sql, rel, instantiate, value_based_opt, storage_based_opt);
 	return rel;
 }
 
