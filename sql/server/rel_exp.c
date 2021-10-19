@@ -391,7 +391,6 @@ exp_atom(sql_allocator *sa, atom *a)
 	e->l = a;
 	if (!a->isnull)
 		set_has_no_nil(e);
-	set_unique(e);
 	return e;
 }
 

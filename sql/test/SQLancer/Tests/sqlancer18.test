@@ -253,7 +253,6 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT 1 as count FROM t2 JOIN
 ----
 135
 
-# the hash is not right, it's a reminder it has to return 135 rows
 query R rowsort
 SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
 ----
