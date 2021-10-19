@@ -1891,7 +1891,7 @@ project (
 | | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
 | | | ) [ "myorders"."o_totalprice" NOT NULL, "sys"."day"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL, "%2"."%2" NOT NULL UNIQUE, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", int(32) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", int(32) "0")) as "%3"."%3" ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", int(32) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", int(32) "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 
 query R rowsort
@@ -1910,7 +1910,7 @@ project (
 | | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
 | | | ) [ "myorders"."o_totalprice" NOT NULL, "sys"."year"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL, boolean(1) "true", "%2"."%2" NOT NULL UNIQUE, "sys"."diff"("%1"."%1" NOT NULL), int(9) "2", "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "0", int(9) "0", tinyint(2) "2"), "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "3", int(9) "0", bigint(64) "9223372036854775807")) as "%4"."%4" ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL, boolean(1) "true", "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "2", "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "0", int(9) "0", tinyint(2) "2"), "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "3", int(9) "0", bigint(64) "9223372036854775807")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
 query I rowsort
