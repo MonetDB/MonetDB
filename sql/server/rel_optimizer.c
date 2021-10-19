@@ -4794,8 +4794,13 @@ point_select_on_unique_column(sql_rel *rel)
 			if (is_compare(e->type) && e->flag == cmp_equal) {
 				if (is_numeric_upcast(el))
 					el = el->l;
+				if (is_numeric_upcast(er))
+					er = er->l;
 				if (is_alias(el->type) && exp_is_atom(er) && (found = rel_find_exp(rel->l, el)) &&
 					is_unique(found) && (!is_semantics(e) || !has_nil(found) || !has_nil(er)))
+					return true;
+				if (is_alias(er->type) && exp_is_atom(el) && (found = rel_find_exp(rel->l, er)) &&
+					is_unique(found) && (!is_semantics(e) || !has_nil(el) || !has_nil(found)))
 					return true;
 			}
 		}
@@ -9849,8 +9854,9 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 #ifndef NDEBUG
 	assert(level < 20);
 #endif
-	/* Run the following optimizers only once after the others run to avoid an infinite optimization loop */
-	rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
+	/* Run the following optimizers only once at the end to avoid an infinite optimization loop */
+	if (opt == 2)
+		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
 
 	/* merge table rewrites may introduce remote or replica tables */
 	if (instantiate && (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite)) {
