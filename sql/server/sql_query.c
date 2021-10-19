@@ -79,7 +79,7 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 	sq->grouped = is_groupby(r->op);
 }
 
-int
+unsigned int
 query_has_outer(sql_query *q)
 {
 	return sql_stack_top(q->outer);
