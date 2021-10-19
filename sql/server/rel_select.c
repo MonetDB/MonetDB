@@ -692,7 +692,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	exps = new_exp_list(sql->sa);
 	for (m = sf->func->res->h; m; m = m->next) {
 		sql_arg *a = m->data;
-		sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0);
+		sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0, 0);
 
 		set_basecol(e);
 		append(exps, e);
@@ -5578,11 +5578,13 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 					return NULL;
 			}
 			exp_setname(sql->sa, le, rname, name);
+			set_not_unique(le);
 			append(outexps, le);
 			list_remove_data(r_exps, NULL, re);
 		} else {
 			if (l_nil)
 				set_has_nil(le);
+			set_not_unique(le);
 			append(outexps, le);
 		}
 	}
@@ -5592,6 +5594,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 		sql_exp *re = n->data;
 		if (r_nil)
 			set_has_nil(re);
+		set_not_unique(re);
 		append(outexps, re);
 	}
 	rel = rel_project(sql->sa, rel, outexps);
@@ -5946,6 +5949,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 				sql_exp *ls = m->data;
 				if (l_nil)
 					set_has_nil(ls);
+				set_not_unique(ls);
 				append(outexps, ls);
 			}
 		}
@@ -5964,6 +5968,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 				sql_exp *rs = m->data;
 				if (r_nil)
 					set_has_nil(rs);
+				set_not_unique(rs);
 				append(outexps, rs);
 			}
 		}
