@@ -329,6 +329,11 @@ create table t1 (c0 int)
 statement ok rowcount 4
 insert into t1 values (1),(2),(3),(NULL)
 
+query I rowsort
+SELECT 1 FROM (select 4) v100(vc0) WHERE (3) NOT IN (COALESCE((SELECT 1 WHERE FALSE), v100.vc0))
+----
+1
+
 statement error GDK reported error: mergejoin: more than one match
 select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
 
