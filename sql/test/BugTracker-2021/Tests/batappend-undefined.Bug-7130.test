@@ -61,7 +61,7 @@ statement error GDK reported error: mergejoin: more than one match
 select EXISTS(select 1 from t_qh left outer join (select cast(2 as INTEGER) from t_qh) as subq_0(c1) on true <> EXISTS(select 1 from t_qh as ref_6 where 2 <
 (select subq_0.c1 as c0 from t_qh where (1 <> ref_6.c_f) or (subq_0.c1 is NULL)))) from (select 30 from t_qh) as subq_0(c1)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error GDK reported error: mergejoin: more than one match
 select EXISTS(select 1 from t_qh left outer join (select cast(2 as INTEGER) from t_qh) as subq_0(c1) on 2 <> (select 1 from t_qh where EXISTS(select 3 as c0 from t_qh as ref_6 where 2 <
 (select subq_0.c1 as c0 from t_qh where (1 <> ref_6.c_f) or (subq_0.c1 is NULL))))) from (select 30 from t_qh) as subq_0(c1)
 
