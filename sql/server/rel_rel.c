@@ -838,6 +838,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 		else
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
+		rel->grouped = l->grouped;
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);
@@ -1411,7 +1412,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		*exp = NULL;
 		return rel;
 	}
-	if (!is_simple_project(rel->op) || !list_empty(rel->r) || rel_is_ref(rel))
+	if (!is_simple_project(rel->op) || need_distinct(rel) || !list_empty(rel->r) || rel_is_ref(rel))
 		rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
@@ -1428,7 +1429,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
+	if (rel && is_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
