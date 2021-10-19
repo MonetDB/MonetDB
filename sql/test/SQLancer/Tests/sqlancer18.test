@@ -305,8 +305,8 @@ NULL
 query T rowsort
 SELECT vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0) FROM vx
 ----
-False
-NULL
+True
+True
 
 query T rowsort
 SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0)
