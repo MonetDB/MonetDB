@@ -2632,6 +2632,9 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return NULL;
 				re = rsq->exps->t->data;
 
+				if (!is_tuple && is_func(re->type))
+					depth++;
+
 				if (rsq && lsq)
 					exp_set_freevar(sql, re, rsq);
 				if (!is_tuple && !is_freevar(re)) {
