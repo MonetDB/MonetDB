@@ -85,7 +85,7 @@ static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 {
 	int distinct = 0;
-	if (ad && exps_unique(sql, rel, ad ))
+	if (ad && exps_unique(sql, rel, ad) && !have_nil(ad))
 		return 1;
 	if (ad && is_groupby(rel->op) && exp_match_list(rel->r, ad))
 		return 1;
@@ -1104,6 +1104,8 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					if (strcmp(exp_name(col), TID) != 0) {
 						col = exp_ref(sql, col);
 						col = exp_unop(sql->sa, col, sql_bind_func(sql, "sys", "identity", exp_subtype(col), NULL, F_FUNC));
+						set_has_no_nil(col);
+						set_unique(col);
 						col = exp_label(sql->sa, col, ++sql->label);
 						append(p->exps, col);
 					}
@@ -1566,67 +1568,68 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static void reset_has_nil(sql_rel *rel, sql_exp *e);
+static void exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil);
 
 static void
-exps_reset_has_nil(sql_rel *rel, list *exps)
+exps_reset_props(sql_rel *rel, list *exps, bool setnil)
 {
 	if (!list_empty(exps))
 		for(node *n=exps->h; n; n=n->next)
-			reset_has_nil(rel, n->data);
+			exp_reset_props(rel, n->data, setnil);
 }
 
 static void
-reset_has_nil(sql_rel *rel, sql_exp *e)
+exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil)
 {
 	switch (e->type) {
 	case e_column: {
-		if (((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, e) != NULL) ||
-			((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, e) != NULL))
+		if (setnil && (((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, e) != NULL) ||
+			((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, e) != NULL)))
 			set_has_nil(e);
 	} break;
 	case e_convert: {
-		reset_has_nil(rel, e->l);
-		if (has_nil((sql_exp*)e->l))
+		exp_reset_props(rel, e->l, setnil);
+		if (setnil && has_nil((sql_exp*)e->l))
 			set_has_nil(e);
 	} break;
 	case e_func: {
 		sql_subfunc *f = e->f;
 
-		exps_reset_has_nil(rel, e->l);
-		if (!f->func->semantics && e->l && have_nil(e->l))
+		exps_reset_props(rel, e->l, setnil);
+		if (setnil && !f->func->semantics && e->l && have_nil(e->l))
 			set_has_nil(e);
 	} break;
 	case e_aggr: {
 		sql_subfunc *a = e->f;
 
-		exps_reset_has_nil(rel, e->l);
-		if ((a->func->s || strcmp(a->func->base.name, "count") != 0) && !a->func->semantics && !has_nil(e) && e->l && have_nil(e->l))
+		exps_reset_props(rel, e->l, setnil);
+		if (setnil && (a->func->s || strcmp(a->func->base.name, "count") != 0) && !a->func->semantics && !has_nil(e) && e->l && have_nil(e->l))
 			set_has_nil(e);
 	} break;
 	case e_cmp: {
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			exps_reset_has_nil(rel, e->l);
-			exps_reset_has_nil(rel, e->r);
-			if (have_nil(e->l) || have_nil(e->r))
+			exps_reset_props(rel, e->l, setnil);
+			exps_reset_props(rel, e->r, setnil);
+			if (setnil && (have_nil(e->l) || have_nil(e->r)))
 				set_has_nil(e);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			reset_has_nil(rel, e->l);
-			exps_reset_has_nil(rel, e->r);
-			if (has_nil((sql_exp*)e->l) || have_nil(e->r))
+			exp_reset_props(rel, e->l, setnil);
+			exps_reset_props(rel, e->r, setnil);
+			if (setnil && (has_nil((sql_exp*)e->l) || have_nil(e->r)))
 				set_has_nil(e);
 		} else {
-			reset_has_nil(rel, e->l);
-			reset_has_nil(rel, e->r);
+			exp_reset_props(rel, e->l, setnil);
+			exp_reset_props(rel, e->r, setnil);
 			if (e->f)
-				reset_has_nil(rel, e->f);
-			if (!is_semantics(e) && (((sql_exp*)e->l) || has_nil((sql_exp*)e->r) || (e->f && has_nil((sql_exp*)e->f))))
+				exp_reset_props(rel, e->f, setnil);
+			if (setnil && !is_semantics(e) && (((sql_exp*)e->l) || has_nil((sql_exp*)e->r) || (e->f && has_nil((sql_exp*)e->f))))
 				set_has_nil(e);
 		}
 	} break;
 	default:
 		break;
 	}
+	set_not_unique(e);
 }
 
 static sql_exp *
@@ -1711,8 +1714,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		} else {
 			e = exp_rel_update_exp(v->sql, e);
 		}
-		if (is_left(rewrite->op))
-			reset_has_nil(rewrite, e);
+		exp_reset_props(rewrite, e, is_left(rewrite->op));
 		v->changes++;
 	}
 	return e;
@@ -2149,7 +2151,7 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 						if (strcmp(exp_name(e), TID) == 0) { /* remove TID references and later restore them with identity function references */
 							if (!tids)
 								tids = sa_list(v->sql->sa);
-							list_append(tids, exp_alias(v->sql->sa, exp_relname(e), TID, idrname, idname, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+							list_append(tids, exp_alias(v->sql->sa, exp_relname(e), TID, idrname, idname, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
 							list_remove_node(exps, NULL, n);
 						}
 						n = next;
@@ -2674,8 +2676,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						rsq = 0;
 					}
 					(void)rewrite_inner(sql, rel, lsq, rel->card <= CARD_ATOM?op_left:op_join, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 					l = rel->l;
 					if (l && on_right && (!is_join(l->op) || (is_project(rel->op) && lsq->card <= CARD_ATOM && rsq->card <= CARD_ATOM)))
 						on_right = 0;
@@ -2685,14 +2686,12 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						sql_rel *join = rel->l; /* the introduced join */
 						join->r = rel_crossproduct(sql->sa, join->r, rsq, (depth && is_select(rel->op))?op_right:op_left);
 						set_dependent(join);
-						if (depth)
-							reset_has_nil(join->r, le);
+						exp_reset_props(join->r, le, depth > 0);
 					} else {
 						sql_rel *rewrite = NULL;
 						operator_type op = !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti;
 						(void)rewrite_inner(sql, rel, rsq, op, &rewrite);
-						if (is_left(rewrite->op))
-							reset_has_nil(rewrite, re);
+						exp_reset_props(rewrite, re, is_left(rewrite->op));
 					}
 				}
 
@@ -2743,15 +2742,13 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (lsq) {
 					sql_rel *rewrite = NULL;
 					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
 					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, re);
+					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
 				if (is_tuple) {
 					list *t = le->f;
@@ -2887,8 +2884,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_rel *rewrite = NULL;
 					operator_type op = (depth||quantifier)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, sq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (quantifier) {
 					sql_subfunc *a;
@@ -2916,8 +2912,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					sql_rel *rewrite = NULL;
 					operator_type op = ((!quantifier && depth > 0)||is_cnt)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, rsq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, re);
+					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
 
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
@@ -2946,15 +2941,13 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (lsq) {
 					sql_rel *rewrite = NULL;
 					(void)rewrite_inner(v->sql, rel, lsq, op_join, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, le);
+					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {
 					sql_rel *rewrite = NULL;
 					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(v->sql, rel, rsq, op, &rewrite);
-					if (is_left(rewrite->op))
-						reset_has_nil(rewrite, re);
+					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
 				if (is_tuple) {
 					list *t = le->f;

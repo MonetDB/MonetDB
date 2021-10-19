@@ -499,6 +499,16 @@ nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *t
 	return 0;
 }
 
+bool
+is_column_unique(sql_column *c)
+{
+	/* is it a primary key column itself? */
+	if (c->t->pkey && list_length(c->t->pkey->k.columns) == 1 && ((sql_kc*)c->t->pkey->k.columns->h->data)->c->base.id == c->base.id)
+		return true;
+	/* is it a unique key itself */
+	return c->unique == 2;
+}
+
 ValPtr
 SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 {

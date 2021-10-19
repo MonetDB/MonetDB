@@ -420,16 +420,6 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, res_table *rt_idxcols/*, oid rid*/)
 	kc->c = find_sql_column(i->t, v);
 	assert(kc->c);
 	list_append(i->columns, kc);
-	if (hash_index(i->type))
-		kc->c->unique = 1;
-	if (hash_index(i->type) && list_length(i->columns) > 1) {
-		/* Correct the unique flag of the keys first column */
-		kc->c->unique = list_length(i->columns);
-		if (kc->c->unique == 2) {
-			sql_kc *ic1 = i->columns->h->data;
-			ic1->c->unique ++;
-		}
-	}
 }
 
 static sql_idx *
@@ -802,6 +792,11 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 			return NULL;
 		}
 	}
+
+	/* after loading keys and idxs, update properties derived from indexes that require keys */
+	if (ol_length(t->idxs))
+		for (node *n = ol_first_node(t->idxs); n; n = n->next)
+			create_sql_idx_done(n->data);
 
 	for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(triggers, "table_id"));
@@ -3241,7 +3236,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	sql_table *sysidx = find_sql_table(tr, syss, "idxs");
 	sql_table *sysic = find_sql_table(tr, syss, "objects");
 	node *n;
-	int nr, unique = 0, res = LOG_OK;
+	int nr, res = LOG_OK, ncols = list_length(i->columns);
 	sql_table *dup = NULL;
 
 	if ((res = new_table(tr, t, &dup)))
@@ -3255,15 +3250,12 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	ni->key = NULL;
 	ATOMIC_PTR_INIT(&ni->data, NULL);
 
-	if (i->type == hash_idx && list_length(i->columns) == 1)
-		unique = 1;
 	for (n = i->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *okc = n->data, *ic;
 
 		list_append(ni->columns, ic = kc_dup(tr, okc, t));
-		if (ic->c->unique != (unique & !okc->c->null))
-			okc->c->unique = ic->c->unique = (unique & (!okc->c->null));
-
+		if (i->key && hash_index(i->type))
+			ic->c->unique = (ncols == 1) ? 2 : MAX(ic->c->unique, 1);
 		if ((res = store->table_api.table_insert(tr, sysic, &ni->base.id, &ic->c->base.name, &nr, ATOMnilptr(TYPE_int)))) {
 			idx_destroy(store, ni);
 			return res;
@@ -4034,6 +4026,29 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 		return res;
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;
+
+		if (i->key && hash_index(i->type)) { /* update new column's unique value */
+			int unique = 0;
+			sqlid cid = ic->c->base.id;
+			struct os_iter oi;
+
+			os_iterator(&oi, i->t->s->idxs, tr, NULL);
+			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+				sql_idx *ti = (sql_idx*)b;
+
+				if (ti->base.id != i->base.id && ti->key && hash_index(ti->type)) {
+					bool found = false;
+					for (node *m = ti->columns->h; m && !found; m = m->next) {
+						sql_kc *tic = m->data;
+
+						found |= tic->c->base.id == cid;
+					}
+					if (found)
+						unique = MAX(unique, list_length(ti->columns) == 1 ? 2 : 1);
+				}
+			}
+			ic->c->unique = unique;
+		}
 		if ((res = sys_drop_ic(tr, i, ic)))
 			return res;
 	}
@@ -5542,32 +5557,6 @@ create_sql_fkey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *na
 }
 
 sql_idx *
-create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
-{
-	sql_kc *ic = SA_ZNEW(sa, sql_kc);
-
-	ic->c = c;
-	list_append(i->columns, ic);
-
-	(void)store;
-	if (hash_index(i->type) && list_length(i->columns) > 1) {
-		/* Correct the unique flag of the keys first column */
-		c->unique = list_length(i->columns);
-		if (c->unique == 2) {
-			sql_kc *ic1 = i->columns->h->data;
-			ic1->c->unique ++;
-		}
-	}
-
-	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) {
-		/*i->type = oph_idx;*/
-		i->type = no_idx;
-	}
-	return i;
-}
-
-sql_idx *
 create_sql_idx(sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, idx_type it)
 {
 	sql_idx *ni = SA_ZNEW(sa, sql_idx);
@@ -5580,6 +5569,37 @@ create_sql_idx(sqlstore *store, sql_allocator *sa, sql_table *t, const char *nam
 	if (ol_add(t->idxs, &ni->base))
 		return NULL;
 	return ni;
+}
+
+sql_idx *
+create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
+{
+	sql_kc *ic = SA_ZNEW(sa, sql_kc);
+
+	ic->c = c;
+	list_append(i->columns, ic);
+
+	(void)store;
+	/* should we switch to oph_idx ? */
+	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) {
+		/*i->type = oph_idx;*/
+		i->type = no_idx;
+	}
+	return i;
+}
+
+sql_idx *
+create_sql_idx_done(sql_idx *i)
+{
+	if (i && i->key && hash_index(i->type)) {
+		int ncols = list_length(i->columns);
+		for (node *n = i->columns->h ; n ; n = n->next) {
+			sql_kc *kc = n->data;
+
+			kc->c->unique = (ncols == 1) ? 2 : MAX(kc->c->unique, 1);
+		}
+	}
+	return i;
 }
 
 static sql_column *
@@ -6271,66 +6291,62 @@ table_has_idx( sql_table *t, list *keycols)
 sql_key *
 key_create_done(sqlstore *store, sql_allocator *sa, sql_key *k)
 {
-	node *n;
 	sql_idx *i;
 
-	/* for now we only mark the end of unique/primary key definitions */
-	if (k->type == fkey)
-		return k;
+	if (k->type != fkey) {
+		if ((i = table_has_idx(k->t, k->columns)) != NULL) {
+			/* use available hash, or use the order */
+			if (hash_index(i->type)) {
+				k->idx = i;
+				if (!k->idx->key)
+					k->idx->key = k;
+			}
+		}
 
-	if ((i = table_has_idx(k->t, k->columns)) != NULL) {
-		/* use available hash, or use the order */
-		if (hash_index(i->type)) {
-			k->idx = i;
-			if (!k->idx->key)
-				k->idx->key = k;
+		/* we need to create an index */
+		k->idx = create_sql_idx(store, sa, k->t, k->base.name, hash_idx);
+		k->idx->key = k;
+
+		for (node *n=k->columns->h; n; n = n->next) {
+			sql_kc *kc = n->data;
+
+			create_sql_ic(store, sa, k->idx, kc->c);
 		}
 	}
-
-	/* we need to create an index */
-	k->idx = create_sql_idx(store, sa, k->t, k->base.name, hash_idx);
-	k->idx->key = k;
-
-	for (n=k->columns->h; n; n = n->next) {
-		sql_kc *kc = n->data;
-
-		create_sql_ic(store, sa, k->idx, kc->c);
-	}
+	k->idx = create_sql_idx_done(k->idx);
 	return k;
 }
 
 int
 sql_trans_key_done(sql_trans *tr, sql_key *k)
 {
-	node *n;
 	sql_idx *i;
 	int res = LOG_OK;
 
-	/* for now we only mark the end of unique/primary key definitions */
-	if (k->type == fkey)
-		return res;
-
-	if ((i = table_has_idx(k->t, k->columns)) != NULL) {
-		/* use available hash, or use the order */
-		if (hash_index(i->type)) {
-			k->idx = i;
-			if (!k->idx->key)
-				k->idx->key = k;
-		}
-		return res;
-	}
-
-	/* we need to create an index */
-	if ((res = sql_trans_create_idx(&k->idx, tr, k->t, k->base.name, hash_idx)))
-		return res;
-	k->idx->key = k;
-
-	for (n=k->columns->h; n; n = n->next) {
-		sql_kc *kc = n->data;
-
-		if ((res = sql_trans_create_ic(tr, k->idx, kc->c)))
+	if (k->type != fkey) {
+		if ((i = table_has_idx(k->t, k->columns)) != NULL) {
+			/* use available hash, or use the order */
+			if (hash_index(i->type)) {
+				k->idx = i;
+				if (!k->idx->key)
+					k->idx->key = k;
+			}
 			return res;
+		}
+
+		/* we need to create an index */
+		if ((res = sql_trans_create_idx(&k->idx, tr, k->t, k->base.name, hash_idx)))
+			return res;
+		k->idx->key = k;
+
+		for (node *n=k->columns->h; n; n = n->next) {
+			sql_kc *kc = n->data;
+
+			if ((res = sql_trans_create_ic(tr, k->idx, kc->c)))
+				return res;
+		}
 	}
+	k->idx = create_sql_idx_done(k->idx);
 	return res;
 }
 
@@ -6432,15 +6448,6 @@ sql_trans_create_ic(sql_trans *tr, sql_idx *i, sql_column *c)
 	assert(c);
 	ic->c = c;
 	list_append(i->columns, ic);
-
-	if (hash_index(i->type) && list_length(i->columns) > 1) {
-		/* Correct the unique flag of the keys first column */
-		c->unique = list_length(i->columns);
-		if (c->unique == 2) {
-			sql_kc *ic1 = i->columns->h->data;
-			ic1->c->unique ++;
-		}
-	}
 
 	if ((res = store->table_api.table_insert(tr, sysic, &i->base.id, &ic->c->base.name, &nr, ATOMnilptr(TYPE_int))))
 		return res;

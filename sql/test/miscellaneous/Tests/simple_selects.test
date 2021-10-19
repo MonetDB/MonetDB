@@ -670,8 +670,8 @@ project (
 | | project (
 | | |  [ boolean(1) "true" ]
 | | ) [ tinyint(1) "1" as "x"."x" ]
-| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
-) [ "z" NOT NULL, tinyint(2) "2" ]
+| ) [ "x"."x" NOT NULL UNIQUE as "z" ] [ "z" NOT NULL UNIQUE ]
+) [ "z" NOT NULL UNIQUE, tinyint(2) "2" ]
 
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) group by z

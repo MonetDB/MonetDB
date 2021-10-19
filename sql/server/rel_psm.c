@@ -512,7 +512,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		for (n = ol_first_node(t->columns), m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
-			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)
