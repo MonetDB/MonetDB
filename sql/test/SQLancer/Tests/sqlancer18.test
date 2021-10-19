@@ -320,3 +320,18 @@ SELECT max((SELECT (SELECT rt2.c1 FROM t2) FROM t2 as rt2))
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+create table t1 (c0 int)
+
+statement ok rowcount 4
+insert into t1 values (1),(2),(3),(NULL)
+
+statement error GDK reported error: mergejoin: more than one match
+select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
+
+statement ok
+ROLLBACK
+
