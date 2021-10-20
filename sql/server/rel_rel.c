@@ -838,8 +838,9 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 		else
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
-		rel->grouped = l->grouped;
 	}
+	if (rel->card == CARD_AGGR)
+		rel->card = CARD_MULTI;
 	if (e && !list_empty(e)) {
 		set_processed(rel);
 		rel->nrcols = list_length(e);
