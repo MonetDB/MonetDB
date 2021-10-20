@@ -307,7 +307,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			c =getVarName(mb, getArg(pci,j));
 			if(getVarSTC(mb,getArg(pci,j))){
 				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-				if (stc &&
+				if (stc && getModuleId(stc) &&
 					strcmp(getModuleId(stc),"sql") ==0 &&
 					strncmp(getFunctionId(stc),"bind",4)==0 &&
 					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
