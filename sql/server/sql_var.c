@@ -596,6 +596,23 @@ stack_find_var_frame(mvc *sql, const char *name, int *level)
 	return NULL;
 }
 
+sql_var*
+stack_find_var_at_level(mvc *sql, const char *name, int level)
+{
+	for (int i = sql->topframes-1; i >= 0; i--) {
+		sql_frame *f = sql->frames[i];
+		if (f->frame_number == level && f->vars) {
+			for (node *n = f->vars->h; n ; n = n->next) {
+				sql_var *var = (sql_var*) n->data;
+				assert(var->name);
+				if (!strcmp(var->name, name))
+					return var;
+			}
+		}
+	}
+	return NULL;
+}
+
 int
 stack_has_frame(mvc *sql, const char *name)
 {

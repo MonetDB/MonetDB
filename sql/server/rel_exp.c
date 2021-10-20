@@ -565,12 +565,12 @@ exp_value(mvc *sql, sql_exp *e)
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
 		sql_var_name *vname = (sql_var_name*) e->r;
-		sql_var *var;
 
 		assert(e->flag != 0 || vname->sname); /* global variables must have a schema */
-		if (e->flag == 0 && (var = find_global_var(sql, mvc_bind_schema(sql, vname->sname), vname->name))) /* global variable */
+		sql_var *var = e->flag == 0 ? find_global_var(sql, mvc_bind_schema(sql, vname->sname), vname->name) :
+									  stack_find_var_at_level(sql, vname->name, e->flag);
+		if (var)
 			return &(var->var);
-		return NULL;
 	}
 	return NULL;
 }
@@ -2835,37 +2835,6 @@ exp_copy(mvc *sql, sql_exp * e)
 	if (is_freevar(e))
 		set_freevar(ne, is_freevar(e)-1);
 	return ne;
-}
-
-atom *
-exp_flatten(mvc *sql, sql_exp *e)
-{
-	if (e->type == e_atom) {
-		return exp_value(sql, e);
-	} else if (e->type == e_convert) {
-		atom *v = exp_flatten(sql, e->l);
-
-		if (v)
-			return atom_cast(sql->sa, v, exp_subtype(e));
-	} else if (e->type == e_func) {
-		sql_subfunc *f = e->f;
-		list *l = e->l;
-		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
-
-		/* TODO handle date + x months */
-		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
-			atom *l1 = exp_flatten(sql, l->h->data);
-			atom *l2 = exp_flatten(sql, l->h->next->data);
-			if (l1 && l2)
-				return atom_add(sql->sa, l1, l2);
-		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
-			atom *l1 = exp_flatten(sql, l->h->data);
-			atom *l2 = exp_flatten(sql, l->h->next->data);
-			if (l1 && l2)
-				return atom_sub(sql->sa, l1, l2);
-		}
-	}
-	return NULL;
 }
 
 sql_exp *
