@@ -2837,37 +2837,6 @@ exp_copy(mvc *sql, sql_exp * e)
 	return ne;
 }
 
-atom *
-exp_flatten(mvc *sql, sql_exp *e)
-{
-	if (e->type == e_atom) {
-		return exp_value(sql, e);
-	} else if (e->type == e_convert) {
-		atom *v = exp_flatten(sql, e->l);
-
-		if (v)
-			return atom_cast(sql->sa, v, exp_subtype(e));
-	} else if (e->type == e_func) {
-		sql_subfunc *f = e->f;
-		list *l = e->l;
-		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
-
-		/* TODO handle date + x months */
-		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
-			atom *l1 = exp_flatten(sql, l->h->data);
-			atom *l2 = exp_flatten(sql, l->h->next->data);
-			if (l1 && l2)
-				return atom_add(sql->sa, l1, l2);
-		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
-			atom *l1 = exp_flatten(sql, l->h->data);
-			atom *l2 = exp_flatten(sql, l->h->next->data);
-			if (l1 && l2)
-				return atom_sub(sql->sa, l1, l2);
-		}
-	}
-	return NULL;
-}
-
 sql_exp *
 exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r)
 {
