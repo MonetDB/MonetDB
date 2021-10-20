@@ -1631,27 +1631,14 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	return update_col_execute(tr, delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
 }
 
-static int
-delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offsets, BAT *i)
+static BAT *
+dict_append_bat(sql_delta *bat, BAT *i)
 {
-	BAT *b, *oi = i;
-	int err = 0;
-
-	assert(!offsets || BATcount(offsets) == BATcount(i));
-	if (!BATcount(i))
-		return LOG_OK;
-	if ((i->ttype == TYPE_msk || mask_cand(i)) && !(oi = BATunmask(i)))
-		return LOG_ERR;
-
-	lock_column(tr->store, id);
-	if (bat->cs.st == ST_DICT) {
 		BAT *newoffsets = NULL;
 		BAT *u = temp_descriptor(bat->cs.ebid);
 
-		if (!u) {
-			unlock_column(tr->store, id);
-			return LOG_ERR;
-		}
+		if (!u)
+			return NULL;
 		BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
 		if (DICTprepare4append(&newoffsets, i, u) < 0) {
 					assert(0);
@@ -1665,8 +1652,7 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 					if (!n) {
 						bat_destroy(u);
 						bat_destroy(n);
-						unlock_column(tr->store, id);
-						return LOG_ERR;
+						return NULL;
 					}
 					/* TODO change storage type */
 					if (bat->cs.bid)
@@ -1685,20 +1671,41 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 					if (!n) {
 						bat_destroy(u);
 						bat_destroy(n);
-						unlock_column(tr->store, id);
-						return LOG_ERR;
+						return NULL;
 					}
 					if (bat->cs.bid)
 						temp_destroy(bat->cs.bid);
 					bat->cs.bid = temp_create(n);
 					bat->cs.cleared = true;
-					oi = i = newoffsets;
+					i = newoffsets;
 				}
 			} else { /* append */
-				oi = i = newoffsets;
+				i = newoffsets;
 			}
 		}
 		bat_destroy(u);
+		return i;
+}
+
+static int
+delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offsets, BAT *i)
+{
+	BAT *b, *oi = i;
+	int err = 0;
+
+	assert(!offsets || BATcount(offsets) == BATcount(i));
+	if (!BATcount(i))
+		return LOG_OK;
+	if ((i->ttype == TYPE_msk || mask_cand(i)) && !(oi = BATunmask(i)))
+		return LOG_ERR;
+
+	lock_column(tr->store, id);
+	if (bat->cs.st == ST_DICT) {
+		oi = i = dict_append_bat(bat, i);
+		if (!oi) {
+			unlock_column(tr->store, id);
+			return LOG_ERR;
+		}
 	}
 
 	b = temp_descriptor(bat->cs.bid);
