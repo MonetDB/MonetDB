@@ -1996,11 +1996,8 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	}
 	if (is_simple_project(rel->op) && need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
 		e->card = MIN(e->card, CARD_AGGR);
-	if (!is_set(rel->op) && (!is_groupby(rel->op) || !list_empty(rel->r))){ /* global groupings have atomic cardinality */
+	if (!is_set(rel->op) && (!is_groupby(rel->op) || !list_empty(rel->r))) /* global groupings have atomic cardinality */
 		rel->card = MAX(e->card, rel->card); /* the relation cardinality may get updated too */
-		if (!is_groupby(rel->op) && rel->card == CARD_AGGR)
-			rel->card = CARD_MULTI;
-	}
 	return e;
 }
 
