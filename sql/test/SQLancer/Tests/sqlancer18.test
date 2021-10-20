@@ -320,9 +320,6 @@ statement ok
 ROLLBACK
 
 statement ok
-START TRANSACTION
-
-statement ok
 create table t1 (c0 int)
 
 statement ok rowcount 4
@@ -333,9 +330,18 @@ SELECT 1 FROM (select 4) v100(vc0) WHERE (3) NOT IN (COALESCE((SELECT 1 WHERE FA
 ----
 1
 
+statement ok
+create view vy(vc0) as (select distinct (select 4 from t1))
+
+statement error GDK reported error: mergejoin: more than one match
+select greatest(1, (select (select vy.vc0 from t1) from vy))
+
 statement error GDK reported error: mergejoin: more than one match
 select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
 
 statement ok
-ROLLBACK
+DROP VIEW vy
+
+statement ok
+DROP TABLE t1
 
