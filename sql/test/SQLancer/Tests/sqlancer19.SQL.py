@@ -25,6 +25,9 @@ with SQLTestCase() as cli:
     INSERT INTO "t3" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH);
     CREATE TABLE "t4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH);
     INSERT INTO "t4" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(10, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(11, INTERVAL '1' MONTH);
+    CREATE TABLE "t5" ("c0" DECIMAL(18,3),"c1" BOOLEAN);
+    INSERT INTO "t5" VALUES (0.928, NULL),(0.974, NULL),(NULL, false),(3.000, NULL),(NULL, false),(NULL, false),(NULL, true),(0.897, NULL),
+    (0.646, NULL),(0.145, true),(0.848, false),(NULL, false);
     COMMIT;
 
     START TRANSACTION;
@@ -32,7 +35,8 @@ with SQLTestCase() as cli:
     CREATE REMOTE TABLE "rt2" ("c0" TINYINT NOT NULL,"c2" DATE) ON 'mapi:monetdb://localhost:%s/%s/sys/t2';
     CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t3';
     CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t4';
-    COMMIT;""" % (port, db, port, db, port, db, port, db)).assertSucceeded()
+    CREATE REMOTE TABLE "rt5" ("c0" DECIMAL(18,3),"c1" BOOLEAN) ON 'mapi:monetdb://localhost:%s/%s/sys/t5';
+    COMMIT;""" % (port, db, port, db, port, db, port, db, port, db)).assertSucceeded()
 
     cli.execute("START TRANSACTION;")
     cli.execute('SELECT json."integer"(JSON \'1\') FROM t3;') \
@@ -280,6 +284,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(36,)])
     cli.execute("SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1 from rt3) x(x)) v100(vc1), rt3 WHERE 5 >= sinh(CAST(v100.vc1 AS REAL));") \
         .assertSucceeded().assertDataResultMatch([(36,)])
+    cli.execute("SELECT CAST(2 AS REAL) BETWEEN 2 AND (t5.c0 / t5.c0)^5 AS X FROM t5 ORDER BY x NULLS LAST;") \
+        .assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,),(True,),(None,),(None,),(None,),(None,)])
+    cli.execute("SELECT CAST(2 AS REAL) BETWEEN 2 AND (rt5.c0 / rt5.c0)^5 AS X FROM rt5 ORDER BY x NULLS LAST;") \
+        .assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,),(True,),(None,),(None,),(None,),(None,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
@@ -295,10 +303,12 @@ with SQLTestCase() as cli:
     DROP TABLE rt2;
     DROP TABLE rt3;
     DROP TABLE rt4;
+    DROP TABLE rt5;
     DROP TABLE t0;
     DROP TABLE t1;
     DROP TABLE t2;
     DROP TABLE t3;
     DROP TABLE t4;
+    DROP TABLE t5;
     DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()

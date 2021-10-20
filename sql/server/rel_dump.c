@@ -1399,16 +1399,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 						/* Find converted value type for division and update function output type */
 						if (f->func->fix_scale == SCALE_DIV) {
-							sql_subtype *lt = is_convert(l->type) ? ((sql_subtype*)exp_fromtype(l)) : exp_subtype(l);
+							sql_subtype *lt = exp_subtype(l);
 							sql_subtype *rt = exp_subtype(r);
 
 							if (lt->type->scale == SCALE_FIX && rt->scale && strcmp(f->func->imp, "/") == 0) {
 								sql_subtype *res = f->res->h->data;
-								unsigned int scaleL = (lt->scale < 3) ? 3 : lt->scale;
-								unsigned int scale = scaleL;
-								scaleL += rt->scale;
-								unsigned int digL = lt->digits + (scaleL - lt->scale);
-								unsigned int digits = (digL > rt->digits) ? digL : rt->digits;
+								unsigned int scale = lt->scale - rt->scale;
+								unsigned int digits = (lt->digits > rt->digits) ? lt->digits : rt->digits;
 
 #ifdef HAVE_HGE
 								if (res->type->radix == 10 && digits > 39)
