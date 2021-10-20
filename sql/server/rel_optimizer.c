@@ -3036,8 +3036,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			}
 			*/
 			if (exp_is_atom(le) && exp_is_atom(re)) {
-				atom *la = exp_flatten(sql, le);
-				atom *ra = exp_flatten(sql, re);
+				atom *la = exp_flatten(sql, true, le);
+				atom *ra = exp_flatten(sql, true, re);
 
 				if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
 					atom *a = atom_mul(sql->sa, la, ra);
@@ -3144,8 +3144,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				return le;
 			}
 			if (exp_is_atom(le) && exp_is_atom(re)) {
-				atom *la = exp_flatten(sql, le);
-				atom *ra = exp_flatten(sql, re);
+				atom *la = exp_flatten(sql, true, le);
+				atom *ra = exp_flatten(sql, true, re);
 
 				if (la && ra) {
 					atom *a = atom_add(sql->sa, la, ra);
@@ -3211,8 +3211,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *re = l->h->next->data;
 
 			if (exp_is_atom(le) && exp_is_atom(re)) {
-				atom *la = exp_flatten(sql, le);
-				atom *ra = exp_flatten(sql, re);
+				atom *la = exp_flatten(sql, true, le);
+				atom *ra = exp_flatten(sql, true, re);
 
 				if (la && ra) {
 					atom *a = atom_sub(sql->sa, la, ra);
@@ -9102,8 +9102,8 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 					if (flag == cmp_gt || flag == cmp_gte || flag == cmp_lte || flag == cmp_lt || flag == cmp_equal) {
 						sql_exp *l = e->r, *h = e->f;
-						atom *lval = exp_flatten(v->sql, l);
-						atom *hval = h ? exp_flatten(v->sql, h) : lval;
+						atom *lval = exp_flatten(v->sql, v->value_based_opt, l);
+						atom *hval = h ? exp_flatten(v->sql, v->value_based_opt, h) : lval;
 
 						if (lval && hval) {
 							range_limit *next = SA_NEW(v->sql->sa, range_limit);
@@ -9125,7 +9125,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						node *m = NULL;
 						for (m = vals->h; m; m = m->next) {
 							sql_exp *l = m->data;
-							atom *lval = exp_flatten(v->sql, l);
+							atom *lval = exp_flatten(v->sql, v->value_based_opt, l);
 
 							if (!lval)
 								break;
@@ -9368,8 +9368,8 @@ exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
 					sql_exp *l = e->r;
 					sql_exp *h = e->f;
 
-					atom *lval = exp_flatten(v->sql, l);
-					atom *hval = h ? exp_flatten(v->sql, h) : lval;
+					atom *lval = exp_flatten(v->sql, v->value_based_opt, l);
+					atom *hval = h ? exp_flatten(v->sql, v->value_based_opt, h) : lval;
 					if (lval && hval) {
 						sql_rel *bt;
 						sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);

@@ -839,8 +839,6 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
 	}
-	if (rel->card == CARD_AGGR)
-		rel->card = CARD_MULTI;
 	if (e && !list_empty(e)) {
 		set_processed(rel);
 		rel->nrcols = list_length(e);
