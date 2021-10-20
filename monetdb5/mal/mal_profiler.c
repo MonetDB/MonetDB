@@ -677,9 +677,12 @@ openProfilerStream(Client cntxt)
 		m = workingset[j].mb;
 		s = workingset[j].stk;
 		p =  workingset[j].pci;
-		if( c && m && s && p )
+		if( c && m && s && p ) {
 			/* show the event  assuming the quadruple is aligned*/
+			MT_lock_unset(&mal_profileLock);
 			profilerEvent(c, m, s, p, 1);
+			MT_lock_set(&mal_profileLock);
+		}
 	}
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
