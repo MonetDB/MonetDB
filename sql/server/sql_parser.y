@@ -4289,9 +4289,6 @@ opt_alias_name:
 
 atom:
     literal
-	{ 
-		$$ = $1;
-	}
  ;
 
 qrank:

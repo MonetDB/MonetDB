@@ -692,7 +692,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	exps = new_exp_list(sql->sa);
 	for (m = sf->func->res->h; m; m = m->next) {
 		sql_arg *a = m->data;
-		sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0);
+		sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0, 0);
 
 		set_basecol(e);
 		append(exps, e);
@@ -3517,43 +3517,47 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				all_freevar = vf;
 			exp = e;
 		}
-		int sql_state = query_fetch_outer_state(query,all_freevar-1);
-		res = groupby = query_fetch_outer(query, all_freevar-1);
-		card = query_outer_used_card(query, all_freevar-1);
-		/* given groupby validate all input expressions */
-		char *err;
-		if ((err = exps_valid(query, exps, all_freevar)) != NULL) {
-			strcpy(sql->errstr, err);
-			sql->session->status = -ERR_GROUPBY;
-			return NULL;
-		}
-		if (exp && !is_groupby_col(res, exp)) {
-			if (is_sql_groupby(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
-			if (is_sql_aggr(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
-			if (is_sql_values(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed on an unique value");
-			if (is_sql_update_set(sql_state) || is_sql_psm(f))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
-			if (is_sql_join(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in JOIN conditions");
-			if (is_sql_where(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in WHERE clause");
-			if (is_psm_call(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "CALL: aggregate functions not allowed inside CALL");
-			if (is_sql_from(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
-			if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
-				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
-				if (lu->type == e_column)
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", (char*)lu->l, (char*)lu->r);
-				if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
+		if (query_has_outer(query) >= all_freevar) {
+			int sql_state = query_fetch_outer_state(query,all_freevar-1);
+			res = groupby = query_fetch_outer(query, all_freevar-1);
+			card = query_outer_used_card(query, all_freevar-1);
+			/* given groupby validate all input expressions */
+			char *err;
+			if ((err = exps_valid(query, exps, all_freevar)) != NULL) {
+				strcpy(sql->errstr, err);
+				sql->session->status = -ERR_GROUPBY;
+				return NULL;
 			}
-			if (is_outer(groupby))
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
+			if (exp && !is_groupby_col(res, exp)) {
+				if (is_sql_groupby(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
+				if (is_sql_aggr(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
+				if (is_sql_values(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed on an unique value");
+				if (is_sql_update_set(sql_state) || is_sql_psm(f))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
+				if (is_sql_join(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in JOIN conditions");
+				if (is_sql_where(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in WHERE clause");
+				if (is_psm_call(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "CALL: aggregate functions not allowed inside CALL");
+				if (is_sql_from(sql_state))
+					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
+				if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
+					sql_exp *lu = query_outer_last_used(query, all_freevar-1);
+					if (lu->type == e_column)
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", (char*)lu->l, (char*)lu->r);
+					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
+				}
+				if (is_outer(groupby))
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
+			}
+		} else {
+			all_freevar = 0;
 		}
 	} else if (!subquery && groupby && is_outer(groupby) && !is_groupby(groupby->op))
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
@@ -5578,11 +5582,13 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 					return NULL;
 			}
 			exp_setname(sql->sa, le, rname, name);
+			set_not_unique(le);
 			append(outexps, le);
 			list_remove_data(r_exps, NULL, re);
 		} else {
 			if (l_nil)
 				set_has_nil(le);
+			set_not_unique(le);
 			append(outexps, le);
 		}
 	}
@@ -5592,6 +5598,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 		sql_exp *re = n->data;
 		if (r_nil)
 			set_has_nil(re);
+		set_not_unique(re);
 		append(outexps, re);
 	}
 	rel = rel_project(sql->sa, rel, outexps);
@@ -5946,6 +5953,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 				sql_exp *ls = m->data;
 				if (l_nil)
 					set_has_nil(ls);
+				set_not_unique(ls);
 				append(outexps, ls);
 			}
 		}
@@ -5964,6 +5972,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 				sql_exp *rs = m->data;
 				if (r_nil)
 					set_has_nil(rs);
+				set_not_unique(rs);
 				append(outexps, rs);
 			}
 		}

@@ -19,7 +19,7 @@ sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
 	*q = (stacked_query) {
 		.rel = rel,
 		.sql_state = sql_state,
-		.grouped = is_groupby(rel->op),
+		.grouped = is_groupby(rel->op)|rel->grouped,
 		.groupby = 0, /* not used for groupby of inner */
 	};
 	return q;
@@ -79,7 +79,7 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 	sq->grouped = is_groupby(r->op);
 }
 
-int
+unsigned int
 query_has_outer(sql_query *q)
 {
 	return sql_stack_top(q->outer);

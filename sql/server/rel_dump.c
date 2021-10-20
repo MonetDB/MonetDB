@@ -320,6 +320,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " NULLS LAST");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
+	if (e->type != e_atom && e->type != e_cmp && is_unique(e))
+		mnstr_printf(fout, " UNIQUE");
 	if (e->p) {
 		prop *p = e->p;
 		char *pv;
@@ -1032,7 +1034,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				if (!exp && rrel)
 					exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 			} else if (!exp) {
-				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, cname[0] == '%');
+				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, 0, cname[0] == '%');
 			}
 		}
 		break;
@@ -1531,6 +1533,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		skipWS(r, pos);
 		set_has_no_nil(exp);
 	}
+	/* [ UNIQUE ] */
+	if (strncmp(r+*pos, "UNIQUE",  strlen("UNIQUE")) == 0) {
+		(*pos)+= (int) strlen("UNIQUE");
+		skipWS(r, pos);
+		set_unique(exp);
+	}
 
 	if (!(exp = read_exp_properties(sql, exp, r, pos)))
 		return NULL;
@@ -1881,7 +1889,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					if (r[*pos] == ',')
 						(*pos)++;
 
-					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0);
+					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0, 0);
 					set_basecol(next);
 					append(outputs, next);
 					m = m->next;
