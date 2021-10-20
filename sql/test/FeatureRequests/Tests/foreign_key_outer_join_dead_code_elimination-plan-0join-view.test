@@ -7,8 +7,8 @@ query T nosort
 project (
 | group by (
 | | project (
-| | | table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL  ]
-| | ) [ "fk"."id" NOT NULL HASHCOL  as "v0"."id" ]
+| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  as "v0"."id" ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -17,9 +17,9 @@ query T nosort
 ----
 project (
 | project (
-| | table("sys"."fk") [ "fk"."id" NOT NULL HASHCOL  ]
-| ) [ "fk"."id" NOT NULL HASHCOL  as "v0"."id" ]
-) [ "v0"."id" NOT NULL HASHCOL  ] [ "v0"."id" ASC NOT NULL HASHCOL  ]
+| | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
+| ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  as "v0"."id" ]
+) [ "v0"."id" NOT NULL UNIQUE HASHCOL  ] [ "v0"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 statement ok
 set optimizer = 'default_pipe'

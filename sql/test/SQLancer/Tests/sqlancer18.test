@@ -253,7 +253,6 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT 1 as count FROM t2 JOIN
 ----
 135
 
-# the hash is not right, it's a reminder it has to return 135 rows
 query R rowsort
 SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
 ----
@@ -305,8 +304,8 @@ NULL
 query T rowsort
 SELECT vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0) FROM vx
 ----
-False
-NULL
+True
+True
 
 query T rowsort
 SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> vx.vc0)
@@ -314,8 +313,28 @@ SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> 
 1970-01-01
 NULL
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error GDK reported error: mergejoin: more than one match
 SELECT max((SELECT (SELECT rt2.c1 FROM t2) FROM t2 as rt2))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table t1 (c0 int)
+
+statement ok rowcount 4
+insert into t1 values (1),(2),(3),(NULL)
+
+query I rowsort
+SELECT 1 FROM (select 4) v100(vc0) WHERE (3) NOT IN (COALESCE((SELECT 1 WHERE FALSE), v100.vc0))
+----
+1
+
+statement error GDK reported error: mergejoin: more than one match
+select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
 
 statement ok
 ROLLBACK

@@ -1092,7 +1092,7 @@ mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type
 }
 
 int
-mvc_create_ukey_done(mvc *m, sql_key *k)
+mvc_create_key_done(mvc *m, sql_key *k)
 {
 	int res = LOG_OK;
 
@@ -1167,7 +1167,7 @@ mvc_create_idx(sql_idx **i, mvc *m, sql_table *t, const char *name, idx_type it)
 }
 
 int
-mvc_create_ic(mvc *m, sql_idx * i, sql_column *c)
+mvc_create_ic(mvc *m, sql_idx *i, sql_column *c)
 {
 	int res = LOG_OK;
 
@@ -1176,6 +1176,16 @@ mvc_create_ic(mvc *m, sql_idx * i, sql_column *c)
 		create_sql_ic(m->store, m->sa, i, c);
 	else
 		res = sql_trans_create_ic(m->session->tr, i, c);
+	return res;
+}
+
+int
+mvc_create_idx_done(mvc *m, sql_idx *i)
+{
+	int res = LOG_OK;
+
+	(void) m;
+	(void) create_sql_idx_done(i);
 	return res;
 }
 
