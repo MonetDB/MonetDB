@@ -16,7 +16,7 @@ select 1 from t0 join t1 on sql_min(true, t1.tc0 between rtrim(t0.tc0) and 'a')
 
 query I rowsort
 select cast("isauuid"(t1.tc0) as int) from t0 full outer join t1 on
-not (sql_min(not ((interval '505207731' day) in (interval '1621733891' day)), (nullif(t0.tc0, t1.tc0)) between asymmetric (rtrim(t0.tc0)) and (cast((r'_7') in (r'', t0.tc0) as string(891)))))
+not (sql_min(not ((interval '505207731' day) in (interval '1621733891' day)), (nullif(t0.tc0, t1.tc0)) between asymmetric (rtrim(t0.tc0)) and (cast(('_7') in ('', t0.tc0) as string(891)))))
 ----
 NULL
 NULL
@@ -154,11 +154,11 @@ COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 55100204380800.000
 
 query T rowsort
-SELECT ALL t1.tc0 FROM t2, t1 FULL OUTER JOIN t0 ON TRUE WHERE (ascii(ltrim(replace(r'', r'l/', r'(')))) IS NOT NULL
+SELECT ALL t1.tc0 FROM t2, t1 FULL OUTER JOIN t0 ON TRUE WHERE (ascii(ltrim(replace('', 'l/', '(')))) IS NOT NULL
 ----
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace(r'', r'l/', r'(')))) IS NOT NULL AS INT) as count FROM t2, t1 FULL OUTER JOIN t0 ON TRUE) as res
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace('', 'l/', '(')))) IS NOT NULL AS INT) as count FROM t2, t1 FULL OUTER JOIN t0 ON TRUE) as res
 ----
 0
 
@@ -178,7 +178,7 @@ statement ok
 create view v0(vc0) as (values (0.6686823))
 
 statement ok
-create view v5(vc0) as (values ("concat"(r'-730017219', r'0.232551533113189')))
+create view v5(vc0) as (values ("concat"('-730017219', '0.232551533113189')))
 
 query I rowsort
 SELECT 1 FROM v0 RIGHT OUTER JOIN v5 ON 'pBU' <= ifthenelse(NOT TRUE, v5.vc0, v5.vc0)
@@ -186,8 +186,8 @@ SELECT 1 FROM v0 RIGHT OUTER JOIN v5 ON 'pBU' <= ifthenelse(NOT TRUE, v5.vc0, v5
 1
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST("isauuid"(splitpart(CAST(((-1206869754)|(-1610043466)) AS STRING(528)), r'0.7805510128618084', 985907011)) AS INT) as count
-FROM v0 RIGHT OUTER JOIN v5 ON ((r'pBU')<=(ifthenelse(NOT (sql_min(TRUE, TRUE)), lower(v5.vc0), "concat"(v5.vc0, v5.vc0))))) as res
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST("isauuid"(splitpart(CAST(((-1206869754)|(-1610043466)) AS STRING(528)), '0.7805510128618084', 985907011)) AS INT) as count
+FROM v0 RIGHT OUTER JOIN v5 ON (('pBU')<=(ifthenelse(NOT (sql_min(TRUE, TRUE)), lower(v5.vc0), "concat"(v5.vc0, v5.vc0))))) as res
 ----
 0
 
@@ -223,15 +223,15 @@ select 1 from v4, v3 where false and true > v3.vc0
 ----
 
 statement ok
-create or replace view v3(vc0) as ((select all ((r'g')not like("right"(case -1977591239 when -1665424052 then r'0.320466856902225' else r'' end, + (-526084344)))) where false) except
-all (select true where ((((greatest(r'', r'967262854'))ilike(upper(r'57284321'))))and(case - (-1814800471) when ((0.15968560343908733134554722710163332521915435791015625)*(87))
-then "isauuid"(r'HS''HᏮCb') when least(0.2907223, 0.5006662) then ((false)or(false)) when - (0.13854998927956396759242352345609106123447418212890625) then cast(false as boolean) end))))
+create or replace view v3(vc0) as ((select all (('g')not like("right"(case -1977591239 when -1665424052 then '0.320466856902225' else '' end, + (-526084344)))) where false) except
+all (select true where ((((greatest('', '967262854'))ilike(upper('57284321'))))and(case - (-1814800471) when ((0.15968560343908733134554722710163332521915435791015625)*(87))
+then "isauuid"('HS''HᏮCb') when least(0.2907223, 0.5006662) then ((false)or(false)) when - (0.13854998927956396759242352345609106123447418212890625) then cast(false as boolean) end))))
 
 statement ok
-create or replace view v4(vc0) as ((select distinct 102 where (((("isauuid"(least(r'DT*', r'')))and(not (coalesce(false, false)))))and(not (case when 18602 then true end)))) union distinct (select cot(cast(nullif(20639, 31260) as real))))
+create or replace view v4(vc0) as ((select distinct 102 where (((("isauuid"(least('DT*', '')))and(not (coalesce(false, false)))))and(not (case when 18602 then true end)))) union distinct (select cot(cast(nullif(20639, 31260) as real))))
 
 query T rowsort
-select all t2.tc0 from v4, v3 full outer join t2 on "isauuid"(r'1870603931') cross join t0 where ((not (not ((r'\tR') is null)))and(((true)>(sql_min("isauuid"(r''), v3.vc0)))))
+select all t2.tc0 from v4, v3 full outer join t2 on "isauuid"('1870603931') cross join t0 where ((not (not (('\tR') is null)))and(((true)>(sql_min("isauuid"(''), v3.vc0)))))
 ----
 
 statement ok
@@ -250,7 +250,7 @@ statement ok
 create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551856816223651236441583023406565189361572265625, 0.5695062)))), null)
 
 query I rowsort
-select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and (r'0.43353835334391844'))) as res
+select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and ('0.43353835334391844'))) as res
 ----
 5
 
@@ -342,22 +342,22 @@ COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1970-01-19
 
 statement ok
-create view v0(vc0) as ((select least(r'KZu', trim(case interval '4' day when interval '3' day then r'8|' when interval '3' day then null end)))
-intersect distinct (select distinct nullif(ifthenelse((3) not in (2.33, 4.02, -4), r'J{⹾<PBj‣r',
-cast(case when 62 then 0.34 when 51 then 0.3 when 34 then 0.4 end as string(274))), sql_max(r'5,賓',
+create view v0(vc0) as ((select least('KZu', trim(case interval '4' day when interval '3' day then '8|' when interval '3' day then null end)))
+intersect distinct (select distinct nullif(ifthenelse((3) not in (2.33, 4.02, -4), 'J{⹾<PBj‣r',
+cast(case when 62 then 0.34 when 51 then 0.3 when 34 then 0.4 end as string(274))), sql_max('5,賓',
 cast(case 3 when 43 then 44 when 0.23 then 0.3 end as string)))))
 
 statement ok
 create view v1(vc0) as ((select abs(-4)) intersect distinct (select distinct + (radians(abs(0.4))) group by 3))
 
 statement ok
-create view v2(vc0) as (select cast((r'|S4 흮,8GQ') not between symmetric (r'3840') and (r'n') as int))
+create view v2(vc0) as (select cast(('|S4 흮,8GQ') not between symmetric ('3840') and ('n') as int))
 
 statement ok
 create view v3(vc0) as (values (cast(((abs(0.11))-(((round(0.3, 3))<<(((-3)+(5)))))) as decimal))) with check option
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t1, v2 FULL OUTER JOIN t0 ON "isauuid"(r'2A') NATURAL JOIN v1 NATURAL JOIN v3) as res
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t1, v2 FULL OUTER JOIN t0 ON "isauuid"('2A') NATURAL JOIN v1 NATURAL JOIN v3) as res
 ----
 NULL
 
@@ -368,7 +368,7 @@ statement ok
 START TRANSACTION
 
 statement ok
-create view v7(vc0, vc1) as (select all 56, replace(r'0.0074401190660642325', "insert"(r'0.9471086251830542', null, 1872651914, r'(Ga_'), r'2]vK') where not (not (false))) with check option
+create view v7(vc0, vc1) as (select all 56, replace('0.0074401190660642325', "insert"('0.9471086251830542', null, 1872651914, '(Ga_'), '2]vK') where not (not (false))) with check option
 
 query I rowsort
 select 1 from v7 where not (((cast(scale_up(4751, -1823537248) as string(86)))not like(v7.vc1)))
