@@ -9810,6 +9810,7 @@ need_optimization(mvc *sql, sql_rel *rel)
 {
 	if (rel && rel->card <= CARD_ATOM) {
 		if (is_insert(rel->op)) {
+			int opt = 0;
 			sql_rel *l = (sql_rel *) rel->l;
 
 			if (is_basetable(l->op)) {
@@ -9820,9 +9821,9 @@ need_optimization(mvc *sql, sql_rel *rel)
 				assert(!isRemote(t) && !isReplicaTable(t));
 				/* If the plan has a merge table or a child of a partitioned one, then optimization cannot be skipped */
 				if (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))))
-					return 1;
+					opt = 1;
 			}
-			return rel->r ? need_optimization(sql, rel->r) : 0;
+			return rel->r ? MAX(need_optimization(sql, rel->r), opt) : opt;
 		}
 		if (is_simple_project(rel->op))
 			return rel->l ? need_optimization(sql, rel->l) : 0;
