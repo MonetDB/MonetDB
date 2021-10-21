@@ -521,5 +521,6 @@ sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_depe
 extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz);
 extern BAT *DICTdecompress_(BAT *o, BAT *u);
 extern int DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict);
+extern int DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict);
 
 #endif /*SQL_STORAGE_H */

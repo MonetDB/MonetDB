@@ -960,3 +960,105 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 	*noffsets = n;
 	return 0;
 }
+
+static sht *
+DICTenlarge_vals(bte *offsets, BUN cnt, BUN sz)
+{
+	sht *n = GDKmalloc(sizeof(sht) * sz);
+
+	if (!n)
+		return NULL;
+	unsigned char *o = (unsigned char*)offsets;
+	unsigned short *no = (unsigned short*)n;
+	for(BUN i = 0; i<cnt; i++) {
+		no[i] = o[i];
+	}
+	return n;
+}
+
+int
+DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
+{
+	int tt = BATcount(dict)>=256?TYPE_sht:TYPE_bte;
+	BUN sz = cnt, nf = 0;
+	void *n = GDKmalloc((tt==TYPE_bte?sizeof(bte):sizeof(sht)) * sz);
+
+	if (!n || BAThash(dict) != GDK_SUCCEED) {
+		GDKfree(n);
+		return -1;
+	}
+
+	int varsized = ATOMvarsized(dict->ttype);
+	int wd = (varsized?sizeof(char*):dict->twidth);
+	char *vp = vals;
+	BATiter ui = bat_iterator_nolock(dict);
+	if (tt == TYPE_bte) {
+		bte *op = (bte*)n;
+		for(BUN i = 0; i<sz; i++, vp += wd) {
+			BUN up = 0;
+			int f = 0;
+			void *val = (void*)vp;
+			if (varsized)
+				val = *(void**)vp;
+			HASHloop(ui, ui.b->thash, up, val) {
+				op[i] = (bte)up;
+				f = 1;
+			}
+			if (!f) {
+				if (BATcount(dict) >= 255) {
+					sht *nn = DICTenlarge_vals(n, i, sz);
+					GDKfree(n);
+					if (!nn)
+						return -1;
+					n = nn;
+					nf = i;
+					tt = TYPE_sht;
+					break;
+				} else {
+					if (BUNappend(dict, val, true) != GDK_SUCCEED ||
+					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
+						assert(0);
+						GDKfree(n);
+						return -1;
+					}
+					/* reinitialize */
+					ui = bat_iterator_nolock(dict);
+					op[i] = BATcount(dict)-1;
+				}
+			}
+		}
+	}
+	if (tt == TYPE_sht) {
+		sht *op = (sht*)n;
+		for(BUN i = nf; i<sz; i++) {
+			BUN up = 0;
+			int f = 0;
+			void *val = (void*)vp;
+			if (varsized)
+				val = *(void**)vp;
+			HASHloop(ui, ui.b->thash, up, val) {
+				op[i] = (sht)up;
+				f = 1;
+			}
+			if (!f) {
+				if (BATcount(dict) >= (64*1024)-1) {
+						assert(0);
+					GDKfree(n);
+					return -2;
+				} else {
+					if (BUNappend(dict, val, true) != GDK_SUCCEED ||
+					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
+						assert(0);
+						GDKfree(n);
+						return -1;
+					}
+					/* reinitialize */
+					ui = bat_iterator_nolock(dict);
+					op[i] = BATcount(dict)-1;
+				}
+			}
+		}
+	}
+	*noffsets = n;
+	return 0;
+}
