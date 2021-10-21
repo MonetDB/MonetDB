@@ -986,6 +986,18 @@ function_error_string(mvc *sql, const char *schema, const char *fname, list *exp
 					schema ? "'.":"", fname, arg_list ? arg_list : "");
 }
 
+static void /* keep updating the label count */
+try_update_label_count(mvc *sql, const char *label)
+{
+	if (label && label[0] == '%' && isdigit(label[1])) {
+		const char *begin = label + 1;
+		char *eptr = NULL;
+		unsigned int value = (unsigned int) strtol(begin, &eptr, 10);
+		if (eptr && eptr[0] == '\0' && begin != eptr)
+			sql->label = MAX(sql->label, value);
+	}
+}
+
 static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
@@ -1035,6 +1047,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 			} else if (!exp) {
 				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, 0, cname[0] == '%');
+			}
+			if (exp) {
+				try_update_label_count(sql, tname);
+				try_update_label_count(sql, cname);
 			}
 		}
 		break;
@@ -1436,8 +1452,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 							} else {
 								res->digits = 0;
 							}
-						} else if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
-							return NULL;
+						}
 					} else if (list_length(exps) > 2) {
 						if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
 							return NULL;
@@ -1486,6 +1501,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (!exp && rrel)
 			exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
 		*e = old;
+		if (exp)
+			try_update_label_count(sql, var_cname);
 		skipWS(r,pos);
 	}
 
@@ -1553,6 +1570,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		(*pos)++;
 		if (r[*pos] != '.') {
 			cname = tname;
+			tname = NULL;
 			exp_setname(sql->sa, exp, NULL, cname);
 			skipWS(r, pos);
 		} else {
@@ -1564,6 +1582,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			skipWS(r, pos);
 			exp_setname(sql->sa, exp, tname, cname);
 		}
+		try_update_label_count(sql, tname);
+		try_update_label_count(sql, cname);
 	}
 	return exp;
 }
@@ -1892,6 +1912,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					set_basecol(next);
 					append(outputs, next);
 					m = m->next;
+					try_update_label_count(sql, nrname);
+					try_update_label_count(sql, ncname);
 					skipWS(r, pos);
 				}
 				if (r[*pos] != ']')
