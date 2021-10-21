@@ -151,6 +151,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT 2 FROM rt3 WHERE (rt3.c0 BETWEEN rt3.c0 AND rt3.c0) IS NULL;") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT upper(count(*)) FROM t3;") \
+        .assertSucceeded().assertDataResultMatch([("6",)])
+    cli.execute("SELECT upper(count(*)) FROM rt3;") \
+        .assertSucceeded().assertDataResultMatch([("6",)])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN
