@@ -4352,8 +4352,11 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 		int cnt = 1;
 		do {
 			// check if already added
-			if (strcmp(callback->name, p->name) == 0)
+			if (strcmp(callback->name, p->name) == 0) {
+				MT_lock_unset(&GDKCallbackListLock);
+				GDKfree(callback);
 				return GDK_FAIL;
+			}
 			if (p->next == NULL) {
 			   	p->next = callback;
 				p = callback->next;
