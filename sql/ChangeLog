@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Oct 21 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Extended SQL system catalog with lookup table sys.fkey_actions and
+  view sys.fkeys to provide user friendly querying of existing foreign
+  keys and their ON UPDATE and ON DELETE referential action specifications.
+
 * Mon Oct 18 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - The COPY INTO command would use the double quote as the default string
   delimiter to produce output, while COPY FROM would use the empty string.

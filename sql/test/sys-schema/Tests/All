@@ -9,6 +9,8 @@ check_MaxStrLength_violations
 HAVE_GEOM?geom_tables_checks
 HAVE_NETCDF?netcdf_tables_checks
 
+fkeys
+
 webExamplesLogicalFunctionsOperators
 webExamplesComparisonFunctionsOperators
 webExamplesCastFunctionsOperators
