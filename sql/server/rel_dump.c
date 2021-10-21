@@ -990,10 +990,9 @@ static void /* keep updating the label count */
 try_update_label_count(mvc *sql, const char *label)
 {
 	if (label && label[0] == '%' && isdigit(label[1])) {
-		const char *begin = label + 1;
 		char *eptr = NULL;
-		unsigned int value = (unsigned int) strtol(begin, &eptr, 10);
-		if (eptr && eptr[0] == '\0' && begin != eptr)
+		unsigned int value = (unsigned int) strtol(label + 1, &eptr, 10);
+		if (eptr && eptr[0] == '\0')
 			sql->label = MAX(sql->label, value);
 	}
 }
