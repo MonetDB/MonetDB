@@ -1392,7 +1392,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 							res->digits = t->digits;
 							res->scale = t->scale;
-						}
+						} else if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
+							return NULL;
 					} else if (list_length(exps) == 2) {
 						sql_exp *l = exps->h->data;
 						sql_exp *r = exps->h->next->data;
@@ -1435,7 +1436,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 							} else {
 								res->digits = 0;
 							}
-						}
+						} else if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
+							return NULL;
 					} else if (list_length(exps) > 2) {
 						if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
 							return NULL;
