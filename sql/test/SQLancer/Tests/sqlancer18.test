@@ -348,6 +348,9 @@ select greatest(1, (select (select vy.vc0 from t1) from vy))
 statement ok
 DROP VIEW vy
 
+statement error 42000!SELECT: subquery uses ungrouped column "vz.c0" from outer query
+SELECT 1 FROM (select 0,1) vz(c0,c1) GROUP BY c1 HAVING sum(1) < ANY(SELECT vz.c0 FROM t1)
+
 statement ok
 DROP TABLE t1
 
