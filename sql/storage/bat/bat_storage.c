@@ -1634,57 +1634,59 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 static BAT *
 dict_append_bat(sql_delta *bat, BAT *i)
 {
-		BAT *newoffsets = NULL;
-		BAT *u = temp_descriptor(bat->cs.ebid);
+	BAT *newoffsets = NULL;
+	BAT *u = temp_descriptor(bat->cs.ebid);
 
-		if (!u)
-			return NULL;
-		BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
-		if (DICTprepare4append(&newoffsets, i, u) < 0) {
-					assert(0);
-		} else {
-			/* returns new offset bat (ie to be appended), possibly with larger type ! */
-			if (BATcount(u) >= max_cnt) {
-				if (max_cnt == 64*1024) { /* decompress */
-					BAT *b = temp_descriptor(bat->cs.bid);
-					BAT *n = b?DICTdecompress_(b , u):NULL;
-					bat_destroy(b);
-					if (!n) {
-						bat_destroy(u);
-						bat_destroy(n);
-						return NULL;
-					}
-					/* TODO change storage type */
-					if (bat->cs.bid)
-						temp_destroy(bat->cs.bid);
-					bat->cs.bid = temp_create(n);
+	if (!u)
+		return NULL;
+	BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
+	if (DICTprepare4append(&newoffsets, i, u) < 0) {
+		assert(0);
+	} else {
+		/* returns new offset bat (ie to be appended), possibly with larger type ! */
+		if (BATcount(u) >= max_cnt) {
+			if (max_cnt == 64*1024) { /* decompress */
+				BAT *b = temp_descriptor(bat->cs.bid);
+				BAT *n = b?DICTdecompress_(b , u):NULL;
+				bat_destroy(b);
+				assert(newoffsets == NULL);
+				if (!n) {
+					bat_destroy(u);
 					bat_destroy(n);
-					if (bat->cs.ebid)
-						temp_destroy(bat->cs.ebid);
-					bat->cs.ebid = 0;
-					bat->cs.st = ST_DEFAULT;
-					bat->cs.cleared = true;
-				} else {
-					BAT *b = temp_descriptor(bat->cs.bid);
-					BAT *n = b?DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i)):NULL;
-					bat_destroy(b);
-					if (!n) {
-						bat_destroy(u);
-						bat_destroy(n);
-						return NULL;
-					}
-					if (bat->cs.bid)
-						temp_destroy(bat->cs.bid);
-					bat->cs.bid = temp_create(n);
-					bat->cs.cleared = true;
-					i = newoffsets;
+					return NULL;
 				}
-			} else { /* append */
+				/* TODO change storage type */
+				if (bat->cs.bid)
+					temp_destroy(bat->cs.bid);
+				bat->cs.bid = temp_create(n);
+				bat_destroy(n);
+				if (bat->cs.ebid)
+					temp_destroy(bat->cs.ebid);
+				bat->cs.ebid = 0;
+				bat->cs.st = ST_DEFAULT;
+				bat->cs.cleared = true;
+			} else {
+				BAT *b = temp_descriptor(bat->cs.bid);
+				BAT *n = b?DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i)):NULL;
+				bat_destroy(b);
+				if (!n) {
+					bat_destroy(newoffsets);
+					bat_destroy(u);
+					bat_destroy(n);
+					return NULL;
+				}
+				if (bat->cs.bid)
+					temp_destroy(bat->cs.bid);
+				bat->cs.bid = temp_create(n);
+				bat->cs.cleared = true;
 				i = newoffsets;
 			}
+		} else { /* append */
+			i = newoffsets;
 		}
-		bat_destroy(u);
-		return i;
+	}
+	bat_destroy(u);
+	return i;
 }
 
 static int
@@ -1735,12 +1737,84 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 	return (err)?LOG_ERR:LOG_OK;
 }
 
+static void *
+dict_append_val(sql_delta *bat, void *i, BUN cnt)
+{
+	void *newoffsets = NULL;
+	BAT *u = temp_descriptor(bat->cs.ebid);
+
+	if (!u)
+		return NULL;
+	BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
+	if (DICTprepare4append_vals(&newoffsets, i, cnt, u) < 0) {
+				assert(0);
+	} else {
+		/* returns new offset bat (ie to be appended), possibly with larger type ! */
+		if (BATcount(u) >= max_cnt) {
+			if (max_cnt == 64*1024) { /* decompress */
+				BAT *b = temp_descriptor(bat->cs.bid);
+				BAT *n = b?DICTdecompress_(b , u):NULL;
+				bat_destroy(b);
+				assert(newoffsets == NULL);
+				if (!n) {
+					bat_destroy(u);
+					bat_destroy(n);
+					return NULL;
+				}
+				/* TODO change storage type */
+				if (bat->cs.bid)
+					temp_destroy(bat->cs.bid);
+				bat->cs.bid = temp_create(n);
+				bat_destroy(n);
+				if (bat->cs.ebid)
+					temp_destroy(bat->cs.ebid);
+				bat->cs.ebid = 0;
+				bat->cs.st = ST_DEFAULT;
+				bat->cs.cleared = true;
+			} else {
+				BAT *b = temp_descriptor(bat->cs.bid);
+				BAT *n = b?DICTenlarge(b, BATcount(b), BATcount(b) + cnt):NULL;
+				bat_destroy(b);
+				if (!n) {
+					GDKfree(newoffsets);
+					bat_destroy(u);
+					bat_destroy(n);
+					return NULL;
+				}
+				if (bat->cs.bid)
+					temp_destroy(bat->cs.bid);
+				bat->cs.bid = temp_create(n);
+				bat->cs.cleared = true;
+				i = newoffsets;
+			}
+		} else { /* append */
+			i = newoffsets;
+		}
+	}
+	bat_destroy(u);
+	return i;
+}
+
 static int
 delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, BUN cnt)
 {
+	void *oi = i;
+	BAT *b;
 	lock_column(tr->store, id);
-	BAT *b = temp_descriptor(bat->cs.bid);
+
+	if (bat->cs.st == ST_DICT) {
+		/* possibly a new array is returned */
+		i = dict_append_val(bat, i, cnt);
+		if (!i) {
+			unlock_column(tr->store, id);
+			return LOG_ERR;
+		}
+	}
+
+	b = temp_descriptor(bat->cs.bid);
 	if (b == NULL) {
+		if (i != oi)
+			GDKfree(i);
 		unlock_column(tr->store, id);
 		return LOG_ERR;
 	}
@@ -1749,6 +1823,8 @@ delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, B
 		size_t ccnt = ((offset+cnt) > bcnt)? (bcnt - offset):cnt;
 		if (BUNreplacemultiincr(b, offset, i, ccnt, true) != GDK_SUCCEED) {
 			bat_destroy(b);
+			if (i != oi)
+				GDKfree(i);
 			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
@@ -1758,10 +1834,12 @@ delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, B
 	if (cnt) {
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
-			lng i, d = offset - BATcount(b);
-			for(i=0;i<d;i++) {
+			lng j, d = offset - BATcount(b);
+			for(j=0;j<d;j++) {
 				if (BUNappend(b, tv, true) != GDK_SUCCEED) {
 					bat_destroy(b);
+					if (i != oi)
+						GDKfree(i);
 					unlock_column(tr->store, id);
 					return LOG_ERR;
 				}
@@ -1769,11 +1847,15 @@ delta_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, void *i, B
 		}
 		if (BUNappendmulti(b, i, cnt, true) != GDK_SUCCEED) {
 			bat_destroy(b);
+			if (i != oi)
+				GDKfree(i);
 			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
 	bat_destroy(b);
+	if (i != oi)
+		GDKfree(i);
 	unlock_column(tr->store, id);
 	return LOG_OK;
 }
