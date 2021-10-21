@@ -51,10 +51,10 @@ static struct PIPELINES {
 	 "optimizer.dict();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
@@ -94,7 +94,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -102,6 +101,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 	{"default_fast",
 	 "optimizer.defaultfast()",
@@ -135,7 +135,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -144,6 +143,7 @@ static struct PIPELINES {
 	 "optimizer.oltp();"
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
@@ -174,7 +174,6 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -182,6 +181,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
@@ -217,7 +217,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -225,6 +224,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
@@ -260,7 +260,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -268,6 +267,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
