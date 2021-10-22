@@ -292,6 +292,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,),(True,),(None,),(None,),(None,),(None,)])
     cli.execute("SELECT CAST(2 AS REAL) BETWEEN 2 AND (rt5.c0 / rt5.c0)^5 AS X FROM rt5 ORDER BY x NULLS LAST;") \
         .assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,),(True,),(None,),(None,),(None,),(None,)])
+    cli.execute("SELECT count(*) FROM t3 GROUP BY 1 + least(2, round(0.68, t3.c0));") \
+        .assertSucceeded().assertDataResultMatch([(1,), (5,)])
+    cli.execute("SELECT count(*) FROM rt3 GROUP BY 1 + least(2, round(0.68, rt3.c0));") \
+        .assertSucceeded().assertDataResultMatch([(1,), (5,)])
     cli.execute("ROLLBACK;")
 
     cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")

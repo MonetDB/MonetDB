@@ -44,6 +44,10 @@ dependency_types_dependency_type_name_unique
 0
 dependency_types_dependency_type_name_unique
 1
+fkey_actions_action_id_pkey
+0
+fkey_actions_action_id_pkey
+0
 function_languages_language_id_pkey
 0
 function_languages_language_id_pkey
@@ -122,6 +126,10 @@ dependency_types_dependency_type_name_unique
 0
 dependency_types_dependency_type_name_unique
 1
+fkey_actions_action_id_pkey
+0
+fkey_actions_action_id_pkey
+0
 function_languages_language_id_pkey
 0
 function_languages_language_id_pkey
