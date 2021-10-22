@@ -28,6 +28,9 @@ with SQLTestCase() as cli:
     CREATE TABLE "t5" ("c0" DECIMAL(18,3),"c1" BOOLEAN);
     INSERT INTO "t5" VALUES (0.928, NULL),(0.974, NULL),(NULL, false),(3.000, NULL),(NULL, false),(NULL, false),(NULL, true),(0.897, NULL),
     (0.646, NULL),(0.145, true),(0.848, false),(NULL, false);
+    CREATE TABLE "t6" ("c1" CLOB);
+    INSERT INTO "t6" VALUES('3'), ('8ጮk|1*'), ('27'), ('Vrx^qA齀'), ('J'), ('18'), ('>*4嘁pAP'), ('+Jm*W0{'), ('>V鷓'), ('BW5z'), ('.#OJruk'),
+    ('lU1覃Nlm'), (NULL), ('968786590');
     COMMIT;
 
     START TRANSACTION;
@@ -36,7 +39,8 @@ with SQLTestCase() as cli:
     CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t3';
     CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t4';
     CREATE REMOTE TABLE "rt5" ("c0" DECIMAL(18,3),"c1" BOOLEAN) ON 'mapi:monetdb://localhost:%s/%s/sys/t5';
-    COMMIT;""" % (port, db, port, db, port, db, port, db, port, db)).assertSucceeded()
+    CREATE REMOTE TABLE "rt6" ("c1" CLOB) ON 'mapi:monetdb://localhost:%s/%s/sys/t6';
+    COMMIT;""" % (port, db, port, db, port, db, port, db, port, db, port, db)).assertSucceeded()
 
     cli.execute("START TRANSACTION;")
     cli.execute('SELECT json."integer"(JSON \'1\') FROM t3;') \
@@ -300,6 +304,12 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT 1 FROM rt3 INNER JOIN (SELECT 1 FROM t2) AS sub0(c0) ON ((2) IN (3, 6)) WHERE 4 < least(NULL, least(rt3.c0, rt3.c0));") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT c1 FROM t6;") \
+        .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
+        ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
+    cli.execute("SELECT c1 FROM rt6;") \
+        .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
+        ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
     cli.execute("ROLLBACK;")
 
     cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
@@ -316,11 +326,13 @@ with SQLTestCase() as cli:
     DROP TABLE rt3;
     DROP TABLE rt4;
     DROP TABLE rt5;
+    DROP TABLE rt6;
     DROP TABLE t0;
     DROP TABLE t1;
     DROP TABLE t2;
     DROP TABLE t3;
     DROP TABLE t4;
     DROP TABLE t5;
+    DROP TABLE t6;
     DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()
