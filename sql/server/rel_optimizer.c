@@ -1443,7 +1443,7 @@ static list *
 exps_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, list *exps, int depth)
 {
 	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return exps;
 
 	for (node *n = exps->h; n; n = n->next)
 		if ((n->data = exp_push_single_func_down(v, rel, ol, or, n->data, depth)) == NULL)
@@ -1455,7 +1455,7 @@ static sql_exp *
 exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sql_exp *e, int depth)
 {
 	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return e;
 
 	switch(e->type) {
 	case e_cmp: {
@@ -7924,7 +7924,7 @@ static sql_rel *
 rel_split_project(visitor *v, sql_rel *rel, int top)
 {
 	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return rel;
 
 	if (!rel)
 		return NULL;
@@ -8042,7 +8042,7 @@ static sql_rel *
 rel_split_select(visitor *v, sql_rel *rel, int top)
 {
 	if (mvc_highwater(v->sql))
-		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return rel;
 
 	if (!rel)
 		return NULL;
