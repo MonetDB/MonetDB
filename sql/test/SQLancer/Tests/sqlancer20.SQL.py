@@ -27,6 +27,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(Decimal('14.6'),)])
     cli.execute("SELECT scale_down(146.0, 1) FROM rt1 where rt1.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(Decimal('14.6'),)])
+    cli.execute("SELECT greatest(\"lower\"('D4Idf '), 'x x') FROM t1 where t1.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("x x",)])
+    cli.execute("SELECT greatest(\"lower\"('D4Idf '), 'x x') FROM rt1 where rt1.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("x x",)])
 
     cli.execute("""
     START TRANSACTION;
