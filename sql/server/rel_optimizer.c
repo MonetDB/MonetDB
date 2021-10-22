@@ -1590,8 +1590,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 {
 	sql_rel *r = rel->l;
 
-	assert(is_groupby(rel->op));
-	if (!rel_is_ref(rel) && list_empty(rel->r) &&
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && list_empty(rel->r) &&
 		r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
 		/* currently only single count aggregation is handled, no other projects or aggregation */
 		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
