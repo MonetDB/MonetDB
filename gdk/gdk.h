@@ -2350,7 +2350,7 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + 1 + CHECK_QRY_TIMEOUT_MASK) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
