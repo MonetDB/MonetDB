@@ -9662,7 +9662,7 @@ rel_push_func_and_select_down(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-optimize_rel(mvc *sql, sql_rel *rel, visitor *v, global_props *gp)
+optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 {
 	int level = *(int*)v->data;
 
@@ -9750,7 +9750,7 @@ optimize_rel(mvc *sql, sql_rel *rel, visitor *v, global_props *gp)
 
 	/* Remove unused expressions */
 	if (level <= 0)
-		rel = rel_dce(sql, rel);
+		rel = rel_dce(v->sql, rel);
 
 	if (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
 		rel = rel_visitor_topdown(v, rel, &rel_push_func_and_select_down);
@@ -9847,7 +9847,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		gp = (global_props) {.cnt = {0},};
 		rel_properties(sql, &gp, rel); /* collect relational tree properties */
 		if (opt == 2) {
-			rel = optimize_rel(sql, rel, &v, &gp);
+			rel = optimize_rel(&v, rel, &gp);
 		} else { /* the merge table rewriter may have to run */
 			rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
 		}

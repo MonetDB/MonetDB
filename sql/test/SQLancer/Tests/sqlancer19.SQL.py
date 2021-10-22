@@ -292,10 +292,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,),(True,),(None,),(None,),(None,),(None,)])
     cli.execute("SELECT CAST(2 AS REAL) BETWEEN 2 AND (rt5.c0 / rt5.c0)^5 AS X FROM rt5 ORDER BY x NULLS LAST;") \
         .assertSucceeded().assertDataResultMatch([(True,),(True,),(True,),(True,),(True,),(True,),(True,),(None,),(None,),(None,),(None,)])
-    cli.execute("SELECT count(*) FROM t3 GROUP BY 1 + least(2, round(0.68, t3.c0));") \
+    cli.execute("SELECT count(*) AS mx FROM t3 GROUP BY 1 + least(2, round(0.68, t3.c0)) ORDER BY mx;") \
         .assertSucceeded().assertDataResultMatch([(1,), (5,)])
-    cli.execute("SELECT count(*) FROM rt3 GROUP BY 1 + least(2, round(0.68, rt3.c0));") \
+    cli.execute("SELECT count(*) AS mx FROM rt3 GROUP BY 1 + least(2, round(0.68, rt3.c0)) ORDER BY mx;") \
         .assertSucceeded().assertDataResultMatch([(1,), (5,)])
+    cli.execute("SELECT 1 FROM t3 INNER JOIN (SELECT 1 FROM t2) AS sub0(c0) ON ((2) IN (3, 6)) WHERE 4 < least(NULL, least(t3.c0, t3.c0));") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM rt3 INNER JOIN (SELECT 1 FROM t2) AS sub0(c0) ON ((2) IN (3, 6)) WHERE 4 < least(NULL, least(rt3.c0, rt3.c0));") \
+        .assertSucceeded().assertDataResultMatch([])
     cli.execute("ROLLBACK;")
 
     cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
