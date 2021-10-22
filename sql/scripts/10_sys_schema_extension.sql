@@ -409,6 +409,35 @@ ALTER TABLE sys.key_types SET READ ONLY;
 GRANT SELECT ON sys.key_types TO PUBLIC;
 
 
+CREATE TABLE sys.fkey_actions (
+    action_id   SMALLINT NOT NULL PRIMARY KEY,
+    action_name VARCHAR(15) NOT NULL);
+
+-- Values taken from sql/include/sql_catalog.h see sql_fkey
+-- and sql/server/sql_parser.y  search for: ref_action:
+INSERT INTO sys.fkey_actions (action_id, action_name) VALUES
+  (0, 'NO ACTION'),
+  (1, 'CASCADE'),
+  (2, 'RESTRICT'),
+  (3, 'SET NULL'),
+  (4, 'SET DEFAULT');
+
+ALTER TABLE sys.fkey_actions SET READ ONLY;
+GRANT SELECT ON sys.fkey_actions TO PUBLIC;
+
+
+CREATE VIEW sys.fkeys AS
+SELECT id, table_id, type, name, rkey, update_action_id, upd.action_name as update_action, delete_action_id, del.action_name as delete_action FROM (
+ SELECT id, table_id, type, name, rkey, cast((("action" >> 8) & 255) as smallint) as update_action_id, cast(("action" & 255) as smallint) AS delete_action_id FROM sys.keys WHERE type = 2
+ UNION ALL
+ SELECT id, table_id, type, name, rkey, cast((("action" >> 8) & 255) as smallint) as update_action_id, cast(("action" & 255) as smallint) AS delete_action_id FROM tmp.keys WHERE type = 2
+) AS fks
+JOIN sys.fkey_actions upd ON fks.update_action_id = upd.action_id
+JOIN sys.fkey_actions del ON fks.delete_action_id = del.action_id;
+
+GRANT SELECT ON sys.fkeys TO PUBLIC;
+
+
 CREATE TABLE sys.index_types (
     index_type_id   SMALLINT NOT NULL PRIMARY KEY,
     index_type_name VARCHAR(25) NOT NULL UNIQUE);
