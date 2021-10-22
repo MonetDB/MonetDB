@@ -986,15 +986,18 @@ function_error_string(mvc *sql, const char *schema, const char *fname, list *exp
 					schema ? "'.":"", fname, arg_list ? arg_list : "");
 }
 
-static void /* keep updating the label count */
+static unsigned int /* keep updating the label count */
 try_update_label_count(mvc *sql, const char *label)
 {
 	if (label && label[0] == '%' && isdigit(label[1])) {
 		char *eptr = NULL;
 		unsigned int value = (unsigned int) strtol(label + 1, &eptr, 10);
-		if (eptr && eptr[0] == '\0')
+		if (eptr && eptr[0] == '\0') {
 			sql->label = MAX(sql->label, value);
+			return value;
+		}
 	}
+	return 0;
 }
 
 static sql_exp*
@@ -1046,10 +1049,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 			} else if (!exp) {
 				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, 0, cname[0] == '%');
-			}
-			if (exp) {
-				try_update_label_count(sql, tname);
-				try_update_label_count(sql, cname);
 			}
 		}
 		break;
@@ -1500,8 +1499,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (!exp && rrel)
 			exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
 		*e = old;
-		if (exp)
-			try_update_label_count(sql, var_cname);
 		skipWS(r,pos);
 	}
 
@@ -1560,6 +1557,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {
+		unsigned int rlabel = 0, nlabel = 0;
 		(*pos)+=2;
 		skipWS(r, pos);
 
@@ -1581,8 +1579,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			skipWS(r, pos);
 			exp_setname(sql->sa, exp, tname, cname);
 		}
-		try_update_label_count(sql, tname);
-		try_update_label_count(sql, cname);
+		rlabel = try_update_label_count(sql, tname);
+		nlabel = try_update_label_count(sql, cname);
+		if (rlabel && rlabel == nlabel)
+			exp->alias.label = rlabel;
 	}
 	return exp;
 }
@@ -1911,8 +1911,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					set_basecol(next);
 					append(outputs, next);
 					m = m->next;
-					try_update_label_count(sql, nrname);
-					try_update_label_count(sql, ncname);
 					skipWS(r, pos);
 				}
 				if (r[*pos] != ']')
