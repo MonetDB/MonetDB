@@ -321,9 +321,9 @@ static str
 RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *local_table;
-	char *remoteuser;
-	char *passwd;
-	char *uri;
+	char *remoteuser = NULL;
+	char *passwd = NULL;
+	char *uri = NULL;
 	char *tmp;
 	char *ret;
 	str scen;
@@ -340,7 +340,10 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, &uri, &remoteuser, &passwd));
-
+	if (!remoteuser)
+		remoteuser = GDKstrdup("");
+	if (!passwd)
+		passwd = GDKstrdup("");
 	/* The password we just got is hashed. Add the byte \1 in front to
 	 * signal this fact to the mapi. */
 	size_t pwlen = strlen(passwd);
