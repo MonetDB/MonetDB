@@ -499,3 +499,19 @@ SELECT SUM(1) FROM t1, t1 as t2
 
 statement ok
 ROLLBACK
+
+statement ok
+CREATE TABLE "t0" ("c0" BIGINT,"c1" BOOLEAN)
+
+statement ok rowcount 16
+INSERT INTO "t0" VALUES (NULL, true),(1, true),(4, true),(NULL, true),(NULL, true),(NULL, false),(9, true),(-217, true),
+(2, true),(4, false),(3, true),(7, true),(3, NULL),(-24, true),(2, true),(9, false)
+
+statement error GDK reported error: BATsubcross: more than one match
+SELECT 6 = ANY(SELECT 1 FROM t0 GROUP BY (SELECT t0.c0)), CASE WHEN 'a' = (SELECT 'b' FROM t0) THEN (VALUES (1)) END
+
+statement error GDK reported error: BATsubcross: more than one match
+SELECT 6 = ANY(SELECT 1 FROM t0 GROUP BY (SELECT t0.c0)), CASE WHEN 'a' LIKE (SELECT 'b' FROM t0) THEN (VALUES (1)) END
+
+statement ok
+DROP TABLE t0
