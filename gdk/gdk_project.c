@@ -710,7 +710,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		r1i = bat_iterator(r1);
 		r2i = bat_iterator(r2);
 	}
-	bn = COLnew_intern(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1i.width : 0);
+	bn = COLnew2(l->hseqbase, ATOMtype(r1->ttype), lcount, TRANSIENT, stringtrick ? r1i.width : 0);
 	if (bn == NULL) {
 		goto doreturn;
 	}
@@ -965,7 +965,7 @@ BATprojectchain(BAT **bats)
 	bi = bat_iterator(b);
 	if (nonil && ATOMstorage(tpe) == TYPE_str && b->batRestricted == BAT_READ) {
 		stringtrick = true;
-		bn = COLnew_intern(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT, bi.width);
+		bn = COLnew2(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT, bi.width);
 		if (bn && bn->tvheap) {
 			/* no need to remove any files since they were
 			 * never created for this bat */
