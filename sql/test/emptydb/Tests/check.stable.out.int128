@@ -24,6 +24,7 @@
 \dSt sys.dependencies
 \dSt sys.dependency_types
 \dSt sys.dump_statements
+\dSt sys.fkey_actions
 \dSt sys.function_languages
 \dSt sys.function_types
 \dSt sys.functions
@@ -119,6 +120,7 @@
 \dSv sys.dump_triggers
 \dSv sys.dump_user_defined_types
 \dSv sys.environment
+\dSv sys.fkeys
 \dSv sys.fully_qualified_functions
 \dSv sys.geometry_columns
 \dSv sys.ids
@@ -397,6 +399,7 @@ SYSTEM TABLE  sys.db_user_info
 SYSTEM TABLE  sys.dependencies
 SYSTEM TABLE  sys.dependency_types
 SYSTEM TABLE  sys.dump_statements
+SYSTEM TABLE  sys.fkey_actions
 SYSTEM TABLE  sys.function_languages
 SYSTEM TABLE  sys.function_types
 SYSTEM TABLE  sys.functions
@@ -485,6 +488,7 @@ SYSTEM VIEW  sys.dump_tables
 SYSTEM VIEW  sys.dump_triggers
 SYSTEM VIEW  sys.dump_user_defined_types
 SYSTEM VIEW  sys.environment
+SYSTEM VIEW  sys.fkeys
 SYSTEM VIEW  sys.fully_qualified_functions
 SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.ids
@@ -968,6 +972,7 @@ CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
 CREATE TABLE "sys"."dump_statements" ("o" INTEGER, "s" CHARACTER LARGE OBJECT);
+CREATE TABLE "sys"."fkey_actions" ("action_id" SMALLINT NOT NULL, "action_name" VARCHAR(15) NOT NULL, CONSTRAINT "fkey_actions_action_id_pkey" PRIMARY KEY ("action_id"));
 CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, "language_keyword" VARCHAR(20), CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
 CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, "function_type_keyword" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));
 CREATE TABLE "sys"."functions" ("id" INTEGER, "name" VARCHAR(256), "func" VARCHAR(8196), "mod" VARCHAR(8196), "language" INTEGER, "type" INTEGER, "side_effect" BOOLEAN, "varres" BOOLEAN, "vararg" BOOLEAN, "schema_id" INTEGER, "system" BOOLEAN, "semantics" BOOLEAN);
@@ -1063,6 +1068,7 @@ create view sys.dump_tables as select t.o o, case when t.typ <> 'VIEW' then 'CRE
 create view sys.dump_triggers as select sys.schema_guard(sch, tab, def) stmt, sch schema_name, tab table_name, tri trigger_name from sys.describe_triggers;
 create view sys.dump_user_defined_types as select 'CREATE TYPE ' || sys.fqn(sch, sql_tpe) || ' EXTERNAL NAME ' || sys.dq(ext_tpe) || ';' stmt, sch schema_name, sql_tpe type_name from sys.describe_user_defined_types;
 create view sys.environment as select * from sys.env();
+create view sys.fkeys as select id, table_id, type, name, rkey, update_action_id, upd.action_name as update_action, delete_action_id, del.action_name as delete_action from (select id, table_id, type, name, rkey, cast((("action" >> 8) & 255) as smallint) as update_action_id, cast(("action" & 255) as smallint) as delete_action_id from sys.keys where type = 2 union all select id, table_id, type, name, rkey, cast((("action" >> 8) & 255) as smallint) as update_action_id, cast(("action" & 255) as smallint) as delete_action_id from tmp.keys where type = 2) as fks join sys.fkey_actions upd on fks.update_action_id = upd.action_id join sys.fkey_actions del on fks.delete_action_id = del.action_id;
 create view sys.fully_qualified_functions as with fqn(id, tpe, sig, num) as (select f.id, ft.function_type_keyword, case when a.type is null then s.name || '.' || f.name || '()' else s.name || '.' || f.name || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') over (partition by f.id order by a.number) || ')' end, a.number from sys.schemas s, sys.function_types ft, sys.functions f left join sys.args a on f.id = a.func_id where s.id= f.schema_id and f.type = ft.function_type_id) select fqn1.id id, fqn1.tpe tpe, fqn1.sig nme from fqn fqn1 join (select id, max(num) from fqn group by id) fqn2(id, num) on fqn1.id = fqn2.id and (fqn1.num = fqn2.num or fqn1.num is null and fqn2.num is null);
 create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
 create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) as system from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system from sys.schemas union all select t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system from sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system from tmp.keys k join tmp._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system from tmp.idxs i join tmp._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system from tmp.triggers g join tmp._tables t on g.table_id = t.id union all select f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system from sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id union all select a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system from sys.args a join sys.functions f on a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false from sys.sequences union all select o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false from sys.objects o join sys._tables pt on o.sub = pt.id join sys._tables mt on o.nr = mt.id where mt.type = 3 union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid')) from sys.types where id > 2000 order by id;
@@ -2030,6 +2036,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._tables",	"sys",	"dump_triggers",	"create view sys.dump_triggers as select sys.schema_guard(sch, tab, def) stmt, sch schema_name, tab table_name, tri trigger_name from sys.describe_triggers;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"dump_user_defined_types",	"create view sys.dump_user_defined_types as select 'CREATE TYPE ' || sys.fqn(sch, sql_tpe) || ' EXTERNAL NAME ' || sys.dq(ext_tpe) || ';' stmt, sch schema_name, sql_tpe type_name from sys.describe_user_defined_types;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"environment",	"create view sys.environment as select * from sys.env();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys._tables",	"sys",	"fkey_actions",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
+[ "sys._tables",	"sys",	"fkeys",	"create view sys.fkeys as select id, table_id, type, name, rkey, update_action_id, upd.action_name as update_action, delete_action_id, del.action_name as delete_action from (select id, table_id, type, name, rkey, cast(((\"action\" >> 8) & 255) as smallint) as update_action_id, cast((\"action\" & 255) as smallint) as delete_action_id from sys.keys where type = 2 union all select id, table_id, type, name, rkey, cast(((\"action\" >> 8) & 255) as smallint) as update_action_id, cast((\"action\" & 255) as smallint) as delete_action_id from tmp.keys where type = 2) as fks join sys.fkey_actions upd on fks.update_action_id = upd.action_id join sys.fkey_actions del on fks.delete_action_id = del.action_id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"fully_qualified_functions",	"create view sys.fully_qualified_functions as with fqn(id, tpe, sig, num) as (select f.id, ft.function_type_keyword, case when a.type is null then s.name || '.' || f.name || '()' else s.name || '.' || f.name || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') over (partition by f.id order by a.number) || ')' end, a.number from sys.schemas s, sys.function_types ft, sys.functions f left join sys.args a on f.id = a.func_id where s.id= f.schema_id and f.type = ft.function_type_id) select fqn1.id id, fqn1.tpe tpe, fqn1.sig nme from fqn fqn1 join (select id, max(num) from fqn group by id) fqn2(id, num) on fqn1.id = fqn2.id and (fqn1.num = fqn2.num or fqn1.num is null and fqn2.num is null);",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"function_languages",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys._tables",	"sys",	"function_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
@@ -2495,6 +2503,17 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"dump_user_defined_types",	"type_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
 [ "sys._columns",	"environment",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"environment",	"value",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
+[ "sys._columns",	"fkey_actions",	"action_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
+[ "sys._columns",	"fkey_actions",	"action_name",	"varchar",	15,	0,	NULL,	false,	1,	NULL	]
+[ "sys._columns",	"fkeys",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "sys._columns",	"fkeys",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "sys._columns",	"fkeys",	"type",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "sys._columns",	"fkeys",	"name",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
+[ "sys._columns",	"fkeys",	"rkey",	"int",	32,	0,	NULL,	true,	4,	NULL	]
+[ "sys._columns",	"fkeys",	"update_action_id",	"smallint",	16,	0,	NULL,	true,	5,	NULL	]
+[ "sys._columns",	"fkeys",	"update_action",	"varchar",	15,	0,	NULL,	true,	6,	NULL	]
+[ "sys._columns",	"fkeys",	"delete_action_id",	"smallint",	16,	0,	NULL,	true,	7,	NULL	]
+[ "sys._columns",	"fkeys",	"delete_action",	"varchar",	15,	0,	NULL,	true,	8,	NULL	]
 [ "sys._columns",	"fully_qualified_functions",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"fully_qualified_functions",	"tpe",	"varchar",	30,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"fully_qualified_functions",	"nme",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
@@ -4932,6 +4951,9 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "table used by view",	"sys",	"describe_tables",	"sys",	"dump_tables",	"VIEW"	]
 [ "table used by view",	"sys",	"describe_triggers",	"sys",	"dump_triggers",	"VIEW"	]
 [ "table used by view",	"sys",	"describe_user_defined_types",	"sys",	"dump_user_defined_types",	"VIEW"	]
+[ "table used by view",	"sys",	"fkey_actions",	"sys",	"fkeys",	"VIEW"	]
+[ "table used by view",	"sys",	"keys",	"sys",	"fkeys",	"VIEW"	]
+[ "table used by view",	"tmp",	"keys",	"sys",	"fkeys",	"VIEW"	]
 [ "table used by view",	"sys",	"args",	"sys",	"fully_qualified_functions",	"VIEW"	]
 [ "table used by view",	"sys",	"function_types",	"sys",	"fully_qualified_functions",	"VIEW"	]
 [ "table used by view",	"sys",	"functions",	"sys",	"fully_qualified_functions",	"VIEW"	]
@@ -5545,6 +5567,20 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by view",	"sys",	"describe_user_defined_types",	"ext_tpe",	"sys",	"dump_user_defined_types",	"VIEW"	]
 [ "column used by view",	"sys",	"describe_user_defined_types",	"sch",	"sys",	"dump_user_defined_types",	"VIEW"	]
 [ "column used by view",	"sys",	"describe_user_defined_types",	"sql_tpe",	"sys",	"dump_user_defined_types",	"VIEW"	]
+[ "column used by view",	"sys",	"fkey_actions",	"action_id",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"fkey_actions",	"action_name",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"keys",	"action",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"keys",	"id",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"keys",	"name",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"keys",	"rkey",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"keys",	"table_id",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"sys",	"keys",	"type",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"tmp",	"keys",	"action",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"tmp",	"keys",	"id",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"tmp",	"keys",	"name",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"tmp",	"keys",	"rkey",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"tmp",	"keys",	"table_id",	"sys",	"fkeys",	"VIEW"	]
+[ "column used by view",	"tmp",	"keys",	"type",	"sys",	"fkeys",	"VIEW"	]
 [ "column used by view",	"sys",	"args",	"func_id",	"sys",	"fully_qualified_functions",	"VIEW"	]
 [ "column used by view",	"sys",	"args",	"id",	"sys",	"fully_qualified_functions",	"VIEW"	]
 [ "column used by view",	"sys",	"args",	"inout",	"sys",	"fully_qualified_functions",	"VIEW"	]
@@ -5721,6 +5757,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by key",	"sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"KEY"	]
+[ "column used by key",	"sys",	"fkey_actions",	"action_id",	"sys",	"fkey_actions",	"fkey_actions_action_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"function_languages",	"language_name",	"sys",	"function_languages",	"function_languages_language_name_unique",	"KEY"	]
 [ "column used by key",	"sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"KEY"	]
@@ -5742,6 +5779,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by index",	"sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"INDEX"	]
+[ "column used by index",	"sys",	"fkey_actions",	"action_id",	"sys",	"fkey_actions",	"fkey_actions_action_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"function_languages",	"language_name",	"sys",	"function_languages",	"function_languages_language_name_unique",	"INDEX"	]
 [ "column used by index",	"sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"INDEX"	]
@@ -5811,6 +5849,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.idxs",	"comments",	"comments_id_pkey",	"Hash"	]
 [ "sys.idxs",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"Hash"	]
 [ "sys.idxs",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"Hash"	]
+[ "sys.idxs",	"fkey_actions",	"fkey_actions_action_id_pkey",	"Hash"	]
 [ "sys.idxs",	"function_languages",	"function_languages_language_id_pkey",	"Hash"	]
 [ "sys.idxs",	"function_languages",	"function_languages_language_name_unique",	"Hash"	]
 [ "sys.idxs",	"function_types",	"function_types_function_type_id_pkey",	"Hash"	]
@@ -5832,6 +5871,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.keys",	"comments",	"comments_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"Unique Key",	NULL,	-1	]
+[ "sys.keys",	"fkey_actions",	"fkey_actions_action_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"function_languages",	"function_languages_language_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"function_languages",	"function_languages_language_name_unique",	"Unique Key",	NULL,	-1	]
 [ "sys.keys",	"function_types",	"function_types_function_type_id_pkey",	"Primary Key",	NULL,	-1	]
@@ -5850,6 +5890,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	name,	nr,	sub # name
 % char,	varchar,	clob,	varchar # type
 % 11,	20,	1,	0 # length
+[ "sys.objects",	"action_id",	"0",	NULL	]
+[ "sys.objects",	"action_id",	"0",	NULL	]
 [ "sys.objects",	"dependency_type_id",	"0",	NULL	]
 [ "sys.objects",	"dependency_type_id",	"0",	NULL	]
 [ "sys.objects",	"dependency_type_name",	"0",	NULL	]
@@ -5930,6 +5972,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on table",	"dependency_views_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"dependency_views_on_views",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"environment",	"public",	"SELECT",	"monetdb",	0	]
+[ "grant on table",	"fkey_actions",	"public",	"SELECT",	"monetdb",	0	]
+[ "grant on table",	"fkeys",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"function_languages",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"function_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"functions",	"public",	"SELECT",	NULL,	0	]
