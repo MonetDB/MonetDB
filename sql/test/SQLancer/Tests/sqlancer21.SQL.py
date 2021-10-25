@@ -31,6 +31,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("x x",)])
     cli.execute("SELECT greatest(\"lower\"('D4Idf '), 'x x') FROM rt1 where rt1.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("x x",)])
+    cli.execute("SELECT 1 FROM t1 where t1.c0 = 1 AND abs(0.4) = 0;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM rt1 where rt1.c0 = 1 AND abs(0.4) = 0;") \
+        .assertSucceeded().assertDataResultMatch([])
 
     cli.execute("""
     START TRANSACTION;
