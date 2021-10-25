@@ -726,7 +726,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 		hdr++;
 	}
 
-	b = COLnew2(0, bb.Ttype, bb.size, TRANSIENT, bb.size > 0 ? (uint16_t) (bb.tailsize / bb.size) : 0);
+	b = COLnew2(bb.Hseqbase, bb.Ttype, bb.size, TRANSIENT, bb.size > 0 ? (uint16_t) (bb.tailsize / bb.size) : 0);
 	if (b == NULL)
 		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
