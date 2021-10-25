@@ -321,9 +321,9 @@ static str
 RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *local_table;
-	char *remoteuser;
-	char *passwd;
-	char *uri;
+	char *remoteuser = NULL;
+	char *passwd = NULL;
+	char *uri = NULL;
 	char *tmp;
 	char *ret;
 	str scen;
@@ -340,7 +340,10 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, &uri, &remoteuser, &passwd));
-
+	if (!remoteuser)
+		remoteuser = GDKstrdup("");
+	if (!passwd)
+		passwd = GDKstrdup("");
 	/* The password we just got is hashed. Add the byte \1 in front to
 	 * signal this fact to the mapi. */
 	size_t pwlen = strlen(passwd);
@@ -359,8 +362,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg == MAL_SUCCEED) {
 		v = &stk->stk[pci->argv[0]];
-		v->vtype = TYPE_str;
-		if((v->val.sval = GDKstrdup(ret)) == NULL) {
+		if (VALinit(v, TYPE_str, ret) == NULL) {
 			GDKfree(ret);
 			throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -857,7 +859,7 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
-		if (ATOMvarsized(t)) {
+		if (ATOMbasetype(t) == TYPE_str) {
 			while (mapi_fetch_row(mhdl)) {
 				var = mapi_fetch_field(mhdl, 1);
 				if (BUNappend(b, var == NULL ? str_nil : var, false) != GDK_SUCCEED) {
@@ -943,13 +945,11 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		(void) mapi_fetch_row(mhdl); /* should succeed */
 		val = mapi_fetch_field(mhdl, 0);
 
-		if (ATOMvarsized(rtype)) {
-			p = GDKstrdup(val == NULL ? str_nil : val);
-			if (p == NULL) {
+		if (ATOMbasetype(rtype) == TYPE_str) {
+			if (!VALinit(v, rtype, val == NULL ? str_nil : val)) {
 				mapi_close_handle(mhdl);
 				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			VALset(v, rtype, p);
 		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val, true) < 0) {
 			char *msg;
 			msg = createException(MAL, "remote.get",
@@ -1053,19 +1053,24 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
+			int tpe = getBatType(type), trivial = tpe < TYPE_date || ATOMbasetype(tpe) == TYPE_str;
+			const void *nil = ATOMnilptr(tpe);
+			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
-				tailv = ATOMformat(getBatType(type), BUNtail(bi, p));
+				const void *v = BUNtail(bi, p);
+				tailv = ATOMformat(tpe, v);
 				if (tailv == NULL) {
 					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.put", GDK_EXCEPTION);
 				}
-				if (getBatType(type) >= TYPE_date && getBatType(type) != TYPE_str)
-					mnstr_printf(sout, "\"%s\"\n", tailv);
-				else
+				if (trivial || atomcmp(v, nil) == 0)
 					mnstr_printf(sout, "%s\n", tailv);
+				else
+					mnstr_printf(sout, "\"%s\"\n", tailv);
 				GDKfree(tailv);
 			}
 			bat_iterator_end(&bi);
@@ -1094,11 +1099,13 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str val;
 		char *tpe;
 		char qbuf[512], *nbuf = qbuf;
-		if (ATOMvarsized(type)) {
-			val = ATOMformat(type, *(str *)value);
-		} else {
-			val = ATOMformat(type, value);
-		}
+		const void *nil = ATOMnilptr(type), *p = value;
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(type);
+
+		if (ATOMextern(type))
+			p = *(str *)value;
+
+		val = ATOMformat(type, p);
 		if (val == NULL) {
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", GDK_EXCEPTION);
@@ -1116,7 +1123,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(tpe);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (type < TYPE_date || type == TYPE_str)
+		if (type < TYPE_date || ATOMbasetype(type) == TYPE_str || atomcmp(p, nil) == 0)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
@@ -1136,8 +1143,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* return the identifier */
 	v = &stk->stk[pci->argv[0]];
-	v->vtype = TYPE_str;
-	if((v->val.sval = GDKstrdup(ident)) == NULL)
+	if (VALinit(v, TYPE_str, ident) == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -1507,7 +1513,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
 	BAT *b = BBPquickdesc(bid), *v = b;
-	char sendtheap = 0;
+	char sendtheap = 0, sendtvheap = 0;
 
 	(void)mb;
 	(void)stk;
@@ -1519,8 +1525,9 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BBPfix(bid) <= 0)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
-	sendtheap = b->ttype != TYPE_void && b->tvarsized;
-	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
+	sendtheap = b->ttype != TYPE_void;
+	sendtvheap = sendtheap && b->tvarsized;
+	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
@@ -1554,15 +1561,15 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->tnonil,
 			BATtdense(v),
 			v->batCount,
-			BATtvoid(v) ? 0 : (size_t)v->batCount << v->tshift,
-			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
+			sendtheap ? (size_t)v->batCount << v->tshift : 0,
+			sendtvheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
-	if (v->batCount > 0) {
+	if (sendtheap && v->batCount > 0) {
 		BATiter vi = bat_iterator(v);
 		mnstr_write(cntxt->fdout, /* tail */
 					vi.base, vi.count * vi.width, 1);
-		if (sendtheap)
+		if (sendtvheap)
 			mnstr_write(cntxt->fdout, /* theap */
 						vi.vh->base, vi.vhfree, 1);
 		bat_iterator_end(&vi);

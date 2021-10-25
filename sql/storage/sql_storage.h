@@ -173,6 +173,7 @@ typedef void *(*del_dup_fptr) (sql_table *t);
 typedef int (*upgrade_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*upgrade_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
+typedef int (*swap_bats_fptr) (sql_trans *tr, sql_column *c, BAT *b);
 
 /*
 -- free the storage resources for columns, indices and tables
@@ -247,8 +248,8 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
-
 	temp_del_tab_fptr temp_del_tab;
+	swap_bats_fptr swap_bats;
 } store_functions;
 
 typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
@@ -429,6 +430,7 @@ extern sql_key * key_create_done(struct sqlstore *store, sql_allocator *sa, sql_
 
 extern sql_idx *create_sql_idx(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(struct sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c);
+extern sql_idx *create_sql_idx_done(sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */

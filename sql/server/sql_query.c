@@ -19,7 +19,7 @@ sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
 	*q = (stacked_query) {
 		.rel = rel,
 		.sql_state = sql_state,
-		.grouped = is_groupby(rel->op),
+		.grouped = is_groupby(rel->op)|rel->grouped,
 		.groupby = 0, /* not used for groupby of inner */
 	};
 	return q;
@@ -79,7 +79,7 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 	sq->grouped = is_groupby(r->op);
 }
 
-int
+unsigned int
 query_has_outer(sql_query *q)
 {
 	return sql_stack_top(q->outer);
@@ -102,7 +102,7 @@ query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f)
 
 	sq->last_used = e;
 	sq->used_card = sq->rel->card;
-	assert( (!is_sql_aggr(f) && sq->grouped == 0 && e->card != CARD_AGGR) || /* outer is a none grouped relation */
+	assert( (!is_sql_aggr(f) && sq->grouped == 0) || /* outer is a none grouped relation */
 		(!is_sql_aggr(f) && sq->grouped == 1 && e->card <= CARD_AGGR) || /* outer is groupbed, ie only return aggregations or groupby cols */
 		(is_sql_aggr(f) && !is_sql_farg(f) && !sq->grouped && e->card != CARD_AGGR) || /* a column/constant to be aggregated */
 		(is_sql_aggr(f) && !is_sql_farg(f) && sq->grouped && e->card != CARD_AGGR) || /* a column/constant to be aggregated */

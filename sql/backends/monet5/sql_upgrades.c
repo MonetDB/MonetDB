@@ -19,10 +19,7 @@
 #include "sql_upgrades.h"
 #include "rel_rel.h"
 #include "rel_semantic.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 
-#include "rel_remote.h"
 #include "mal_authorize.h"
 
 /* this function can be used to recreate the system tables (types,
@@ -850,7 +847,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 				r = rel_parse(sql, s, relt, m_deps);
 				if (r)
-					r = sql_processrelation(sql, r, 0, 0);
+					r = sql_processrelation(sql, r, 0, 0, 0);
 				if (r) {
 					list *id_l = rel_dependencies(sql, r);
 
@@ -886,7 +883,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0, 0);
+						r = sql_processrelation(sql, r, 0, 0, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -914,7 +911,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = sql_processrelation(sql, r, 0, 0);
+							r = sql_processrelation(sql, r, 0, 0, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 
@@ -4218,6 +4215,43 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"drop function sys.reverse(string);\n"
 					"drop all function sys.fuse;\n");
+
+	/* 26_sysmon.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.vacuum(sname string, tname string, cname string)\n"
+					"	external name sql.vacuum;\n"
+					"create procedure sys.vacuum(sname string, tname string, cname string, interval int)\n"
+					"	external name sql.vacuum;\n"
+					"create procedure sys.stop_vacuum(sname string, tname string, cname string)\n"
+					"	external name sql.stop_vacuum;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where system <> true and name in ('vacuum', 'stop_vacuum') and schema_id = 2000 and type = %d;\n", F_PROC);
+
+	/* 10_sys_schema_extension.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"CREATE TABLE sys.fkey_actions (\n"
+					"    action_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+					"    action_name VARCHAR(15) NOT NULL);\n"
+					"INSERT INTO sys.fkey_actions (action_id, action_name) VALUES\n"
+					"  (0, 'NO ACTION'),\n"
+					"  (1, 'CASCADE'),\n"
+					"  (2, 'RESTRICT'),\n"
+					"  (3, 'SET NULL'),\n"
+					"  (4, 'SET DEFAULT');\n"
+					"ALTER TABLE sys.fkey_actions SET READ ONLY;\n"
+					"GRANT SELECT ON sys.fkey_actions TO PUBLIC;\n"
+					"CREATE VIEW sys.fkeys AS\n"
+					"SELECT id, table_id, type, name, rkey, update_action_id, upd.action_name as update_action, delete_action_id, del.action_name as delete_action FROM (\n"
+					" SELECT id, table_id, type, name, rkey, cast(((\"action\" >> 8) & 255) as smallint) as update_action_id, cast((\"action\" & 255) as smallint) AS delete_action_id FROM sys.keys WHERE type = 2\n"
+					" UNION ALL\n"
+					" SELECT id, table_id, type, name, rkey, cast(((\"action\" >> 8) & 255) as smallint) as update_action_id, cast((\"action\" & 255) as smallint) AS delete_action_id FROM tmp.keys WHERE type = 2\n"
+					") AS fks\n"
+					"JOIN sys.fkey_actions upd ON fks.update_action_id = upd.action_id\n"
+					"JOIN sys.fkey_actions del ON fks.delete_action_id = del.action_id;\n"
+					"GRANT SELECT ON sys.fkeys TO PUBLIC;\n"
+					);
+	pos += snprintf(buf + pos, bufsize - pos,
+					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);

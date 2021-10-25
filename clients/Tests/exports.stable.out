@@ -516,6 +516,8 @@ size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep
 ssize_t fltFromStr(const char *src, size_t *len, flt **dst, bool external);
 ssize_t fltToStr(str *dst, size_t *len, const flt *src, bool external);
 const flt flt_nil;
+gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int interval);
+gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
 geomcatalogfix_fptr geomcatalogfix_get(void);
 void geomcatalogfix_set(geomcatalogfix_fptr);
 geomsqlfix_fptr geomsqlfix_get(void);

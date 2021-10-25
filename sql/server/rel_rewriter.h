@@ -40,4 +40,6 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 
 extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
 
+extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e);
+
 #endif /*_REL_REWRITER_H_*/

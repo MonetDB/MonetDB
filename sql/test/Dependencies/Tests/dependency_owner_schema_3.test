@@ -48,7 +48,7 @@ DEP_SCHEMA
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
-636 values hashing to 90e2ee5bb64e32ae6e9d2ac0ab8dae7b
+645 values hashing to 6a76e9478e88821358bdbee0f171f520
 
 query TTT rowsort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
@@ -126,11 +126,14 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-2217 values hashing to 419c161985866d250f6e16deb56ab344
+2259 values hashing to fbfaada25cafb60a05201d2a699ce3e3
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
 ----
+action_id
+fkey_actions_action_id_pkey
+DEP_KEY
 dependency_type_id
 dependency_types_dependency_type_id_pkey
 DEP_KEY

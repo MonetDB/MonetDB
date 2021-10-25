@@ -178,29 +178,29 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 		return rel;
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+		int changes = v->changes, level = *(int*)v->data;
 		rel->exps = exps_simplify_exp(v, rel->exps);
 		/* At a select or inner join relation if the single expression is false, eliminate the inner relations with a dummy projection */
-		if (v->value_based_opt && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
-			if ((is_select(rel->op) || (is_innerjoin(rel->op) && !rel_is_ref(rel->r))) && rel->card > CARD_ATOM && !rel_is_ref(rel->l)) {
-				list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
-				if (is_innerjoin(rel->op))
-					toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);
+		if (v->value_based_opt && (v->changes > changes || level == 0) && (is_select(rel->op) || is_innerjoin(rel->op)) &&
+			!is_single(rel) && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+			list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
+			if (is_innerjoin(rel->op))
+				toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);
 
-				for (node *n = toconvert->h ; n ; n = n->next) {
-					sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
-					exp_prop_alias(v->sql->sa, a, e);
-					list_append(nexps, a);
-				}
-				rel_destroy(rel->l);
-				if (is_innerjoin(rel->op)) {
-					rel_destroy(rel->r);
-					rel->r = NULL;
-					rel->op = op_select;
-				}
-				rel->l = rel_project(v->sql->sa, NULL, nexps);
-				rel->card = CARD_ATOM;
-				v->changes++;
+			for (node *n = toconvert->h ; n ; n = n->next) {
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				exp_prop_alias(v->sql->sa, a, e);
+				list_append(nexps, a);
 			}
+			rel_destroy(rel->l);
+			if (is_innerjoin(rel->op)) {
+				rel_destroy(rel->r);
+				rel->r = NULL;
+				rel->op = op_select;
+			}
+			rel->l = rel_project(v->sql->sa, NULL, nexps);
+			rel->card = CARD_ATOM;
+			v->changes++;
 		}
 	}
 	if (is_join(rel->op) && list_empty(rel->exps))
@@ -214,4 +214,35 @@ rewrite_reset_used(visitor *v, sql_rel *rel)
 	(void) v;
 	rel->used = 0;
 	return rel;
+}
+
+atom *
+exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e)
+{
+	if (e->type == e_atom) {
+		return value_based_opt ? exp_value(sql, e) : (atom *) e->l;
+	} else if (e->type == e_convert) {
+		atom *v = exp_flatten(sql, value_based_opt, e->l);
+
+		if (v)
+			return atom_cast(sql->sa, v, exp_subtype(e));
+	} else if (e->type == e_func) {
+		sql_subfunc *f = e->f;
+		list *l = e->l;
+		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
+
+		/* TODO handle date + x months */
+		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
+			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
+			if (l1 && l2)
+				return atom_add(sql->sa, l1, l2);
+		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, value_based_opt, l->h->data);
+			atom *l2 = exp_flatten(sql, value_based_opt, l->h->next->data);
+			if (l1 && l2)
+				return atom_sub(sql->sa, l1, l2);
+		}
+	}
+	return NULL;
 }

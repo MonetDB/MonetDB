@@ -49,3 +49,12 @@ returns table(
 )
 external name sysmon.user_statistics;
 
+create procedure sys.vacuum(sname string, tname string, cname string)
+	external name sql.vacuum;
+
+create procedure sys.vacuum(sname string, tname string, cname string, interval int)
+	external name sql.vacuum;
+
+create procedure sys.stop_vacuum(sname string, tname string, cname string)
+	external name sql.stop_vacuum;
+

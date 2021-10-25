@@ -819,7 +819,7 @@ mvc_export_warning(stream *s, str w)
 static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
-	bool sendtheap = bn->ttype != TYPE_void && bn->tvarsized;
+	bool sendtheap = bn->ttype != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
 
 	if (mnstr_printf(s, /*JSON*/"{"
 		"\"version\":1,"
@@ -842,17 +842,17 @@ mvc_export_binary_bat(stream *s, BAT* bn)
 		bn->tnonil,
 		BATtdense(bn),
 		bn->batCount,
-		(size_t)bn->batCount << bn->tshift,
-		sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0) < 0)
+		sendtheap ? (size_t)bn->batCount << bn->tshift : 0,
+		sendtvheap && bn->batCount > 0 ? bn->tvheap->free : 0) < 0)
 		return -4;
 
-	if (bn->batCount > 0) {
+	if (sendtheap && bn->batCount > 0) {
 		BATiter bni = bat_iterator(bn);
 		if (mnstr_write(s, /* tail */ bni.base, bni.count * bni.width, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
-		if (sendtheap && mnstr_write(s, /* theap */ bni.vh->base, bni.vh->free, 1) < 1) {
+		if (sendtvheap && mnstr_write(s, /* tvheap */ bni.vh->base, bni.vh->free, 1) < 1) {
 			bat_iterator_end(&bni);
 			return -4;
 		}
@@ -876,7 +876,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	BAT* order		= NULL;
 	node *n;
 
-	const int nr_columns = b->client->protocol == PROTOCOL_COLUMNAR? 7 : 6;
+	const int nr_columns = (b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) ? 7 : 6;
 
 	int len1 = 0, len4 = 0, len5 = 0, len6 = 0, len7 =0;	/* column widths */
 	int len2 = 1, len3 = 1;
@@ -1011,7 +1011,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		goto wrapup;
 	}
 
-	if (b->client->protocol == PROTOCOL_COLUMNAR && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
+	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
 		error = -1;
 
 	wrapup:
