@@ -1776,8 +1776,8 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 		return false;
 	if (e->flag == cmp_equal && !is_anti(e))
 		return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
-	if (((e->flag == cmp_notequal) && !is_anti(e)) || ((e->flag == cmp_equal) && is_anti(e)) )
-		return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
+	if ((e->flag == cmp_notequal && !is_anti(e)) || (e->flag == cmp_equal && is_anti(e)))
+		return exp_is_null(l) && exp_is_null(r);
 	return false;
 }
 
