@@ -1410,24 +1410,27 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetInteriorRingN failed.");
 	}
 
-	/* iterate over the interiorRing and transform each one of them */
-	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-	if (transformedInteriorRingGeometries == NULL) {
-		*transformedGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	for (i = 0; i < numInteriorRings; i++) {
-		ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
-		if (ret != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-			GDKfree(transformedInteriorRingGeometries);
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
+	if(numInteriorRings > 0)
+	{
+		/* iterate over the interiorRing and transform each one of them */
+		transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+		if (transformedInteriorRingGeometries == NULL) {
 			*transformedGeometry = NULL;
-			return ret;
+			GEOSGeom_destroy(transformedExteriorRingGeometry);
+			throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
+		for (i = 0; i < numInteriorRings; i++) {
+			ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
+			if (ret != MAL_SUCCEED) {
+				while (--i >= 0)
+					GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+				GDKfree(transformedInteriorRingGeometries);
+				GEOSGeom_destroy(transformedExteriorRingGeometry);
+				*transformedGeometry = NULL;
+				return ret;
+			}
+			GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
+		}
 	}
 
 	*transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
