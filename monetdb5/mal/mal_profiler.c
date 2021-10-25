@@ -307,7 +307,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			c =getVarName(mb, getArg(pci,j));
 			if(getVarSTC(mb,getArg(pci,j))){
 				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-				if (stc &&
+				if (stc && getModuleId(stc) &&
 					strcmp(getModuleId(stc),"sql") ==0 &&
 					strncmp(getFunctionId(stc),"bind",4)==0 &&
 					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
@@ -677,9 +677,12 @@ openProfilerStream(Client cntxt)
 		m = workingset[j].mb;
 		s = workingset[j].stk;
 		p =  workingset[j].pci;
-		if( c && m && s && p )
+		if( c && m && s && p ) {
 			/* show the event  assuming the quadruple is aligned*/
+			MT_lock_unset(&mal_profileLock);
 			profilerEvent(c, m, s, p, 1);
+			MT_lock_set(&mal_profileLock);
+		}
 	}
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;

@@ -382,7 +382,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			default:
 				break;
 		}
-		switch (mvc_create_ukey_done(sql, k)) {
+		switch (mvc_create_key_done(sql, k)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return res;
@@ -458,6 +458,17 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 				break;
 		}
 		switch (mvc_create_fkc(sql, fk, cs)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return res;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+				return res;
+			default:
+				break;
+		}
+		switch (mvc_create_key_done(sql, (sql_key*)fk)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return res;
@@ -546,7 +557,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						if (e && is_atom(e->type)) {
 							atom *a = exp_value(sql, e);
 
-							if (atom_null(a)) {
+							if (a && atom_null(a)) {
 								switch (mvc_default(sql, cs, NULL)) {
 									case -1:
 										(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -704,6 +715,17 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 			return SQL_ERR;
 		}
+		switch (mvc_create_key_done(sql, (sql_key*)fk)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
 	}
 	return SQL_OK;
 }
@@ -763,7 +785,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 					break;
 			}
 		}
-		switch (mvc_create_ukey_done(sql, k)) {
+		switch (mvc_create_key_done(sql, k)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return SQL_ERR;
@@ -1773,31 +1795,31 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	/* New columns need update with default values. Add one more element for new column */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (ol_length(nt->columns) + 1));
 	rel_base_use_tid(sql, bt);
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 
 	list *cols = new_exp_list(sql->sa);
 	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
-			sql_column *c = n->data;
+		sql_column *c = n->data;
 
-			rel_base_use(sql, bt, c->colnr);
-			/* handle new columns */
-			if (!c->base.new || c->base.deleted)
-				continue;
-			if (c->def) {
-				e = rel_parse_val(sql, nt->s, c->def, &c->type, sql->emode, NULL);
-			} else {
-				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-			}
-			if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
-				rel_destroy(r);
-				return NULL;
-			}
-			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
+		rel_base_use(sql, bt, c->colnr);
+		/* handle new columns */
+		if (!c->base.new || c->base.deleted)
+			continue;
+		if (c->def) {
+			e = rel_parse_val(sql, nt->s, c->def, &c->type, sql->emode, NULL);
+		} else {
+			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+		}
+		if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
+			rel_destroy(r);
+			return NULL;
+		}
+		list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
 
-			assert(!updates[c->colnr]);
-			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
-			updates[c->colnr] = e;
+		assert(!updates[c->colnr]);
+		exp_setname(sql->sa, e, c->t->base.name, c->base.name);
+		updates[c->colnr] = e;
 	}
 	res = rel_update(sql, res, r, updates, list_length(cols)?cols:NULL);
 	return res;
@@ -2110,10 +2132,11 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 				break;
 		}
 	}
+	mvc_create_idx_done(sql, i);
 
 	/* new columns need update with default values */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL);

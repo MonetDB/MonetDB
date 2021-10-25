@@ -1,0 +1,178 @@
+statement ok
+create table testkeys (a int primary key, b int unique, c int, d int, unique(c, d))
+
+statement ok rowcount 3
+insert into testkeys values (1,1,1,1),(2,2,2,2),(3,3,3,3)
+
+# The following joins can be converted into semijoins
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
+----
+project (
+| semijoin (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL HASHCOL ) ]
+) [ "y"."y" ]
+
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
+----
+project (
+| semijoin (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
+| ) [ ("y"."y") = ("testkeys"."b" HASHCOL ) ]
+) [ "y"."y" ]
+
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a or (y.y is null and testkeys.a is null)
+----
+project (
+| semijoin (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL HASHCOL ) ]
+) [ "y"."y" ]
+
+# The following joins cannot be converted into semijoins
+query T nosort
+plan select y from (values (NULL),(1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b or (y.y is null and testkeys.b is null)
+----
+project (
+| join (
+| |  [  [ int(32) NULL, int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."b" UNIQUE HASHCOL  ]
+| ) [ ("y"."y") * = ("testkeys"."b" HASHCOL ) ]
+) [ "y"."y" ]
+
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.c or (y.y is null and testkeys.c is null)
+----
+project (
+| join (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."c" ]
+| ) [ ("y"."y") * = ("testkeys"."c") ]
+) [ "y"."y" ]
+
+statement ok
+start transaction
+
+statement ok
+create table othertable (a int, b int, c int, d int)
+
+statement ok rowcount 3
+insert into othertable values (1,1,1,1),(2,2,2,2),(3,3,3,3)
+
+# here 'othertable.a = 2' can be pushed up
+query T nosort
+plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 2
+----
+project (
+| select (
+| | join (
+| | | select (
+| | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
+| | | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = (int(32) "1") ],
+| | | table("sys"."othertable") [ "othertable"."a" ]
+| | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
+| ) [ ("othertable"."a") = (int(32) "2") ]
+) [ "othertable"."a" ]
+
+# here 'othertable.a between 2 and 5' can be pushed up too
+query T nosort
+plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b = 1 and othertable.a between 2 and 5
+----
+project (
+| select (
+| | join (
+| | | select (
+| | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
+| | | ) [ ("testkeys"."b" HASHCOL ) = (int(32) "1") ],
+| | | table("sys"."othertable") [ "othertable"."a" ]
+| | ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
+| ) [ (int(32) "2") <= ("othertable"."a") <= (int(32) "5") ]
+) [ "testkeys"."a" NOT NULL HASHCOL  ]
+
+# here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
+query T nosort
+plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b is null and othertable.a > 1
+----
+project (
+| join (
+| | select (
+| | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
+| | ) [ ("testkeys"."b" HASHCOL ) * = (int(32) NULL) ],
+| | select (
+| | | table("sys"."othertable") [ "othertable"."a" ]
+| | ) [ ("othertable"."a") > (int(32) "1") ]
+| ) [ ("testkeys"."a" NOT NULL HASHCOL ) = ("othertable"."a") ]
+) [ "testkeys"."a" NOT NULL HASHCOL  ]
+
+statement ok
+rollback
+
+statement ok
+alter table testkeys drop constraint testkeys_a_pkey
+
+statement ok
+alter table testkeys drop constraint testkeys_b_unique
+
+# No more unique properties
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
+----
+project (
+| join (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL) ]
+) [ "y"."y" ]
+
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
+----
+project (
+| join (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."b" ]
+| ) [ ("y"."y") = ("testkeys"."b") ]
+) [ "y"."y" ]
+
+statement ok
+start transaction
+
+statement ok
+alter table testkeys add constraint testkeys_a_pkey primary key (a)
+
+statement ok
+alter table testkeys add constraint testkeys_b_unique unique (b)
+
+statement ok
+rollback
+
+# The unique properties should not return
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
+----
+project (
+| join (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL ]
+| ) [ ("y"."y") = ("testkeys"."a" NOT NULL) ]
+) [ "y"."y" ]
+
+query T nosort
+plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
+----
+project (
+| join (
+| |  [  [ int(32) "1", int(32) "2", int(32) "3" ] as "y"."y" ],
+| | table("sys"."testkeys") [ "testkeys"."b" ]
+| ) [ ("y"."y") = ("testkeys"."b") ]
+) [ "y"."y" ]
+
+statement ok
+DROP TABLE testkeys
+

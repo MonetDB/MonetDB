@@ -233,6 +233,9 @@ DEP_VIEW
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c, sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
 ----
+action_id
+fkey_actions_action_id_pkey
+DEP_KEY
 dependency_type_id
 dependency_types_dependency_type_id_pkey
 DEP_KEY

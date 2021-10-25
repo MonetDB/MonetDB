@@ -21,10 +21,10 @@ SELECT t2.c0 FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)
 ----
 377 values hashing to 3fcc20c12d29f4847a2af7e1c9e3c51b
 
-query T rowsort
+query I rowsort
 SELECT '' NOT ILIKE 'x' FROM t2 JOIN (SELECT DISTINCT TIME '01:00:00', greatest(t1.c0, 0.3)%asin(0.7) FROM t1) AS sub0(c0,c1) ON sub0.c1 <= t2.c0
 ----
-377 values hashing to 19d4c8a836908c70817468cb9b9d7405
+377 values hashing to ef89b4852ebacfce3c2e98d7838b9254
 
 statement ok
 ROLLBACK
@@ -71,18 +71,18 @@ project (
 | | | intersect (
 | | | | project (
 | | | | | select (
-| | | | | |  [ boolean "true" ]
-| | | | | ) [ tinyint "2" ! <= tinyint "1" ! <= tinyint "2" BETWEEN , tinyint "3" <= tinyint "2" <= tinyint "5" BETWEEN  ]
-| | | | ) [ tinyint "2" as "v0"."vc0" ],
+| | | | | |  [ boolean(1) "true" ]
+| | | | | ) [ (tinyint(2) "2") ! <= (tinyint(1) "1") ! <= (tinyint(2) "2"), (tinyint(2) "3") <= (tinyint(2) "2") <= (tinyint(3) "5") ]
+| | | | ) [ tinyint(2) "2" as "v0"."vc0" ],
 | | | | project (
 | | | | | select (
-| | | | | |  [ boolean "true" ]
-| | | | | ) [ tinyint "4" ! <= tinyint "1" ! <= tinyint "4" BETWEEN , tinyint "3" <= tinyint "4" <= tinyint "5" BETWEEN  ]
-| | | | ) [ tinyint "4" as "v0"."vc0" ]
+| | | | | |  [ boolean(1) "true" ]
+| | | | | ) [ (tinyint(3) "4") ! <= (tinyint(1) "1") ! <= (tinyint(3) "4"), (tinyint(2) "3") <= (tinyint(3) "4") <= (tinyint(3) "5") ]
+| | | | ) [ tinyint(3) "4" as "v0"."vc0" ]
 | | | ) [ "v0"."vc0" NOT NULL ]
-| | ) [ "sys"."sql_max"(tinyint "1", tinyint "1") NOT NULL as "v20"."vc0" ]
-| ) [ tinyint "7" > "v20"."vc0" NOT NULL ]
-) [ tinyint "1" ]
+| | ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]
+| ) [ (tinyint(3) "7") > ("v20"."vc0" NOT NULL) ]
+) [ tinyint(1) "1" ]
 
 statement ok
 ROLLBACK
@@ -138,15 +138,15 @@ COPY 7 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 861414840	NULL
 
 statement ok
-create view v4(vc0) as (values ("insert"(r'2', ((5)|(1571515754)), nullif(68, 0.681765350302749428834658829146064817905426025390625), r' ') not ilike
+create view v4(vc0) as (values ("insert"('2', ((5)|(1571515754)), nullif(68, 0.681765350302749428834658829146064817905426025390625), ' ') not ilike
 nullif(case (select interval '1807439388' month from t1 as tt1l4n0, t2 as tt2l4n1) when sql_sub(interval '16' month, interval '169164132' month) then
-(select r'0.9840143051690606' from t1 as tt1l4n0 where false) when sql_sub(interval '2140361559' month, interval '1731030991' month) then least(r'yh', r'')
+(select '0.9840143051690606' from t1 as tt1l4n0 where false) when sql_sub(interval '2140361559' month, interval '1731030991' month) then least('yh', '')
 when sql_add(interval '323468641' month, interval '484732283' month) then cast(interval '340353783' second as string(241)) when sql_min(null, interval '351381849' month)
-then "right"(r'0.6603113972580116', 1409573249) when abs(interval '41293241' month) then cast(1654332323 as string(452)) else nullif(r'', r'i') end, r'EI')))
+then "right"('0.6603113972580116', 1409573249) when abs(interval '41293241' month) then cast(1654332323 as string(452)) else nullif('', 'i') end, 'EI')))
 
 statement error GDK reported error: BATsubcross: more than one match
 UPDATE t1 SET c2 = 1 FROM v4 WHERE ((((((((INTERVAL '1' MONTH NOT IN ((SELECT INTERVAL '3' MONTH FROM v4)))AND(sys.md5(t1.c2) <> ANY(SELECT '1'))))
-AND (CASE WHEN (r'1810575798') BETWEEN '1' AND ((SELECT r'' WHERE TRUE)) THEN false ELSE true END))))))
+AND (CASE WHEN ('1810575798') BETWEEN '1' AND ((SELECT '' WHERE TRUE)) THEN false ELSE true END))))))
 
 statement ok
 ROLLBACK
@@ -173,10 +173,10 @@ select json.text(null, '23131')
 ----
 NULL
 
-query T nosort
+query I nosort
 select json.isvalid(json.tojsonarray(x)) from (values ('a"'),('"b'),('c"')) x(x)
 ----
-True
+1
 
 statement ok
 START TRANSACTION
@@ -361,10 +361,10 @@ SELECT json.tojsonarray('<') FROM t1, t2 GROUP BY t1.c0
 statement ok
 create or replace view v30(vc0) as (select null)
 
-query T nosort
+query I nosort
 select json."isvalid"(CAST(v30.vc0 AS JSON)) FROM v30
 ----
-True
+1
 
 statement ok
 ROLLBACK

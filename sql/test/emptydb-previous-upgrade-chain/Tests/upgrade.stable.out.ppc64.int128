@@ -3333,7 +3333,7 @@ insert into sys.functions values (888, 'week', 'weekofyear', 'mtime', 0, 1, fals
 insert into sys.args values (38992, 888, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (38993, 888, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.functions values (889, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (38994, 889, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (38994, 889, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (38995, 889, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.functions values (890, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (38996, 890, 'res_0', 'int', 32, 0, 0, 0);
@@ -3345,7 +3345,7 @@ insert into sys.functions values (892, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39000, 892, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39001, 892, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (893, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39002, 893, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39002, 893, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39003, 893, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (894, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39004, 894, 'res_0', 'int', 32, 0, 0, 0);
@@ -3357,7 +3357,7 @@ insert into sys.functions values (896, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39008, 896, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39009, 896, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (897, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39010, 897, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39010, 897, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39011, 897, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (898, 'century', 'century', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39012, 898, 'res_0', 'int', 32, 0, 0, 0);
@@ -3387,7 +3387,7 @@ insert into sys.functions values (906, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39028, 906, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39029, 906, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (907, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39030, 907, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39030, 907, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39031, 907, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (908, 'century', 'century', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39032, 908, 'res_0', 'int', 32, 0, 0, 0);
@@ -3417,7 +3417,7 @@ insert into sys.functions values (916, 'second', 'sql_seconds', 'mtime', 0, 1, f
 insert into sys.args values (39048, 916, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (39049, 916, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (917, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39050, 917, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39050, 917, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39051, 917, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (918, 'year', 'year', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39052, 918, 'res_0', 'int', 32, 0, 0, 0);
@@ -3438,7 +3438,7 @@ insert into sys.functions values (923, 'second', 'seconds', 'mtime', 0, 1, false
 insert into sys.args values (39062, 923, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (39063, 923, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (924, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39064, 924, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39064, 924, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39065, 924, 'arg_1', 'day_interval', 4, 0, 1, 1);
 insert into sys.functions values (925, 'day', 'day', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (39066, 925, 'res_0', 'bigint', 64, 0, 0, 0);
@@ -3453,7 +3453,7 @@ insert into sys.functions values (928, 'second', 'seconds', 'mtime', 0, 1, false
 insert into sys.args values (39072, 928, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (39073, 928, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (929, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
-insert into sys.args values (39074, 929, 'res_0', 'bigint', 64, 0, 0, 0);
+insert into sys.args values (39074, 929, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (39075, 929, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (930, 'next_value_for', 'next_value', 'sql', 0, 1, true, false, false, 2000, true, true);
 insert into sys.args values (39076, 930, 'res_0', 'bigint', 64, 0, 0, 0);
@@ -4143,8 +4143,6 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
-create function fuse(one bigint, two bigint)
-returns hugeint external name udf.fuse;
 create function sys.generate_series(first hugeint, "limit" hugeint)
 returns table (value hugeint)
 external name generator.series;
@@ -4208,7 +4206,6 @@ GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;
 create function json.filter(js json, name hugeint)
 returns json external name json.filter;
 GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;
-update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
 update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 6;
@@ -5187,4 +5184,647 @@ SELECT d.id, i1.obj_type, i1.name,
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 UPDATE sys._tables SET system = true WHERE name in ('ids', 'dependencies_vw') AND schema_id = 2000;
 set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+update sys.args set type = 'decimal', type_digits = 18, type_scale = 3 where func_id in (select id from sys.functions where name = 'epoch_ms' and schema_id = 2000) and number = 0 and type = 'bigint';
+drop view sys.tracelog;
+drop function sys.tracelog();
+create function sys.tracelog()
+ returns table (
+  ticks bigint, -- time in microseconds
+  stmt string,  -- actual statement executed
+  event string  -- profiler event executed
+ )
+ external name sql.dump_trace;
+create view sys.tracelog as select * from sys.tracelog();
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'tracelog';
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'tracelog' and type = 5;
+drop function sys.epoch(bigint);
+create function sys.epoch(sec DECIMAL(18,3)) returns TIMESTAMP WITH TIME ZONE
+external name mtime.epoch;
+grant execute on function sys.epoch (DECIMAL(18,3)) to public;
+update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
+set schema "sys";
+create view sys.malfunctions as select * from sys.malfunctions();
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'malfunctions';
+drop view sys.dependencies_vw;
+drop view sys.ids;
+CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS
+SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) AS system FROM sys.auths UNION ALL
+SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system FROM sys.schemas UNION ALL
+SELECT t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system FROM sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id UNION ALL
+SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL
+SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL
+SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL
+SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL
+SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL
+SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL
+SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL
+SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL
+SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL
+SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL
+SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL
+SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL
+SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid')) FROM sys.types WHERE id > 2000
+ ORDER BY id;
+GRANT SELECT ON sys.ids TO PUBLIC;
+CREATE VIEW sys.dependencies_vw AS
+SELECT d.id, i1.obj_type, i1.name,
+       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,
+       d.depend_type, dt.dependency_type_name
+  FROM sys.dependencies d
+  JOIN sys.ids i1 ON d.id = i1.id
+  JOIN sys.ids i2 ON d.depend_id = i2.id
+  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id
+ ORDER BY id, depend_id;
+GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
+UPDATE sys._tables SET system = true WHERE name in ('ids', 'dependencies_vw') AND schema_id = 2000;
+drop function sys.dump_database(boolean);
+drop procedure sys.dump_table_data();
+drop procedure sys._dump_table_data(string, string);
+drop function sys.prepare_esc(string, string);
+drop function sys.esc(string);
+drop view sys.dump_privileges;
+drop view sys.dump_user_defined_types;
+drop view sys.dump_comments;
+drop view sys.dump_triggers;
+drop view sys.dump_tables;
+drop view sys.dump_functions;
+drop view sys.dump_start_sequences;
+drop view sys.dump_sequences;
+drop view sys.dump_partition_tables;
+drop view sys.dump_foreign_keys;
+drop view sys.dump_column_defaults;
+drop view sys.dump_indices;
+drop view sys.dump_table_constraint_type;
+drop view sys.dump_grant_user_privileges;
+drop view sys.dump_add_schemas_to_users;
+drop view sys.dump_create_schemas;
+drop view sys.dump_create_users;
+drop view sys.dump_create_roles;
+drop view sys.describe_functions;
+drop view sys.describe_partition_tables;
+drop view sys.describe_privileges;
+drop view sys.describe_comments;
+drop view sys.describe_tables;
+drop function sys.get_remote_table_expressions(string, string);
+drop function sys.get_merge_table_partition_expressions(int);
+drop view sys.describe_constraints;
+drop function sys.alter_table(string, string);
+drop function sys.sq(string);
+CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
+CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t); END;
+CREATE VIEW sys.describe_constraints AS
+	SELECT
+		s.name sch,
+		t.name tbl,
+		kc.name col,
+		k.name con,
+		CASE k.type WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' END tpe
+	FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
+	WHERE kc.id = k.id
+		AND k.table_id = t.id
+		AND s.id = t.schema_id
+		AND t.system = FALSE
+		AND k.type in (0, 1);
+CREATE FUNCTION sys.get_merge_table_partition_expressions(tid INT) RETURNS STRING
+BEGIN
+	RETURN
+		SELECT
+			CASE WHEN tp.table_id IS NOT NULL THEN
+				' PARTITION BY ' ||
+				ifthenelse(bit_and(tp.type, 2) = 2, 'VALUES ', 'RANGE ') ||
+				CASE
+					WHEN bit_and(tp.type, 4) = 4
+					THEN 'ON ' || '(' || (SELECT sys.DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
+					ELSE 'USING ' || '(' || tp.expression || ')'
+				END
+			ELSE
+				''
+			END
+		FROM (VALUES (tid)) t(id) LEFT JOIN sys.table_partitions tp ON t.id = tp.table_id;
+END;
+CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
+	RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
+END;
+CREATE VIEW sys.describe_tables AS
+	SELECT
+		t.id o,
+		s.name sch,
+		t.name tab,
+		ts.table_type_name typ,
+		(SELECT
+			' (' ||
+			GROUP_CONCAT(
+				sys.DQ(c.name) || ' ' ||
+				sys.describe_type(c.type, c.type_digits, c.type_scale) ||
+				ifthenelse(c."null" = 'false', ' NOT NULL', '')
+			, ', ') || ')'
+		FROM sys._columns c
+		WHERE c.table_id = t.id) col,
+		CASE ts.table_type_name
+			WHEN 'REMOTE TABLE' THEN
+				sys.get_remote_table_expressions(s.name, t.name)
+			WHEN 'MERGE TABLE' THEN
+				sys.get_merge_table_partition_expressions(t.id)
+			WHEN 'VIEW' THEN
+				sys.schema_guard(s.name, t.name, t.query)
+			ELSE
+				''
+		END opt
+	FROM sys.schemas s, sys.table_types ts, sys.tables t
+	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
+		AND t.system = FALSE
+		AND s.id = t.schema_id
+		AND ts.table_type_id = t.type
+		AND s.name <> 'tmp';
+CREATE VIEW sys.describe_comments AS
+		SELECT
+			o.id id,
+			o.tpe tpe,
+			o.nme fqn,
+			c.remark rem
+		FROM (
+			SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas
+			UNION ALL
+			SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+			WHERE s.name <> 'tmp'
+			UNION ALL
+			SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
+			UNION ALL
+			SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
+			UNION ALL
+			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+			UNION ALL
+			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+			) AS o(id, tpe, nme)
+			JOIN sys.comments c ON c.id = o.id;
+CREATE VIEW sys.describe_privileges AS
+	SELECT
+		CASE
+			WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM
+				'COPY FROM'
+			WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO
+				'COPY INTO'
+			ELSE
+				o.nme
+		END o_nme,
+		coalesce(o.tpe, 'GLOBAL') o_tpe,
+		pc.privilege_code_name p_nme,
+		a.name a_nme,
+		g.name g_nme,
+		p.grantable grantable
+	FROM
+		sys.privileges p LEFT JOIN
+		(
+		SELECT t.id, s.name || '.' || t.name , 'TABLE'
+			from sys.schemas s, sys.tables t where s.id = t.schema_id
+		UNION ALL
+			SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
+			FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
+		UNION ALL
+			SELECT f.id, f.nme, f.tpe
+			FROM sys.fully_qualified_functions f
+		) o(id, nme, tpe) ON o.id = p.obj_id,
+		sys.privilege_codes pc,
+		auths a, auths g
+	WHERE
+		p.privileges = pc.privilege_code_id AND
+		p.auth_id = a.id AND
+		p.grantor = g.id;
+CREATE VIEW sys.describe_partition_tables AS
+	SELECT 
+		m_sch,
+		m_tbl,
+		p_sch,
+		p_tbl,
+		CASE
+			WHEN p_raw_type IS NULL THEN 'READ ONLY'
+			WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'
+			ELSE p_raw_type
+		END AS tpe,
+		pvalues,
+		minimum,
+		maximum,
+		with_nulls
+	FROM 
+    (WITH
+		tp("type", table_id) AS
+		(SELECT ifthenelse((table_partitions."type" & 2) = 2, 'VALUES', 'RANGE'), table_partitions.table_id FROM sys.table_partitions),
+		subq(m_tid, p_mid, "type", m_sch, m_tbl, p_sch, p_tbl) AS
+		(SELECT m_t.id, p_m.id, m_t."type", m_s.name, m_t.name, p_s.name, p_m.name
+		FROM sys.schemas m_s, sys._tables m_t, sys.dependencies d, sys.schemas p_s, sys._tables p_m
+		WHERE m_t."type" IN (3, 6)
+			AND m_t.schema_id = m_s.id
+			AND m_s.name <> 'tmp'
+			AND m_t.system = FALSE
+			AND m_t.id = d.depend_id
+			AND d.id = p_m.id
+			AND p_m.schema_id = p_s.id
+		ORDER BY m_t.id, p_m.id)
+	SELECT
+		subq.m_sch,
+		subq.m_tbl,
+		subq.p_sch,
+		subq.p_tbl,
+		tp."type" AS p_raw_type,
+		CASE WHEN tp."type" = 'VALUES'
+			THEN (SELECT GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS pvalues,
+		CASE WHEN tp."type" = 'RANGE'
+			THEN (SELECT minimum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS minimum,
+		CASE WHEN tp."type" = 'RANGE'
+			THEN (SELECT maximum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS maximum,
+		CASE WHEN tp."type" = 'VALUES'
+			THEN EXISTS(SELECT vp.value FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
+			ELSE (SELECT rp.with_nulls FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
+		END AS with_nulls
+	FROM 
+		subq LEFT OUTER JOIN tp
+		ON subq.m_tid = tp.table_id) AS tmp_pi;
+CREATE VIEW sys.describe_functions AS
+	WITH func_args_all(func_id, number, max_number, func_arg) AS
+	(
+		SELECT
+			func_id,
+			number,
+			max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
+			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+		FROM sys.args
+		WHERE inout = 1
+	),
+	func_args(func_id, func_arg) AS
+	(
+		SELECT func_id, func_arg
+		FROM func_args_all
+		WHERE number = max_number
+	),
+	func_rets_all(func_id, number, max_number, func_ret, func_ret_type) AS
+	(
+		SELECT
+			func_id,
+			number,
+			max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
+			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number),
+			group_concat(sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+		FROM sys.args
+		WHERE inout = 0
+	),
+	func_rets(func_id, func_ret, func_ret_type) AS
+	(
+		SELECT
+			func_id,
+			func_ret,
+			func_ret_type
+		FROM func_rets_all
+		WHERE number = max_number
+	)
+	SELECT
+		f.id o,
+		s.name sch,
+		f.name fun,
+		CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def
+	FROM sys.functions f
+		LEFT OUTER JOIN func_args fa ON fa.func_id = f.id
+		LEFT OUTER JOIN func_rets fr ON fr.func_id = f.id
+		JOIN sys.schemas s ON f.schema_id = s.id
+		JOIN sys.function_types ft ON f.type = ft.function_type_id
+		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
+	WHERE s.name <> 'tmp' AND NOT f.system;
+update sys.functions set system = true where system <> true and name in ('sq', 'alter_table', 'get_merge_table_partition_expressions', 'get_remote_table_expressions') and schema_id = 2000 and type = 1;
+update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;
+CREATE VIEW sys.dump_create_roles AS
+  SELECT
+    'CREATE ROLE ' || sys.dq(name) || ';' stmt,
+    name user_name
+    FROM sys.auths
+   WHERE name NOT IN (SELECT name FROM sys.db_user_info)
+     AND grantor <> 0;
+CREATE VIEW sys.dump_create_users AS
+  SELECT
+    'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||
+      sys.sq(sys.password_hash(ui.name)) ||
+      ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '"sys"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,
+    ui.name user_name
+    FROM sys.db_user_info ui, sys.schemas s
+   WHERE ui.default_schema = s.id
+     AND ui.name <> 'monetdb'
+     AND ui.name <> '.snapshot';
+CREATE VIEW sys.dump_create_schemas AS
+  SELECT
+    'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,
+    s.name schema_name
+    FROM sys.schemas s, sys.auths a
+   WHERE s.authorization = a.id AND s.system = FALSE;
+CREATE VIEW sys.dump_add_schemas_to_users AS
+  SELECT
+    'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';' stmt,
+    s.name schema_name,
+    ui.name user_name
+    FROM sys.db_user_info ui, sys.schemas s
+   WHERE ui.default_schema = s.id
+     AND ui.name <> 'monetdb'
+     AND ui.name <> '.snapshot'
+     AND s.name <> 'sys';
+CREATE VIEW sys.dump_grant_user_privileges AS
+  SELECT
+    'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt,
+    a2.name grantee,
+    a1.name grantor
+    FROM sys.auths a1, sys.auths a2, sys.user_role ur
+   WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
+CREATE VIEW sys.dump_table_constraint_type AS
+  SELECT
+    'ALTER TABLE ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
+      ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
+      tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ') || ');' stmt,
+    sch schema_name,
+    tbl table_name,
+    con constraint_name
+    FROM sys.describe_constraints GROUP BY sch, tbl, con, tpe;
+CREATE VIEW sys.dump_table_grants AS
+  WITH table_grants (sname, tname, grantee, grants, grantor, grantable)
+  AS (SELECT s.name, t.name, a.name, sum(p.privileges), g.name, p.grantable
+	FROM sys.schemas s, sys.tables t, sys.auths a, sys.privileges p, sys.auths g
+       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id GROUP BY s.name, t.name, a.name, g.name, p.grantable
+       ORDER BY s.name, t.name, a.name, g.name, p.grantable)
+  SELECT
+    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.dq(sname)
+      || '.' || sys.dq(tname) || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
+      || CASE WHEN grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
+    sname schema_name,
+    tname table_name,
+    grantee
+    FROM table_grants LEFT OUTER JOIN sys.privilege_codes pc ON grants = pc.privilege_code_id;
+CREATE VIEW sys.dump_column_grants AS
+  SELECT
+    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON '
+      || sys.dq(s.name) || '.' || sys.dq(t.name) || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
+      || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
+    s.name schema_name,
+    t.name table_name,
+    c.name column_name,
+    a.name grantee
+    FROM sys.schemas s,
+	 sys.tables t,
+	 sys.columns c,
+	 sys.auths a,
+	 sys.privileges p,
+	 sys.auths g,
+	 sys.privilege_codes pc
+   WHERE p.obj_id = c.id
+     AND c.table_id = t.id
+     AND p.auth_id = a.id
+     AND t.schema_id = s.id
+     AND NOT t.system
+     AND p.grantor = g.id
+     AND p.privileges = pc.privilege_code_id
+   ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable;
+CREATE VIEW sys.dump_function_grants AS
+  WITH func_args_all(func_id, number, max_number, func_arg) AS
+  (SELECT a.func_id,
+	  a.number,
+	  max(a.number) OVER (PARTITION BY a.func_id ORDER BY a.number DESC),
+	  group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ', ') OVER (PARTITION BY a.func_id ORDER BY a.number)
+     FROM sys.args a
+    WHERE a.inout = 1),
+  func_args(func_id, func_arg) AS
+  (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)
+  SELECT
+    'GRANT ' || pc.privilege_code_name || ' ON '
+      || ft.function_type_keyword || ' '
+      || sys.dq(s.name) || '.' || sys.dq(f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
+      || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
+      || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
+    s.name schema_name,
+    f.name function_name,
+    a.name grantee
+    FROM sys.schemas s,
+	 sys.functions f LEFT OUTER JOIN func_args fa ON f.id = fa.func_id,
+	 sys.auths a,
+	 sys.privileges p,
+	 sys.auths g,
+	 sys.function_types ft,
+	 sys.privilege_codes pc
+   WHERE s.id = f.schema_id
+     AND f.id = p.obj_id
+     AND p.auth_id = a.id
+     AND p.grantor = g.id
+     AND p.privileges = pc.privilege_code_id
+     AND f.type = ft.function_type_id
+     AND NOT f.system
+   ORDER BY s.name, f.name, a.name, g.name, p.grantable;
+CREATE VIEW sys.dump_indices AS
+  SELECT
+    'CREATE ' || tpe || ' ' ||
+      sys.DQ(ind) || ' ON ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
+      '(' || GROUP_CONCAT(col) || ');' stmt,
+    sch schema_name,
+    tbl table_name,
+    ind index_name
+    FROM sys.describe_indices GROUP BY ind, tpe, sch, tbl;
+CREATE VIEW sys.dump_column_defaults AS
+  SELECT 'ALTER TABLE ' || sys.FQN(sch, tbl) || ' ALTER COLUMN ' || sys.DQ(col) || ' SET DEFAULT ' || def || ';' stmt,
+	 sch schema_name,
+	 tbl table_name,
+	 col column_name
+    FROM sys.describe_column_defaults;
+CREATE VIEW sys.dump_foreign_keys AS
+  SELECT
+    'ALTER TABLE ' || sys.DQ(fk_s) || '.'|| sys.DQ(fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
+      'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',') ||') ' ||
+      'REFERENCES ' || sys.DQ(pk_s) || '.' || sys.DQ(pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
+      'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
+      ';' stmt,
+    fk_s foreign_schema_name,
+    fk_t foreign_table_name,
+    pk_s primary_schema_name,
+    pk_t primary_table_name,
+    fk key_name
+    FROM sys.describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
+CREATE VIEW sys.dump_partition_tables AS
+  SELECT
+    sys.ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+      CASE 
+      WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
+      WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
+      WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
+      ELSE ''
+      END ||
+      CASE WHEN tpe in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
+      ';' stmt,
+    m_sch merge_schema_name,
+    m_tbl merge_table_name,
+    p_sch partition_schema_name,
+    p_tbl partition_table_name
+    FROM sys.describe_partition_tables;
+CREATE VIEW sys.dump_sequences AS
+  SELECT
+    'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
+      CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
+      CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
+      CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
+      CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
+      CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
+      CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt,
+    sch schema_name,
+    seq seqname
+    FROM sys.describe_sequences;
+CREATE VIEW sys.dump_start_sequences AS
+  SELECT
+    'UPDATE sys.sequences seq SET start = ' || s ||
+      ' WHERE name = ' || sys.SQ(seq) ||
+      ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,
+    sch schema_name,
+    seq sequence_name
+    FROM sys.describe_sequences;
+CREATE VIEW sys.dump_functions AS
+  SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt,
+	 f.sch schema_name,
+	 f.fun function_name
+    FROM sys.describe_functions f;
+CREATE VIEW sys.dump_tables AS
+  SELECT
+    t.o o,
+    CASE
+      WHEN t.typ <> 'VIEW' THEN
+      'CREATE ' || t.typ || ' ' || sys.FQN(t.sch, t.tab) || t.col || t.opt || ';'
+      ELSE
+      t.opt
+      END stmt,
+    t.sch schema_name,
+    t.tab table_name
+    FROM sys.describe_tables t;
+CREATE VIEW sys.dump_triggers AS
+  SELECT sys.schema_guard(sch, tab, def) stmt,
+	 sch schema_name,
+	 tab table_name,
+	 tri trigger_name
+    FROM sys.describe_triggers;
+CREATE VIEW sys.dump_comments AS
+  SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
+CREATE VIEW sys.dump_user_defined_types AS
+  SELECT 'CREATE TYPE ' || sys.FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || sys.DQ(ext_tpe) || ';' stmt,
+	 sch schema_name,
+	 sql_tpe type_name
+    FROM sys.describe_user_defined_types;
+CREATE FUNCTION sys.esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,E'\\', E'\\\\'), E'\n', E'\\n'), '"', E'\\"') || '"'; END;
+CREATE FUNCTION sys.prepare_esc(s STRING, t STRING) RETURNS STRING
+BEGIN
+  RETURN
+    CASE
+    WHEN (t = 'varchar' OR t ='char' OR t = 'clob' OR t = 'json' OR t = 'geometry' OR t = 'url') THEN
+    'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'sys.esc(' || sys.DQ(s) || ')' || ' END'
+    ELSE
+    'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || sys.DQ(s) || ' AS STRING) END'
+    END;
+END;
+CREATE PROCEDURE sys.dump_table_data(sch STRING, tbl STRING)
+BEGIN
+  DECLARE k INT;
+  SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.name = tbl AND t.schema_id = s.id AND s.name = sch);
+  IF k IS NOT NULL THEN
+    DECLARE cname STRING;
+    DECLARE ctype STRING;
+    SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+    SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+    DECLARE COPY_INTO_STMT STRING;
+    DECLARE _cnt INT;
+    SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
+    IF _cnt > 0 THEN
+      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
+      DECLARE SELECT_DATA_STMT STRING;
+      SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
+      DECLARE M INT;
+      SET M = (SELECT MAX(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
+      WHILE (k < M) DO
+	SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
+        SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+	SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+	SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
+	SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);
+      END WHILE;
+      SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
+      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
+      insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
+      CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
+    END IF;
+  END IF;
+END;
+CREATE PROCEDURE sys.dump_table_data()
+BEGIN
+  DECLARE i INT;
+  SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+  IF i IS NOT NULL THEN
+    DECLARE M INT;
+    SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+    DECLARE sch STRING;
+    DECLARE tbl STRING;
+    WHILE i < M DO
+      set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+      set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+      CALL sys.dump_table_data(sch, tbl);
+      SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
+    END WHILE;
+    set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+    set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+    CALL sys.dump_table_data(sch, tbl);
+  END IF;
+END;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+  SET SCHEMA sys;
+  TRUNCATE sys.dump_statements;
+  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA "sys";');
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+				    FROM (
+				      SELECT f.o, f.stmt FROM sys.dump_functions f
+				       UNION
+				      SELECT t.o, t.stmt FROM sys.dump_tables t
+				    ) AS stmts(o, s);
+  IF NOT DESCRIBE THEN
+    CALL sys.dump_table_data();
+  END IF;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+  RETURN sys.dump_statements;
+END;
+update sys.functions set system = true where system <> true and name in ('esc', 'prepare_esc') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = 5;
+update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = 2;
+update sys._tables set system = true where name in ('dump_create_roles', 'dump_create_users', 'dump_create_schemas', 'dump_add_schemas_to_users', 'dump_grant_user_privileges', 'dump_table_constraint_type', 'dump_table_grants', 'dump_column_grants', 'dump_function_grants', 'dump_indices', 'dump_column_defaults', 'dump_foreign_keys', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'dump_functions', 'dump_tables', 'dump_triggers', 'dump_comments', 'dump_user_defined_types') AND schema_id = 2000;
+drop function sys.reverse(string);
+drop all function sys.fuse;
+create procedure sys.vacuum(sname string, tname string, cname string)
+	external name sql.vacuum;
+create procedure sys.vacuum(sname string, tname string, cname string, interval int)
+	external name sql.vacuum;
+create procedure sys.stop_vacuum(sname string, tname string, cname string)
+	external name sql.stop_vacuum;
+update sys.functions set system = true where system <> true and name in ('vacuum', 'stop_vacuum') and schema_id = 2000 and type = 2;
 

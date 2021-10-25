@@ -479,23 +479,14 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 		unsigned int mscale = 0, mdigits = 0;
 
 		if (ops) {
-			if (ops->h && ops->h->data && f->imp &&
-			    strcmp(f->imp, "round") == 0) {
-				/* special case for round(): result is
-				 * same type as first argument */
-				sql_subtype *a = ops->h->data;
-				mscale = a->scale;
-				mdigits = a->digits;
-			} else {
-				for (tn = ops->h; tn; tn = tn->next) {
-					sql_subtype *a = tn->data;
+			for (tn = ops->h; tn; tn = tn->next) {
+				sql_subtype *a = tn->data;
 
-					/* same scale as the input */
-					if (a && a->scale > mscale)
-						mscale = a->scale;
-					if (a && f->fix_scale == INOUT)
-						mdigits = a->digits;
-				}
+				/* same scale as the input */
+				if (a && a->scale > mscale)
+					mscale = a->scale;
+				if (a && f->fix_scale == INOUT && tn == ops->h)
+					mdigits = a->digits;
 			}
 		}
 
