@@ -1057,44 +1057,36 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		break;
 	case op_semi:
 	case op_anti:
-
 	case op_select:
 	case op_topn:
 	case op_sample:
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
-
 	case op_basetable:
-		if (e->l)
-			found = (rel_base_bind_column2_(rel, e->l, e->r) != NULL);
-		else
-			found = (rel_base_bind_column_(rel, e->r) != NULL);
-		break;
 	case op_union:
 	case op_inter:
 	case op_except:
-		if (!rel->exps) {
-			found = rel_bind_path_(sql, rel->l, e, path);
-			assert(0);
-			break;
-		}
-		/* fall through */
 	case op_groupby:
 	case op_project:
 	case op_table:
-		if (!rel->exps)
-			break;
-		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
-			found = 1;
-		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
-			found = 1;
+		if (is_basetable(rel->op) && !rel->exps) {
+			if (e->l) {
+				if (rel_base_bind_column2_(rel, e->l, e->r))
+					found = 1;
+			} else if (rel_base_bind_column_(rel, e->r))
+				found = 1;
+		} else if (rel->exps) {
+			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
+				found = 1;
+			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
+				found = 1;
+		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
 	case op_truncate:
 	case op_merge:
-		break;
 	case op_ddl:
 		break;
 	}
@@ -1109,9 +1101,10 @@ rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e, list *path)
 	if (!path)
 		return NULL;
 
-	if (e->type == e_convert)
-		path = rel_bind_path(sql, rel, e->l, path);
-	else if (e->type == e_column) {
+	if (e->type == e_convert) {
+		if (!(path = rel_bind_path(sql, rel, e->l, path)))
+			return NULL;
+	} else if (e->type == e_column) {
 		if (rel) {
 			if (!rel_bind_path_(sql, rel, e, path)) {
 				/* something is wrong */
@@ -1207,15 +1200,13 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 sql_rel *
 rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f)
 {
-	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
-	list *r = rel_bind_path(sql, rel, rs, sa_list(sql->sa));
-	list *r2 = NULL;
+	list *l = NULL, *r = NULL, *r2 = NULL;
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
-	if (rs2)
-		r2 = rel_bind_path(sql, rel, rs2, sa_list(sql->sa));
-	if (!l || !r || (rs2 && !r2))
+	if (!(l = rel_bind_path(sql, rel, ls, sa_list(sql->sa))) ||
+		!(r = rel_bind_path(sql, rel, rs, sa_list(sql->sa))) ||
+		(rs2 && !(r2 = rel_bind_path(sql, rel, rs2, sa_list(sql->sa)))))
 		return NULL;
 
 	if (is_sql_or(f))
