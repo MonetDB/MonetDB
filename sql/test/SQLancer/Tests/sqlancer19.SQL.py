@@ -309,7 +309,7 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT t7.c0 FROM t7 WHERE (((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -t7.c0 AND t7.c0)) ORDER BY c0;") \
         .assertSucceeded().assertDataResultMatch([(None,),(-7,),(-1,),(0,),(0,),(0,),(0,),(0,),(1,),(3,),(3,),(4,),(4,),(4,),(5,),(5,),(5,),(5,),(6,),(6,),(7,),(7,),(8,),(9,),(9,)])
-    cli.execute("SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) AS INT) as count FROM rt7) as res;") \
+    cli.execute("SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -t7.c0 AND t7.c0)) AS INT) as count FROM t7) as res;") \
         .assertSucceeded().assertDataResultMatch([(25,)])
     cli.execute("SELECT rt7.c0 FROM rt7 WHERE (((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) ORDER BY c0;") \
         .assertSucceeded().assertDataResultMatch([(None,),(-7,),(-1,),(0,),(0,),(0,),(0,),(0,),(1,),(3,),(3,),(4,),(4,),(4,),(5,),(5,),(5,),(5,),(6,),(6,),(7,),(7,),(8,),(9,),(9,)])
