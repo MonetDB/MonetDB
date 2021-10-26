@@ -68,8 +68,9 @@ static void logjsonInternal(char *logbuffer)
 	MT_lock_set(&mal_profileLock);
 	if (maleventstream) {
 	// upon request the log record is sent over the profile stream
-		(void) mnstr_write(maleventstream, logbuffer, 1, len);
-		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
+		if (mnstr_write(maleventstream, logbuffer, 1, len) != BLOCK) /* if we wrote exactly the BLOCK size, it was
+																	   flushed allready */
+			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
 	MT_lock_unset(&mal_profileLock);
 }

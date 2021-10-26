@@ -1883,6 +1883,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				outputs = new_exp_list(sql->sa);
 				while (r[*pos] && r[*pos] != ']' && m) {
 					sql_arg *a = m->data;
+					unsigned int rlabel, nlabel;
 					char *nrname, *ncname;
 
 					if (r[*pos] != '"')
@@ -1908,6 +1909,10 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 						(*pos)++;
 
 					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0, 0);
+					rlabel = try_update_label_count(sql, nrname);
+					nlabel = try_update_label_count(sql, ncname);
+					if (rlabel && rlabel == nlabel)
+						next->alias.label = rlabel;
 					set_basecol(next);
 					append(outputs, next);
 					m = m->next;
