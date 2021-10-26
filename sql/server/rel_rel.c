@@ -296,7 +296,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 		assert(is_processed(rel));
 		return NULL;
 	} else if (is_join(rel->op)) {
-		sql_exp *e1 = rel_bind_column(sql, rel->l, cname, f, no_tname), *e2 = NULL;
+		sql_exp *e1 = rel_bind_column(sql, rel->l, cname, f, no_tname), *e2 = NULL, *res;
 
 		if (e1 && (is_right(rel->op) || is_full(rel->op)))
 			set_has_nil(e1);
@@ -307,7 +307,10 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			if (e1 && e2 && !is_dependent(rel))
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		}
-		return e1 ? e1 : e2;
+		res = e1 ? e1 : e2;
+		if (res)
+			set_not_unique(res);
+		return res;
 	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
 		   is_topn(rel->op) ||
@@ -385,6 +388,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
 		}
+		if (e)
+			set_not_unique(e);
 		return e;
 	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
@@ -532,8 +537,10 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
-			if (!keep_props)
+			if (!keep_props) {
 				e->p = NULL; /* remove all the properties on unions on the general case */
+				set_not_unique(e);
+			}
 		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
@@ -896,14 +903,17 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 }
 
 static void
-exps_has_nil(list *exps)
+exps_reset_props(list *exps, bool setnil)
 {
-	if (!list_empty(exps))
+	if (!list_empty(exps)) {
 		for (node *m = exps->h; m; m = m->next) {
 			sql_exp *e = m->data;
 
-			set_has_nil(e);
+			if (setnil)
+				set_has_nil(e);
+			set_not_unique(e);
 		}
+	}
 }
 
 list *
@@ -926,11 +936,9 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_right:
 	case op_full:
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
-		if (rel->op == op_full || rel->op == op_right)
-			exps_has_nil(lexps);
+		exps_reset_props(lexps, is_right(rel->op) || is_full(rel->op));
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
-		if (rel->op == op_full || rel->op == op_left)
-			exps_has_nil(rexps);
+		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
 		return list_merge(lexps, rexps, (fdup)NULL);
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
@@ -1049,44 +1057,36 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		break;
 	case op_semi:
 	case op_anti:
-
 	case op_select:
 	case op_topn:
 	case op_sample:
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
-
 	case op_basetable:
-		if (e->l)
-			found = (rel_base_bind_column2_(rel, e->l, e->r) != NULL);
-		else
-			found = (rel_base_bind_column_(rel, e->r) != NULL);
-		break;
 	case op_union:
 	case op_inter:
 	case op_except:
-		if (!rel->exps) {
-			found = rel_bind_path_(sql, rel->l, e, path);
-			assert(0);
-			break;
-		}
-		/* fall through */
 	case op_groupby:
 	case op_project:
 	case op_table:
-		if (!rel->exps)
-			break;
-		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
-			found = 1;
-		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
-			found = 1;
+		if (is_basetable(rel->op) && !rel->exps) {
+			if (e->l) {
+				if (rel_base_bind_column2_(rel, e->l, e->r))
+					found = 1;
+			} else if (rel_base_bind_column_(rel, e->r))
+				found = 1;
+		} else if (rel->exps) {
+			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
+				found = 1;
+			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
+				found = 1;
+		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
 	case op_truncate:
 	case op_merge:
-		break;
 	case op_ddl:
 		break;
 	}
@@ -1101,9 +1101,10 @@ rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e, list *path)
 	if (!path)
 		return NULL;
 
-	if (e->type == e_convert)
-		path = rel_bind_path(sql, rel, e->l, path);
-	else if (e->type == e_column) {
+	if (e->type == e_convert) {
+		if (!(path = rel_bind_path(sql, rel, e->l, path)))
+			return NULL;
+	} else if (e->type == e_column) {
 		if (rel) {
 			if (!rel_bind_path_(sql, rel, e, path)) {
 				/* something is wrong */
@@ -1199,15 +1200,13 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 sql_rel *
 rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f)
 {
-	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
-	list *r = rel_bind_path(sql, rel, rs, sa_list(sql->sa));
-	list *r2 = NULL;
+	list *l = NULL, *r = NULL, *r2 = NULL;
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
-	if (rs2)
-		r2 = rel_bind_path(sql, rel, rs2, sa_list(sql->sa));
-	if (!l || !r || (rs2 && !r2))
+	if (!(l = rel_bind_path(sql, rel, ls, sa_list(sql->sa))) ||
+		!(r = rel_bind_path(sql, rel, rs, sa_list(sql->sa))) ||
+		(rs2 && !(r2 = rel_bind_path(sql, rel, rs2, sa_list(sql->sa)))))
 		return NULL;
 
 	if (is_sql_or(f))
@@ -1403,12 +1402,14 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		*exp = NULL;
 		return rel;
 	}
-	if (!is_simple_project(rel->op) || !list_empty(rel->r) || rel_is_ref(rel))
+	if (!is_simple_project(rel->op) || need_distinct(rel) || !list_empty(rel->r) || rel_is_ref(rel))
 		rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
-	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC));
 	set_intern(e);
+	set_has_no_nil(e);
+	set_unique(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	(void) rel_project_add_exp(sql, rel, e);
@@ -1418,7 +1419,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
+	if (rel && is_project(rel->op) && !need_distinct(rel) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
@@ -1464,7 +1465,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (!e && cname[0] == '%' && !tname)
 			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, 0);
 		if (e && !ambiguous && !multi)
-			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 	}
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
@@ -1482,6 +1483,8 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
 		}
+		if (e)
+			set_not_unique(e);
 		return e;
 	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
@@ -1524,7 +1527,7 @@ lastexp(sql_rel *rel)
 	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
-	assert(is_project(rel->op));
+	assert(is_project(rel->op) || rel->op == op_table);
 	return rel->exps->t->data;
 }
 

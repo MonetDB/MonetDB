@@ -16835,6 +16835,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 			nils = BUN_NONE;
 		}
 		ret->val.mval = tmp.val.btval;
+		ret->len = ATOMsize(TYPE_msk);
 	} else if (v->vtype == TYPE_msk) {
 		ValRecord tmp;
 		tmp.vtype = TYPE_bit;
@@ -16845,9 +16846,11 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
 					     ATOMnilptr(v->vtype)) == 0) {
-			ret->val.sval = GDKstrdup(str_nil);
+			if (VALinit(ret, TYPE_str, str_nil) == NULL)
+				return GDK_FAIL;
 		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
-			ret->val.sval = GDKstrdup(v->val.sval);
+			if (VALinit(ret, TYPE_str, v->val.sval) == NULL)
+				return GDK_FAIL;
 		} else {
 			ret->len = 0;
 			ret->val.sval = NULL;
@@ -16858,25 +16861,24 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 				GDKfree(ret->val.sval);
 				ret->val.sval = NULL;
 				ret->len = 0;
-				nils = BUN_NONE;
+				return GDK_FAIL;
 			}
 		}
-		if (ret->val.sval == NULL)
-			nils = BUN_NONE;
 	} else if (ret->vtype == TYPE_void) {
 		if (abort_on_error &&
 		    ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
 			GDKerror("22003!cannot convert non-nil to void.\n");
-			nils = BUN_NONE;
+			return GDK_FAIL;
 		}
 		ret->val.oval = oid_nil;
+		ret->len = ATOMsize(TYPE_void);
 	} else if (v->vtype == TYPE_void) {
 		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
-			nils = BUN_NONE;
+			return GDK_FAIL;
 	} else if (v->vtype == TYPE_str) {
 		if (strNil(v->val.sval)) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
-				nils = BUN_NONE;
+				return GDK_FAIL;
 		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {
 			nils = BUN_NONE + 1;
 		} else {
@@ -16912,7 +16914,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 						 "to type %s failed.\n",
 						 ATOMname(ret->vtype));
 				}
-				nils = BUN_NONE;
+				return GDK_FAIL;
 			} else {
 				/* now give value obtained to ret */
 				assert(ATOMextern(ret->vtype) ||
@@ -16928,6 +16930,8 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 					      &(struct canditer){.tpe=cand_dense, .ncand=1},
 					      0, abort_on_error, &reduce,
 					      scale1, scale2, precision);
+		if (nils < BUN_NONE)
+			ret->len = ATOMlen(ret->vtype, VALptr(ret));
 	}
 	if (nils == BUN_NONE + 1) {
 		GDKerror("conversion from type %s to type %s "
@@ -16935,6 +16939,5 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;
 	}
-	ret->len = ATOMlen(ret->vtype, VALptr(ret));
 	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }
