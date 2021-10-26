@@ -5728,8 +5728,10 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 	}
 
 	if (tpe->type->s) {/* column depends on type */
-		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY)))
+		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY))) {
+			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
+		}
 		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl))) {
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
