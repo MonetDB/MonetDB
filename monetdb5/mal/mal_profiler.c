@@ -60,7 +60,7 @@ static struct rusage prevUsage;
 #define LOGLEN 8192
 
 // The heart beat events should be sent to all outstanding channels.
-static void logjsonInternal(char *logbuffer)
+static void logjsonInternal(char *logbuffer, bool flush)
 {
 	size_t len;
 	len = strlen(logbuffer);
@@ -69,7 +69,8 @@ static void logjsonInternal(char *logbuffer)
 	if (maleventstream) {
 	// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
-		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
+		if (flush)
+			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
 	MT_lock_unset(&mal_profileLock);
 }
@@ -141,7 +142,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			/* includes first time when logbuffer == NULL and logcap = 0 */
 			char *alloc_buff;
 			if (logbuf->loglen > 0)
-				logjsonInternal(logbuf->logbuffer);
+				logjsonInternal(logbuf->logbuffer, false);
 			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
 			if (logbuf->logcap < LOGLEN)
 				logbuf->logcap = LOGLEN;
@@ -156,7 +157,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			logbuf->logbuffer = alloc_buff;
 			lognew(logbuf);
 		} else {
-			logjsonInternal(logbuf->logbuffer);
+			logjsonInternal(logbuf->logbuffer, false);
 			lognew(logbuf);
 		}
 	}
@@ -453,7 +454,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	}
 	if (!logadd(&logbuf, "}\n")) // end marker
 		return;
-	logjsonInternal(logbuf.logbuffer);
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
 }
 
@@ -590,7 +591,7 @@ profilerHeartbeatEvent(char *alter)
 				"}\n",			// end marker
 				alter, cpuload))
 		return;
-	logjsonInternal(logbuf.logbuffer);
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
 }
 
@@ -625,7 +626,7 @@ openProfilerStream(Client cntxt)
 #endif
 	if (myname == 0){
 		myname = putName("profiler");
-		logjsonInternal(monet_characteristics);
+		logjsonInternal(monet_characteristics, true);
 	}
 	if(maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
@@ -682,7 +683,7 @@ startProfiler(Client cntxt)
 	}
 	malProfileMode = 1;
 	MT_lock_unset(&mal_profileLock);
-	logjsonInternal(monet_characteristics);
+	logjsonInternal(monet_characteristics, true);
 	// reset the trace table
 	clearTrace(cntxt);
 
