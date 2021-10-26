@@ -611,6 +611,25 @@ BKCgetSize(lng *tot, const bat *bid){
 	return MAL_SUCCEED;
 }
 
+static str
+BKCgetVHeapSize(lng *tot, const bat *bid){
+	BAT *b;
+	lng size = 0;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getVHeapSize", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (ATOMvarsized(b->ttype)) {
+		MT_lock_set(&b->theaplock);
+		if (b->tvheap)
+			size += b->tvheap->size;
+		MT_lock_unset(&b->theaplock);
+	}
+
+	*tot = size;
+	BBPunfix(*bid);
+	return MAL_SUCCEED;
+}
+
 /*
  * Synced BATs
  */
@@ -1234,6 +1253,7 @@ mel_func bat5_init_funcs[] = {
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
  command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
  command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes\nrounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),
+ command("bat", "getVHeapSize", BKCgetVHeapSize, false, "Calculate the vheap size for varsized bats", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getCapacity", BKCgetCapacity, false, "Returns the current allocation size (in max number of elements) of a BAT.", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getColumnType", BKCgetColumnType, false, "Returns the type of the tail column of a BAT, as an integer type number.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getRole", BKCgetRole, false, "Returns the rolename of the head column of a BAT.", args(1,2, arg("",str),batargany("bid",1))),

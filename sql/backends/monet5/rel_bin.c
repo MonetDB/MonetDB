@@ -16,16 +16,12 @@
 #include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
 #include "rel_predicates.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
-
-#define OUTER_ZERO 64
 
 static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 static stmt * rel_bin(backend *be, sql_rel *rel);
@@ -1211,8 +1207,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		break;
 	case e_atom: {
 		if (e->l) { 			/* literals */
-			atom *a = e->l;
-			s = stmt_atom(be, atom_dup(sql->sa, a));
+			s = stmt_atom(be, e->l);
 		} else if (e->r) { 		/* parameters and declared variables */
 			sql_var_name *vname = (sql_var_name*) e->r;
 			assert(vname->name);
@@ -1296,11 +1291,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (f->func->rel)
-			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
-		else
-			s = stmt_Nop(be, stmt_list(be, l), sel, f);
-		if (!s)
+		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f)))
 			return NULL;
 	} 	break;
 	case e_aggr: {
@@ -1924,7 +1915,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 				stpcpy(stpcpy(stpcpy(stpcpy(buf, levelstr), "\""), nme), "\""); /* escape variable name */
 			}
 			if (!list_find(args, buf, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
+				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, e->flag);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, buf));
 				list_append(args, s);
@@ -2168,18 +2159,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					s = stmt_alias(be, s, rnme, a->name);
 					list_append(l, s);
 				}
-#if 0
-				if (list_length(f->res) == list_length(f->func->res) + 1) {
-					assert(0);
-					/* add missing %TID% column */
-					sql_subtype *t = f->res->t->data;
-					stmt *s = stmt_rs_column(be, psub, i, t);
-					const char *rnme = exp_find_rel_name(op);
-
-					s = stmt_alias(be, s, rnme, TID);
-					list_append(l, s);
-				}
-#endif
 			}
 		}
 		assert(rel->flag != TABLE_PROD_FUNC || !sub || !(sub->nrcols));
@@ -2197,7 +2176,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		sub = stmt_list(be, l);
 		if (!(sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0)))
 			return NULL;
-		fr = rel->l;
+		fr = rel->l = sub->op4.rel; /* rel->l may get rewritten */
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
 			sql_exp *c = n->data;
@@ -3620,14 +3599,14 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!sub && !predicate)
 		predicate = rel2bin_predicate(be);
-	if (!rel->exps || !rel->exps->h) {
+	if (list_empty(rel->exps)) {
 		if (sub)
 			return sub;
 		if (predicate)
 			return predicate;
 		assert(0);
-		return stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
 	}
+	en = rel->exps->h;
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
 		assert(predicate);
@@ -3636,7 +3615,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 	/* handle possible index lookups */
 	/* expressions are in index order ! */
-	if (sub && (en = rel->exps->h) != NULL) {
+	if (sub && en) {
 		sql_exp *e = en->data;
 		prop *p;
 
@@ -3902,7 +3881,7 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, s, query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1, 1)))
+	if ((rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }
@@ -4156,7 +4135,7 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 	ti->nn = name;
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		append(exps, ne);
 	}
@@ -5105,14 +5084,14 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 		sql_column *c = n->data;
 
 		if (updates[c->colnr]) {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			append(exps, oe);
 			append(exps, ne);
 		} else {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			append(exps, oe);
 			append(exps, ne);
@@ -5379,7 +5358,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, stmt
 	ti->nn = name;
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		append(exps, ne);
 	}
@@ -5843,8 +5822,8 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *n;
-	const char *tsep, *rsep, *ssep, *ns;
-	const char *fn   = NULL;
+	const char *tsep, *rsep, *ssep, *ns, *fn = NULL;
+	atom *tatom, *ratom, *satom, *natom;
 	int onclient = 0;
 	stmt *s = NULL, *fns = NULL;
 	list *slist = sa_list(sql->sa);
@@ -5858,10 +5837,14 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	if (!rel->exps)
 		return s;
 	n = rel->exps->h;
-	tsep = sa_strdup(sql->sa, E_ATOM_STRING(n->data));
-	rsep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->data));
-	ssep = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->data));
-	ns   = sa_strdup(sql->sa, E_ATOM_STRING(n->next->next->next->data));
+	tatom = ((sql_exp*) n->data)->l;
+	tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
+	ratom = ((sql_exp*) n->next->data)->l;
+	rsep  = sa_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
+	satom = ((sql_exp*) n->next->next->data)->l;
+	ssep  = sa_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
+	natom = ((sql_exp*) n->next->next->next->data)->l;
+	ns    = sa_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
 
 	if (n->next->next->next->next) {
 		fn = E_ATOM_STRING(n->next->next->next->next->data);

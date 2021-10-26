@@ -4289,12 +4289,6 @@ opt_alias_name:
 
 atom:
     literal
-	{ 
-		AtomNode *an = (AtomNode*)$1;
-		atom *a = an->a; 
-		an->a = atom_dup(SA, a); 
-		$$ = $1;
-	}
  ;
 
 qrank:
@@ -4691,7 +4685,7 @@ literal:
 		  }
 
 		  if (err) {
-			sqlformaterror(m, SQLSTATE(22003) "integer value too large or not a number (%s)", $1);
+			sqlformaterror(m, SQLSTATE(22003) "Integer value too large or not a number (%s)", $1);
 			$$ = NULL;
 			YYABORT;
 		  } else {
@@ -4796,7 +4790,7 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22M28) "incorrect blob %s", $2);
+			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $2);
 			YYABORT;
 		  }
 		}
@@ -4810,55 +4804,56 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $1)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22M28) "incorrect blob %s", $1);
+			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $1);
 			YYABORT;
 		  }
 		}
  |  aTYPE string
 		{ sql_subtype t;
-		  atom *a= 0;
+		  atom *a = NULL;
 		  int r;
 
-		  $$ = NULL;
-		  r = sql_find_subtype(&t, $1, 0, 0);
-	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
-			$$ = _newAtomNode(a);
-		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22000) "incorrect %s %s", $1, $2);
+		  if (!(r = sql_find_subtype(&t, $1, 0, 0))) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
+		  if (!(a = atom_general(SA, &t, $2))) {
+			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
+			YYABORT;
+		  }
+		  $$ = _newAtomNode(a);
 		}
  | type_alias string
 		{ sql_subtype t; 
-		  atom *a = 0;
+		  atom *a = NULL;
 		  int r;
 
-		  $$ = NULL;
-		  r = sql_find_subtype(&t, $1, 0, 0);
-	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
-			$$ = _newAtomNode(a);
-		  if (!$$) {
-			sqlformaterror(m, SQLSTATE(22000) "incorrect %s %s", $1, $2);
+		  if (!(r = sql_find_subtype(&t, $1, 0, 0))) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
+		  if (!(a = atom_general(SA, &t, $2))) {
+			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
+			YYABORT;
+		  }
+		  $$ = _newAtomNode(a);
 		}
  | ident_or_uident string
 		{
-		  sql_type *t = mvc_bind_type(m, $1);
-		  atom *a;
+		  sql_type *t = NULL;
+		  sql_subtype tpe;
+		  atom *a = NULL;
 
-		  $$ = NULL;
-		  if (t) {
-		  	sql_subtype tpe;
-			sql_init_subtype(&tpe, t, 0, 0);
-			a = atom_general(SA, &tpe, $2);
-			if (a)
-				$$ = _newAtomNode(a);
-		  }
-		  if (!t || !$$) {
-			sqlformaterror(m, SQLSTATE(22000) "type (%s) unknown", $1);
+		  if (!(t = mvc_bind_type(m, $1))) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
+		  sql_init_subtype(&tpe, t, 0, 0);
+		  if (!(a = atom_general(SA, &tpe, $2))) {
+			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
+			YYABORT;
+		  }
+		  $$ = _newAtomNode(a);
 		}
  |  BOOL_FALSE
 		{ sql_subtype t;
@@ -5215,7 +5210,7 @@ data_type:
 			}
 | GEOMETRY {
 		if (!sql_find_subtype(&$$, "geometry", 0, 0 )) {
-			sqlformaterror(m, "%s", SQLSTATE(22000) "type (geometry) unknown");
+			sqlformaterror(m, "%s", SQLSTATE(22000) "Type (geometry) unknown");
 			$$.type = NULL;
 			YYABORT;
 		}
@@ -5248,7 +5243,7 @@ data_type:
 	}
 | GEOMETRYA {
 		if (!sql_find_subtype(&$$, "geometrya", 0, 0 )) {
-			sqlformaterror(m, "%s", SQLSTATE(22000) "type (geometrya) unknown");
+			sqlformaterror(m, "%s", SQLSTATE(22000) "Type (geometrya) unknown");
 			$$.type = NULL;
 			YYABORT;
 		}

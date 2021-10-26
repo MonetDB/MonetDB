@@ -85,12 +85,13 @@ extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 extern list * exp_get_values(sql_exp *e); /* get expression list from the values expression */
 extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
+extern int have_semantics(list *exps);
 
-sql_export sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int intern);
+sql_export sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 extern sql_exp * exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe);
 extern sql_exp * exp_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_ref_save(mvc *sql, sql_exp *e); /* if needed mark the input expression as a referenced expression, return reference to e */
-extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int intern);
+extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old);
 extern sql_exp * exp_alias_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_set(sql_allocator *sa, const char *sname, const char *name, sql_exp *val, int level);
@@ -187,11 +188,10 @@ extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);
 extern void exps_setcard( list *exps, unsigned int card);
 extern int exps_intern(list *exps);
+extern sql_exp *exps_find_one_multi_exp(list *exps);
 
 extern const char *compare_func( comp_type t, int anti );
 extern int is_identity( sql_exp *e, sql_rel *r);
-
-extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
 extern sql_exp *exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r);
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);

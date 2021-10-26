@@ -40,17 +40,12 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_distribute.h"
-#include "rel_partition.h"
 #include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_psm.h"
 #include "rel_bin.h"
 #include "rel_dump.h"
-#include "rel_remote.h"
 
 #include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
@@ -263,7 +258,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 	if (msg) {
 		if (c->curprg->def->errors)
-			GDKfree(msg);
+			freeException(msg);
 		else
 			c->curprg->def->errors = msg;
 	}
@@ -387,21 +382,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* ops */
 	if (call && call->type == st_list) {
+		char nbuf[IDLENGTH];
+		int i = 0;
+
 		for (node *n = call->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
-			int type = t->type->localtype;
-			int varid = 0;
-			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
-			char *buf = SA_NEW_ARRAY(m->sa, char, strlen(nme) + 2);
+			int type = t->type->localtype, varid = 0;
 
-			if (!buf) {
-				GDKfree(lname);
-				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return -1;
-			}
-			stpcpy(stpcpy(buf, "A"), nme);
-			if ((varid = newVariable(curBlk, buf,strlen(buf), type)) < 0) {
+			sprintf(nbuf, "A%d", i++);
+			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
 				GDKfree(lname);
 				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				return -1;
@@ -1233,11 +1223,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
-		r = sql_processrelation(m, r, 1, 0);
-	if (r)
-		r = rel_distribute(m, r);
-	if (r)
-		r = rel_partition(m, r);
+		r = sql_processrelation(m, r, 1, 1, 0);
 	if (r && !f->sql) 	/* native function */
 		return 0;
 
@@ -1363,7 +1349,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	if (msg) {
 		if (c->curprg->def->errors)
-			GDKfree(msg);
+			freeException(msg);
 		else
 			c->curprg->def->errors = msg;
 	}

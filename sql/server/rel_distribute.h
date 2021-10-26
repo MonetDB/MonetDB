@@ -10,8 +10,11 @@
 #define _REL_DISTRIBUTE_H_
 
 #include "sql_relation.h"
+#include "rel_rel.h"
 #include "sql_mvc.h"
 
-extern sql_rel * rel_distribute(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_rewrite_remote(visitor *v, sql_rel *rel);
+extern sql_rel *rel_rewrite_replica(visitor *v, sql_rel *rel);
+extern sql_rel *rel_remote_func(visitor *v, sql_rel *rel);
 
 #endif /*_REL_DISTRIBUTE_H_*/

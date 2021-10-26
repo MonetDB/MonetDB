@@ -41,7 +41,7 @@ statement error 40002!INSERT INTO: FOREIGN KEY constraint 't1.t1_c0_fkey' violat
 insert into t1(c0) values ((select 'a')), ('b')
 
 statement error 40002!INSERT INTO: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
-insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'')
+insert into t1(c0) values(']BW扗}FUp'), (cast((values (greatest('Aᨐ', '_'))) as string(616))), ('')
 
 statement ok
 DROP TABLE t1
@@ -613,7 +613,7 @@ NULL
 1804976115
 
 statement error 42000!MERGE: subqueries not supported inside MERGE conditions
-merge into t2 using (select * from t1) as t1 on (((((values (false), (false)))and("isauuid"(r'AJr1G'))))or(exists ((select distinct l2t2.c2 from t0 as l2t0, t2 as l2t2 where false group by l2t2.c2, l2t2.c2,
+merge into t2 using (select * from t1) as t1 on (((((values (false), (false)))and("isauuid"('AJr1G'))))or(exists ((select distinct l2t2.c2 from t0 as l2t0, t2 as l2t2 where false group by l2t2.c2, l2t2.c2,
 0.200162480534249) union all (select distinct -25669977 from t1 as l2t1 where false)))) when matched then update set c2 = (coalesce(0.05676984416302433, cast(0.05650992 as bigint)))
 when not matched then insert (c2) values (cast(((0.6603879962021974581176664287340827286243438720703125)<>(0.99667693019570047230359932655119337141513824462890625)) as bigint))
 
@@ -844,7 +844,7 @@ True
 True
 
 query T rowsort
-SELECT t1.c2 FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((scale_down(4, 3))&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"(r'*O'))))AND(((r'h')NOT LIKE(r'N')))) 
+SELECT t1.c2 FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((scale_down(4, 3))&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"('*O'))))AND((('h')NOT LIKE('N')))) 
 WHERE (((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT ALL (SELECT BLOB 'afd907d0A0' FROM t0 AS l2t0 WHERE TRUE))) IS NULL
 ----
 7982
@@ -868,7 +868,7 @@ WHERE (((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT 
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT ALL (SELECT BLOB 'afd907d0A0' FROM t0 AS l2t0 WHERE TRUE))) IS NULL AS INT) as count FROM t1, t2 
-RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((scale_down(4, 3))&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"(r'*O'))))AND(((r'h')NOT LIKE(r'N'))))) as res
+RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((scale_down(4, 3))&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"('*O'))))AND((('h')NOT LIKE('N'))))) as res
 ----
 18
 
@@ -942,7 +942,7 @@ query TI nosort
 select interval '4' month, count(*) from t2, t0, t1 cross join (select t2.c0, case when least(false, true) then 2 when (date '1970-01-01') is not null then 3.2 when (values (true), (true)) 
 then sql_max(0.54, 0.15) end from t1, t2, t0 full outer join (select (select 0.16 from t1 as l2t1, t2 as l2t2 where true) from t0 as l1t0, t1 as l1t1, t2 as l1t2 where false) as sub0 on case blob ''
 when blob '14' then false when blob '15' then false end where ((t2.c2)ilike(t2.c2))) as sub0 where ((nullif(t2.c2, t2.c2))ilike((select l2t2.c2 from t2 as l2t2, t1 as l2t1 where true))) group by 5
-having (scale_up(min(case when ((t2.c2)ilike(t2.c2)) then t0.c0 end), 2)) between asymmetric (cast(0.42 as smallint)) and (least(-3, 0.31)) order by null asc nulls last, lower(r'0.4') desc nulls last
+having (scale_up(min(case when ((t2.c2)ilike(t2.c2)) then t0.c0 end), 2)) between asymmetric (cast(0.42 as smallint)) and (least(-3, 0.31)) order by null asc nulls last, lower('0.4') desc nulls last
 ----
 
 

@@ -171,9 +171,9 @@ ATOMelmshift(int sz)
 
 
 void
-BATsetdims(BAT *b)
+BATsetdims(BAT *b, uint16_t width)
 {
-	b->twidth = b->ttype == TYPE_str ? 1 : ATOMsize(b->ttype);
+	b->twidth = b->ttype == TYPE_str ? width > 0 ? width : 1 : ATOMsize(b->ttype);
 	b->tshift = ATOMelmshift(b->twidth);
 	assert_shift_width(b->tshift, b->twidth);
 	b->tvarsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
@@ -204,6 +204,7 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 {
 	if (tt == TYPE_str) {
 		switch (width) {
+		case 0:
 		case 1:
 			strconcat_len(tail->filename,
 				      sizeof(tail->filename), physnme,
@@ -241,7 +242,7 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
  * filenames.
  */
 BAT *
-COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
+COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 {
 	BAT *bn;
 
@@ -268,20 +269,11 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	if (bn == NULL)
 		return NULL;
 
-	BATsetdims(bn);
+	BATsetdims(bn, width);
 	bn->batCapacity = cap;
 
 	if (ATOMstorage(tt) == TYPE_msk)
 		cap /= 8;	/* 8 values per byte */
-	else if (tt == TYPE_str) {
-		if (width != 0) {
-			/* power of two and not too large */
-			assert((width & (width - 1)) == 0);
-			assert(width <= sizeof(var_t));
-			bn->twidth = width;
-		}
-		settailname(bn->theap, BBP_physical(bn->batCacheid), tt, bn->twidth);
-	}
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
@@ -313,7 +305,7 @@ COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 BAT *
 COLnew(oid hseq, int tt, BUN cap, role_t role)
 {
-	return COLnew_intern(hseq, tt, cap, role, 0);
+	return COLnew2(hseq, tt, cap, role, 0);
 }
 
 BAT *
@@ -835,16 +827,15 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				slowcopy = true;
 		}
 
-		bn = COLnew_intern(b->hseqbase, tt, bi.count, role, bi.width);
+		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
 			bat_iterator_end(&bi);
 			return NULL;
 		}
 		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
 			/* this combination can happen since the last
-			 * argument of COLnew_intern not being zero
-			 * triggers a skip in the allocation of the
-			 * tvheap */
+			 * argument of COLnew2 not being zero triggers a
+			 * skip in the allocation of the tvheap */
 			if (ATOMheap(bn->ttype, bn->tvheap, bn->batCapacity) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);

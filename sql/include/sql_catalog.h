@@ -510,7 +510,6 @@ typedef struct sql_func {
 	 		*/
 	sql_schema *s;
 	sql_allocator *sa;
-	void *rel;	/* implementation */
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -574,7 +573,7 @@ typedef struct sql_ukey {	/* pkey, ukey */
 
 typedef struct sql_fkey {	/* fkey */
 	sql_key k;
-	/* no action, restrict (default), cascade, set null, set default */
+	/* 0=no action, 1=cascade, 2=restrict (default setting), 3=set null, 4=set default */
 	int on_delete;
 	int on_update;
 	sqlid rkey;
@@ -614,7 +613,7 @@ typedef struct sql_column {
 	int colnr;
 	bit null;
 	char *def;
-	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
+	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
 	int sorted;		/* for DECLARED (dupped tables) we keep order info */
@@ -797,6 +796,7 @@ typedef struct {
 } sql_emit_col;
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
+extern bool is_column_unique(sql_column *c);
 sql_export sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 extern node *members_find_child_id(list *l, sqlid id);
 
@@ -861,7 +861,8 @@ typedef struct atom {
 } atom;
 
 /* duplicate atom */
-extern atom *atom_dup(sql_allocator *sa, atom *a);
+extern ValPtr SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s);
+extern atom *atom_copy(sql_allocator *sa, atom *a);
 
 typedef struct pl {
 	sql_column *c;
