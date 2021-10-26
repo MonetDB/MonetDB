@@ -726,16 +726,9 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 		hdr++;
 	}
 
-	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
+	b = COLnew2(bb.Hseqbase, bb.Ttype, bb.size, TRANSIENT, bb.size > 0 ? (uint16_t) (bb.tailsize / bb.size) : 0);
 	if (b == NULL)
 		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* for strings, the width may not match, fix it to match what we
-	 * retrieved */
-	if (bb.Ttype == TYPE_str && bb.size) {
-		b->twidth = (unsigned short) (bb.tailsize / bb.size);
-		b->tshift = ATOMelmshift(Tsize(b));
-	}
 
 	if (bb.tailsize > 0) {
 		if (HEAPextend(b->theap, bb.tailsize, true) != GDK_SUCCEED ||
@@ -744,7 +737,9 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 		b->theap->dirty = true;
 	}
 	if (bb.theapsize > 0) {
-		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
+		if ((b->tvheap->base == NULL &&
+			 (*BATatoms[b->ttype].atomHeap)(b->tvheap, b->batCapacity) != GDK_SUCCEED) ||
+			HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->tvheap->free = bb.theapsize;

@@ -31,6 +31,8 @@ with SQLTestCase() as cli:
     CREATE TABLE "t6" ("c1" CLOB);
     INSERT INTO "t6" VALUES('3'), ('8ጮk|1*'), ('27'), ('Vrx^qA齀'), ('J'), ('18'), ('>*4嘁pAP'), ('+Jm*W0{'), ('>V鷓'), ('BW5z'), ('.#OJruk'),
     ('lU1覃Nlm'), (NULL), ('968786590');
+    CREATE TABLE "t7" ("c0" SMALLINT);
+    INSERT INTO "t7" VALUES (0),(0),(3),(3),(7),(-1),(5),(NULL),(5),(0),(5),(6),(4),(4),(4),(6),(7),(-7),(0),(1),(5),(9),(9),(8),(0);
     COMMIT;
 
     START TRANSACTION;
@@ -40,7 +42,8 @@ with SQLTestCase() as cli:
     CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t4';
     CREATE REMOTE TABLE "rt5" ("c0" DECIMAL(18,3),"c1" BOOLEAN) ON 'mapi:monetdb://localhost:%s/%s/sys/t5';
     CREATE REMOTE TABLE "rt6" ("c1" CLOB) ON 'mapi:monetdb://localhost:%s/%s/sys/t6';
-    COMMIT;""" % (port, db, port, db, port, db, port, db, port, db, port, db)).assertSucceeded()
+    CREATE REMOTE TABLE "rt7" ("c0" SMALLINT) ON 'mapi:monetdb://localhost:%s/%s/sys/t7';
+    COMMIT;""" % (port, db, port, db, port, db, port, db, port, db, port, db, port, db)).assertSucceeded()
 
     cli.execute("START TRANSACTION;")
     cli.execute('SELECT json."integer"(JSON \'1\') FROM t3;') \
@@ -304,6 +307,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([])
     cli.execute("SELECT 1 FROM rt3 INNER JOIN (SELECT 1 FROM t2) AS sub0(c0) ON ((2) IN (3, 6)) WHERE 4 < least(NULL, least(rt3.c0, rt3.c0));") \
         .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT t7.c0 FROM t7 WHERE (((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -t7.c0 AND t7.c0)) ORDER BY c0;") \
+        .assertSucceeded().assertDataResultMatch([(None,),(-7,),(-1,),(0,),(0,),(0,),(0,),(0,),(1,),(3,),(3,),(4,),(4,),(4,),(5,),(5,),(5,),(5,),(6,),(6,),(7,),(7,),(8,),(9,),(9,)])
+    cli.execute("SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -t7.c0 AND t7.c0)) AS INT) as count FROM t7) as res;") \
+        .assertSucceeded().assertDataResultMatch([(25,)])
+    cli.execute("SELECT rt7.c0 FROM rt7 WHERE (((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) ORDER BY c0;") \
+        .assertSucceeded().assertDataResultMatch([(None,),(-7,),(-1,),(0,),(0,),(0,),(0,),(0,),(1,),(3,),(3,),(4,),(4,),(4,),(5,),(5,),(5,),(5,),(6,),(6,),(7,),(7,),(8,),(9,),(9,)])
+    cli.execute("SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) AS INT) as count FROM rt7) as res;") \
+        .assertSucceeded().assertDataResultMatch([(25,)])
     cli.execute("SELECT c1 FROM t6;") \
         .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
         ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
@@ -327,6 +338,7 @@ with SQLTestCase() as cli:
     DROP TABLE rt4;
     DROP TABLE rt5;
     DROP TABLE rt6;
+    DROP TABLE rt7;
     DROP TABLE t0;
     DROP TABLE t1;
     DROP TABLE t2;
@@ -334,5 +346,6 @@ with SQLTestCase() as cli:
     DROP TABLE t4;
     DROP TABLE t5;
     DROP TABLE t6;
+    DROP TABLE t7;
     DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()

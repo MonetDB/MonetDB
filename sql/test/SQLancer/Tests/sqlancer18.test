@@ -515,3 +515,35 @@ SELECT 6 = ANY(SELECT 1 FROM t0 GROUP BY (SELECT t0.c0)), CASE WHEN 'a' LIKE (SE
 
 statement ok
 DROP TABLE t0
+
+statement ok
+CREATE TABLE "t0" ("c0" TIME,"c1" DOUBLE PRECISION)
+
+statement ok
+CREATE TABLE "t1" ("c0" INT)
+
+statement ok rowcount 17
+INSERT INTO "t1" VALUES (1),(10),(7),(9),(NULL),(1),(7),(7),(0),(8),(0),(9),(NULL),(5),(3),(8),(0)
+
+# this one could be an error too
+query T rowsort
+select (FALSE) in (TRUE, (select time '13:35:07' from t1) between t0.c0 and t0.c0) from t0
+----
+
+# this one could be an error too
+query T rowsort
+select (FALSE) in (FALSE, (select time '13:35:07' from t1) between t0.c0 and t0.c0) from t0
+----
+
+statement ok rowcount 1
+INSERT INTO "t0" VALUES (NULL, 1)
+
+statement error GDK reported error: BATsubcross: more than one match
+select (FALSE) in (FALSE, (select time '13:35:07' from t1) between t0.c0 and t0.c0) from t0
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+

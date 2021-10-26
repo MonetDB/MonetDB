@@ -4689,7 +4689,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && r && r->op == op_project && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l;
 		/* we cannot push through window functions (for safety I disabled projects over DDL too) */
-		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 1)) {
+		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 0)) {
 			/* introduce selects under the project (if needed) */
 			set_processed(pl);
 			for (n = exps->h; n;) {

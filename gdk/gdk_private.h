@@ -83,7 +83,7 @@ void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
-void BATsetdims(BAT *b)
+void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
 ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -124,9 +124,6 @@ BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict val
 BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
-	__attribute__((__visibility__("hidden")));
-BAT *COLnew_intern(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
