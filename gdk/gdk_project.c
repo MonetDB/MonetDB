@@ -776,7 +776,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	/* handle string trick */
 	if (stringtrick) {
 		assert(r1i.vh);
-		if (r1->batRestricted == BAT_READ) {
+		if (r1->batRestricted == BAT_READ || VIEWvtparent(r1)) {
 			/* really share string heap */
 			assert(r1i.vh->parentid > 0);
 			BBPshare(r1i.vh->parentid);
