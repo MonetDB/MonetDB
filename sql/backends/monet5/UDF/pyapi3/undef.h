@@ -26,7 +26,9 @@
 #undef snprintf
 #undef vsnprintf
 
+#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 10
 #undef ssize_t
+#endif
 
 #ifndef bool
 #define bool unsigned char
