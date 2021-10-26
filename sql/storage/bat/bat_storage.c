@@ -3082,31 +3082,52 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 	BUN sz = 0;
 
 	(void)tr;
-	assert(cs->st == ST_DEFAULT);
+	assert(cs->st == ST_DEFAULT || cs->st == ST_DICT);
 	if (cs->bid && renew) {
 		b = quick_descriptor(cs->bid);
 		if (b) {
 			sz += BATcount(b);
-			bat bid = cs->bid;
-			cs->bid = temp_copy(bid, true, temp); /* create empty copy */
-			temp_destroy(bid);
+			if (cs->st == ST_DICT) {
+				bat bid = cs->ebid;
+				cs->ebid = temp_copy(bid, true, temp); /* create empty copy */
+				temp_destroy(bid);
+
+				bid = cs->bid;
+				BAT *n = COLnew(0, TYPE_bte, 0, PERSISTENT);
+				if (!temp)
+					bat_set_access(n, BAT_READ);
+				cs->bid = temp_create(n); /* create empty copy */
+				bat_destroy(n);
+			} else {
+				bat bid = cs->bid;
+				cs->bid = temp_copy(bid, true, temp); /* create empty copy */
+				temp_destroy(bid);
+			}
 		}
 	}
 	if (cs->uibid) {
+		temp_destroy(cs->uibid);
+		cs->uibid = 0;
+		/*
 		b = temp_descriptor(cs->uibid);
 		if (b && !isEbat(b)) {
 			bat_clear(b);
 			BATcommit(b, BUN_NONE);
 		}
 		bat_destroy(b);
+		*/
 	}
 	if (cs->uvbid) {
+		temp_destroy(cs->uvbid);
+		cs->uvbid = 0;
+		/*
 		b = temp_descriptor(cs->uvbid);
 		if(b && !isEbat(b)) {
 			bat_clear(b);
 			BATcommit(b, BUN_NONE);
 		}
 		bat_destroy(b);
+		*/
 	}
 	cs->cleared = 1;
 	cs->ucnt = 0;
