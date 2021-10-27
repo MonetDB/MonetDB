@@ -60,8 +60,8 @@ static void
 BATmaxminpos_sht(BAT *o, sht m)
 {
 	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;
-	sht minval = m<0?-128:0;
-	sht maxval = m<0?127:m;
+	sht minval = m<0?-32768:0;
+	sht maxval = m<0?32767:m;
 
 	assert(o->ttype == TYPE_sht);
 	o->tnil = m<0?true:false;
