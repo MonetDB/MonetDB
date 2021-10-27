@@ -151,7 +151,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 		o->tnonil = b->tnonil;
 		o->tkey = b->tkey;
 
-		BATmaxminpos_bte(o, BATcount(u)-1);
+		BATmaxminpos_bte(o, (bte) (BATcount(u)-1));
 	} else {
 		sht *op = (sht*)Tloc(o, 0);
 		BATloop(b, p, q) {
@@ -167,7 +167,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 		o->tnonil = b->tnonil;
 		o->tkey = b->tkey;
 
-		BATmaxminpos_sht(o, BATcount(u)-1);
+		BATmaxminpos_sht(o, (sht) (BATcount(u)-1));
 	}
 	bat_iterator_end(&bi);
 	*O = o;
@@ -919,7 +919,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					}
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
-					op[i] = BATcount(dict)-1;
+					op[i] = (bte) (BATcount(dict)-1);
 				}
 			}
 		}
@@ -949,7 +949,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					}
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
-					op[i] = BATcount(dict)-1;
+					op[i] = (sht) (BATcount(dict)-1);
 				}
 			}
 		}
@@ -1023,7 +1023,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 					}
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
-					op[i] = BATcount(dict)-1;
+					op[i] = (bte) (BATcount(dict)-1);
 				}
 			}
 		}
@@ -1054,7 +1054,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 					}
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
-					op[i] = BATcount(dict)-1;
+					op[i] = (sht) (BATcount(dict)-1);
 				}
 			}
 		}
