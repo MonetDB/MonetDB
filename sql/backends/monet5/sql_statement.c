@@ -3962,7 +3962,8 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 			freeInstruction(q);
 			return NULL;
 		}
-		s->flag = loop;
+		s->flag = be->mvc_var; /* keep the mvc_var of the outer context */
+		s->loop = loop;
 		s->op1 = cond;
 		s->nr = getArg(q, 0);
 		return s;
@@ -3979,7 +3980,7 @@ stmt_control_end(backend *be, stmt *cond)
 	if (cond->nr < 0)
 		return NULL;
 
-	if (cond->flag) {	/* while */
+	if (cond->loop) {	/* while */
 		/* redo barrier */
 		q = newAssignment(mb);
 		if (q == NULL)
@@ -3998,10 +3999,7 @@ stmt_control_end(backend *be, stmt *cond)
 		q->argc = q->retc = 1;
 		q->barrier = EXITsymbol;
 	}
-	q = newStmt(mb, sqlRef, mvcRef);
-	if (q == NULL)
-		return NULL;
-	be->mvc_var = getDestVar(q);
+	be->mvc_var = cond->flag; /* restore old mvc_var from before the barrier */
 	stmt *s = stmt_create(be->mvc->sa, st_control_end);
 	if(!s) {
 		freeInstruction(q);
