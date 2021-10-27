@@ -92,7 +92,7 @@ insert into all_types values (false, -10, -10000, -1000000,
 	'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype',
 	'76236890-f4e2-4d4f-a02b-ec7a02c3cb50')
 
-query IIIIIRTRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
 0
@@ -101,13 +101,13 @@ select * from all_types
 -1000000
 -10000000000
 -1000000000000000019884624838656.000
--1e+20
+-100000000000000000000.000
 -1.000
 -123456789.000
 -12345.678
 -3.142
--3.1415
--3.1415
+-3.142
+-3.142
 2005-04-15
 -24
 -18
@@ -124,12 +124,12 @@ select * from all_types
 -1 day, 23:59:50
 1988-07-15 07:30:00
 1988-07-15 07:30:00
-1988-07-15 09:30:00
-1988-07-15 09:30:00
+1988-07-15 08:30:00+01:00
+1988-07-15 08:30:00+01:00
 06:30:00
 06:30:00
-08:30:00
-08:30:00
+07:30:00+01:00
+07:30:00+01:00
 01234567
 01234567
 0123456
@@ -150,13 +150,13 @@ https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 1000000
 10000000000
 1000000000000000019884624838656.000
-1e+20
+100000000000000000000.000
 1.000
 123456789.000
 12345.678
 3.142
-3.1415
-3.1415
+3.142
+3.142
 2009-04-15
 24
 18
@@ -173,12 +173,12 @@ https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 0:00:10
 1995-07-15 07:30:00
 1995-07-15 07:30:00
-1995-07-15 09:30:00
-1995-07-15 09:30:00
+1995-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
 07:30:00
 07:30:00
-09:30:00
-09:30:00
+08:30:00+01:00
+08:30:00+01:00
 123456
 123456
 123456
@@ -197,10 +197,10 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query IIIIIRTRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-196 values hashing to 0fe8a85c71916d9a354fa517c706ec86
+196 values hashing to 107441753e80c5ea264bfc9d155b6eb4
 
 query TIIIIIT rowsort
 select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types'
@@ -482,13 +482,13 @@ select "double" from all_types order by "double" ASC
 1000000000000000019884624838656.000
 1000000000000000019884624838656.000
 
-query T rowsort
+query R rowsort
 select "real" from all_types order by "real" ASC
 ----
--1e+20
--1e+20
-1e+20
-1e+20
+-100000000000000000000.000
+-100000000000000000000.000
+100000000000000000000.000
+100000000000000000000.000
 
 query R rowsort
 select "decimal" from all_types order by "decimal" ASC
@@ -522,21 +522,21 @@ select "float" from all_types order by "float" ASC
 3.142
 3.142
 
-query T rowsort
+query R rowsort
 select "float9" from all_types order by "float9" ASC
 ----
--3.1415
--3.1415
-3.1415
-3.1415
+-3.142
+-3.142
+3.142
+3.142
 
-query T rowsort
+query R rowsort
 select "float83" from all_types order by "float83" ASC
 ----
--3.1415
--3.1415
-3.1415
-3.1415
+-3.142
+-3.142
+3.142
+3.142
 
 query T rowsort
 select "date" from all_types order by "date" ASC
@@ -669,18 +669,18 @@ select "timestamp5" from all_types order by "timestamp5" ASC
 query T rowsort
 select "timestampzone" from all_types order by "timestampzone" ASC
 ----
-1988-07-15 09:30:00
-1988-07-15 09:30:00
-1995-07-15 09:30:00
-1995-07-15 09:30:00
+1988-07-15 08:30:00+01:00
+1988-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
 
 query T rowsort
 select "timestamp5zone" from all_types order by "timestamp5zone" ASC
 ----
-1988-07-15 09:30:00
-1988-07-15 09:30:00
-1995-07-15 09:30:00
-1995-07-15 09:30:00
+1988-07-15 08:30:00+01:00
+1988-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
 
 query T rowsort
 select "time" from all_types order by "time" ASC
@@ -701,18 +701,18 @@ select "time5" from all_types order by "time5" ASC
 query T rowsort
 select "timezone" from all_types order by "timezone" ASC
 ----
-08:30:00
-08:30:00
-09:30:00
-09:30:00
+07:30:00+01:00
+07:30:00+01:00
+08:30:00+01:00
+08:30:00+01:00
 
 query T rowsort
 select "time5zone" from all_types order by "time5zone" ASC
 ----
-08:30:00
-08:30:00
-09:30:00
-09:30:00
+07:30:00+01:00
+07:30:00+01:00
+08:30:00+01:00
+08:30:00+01:00
 
 query T rowsort
 select "blob" from all_types order by "blob" ASC
@@ -874,13 +874,13 @@ select "double" from all_types order by "double" DESC
 1000000000000000019884624838656.000
 1000000000000000019884624838656.000
 
-query T rowsort
+query R rowsort
 select "real" from all_types order by "real" DESC
 ----
--1e+20
--1e+20
-1e+20
-1e+20
+-100000000000000000000.000
+-100000000000000000000.000
+100000000000000000000.000
+100000000000000000000.000
 
 query R rowsort
 select "decimal" from all_types order by "decimal" DESC
@@ -914,21 +914,21 @@ select "float" from all_types order by "float" DESC
 3.142
 3.142
 
-query T rowsort
+query R rowsort
 select "float9" from all_types order by "float9" DESC
 ----
--3.1415
--3.1415
-3.1415
-3.1415
+-3.142
+-3.142
+3.142
+3.142
 
-query T rowsort
+query R rowsort
 select "float83" from all_types order by "float83" DESC
 ----
--3.1415
--3.1415
-3.1415
-3.1415
+-3.142
+-3.142
+3.142
+3.142
 
 query T rowsort
 select "date" from all_types order by "date" DESC
@@ -1061,18 +1061,18 @@ select "timestamp5" from all_types order by "timestamp5" DESC
 query T rowsort
 select "timestampzone" from all_types order by "timestampzone" DESC
 ----
-1988-07-15 09:30:00
-1988-07-15 09:30:00
-1995-07-15 09:30:00
-1995-07-15 09:30:00
+1988-07-15 08:30:00+01:00
+1988-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
 
 query T rowsort
 select "timestamp5zone" from all_types order by "timestamp5zone" DESC
 ----
-1988-07-15 09:30:00
-1988-07-15 09:30:00
-1995-07-15 09:30:00
-1995-07-15 09:30:00
+1988-07-15 08:30:00+01:00
+1988-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
+1995-07-15 08:30:00+01:00
 
 query T rowsort
 select "time" from all_types order by "time" DESC
@@ -1093,18 +1093,18 @@ select "time5" from all_types order by "time5" DESC
 query T rowsort
 select "timezone" from all_types order by "timezone" DESC
 ----
-08:30:00
-08:30:00
-09:30:00
-09:30:00
+07:30:00+01:00
+07:30:00+01:00
+08:30:00+01:00
+08:30:00+01:00
 
 query T rowsort
 select "time5zone" from all_types order by "time5zone" DESC
 ----
-08:30:00
-08:30:00
-09:30:00
-09:30:00
+07:30:00+01:00
+07:30:00+01:00
+08:30:00+01:00
+08:30:00+01:00
 
 query T rowsort
 select "blob" from all_types order by "blob" DESC
@@ -1221,10 +1221,10 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query IIIIIRTRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
 ----
-392 values hashing to 81c256290b3c4e56975dedc3b3ea8f81
+392 values hashing to 724732f91f937eb11f577fbaedfc1b3b
 
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name

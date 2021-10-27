@@ -6,13 +6,6 @@
   view sys.fkeys to provide user friendly querying of existing foreign
   keys and their ON UPDATE and ON DELETE referential action specifications.
 
-* Mon Oct 18 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- The COPY INTO command would use the double quote as the default string
-  delimiter to produce output, while COPY FROM would use the empty string.
-  As a consequence, this created incompatibility between the two commands
-  when using default values from the parser. As a solution, the COPY INTO
-  command changed to use the empty string as the default string delimiter.
-
 * Tue Oct 12 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Many improvements were done for REMOTE table plans. As a consequence,
   master or slave servers from this feature release are not compatible

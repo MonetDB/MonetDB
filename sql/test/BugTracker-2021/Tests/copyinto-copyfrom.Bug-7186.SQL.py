@@ -13,9 +13,9 @@ try:
         CREATE TABLE "t" ("id" INTEGER,"name" VARCHAR(1024),"schema_id" INTEGER,"query" VARCHAR(1048576),"type" SMALLINT,"system" BOOLEAN,"commit_action" SMALLINT,"access" SMALLINT,"temporary" TINYINT);
         """).assertSucceeded()
         cli.execute("""
-        COPY SELECT "id","name","schema_id","query","type","system","commit_action","access","temporary" FROM sys.tables LIMIT 100 INTO '%s' DELIMITERS '|';
+        COPY SELECT "id","name","schema_id","query","type","system","commit_action","access","temporary" FROM sys.tables LIMIT 100 INTO '%s' USING DELIMITERS '|',E'\n','"';
         """ % (temp_name)).assertSucceeded()
-        cli.execute("COPY INTO t FROM '%s' DELIMITERS '|';" % (temp_name)).assertSucceeded()
+        cli.execute("COPY INTO t FROM '%s' USING DELIMITERS '|',E'\\n','\"';" % (temp_name)).assertSucceeded()
         cli.execute("DROP TABLE t;").assertSucceeded()
         cli.execute("ROLLBACK;").assertSucceeded()
 finally:
