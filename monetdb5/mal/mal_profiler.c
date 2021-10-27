@@ -65,14 +65,12 @@ static void logjsonInternal(char *logbuffer, bool flush)
 	size_t len;
 	len = strlen(logbuffer);
 
-	MT_lock_set(&mal_profileLock);
 	if (maleventstream) {
 	// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
 		if (flush)
 			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
-	MT_lock_unset(&mal_profileLock);
 }
 
 /*
@@ -184,7 +182,7 @@ EXAMPLE:
 "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
 static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	struct logbuf logbuf;
 	str c;
@@ -458,6 +456,14 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logdel(&logbuf);
 }
 
+static void
+renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+{
+	MT_lock_set(&mal_profileLock);
+	prepareProfilerEvent(cntxt, mb, stk, pci, start);
+	MT_lock_unset(&mal_profileLock);
+}
+
 /* the OS details on cpu load are read from /proc/stat
  * We should use an OS define to react to the maximal cores
  */
@@ -624,16 +630,19 @@ openProfilerStream(Client cntxt)
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
+	MT_lock_set(&mal_profileLock);
 	if (myname == 0){
 		myname = putName("profiler");
 		logjsonInternal(monet_characteristics, true);
 	}
 	if(maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
-		if (cntxt->user == MAL_ADMIN)
+		if (cntxt->user == MAL_ADMIN) {
 			closeProfilerStream(cntxt);
-		else
+		} else {
+			MT_lock_unset(&mal_profileLock);
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
+		}
 	}
 	malProfileMode = -1;
 	maleventstream = cntxt->fdout;
@@ -649,6 +658,7 @@ openProfilerStream(Client cntxt)
 		/* show the event */
 		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
 	MT_lock_unset(&mal_delayLock);
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -682,8 +692,8 @@ startProfiler(Client cntxt)
 		myname = putName("profiler");
 	}
 	malProfileMode = 1;
-	MT_lock_unset(&mal_profileLock);
 	logjsonInternal(monet_characteristics, true);
+	MT_lock_unset(&mal_profileLock);
 	// reset the trace table
 	clearTrace(cntxt);
 
