@@ -335,13 +335,6 @@ strHeap(Heap *d, size_t cap)
 	return HEAPalloc(d, cap, 8, 1);
 }
 
-void
-strCleanHash(Heap *h, bool rebuild)
-{
-	(void) h;
-	(void) rebuild;
-}
-
 var_t
 strPut(BAT *b, var_t *dst, const void *v)
 {
