@@ -253,6 +253,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	PairIterator pi, *pip;
 	CharPair cp, *cpp;
 	struct canditer ci;
+	size_t values = 0;
 
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
@@ -308,6 +309,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 #endif
 					hist[hidx].cnt++;
 					if (hist[hidx].p == NULL) {
+						values++;
 						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
 						hist[hidx].p->psize = cpp->psize;
 						hist[hidx].p->pbytes = cpp->pbytes;
@@ -319,18 +321,22 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	}
 	bat_iterator_end(&bi);
 
-	// Choose the header pairs
-	STRMPchoosePairs(hist, hlen, hpairs);
-	for(hidx = 0; hidx < hlen; hidx++) {
-		if(hist[hidx].p) {
-			GDKfree(hist[hidx].p);
-			hist[hidx].p = NULL;
+	// Check that we did record something in the histogram.
+	if(values >= STRIMP_HEADER_SIZE) {
+		// Choose the header pairs
+		STRMPchoosePairs(hist, hlen, hpairs);
+		for (hidx = 0; hidx < hlen; hidx++) {
+			if (hist[hidx].p) {
+				GDKfree(hist[hidx].p);
+				hist[hidx].p = NULL;
+			}
 		}
 	}
+
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
-	return true;
+	return values >= STRIMP_HEADER_SIZE;
 }
 
 /* Create the heap for a string imprint. Returns NULL on failure. This
