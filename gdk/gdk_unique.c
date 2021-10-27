@@ -32,7 +32,6 @@ BATunique(BAT *b, BAT *s)
 	const char *vars;
 	int width;
 	oid i, o;
-	uint16_t *seen = NULL;
 	const char *nme;
 	Hash *hs = NULL;
 	BUN hb;
@@ -42,7 +41,6 @@ BATunique(BAT *b, BAT *s)
 	const char *algomsg = "";
 	lng t0 = 0;
 
-	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	if (qry_ctx != NULL) {
@@ -108,35 +106,19 @@ BATunique(BAT *b, BAT *s)
 	width = bi.width;
 	cmp = ATOMcompare(b->ttype);
 
-	if (BATordered(b) || BATordered_rev(b)) {
-		const void *prev = NULL;
-		algomsg = "unique: sorted";
-		for (i = 0; i < cnt; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
-			o = canditer_next(&ci);
-			v = VALUE(o - b->hseqbase);
-			if (prev == NULL || (*cmp)(v, prev) != 0) {
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
-					goto bunins_failed;
-			}
-			prev = v;
-		}
-	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
-		unsigned char val;
+	if (ATOMbasetype(b->ttype) == TYPE_bte ||
+	    (b->twidth == 1 && ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap))) {
+		uint8_t val;
 
 		algomsg = "unique: byte-sized atoms";
-		assert(vars == NULL);
-		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
-		if (seen == NULL)
-			goto bunins_failed;
-		for (i = 0; i < cnt; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		uint32_t seen[256 >> 5];
+		memset(seen, 0, sizeof(seen));
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
-			val = ((const unsigned char *) vals)[o - b->hseqbase];
-			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
-				seen[val >> 4] |= 1U << (val & 0xF);
+			val = ((const uint8_t *) vals)[o - b->hseqbase];
+			uint32_t m = UINT32_C(1) << (val & 0x1F);
+			if (!(seen[val >> 5] & m)) {
+				seen[val >> 5] |= m;
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 					goto bunins_failed;
 				if (bn->batCount == 256) {
@@ -146,23 +128,21 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 		}
-		GDKfree(seen);
-		seen = NULL;
-	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
-		unsigned short val;
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+	} else if (ATOMbasetype(b->ttype) == TYPE_sht ||
+	    (b->twidth == 2 && ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap))) {
+		uint16_t val;
 
 		algomsg = "unique: short-sized atoms";
-		assert(vars == NULL);
-		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
-		if (seen == NULL)
-			goto bunins_failed;
-		for (i = 0; i < cnt; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		uint32_t seen[65536 >> 5];
+		memset(seen, 0, sizeof(seen));
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
-			val = ((const unsigned short *) vals)[o - b->hseqbase];
-			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
-				seen[val >> 4] |= 1U << (val & 0xF);
+			val = ((const uint16_t *) vals)[o - b->hseqbase];
+			uint32_t m = UINT32_C(1) << (val & 0x1F);
+			if (!(seen[val >> 5] & m)) {
+				seen[val >> 5] |= m;
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 					goto bunins_failed;
 				if (bn->batCount == 65536) {
@@ -172,8 +152,22 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 		}
-		GDKfree(seen);
-		seen = NULL;
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+	} else if (BATordered(b) || BATordered_rev(b)) {
+		const void *prev = NULL;
+		algomsg = "unique: sorted";
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+			o = canditer_next(&ci);
+			v = VALUE(o - b->hseqbase);
+			if (prev == NULL || (*cmp)(v, prev) != 0) {
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+			prev = v;
+		}
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	} else if (BATcheckhash(b) ||
 		   (!b->batTransient &&
 		    cnt == BATcount(b) &&
@@ -192,9 +186,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		for (i = 0; i < cnt; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -220,6 +212,8 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 		MT_rwlock_rdunlock(&b->thashlock);
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	} else {
 		BUN prb;
 		BUN p;
@@ -254,9 +248,7 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		for (i = 0; i < cnt; i++) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
 			v = VALUE(o - b->hseqbase);
 			prb = HASHprobe(hs, v);
@@ -278,6 +270,8 @@ BATunique(BAT *b, BAT *s)
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
+		TIMEOUT_CHECK(timeoffset,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	}
 	bat_iterator_end(&bi);
 
@@ -305,8 +299,6 @@ BATunique(BAT *b, BAT *s)
 
   bunins_failed:
 	bat_iterator_end(&bi);
-	if (seen)
-		GDKfree(seen);
 	if (hs != NULL) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
