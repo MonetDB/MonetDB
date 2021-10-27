@@ -1106,81 +1106,77 @@ backend_create_c_func(backend *be, sql_func *f)
 int
 mal_function_find_implementation_address(str *res, mvc *m, sql_func *f)
 {
-	mvc *o = m;
+	mvc o = *m;
 	buffer *b = NULL;
 	bstream *bs = NULL;
 	stream *buf = NULL;
 	char *n = NULL;
 	int len = _strlen(f->query);
-	sql_schema *s = cur_schema(m);
 	dlist *l, *ext_name;
 
-	if (!(m = ZNEW(mvc))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+	if (!(b = (buffer*)malloc(sizeof(buffer)))) {
+		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
 	}
-	m->type = Q_PARSE;
-	m->user_id = m->role_id = USER_MONETDB;
-	m->store = o->store;
-	if (!(m->pa = sa_create(NULL))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	if (!(m->session = sql_session_create(m->store, m->pa, 0))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	if (s)
-		m->session->schema = s;
-	if (!(m->sa = sa_create(NULL))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	if (!(b = (buffer*)GDKmalloc(sizeof(buffer)))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	if (!(n = GDKmalloc(len + 2))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+	if (!(n = malloc(len + 2))) {
+		free(b);
+		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
 	}
 	snprintf(n, len + 2, "%s\n", f->query);
 	len++;
 	buffer_init(b, n, len);
 	if (!(buf = buffer_rastream(b, "sqlstatement"))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		buffer_destroy(b);
+		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
 	}
 	if (!(bs = bstream_create(buf, b->len))) {
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		buffer_destroy(b);
+		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
 	}
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
-	(void) sqlparse(m); /* blindly ignore errors */
-	assert(m->sym->token == SQL_CREATE_FUNC);
-	l = m->sym->data.lval;
-	ext_name = l->h->next->next->next->data.lval;
-	if (!(*res = _STRDUP(qname_schema_object(ext_name)))) /* found the implementation, set it */
-		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-bailout:
-	if (m) {
-		bstream_destroy(m->scanner.rs);
-		if (m->session) {
-			sql_session_destroy(m->session);
-		}
-		if (m->sa)
-			sa_destroy(m->sa);
-		_DELETE(m);
+	m->type = Q_PARSE;
+	m->user_id = m->role_id = USER_MONETDB;
+	m->params = NULL;
+	m->sym = NULL;
+	m->errstr[0] = '\0';
+	(void) sqlparse(m);
+	if (m->session->status || m->errstr[0] || !m->sym || m->sym->token != SQL_CREATE_FUNC) {
+		if (m->errstr[0] == '\0')
+			(void) sql_error(m, 02, SQLSTATE(42000) "Could not parse CREATE SQL MAL function statement");
+	} else {
+		l = m->sym->data.lval;
+		ext_name = l->h->next->next->next->data.lval;
+		if (!(*res = _STRDUP(qname_schema_object(ext_name)))) /* found the implementation, set it */
+			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	m = o;
-	if (n)
-		GDKfree(n);
-	if (b)
-		GDKfree(b);
-	return m->errstr[0] == '\0'; /* m was set back to o */
+
+	buffer_destroy(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
+	o.frames = m->frames;	/* may have been realloc'ed */
+	o.sizeframes = m->sizeframes;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
+
+		strcpy(o.errstr, m->errstr);
+		*m = o;
+		m->session->status = status;
+	} else {
+		unsigned int label = m->label;
+
+		while (m->topframes > o.topframes)
+			clear_frame(m, m->frames[--m->topframes]);
+		*m = o;
+		m->label = label;
+	}
+	return m->errstr[0] == '\0' ? 0 : -1; /* m was set back to o */
 }
 
 static int
@@ -1204,7 +1200,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
 		if (f->lang == FUNC_LANG_MAL && !f->imp) {
 			char *imp = NULL;
-			if (!mal_function_find_implementation_address(&imp, m, f))
+			if (mal_function_find_implementation_address(&imp, m, f) < 0)
 				return -1;
 			f->imp = sa_strdup(f->sa, imp);
 			_DELETE(imp);
