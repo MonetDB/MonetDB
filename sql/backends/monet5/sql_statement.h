@@ -119,7 +119,8 @@ typedef struct stmt {
 	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
-	 reduce:1;		/* used to reduce number of rows (also for joins) */
+	 reduce:1,		/* used to reduce number of rows (also for joins) */
+	 loop:1;		/* cond statement is looping */
 
 	struct stmt *cand;	/* optional candidate list */
 

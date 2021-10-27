@@ -1063,6 +1063,8 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  */
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
 	__attribute__((__warn_unused_result__));
+gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
+	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATextend(BAT *b, BUN newcap)

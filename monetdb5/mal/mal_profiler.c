@@ -60,18 +60,17 @@ static struct rusage prevUsage;
 #define LOGLEN 8192
 
 // The heart beat events should be sent to all outstanding channels.
-static void logjsonInternal(char *logbuffer)
+static void logjsonInternal(char *logbuffer, bool flush)
 {
 	size_t len;
 	len = strlen(logbuffer);
 
-	MT_lock_set(&mal_profileLock);
 	if (maleventstream) {
 	// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
-		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
+		if (flush)
+			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
-	MT_lock_unset(&mal_profileLock);
 }
 
 /*
@@ -141,7 +140,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			/* includes first time when logbuffer == NULL and logcap = 0 */
 			char *alloc_buff;
 			if (logbuf->loglen > 0)
-				logjsonInternal(logbuf->logbuffer);
+				logjsonInternal(logbuf->logbuffer, false);
 			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
 			if (logbuf->logcap < LOGLEN)
 				logbuf->logcap = LOGLEN;
@@ -156,7 +155,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			logbuf->logbuffer = alloc_buff;
 			lognew(logbuf);
 		} else {
-			logjsonInternal(logbuf->logbuffer);
+			logjsonInternal(logbuf->logbuffer, false);
 			lognew(logbuf);
 		}
 	}
@@ -474,11 +473,13 @@ static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	str ev;
+	MT_lock_set(&mal_profileLock);
 	ev = prepareProfilerEvent(cntxt, mb, stk, pci, start);
 	if( ev ){
-		logjsonInternal(ev);
+		logjsonInternal(ev, true);
 		free(ev);
 	}
+	MT_lock_unset(&mal_profileLock);
 }
 
 /* the OS details on cpu load are read from /proc/stat
@@ -614,7 +615,7 @@ profilerHeartbeatEvent(char *alter)
 				"}\n",			// end marker
 				alter, cpuload))
 		return;
-	logjsonInternal(logbuf.logbuffer);
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
 }
 
@@ -647,16 +648,19 @@ openProfilerStream(Client cntxt)
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
+	MT_lock_set(&mal_profileLock);
 	if (myname == 0){
 		myname = putName("profiler");
-		logjsonInternal(monet_characteristics);
+		logjsonInternal(monet_characteristics, true);
 	}
 	if(maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
-		if (cntxt->user == MAL_ADMIN)
+		if (cntxt->user == MAL_ADMIN) {
 			closeProfilerStream(cntxt);
-		else
+		} else {
+			MT_lock_unset(&mal_profileLock);
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
+		}
 	}
 	malProfileMode = -1;
 	maleventstream = cntxt->fdout;
@@ -670,7 +674,6 @@ openProfilerStream(Client cntxt)
 
 	MT_sleep_ms(200);
 
-	MT_lock_set(&mal_profileLock);
 	for(j = 0; j <THREADS; j++){
 		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
 		c = workingset[j].cntxt;
@@ -718,8 +721,8 @@ startProfiler(Client cntxt)
 		myname = putName("profiler");
 	}
 	malProfileMode = 1;
+	logjsonInternal(monet_characteristics, true);
 	MT_lock_unset(&mal_profileLock);
-	logjsonInternal(monet_characteristics);
 	// reset the trace table
 	clearTrace(cntxt);
 

@@ -66,12 +66,12 @@ select cast('2020-07-29 17:44:59.123456' as timestamp)
 query T rowsort
 select cast('17:44:59.321+01:30' as timetz)
 ----
-16:14:59.321000
+18:14:59.321000+02:00
 
 query T rowsort
 select cast('2020-07-29 17:44:59.321+01:30' as timestamptz)
 ----
-2020-07-29 16:14:59.321000
+2020-07-29 18:14:59.321000+02:00
 
 query T rowsort
 select cast('1234' as interval month)
@@ -200,5 +200,4 @@ query T rowsort
 select r'rA\fB\tC\n\\Z'
 ----
 rA\fB\tC\n\\Z
-
 
