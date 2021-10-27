@@ -1092,8 +1092,26 @@ dict_append_bat(column_storage *cs, BAT *i)
 		if (BATcount(u) >= max_cnt) {
 			if (max_cnt == 64*1024) { /* decompress */
 				BAT *b = temp_descriptor(cs->bid);
+				if (cs->ucnt) {
+					BAT *ui = NULL, *uv = NULL;
+					BAT *nb = COLcopy(b, b->ttype, true, TRANSIENT);
+					if (!nb || cs_real_update_bats(cs, &ui, &uv) != LOG_OK) {
+						bat_destroy(b);
+						bat_destroy(u);
+						return NULL;
+					}
+					bat_destroy(b);
+					b = nb;
+					if (BATupdate(b, ui, uv, true) != GDK_SUCCEED) {
+						bat_destroy(ui);
+						bat_destroy(uv);
+						bat_destroy(b);
+						bat_destroy(u);
+					}
+					bat_destroy(ui);
+					bat_destroy(uv);
+				}
 				BAT *n = b?DICTdecompress_(b , u):NULL;
-				/* TODO also decrompress updates if any */
 				bat_destroy(b);
 				assert(newoffsets == NULL);
 				if (!n) {
@@ -1101,7 +1119,6 @@ dict_append_bat(column_storage *cs, BAT *i)
 					bat_destroy(n);
 					return NULL;
 				}
-				/* TODO change storage type */
 				if (cs->bid)
 					temp_destroy(cs->bid);
 				cs->bid = temp_create(n);
@@ -1109,6 +1126,12 @@ dict_append_bat(column_storage *cs, BAT *i)
 				if (cs->ebid)
 					temp_destroy(cs->ebid);
 				cs->ebid = 0;
+				cs->ucnt = 0;
+				if (cs->uibid)
+					temp_destroy(cs->uibid);
+				if (cs->uvbid)
+					temp_destroy(cs->uvbid);
+				cs->uibid = cs->uvbid = 0;
 				cs->st = ST_DEFAULT;
 				cs->cleared = true;
 			} else {
@@ -1723,7 +1746,10 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
-	return update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat);
+	int res =  update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat);
+	if (delta->cs.st == ST_DEFAULT && c->storage_type)
+		sql_trans_alter_storage(tr, c, NULL);
+	return res;
 }
 
 static sql_delta *
@@ -1939,7 +1965,10 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN 
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
-	return append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe == TYPE_bat);
+	int res = append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe == TYPE_bat);
+	if (delta->cs.st == ST_DEFAULT && c->storage_type)
+		sql_trans_alter_storage(tr, c, NULL);
+	return res;
 }
 
 static int
@@ -3108,26 +3137,10 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 	if (cs->uibid) {
 		temp_destroy(cs->uibid);
 		cs->uibid = 0;
-		/*
-		b = temp_descriptor(cs->uibid);
-		if (b && !isEbat(b)) {
-			bat_clear(b);
-			BATcommit(b, BUN_NONE);
-		}
-		bat_destroy(b);
-		*/
 	}
 	if (cs->uvbid) {
 		temp_destroy(cs->uvbid);
 		cs->uvbid = 0;
-		/*
-		b = temp_descriptor(cs->uvbid);
-		if(b && !isEbat(b)) {
-			bat_clear(b);
-			BATcommit(b, BUN_NONE);
-		}
-		bat_destroy(b);
-		*/
 	}
 	cs->cleared = 1;
 	cs->ucnt = 0;
