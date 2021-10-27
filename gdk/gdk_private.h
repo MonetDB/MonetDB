@@ -249,8 +249,6 @@ const char *gettailname(const BAT *b)
 	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
-void strCleanHash(Heap *hp, bool rebuild)
-	__attribute__((__visibility__("hidden")));
 void strDestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 gdk_return strHeap(Heap *d, size_t cap)
