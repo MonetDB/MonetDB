@@ -36,12 +36,6 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	sql_schema *c = cur_schema(m);
 	sql_query *qc = NULL;
 
-	m->qc = NULL;
-
-	m->emode = emode;
-	if (s)
-		m->session->schema = s;
-
 	if ((b = malloc(sizeof(buffer))) == NULL)
 		return NULL;
 	if ((n = malloc(len + 1 + 1)) == NULL) {
@@ -65,6 +59,10 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
+	m->qc = NULL;
+	m->emode = emode;
+	if (s)
+		m->session->schema = s;
 	m->params = NULL;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
