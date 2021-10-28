@@ -1891,12 +1891,6 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	stream *s;
 	bstream *bs;
 
-	m->qc = NULL;
-
-	if (sch)
-		m->session->schema = sch;
-
-	m->emode = emode;
 	b = malloc(sizeof(buffer));
 	len += 8; /* add 'select ;' */
 	n = malloc(len + 1 + 1);
@@ -1922,6 +1916,10 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
+	m->qc = NULL;
+	if (sch)
+		m->session->schema = sch;
+	m->emode = emode;
 	m->params = NULL;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
