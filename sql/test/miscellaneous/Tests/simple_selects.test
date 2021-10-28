@@ -804,17 +804,27 @@ select ups()
 statement ok
 rollback
 
-statement error
+statement ok
 create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
 
-statement error
+query I rowsort
 select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
+----
+2
 
-statement error
+statement ok
+drop function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+statement ok
 create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
 
-statement error
+query I rowsort
 select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
+----
+3
+
+statement ok
+drop function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
 
 statement ok
 create table thisnamewontconflict(y int, z int)

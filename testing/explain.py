@@ -20,6 +20,8 @@ def function_histogram(tab):
             g = re.match('^[^#].*\s([a-zA-Z_][a-zA-Z_0-9]*\.[a-zA-Z_][a-zA-Z_0-9]*)\(.*;', row[0])
             if g:
                 f = g.group(1)
+                if f.startswith('sql.f_'): # normalize user functions
+                    f = 'sql.user_func'
                 if f in histo:
                     histo[f]+=1
                 else:
@@ -39,6 +41,8 @@ def function_with_more_than_one_result_bat(tab):
                 g2 = re.match('^[^#].*\s([a-zA-Z_][a-zA-Z_0-9]*\.[a-zA-Z_][a-zA-Z_0-9]*)\(.*;', row[0])
                 if g2:
                     f = g2.group(1)
+                    if f.startswith('sql.f_'): # normalize user functions
+                        f = 'sql.user_func'
                     if f in histo:
                         histo[f]+=1
                     else:
