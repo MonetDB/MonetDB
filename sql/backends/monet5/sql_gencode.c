@@ -954,7 +954,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 	Client c;
 	Module m;
 	int clientID = *(int*) M;
-	const char *mname = putName(f->mod), *fname = putName(f->imp);
+	const char *mname = putName(sql_func_mod(f)), *fname = putName(sql_func_imp(f));
 
 	if (!mname || !fname)
 		return 0;
@@ -1016,95 +1016,9 @@ monet5_resolve_function(ptr M, sql_func *f)
 	return 0;
 }
 
-static int
-backend_create_r_func(backend *be, sql_func *f)
-{
-	(void)be;
-	_DELETE(f->mod);
-	_DELETE(f->imp);
-	f->mod = GDKstrdup("rapi");
-	switch(f->type) {
-	case  F_AGGR:
-		f->imp = GDKstrdup("eval_aggr");
-		break;
-	case  F_PROC: /* no output */
-	case  F_FUNC:
-	default: /* ie also F_FILT and F_UNION for now */
-		f->imp = GDKstrdup("eval");
-		break;
-	}
-	return 0;
-}
-
-/* Create the MAL block for a registered function and optimize it */
-static int
-backend_create_py_func(backend *be, sql_func *f)
-{
-	(void)be;
-	_DELETE(f->mod);
-	_DELETE(f->imp);
-	f->mod = GDKstrdup("pyapi3");
-	switch(f->type) {
-	case  F_AGGR:
-		f->imp = GDKstrdup("eval_aggr");
-		break;
-	case F_LOADER:
-		f->imp = GDKstrdup("eval_loader");
-		break;
-	case  F_PROC: /* no output */
-	case  F_FUNC:
-	default: /* ie also F_FILT and F_UNION for now */
-		f->imp = GDKstrdup("eval");
-		break;
-	}
-	return 0;
-}
-
-static int
-backend_create_map_py_func(backend *be, sql_func *f)
-{
-	(void)be;
-	_DELETE(f->mod);
-	_DELETE(f->imp);
-	f->mod = GDKstrdup("pyapi3map");
-	switch(f->type) {
-	case  F_AGGR:
-		f->imp = GDKstrdup("eval_aggr");
-		break;
-	case  F_PROC: /* no output */
-	case  F_FUNC:
-	default: /* ie also F_FILT and F_UNION for now */
-		f->imp = GDKstrdup("eval");
-		break;
-	}
-	return 0;
-}
-
-/* Create the MAL block for a registered function and optimize it */
-static int
-backend_create_c_func(backend *be, sql_func *f)
-{
-	(void)be;
-	_DELETE(f->mod);
-	_DELETE(f->imp);
-	f->mod = GDKstrdup("capi");
-	switch(f->type) {
-	case  F_AGGR:
-		f->imp = GDKstrdup("eval_aggr");
-		break;
-	case F_LOADER:
-	case F_PROC: /* no output */
-	case F_FUNC:
-	default: /* ie also F_FILT and F_UNION for now */
-		f->imp = GDKstrdup("eval");
-		break;
-	}
-	return 0;
-}
-
 /* Parse the SQL query from the function, and extract the MAL function from the generated abstract syntax tree */
-int
-mal_function_find_implementation_address(str *res, mvc *m, sql_func *f)
+static int
+mal_function_find_implementation_address(mvc *m, sql_func *f)
 {
 	mvc o = *m;
 	buffer *b = NULL;
@@ -1152,7 +1066,12 @@ mal_function_find_implementation_address(str *res, mvc *m, sql_func *f)
 	} else {
 		l = m->sym->data.lval;
 		ext_name = l->h->next->next->next->data.lval;
-		if (!(*res = _STRDUP(qname_schema_object(ext_name)))) /* found the implementation, set it */
+		const char *imp = qname_schema_object(ext_name);
+
+		assert(!f->imp);
+		if (strlen(imp) >= IDLENGTH)
+			(void) sql_error(m, 02, SQLSTATE(42000) "MAL function name '%s' too large for the backend", imp);
+		else if (!(f->imp = _STRDUP(imp))) /* found the implementation, set it */
 			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1179,6 +1098,27 @@ mal_function_find_implementation_address(str *res, mvc *m, sql_func *f)
 	return m->errstr[0] == '\0' ? 0 : -1; /* m was set back to o */
 }
 
+int
+backend_create_mal_func(mvc *m, sql_func *f)
+{
+	if (!f->instantiated) {
+		if (strlen(f->mod) >= IDLENGTH) {
+			(void) sql_error(m, 01, SQLSTATE(42000) "MAL module name '%s' too large for the backend", f->mod);
+			return -1;
+		}
+		if (mal_function_find_implementation_address(m, f) < 0)
+			return -1;
+		if (!backend_resolve_function(&(m->clientid), f)) {
+			(void) sql_error(m, 02, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
+			_DELETE(f->imp);
+			f->imp = NULL;
+			return -1;
+		}
+		f->instantiated = TRUE;
+	}
+	return 0;
+}
+
 static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
@@ -1187,47 +1127,24 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
 	Symbol symbackup = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid, res = 0, added_to_cache = 0;
+	int i, retseen = 0, sideeffects = 0, no_inline = 0, res = 0, added_to_cache = 0;
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
 	backend bebackup;
+	sql_func *pf;
+
+	if (f->instantiated || (m->forward && m->forward->base.id == f->base.id)) /* already instantiated or instantiating a recursive function */
+		return 0;
 
 	if (strlen(f->base.name) >= IDLENGTH) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "Function name '%s' too large for the backend", f->base.name);
 		return -1;
 	}
-	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
-	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
-		if (f->lang == FUNC_LANG_MAL && !f->imp) {
-			char *imp = NULL;
-			if (mal_function_find_implementation_address(&imp, m, f) < 0)
-				return -1;
-			f->imp = sa_strdup(f->sa, imp);
-			_DELETE(imp);
-		}
-		if (!backend_resolve_function(&clientid, f)) {
-			if (f->lang == FUNC_LANG_INT)
-				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found", f->mod, f->imp);
-			else
-				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
-			return -1;
-		}
-	}
-	if (!f->sql || (!vararg && f->sql > 1))
-		return 0;
-	if (!vararg)
-		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
 		r = sql_processrelation(m, r, 1, 1, 0);
-	if (r && !f->sql) 	/* native function */
-		return 0;
-
-	if (!r) {
-		if (!vararg)
-			f->sql--;
+	if (!r)
 		return -1;
-	}
 
 	symbackup = c->curprg;
 	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
@@ -1235,6 +1152,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
 	if (c->curprg == NULL) {
+		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		res = -1;
+		goto cleanup;
+	}
+	assert(!f->imp);
+	if (!(f->imp = _STRDUP(f->base.name))) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
@@ -1311,8 +1234,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			setVarType(curBlk, varid, type);
 		}
 	}
-	/* announce the transaction mode */
-	if ((res = backend_dumpstmt(be, curBlk, r, 0, 1, NULL)) < 0)
+	/* for recursive functions, avoid infinite loops */
+	pf = m->forward;
+	m->forward = f;
+	res = backend_dumpstmt(be, curBlk, r, 0, 1, NULL);
+	m->forward = pf;
+	if (res < 0)
 		goto cleanup;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
@@ -1357,12 +1284,14 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 cleanup:
 	if (res < 0) {
-		if (!vararg)
-			f->sql--;
 		if (!added_to_cache)
 			freeSymbol(c->curprg);
 		else
 			SQLremoveQueryFromCache(c);
+		_DELETE(f->imp);
+		f->imp = NULL;
+	} else {
+		f->instantiated = TRUE;
 	}
 	memcpy(be, &bebackup, sizeof(backend));
 	c->curprg = symbackup;
@@ -1374,22 +1303,20 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	switch(f->lang) {
 	case FUNC_LANG_INT:
-	case FUNC_LANG_MAL:
-	case FUNC_LANG_SQL:
-		return backend_create_sql_func(be, f, restypes, ops);
 	case FUNC_LANG_R:
-		return backend_create_r_func(be, f);
 	case FUNC_LANG_PY:
 	case FUNC_LANG_PY3:
-		return backend_create_py_func(be, f);
 	case FUNC_LANG_MAP_PY:
 	case FUNC_LANG_MAP_PY3:
-		return backend_create_map_py_func(be, f);
 	case FUNC_LANG_C:
 	case FUNC_LANG_CPP:
-		return backend_create_c_func(be, f);
-	case FUNC_LANG_J:
+		return 0; /* these languages don't require internal instantiation */
+	case FUNC_LANG_MAL:
+		return backend_create_mal_func(be->mvc, f);
+	case FUNC_LANG_SQL:
+		return backend_create_sql_func(be, f, restypes, ops);
 	default:
+		sql_error(be->mvc, 003, SQLSTATE(42000) "Function language without a MAL backend");
 		return -1;
 	}
 }

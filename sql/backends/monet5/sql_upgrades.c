@@ -79,7 +79,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 				" (%d, '%s', '%s', '%s',"
 				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
 				func->base.id, func->base.name,
-				func->imp, func->mod, (int) FUNC_LANG_INT,
+				sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
 				(int) func->type,
 				boolnames[func->side_effect],
 				boolnames[func->varres],

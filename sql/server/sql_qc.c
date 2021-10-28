@@ -162,6 +162,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	f->base.new = 1;
 	f->base.id = n->id;
 	f->base.name = f->imp = name;
+	f->instantiated = TRUE;
 	n->f = f;
 	return n;
 }

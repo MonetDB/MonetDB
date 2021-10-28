@@ -21,9 +21,9 @@ extern int backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 extern int backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int addend, const char *query);
 extern int monet5_has_module(ptr M, char *module);
 extern int monet5_resolve_function(ptr M, sql_func *f);
+extern int backend_create_mal_func(mvc *m, sql_func *f);
 extern int backend_create_func(backend *be, sql_func *f, list *restypes, list *ops);
 extern int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
-extern int mal_function_find_implementation_address(str *res, mvc *m, sql_func *f);
 
 extern int monet5_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func);
 
