@@ -36,10 +36,10 @@ batcalc.lng
 1
 querylog.define
 1
-sql.my_generate_series
-2
 sql.resultSet
 1
+sql.user_func
+2
 user.main
 1
 

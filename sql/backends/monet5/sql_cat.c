@@ -1036,10 +1036,6 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
-		/* for sql functions, this check is necessary here */
-		if (nf->lang == FUNC_LANG_SQL && strlen(fname) >= IDLENGTH)
-			throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: name '%s' too large for the backend", base, F, fname);
-
 		assert(nf->query);
 		if (!(sql->sa = sa_create(sql->pa))) {
 			sql->sa = sa;

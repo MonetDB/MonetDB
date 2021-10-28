@@ -1132,14 +1132,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	str msg = MAL_SUCCEED;
 	backend bebackup;
 	sql_func *pf;
+	char befname[IDLENGTH];
 
 	if (f->instantiated || (m->forward && m->forward->base.id == f->base.id)) /* already instantiated or instantiating a recursive function */
 		return 0;
 
-	if (strlen(f->base.name) >= IDLENGTH) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "Function name '%s' too large for the backend", f->base.name);
-		return -1;
-	}
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
 		r = sql_processrelation(m, r, 1, 1, 0);
@@ -1150,14 +1147,15 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
 	backend_reset(be);
 
-	c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
+	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
+	c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(befname), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
 	assert(!f->imp);
-	if (!(f->imp = _STRDUP(f->base.name))) {
+	if (!(f->imp = _STRDUP(befname))) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;

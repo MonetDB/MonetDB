@@ -322,6 +322,7 @@ extern void store_resume_log(struct sqlstore *store);
 extern lng store_hot_snapshot(struct sqlstore *store, str tarfile);
 extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
+extern ulng store_function_counter(struct sqlstore *store);
 extern ulng store_oldest(struct sqlstore *store);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
@@ -461,8 +462,9 @@ typedef struct sqlstore {
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
 	ATOMIC_TYPE lastactive;	/* timestamp of last active client */
-    ATOMIC_TYPE timestamp;	/* timestamp counter */
-    ATOMIC_TYPE transaction;/* transaction id counter */
+	ATOMIC_TYPE timestamp;	/* timestamp counter */
+	ATOMIC_TYPE transaction;/* transaction id counter */
+	ATOMIC_TYPE function_counter;/* function counter used during function instantiation */
 	ulng oldest;
 	ulng oldest_pending;
 	int readonly;			/* store is readonly */

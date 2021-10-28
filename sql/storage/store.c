@@ -23,6 +23,13 @@
 
 static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
 
+ulng
+store_function_counter(sqlstore *store)
+{
+	ulng ts = ATOMIC_INC(&store->function_counter);
+	return ts;
+}
+
 static ulng
 store_timestamp(sqlstore *store)
 {
@@ -2076,6 +2083,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		.nr_active = ATOMIC_VAR_INIT(0),
 		.timestamp = ATOMIC_VAR_INIT(0),
 		.lastactive = ATOMIC_VAR_INIT(0),
+		.function_counter = ATOMIC_VAR_INIT(0),
 		.sa = pa,
 	};
 
