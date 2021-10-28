@@ -896,53 +896,88 @@ static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = sqlINT;
-	int before_cur = EOF;
+	int token = cur == '0' ? sqlINT : 0;
 
+	/* a number has one of these forms (expressed in regular expressions):
+	 * 0x[0-9A-Fa-f]+                   -- (hexadecimal) INTEGER
+	 * \.[0-9]+                         -- DECIMAL
+	 * [0-9]+\.[0-9]*                   -- DECIMAL
+	 * [0-9]+@0                         -- OID
+	 * [0-9]*\.[0-9]+[eE][-+]?[0-9]+    -- REAL
+	 * [0-9]+(\.[0-9]*)?[eE][-+]?[0-9]+ -- REAL
+	 * [0-9]+                           -- (decimal) INTEGER
+	 */
 	lc->started = 1;
+	/* after this block, cur contains the first character after the
+	 * parsed number (which may be the first causing it not to be a number);
+	 * it token == 0 after this block, a parse error was detected */
 	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		while ((cur = scanner_getc(lc)) != EOF &&
-		       (iswdigit(cur) ||
-				 (cur >= 'A' && cur <= 'F') ||
-				 (cur >= 'a' && cur <= 'f')))
+		cur = scanner_getc(lc);
+		while (cur != EOF && iswxdigit(cur)) {
 			token = HEXADECIMAL;
-		if (token == sqlINT)
-			before_cur = 'x';
+			cur = scanner_getc(lc);
+		}
+		if (token != HEXADECIMAL) {
+			/* 0x not followed by a hex digit: show 'x' as erroneous */
+			utf8_putchar(lc, cur);
+			cur = 'x';
+			token = 0;
+		}
 	} else {
-		if (iswdigit(cur))
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
-				;
+		while (cur != EOF && iswdigit(cur)) {
+			token = sqlINT;
+			cur = scanner_getc(lc);
+		}
 		if (cur == '@') {
-			token = OIDNUM;
-			cur = scanner_getc(lc);
-			if (cur == '0')
+			if (token == sqlINT) {
 				cur = scanner_getc(lc);
-		}
-
-		if (cur == '.') {
-			token = INTNUM;
-
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
-				;
-		}
-		if (cur == 'e' || cur == 'E') {
-			token = APPROXNUM;
-			cur = scanner_getc(lc);
-			if (cur == '-' || cur == '+')
-				token = 0;
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
-				token = APPROXNUM;
+				if (cur == '0') {
+					cur = scanner_getc(lc);
+					token = OIDNUM;
+				} else {
+					/* number + '@' not followed by 0: show '@' as erroneous */
+					utf8_putchar(lc, cur);
+					cur = '@';
+					token = 0;
+				}
+			}
+		} else {
+			if (cur == '.') {
+				cur = scanner_getc(lc);
+				if (token == sqlINT || iswdigit(cur)) {
+					token = INTNUM;
+					while (iswdigit(cur))
+						cur = scanner_getc(lc);
+				} else {
+					token = 0;
+				}
+			}
+			if (cur == 'e' || cur == 'E') {
+				if (token != 0) {
+					cur = scanner_getc(lc);
+					if (cur == '+' || cur == '-')
+						cur = scanner_getc(lc);
+					while (cur != EOF && iswdigit(cur)) {
+						token = APPROXNUM;
+						cur = scanner_getc(lc);
+					}
+					if (token != APPROXNUM)
+						token = 0;
+				}
+			}
 		}
 	}
 
 	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
 		return EOF;
 
+	if (cur != EOF) {
+		if (iswalnum(cur) || cur == '_' /* || cur == '"' || cur == '\'' */)
+			token = 0;
+		utf8_putchar(lc, cur);
+	}
+
 	if (token) {
-		if (cur != EOF)
-			utf8_putchar(lc, cur);
-		if (before_cur != EOF)
-			utf8_putchar(lc, before_cur);
 		return scanner_token(lc, token);
 	} else {
 		(void)sql_error( c, 2, SQLSTATE(42000) "Unexpected symbol %lc", (wint_t) cur);
