@@ -1485,7 +1485,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char 
 }
 
 static sql_table *
-create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
+create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type, bit system, int persistence, int commit_action, bte properties, int size)
 {
 	sql_table *t = SA_ZNEW(sa, sql_table);
 
@@ -1507,7 +1507,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 	if (isMergeTable(t) || isReplicaTable(t))
 		t->members = list_new(sa, (fdestroy) &part_destroy);
 	t->pkey = NULL;
-	t->sz = COLSIZE;
+	t->sz = size < 0 ? COLSIZE : size;
 	t->s = NULL;
 	t->properties = properties;
 	memset(&t->part, 0, sizeof(t->part));
@@ -1518,7 +1518,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 sql_table *
 create_sql_table(sqlstore *store, sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
 {
-	return create_sql_table_with_id(sa, next_oid(store), name, type, system, persistence, commit_action, properties);
+	return create_sql_table_with_id(sa, next_oid(store), name, type, system, persistence, commit_action, properties, -1);
 }
 
 static void
@@ -1603,7 +1603,7 @@ sql_table *
 dup_sql_table(sql_allocator *sa, sql_table *t)
 {
 	node *n;
-	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, t->properties);
+	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, t->properties, t->sz);
 
 	nt->base.new = t->base.new;
 
@@ -1637,7 +1637,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 }
 
 static sql_table *
-bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
+bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id, int size)
 {
 	sqlstore *store = tr->store;
 	int istmp = isTempSchema(s);
@@ -1647,7 +1647,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
 
 	if (store->obj_id <= id)
 		store->obj_id = id+1;
-	t = create_sql_table_with_id(tr->sa, id, name, tt_table, 1, persistence, commit_action, 0);
+	t = create_sql_table_with_id(tr->sa, id, name, tt_table, 1, persistence, commit_action, 0, size);
 	t->bootstrap = 1;
 
 	TRC_DEBUG(SQL_STORE, "Create table: %s\n", name);
@@ -1799,14 +1799,14 @@ store_load(sqlstore *store, sql_allocator *pa)
 	if (!store->first)
 		s->base.new = 0;
 
-	t = bootstrap_create_table(tr, s, "schemas", 2001);
+	t = bootstrap_create_table(tr, s, "schemas", 2001, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2002, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2003, "varchar", 1024);
 	bootstrap_create_column(tr, t, "authorization", 2004, "int", 32);
 	bootstrap_create_column(tr, t, "owner", 2005, "int", 32);
 	bootstrap_create_column(tr, t, "system", 2006, "boolean", 1);
 
-	types = t = bootstrap_create_table(tr, s, "types", 2007);
+	types = t = bootstrap_create_table(tr, s, "types", 2007, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2008, "int", 32);
 	bootstrap_create_column(tr, t, "systemname", 2009, "varchar", 256);
 	bootstrap_create_column(tr, t, "sqlname", 2010, "varchar", 1024);
@@ -1816,7 +1816,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "eclass", 2014, "int", 32);
 	bootstrap_create_column(tr, t, "schema_id", 2015, "int", 32);
 
-	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
+	functions = t = bootstrap_create_table(tr, s, "functions", 2016, 2048);
 	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2018, "varchar", 256);
 	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
@@ -1834,7 +1834,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
 	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
 
-	arguments = t = bootstrap_create_table(tr, s, "args", 2028);
+	arguments = t = bootstrap_create_table(tr, s, "args", 2028, 8192);
 	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
 	bootstrap_create_column(tr, t, "func_id", 2030, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2031, "varchar", 256);
@@ -1844,7 +1844,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "inout", 2035, "tinyint", 8);
 	bootstrap_create_column(tr, t, "number", 2036, "int", 32);
 
-	t = bootstrap_create_table(tr, s, "sequences", 2037);
+	t = bootstrap_create_table(tr, s, "sequences", 2037, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2038, "int", 32);
 	bootstrap_create_column(tr, t, "schema_id", 2039, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2040, "varchar", 256);
@@ -1855,32 +1855,32 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "cacheinc", 2045, "bigint", 64);
 	bootstrap_create_column(tr, t, "cycle", 2046, "boolean", 1);
 
-	t = bootstrap_create_table(tr, s, "table_partitions", 2047);
+	t = bootstrap_create_table(tr, s, "table_partitions", 2047, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2048, "int", 32);
 	bootstrap_create_column(tr, t, "table_id", 2049, "int", 32);
 	bootstrap_create_column(tr, t, "column_id", 2050, "int", 32);
 	bootstrap_create_column(tr, t, "expression", 2051, "varchar", STORAGE_MAX_VALUE_LENGTH);
 	bootstrap_create_column(tr, t, "type", 2052, "tinyint", 8);
 
-	t = bootstrap_create_table(tr, s, "range_partitions", 2053);
+	t = bootstrap_create_table(tr, s, "range_partitions", 2053, COLSIZE);
 	bootstrap_create_column(tr, t, "table_id", 2054, "int", 32);
 	bootstrap_create_column(tr, t, "partition_id", 2055, "int", 32);
 	bootstrap_create_column(tr, t, "minimum", 2056, "varchar", STORAGE_MAX_VALUE_LENGTH);
 	bootstrap_create_column(tr, t, "maximum", 2057, "varchar", STORAGE_MAX_VALUE_LENGTH);
 	bootstrap_create_column(tr, t, "with_nulls", 2058, "boolean", 1);
 
-	t = bootstrap_create_table(tr, s, "value_partitions", 2059);
+	t = bootstrap_create_table(tr, s, "value_partitions", 2059, COLSIZE);
 	bootstrap_create_column(tr, t, "table_id", 2060, "int", 32);
 	bootstrap_create_column(tr, t, "partition_id", 2061, "int", 32);
 	bootstrap_create_column(tr, t, "value", 2062, "varchar", STORAGE_MAX_VALUE_LENGTH);
 
-	t = bootstrap_create_table(tr, s, "dependencies", 2063);
+	t = bootstrap_create_table(tr, s, "dependencies", 2063, 2048);
 	bootstrap_create_column(tr, t, "id", 2064, "int", 32);
 	bootstrap_create_column(tr, t, "depend_id", 2065, "int", 32);
 	bootstrap_create_column(tr, t, "depend_type", 2066, "smallint", 16);
 
 
-	t = bootstrap_create_table(tr, s, "_tables", 2067);
+	t = bootstrap_create_table(tr, s, "_tables", 2067, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2068, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2069, "varchar", 1024);
 	bootstrap_create_column(tr, t, "schema_id", 2070, "int", 32);
@@ -1890,7 +1890,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "commit_action", 2074, "smallint", 16);
 	bootstrap_create_column(tr, t, "access", 2075, "smallint", 16);
 
-	t = bootstrap_create_table(tr, s, "_columns", 2076);
+	t = bootstrap_create_table(tr, s, "_columns", 2076, 2048);
 	bootstrap_create_column(tr, t, "id", 2077, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2078, "varchar", 1024);
 	bootstrap_create_column(tr, t, "type", 2079, "varchar", 1024);
@@ -1902,7 +1902,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "number", 2085, "int", 32);
 	bootstrap_create_column(tr, t, "storage", 2086, "varchar", 2048);
 
-	t = bootstrap_create_table(tr, s, "keys", 2087);
+	t = bootstrap_create_table(tr, s, "keys", 2087, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2088, "int", 32);
 	bootstrap_create_column(tr, t, "table_id", 2089, "int", 32);
 	bootstrap_create_column(tr, t, "type", 2090, "int", 32);
@@ -1910,13 +1910,13 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "rkey", 2092, "int", 32);
 	bootstrap_create_column(tr, t, "action", 2093, "int", 32);
 
-	t = bootstrap_create_table(tr, s, "idxs", 2094);
+	t = bootstrap_create_table(tr, s, "idxs", 2094, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2095, "int", 32);
 	bootstrap_create_column(tr, t, "table_id", 2096, "int", 32);
 	bootstrap_create_column(tr, t, "type", 2097, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2098, "varchar", 1024);
 
-	t = bootstrap_create_table(tr, s, "triggers", 2099);
+	t = bootstrap_create_table(tr, s, "triggers", 2099, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2100, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2101, "varchar", 1024);
 	bootstrap_create_column(tr, t, "table_id", 2102, "int", 32);
@@ -1928,7 +1928,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "condition", 2108, "varchar", 2048);
 	bootstrap_create_column(tr, t, "statement", 2109, "varchar", 2048);
 
-	t = bootstrap_create_table(tr, s, "objects", 2110);
+	t = bootstrap_create_table(tr, s, "objects", 2110, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2111, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2112, "varchar", 1024);
 	bootstrap_create_column(tr, t, "nr", 2113, "int", 32);
@@ -1937,7 +1937,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	s = bootstrap_create_schema(tr, "tmp", 2114, ROLE_SYSADMIN, USER_MONETDB);
 	store->tmp = s;
 
-	t = bootstrap_create_table(tr, s, "_tables", 2115);
+	t = bootstrap_create_table(tr, s, "_tables", 2115, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2116, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2117, "varchar", 1024);
 	bootstrap_create_column(tr, t, "schema_id", 2118, "int", 32);
@@ -1947,7 +1947,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "commit_action", 2122, "smallint", 16);
 	bootstrap_create_column(tr, t, "access", 2123, "smallint", 16);
 
-	t = bootstrap_create_table(tr, s, "_columns", 2124);
+	t = bootstrap_create_table(tr, s, "_columns", 2124, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2125, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2126, "varchar", 1024);
 	bootstrap_create_column(tr, t, "type", 2127, "varchar", 1024);
@@ -1959,7 +1959,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "number", 2133, "int", 32);
 	bootstrap_create_column(tr, t, "storage", 2134, "varchar", 2048);
 
-	t = bootstrap_create_table(tr, s, "keys", 2135);
+	t = bootstrap_create_table(tr, s, "keys", 2135, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2136, "int", 32);
 	bootstrap_create_column(tr, t, "table_id", 2137, "int", 32);
 	bootstrap_create_column(tr, t, "type", 2138, "int", 32);
@@ -1967,13 +1967,13 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "rkey", 2140, "int", 32);
 	bootstrap_create_column(tr, t, "action", 2141, "int", 32);
 
-	t = bootstrap_create_table(tr, s, "idxs", 2142);
+	t = bootstrap_create_table(tr, s, "idxs", 2142, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2143, "int", 32);
 	bootstrap_create_column(tr, t, "table_id", 2144, "int", 32);
 	bootstrap_create_column(tr, t, "type", 2145, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2146, "varchar", 1024);
 
-	t = bootstrap_create_table(tr, s, "triggers", 2147);
+	t = bootstrap_create_table(tr, s, "triggers", 2147, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2148, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2149, "varchar", 1024);
 	bootstrap_create_column(tr, t, "table_id", 2150, "int", 32);
@@ -1985,7 +1985,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	bootstrap_create_column(tr, t, "condition", 2156, "varchar", 2048);
 	bootstrap_create_column(tr, t, "statement", 2157, "varchar", 2048);
 
-	t = bootstrap_create_table(tr, s, "objects", 2158);
+	t = bootstrap_create_table(tr, s, "objects", 2158, COLSIZE);
 	bootstrap_create_column(tr, t, "id", 2159, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2160, "varchar", 1024);
 	bootstrap_create_column(tr, t, "nr", 2161, "int", 32);
@@ -5418,7 +5418,7 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 					   int persistence, int commit_action, int sz, bte properties)
 {
 	sqlstore *store = tr->store;
-	sql_table *t = create_sql_table_with_id(tr->sa, next_oid(tr->store), name, tt, system, persistence, commit_action, properties);
+	sql_table *t = create_sql_table_with_id(tr->sa, next_oid(tr->store), name, tt, system, persistence, commit_action, properties, sz);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(tr, syss, "_tables");
 	sht ca;
@@ -5430,9 +5430,6 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 
 	t->query = sql ? SA_STRDUP(tr->sa, sql) : NULL;
 	t->s = s;
-	t->sz = sz;
-	if (sz < 0)
-		t->sz = COLSIZE;
 	if (isGlobal(t)) {
 		if ((res = os_add(s->tables, tr, t->base.name, &t->base)))
 			return res;
