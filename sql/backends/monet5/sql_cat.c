@@ -988,7 +988,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			if (!sff->s || sff->system)
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
 
-			if (sff->lang == FUNC_LANG_MAL && !mal_function_find_implementation_address(&fimp, sql, sff)) {
+			if (sff->lang == FUNC_LANG_MAL && mal_function_find_implementation_address(&fimp, sql, sff) < 0) {
 				backend_ok = false;
 				sql->session->status = 0; /* clean the error */
 				sql->errstr[0] = '\0';
