@@ -905,9 +905,15 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	} else {
 		v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mod"), rid, &cbat);
 	}
-	t->mod = SA_STRDUP(tr->sa, v);	if (!update_env) store->table_api.column_find_string_end(cbat);
+	if (strcmp(v, "pyapi") == 0) /* pyapi module no longer used */
+		t->mod = SA_STRDUP(tr->sa, "pypapi3");
+	else if (strcmp(v, "pyapimap") == 0) /* pyapimap module no longer used */
+		t->mod = SA_STRDUP(tr->sa, "pyapi3map");
+	else
+		t->mod = SA_STRDUP(tr->sa, v);
+	if (!update_env) store->table_api.column_find_string_end(cbat);
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
-	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
+	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
 	t->side_effect = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
 	if (t->type==F_FILT)
@@ -926,6 +932,18 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		t->lang = FUNC_LANG_PY;
 	else if ((int) t->lang == 9)	/* old FUNC_LANG_MAP_PY2 */
 		t->lang = FUNC_LANG_MAP_PY;
+	if (LANG_EXT(t->lang)) { /* instantiate functions other than sql and mal */
+		switch(t->type) {
+		case F_AGGR:
+			t->imp = SA_STRDUP(tr->sa, "eval_aggr");
+			break;
+		case F_LOADER:
+			t->imp = SA_STRDUP(tr->sa, "eval_loader");
+			break;
+		default: /* for every other function type at the moment */
+			t->imp = SA_STRDUP(tr->sa, "eval");
+		}
+	}
 	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -4672,12 +4690,12 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
 	base_init(sa, &t->base, next_oid(store), true, func);
-	assert(impl && mod);
+	assert(mod);
 	t->imp = (impl)?SA_STRDUP(sa, impl):NULL;
-	t->mod = (mod)?SA_STRDUP(sa, mod):NULL;
+	t->mod = SA_STRDUP(sa, mod);
 	t->type = type;
 	t->lang = lang;
-	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = TRUE;
 	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
@@ -4717,12 +4735,12 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	base_init(tr->sa, &t->base, next_oid(tr->store), true, func);
-	assert(impl && mod);
+	assert(mod);
 	t->imp = (impl)?SA_STRDUP(tr->sa, impl):NULL;
-	t->mod = (mod)?SA_STRDUP(tr->sa, mod):NULL;
+	t->mod = SA_STRDUP(tr->sa, mod);
 	t->type = type;
 	t->lang = lang;
-	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = TRUE;
 	se = t->side_effect = (type==F_FILT || (ffres && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;

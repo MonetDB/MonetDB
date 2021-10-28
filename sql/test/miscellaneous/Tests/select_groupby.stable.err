@@ -28,7 +28,7 @@ stderr of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-155076/.s.monetdb.39205
 QUERY = create function "sys"."dummy"("col1" blob, "col2" blob, "col3" integer) returns boolean external name "unknown"."idontexist"; --error, MAL implementation of sys.dummy doesn't exist.
-ERROR = !CREATE FUNCTION: external name unknown.idontexist not bound (sys.dummy)
+ERROR = !MAL external name unknown.idontexist not bound (sys.dummy)
 CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-155076/.s.monetdb.39205
 QUERY = SELECT "sys"."dummy"("fortieth-second", blob '', '0') AS "alias1", "fortieth-third" FROM "myschema"."mytable"; --error, function doesn't exist

@@ -897,7 +897,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 
 	if (body && LANG_EXT(lang)) {
-		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown";
+		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
 		switch (lang) {
 		case FUNC_LANG_R:
 			mod = "rapi";
@@ -916,23 +916,27 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			slang = "Javascript";
 			break;
 		case FUNC_LANG_PY:
-			mod = "pyapi";
-			slang = "Python";
-			break;
-		case FUNC_LANG_MAP_PY:
-			mod = "pyapimap";
-			slang = "Python";
-			break;
 		case FUNC_LANG_PY3:
 			mod = "pyapi3";
 			slang = "Python";
 			break;
+		case FUNC_LANG_MAP_PY:
 		case FUNC_LANG_MAP_PY3:
 			mod = "pyapi3map";
 			slang = "Python";
 			break;
 		default:
-			assert(0);
+			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
+		}
+		switch(type) {
+		case F_AGGR:
+			imp = "eval_aggr";
+			break;
+		case F_LOADER:
+			imp = "eval_loader";
+			break;
+		default: /* for every other function type at the moment */
+			imp = "eval";
 		}
 
 		if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
@@ -940,7 +944,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -959,7 +963,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		if (create) { /* needed for recursive functions */
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -991,14 +995,13 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	} else { /* MAL implementation */
 		char *fmod = qname_module(ext_name);
 		char *fnme = qname_schema_object(ext_name);
-		int clientid = sql->clientid;
 
 		if (!fmod || !fnme)
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL module or function name missing", F);
 		sql->params = NULL;
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, NULL, q, FALSE, vararg, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1009,25 +1012,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			}
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
-		} else {
-			sql_func *f = sf->func;
-			if (!f->mod || strcmp(f->mod, fmod)) {
-				_DELETE(f->mod);
-				f->mod = _STRDUP(fmod);
-			}
-			if (!f->imp || strcmp(f->imp, fnme)) {
-				_DELETE(f->imp);
-				f->imp = _STRDUP(fnme);
-			}
-			if (!f->mod || !f->imp)
-				return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
-			f->sql = 0; /* native */
 		}
 		if (!f)
 			f = sf->func;
 		assert(f);
-		if (!backend_resolve_function(&clientid, f))
-			return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 	}
 	return rel_create_function(sql->sa, s->base.name, f, replace);
 }

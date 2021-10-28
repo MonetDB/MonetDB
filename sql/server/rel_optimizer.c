@@ -2962,7 +2962,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 			}
 		}
-		if (!f->func->s && list_length(l) == 2 && str_ends_with(f->func->imp, "_no_nil") == 0) {
+		if (!f->func->s && list_length(l) == 2 && str_ends_with(sql_func_imp(f->func), "_no_nil") == 0) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 

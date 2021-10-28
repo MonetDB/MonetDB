@@ -444,10 +444,9 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 char *
 sql_func_imp(sql_func *f)
 {
-	if (f->sql)
-		return f->base.name;
-	else
-		return f->imp;
+	if (!f->imp)
+		return "";
+	return f->imp;
 }
 
 char *
@@ -456,12 +455,6 @@ sql_func_mod(sql_func *f)
 	if (!f->mod)
 		return "";
 	return f->mod;
-}
-
-int
-is_sqlfunc(sql_func *f)
-{
-	return f->sql;
 }
 
 sql_subfunc*
@@ -658,7 +651,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 		t->res = list_append(SA_LIST(sa, (fdestroy) &arg_destroy), fres);
 	} else
 		t->res = NULL;
-	t->sql = 0;
+	t->instantiated = TRUE;
 	t->lang = FUNC_LANG_INT;
 	t->semantics = semantics;
 	t->side_effect = side_effect;
