@@ -321,18 +321,18 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	}
 	bat_iterator_end(&bi);
 
-	// Check that we did record something in the histogram.
+	// Check that we have enough values in the histogram.
 	if(values >= STRIMP_HEADER_SIZE) {
 		// Choose the header pairs
 		STRMPchoosePairs(hist, hlen, hpairs);
-		for (hidx = 0; hidx < hlen; hidx++) {
-			if (hist[hidx].p) {
-				GDKfree(hist[hidx].p);
-				hist[hidx].p = NULL;
-			}
-		}
 	}
 
+	for (hidx = 0; hidx < hlen; hidx++) {
+		if (hist[hidx].p) {
+			GDKfree(hist[hidx].p);
+			hist[hidx].p = NULL;
+		}
+	}
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
