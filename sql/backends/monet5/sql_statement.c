@@ -3289,10 +3289,12 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 				if (f->func->type == F_UNION)
 					q = newStmtArgs(mb, batmalRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
 				else
-					q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
+					q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6 + ops->argument_independence);
 				if (q == NULL)
 					return NULL;
 				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+				if (ops->argument_independence)
+					q = pushLng(mb, q, 0); // Represents input cardinality which signals the multiplex optimizer to use a manifold implementation or bulkoperator which is only dependent of the input cardinality.
 				q = pushStr(mb, q, mod);
 				q = pushStr(mb, q, fimp);
 			} else {
