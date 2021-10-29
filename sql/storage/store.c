@@ -30,6 +30,18 @@ store_function_counter(sqlstore *store)
 	return ts;
 }
 
+void
+lock_function(sqlstore *store, sqlid id)
+{
+	MT_lock_set(&store->function_locks[id&(NR_FUNCTION_LOCKS-1)]);
+}
+
+void
+unlock_function(sqlstore *store, sqlid id)
+{
+	MT_lock_unset(&store->function_locks[id&(NR_FUNCTION_LOCKS-1)]);
+}
+
 static ulng
 store_timestamp(sqlstore *store)
 {
@@ -2091,6 +2103,8 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
+	for(int i = 0; i<NR_FUNCTION_LOCKS; i++)
+		MT_lock_init(&store->function_locks[i], "sqlstore_function");
 	for(int i = 0; i<NR_TABLE_LOCKS; i++)
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
