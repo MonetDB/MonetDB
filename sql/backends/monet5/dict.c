@@ -233,7 +233,7 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = DICTcompress_intern(&o, &u, b, ordered, true, true);
 	bat_destroy(b);
 	if (msg == MAL_SUCCEED) {
-		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_dict(tr, c, o, u) != LOG_OK) {
+		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_compress(tr, c, ST_DICT, o, u) != LOG_OK) {
 			bat_destroy(u);
 			bat_destroy(o);
 			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");

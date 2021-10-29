@@ -5259,6 +5259,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
+#include "for.h"
 #include "dict.h"
 #include "mel.h"
 static mel_func sql_init_funcs[] = {
@@ -5390,6 +5391,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "prepared_statements_args", SQLsession_prepared_statements_args, false, "Available prepared statements' arguments in the current session", args(9,9, batarg("statementid",int),batarg("type",str),batarg("digits",int),batarg("scale",int),batarg("inout",bte),batarg("number",int),batarg("schema",str),batarg("table",str),batarg("column",str))),
  pattern("sql", "copy_rejects", COPYrejects, false, "", args(4,4, batarg("rowid",lng),batarg("fldid",int),batarg("msg",str),batarg("inp",str))),
  pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
+ pattern("for", "compress", FORcompress_col, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
+ pattern("for", "decompress", FORdecompress, false, "decompress a for compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), argany("minval", 1))),
  pattern("dict", "compress", DICTcompress, false, "dict compress a bat", args(2, 3, batargany("o", 0), batargany("v", 1), batargany("b", 1))),
  pattern("dict", "compress", DICTcompress_col, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
  pattern("dict", "compress", DICTcompress_col, false, "compress a sql column", args(0, 4, arg("schema", str), arg("table", str), arg("column", str), arg("ordered", bit))),

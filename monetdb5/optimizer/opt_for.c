@@ -7,8 +7,9 @@
  */
 
 #include "monetdb_config.h"
-#include "opt_dict.h"
+#include "opt_for.h"
 
+#if 0
 static InstrPtr
 ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 {
@@ -17,6 +18,7 @@ ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 	p->argc--;
 	return p;
 }
+#endif
 
 static int
 allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
@@ -29,13 +31,12 @@ allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
 }
 
 str
-OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit, slimit;
 	InstrPtr p=0, *old=NULL;
 	int actions = 0;
-	int *varisdict=NULL, *vardictvalue=NULL;
-	bit *dictunique=NULL;
+	int *varisfor=NULL, *varforvalue=NULL;
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
@@ -44,20 +45,18 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mb->inlineProp)
 		goto wrapup;
 
-	varisdict = GDKzalloc(2 * mb->vtop * sizeof(int));
-	vardictvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
-	dictunique = GDKzalloc(2 * mb->vtop * sizeof(bit));
-	if (varisdict == NULL || vardictvalue == NULL || dictunique == NULL)
+	varisfor = GDKzalloc(2 * mb->vtop * sizeof(int));
+	varforvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
+	if (varisfor == NULL || varforvalue == NULL)
 		goto wrapup;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varisdict);
-		GDKfree(vardictvalue);
-		GDKfree(dictunique);
-		throw(MAL,"optimizer.dict", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDKfree(varisfor);
+		GDKfree(varforvalue);
+		throw(MAL,"optimizer.for", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// Consolidate the actual need for variables
@@ -65,52 +64,50 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if( p == 0)
 			continue; //left behind by others?
-		if (p->retc == 1 && getModuleId(p) == dictRef && getFunctionId(p) == decompressRef) {
-			// remember we have encountered a dict decompress function
+		if (p->retc == 1 && getModuleId(p) == forRef && getFunctionId(p) == decompressRef) {
+			// remember we have encountered a for decompress function
 			k =  getArg(p,0);
-			varisdict[k] = getArg(p,1);
-			vardictvalue[k] = getArg(p, 2);
-			dictunique[k] = 1;
+			varisfor[k] = getArg(p,1);
+			varforvalue[k] = getArg(p, 2);
 			continue;
 		}
 		int done = 0;
 		for(j=p->retc; j< p->argc; j++){
 			k = getArg(p,j);
-			if (varisdict[k]) { // maybe we could delay this usage
+			if (varisfor[k]) { // maybe we could delay this usage
 				if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
-					/* projection(cand, col) with col = dict.decompress(o,u)
+					/* projection(cand, col) with col = for.decompress(o,min_val)
 					 * v1 = projection(cand, o)
-					 * dict.decompress(v1, u) */
+					 * for.decompress(v1, min_val) */
 					InstrPtr r = copyInstruction(p);
-					int tpe = getVarType(mb, varisdict[k]);
+					int tpe = getVarType(mb, varisfor[k]);
 					int l = getArg(r, 0);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
-					getArg(r, j) = varisdict[k];
-					varisdict[l] = getArg(r,0);
-					vardictvalue[l] = vardictvalue[k];
-					dictunique[l] = dictunique[k];
+					getArg(r, j) = varisfor[k];
+					varisfor[l] = getArg(r,0);
+					varforvalue[l] = varforvalue[k];
 					pushInstruction(mb,r);
 					done = 1;
 					break;
 				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
 					/* a = b */
 					int l = getArg(p, 0);
-					varisdict[l] = varisdict[k];
-					vardictvalue[l] = vardictvalue[k];
-					dictunique[l] = dictunique[k];
+					varisfor[l] = varisfor[k];
+					varforvalue[l] = varforvalue[k];
 					done = 1;
 					break;
 				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef) {
-					/* pos = subslice(col, l, h) with col = dict.decompress(o,u)
+					/* pos = subslice(col, l, h) with col = for.decompress(o,min_val)
 					 * pos = subslice(o, l, h) */
 					InstrPtr r = copyInstruction(p);
-					getArg(r, j) = varisdict[k];
+					getArg(r, j) = varisfor[k];
 					pushInstruction(mb,r);
 					done = 1;
 					break;
+#if 0
 				} else if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
-						InstrPtr r = newInstructionArgs(mb, dictRef, thetaselectRef, 6);
+						InstrPtr r = newInstructionArgs(mb, forRef, thetaselectRef, 6);
 
 						getArg(r, 0) = getArg(p, 0);
 						addArgument(mb, r, varisdict[k]);
@@ -200,50 +197,30 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
+#endif
 				} else if ((isMapOp(p) || isMap2Op(p)) && allConstExcept(mb, p, j)) {
-					/* batcalc.-(1, col) with col = dict.decompress(o,u)
-					 * v1 = batcalc.-(1, u)
-					 * dict.decompress(o, v1) */
+					/* batcalc.-(1, col) with col = for.decompress(o,min_val)
+					 * v1 = batcalc.-(1, min_val)
+					 * for.decompress(o, v1) */
 					InstrPtr r = copyInstruction(p);
+					getModuleId(r) = calcRef;/* single value */
 					int tpe = getVarType(mb, getArg(p,0));
 					int l = getArg(r, 0), m = getArg(p, 0);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
-					getArg(r, j) = vardictvalue[k];
+					getArg(r, j) = varforvalue[k];
 
-					/* new and old result are now dicts */
-					varisdict[l] = varisdict[m] = varisdict[k];
-					vardictvalue[l] = vardictvalue[m] = getArg(r,0);
-					dictunique[l] = 0;
+					/* new and old result are now min-values */
+					varisfor[l] = varisfor[m] = varisfor[k];
+					varforvalue[l] = varforvalue[m] = getArg(r,0);
 					pushInstruction(mb,r);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == groupRef &&
 						(getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
 						 getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)) {
-					/* group.group[done](col) | group.subgroup[done](col, grp) with col = dict.decompress(o,u)
+					/* group.group[done](col) | group.subgroup[done](col, grp) with col = for.decompress(o,min_val)
 					 * v1 = group.group[done](o) | group.subgroup[done](o, grp) */
-					int input = varisdict[k];
-					if (!dictunique[k]) {
-						/* make new dict and renumber the inputs */
-
-						int tpe = getVarType(mb, varisdict[k]);
-						/*(o,v) = compress(vardictvalue[k]); */
-						InstrPtr r = newInstructionArgs(mb, dictRef, compressRef, 3);
-						/* dynamic type problem ie could be bte or sht, use same type as input dict */
-						getArg(r, 0) = newTmpVariable(mb, tpe);
-						r = pushReturn(mb, r, newTmpVariable(mb, getArgType(mb, p, j)));
-						r = addArgument(mb, r, vardictvalue[k]);
-						pushInstruction(mb,r);
-
-						InstrPtr s = newInstructionArgs(mb, dictRef, renumberRef, 3);
-						//newvar = renumber(varisdict[k], o);
-						getArg(s, 0) = newTmpVariable(mb, tpe);
-						s = addArgument(mb, s, varisdict[k]);
-						s = addArgument(mb, s, getArg(r, 0));
-						pushInstruction(mb,s);
-
-						input = getArg(s, 0);
-					}
+					int input = varisfor[k];
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = input;
 					pushInstruction(mb,r);
@@ -252,10 +229,10 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				} else {
 					/* need to decompress */
 					int tpe = getArgType(mb, p, j);
-					InstrPtr r = newInstructionArgs(mb, dictRef, decompressRef, 3);
+					InstrPtr r = newInstructionArgs(mb, forRef, decompressRef, 3);
 					getArg(r, 0) = newTmpVariable(mb, tpe);
-					r = addArgument(mb, r, varisdict[k]);
-					r = addArgument(mb, r, vardictvalue[k]);
+					r = addArgument(mb, r, varisfor[k]);
+					r = addArgument(mb, r, varforvalue[k]);
 					pushInstruction(mb, r);
 
 					getArg(p, j) = getArg(r, 0);
@@ -283,8 +260,7 @@ wrapup:
 	(void) pushInt(mb, pci, actions);
 
 	GDKfree(old);
-	GDKfree(varisdict);
-	GDKfree(vardictvalue);
-	GDKfree(dictunique);
+	GDKfree(varisfor);
+	GDKfree(varforvalue);
 	return msg;
 }

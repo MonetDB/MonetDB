@@ -207,6 +207,7 @@ extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 extern stmt *stmt_dict(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_for(backend *be, stmt *op1, stmt *minval);
 
 extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);

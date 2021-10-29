@@ -4,6 +4,9 @@
 
 #include "sql.h"
 
+extern str FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 extern str DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str DICTcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

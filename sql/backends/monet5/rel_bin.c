@@ -1566,9 +1566,11 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
-		if (c->storage_type) {
-			stmt *v = stmt_bat(be, c, RD_DICT, part);
+		if (c->storage_type && c->storage_type[0] == 'D') {
+			stmt *v = stmt_bat(be, c, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
+		} else if (c->storage_type && c->storage_type[0] == 'F') {
+			sc = stmt_for(be, sc, stmt_atom(be, atom_general( be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/)));
 		}
 		sc = stmt_project_delta(be, sc, u);
 		if (del)
