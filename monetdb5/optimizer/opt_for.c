@@ -104,18 +104,37 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
-#if 0
-				} else if (isSelect(p)) {
+				} else// if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
-						InstrPtr r = newInstructionArgs(mb, forRef, thetaselectRef, 6);
+						/* pos = thetaselect(col, cand, l, ...) with col = for.decompress(o, minval)
+						 * l = calc.-(l, minval);
+						 * nl = calc.bte(l);
+						 * or
+						 * nl = calc.sht(l);
+					 	 * pos = select(o, cand, nl,  ...) */
 
-						getArg(r, 0) = getArg(p, 0);
-						addArgument(mb, r, varisdict[k]);
-						addArgument(mb, r, getArg(p, 2)); /* cand */
-						addArgument(mb, r, vardictvalue[k]);
-						addArgument(mb, r, getArg(p, 3)); /* val */
-						addArgument(mb, r, getArg(p, 4)); /* op */
+						InstrPtr q = newInstructionArgs(mb, calcRef, minusRef, 3);
+						int tpe = getVarType(mb, getArg(p,3));
+						getArg(q, 0) = newTmpVariable(mb, tpe);
+						addArgument(mb, q, getArg(p, 3));
+						addArgument(mb, q, varforvalue[k]);
+						pushInstruction(mb,q);
+
+						InstrPtr r;
+						tpe = getBatType(getVarType(mb, varisfor[k]));
+						if (tpe == TYPE_bte)
+							r = newInstructionArgs(mb, calcRef, putName("bte"), 2);
+						else
+							r = newInstructionArgs(mb, calcRef, putName("sht"), 2);
+						getArg(r, 0) = newTmpVariable(mb, tpe);
+						addArgument(mb, r, getArg(q, 0));
 						pushInstruction(mb,r);
+
+						q = copyInstruction(p);
+						getArg(q, j) = varisfor[k];
+						getArg(q, 3) = getArg(r, 0);
+						pushInstruction(mb,q);
+#if 0
 					} else if (getFunctionId(p) == selectRef && p->argc == 9) {
 						/* select (c, s, l, h, li, hi, anti, unknown ) */
 						InstrPtr r = newInstructionArgs(mb, dictRef, selectRef, 10);
@@ -161,43 +180,9 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						t = pushNil(mb, t, TYPE_lng); /* estimate */
 						pushInstruction(mb,t);
 					}
-					done = 1;
-					break;
-				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
-						&& varisdict[getArg(p, j+1)] && vardictvalue[k] == vardictvalue[getArg(p, j+1)]) {
-					/* (r1, r2) = join(col1, col2, cand1, cand2, ...) with
-					 *		col1 = dict.decompress(o1,u1), col2 = dict.decompress(o2,u2)
-					 *		iff u1 == u2
-					 *			(r1, r2) = algebra.join(o1, o2, cand1, cand2, ...) */
-					int l = getArg(p, j+1);
-					InstrPtr r = copyInstruction(p);
-					getArg(r, j+0) = varisdict[k];
-					getArg(r, j+1) = varisdict[l];
-					pushInstruction(mb,r);
-					done = 1;
-					break;
-				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
-						&& varisdict[getArg(p, j+1)] && vardictvalue[k] != vardictvalue[getArg(p, j+1)]) {
-					/* (r1, r2) = join(col1, col2, cand1, cand2, ...) with
-					 *		col1 = dict.decompress(o1,u1), col2 = dict.decompress(o2,u2)
-					 * (r1, r2) = dict.join(o1, u1, o2, u2, cand1, cand2, ...) */
-					int l = getArg(p, j+1);
-					InstrPtr r = newInstructionArgs(mb, dictRef, joinRef, 10);
-					assert(p->argc==8);
-					getArg(r, 0) = getArg(p, 0);
-					r = pushReturn(mb, r, getArg(p, 1));
-					r = addArgument(mb, r, varisdict[k]);
-					r = addArgument(mb, r, vardictvalue[k]);
-					r = addArgument(mb, r, varisdict[l]);
-					r = addArgument(mb, r, vardictvalue[l]);
-					r = addArgument(mb, r, getArg(p, 4));
-					r = addArgument(mb, r, getArg(p, 5));
-					r = addArgument(mb, r, getArg(p, 6));
-					r = addArgument(mb, r, getArg(p, 7));
-					pushInstruction(mb,r);
-					done = 1;
-					break;
 #endif
+					done = 1;
+					break;
 				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef)  && allConstExcept(mb, p, j)) {
 					/* batcalc.-(1, col) with col = for.decompress(o,min_val)
 					 * v1 = batcalc.-(1, min_val)
