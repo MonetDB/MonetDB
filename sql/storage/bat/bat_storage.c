@@ -948,11 +948,11 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 {
 	BAT *b;
 
-	assert(access == RDONLY || access == QUICK || access == RD_DICT);
+	assert(access == RDONLY || access == QUICK || access == RD_EXT);
 	assert(cs != NULL);
 	if (access == QUICK)
 		return quick_descriptor(cs->bid);
-	if (access == RD_DICT)
+	if (access == RD_EXT)
 		return temp_descriptor(cs->ebid);
 	assert(cs->bid);
 	b = temp_descriptor(cs->bid);
@@ -978,7 +978,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access, cnt);
 	BAT *b = cs_bind_bat( &d->cs, access, cnt);
-	assert(!b || ((c->storage_type && access != RD_DICT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
+	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
 	return b;
 }
 
@@ -4352,7 +4352,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 }
 
 static int
-col_dict(sql_trans *tr, sql_column *col, BAT *o, BAT *u)
+col_compress(sql_trans *tr, sql_column *col, int storage_type, BAT *o, BAT *u)
 {
 	bool update_conflict = false;
 	int in_transaction = segments_in_transaction(tr, col->t);
@@ -4367,14 +4367,17 @@ col_dict(sql_trans *tr, sql_column *col, BAT *o, BAT *u)
 	assert(d && d->cs.ts == tr->tid);
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
 		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isTempTable(col->t)?NULL:&log_update_col);
-	d->cs.st = ST_DICT;
+
+	d->cs.st = storage_type;
 	d->cs.cleared = true;
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);
 	d->cs.bid = temp_create(o);
-	if (d->cs.ebid)
-		temp_destroy(d->cs.ebid);
-	d->cs.ebid = temp_create(u);
+	if (u) {
+		if (d->cs.ebid)
+			temp_destroy(d->cs.ebid);
+		d->cs.ebid = temp_create(u);
+	}
 	return 0;
 }
 
@@ -4426,7 +4429,7 @@ bat_storage_init( store_functions *sf)
 
 	sf->temp_del_tab = &temp_del_tab;
 	sf->swap_bats = &swap_bats;
-	sf->col_dict = &col_dict;
+	sf->col_compress = &col_compress;
 }
 
 #if 0

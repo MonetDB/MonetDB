@@ -194,7 +194,7 @@ typedef int (*drop_del_fptr) (sql_trans *tr, sql_table *t);
 
 typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
-typedef int (*col_dict_fptr) (sql_trans *tr, sql_column *c, BAT *offsets, BAT *vals);
+typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, int storage_type, BAT *offsets, BAT *vals);
 
 /*
 -- update_table rollforward the changes made from table ft to table tt
@@ -247,7 +247,7 @@ typedef struct store_functions {
 	drop_del_fptr drop_del;
 
 	clear_table_fptr clear_table;
-	col_dict_fptr col_dict;
+	col_compress_fptr col_compress;
 
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;

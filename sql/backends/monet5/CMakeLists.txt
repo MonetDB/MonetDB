@@ -151,6 +151,7 @@ target_sources(sql
   sql_rank.c sql_rank.h
   sql_subquery.c sql_subquery.h
   opt_backend.h
+  for.c for.h
   dict.c dict.h
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
