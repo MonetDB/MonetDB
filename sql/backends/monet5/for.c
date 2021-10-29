@@ -37,7 +37,11 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat O = *getArgReference_bat(stk, pci, 1);
 	int tt = getArgType(mb, pci, 2);
 
-	if (tt != TYPE_hge && tt != TYPE_lng && tt != TYPE_int)
+	if (
+#ifdef HAVE_HGE
+			tt != TYPE_hge &&
+#endif
+			tt != TYPE_lng && tt != TYPE_int)
 		throw(SQL, "for.decompress", SQLSTATE(3F000) "for decompress: invalid type");
 
 	BAT *o = BATdescriptor(O), *b = NULL;
@@ -83,8 +87,13 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 {
 	BAT *o = NULL;
 	char buf[64];
+	int tt = b->ttype;
 
-	if (b->ttype != TYPE_hge && b->ttype != TYPE_lng && b->ttype != TYPE_int)
+	if (
+#ifdef HAVE_HGE
+			tt != TYPE_hge &&
+#endif
+			tt != TYPE_lng && tt != TYPE_int)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: invalid column type");
 
 	/* For now we only handle hge, lng, and int -> sht and bte */
@@ -92,9 +101,12 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	ptr mx = BATmax(b, NULL);
 
 	BUN cnt = BATcount(b);
+#ifdef HAVE_HGE
 	if (b->ttype == TYPE_hge) {
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type hge");
-	} else if (b->ttype == TYPE_lng) {
+	} else
+#endif
+	if (b->ttype == TYPE_lng) {
 		lng min_val = *(lng*)mn;
 		lng max_val = *(lng*)mx;
 		if ((max_val-min_val) > GDK_sht_max)
