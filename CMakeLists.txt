@@ -24,10 +24,6 @@ set(CMAKE_PROJECT_HOMEPAGE_URL "https://www.monetdb.org/")
 set(C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
-  cmake_policy(SET CMP0076 OLD)
-endif()
-
 # We give precedence to UNIX include directories over
 # OS X Frameworks directories
 set(CMAKE_FIND_FRAMEWORK LAST)
