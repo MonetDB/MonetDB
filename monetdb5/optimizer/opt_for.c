@@ -198,15 +198,17 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					done = 1;
 					break;
 #endif
-				} else if ((isMapOp(p) || isMap2Op(p)) && allConstExcept(mb, p, j)) {
+				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef)  && allConstExcept(mb, p, j)) {
 					/* batcalc.-(1, col) with col = for.decompress(o,min_val)
 					 * v1 = batcalc.-(1, min_val)
 					 * for.decompress(o, v1) */
-					InstrPtr r = copyInstruction(p);
-					getModuleId(r) = calcRef;/* single value */
-					int tpe = getVarType(mb, getArg(p,0));
-					int l = getArg(r, 0), m = getArg(p, 0);
+					/* we assume binary operators only ! */
+					InstrPtr r = newInstructionArgs(mb, calcRef, getFunctionId(p), 3);
+					int tpe = getBatType(getVarType(mb, getArg(p,0)));
 					getArg(r, 0) = newTmpVariable(mb, tpe);
+					int l = getArg(r, 0), m = getArg(p, 0);
+					addArgument(mb, r, getArg(p, 1));
+					addArgument(mb, r, getArg(p, 2));
 					getArg(r, j) = varforvalue[k];
 
 					/* new and old result are now min-values */
