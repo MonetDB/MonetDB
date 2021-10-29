@@ -2360,7 +2360,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* handle dict select */
-		if (match == 2 && match == bats-1 && p->retc == 1 && isSelect(p) && getModuleId(p) == dictRef) {
+		if ((match == 1 || match == bats-1) && p->retc == 1 && isSelect(p) && getModuleId(p) == dictRef) {
 			if(mat_apply(mb, p, &ml, match)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
