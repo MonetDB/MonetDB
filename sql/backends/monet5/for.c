@@ -154,6 +154,8 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
 	if (c->null)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: for 'for' compression column's cannot have NULL's");
+	if (c->storage_type)
+		throw(SQL, "for.compress", SQLSTATE(3F000) "column '%s.%s.%s' allready compressed", sname, tname, cname);
 
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *o = NULL;
