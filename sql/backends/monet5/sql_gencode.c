@@ -1117,7 +1117,6 @@ backend_create_mal_func(mvc *m, sql_func *f)
 		if (!backend_resolve_function(&(m->clientid), f)) {
 			(void) sql_error(m, 02, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
 			_DELETE(f->imp);
-			f->imp = NULL;
 			unlock_function(m->store, f->base.id);
 			return -1;
 		}
@@ -1300,7 +1299,6 @@ cleanup:
 			else
 				SQLremoveQueryFromCache(c);
 			_DELETE(f->imp);
-			f->imp = NULL;
 		} else {
 			f->instantiated = TRUE; /* make sure 'instantiated' gets set after 'imp' */
 		}

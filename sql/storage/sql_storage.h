@@ -76,6 +76,7 @@ typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, const void *k
 typedef rids *(*rids_orderby_fptr)( sql_trans *tr, rids *r, sql_column *orderby_col);
 
 typedef rids *(*rids_join_fptr)( sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc);
+typedef rids *(*rids_semijoin_fptr)( sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc);
 typedef rids *(*rids_diff_fptr)( sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc);
 
 /* return table rids from result of table_select, return (-1) when done */
@@ -114,6 +115,7 @@ typedef struct table_functions {
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
 	rids_join_fptr rids_join;
+	rids_semijoin_fptr rids_semijoin;
 	rids_next_fptr rids_next;
 	rids_destroy_fptr rids_destroy;
 	rids_empty_fptr rids_empty;
