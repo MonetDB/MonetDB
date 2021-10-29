@@ -32,7 +32,7 @@ statement ok
 alter table parent add table child3
 
 statement ok
-create local temp table "depend_count" ("a" bigint) on commit preserve rows
+create table "depend_count" ("a" bigint)
 
 statement ok
 insert into "depend_count" values ((select count(*) from dependencies))
@@ -106,9 +106,6 @@ alter table parent drop table child3
 statement ok
 drop table child2
 
-statement ok
-drop table child3
-
 query I rowsort
 SELECT a from myfunc()
 ----
@@ -135,6 +132,66 @@ SELECT a from myfunc()
 ----
 7
 8
+
+statement ok
+alter table parent add table child3
+
+statement ok
+truncate "depend_count"
+
+statement ok
+insert into "depend_count" values ((select count(*) from dependencies))
+
+statement ok
+create view myview as (select a from parent)
+
+# only dependencies on table 'parent' should be created
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+2
+
+query I rowsort
+SELECT a from myview
+----
+5
+6
+7
+8
+
+statement ok
+alter table parent drop table child3
+
+statement ok
+alter table parent drop table child4
+
+statement ok
+savepoint sp2
+
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+0
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+SELECT a from myview
+
+statement ok
+rollback to savepoint sp2
+
+statement ok
+alter table parent add table child4
+
+query I rowsort
+SELECT a from myview
+----
+7
+8
+
+query I nosort
+select count(*) - (select "a" from "depend_count") from dependencies
+----
+1
 
 statement ok
 rollback
