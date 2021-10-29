@@ -9065,6 +9065,66 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 	return nrel;
 }
 
+static bool
+_rel_flag_independent_projections(sql_exp* e, list* projected_from)
+{
+	// I.e. f() or f(arg) or f(arg1, ..., argn)
+	if (e -> type == e_func) {
+		list* args = e->l;// The list of actual arguments which can be empty
+		bool is_independent = true;
+		for (node *en = args->h; en; en = en->next) {
+			sql_exp* arg = en->data;
+			if (!_rel_flag_independent_projections(arg, projected_from))
+				is_independent = false;
+		}
+		if (is_independent) {
+			/*
+			* This function's arguments are independent
+			* of the available column expression from the project's inner relation.
+			* We have to flag the function with the projectional independence.
+			*/
+			e->argument_independence = 1;
+		}
+		return is_independent;
+	}
+	// E.g. CAST (i AS BIGINT)
+	if (e -> type == e_convert)
+		return (_rel_flag_independent_projections(e->l, projected_from));
+	// Any atom potentially aliased, e.g. 2 as i
+	if (e->type == e_atom) {
+		return true;
+	}
+	if (e->type == e_column) {
+		if (!exps_find_exp(projected_from, e)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+static bool
+rel_flag_independent_projections(list* projected_to, list* projected_from)
+{
+	// TODO: signal changes
+	for (node *en = projected_to->h; en; en = en->next) {
+		sql_exp* e = en->data;
+		(void) _rel_flag_independent_projections(e, projected_from);
+	}
+	return true;
+}
+
+static sql_rel *
+rel_optimize_function_calls(visitor *v, sql_rel *rel)
+{
+	if (rel->op == op_project) {
+		list *i = _rel_projections(v->sql, rel->l, NULL, 1, 1, 0);
+		rel_flag_independent_projections(rel->exps, i);
+		list_destroy(i);
+	}
+	return rel;
+}
+
 /* rewrite merge tables into union of base tables */
 static sql_rel *
 rel_merge_table_rewrite(visitor *v, sql_rel *rel)
@@ -9763,6 +9823,8 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 	/* Some merge table rewrites require two tree iterations. Later I could improve this to use only one iteration */
 	if (gp->needs_mergetable_rewrite)
 		rel = rel_visitor_topdown(v, rel, &rel_merge_table_rewrite);
+
+	rel = rel_visitor_topdown(v, rel, &rel_optimize_function_calls);
 
 	return rel;
 }
