@@ -323,6 +323,9 @@ extern lng store_hot_snapshot(struct sqlstore *store, str tarfile);
 extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
 extern ulng store_function_counter(struct sqlstore *store);
+extern void lock_function(struct sqlstore *store, sqlid id);
+extern void unlock_function(struct sqlstore *store, sqlid id);
+
 extern ulng store_oldest(struct sqlstore *store);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
@@ -445,6 +448,7 @@ extern int sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k, sql_key *
 extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires);
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
 
+#define NR_FUNCTION_LOCKS 16
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
 #define TRANSACTION_ID_BASE	(1ULL<<63)
@@ -456,6 +460,7 @@ typedef struct sqlstore {
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock function_locks[NR_FUNCTION_LOCKS];		/* protecting concurrent function instantiations */
 	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
 	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 	list *active;			/* list of running transactions */
