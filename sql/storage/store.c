@@ -3193,6 +3193,98 @@ new_table(sql_trans *tr, sql_table *t, sql_table **tres)
 	return res;
 }
 
+static sql_arg *
+arg_dup(sql_trans *tr, sql_schema *s, sql_arg *oa)
+{
+	sql_arg *a = SA_ZNEW(tr->sa, sql_arg);
+
+	if (a) {
+		a->name = SA_STRDUP(tr->sa, oa->name);
+		a->inout = oa->inout;
+		dup_sql_type(tr, s, &(oa->type), &(a->type));
+	}
+	return a;
+}
+
+static int
+func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
+{
+	sql_allocator *sa = tr->sa;
+	sql_func *f = SA_ZNEW(sa, sql_func);
+
+	/* 'func_dup' is aimed at FUNC_LANG_SQL functions ONLY, so f->imp and f->instantiated won't be set */
+	base_init(sa, &f->base, of->base.id, 0, of->base.name);
+	f->mod = SA_STRDUP(sa, of->mod); 
+	f->type = of->type;
+	f->lang = of->lang;
+	f->semantics = of->semantics;
+	f->side_effect = of->side_effect;
+	f->varres = of->varres;
+	f->vararg = of->vararg;
+	f->fix_scale = of->fix_scale;
+	f->system = of->system;
+	f->query = (of->query)?SA_STRDUP(sa, of->query):NULL;
+	f->s = s;
+	f->sa = sa;
+
+	f->ops = SA_LIST(sa, (fdestroy) &arg_destroy);
+	for (node *n=of->ops->h; n; n = n->next)
+		list_append(f->ops, arg_dup(tr, s, n->data));
+	if (of->res) {
+		f->res = SA_LIST(sa, (fdestroy) &arg_destroy);
+		for (node *n=of->res->h; n; n = n->next)
+			list_append(f->res, arg_dup(tr, s, n->data));
+	}
+
+	return os_add(s->funcs, tr, f->base.name, &f->base);
+}
+
+static int
+store_reset_sql_functions(sql_trans *tr, sqlid id)
+{
+	sqlstore *store = tr->store;
+	int res = LOG_OK, sql_lang = (int) FUNC_LANG_SQL; /* functions other than SQL don't require to be instantiated again */
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *deps = find_sql_table(tr, syss, "dependencies");
+	rids *sql_funcs = NULL, *depends = NULL, *joined = NULL;
+
+	/* Find dependencies from the object */
+	depends = store->table_api.rids_select(tr, find_sql_column(deps, "id"), &id, &id, NULL);
+	if (store->table_api.rids_empty(depends)) { /* nothing depends on the object, return */
+		store->table_api.rids_destroy(depends);
+		return res;
+	}
+	/* Get SQL funcions */
+	sql_table *funcs = find_sql_table(tr, syss, "functions");
+	sql_column *func_id = find_sql_column(funcs, "id");
+	if (!(sql_funcs = store->table_api.rids_select(tr, find_sql_column(funcs, "language"), &sql_lang, &sql_lang, NULL))) {
+		store->table_api.rids_destroy(depends);
+		return -1;
+	}
+	/* Do the semijoin */
+	joined = store->table_api.rids_semijoin(tr, sql_funcs, func_id, depends, find_sql_column(deps, "depend_id"));
+	store->table_api.rids_destroy(depends);
+	if (!joined) {
+		store->table_api.rids_destroy(sql_funcs);
+		return -1;
+	}
+
+	for (oid rid = store->table_api.rids_next(joined); !is_oid_nil(rid); rid = store->table_api.rids_next(joined)) {
+		sqlid fid = store->table_api.column_find_sqlid(tr, func_id, rid);
+		sql_func *f = sql_trans_find_func(tr, fid); /* could have changed by depending changes */
+		/* if it is on the same transaction, then don't dup it again */
+		if (isNew(f) || os_obj_intransaction(f->s->funcs, tr, &f->base)) {
+			f->instantiated = 0;
+			_DELETE(f->imp);
+		} else if ((res = func_dup(tr, f, f->s))) {
+			store->table_api.rids_destroy(joined);
+			return res;
+		}
+	}
+	store->table_api.rids_destroy(joined);
+	return res;
+}
+
 int
 sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 {
@@ -3232,6 +3324,8 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 			return res;
 		if (!isNew(rkey) && isGlobal(rkey->t) && !isGlobalTemp(rkey->t) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
 			return res;
+		if ((res = store_reset_sql_functions(tr, rkey->t->base.id))) /* reset sql that depend on table */
+			return res;
 	}
 
 	for (n = nk->columns->h, nr = 0; n; n = n->next, nr++) {
@@ -3257,6 +3351,8 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (!isNew(kc->c) && (res = sql_trans_add_dependency(tr, kc->c->base.id, ddl)))
 			return res;
 	}
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+		return res;
 
 	/* TODO this has to be cleaned out too */
 	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl))) /* this dependency is needed for merge tables */
@@ -3309,6 +3405,8 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 		return res;
 
 	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
+		return res;
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
 		return res;
 
 	if (isDeclaredTable(i->t))
@@ -3372,6 +3470,8 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 		return res;
 
 	if ((res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
+		return res;
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
 		return res;
 
 	if (!isDeclaredTable(t))
@@ -4731,19 +4831,6 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 	return t;
 }
 
-static sql_arg *
-arg_dup(sql_trans *tr, sql_schema *s, sql_arg *oa)
-{
-	sql_arg *a = SA_ZNEW(tr->sa, sql_arg);
-
-	if (a) {
-		a->name = SA_STRDUP(tr->sa, oa->name);
-		a->inout = oa->inout;
-		dup_sql_type(tr, s, &(oa->type), &(a->type));
-	}
-	return a;
-}
-
 int
 sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *ffres, sql_ftype type, sql_flang lang,
 		const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
@@ -5035,6 +5122,8 @@ sql_trans_propagate_dependencies_parents(sql_trans *tr, sql_table *mt, bool *chi
 	sql_part *pt = NULL;
 
 	for (; mt; mt = pt?pt->t:NULL) {
+		if ((res = store_reset_sql_functions(tr, mt->base.id))) /* reset sql that depend on table */
+			return res;
 		if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 			return res;
 		if (child_of_partitioned)
@@ -5049,6 +5138,8 @@ sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt, bool chi
 {
 	int res = LOG_OK;
 
+	if ((res = store_reset_sql_functions(tr, pt->base.id))) /* reset sql that depend on table */
+		return res;
 	if (!isNew(pt)) {
 		if ((res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 			return res;
@@ -5449,6 +5540,10 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	list_remove_node(mt->members, store, n);
 
 	if (drop_action == DROP_CASCADE && (res = sql_trans_drop_table_id(tr, mt->s, pt->base.id, drop_action)))
+		return res;
+	if ((res = store_reset_sql_functions(tr, mt->base.id))) /* reset sql that depend on table */
+		return res;
+	if ((res = store_reset_sql_functions(tr, pt->base.id))) /* reset sql that depend on table */
 		return res;
 	return res;
 }
@@ -5953,6 +6048,8 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		/* disallow concurrent updates on the column if not null is set */
 		if (!isnull && !isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
 			return res;
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql that depend on table */
+			return res;
 	}
 	return res;
 }
@@ -5976,7 +6073,10 @@ sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access)
 			return res;
 		if ((res = new_table(tr, t, &dup)))
 			return res;
-		dup->access = access;
+		t = dup;
+		t->access = access;
+		if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+			return res;
 	}
 	return res;
 }
@@ -6012,6 +6112,8 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		dup->def = NULL;
 		if (val)
 			dup->def = SA_STRDUP(tr->sa, val);
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql that depend on table */
+			return res;
 	}
 	return res;
 }
@@ -6044,6 +6146,8 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 		dup->storage_type = NULL;
 		if (storage)
 			dup->storage_type = SA_STRDUP(tr->sa, storage);
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql that depend on table */
+			return res;
 	}
 	return res;
 }
@@ -6426,6 +6530,8 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (k->idx && (res = sql_trans_drop_idx(tr, s, k->idx->base.id, drop_action)))
 		return res;
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+		return res;
 
 	if (!isTempTable(k->t) && (res = sys_drop_key(tr, k, drop_action)))
 		return res;
@@ -6532,6 +6638,8 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (!isTempTable(i->t) && (res = sys_drop_idx(tr, i, drop_action)))
 		return res;
+	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql that depend on table */
+		return res;
 
 	i->base.deleted = 1;
 	if (!isNew(i) && !isTempTable(i->t))
@@ -6621,6 +6729,8 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
+	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql that depend on table */
+		return res;
 	if ((res = sys_drop_trigger(tr, i)))
 		return res;
 	node *n = ol_find_name(i->t->triggers, i->base.name);
