@@ -988,6 +988,7 @@ const char *first_valueRef;
 const char *firstnRef;
 Module fixModule(const char *nme);
 int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
+const char *forRef;
 void freeException(str);
 void freeInstruction(InstrPtr p);
 void freeMalBlk(MalBlkPtr mb);
