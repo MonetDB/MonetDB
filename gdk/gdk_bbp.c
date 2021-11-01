@@ -793,7 +793,7 @@ BBPcheckbats(unsigned bbpversion)
 				}
 			}
 #else
-			/* first check string offset heap without widht,
+			/* first check string offset heap without width,
 			 * then with */
 #ifdef GDKLIBRARY_TAILN
 			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
@@ -1482,12 +1482,12 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 	maxprop = BATgetprop_nolock(b, GDK_MAX_POS);
 	size_t free = b->theap->free;
 	if (size < BUN_NONE) {
-		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk)) {
-			BUN bytes = ((size + 31) / 32) * 4;
-			if (free > bytes)
-				free = bytes;
-		} else if (b->twidth > 0 && free / b->twidth > size)
+		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk))
+			free = ((size + 31) / 32) * 4;
+		else if (b->twidth > 0)
 			free = size << b->tshift;
+		else
+			free = 0;
 	}
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,
