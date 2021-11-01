@@ -1,3 +1,6 @@
+statement ok
+SET TIME ZONE INTERVAL '02:00' HOUR TO MINUTE
+
 query T rowsort
 select cast(123 as varchar(10))
 ----
