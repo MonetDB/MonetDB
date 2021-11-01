@@ -21,3 +21,4 @@ unique_keys
 vessels
 prepare
 rel_push_count_down
+NOT_ASSERT?sqlfuncnames

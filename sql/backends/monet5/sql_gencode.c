@@ -1156,11 +1156,21 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			return -1;
 		}
 
+#ifndef NDEBUG
+		/* for debug builds we keep the SQL function name in the MAL function name to make it easy to debug */
+		if (strlen(f->base.name) + 21 >= IDLENGTH) { /* 20 bits for u64 number + '%' */
+			(void) sql_error(m, 01, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->base.name);
+			unlock_function(m->store, f->base.id);
+			return -1;
+		}
+		(void) snprintf(befname, IDLENGTH, "%%" LLFMT "%s", store_function_counter(m->store), f->base.name);
+#else
+		(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
+#endif
 		symbackup = c->curprg;
 		memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
 		backend_reset(be);
 
-		(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
 		nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
 		c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(befname), FUNCTIONsymbol, nargs);
 		if (c->curprg == NULL) {
