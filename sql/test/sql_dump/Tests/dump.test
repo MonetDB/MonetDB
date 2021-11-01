@@ -1,4 +1,7 @@
 statement ok
+SET TIME ZONE INTERVAL '02:00' HOUR TO MINUTE
+
+statement ok
 START TRANSACTION
 
 statement ok
