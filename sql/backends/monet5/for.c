@@ -116,7 +116,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 			bte *ov = Tloc(o, 0);
 			lng *iv = Tloc(b, 0);
 			for(BUN i = 0; i<cnt; i++)
-				ov[i] = (sht)(iv[i] - min_val);
+				ov[i] = (bte)(iv[i] - min_val);
 		} else {
 			o = COLnew(b->hseqbase, TYPE_sht, cnt, PERSISTENT);
 			sht *ov = Tloc(o, 0);
@@ -186,4 +186,3 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(comp_min_val);
 	return msg;
 }
-
