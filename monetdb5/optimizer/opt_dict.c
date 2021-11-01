@@ -142,6 +142,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						int cand = getArg(p, j+1);
 						InstrPtr r = copyInstruction(p);
+						getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 						getArg(r, j) = vardictvalue[k];
 						if (cand)
 							r = ReplaceWithNil(mb, r, j+1, TYPE_bat); /* no candidate list */
