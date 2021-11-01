@@ -3324,7 +3324,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 			return res;
 		if (!isNew(rkey) && isGlobal(rkey->t) && !isGlobalTemp(rkey->t) && (res = sql_trans_add_dependency(tr, rkey->t->base.id, dml))) /* disallow concurrent updates on other key */
 			return res;
-		if ((res = store_reset_sql_functions(tr, rkey->t->base.id))) /* reset sql that depend on table */
+		if ((res = store_reset_sql_functions(tr, rkey->t->base.id))) /* reset sql functions depending on the table */
 			return res;
 	}
 
@@ -3351,7 +3351,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (!isNew(kc->c) && (res = sql_trans_add_dependency(tr, kc->c->base.id, ddl)))
 			return res;
 	}
-	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
 	/* TODO this has to be cleaned out too */
@@ -3406,7 +3406,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 
 	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
-	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
 	if (isDeclaredTable(i->t))
@@ -3471,7 +3471,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 
 	if ((res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
-	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
 	if (!isDeclaredTable(t))
@@ -5122,7 +5122,7 @@ sql_trans_propagate_dependencies_parents(sql_trans *tr, sql_table *mt, bool *chi
 	sql_part *pt = NULL;
 
 	for (; mt; mt = pt?pt->t:NULL) {
-		if ((res = store_reset_sql_functions(tr, mt->base.id))) /* reset sql that depend on table */
+		if ((res = store_reset_sql_functions(tr, mt->base.id))) /* reset sql functions depending on the table */
 			return res;
 		if (!isNew(mt) && (res = sql_trans_add_dependency(tr, mt->base.id, ddl))) /* protect from another transaction changing the table's schema */
 			return res;
@@ -5138,7 +5138,10 @@ sql_trans_propagate_dependencies_children(sql_trans *tr, sql_table *pt, bool chi
 {
 	int res = LOG_OK;
 
-	if ((res = store_reset_sql_functions(tr, pt->base.id))) /* reset sql that depend on table */
+	if (THRhighwater()) /* for now throw malloc failure error */
+		return -1;
+
+	if ((res = store_reset_sql_functions(tr, pt->base.id))) /* reset sql functions depending on the table */
 		return res;
 	if (!isNew(pt)) {
 		if ((res = sql_trans_add_dependency(tr, pt->base.id, ddl))) /* protect from another transaction changing the table's schema */
@@ -5524,7 +5527,8 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 {
 	int res = LOG_OK;
 	sqlstore *store = tr->store;
-	sql_table *dup = NULL;
+	sql_table *dup = NULL, *mt_it;
+	sql_part *mti_part = NULL;
 
 	if ((res = new_table(tr, mt, &dup)))
 		return res;
@@ -5541,9 +5545,13 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 
 	if (drop_action == DROP_CASCADE && (res = sql_trans_drop_table_id(tr, mt->s, pt->base.id, drop_action)))
 		return res;
-	if ((res = store_reset_sql_functions(tr, mt->base.id))) /* reset sql that depend on table */
-		return res;
-	if ((res = store_reset_sql_functions(tr, pt->base.id))) /* reset sql that depend on table */
+	for (mt_it = mt; mt_it; mt_it = mti_part?mti_part->t:NULL) {
+		/* functions depending on parent tables need to be recompiled, ugh */
+		if ((res = store_reset_sql_functions(tr, mt_it->base.id))) /* reset sql functions depending on the table */
+			return res;
+		mti_part = partition_find_part(tr, mt_it, NULL);
+	}
+	if ((res = store_reset_sql_functions(tr, pt->base.id))) /* reset sql functions depending on the table */
 		return res;
 	return res;
 }
@@ -6048,7 +6056,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		/* disallow concurrent updates on the column if not null is set */
 		if (!isnull && !isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
 			return res;
-		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql that depend on table */
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
 			return res;
 	}
 	return res;
@@ -6075,7 +6083,7 @@ sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access)
 			return res;
 		t = dup;
 		t->access = access;
-		if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+		if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 			return res;
 	}
 	return res;
@@ -6112,7 +6120,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		dup->def = NULL;
 		if (val)
 			dup->def = SA_STRDUP(tr->sa, val);
-		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql that depend on table */
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
 			return res;
 	}
 	return res;
@@ -6146,7 +6154,7 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 		dup->storage_type = NULL;
 		if (storage)
 			dup->storage_type = SA_STRDUP(tr->sa, storage);
-		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql that depend on table */
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
 			return res;
 	}
 	return res;
@@ -6530,7 +6538,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (k->idx && (res = sql_trans_drop_idx(tr, s, k->idx->base.id, drop_action)))
 		return res;
-	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql that depend on table */
+	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
 	if (!isTempTable(k->t) && (res = sys_drop_key(tr, k, drop_action)))
@@ -6638,7 +6646,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (!isTempTable(i->t) && (res = sys_drop_idx(tr, i, drop_action)))
 		return res;
-	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql that depend on table */
+	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
 	i->base.deleted = 1;
@@ -6729,7 +6737,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql that depend on table */
+	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
 		return res;
 	if ((res = sys_drop_trigger(tr, i)))
 		return res;
