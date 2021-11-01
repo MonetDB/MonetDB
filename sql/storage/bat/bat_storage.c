@@ -4352,7 +4352,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 }
 
 static int
-col_compress(sql_trans *tr, sql_column *col, int storage_type, BAT *o, BAT *u)
+col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 {
 	bool update_conflict = false;
 	int in_transaction = segments_in_transaction(tr, col->t);
@@ -4368,7 +4368,7 @@ col_compress(sql_trans *tr, sql_column *col, int storage_type, BAT *o, BAT *u)
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
 		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, isTempTable(col->t)?NULL:&log_update_col);
 
-	d->cs.st = storage_type;
+	d->cs.st = st;
 	d->cs.cleared = true;
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);

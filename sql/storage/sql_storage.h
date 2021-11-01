@@ -194,7 +194,13 @@ typedef int (*drop_del_fptr) (sql_trans *tr, sql_table *t);
 
 typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
-typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, int storage_type, BAT *offsets, BAT *vals);
+typedef enum storage_type {
+	ST_DEFAULT = 0,
+	ST_DICT,
+	ST_FOR,
+} storage_type;
+
+typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, storage_type st, BAT *offsets, BAT *vals);
 
 /*
 -- update_table rollforward the changes made from table ft to table tt

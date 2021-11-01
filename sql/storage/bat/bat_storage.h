@@ -12,12 +12,6 @@
 #include "sql_storage.h"
 #include "bat_logger.h"
 
-typedef enum storage_type {
-	ST_DEFAULT = 0,
-	ST_DICT,
-	ST_FOR,
-} storage_type;
-
 typedef struct column_storage {
 	int refcnt;
 	int bid;
