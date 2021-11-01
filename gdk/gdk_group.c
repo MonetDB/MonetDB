@@ -73,7 +73,7 @@
 		if (ngrp == maxgrps) {					\
 			/* we need to extend extents and histo bats, */	\
 			/* do it at most once */			\
-			maxgrps = BATcount(b);				\
+			maxgrps = bi.count;				\
 			if (extents) {					\
 				BATsetcount(en, ngrp);			\
 				if (BATextend(en, maxgrps) != GDK_SUCCEED) \
@@ -600,12 +600,10 @@ ctz(oid x)
 
 #define GRP_small_values(BG, BV, GV)					\
 	do {								\
-		uint##BG##_t *restrict sgrps = GDKmalloc((1 << BG) * sizeof(uint##BG##_t)); \
+		uint##BG##_t sgrps[1 << BG];				\
 		const uint##BV##_t *restrict w = (const uint##BV##_t *) bi.base; \
 		uint##BG##_t v;						\
-		if (sgrps == NULL)					\
-			goto error1;					\
-		memset(sgrps, 0xFF, (1 << BG) * sizeof(uint##BG##_t));	\
+		memset(sgrps, 0xFF, sizeof(sgrps));			\
 		if (histo)						\
 			memset(cnts, 0, maxgrps * sizeof(lng));		\
 		ngrp = 0;						\
@@ -647,7 +645,6 @@ ctz(oid x)
 		}							\
 		TIMEOUT_CHECK(timeoffset,				\
 			      GOTO_LABEL_TIMEOUT_HANDLER(error));	\
-		GDKfree(sgrps);						\
 	} while (0)
 
 gdk_return
