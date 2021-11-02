@@ -31,7 +31,7 @@ static void
 cq_delete(int clientid, cq *q)
 {
 	if (q->name)
-		backend_freecode(clientid, q->name);
+		backend_freecode(NULL, clientid, q->name);
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
 		sa_destroy(q->sa);

@@ -16,6 +16,9 @@
 #include "stream.h"
 #include "matomic.h"
 
+#define sql_shared_module_name "sql"
+#define sql_private_module_name "user"
+
 #define tr_none		0
 #define tr_readonly	1
 #define tr_writable	2
