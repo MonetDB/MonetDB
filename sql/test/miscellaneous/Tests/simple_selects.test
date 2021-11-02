@@ -869,3 +869,28 @@ select json 'iamwrongjson'
 statement error
 select inet '192.168.1.0/26 thisstringshouldnotbehere'
 
+statement ok
+create function dosomething() returns int begin return 1; end
+
+query I rowsort
+select dosomething()
+----
+1
+
+statement ok
+start transaction
+
+statement ok
+drop function dosomething
+
+statement ok
+rollback
+
+# make sure the function has backend set if the transaction has to rollback
+query I rowsort
+select dosomething()
+----
+1
+
+statement ok
+drop function dosomething

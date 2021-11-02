@@ -67,9 +67,6 @@
 #define mod_explain 	4
 #define mod_exec 	8
 
-#define sql_shared_module_name "sql"
-#define sql_private_module_name "user"
-
 typedef struct sql_groupby_expression {
 	symbol *sdef;
 	tokens token;

@@ -124,6 +124,10 @@ func_destroy(sqlstore *store, sql_func *f)
 	assert(f->base.refcnt > 0);
 	if (--(f->base.refcnt) > 0)
 		return;
+	if (f->lang == FUNC_LANG_SQL && f->instantiated) {
+		/* clean backend code */
+		backend_freecode(sql_shared_module_name, 0, f->imp);
+	}
 	if (f->res)
 		list_destroy2(f->res, store);
 	list_destroy2(f->ops, store);
@@ -3274,8 +3278,12 @@ store_reset_sql_functions(sql_trans *tr, sqlid id)
 		sql_func *f = sql_trans_find_func(tr, fid); /* could have changed by depending changes */
 		/* if it is on the same transaction, then don't dup it again */
 		if (isNew(f) || os_obj_intransaction(f->s->funcs, tr, &f->base)) {
-			f->instantiated = 0;
-			_DELETE(f->imp);
+			if (f->instantiated) {
+				/* clean backend code */
+				backend_freecode(sql_shared_module_name, 0, f->imp);
+				f->instantiated = FALSE;
+				_DELETE(f->imp);
+			}
 		} else if ((res = func_dup(tr, f, f->s))) {
 			store->table_api.rids_destroy(joined);
 			return res;
