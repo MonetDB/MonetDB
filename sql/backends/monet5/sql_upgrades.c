@@ -4029,7 +4029,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    FROM sys.describe_column_defaults;\n"
 					"CREATE VIEW sys.dump_foreign_keys AS\n"
 					"  SELECT\n"
-					"    'ALTER TABLE ' || sys.DQ(fk_s) || '.'|| sys.DQ(fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||\n"
+					"    'ALTER TABLE ' || sys.FQN(fk_s, fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||\n"
 					"      'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',') ||') ' ||\n"
 					"      'REFERENCES ' || sys.FQN(pk_s, pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||\n"
 					"      'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||\n"

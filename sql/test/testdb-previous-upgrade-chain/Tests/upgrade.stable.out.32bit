@@ -4602,13 +4602,19 @@ drop view sys.describe_partition_tables;
 drop view sys.describe_privileges;
 drop view sys.describe_comments;
 drop view sys.describe_tables;
+drop function sys.schema_guard(string, string, string);
 drop function sys.get_remote_table_expressions(string, string);
 drop function sys.get_merge_table_partition_expressions(int);
 drop view sys.describe_constraints;
 drop function sys.alter_table(string, string);
+drop function sys.FQN(string, string);
 drop function sys.sq(string);
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
-CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t); END;
+CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"."' || sys.replace(t,'"','""') || '"'; END;
+CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
+RETURN
+    SELECT sys.replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');
+END;
 CREATE VIEW sys.describe_constraints AS
 	SELECT
 		s.name sch,
@@ -4832,7 +4838,7 @@ CREATE VIEW sys.describe_functions AS
 		JOIN sys.function_types ft ON f.type = ft.function_type_id
 		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
 	WHERE s.name <> 'tmp' AND NOT f.system;
-update sys.functions set system = true where system <> true and name in ('sq', 'alter_table', 'get_merge_table_partition_expressions', 'get_remote_table_expressions') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = 1;
 update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;
 CREATE VIEW sys.dump_create_roles AS
   SELECT
@@ -4876,8 +4882,7 @@ CREATE VIEW sys.dump_grant_user_privileges AS
    WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 CREATE VIEW sys.dump_table_constraint_type AS
   SELECT
-    'ALTER TABLE ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
-      ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
+    'ALTER TABLE ' || sys.FQN(sch, tbl) || ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
       tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ') || ');' stmt,
     sch schema_name,
     tbl table_name,
@@ -4887,11 +4892,12 @@ CREATE VIEW sys.dump_table_grants AS
   WITH table_grants (sname, tname, grantee, grants, grantor, grantable)
   AS (SELECT s.name, t.name, a.name, sum(p.privileges), g.name, p.grantable
 	FROM sys.schemas s, sys.tables t, sys.auths a, sys.privileges p, sys.auths g
-       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id GROUP BY s.name, t.name, a.name, g.name, p.grantable
+       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id
+       GROUP BY s.name, t.name, a.name, g.name, p.grantable
        ORDER BY s.name, t.name, a.name, g.name, p.grantable)
   SELECT
-    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.dq(sname)
-      || '.' || sys.dq(tname) || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
+    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.FQN(sname, tname)
+      || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
       || CASE WHEN grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     sname schema_name,
     tname table_name,
@@ -4899,8 +4905,8 @@ CREATE VIEW sys.dump_table_grants AS
     FROM table_grants LEFT OUTER JOIN sys.privilege_codes pc ON grants = pc.privilege_code_id;
 CREATE VIEW sys.dump_column_grants AS
   SELECT
-    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON '
-      || sys.dq(s.name) || '.' || sys.dq(t.name) || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
+    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON ' || sys.FQN(s.name, t.name)
+      || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
     t.name table_name,
@@ -4932,9 +4938,8 @@ CREATE VIEW sys.dump_function_grants AS
   func_args(func_id, func_arg) AS
   (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)
   SELECT
-    'GRANT ' || pc.privilege_code_name || ' ON '
-      || ft.function_type_keyword || ' '
-      || sys.dq(s.name) || '.' || sys.dq(f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
+    'GRANT ' || pc.privilege_code_name || ' ON ' || ft.function_type_keyword || ' '
+      || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
       || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
@@ -4957,9 +4962,7 @@ CREATE VIEW sys.dump_function_grants AS
    ORDER BY s.name, f.name, a.name, g.name, p.grantable;
 CREATE VIEW sys.dump_indices AS
   SELECT
-    'CREATE ' || tpe || ' ' ||
-      sys.DQ(ind) || ' ON ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
-      '(' || GROUP_CONCAT(col) || ');' stmt,
+    'CREATE ' || tpe || ' ' || sys.DQ(ind) || ' ON ' || sys.FQN(sch, tbl) || '(' || GROUP_CONCAT(col) || ');' stmt,
     sch schema_name,
     tbl table_name,
     ind index_name
@@ -4972,9 +4975,9 @@ CREATE VIEW sys.dump_column_defaults AS
     FROM sys.describe_column_defaults;
 CREATE VIEW sys.dump_foreign_keys AS
   SELECT
-    'ALTER TABLE ' || sys.DQ(fk_s) || '.'|| sys.DQ(fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
+    'ALTER TABLE ' || sys.FQN(fk_s, fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
       'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',') ||') ' ||
-      'REFERENCES ' || sys.DQ(pk_s) || '.' || sys.DQ(pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
+      'REFERENCES ' || sys.FQN(pk_s, pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
       'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
       ';' stmt,
     fk_s foreign_schema_name,
@@ -4985,7 +4988,7 @@ CREATE VIEW sys.dump_foreign_keys AS
     FROM sys.describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 CREATE VIEW sys.dump_partition_tables AS
   SELECT
-    sys.ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+    'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
       CASE 
       WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
       WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
