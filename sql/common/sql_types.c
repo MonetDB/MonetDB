@@ -654,7 +654,6 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	t->instantiated = TRUE;
 	t->lang = FUNC_LANG_INT;
 	t->semantics = semantics;
-	t->side_effect = side_effect;
 	t->fix_scale = fix_scale;
 	t->s = NULL;
 	t->system = TRUE;
@@ -662,6 +661,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 
 	/* grouping aggregate doesn't have a backend */
 	assert(strlen(imp) == 0 || strlen(mod) == 0 || backend_resolve_function(&(int){0}, t));
+	t->side_effect = side_effect; /* backend_resolve_function may set 'side_effect' flag in the future */
 
 	return t;
 }

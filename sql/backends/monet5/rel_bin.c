@@ -1243,7 +1243,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL;
 		const char *mod, *fimp;
 
-		/* attempt to instantiate nosql functions now, so we can know if we can push candidate lists */
+		/* attempt to instantiate MAL functions now, so we can know if we can push candidate lists */
 		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);

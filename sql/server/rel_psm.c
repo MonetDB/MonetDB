@@ -944,7 +944,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -963,7 +963,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		if (create) { /* needed for recursive functions */
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1001,7 +1001,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->params = NULL;
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, NULL, q, FALSE, vararg, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, NULL, q, FALSE, vararg, FALSE, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:

@@ -955,12 +955,18 @@ monet5_resolve_function(ptr M, sql_func *f)
 		return 0;
 
 	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
-	if (mname == calcRef && fname == getName("="))
+	if (mname == calcRef && fname == getName("=")) {
+		//f->side_effect = 0;
 		return 1;
-	if (mname == aggrRef && (fname == countRef || fname == count_no_nilRef))
+	}
+	if (mname == aggrRef && (fname == countRef || fname == count_no_nilRef)) {
+		//f->side_effect = 0;
 		return 1;
-	if (f->type == F_ANALYTIC)
+	}
+	if (f->type == F_ANALYTIC) {
+		//f->side_effect = 0;
 		return 1;
+	}
 
 	c = MCgetClient(clientID);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
@@ -968,9 +974,10 @@ monet5_resolve_function(ptr M, sql_func *f)
 			InstrPtr sig = getSignature(s);
 			int argc = sig->argc - sig->retc, nfargs = list_length(f->ops), nfres = list_length(f->res);
 
-			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres)
+			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres) {
+				//f->side_effect = (bit) s->def->unsafeProp;
 				return 1;
-			else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
+			} else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
 				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
 				/* Check for types of inputs and outputs. SQL procedures and filter functions always return 1 value in the MAL implementation
 				bool all_match = true;
@@ -1004,7 +1011,8 @@ monet5_resolve_function(ptr M, sql_func *f)
 					}
 				}
 				if (all_match)*/
-					return 1;
+				//f->side_effect = (bit) s->def->unsafeProp;
+				return 1;
 			}
 		}
 	}
