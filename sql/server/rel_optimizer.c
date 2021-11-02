@@ -9727,24 +9727,22 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 {
 	int level = 0, opt = 0;
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level, .changes = 1 };
-	global_props gp = (global_props) {.cnt = {0},.instantiate = (u_int8_t)instantiate};
+	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate};
 
 	rel = rel_keep_renames(sql, rel);
 	if (!rel || !(opt = need_optimization(sql, rel, instantiate)))
 		return rel;
 
-	if (opt > 0) {
-		for( ;rel && level < 20 && v.changes; level++) {
-			v.changes = 0;
-			gp = (global_props) {.cnt = {0},.instantiate = (u_int8_t)instantiate};
-			v.data = &gp;
-			rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
-			v.data = &level;
-			if (opt == 2) {
-				rel = optimize_rel(&v, rel, &gp);
-			} else if (gp.needs_mergetable_rewrite) { /* the merge table rewriter may have to run */
-				rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
-			}
+	for( ;rel && level < 20 && v.changes; level++) {
+		v.changes = 0;
+		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate};
+		v.data = &gp;
+		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
+		v.data = &level;
+		if (opt == 2) {
+			rel = optimize_rel(&v, rel, &gp);
+		} else if (gp.needs_mergetable_rewrite) { /* the merge table rewriter may have to run */
+			rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
 		}
 	}
 #ifndef NDEBUG
