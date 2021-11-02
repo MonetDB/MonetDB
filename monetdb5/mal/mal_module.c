@@ -64,6 +64,8 @@ getModules(void)
 	int i;
 	Module s,n;
 
+	if (!b)
+		return NULL;
 	for( i = 0; i< MODULE_HASH_SIZE; i++){
 		s = moduleIndex[i];
 		while(s){
