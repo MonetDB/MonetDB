@@ -845,6 +845,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	char arg[IDLENGTH];
 	int argc = 1, res = 0, added_to_cache = 0;
 	backend bebackup;
+	const char *sql_private_module = putName(sql_private_module_name);
 
 	symbackup = c->curprg;
 	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
@@ -854,12 +855,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		argc += list_length(m->params);
 	if (argc < MAXARG)
 		argc = MAXARG;
-	if (cq) {
-		assert(strlen(cq->name) < IDLENGTH);
-		c->curprg = newFunctionArgs(putName(sql_private_module_name), putName(cq->name), FUNCTIONsymbol, argc);
-	} else {
-		c->curprg = newFunctionArgs(putName(sql_private_module_name), "tmp", FUNCTIONsymbol, argc);
-	}
+	assert(cq && strlen(cq->name) < IDLENGTH);
+	c->curprg = newFunctionArgs(sql_private_module, putName(cq->name), FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
@@ -870,7 +867,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
 	setVarType(mb, 0, TYPE_void);
-	setModuleId(curInstr, putName(sql_private_module_name));
+	setModuleId(curInstr, sql_private_module);
 
 	if (m->params) {	/* needed for prepare statements */
 		argc = 0;
@@ -909,13 +906,11 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if ((res = backend_dumpstmt(be, mb, r, m->emode == m_prepare, 1, be->q ? be->q->f->query : NULL)) < 0)
 		goto cleanup;
 
-	if (cq) {
-		SQLaddQueryToCache(c);
-		added_to_cache = 1;
-		// optimize this code the 'old' way
-		if (m->emode == m_prepare && !c->curprg->def->errors)
-			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
-	}
+	SQLaddQueryToCache(c);
+	added_to_cache = 1;
+	// optimize this code the 'old' way
+	if (m->emode == m_prepare && !c->curprg->def->errors)
+		c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	if (c->curprg->def->errors) {
 		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 		res = -1;
@@ -1147,6 +1142,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		backend bebackup;
 		sql_func *pf = NULL;
 		char befname[IDLENGTH];
+		const char *sql_shared_module = putName(sql_shared_module_name);
+		Module mod = getModule(sql_shared_module);
 
 		sql_rel *r = rel_parse(m, f->s, f->query, m_instantiate);
 		if (r)
@@ -1172,7 +1169,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		backend_reset(be);
 
 		nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
-		c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(befname), FUNCTIONsymbol, nargs);
+		c->curprg = newFunctionArgs(sql_shared_module, putName(befname), FUNCTIONsymbol, nargs);
 		if (c->curprg == NULL) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			res = -1;
@@ -1279,8 +1276,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			curBlk->inlineProp = 1;
 		if (sideeffects)
 			curBlk->unsafeProp = 1;
-		/* optimize the code */
-		SQLaddQueryToCache(c);
+		/* optimize the code, but beforehand add it to the cache, so recursive functions will be found */
+		insertSymbol(mod, c->curprg);
 		added_to_cache = 1;
 		if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 			msg = SQLoptimizeFunction(c, c->curprg->def);
@@ -1307,7 +1304,7 @@ cleanup:
 			if (!added_to_cache)
 				freeSymbol(c->curprg);
 			else
-				SQLremoveQueryFromCache(c);
+				deleteSymbol(mod, c->curprg);
 			_DELETE(f->imp);
 		} else {
 			f->instantiated = TRUE; /* make sure 'instantiated' gets set after 'imp' */
