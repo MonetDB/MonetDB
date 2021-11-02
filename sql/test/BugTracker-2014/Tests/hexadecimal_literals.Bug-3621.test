@@ -108,15 +108,13 @@ select 0xF
 ----
 15
 
-query I rowsort
+statement error
 select 0xg
 ----
-0
 
-query I rowsort
+statement error
 select 0xG
 ----
-0
 
 query I rowsort
 select 0x00
@@ -620,15 +618,13 @@ select -0xF
 ----
 -15
 
-query I rowsort
+statement error
 select -0xg
 ----
-0
 
-query I rowsort
+statement error
 select -0xG
 ----
-0
 
 query I rowsort
 select -0x00
