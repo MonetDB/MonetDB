@@ -3650,6 +3650,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"drop view sys.describe_privileges;\n"
 					"drop view sys.describe_comments;\n"
 					"drop view sys.describe_tables;\n"
+					"drop function sys.schema_guard(string, string, string);\n"
 					"drop function sys.get_remote_table_expressions(string, string);\n"
 					"drop function sys.get_merge_table_partition_expressions(int);\n"
 					"drop view sys.describe_constraints;\n"
@@ -3659,6 +3660,10 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;\n"
 					"CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '\"' || sys.replace(s,'\"','\"\"') || '\".\"' || sys.replace(t,'\"','\"\"') || '\"'; END;\n"
+					"CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN\n"
+					"RETURN\n"
+					"    SELECT sys.replace_first(stmt, '(\\\\s*\"?' || sch ||  '\"?\\\\s*\\\\.|)\\\\s*\"?' || nme || '\"?\\\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');\n"
+					"END;\n"
 					"CREATE VIEW sys.describe_constraints AS\n"
 					"	SELECT\n"
 					"		s.name sch,\n"
@@ -3883,7 +3888,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
 					"	WHERE s.name <> 'tmp' AND NOT f.system;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions') and schema_id = 2000 and type = %d;\n", F_FUNC);
+					"update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
 				"update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;\n");
 
