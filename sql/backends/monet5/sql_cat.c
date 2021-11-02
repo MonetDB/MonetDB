@@ -1011,8 +1011,29 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->errstr[0] = '\0';
 		}
 	}
+	/* set side-effects flag */
+	switch(f->lang) {
+	case FUNC_LANG_R:
+	case FUNC_LANG_PY:
+	case FUNC_LANG_PY3:
+	case FUNC_LANG_MAP_PY:
+	case FUNC_LANG_MAP_PY3:
+	case FUNC_LANG_C:
+	case FUNC_LANG_CPP:
+		f->side_effect = (list_empty(f->res) || list_empty(f->ops)); /* TODO make this more precise? */
+		break;
+	case FUNC_LANG_MAL:
+		/* TODO using the 'unsafeProp' from the MAL definition causes many system functions to have a different value */
+		f->side_effect = f->type != F_FILT && (list_empty(f->res) || list_empty(f->ops));
+		break;
+	case FUNC_LANG_SQL:
+		f->side_effect = list_empty(f->res) == 1;
+		break;
+	default:
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: cannot create new functions using the current language", base, F);
+	}
 
-	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)) {
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
 		case -1:
 			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:
@@ -1023,7 +1044,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	}
 	switch (nf->lang) {
 	case FUNC_LANG_MAL:
-		/* instantiate MAL functions while being created */
+	/* instantiate MAL functions while being created */
 		if (backend_create_mal_func(sql, nf) < 0) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.create_func", "%s", sql->errstr);

@@ -939,8 +939,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
 	t->side_effect = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
-	if (t->type==F_FILT)
-		t->side_effect=FALSE;
 	t->varres = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "varres"), rid);
 	t->vararg = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
 	t->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
@@ -990,9 +988,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 			}
 		}
 	}
-	if (t->type == F_FUNC && !t->res)
-		t->type = F_PROC;
-	t->side_effect = (t->type==F_FILT || (t->res && (t->lang==FUNC_LANG_SQL || !list_empty(t->ops))))?FALSE:TRUE;
 	return t;
 }
 
@@ -1468,11 +1463,10 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 	sqlstore *store = tr->store;
 	for (node *n = funcs_list->h; n; n = n->next) {
 		sql_func *f = n->data;
-		bit se = (f->type == F_AGGR) ? FALSE : f->side_effect;
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &f->side_effect, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -4815,7 +4809,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 sql_func *
 create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
-		const char *impl, const char *query, bit varres, bit vararg, bit system)
+				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -4827,7 +4821,7 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 	t->lang = lang;
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = TRUE;
-	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
+	t->side_effect = side_effect;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = args;
@@ -4841,14 +4835,13 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 
 int
 sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *ffres, sql_ftype type, sql_flang lang,
-		const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
+					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	sqlstore *store = tr->store;
 	sql_table *sysfunc = find_sql_table(tr, find_sql_schema(tr, "sys"), "functions");
 	sql_table *sysarg = find_sql_table(tr, find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
-	bit se;
 
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	base_init(tr->sa, &t->base, next_oid(tr->store), true, func);
@@ -4859,7 +4852,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->lang = lang;
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = TRUE;
-	se = t->side_effect = (type==F_FILT || (ffres && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
+	t->side_effect = side_effect;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = SA_LIST(tr->sa, (fdestroy) &arg_destroy);
@@ -4877,7 +4870,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &se,
+	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &t->side_effect,
 			&t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
