@@ -18,6 +18,7 @@
 #define CATALOG_JUN2020 52204	/* first in Jun2020 */
 #define CATALOG_JUN2020_MMT 52206	/* only in Jun2020-mmt */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
+#define CATALOG_JUL2021 52300	/* first in Jul2021 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -56,6 +57,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_OCT2020
 	if (oldversion == CATALOG_OCT2020) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_JUL2021
+	if (oldversion == CATALOG_JUL2021) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -1819,13 +1828,23 @@ upgrade(old_logger *lg)
 }
 
 static gdk_return
-bl_postversion(void *Store, old_logger *old_lg)
+bl_postversion(void *Store, void *Lg)
 {
 	sqlstore *store = Store;
-	(void)store;
-	if (store->catalog_version < 52300 && upgrade(old_lg) != GDK_SUCCEED)
-		return GDK_FAIL;
-	logger *lg = old_lg->lg;
+	old_logger *old_lg;
+	logger *lg;
+
+	if (store->catalog_version < 52300) { /* the watershed */
+		/* called from gdk_logger_old.c; Lg is the old logger */
+		old_lg = Lg;
+		if (upgrade(old_lg) != GDK_SUCCEED)
+			return GDK_FAIL;
+		lg = old_lg->lg;
+	} else {
+		/* called from gdk_logger.c; Lg is the new logger, there is no old */
+		old_lg = NULL;
+		lg = Lg;
+	}
 	bool tabins_first = true;
 
 #ifdef CATALOG_NOV2019
@@ -2570,6 +2589,126 @@ bl_postversion(void *Store, old_logger *old_lg)
 				bat_destroy(strm);
 			}
 		}
+	}
+#endif
+
+#ifdef CATALOG_JUL2021
+	if (store->catalog_version <= CATALOG_JUL2021) {
+		/* change the language attribute in sys.functions for sys.env,
+		 * sys.var, and sys.db_users from SQL to MAL */
+
+		/* sys.functions i.e. deleted rows */
+		BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
+		if (del_funcs == NULL)
+			return GDK_FAIL;
+		BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
+		bat_destroy(del_funcs);
+		/* sys.functions.schema_id */
+		BAT *func_schem = temp_descriptor(logger_find_bat(lg, 2026));
+		if (func_tid == NULL || func_schem == NULL) {
+			bat_destroy(func_tid);
+			bat_destroy(func_schem);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 */
+		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
+		bat_destroy(func_tid);
+		bat_destroy(func_schem);
+		if (cands == NULL)
+			return GDK_FAIL;
+		/* the functions we need to change */
+		BAT *funcs = COLnew(0, TYPE_str, 3, TRANSIENT);
+		if (funcs == NULL ||
+			BUNappend(funcs, "db_users", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "env", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "var", false) != GDK_SUCCEED) {
+			bat_destroy(cands);
+			bat_destroy(funcs);
+			return GDK_FAIL;
+		}
+		/* sys.functions.name */
+		BAT *func_name = temp_descriptor(logger_find_bat(lg, 2018));
+		if (func_name == NULL) {
+			bat_destroy(cands);
+			bat_destroy(funcs);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 and name in (...) */
+		BAT *b = BATintersect(func_name, funcs, cands, NULL, false, false, 3);
+		bat_destroy(cands);
+		bat_destroy(func_name);
+		bat_destroy(funcs);
+		cands = b;
+		if (cands == NULL)
+			return GDK_FAIL;
+		/* sys.functions.language */
+		BAT *func_lang = temp_descriptor(logger_find_bat(lg, 2021));
+		if (func_lang == NULL) {
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 and name in (...)
+		 * and language = FUNC_LANG_SQL */
+		b = BATselect(func_lang, cands, &(int) {FUNC_LANG_SQL}, NULL, true, true, false);
+		bat_destroy(cands);
+		cands = b;
+		if (cands == NULL) {
+			bat_destroy(func_lang);
+			return GDK_FAIL;
+		}
+		b = BATconstant(0, TYPE_int, &(int) {FUNC_LANG_MAL}, BATcount(cands), TRANSIENT);
+		if (b == NULL) {
+			bat_destroy(func_lang);
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		gdk_return rc = GDK_FAIL;
+		BAT *b2 = COLcopy(func_lang, func_lang->ttype, true, PERSISTENT);
+		bat bid = func_lang->batCacheid;
+		bat_destroy(func_lang);
+		if (b2 == NULL ||
+			BATreplace(b2, cands, b, false) != GDK_SUCCEED) {
+			bat_destroy(b2);
+			bat_destroy(cands);
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		bat_destroy(b);
+		bat_destroy(cands);
+		b2 = BATsetaccess(b2, BAT_READ);
+		if (old_lg != NULL) {
+			if ((rc = BUNappend(old_lg->del, &bid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(old_lg->add, &b2->batCacheid, false)) == GDK_SUCCEED &&
+				(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2021}), &b2->batCacheid, false)) == GDK_SUCCEED) {
+				BBPretain(b2->batCacheid);
+				BBPretain(b2->batCacheid);
+			}
+		} else {
+			if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
+				BATiter cii = bat_iterator_nolock(lg->catalog_id);
+				BUN p;
+				MT_rwlock_rdlock(&cii.b->thashlock);
+				HASHloop_int(cii, cii.b->thash, p, &(int){2021}) {
+					if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+						if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED) {
+							MT_rwlock_rdunlock(&cii.b->thashlock);
+							return GDK_FAIL;
+						}
+						break;
+					}
+				}
+				MT_rwlock_rdunlock(&cii.b->thashlock);
+				if ((rc = BUNappend(lg->catalog_id, &(int){2021}, false)) == GDK_SUCCEED &&
+					(rc = BUNappend(lg->catalog_bid, &b2->batCacheid, false)) == GDK_SUCCEED &&
+					(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
+					(rc = BUNappend(lg->catalog_cnt, &(lng){0}, false)) == GDK_SUCCEED) {
+					BBPretain(b2->batCacheid);
+				}
+			}
+		}
+		bat_destroy(b2);
+		if (rc != GDK_SUCCEED)
+			return rc;
 	}
 #endif
 

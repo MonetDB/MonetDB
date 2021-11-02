@@ -18,8 +18,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.23.00 of catalog */
-#define CATALOG_VERSION 52300	/* first after Oct2020 */
+/* version 05.23.01 of catalog */
+#define CATALOG_VERSION 52301	/* first after Jul2021 */
 
 static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
 
@@ -3218,7 +3218,7 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 
 	/* 'func_dup' is aimed at FUNC_LANG_SQL functions ONLY, so f->imp and f->instantiated won't be set */
 	base_init(sa, &f->base, of->base.id, 0, of->base.name);
-	f->mod = SA_STRDUP(sa, of->mod); 
+	f->mod = SA_STRDUP(sa, of->mod);
 	f->type = of->type;
 	f->lang = of->lang;
 	f->semantics = of->semantics;
