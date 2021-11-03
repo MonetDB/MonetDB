@@ -633,11 +633,11 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
 	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
-	if ((lv->tkey && op[0] == '=') || ((op[0] == '<' || op[0] == '>') && lv->tsorted && BATcount(lv) < (max_cnt/2))) {
+	if ((lv->tkey && (op[0] == '=' || op[0] == '!')) || ((op[0] == '<' || op[0] == '>') && lv->tsorted && BATcount(lv) < (max_cnt/2))) {
 		BUN p = BUN_NONE;
 		if (ATOMvarsized(lv->ttype))
 			v = *(ptr*)v;
-		if (op[0] == '=') {
+		if (op[0] == '=' || op[0] == '!') {
 			p =  BUNfnd(lv, v);
 		} else if (op[0] == '<') {
 			p = SORTfndfirst(lv, v);
