@@ -2701,9 +2701,10 @@ bl_postversion(void *Store, void *Lg)
 				if ((rc = BUNappend(lg->catalog_id, &(int){2021}, false)) == GDK_SUCCEED &&
 					(rc = BUNappend(lg->catalog_bid, &b2->batCacheid, false)) == GDK_SUCCEED &&
 					(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
-					(rc = BUNappend(lg->catalog_cnt, &(lng){0}, false)) == GDK_SUCCEED) {
+					(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(b2)}, false)) == GDK_SUCCEED) {
 					BBPretain(b2->batCacheid);
 				}
+				lg->cnt++;
 			}
 		}
 		bat_destroy(b2);
