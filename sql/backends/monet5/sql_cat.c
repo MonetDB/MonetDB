@@ -979,7 +979,6 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 
 		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type)) != NULL) {
 			sql_func *sff = sf->func;
-			char *fimp = NULL;
 
 			if (!sff->s || sff->system)
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
@@ -989,11 +988,8 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 				sff->varres == f->varres && sff->vararg == f->vararg &&
 				((!sff->query && !f->query) || (sff->query && f->query && strcmp(sff->query, f->query) == 0)) &&
 				list_cmp(sff->res, f->res, (fcmp) &args_cmp) == 0 &&
-				list_cmp(sff->ops, f->ops, (fcmp) &args_cmp) == 0) {
-				_DELETE(fimp);
+				list_cmp(sff->ops, f->ops, (fcmp) &args_cmp) == 0)
 				return MAL_SUCCEED;
-			}
-			_DELETE(fimp);
 
 			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
