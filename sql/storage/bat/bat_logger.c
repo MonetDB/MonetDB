@@ -2612,10 +2612,11 @@ bl_postversion(void *Store, void *Lg)
 		}
 		/* select * from sys.functions where schema_id = 2000 */
 		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
-		bat_destroy(func_tid);
 		bat_destroy(func_schem);
-		if (cands == NULL)
+		if (cands == NULL) {
+			bat_destroy(func_tid);
 			return GDK_FAIL;
+		}
 		/* the functions we need to change */
 		BAT *funcs = COLnew(0, TYPE_str, 3, TRANSIENT);
 		if (funcs == NULL ||
@@ -2624,6 +2625,7 @@ bl_postversion(void *Store, void *Lg)
 			BUNappend(funcs, "var", false) != GDK_SUCCEED) {
 			bat_destroy(cands);
 			bat_destroy(funcs);
+			bat_destroy(func_tid);
 			return GDK_FAIL;
 		}
 		/* sys.functions.name */
@@ -2631,6 +2633,7 @@ bl_postversion(void *Store, void *Lg)
 		if (func_name == NULL) {
 			bat_destroy(cands);
 			bat_destroy(funcs);
+			bat_destroy(func_tid);
 			return GDK_FAIL;
 		}
 		/* select * from sys.functions where schema_id = 2000 and name in (...) */
@@ -2639,12 +2642,15 @@ bl_postversion(void *Store, void *Lg)
 		bat_destroy(func_name);
 		bat_destroy(funcs);
 		cands = b;
-		if (cands == NULL)
+		if (cands == NULL) {
+			bat_destroy(func_tid);
 			return GDK_FAIL;
+		}
 		/* sys.functions.language */
 		BAT *func_lang = temp_descriptor(logger_find_bat(lg, 2021));
 		if (func_lang == NULL) {
 			bat_destroy(cands);
+			bat_destroy(func_tid);
 			return GDK_FAIL;
 		}
 		/* select * from sys.functions where schema_id = 2000 and name in (...)
@@ -2654,27 +2660,67 @@ bl_postversion(void *Store, void *Lg)
 		cands = b;
 		if (cands == NULL) {
 			bat_destroy(func_lang);
+			bat_destroy(func_tid);
 			return GDK_FAIL;
 		}
 		b = BATconstant(0, TYPE_int, &(int) {FUNC_LANG_MAL}, BATcount(cands), TRANSIENT);
 		if (b == NULL) {
 			bat_destroy(func_lang);
 			bat_destroy(cands);
+			bat_destroy(func_tid);
 			return GDK_FAIL;
 		}
 		gdk_return rc = GDK_FAIL;
 		BAT *b2 = COLcopy(func_lang, func_lang->ttype, true, PERSISTENT);
 		bat bid = func_lang->batCacheid;
-		bat_destroy(func_lang);
 		if (b2 == NULL ||
 			BATreplace(b2, cands, b, false) != GDK_SUCCEED) {
 			bat_destroy(b2);
 			bat_destroy(cands);
 			bat_destroy(b);
+			bat_destroy(func_tid);
+			bat_destroy(func_lang);
 			return GDK_FAIL;
 		}
 		bat_destroy(b);
 		bat_destroy(cands);
+
+		/* additionally, update the language attribute for entries
+		 * that were declared using "EXTERNAL NAME" to be MAL functions
+		 * instead of SQL functions (a problem that seems to have
+		 * occurred in ancient databases) */
+
+		/* sys.functions.func */
+		BAT *func_func = temp_descriptor(logger_find_bat(lg, 2019));
+		if (func_func == NULL) {
+			bat_destroy(func_tid);
+			bat_destroy(b2);
+			return GDK_FAIL;
+		}
+		cands = BATselect(func_lang, func_tid, &(int){FUNC_LANG_SQL}, NULL, true, true, false);
+		bat_destroy(func_lang);
+		bat_destroy(func_tid);
+		if (cands == NULL) {
+			bat_destroy(b2);
+			bat_destroy(func_func);
+			return GDK_FAIL;
+		}
+		struct canditer ci;
+		canditer_init(&ci, func_func, cands);
+		BATiter ffi = bat_iterator_nolock(func_func);
+		for (BUN p = 0; p < ci.ncand; p++) {
+			oid o = canditer_next(&ci);
+			const char *f = BUNtvar(ffi, o - func_func->hseqbase);
+			const char *e;
+			if (!strNil(f) &&
+				(e = strstr(f, "external")) != NULL &&
+				e > f && isspace(e[-1]) && isspace(e[8]) && strcmp(e + 9, "name") == 0 && isspace(e[13]) &&
+				BUNreplace(b2, o, &(int){FUNC_LANG_MAL}, false) != GDK_SUCCEED) {
+				bat_destroy(b2);
+				bat_destroy(func_func);
+				return GDK_FAIL;
+			}
+		}
 		b2 = BATsetaccess(b2, BAT_READ);
 		if (old_lg != NULL) {
 			if ((rc = BUNappend(old_lg->del, &bid, false)) == GDK_SUCCEED &&
