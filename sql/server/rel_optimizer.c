@@ -9072,11 +9072,12 @@ _rel_flag_independent_projections(sql_exp* e, list* projected_from)
 	if (e -> type == e_func) {
 		list* args = e->l;// The list of actual arguments which can be empty
 		bool is_independent = true;
-		for (node *en = args->h; en; en = en->next) {
-			sql_exp* arg = en->data;
-			if (!_rel_flag_independent_projections(arg, projected_from))
-				is_independent = false;
-		}
+		if (args)
+			for (node *en = args->h; en; en = en->next) {
+				sql_exp* arg = en->data;
+				if (!_rel_flag_independent_projections(arg, projected_from))
+					is_independent = false;
+			}
 		if (is_independent) {
 			/*
 			* This function's arguments are independent

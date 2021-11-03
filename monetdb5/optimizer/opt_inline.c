@@ -31,8 +31,9 @@ OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
 	Symbol s;
 	str mod,fcn;
 
-	mod = VALget(&getVar(mb, getArg(p, p->retc+0))->value);
-	fcn = VALget(&getVar(mb, getArg(p, p->retc+1))->value);
+	int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
+	mod = VALget(&getVar(mb, getArg(p, p->retc+0+plus_one))->value);
+	fcn = VALget(&getVar(mb, getArg(p, p->retc+1+plus_one))->value);
 	if ((s = findSymbolInModule(getModule(putName(mod)), putName(fcn))) == 0)
 		return false;
 	return s->def->inlineProp;
