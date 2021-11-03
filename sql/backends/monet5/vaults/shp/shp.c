@@ -825,9 +825,9 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 #include "mel.h"
 static mel_func shp_init_funcs[] = {
- pattern("shp", "attach", SHPattach, false, "Register an ESRI Shapefile in the vault catalog", args(1,2, arg("",void),arg("filename",str))),
- pattern("shp", "import", SHPimport, false, "Import an ESRI Shapefile with given id into the vault", args(1,2, arg("",void),arg("fileid",int))),
- pattern("shp", "import", SHPpartialimport, false, "Partially import an ESRI Shapefile with given id into the vault", args(1,3, arg("",void),arg("fileid",int),arg("po",wkb))),
+ pattern("shp", "attach", SHPattach, true, "Register an ESRI Shapefile in the vault catalog", args(1,2, arg("",void),arg("filename",str))),
+ pattern("shp", "import", SHPimport, true, "Import an ESRI Shapefile with given id into the vault", args(1,2, arg("",void),arg("fileid",int))),
+ pattern("shp", "import", SHPpartialimport, true, "Partially import an ESRI Shapefile with given id into the vault", args(1,3, arg("",void),arg("fileid",int),arg("po",wkb))),
  { .imp=NULL }
 };
 #include "mal_import.h"
