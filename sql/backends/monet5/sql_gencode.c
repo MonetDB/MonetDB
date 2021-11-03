@@ -1062,6 +1062,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	m->params = NULL;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
+	m->session->status = 0;
 	(void) sqlparse(m);
 	if (m->session->status || m->errstr[0] || !m->sym || m->sym->token != SQL_CREATE_FUNC) {
 		if (m->errstr[0] == '\0')

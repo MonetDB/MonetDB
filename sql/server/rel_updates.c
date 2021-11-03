@@ -1923,6 +1923,7 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	m->params = NULL;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
+	m->session->status = 0;
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 

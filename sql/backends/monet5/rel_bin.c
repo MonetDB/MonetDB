@@ -3890,7 +3890,7 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, s, query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
+	if (rel && (rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }
