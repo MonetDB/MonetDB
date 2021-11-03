@@ -81,8 +81,8 @@
 /* Macros for accessing metadada of a strimp. These are recorded in the
  * first 8 bytes of the heap.
  */
-#define NPAIRS(d) (((d) >> 8) & 0xff)
-#define HSIZE(d) (((d) >> 16) & 0xffff)
+#define NPAIRS(d) (size_t)(((d) >> 8) & 0xff)
+#define HSIZE(d) (size_t)(((d) >> 16) & 0xffff)
 
 #undef UTF8STRIMPS 		/* Not using utf8 for now */
 #ifdef UTF8STRIMPS
@@ -104,7 +104,7 @@ pair_equal(CharPair *p1, CharPair *p2) {
  * implemented for the UTF8 case.
  */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
-#define pairToIndex(b1, b2) (uint16_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
+#define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
 static bool
 pair_equal(CharPair *p1, CharPair *p2) {
@@ -113,7 +113,7 @@ pair_equal(CharPair *p1, CharPair *p2) {
 
 }
 
-static int64_t
+static size_t
 histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p) {
 	(void) hist;
 	(void) hsize;
@@ -146,11 +146,14 @@ STRMPpairLookup(Strimps *s, CharPair *p) {
 	size_t offset = 0;
 	CharPair sp;
 
+	// The return type implies that we have no more than 128 pairs.
+	assert(npairs <= 128);
+
 	for (idx = 0; idx < npairs; idx++) {
 		sp.psize = s->sizes_base[idx];
 		sp.pbytes = s->pairs_base + offset;
 		if (pair_equal(&sp, p))
-			return idx;
+			return (int8_t)idx;
 		offset += sp.psize;
 	}
 
@@ -437,8 +440,8 @@ BATcheckstrimps(BAT *b)
 				if ((fd = GDKfdlocate(hp->strimps.farmid, nme, "rb+", "tstrimps")) >= 0) {
 					struct stat st;
 					uint64_t desc;
-					uint64_t npairs;
-					uint64_t hsize;
+					size_t npairs;
+					size_t hsize;
 					/* Read the 8 byte long strimp
 					 * descriptor.
 					 *
