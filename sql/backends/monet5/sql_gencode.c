@@ -956,15 +956,15 @@ monet5_resolve_function(ptr M, sql_func *f)
 
 	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
 	if (mname == calcRef && fname == getName("=")) {
-		//f->side_effect = 0;
+		f->side_effect = 0;
 		return 1;
 	}
 	if (mname == aggrRef && (fname == countRef || fname == count_no_nilRef)) {
-		//f->side_effect = 0;
+		f->side_effect = 0;
 		return 1;
 	}
 	if (f->type == F_ANALYTIC) {
-		//f->side_effect = 0;
+		f->side_effect = 0;
 		return 1;
 	}
 
@@ -975,7 +975,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 			int argc = sig->argc - sig->retc, nfargs = list_length(f->ops), nfres = list_length(f->res);
 
 			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres) {
-				//f->side_effect = (bit) s->def->unsafeProp;
+				f->side_effect = (bit) s->def->unsafeProp;
 				return 1;
 			} else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
 				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
@@ -1011,7 +1011,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 					}
 				}
 				if (all_match)*/
-				//f->side_effect = (bit) s->def->unsafeProp;
+				f->side_effect = (bit) s->def->unsafeProp;
 				return 1;
 			}
 		}
@@ -1324,7 +1324,7 @@ cleanup:
 	return res;
 }
 
-int
+static int
 backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	switch(f->lang) {

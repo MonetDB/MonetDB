@@ -1249,10 +1249,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		mod = sql_func_mod(f->func);
 		fimp = sql_func_imp(f->func);
 
-		if (f->func->side_effect && left && left->nrcols > 0) {
+		/* TODO the 'next_value_for' case is an ugly hack, and it will get fixed on 'sequences_7184' branch */
+		if ((f->func->side_effect || (!f->func->s && strcmp(f->func->base.name, "next_value_for") == 0)) && left && left->nrcols > 0) {
 			sql_subfunc *f1 = NULL;
 			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
-			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
+			if (list_empty(exps) && ((!f->func->s && strcmp(f->func->base.name, "rand") == 0) || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
 				if (f1)
 					f = f1;
 				list_append(l, stmt_const(be, bin_find_smallest_column(be, left),
@@ -2127,7 +2128,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						else
 							getArg(q, 0) = newTmpVariable(be->mb, type);
 					}
-					if (backend_create_func(be, f->func, NULL, ops) < 0)
+					if (backend_create_subfunc(be, f, ops) < 0)
 		 				return NULL;
 					str mod = sql_func_mod(f->func);
 					str fcn = sql_func_imp(f->func);

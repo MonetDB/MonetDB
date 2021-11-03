@@ -944,7 +944,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, FALSE)) {
+			bit side_effect = (list_empty(restype) || list_empty(l)); /* TODO make this more precise? */
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -962,8 +963,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql_schema *os = cur_schema(sql);
 
 		if (create) { /* needed for recursive functions */
+			bit side_effect = list_empty(restype) == 1; /* TODO make this more precise? */
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, side_effect)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -998,10 +1000,14 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		if (!fmod || !fnme)
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL module or function name missing", F);
+		if (strlen(fmod) >= IDLENGTH)
+			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL module name '%s' too large for the backend", F, fmod);
+		if (strlen(fnme) >= IDLENGTH)
+			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL function name '%s' too large for the backend", F, fnme);
 		sql->params = NULL;
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, NULL, q, FALSE, vararg, FALSE, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE, FALSE)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1010,6 +1016,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				default:
 					break;
 			}
+			/* instantiate MAL functions while being created. This also sets the side-effects flag */
+			if (!backend_resolve_function(&(sql->clientid), f))
+				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
+			f->instantiated = TRUE;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 		}
