@@ -3209,7 +3209,7 @@ stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op)
 {
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
-	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op, NULL);
 	if (!r->cand)
 		r->cand = op1->cand;
 	return r;
@@ -3221,14 +3221,14 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	list_append(ops, op2);
-	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op, NULL);
 	if (!r->cand)
 		r->cand = op1->cand?op1->cand:op2->cand;
 	return r;
 }
 
 stmt *
-stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
+stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3277,7 +3277,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			return NULL;
 		mod = sql_func_mod(f->func);
 		fimp = sql_func_imp(f->func);
-		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
+		if (((o && o->nrcols > 0) || rows) && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 			fimp = convertMultiplexFcn(fimp);
 			q = NULL;
@@ -3287,14 +3287,19 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 				return NULL;
 			if (!q) {
 				if (f->func->type == F_UNION)
-					q = newStmtArgs(mb, batmalRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
-				else
-					q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6 + ops->argument_independence);
+						q = newStmtArgs(mb, batmalRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
+				else {
+					if (ops->argument_independence) {
+						stmt *card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+						q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 7);
+						q = pushArgument(mb, q, card->nr);
+					}
+					else
+						q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
+				}
 				if (q == NULL)
 					return NULL;
 				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
-				if (ops->argument_independence)
-					q = pushLng(mb, q, 0); // Represents input cardinality which signals the multiplex optimizer to use a manifold implementation or bulkoperator which is only dependent of the input cardinality.
 				q = pushStr(mb, q, mod);
 				q = pushStr(mb, q, fimp);
 			} else {
@@ -3360,7 +3365,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		}
 		s->op1 = ops;
 		if (o) {
-			s->nrcols = o->nrcols;
+			s->nrcols = rows? rows->nrcols:o->nrcols;
 			s->key = o->key;
 			s->aggr = o->aggr;
 		} else {
