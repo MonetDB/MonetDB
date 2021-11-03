@@ -66,12 +66,12 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop role myrole;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
 
-# Test different instantiations of SQL functions and views on different transactions
 with SQLTestCase() as mdb1:
     with SQLTestCase() as mdb2:
         mdb1.connect(username="monetdb", password="monetdb")
         mdb2.connect(username="monetdb", password="monetdb")
 
+        # Test different instantiations of SQL functions and views on different transactions
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('CREATE MERGE TABLE parent(a int)').assertSucceeded()
         mdb1.execute('CREATE TABLE child1(a int)').assertSucceeded()
@@ -113,4 +113,36 @@ with SQLTestCase() as mdb1:
         mdb1.execute('drop table parent;').assertSucceeded()
         mdb1.execute('drop table child1;').assertSucceeded()
         mdb1.execute('drop table child2;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+
+        # Test replacing functions and views with concurrent transactions
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('create or replace function otherfunc() returns int return 1;').assertSucceeded()
+        mdb1.execute('create or replace view otherview(x) as (select 1)').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb1.execute('SELECT otherfunc()').assertDataResultMatch([(1,)])
+        mdb2.execute('SELECT otherfunc()').assertDataResultMatch([(1,)])
+        mdb1.execute('SELECT x from otherview').assertDataResultMatch([(1,)])
+        mdb2.execute('SELECT x from otherview').assertDataResultMatch([(1,)])
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute('SELECT otherfunc()').assertDataResultMatch([(1,)])
+        mdb2.execute('SELECT otherfunc()').assertDataResultMatch([(1,)])
+        mdb1.execute('SELECT x from otherview').assertDataResultMatch([(1,)])
+        mdb2.execute('SELECT x from otherview').assertDataResultMatch([(1,)])
+        mdb2.execute('create or replace function otherfunc() returns int return 2;').assertSucceeded()
+        mdb2.execute('create or replace view otherview(x) as (select 2)').assertSucceeded()
+        mdb1.execute('SELECT otherfunc()').assertDataResultMatch([(1,)])
+        mdb2.execute('SELECT otherfunc()').assertDataResultMatch([(2,)])
+        mdb1.execute('SELECT x from otherview').assertDataResultMatch([(1,)])
+        mdb2.execute('SELECT x from otherview').assertDataResultMatch([(2,)])
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertSucceeded()
+        mdb1.execute('SELECT otherfunc()').assertDataResultMatch([(2,)])
+        mdb2.execute('SELECT otherfunc()').assertDataResultMatch([(2,)])
+        mdb1.execute('SELECT x from otherview').assertDataResultMatch([(2,)])
+        mdb2.execute('SELECT x from otherview').assertDataResultMatch([(2,)])
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('drop function otherfunc;').assertSucceeded()
+        mdb1.execute('drop view otherview;').assertSucceeded()
         mdb1.execute('commit;').assertSucceeded()
