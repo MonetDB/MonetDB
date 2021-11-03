@@ -1685,10 +1685,11 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 static stmt *
 parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emode)
 {
-	sql_exp *e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL);
-	if (e)
-		return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	return sql_error(be->mvc, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	sql_exp *e = NULL;
+
+	if (!(e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL)))
+		return NULL;
+	return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
 
 static stmt *

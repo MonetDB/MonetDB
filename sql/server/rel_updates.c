@@ -31,7 +31,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		if (c->def) {
 			sql_exp *e = rel_parse_val(sql, c->t->s, c->def, &c->type, sql->emode, NULL);
 			if (!e || (e = exp_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
-				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
+				return NULL;
 			return e;
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
@@ -359,7 +359,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				if (c->def) {
 					e = rel_parse_val(sql, t->s, c->def, &c->type, sql->emode, NULL);
 					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
-						return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
+						return NULL;
 				} else {
 					atom *a = atom_general(sql->sa, &c->type, NULL);
 					e = exp_atom(sql->sa, a);
@@ -1882,7 +1882,6 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 sql_exp *
 rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 {
-	mvc o = *m;
 	sql_exp *e = NULL;
 	buffer *b;
 	char *n;
@@ -1897,7 +1896,7 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	if(!b || !n) {
 		free(b);
 		free(n);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(n, len + 2, "select %s;\n", query);
 	len++;
@@ -1905,13 +1904,14 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	s = buffer_rastream(b, "sqlstatement");
 	if(!s) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(s, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	mvc o = *m;
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);

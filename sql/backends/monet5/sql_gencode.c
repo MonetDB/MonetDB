@@ -1023,7 +1023,6 @@ monet5_resolve_function(ptr M, sql_func *f)
 static int
 mal_function_find_implementation_address(mvc *m, sql_func *f)
 {
-	mvc o = *m;
 	buffer *b = NULL;
 	bstream *bs = NULL;
 	stream *buf = NULL;
@@ -1053,6 +1052,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
+	mvc o = *m;
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
