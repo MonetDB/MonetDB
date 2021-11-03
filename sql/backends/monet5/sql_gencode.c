@@ -1108,6 +1108,11 @@ backend_create_mal_func(mvc *m, sql_func *f)
 		return 0;
 	lock_function(m->store, f->base.id);
 	if (!f->instantiated) {
+		char *F = NULL, *fn = NULL;
+		bit side_effect = f->side_effect;
+
+		FUNC_TYPE_STR(f->type, F, fn)
+		(void) F;
 		if (strlen(f->mod) >= IDLENGTH) {
 			(void) sql_error(m, 01, SQLSTATE(42000) "MAL module name '%s' too large for the backend", f->mod);
 			unlock_function(m->store, f->base.id);
@@ -1119,6 +1124,13 @@ backend_create_mal_func(mvc *m, sql_func *f)
 		}
 		if (!backend_resolve_function(&(m->clientid), f)) {
 			(void) sql_error(m, 02, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
+			_DELETE(f->imp);
+			unlock_function(m->store, f->base.id);
+			return -1;
+		}
+		if (side_effect != f->side_effect) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "Side-effect value from the SQL %s %s.%s doesn't match the MAL definition %s.%s\n"
+							 "Either re-create the %s, or fix the MAL definition and restart the database", fn, f->s->base.name, f->base.name, f->mod, f->imp, fn);
 			_DELETE(f->imp);
 			unlock_function(m->store, f->base.id);
 			return -1;
