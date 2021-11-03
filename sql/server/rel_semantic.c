@@ -26,7 +26,6 @@
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 {
-	mvc o = *m;
 	sql_rel *rel = NULL;
 	buffer *b;
 	bstream *bs;
@@ -40,7 +39,7 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 		return NULL;
 	if ((n = malloc(len + 1 + 1)) == NULL) {
 		free(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(n, len + 2, "%s\n", query);
 	len++;
@@ -48,13 +47,14 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(buf, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return NULL;
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	mvc o = *m;
 	scanner_init( &m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
