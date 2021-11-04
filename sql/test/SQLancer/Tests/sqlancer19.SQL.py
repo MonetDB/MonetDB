@@ -315,6 +315,14 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(None,),(-7,),(-1,),(0,),(0,),(0,),(0,),(0,),(1,),(3,),(3,),(4,),(4,),(4,),(5,),(5,),(5,),(5,),(6,),(6,),(7,),(7,),(8,),(9,),(9,)])
     cli.execute("SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) AS INT) as count FROM rt7) as res;") \
         .assertSucceeded().assertDataResultMatch([(25,)])
+    cli.execute("create view v8(vc0) as (select -24.6 from t3);") \
+        .assertSucceeded()
+    cli.execute("create view v9(vc0) as (select -24.6 from rt3);") \
+        .assertSucceeded()
+    cli.execute("SELECT 1 FROM t3 WHERE EXISTS ((SELECT 0.3, 4 FROM v8) EXCEPT ALL (SELECT 8, 1 FROM v8));") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute("SELECT 1 FROM t3 WHERE EXISTS ((SELECT 0.3, 4 FROM v9) EXCEPT ALL (SELECT 8, 1 FROM v9));") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("SELECT c1 FROM t6;") \
         .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
         ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
@@ -322,13 +330,6 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
         ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
     cli.execute("ROLLBACK;")
-
-    cli.execute("CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;")
-    # At the moment I take this as a feature. Later we could replace the algebra.fetch call with something more appropriate
-    cli.execute("SELECT 1 FROM rt3 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL;") \
-        .assertFailed(err_message="Illegal argument: cannot fetch a single row from an empty input")
-    cli.execute("SELECT 1 FROM rt3 HAVING mybooludf(min(false));") \
-        .assertFailed(err_message="Illegal argument: cannot fetch a single row from an empty input")
 
     cli.execute("""
     START TRANSACTION;
@@ -347,5 +348,4 @@ with SQLTestCase() as cli:
     DROP TABLE t5;
     DROP TABLE t6;
     DROP TABLE t7;
-    DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()
