@@ -4256,6 +4256,12 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
 
+	/* 99_system.sql */
+	t = mvc_bind_table(sql, s, "systemfunctions");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.systemfunctions;\n");
+
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
