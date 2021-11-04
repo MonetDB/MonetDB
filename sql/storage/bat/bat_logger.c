@@ -2757,6 +2757,162 @@ bl_postversion(void *Store, void *Lg)
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}
+	if (store->catalog_version <= CATALOG_JUL2021) {
+		/* change the language attribute in sys.functions for sys.env,
+		 * sys.var, and sys.db_users from SQL to MAL */
+
+		/* sys.functions i.e. deleted rows */
+		BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
+		if (del_funcs == NULL)
+			return GDK_FAIL;
+		BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
+		bat_destroy(del_funcs);
+		/* sys.functions.schema_id */
+		BAT *func_schem = temp_descriptor(logger_find_bat(lg, 2026));
+		if (func_tid == NULL || func_schem == NULL) {
+			bat_destroy(func_tid);
+			bat_destroy(func_schem);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 */
+		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
+		bat_destroy(func_schem);
+		bat_destroy(func_tid);
+		if (cands == NULL) {
+			return GDK_FAIL;
+		}
+		/* sys.functions.side_effect */
+		BAT *func_se = temp_descriptor(logger_find_bat(lg, 2023));
+		if (func_se == NULL) {
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		bat bid = func_se->batCacheid;
+		/* make a copy that we can modify */
+		BAT *b = COLcopy(func_se, func_se->ttype, true, PERSISTENT);
+		bat_destroy(func_se);
+		if (b == NULL) {
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		func_se = b;
+		/* sys.functions.func */
+		BAT *func_func = temp_descriptor(logger_find_bat(lg, 2019));
+		if (func_func == NULL) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			return GDK_FAIL;
+		}
+		/* the functions we need to change to FALSE */
+		BAT *funcs = COLnew(0, TYPE_str, 2, TRANSIENT);
+		if (funcs == NULL ||
+			BUNappend(funcs, "sqlrand", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "next_value", false) != GDK_SUCCEED) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			bat_destroy(funcs);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 and func in (...) */
+		b = BATintersect(func_func, funcs, cands, NULL, false, false, 4);
+		bat_destroy(funcs);
+		if (b == NULL) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			return GDK_FAIL;
+		}
+		BAT *vals = BATconstant(0, TYPE_bit, &(bit) {FALSE}, BATcount(b), TRANSIENT);
+		if (vals == NULL) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		gdk_return rc;
+		rc = BATreplace(func_se, b, vals, false);
+		bat_destroy(b);
+		bat_destroy(vals);
+		if (rc != GDK_SUCCEED) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			return GDK_FAIL;
+		}
+		/* the functions we need to change to TRUE */
+		funcs = COLnew(0, TYPE_str, 4, TRANSIENT);
+		if (funcs == NULL ||
+			BUNappend(funcs, "copy_from", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "importTable", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "update_schemas", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "update_tables", false) != GDK_SUCCEED) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			bat_destroy(funcs);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 and func in (...) */
+		b = BATintersect(func_func, funcs, cands, NULL, false, false, 4);
+		bat_destroy(funcs);
+		bat_destroy(cands);
+		bat_destroy(func_func);
+		if (b == NULL) {
+			bat_destroy(func_se);
+			return GDK_FAIL;
+		}
+		vals = BATconstant(0, TYPE_bit, &(bit) {TRUE}, BATcount(b), TRANSIENT);
+		if (vals == NULL) {
+			bat_destroy(func_se);
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		rc = BATreplace(func_se, b, vals, false);
+		bat_destroy(b);
+		bat_destroy(vals);
+		if (rc != GDK_SUCCEED) {
+			bat_destroy(func_se);
+			return GDK_FAIL;
+		}
+		/* replace old column with modified copy */
+		func_se = BATsetaccess(func_se, BAT_READ);
+		if (old_lg != NULL) {
+			if ((rc = BUNappend(old_lg->del, &bid, false)) == GDK_SUCCEED &&
+				(rc = BUNappend(old_lg->add, &func_se->batCacheid, false)) == GDK_SUCCEED &&
+				(rc = BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2023}), &func_se->batCacheid, false)) == GDK_SUCCEED) {
+				BBPretain(func_se->batCacheid);
+				BBPretain(func_se->batCacheid);
+			}
+		} else {
+			if ((rc = BAThash(lg->catalog_id)) == GDK_SUCCEED) {
+				BATiter cii = bat_iterator_nolock(lg->catalog_id);
+				BUN p;
+				MT_rwlock_rdlock(&cii.b->thashlock);
+				HASHloop_int(cii, cii.b->thash, p, &(int){2023}) {
+					if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
+						if (BUNappend(lg->dcatalog, &(oid){(oid)p}, false) != GDK_SUCCEED) {
+							MT_rwlock_rdunlock(&cii.b->thashlock);
+							return GDK_FAIL;
+						}
+						break;
+					}
+				}
+				MT_rwlock_rdunlock(&cii.b->thashlock);
+				if ((rc = BUNappend(lg->catalog_id, &(int){2023}, false)) == GDK_SUCCEED &&
+					(rc = BUNappend(lg->catalog_bid, &func_se->batCacheid, false)) == GDK_SUCCEED &&
+					(rc = BUNappend(lg->catalog_lid, &lng_nil, false)) == GDK_SUCCEED &&
+					(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(func_se)}, false)) == GDK_SUCCEED) {
+					BBPretain(func_se->batCacheid);
+				}
+				lg->cnt++;
+			}
+		}
+		bat_destroy(func_se);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
 #endif
 
 	return GDK_SUCCEED;
