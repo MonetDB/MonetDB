@@ -2758,8 +2758,8 @@ bl_postversion(void *Store, void *Lg)
 			return rc;
 	}
 	if (store->catalog_version <= CATALOG_JUL2021) {
-		/* change the language attribute in sys.functions for sys.env,
-		 * sys.var, and sys.db_users from SQL to MAL */
+		/* change the side_effects attribute in sys.functions for
+		 * selected functions */
 
 		/* sys.functions i.e. deleted rows */
 		BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
@@ -2823,6 +2823,40 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(func_func);
 			return GDK_FAIL;
 		}
+		/* while we're at it, also change sys.env and sys.db_users to
+		 * being without side effect (legacy from ancient databases) */
+		/* sys.functions.name */
+		BAT *func_name = temp_descriptor(logger_find_bat(lg, 2018));
+		if (func_name == NULL) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		BAT *b2 = BATselect(func_name, cands, "env", NULL, true, true, false);
+		if (b2 == NULL || BATappend(b, b2, NULL, false) != GDK_SUCCEED) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			bat_destroy(b);
+			bat_destroy(func_name);
+			bat_destroy(b2);
+			return GDK_FAIL;
+		}
+		bat_destroy(b2);
+		b2 = BATselect(func_name, cands, "db_users", NULL, true, true, false);
+		bat_destroy(func_name);
+		if (b2 == NULL || BATappend(b, b2, NULL, false) != GDK_SUCCEED) {
+			bat_destroy(cands);
+			bat_destroy(func_se);
+			bat_destroy(func_func);
+			bat_destroy(b);
+			bat_destroy(b2);
+			return GDK_FAIL;
+		}
+		bat_destroy(b2);
+
 		BAT *vals = BATconstant(0, TYPE_bit, &(bit) {FALSE}, BATcount(b), TRANSIENT);
 		if (vals == NULL) {
 			bat_destroy(cands);
