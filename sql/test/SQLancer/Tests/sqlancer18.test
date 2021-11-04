@@ -547,3 +547,8 @@ DROP TABLE t0
 statement ok
 DROP TABLE t1
 
+query T nosort
+select (case when false then v100.vc1 when true then (values (2)) end) in (3) from (values (1),(2)) v100(vc1)
+----
+False
+False
