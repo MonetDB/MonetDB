@@ -766,15 +766,15 @@ static str
 sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err;
+	char *buf = NULL, *err = NULL;
 
-	if (buf == NULL)
+	if (!*systabfixed &&
+		(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (!*systabfixed) {
-		sql_fix_system_tables(c, sql, prev_schema);
-		*systabfixed = true;
-	}
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
@@ -1238,15 +1238,15 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 {
 	sql_table *t;
 	size_t bufsize = 32768, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
+	char *err = NULL, *buf = NULL;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 	if (!*systabfixed &&
-	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 		return err;
 	*systabfixed = true;
 
-	if (buf == NULL)
+	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2022,8 +2022,12 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 		BATiter bi = bat_iterator_nolock(b);
 		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
 			if (!*systabfixed &&
-				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL) {
+				BBPunfix(b->batCacheid);
+				res_table_destroy(output);
+				GDKfree(buf);
 				return err;
+			}
 			*systabfixed = true;
 
 			pos = 0;
@@ -2178,7 +2182,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		if (BATcount(b) > 0) {
 			if (!*systabfixed &&
 				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
-				return err;
+				goto bailout;
 			*systabfixed = true;
 
 			pos = 0;
