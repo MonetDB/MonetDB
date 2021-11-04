@@ -12,6 +12,7 @@ with SQLTestCase() as cli:
     START TRANSACTION;
     CREATE TABLE "t1" ("c0" BIGINT,"c1" INTERVAL MONTH);
     INSERT INTO "t1" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH);
+    CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a;
     COMMIT;
 
     START TRANSACTION;
@@ -36,8 +37,19 @@ with SQLTestCase() as cli:
     cli.execute("SELECT 1 FROM rt1 where rt1.c0 = 1 AND abs(0.4) = 0;") \
         .assertSucceeded().assertDataResultMatch([])
 
+    # We should replace algebra.fetch call with something more appropriate
+    cli.execute("SELECT 1 FROM t1 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM rt1 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL;") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM t1 HAVING mybooludf(min(false));") \
+        .assertSucceeded().assertDataResultMatch([])
+    cli.execute("SELECT 1 FROM rt1 HAVING mybooludf(min(false));") \
+        .assertSucceeded().assertDataResultMatch([])
+
     cli.execute("""
     START TRANSACTION;
     DROP TABLE rt1;
     DROP TABLE t1;
+    DROP FUNCTION mybooludf(bool);
     COMMIT;""").assertSucceeded()
