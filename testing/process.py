@@ -167,7 +167,7 @@ class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
         self.isserver = False
-        if sys.version[:3] < '3.7':
+        if sys.version_info.major == 3 and sys.version_info.minor < 7:
             kw = kwargs.copy()
             if 'text' in kw:
                 kw['universal_newlines'] = kw['text']
