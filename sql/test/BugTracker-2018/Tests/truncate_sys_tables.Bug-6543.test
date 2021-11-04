@@ -50,19 +50,6 @@ SELECT (COUNT(*) > 0) AS has_rows FROM sys.table_types
 ----
 1
 
-query I rowsort
-SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions
-----
-1
-
-statement error
-TRUNCATE TABLE sys.systemfunctions
-
-query I rowsort
-SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions
-----
-1
-
 statement error
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput
 
