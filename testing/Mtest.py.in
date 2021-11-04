@@ -3809,7 +3809,7 @@ def main(argv) :
         par['IGNORE'] = opts.ignore
         par['CONTEXT'] = str(opts.context)
         a = opts.accuracy
-        if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+        if testweb or opts.alltests or CONDITIONALS['MERCURIAL']:
             CONDITIONALS['KNOWNFAIL'] = 'execute'
         if a not in (-1,0,1,2):
             ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
