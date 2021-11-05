@@ -2371,9 +2371,9 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		if (d->cs.st == ST_DICT) {
 			BAT *b = bind_col(tr, col, QUICK);
 			if (b->ttype == TYPE_bte)
-				de = 8;
+				de = 1;
 			else if (b->ttype == TYPE_sht)
-				de = 16;
+				de = 2;
 		}
 	} else if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
