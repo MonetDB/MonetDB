@@ -1243,19 +1243,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL;
 		int push_cands = can_push_cands(sel, f);
 
-		if (f->func->side_effect && left && left->nrcols > 0 && f->func->type != F_LOADER) {
-			sql_subfunc *f1 = NULL;
-			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
-			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
-				if (f1)
-					f = f1;
-				list_append(l, stmt_const(be, bin_find_smallest_column(be, left),
-										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
-			} else if (exps_card(exps) < CARD_MULTI) {
-				rows = bin_find_smallest_column(be, left);
-			}
-			sql->session->status = 0; /* if the function was not found clean the error */
-			sql->errstr[0] = '\0';
+		if (f->func->side_effect && left && left->nrcols > 0 && f->func->type != F_LOADER && exps_card(exps) < CARD_MULTI) {
+			rows = bin_find_smallest_column(be, left);
 		}
 		assert(!e->r);
 		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)

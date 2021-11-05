@@ -3365,9 +3365,11 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		}
 		s->op1 = ops;
 		if (o) {
-			s->nrcols = rows? rows->nrcols:o->nrcols;
+			s->nrcols = o->nrcols;
 			s->key = o->key;
 			s->aggr = o->aggr;
+		} else if (rows) {
+			s->nrcols = rows->nrcols;
 		} else {
 			s->nrcols = 0;
 			s->key = 1;
