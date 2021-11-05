@@ -1,18 +1,40 @@
-query TIII rowsort
+query TTII rowsort
 SELECT s.name AS schema_nm, s.system AS is_system_schema
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type <> 2 AND f.id NOT IN (SELECT sf.id as function_id FROM sys.functions sf WHERE sf.system)) AS "user defined functions count"
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type = 2 AND f.id NOT IN (SELECT sf.id as function_id FROM sys.functions sf WHERE sf.system)) AS "user defined procedures count"
  FROM sys.schemas AS s
 WHERE s.name IN ('json', 'profiler', 'sys')
 ----
-12 values hashing to 9a34d92e7a28fa3845d10ff8833706a6
+json
+True
+0
+0
+profiler
+True
+0
+0
+sys
+True
+0
+0
 
-query TIII rowsort
+query TTII rowsort
 SELECT s.name AS schema_nm, s.system AS is_system_schema
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type <> 2 AND NOT f.system) AS "user defined functions count"
 , (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type = 2 AND NOT f.system) AS "user defined procedures count"
  FROM sys.schemas AS s
 WHERE s.name IN ('json', 'profiler', 'sys')
 ----
-12 values hashing to 9a34d92e7a28fa3845d10ff8833706a6
+json
+True
+0
+0
+profiler
+True
+0
+0
+sys
+True
+0
+0
 
