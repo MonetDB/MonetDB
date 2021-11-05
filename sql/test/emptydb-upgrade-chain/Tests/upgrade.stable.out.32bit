@@ -949,4 +949,5 @@ update sys.functions set system = true where system <> true and schema_id = (sel
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and name = 'getlimit';
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');
+drop view sys.systemfunctions;
 
