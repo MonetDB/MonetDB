@@ -484,6 +484,7 @@ AUTHcheckCredentials(
 		if (encrypted == NULL)
 			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		hash = mcrypt_hashPassword(algo, encrypted, challenge);
+		free(encrypted);
 		if (hash && strcmp(passwd, hash) == 0) {
 			*uid = p;
 			free(hash);

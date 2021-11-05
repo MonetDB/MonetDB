@@ -574,7 +574,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	BUN cap,j;
 	oid o = 0;
 	InstrPtr p;
-	str oper, msg= MAL_SUCCEED;
+	str oper;
 
 	(void) cntxt;
 	p = findGeneratorDefinition(mb,pci,pci->argv[1]);
@@ -685,8 +685,10 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				}
 				val = timestamp_add_usec(val, s);
 				if (is_timestamp_nil(val)) {
-					msg = createException(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
-					goto wrapup;
+					if (cand)
+						BBPunfix(cand->batCacheid);
+					BBPreclaim(bn);
+					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
 		} else {
@@ -696,19 +698,16 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		}
 	}
 
-wrapup:
 	if( cndid)
 		BBPunfix(cndid);
-	if( bn){
-		bn->tsorted = true;
-		bn->trevsorted = false;
-		bn->tkey = true;
-		bn->tnil = false;
-		bn->tnonil = true;
-		BATsetcount(bn,c);
-		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
-	}
-	return msg;
+	bn->tsorted = true;
+	bn->trevsorted = false;
+	bn->tkey = true;
+	bn->tnil = false;
+	bn->tnonil = true;
+	BATsetcount(bn,c);
+	BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 #define VLTprojection(TPE)												\
@@ -927,10 +926,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( q == NULL){
 		/* p != NULL, hence bl == NULL */
 		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
-		if( br == NULL) {
-			if(bl) BBPunfix(bl->batCacheid);
+		if( br == NULL)
 			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
 	}
 
 	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first

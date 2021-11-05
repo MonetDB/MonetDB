@@ -19,7 +19,6 @@
 #include "sql_user.h"
 #include "sql_mvc.h"
 #include "sql_privileges.h"
-#include "bat5.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "mcrypt.h"
@@ -276,17 +275,19 @@ static void
 monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
 	sql_schema *sys;
-	sql_table *t, *uinfo;
+	sql_table *t = NULL, *uinfo = NULL;
+	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
 	list *res, *ops;
+	sql_func *f = NULL;
 
 	/* create the authorisation related tables */
-	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
-	mvc_create_column_(m, t, "name", "varchar", 1024);
-	mvc_create_column_(m, t, "fullname", "varchar", 2048);
-	mvc_create_column_(m, t, "default_schema", "int", 9);
-	mvc_create_column_(m, t, "schema_path", "clob", 0);
+	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
+	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
+	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
+	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -296,7 +297,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
+	mvc_create_func(&f, m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "
@@ -309,10 +310,10 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 		return ;
 	}
 
-	mvc_create_column_(m, t, "name", "varchar", 2048);
-	mvc_create_column_(m, t, "fullname", "varchar", 2048);
-	mvc_create_column_(m, t, "default_schema", "int", 9);
-	mvc_create_column_(m, t, "schema_path", "clob", 0);
+	mvc_create_column_(&col, m, t, "name", "varchar", 2048);
+	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
+	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
+	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	schema_id = sys->base.id;
@@ -562,9 +563,8 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 	sql_table *user_info = NULL;
 	sql_table *schemas = NULL;
 	sql_table *auths = NULL;
-	str username = NULL;
+	str username = NULL, sname = NULL;
 	sqlstore *store = m->session->tr->store;
-	ptr cbat;
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	auths = find_sql_table(m->session->tr, sys, "auths");
@@ -573,22 +573,25 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
 	if (is_oid_nil(rid))
+		return -2;
+	if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
 		return -1;
-	username = store->table_api.column_find_string_start(m->session->tr, find_sql_column(auths, "name"), rid, &cbat);
 	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
-	store->table_api.column_find_string_end(cbat);
+	_DELETE(username);
 
 	if (!is_oid_nil(rid))
 		schema_id = store->table_api.column_find_sqlid(m->session->tr, find_sql_column(user_info, "default_schema"), rid);
-	if (!is_int_nil(schema_id)) {
-		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas, "id"), &schema_id, NULL);
-		if (!is_oid_nil(rid)) {
-			str sname = store->table_api.column_find_string_start(m->session->tr, find_sql_column(schemas, "name"), rid, &cbat);
-			*schema = sa_strdup(m->session->sa, sname);
-			store->table_api.column_find_string_end(cbat);
-		}
-	}
-	return 0;
+	if (is_int_nil(schema_id))
+		return -3;
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas, "id"), &schema_id, NULL);
+	if (is_oid_nil(rid))
+		return -3;
+
+	if (!(sname = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas, "name"), rid)))
+		return -1;
+	*schema = sa_strdup(m->session->sa, sname);
+	_DELETE(sname);
+	return *schema ? 0 : -1;
 }
 
 int
@@ -608,14 +611,13 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
 	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, err = NULL;
-	void *p = 0;
 	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
 
 	if ((err = AUTHresolveUser(&username, user)) != MAL_SUCCEED) {
 		freeException(err);
-		return -2;
+		return -1;
 	}
 
 	if ((res = mvc_trans(m)) < 0) {
@@ -638,10 +640,12 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return -2;
 	}
 	schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
-
-	p = store->table_api.column_find_value(m->session->tr, users_schema_path, rid);
-	assert(p);
-	schema_path = (str) p;
+	if (!(schema_path = store->table_api.column_find_value(m->session->tr, users_schema_path, rid))) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		return -1;
+	}
 
 	schemas = find_sql_table(m->session->tr, sys, "schemas");
 	schemas_name = find_sql_column(schemas, "name");
@@ -658,7 +662,13 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		_DELETE(schema_path);
 		return -3;
 	}
-	schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
+	if (!(schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid))) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		_DELETE(schema_path);
+		return -1;
+	}
 	schema_cpy = schema;
 	schema = sa_strdup(m->session->sa, schema);
 	_DELETE(schema_cpy);
@@ -683,7 +693,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		freeException(path_err);
 		return ok == 0 ? -3 : -1;
 	}
-	
+
 	/* reset the user and schema names */
 	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
 		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||

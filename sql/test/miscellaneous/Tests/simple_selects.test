@@ -294,7 +294,7 @@ select cast(cast(1 as interval second) as boolean)
 statement error
 select cast(cast(1 as interval month) as boolean)
 
-query T rowsort
+query I rowsort
 select cast(null as blob) > cast(null as blob)
 ----
 NULL
@@ -334,7 +334,7 @@ select md5(null)
 ----
 NULL
 
-query TTTTTTTTTTTT rowsort
+query IIIIIIIIIIII rowsort
 select 'a' like null, null like 'a', null like null, 'a' ilike null, null ilike 'a', null ilike null,
        'a' not like null, null not like 'a', null not like null, 'a' not ilike null, null not ilike 'a', null not ilike null; --all NULL
 ----
@@ -357,7 +357,7 @@ create table x (x varchar(32))
 statement ok
 insert into x values (null), ('a')
 
-query TTTTTTTTTTTT rowsort
+query IIIIIIIIIIII rowsort
 select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
        x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x
 ----
@@ -386,23 +386,23 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 select x like null from x
 ----
 NULL
 NULL
 
-query TTTT rowsort
+query IIII rowsort
 select x like x, x ilike x, x not like x, x not ilike x from x
 ----
+1
+1
+0
+0
 NULL
 NULL
 NULL
 NULL
-True
-True
-False
-False
 
 query T rowsort
 select x1.x from x x1 inner join x x2 on x1.x not like x2.x
@@ -668,10 +668,10 @@ plan select x as z, 2 from (select 1) as x(x) group by z, z
 project (
 | group by (
 | | project (
-| | |  [ boolean "true" ]
-| | ) [ tinyint "1" as "x"."x" ]
+| | |  [ boolean(1) "true" ]
+| | ) [ tinyint(1) "1" as "x"."x" ]
 | ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
-) [ "z" NOT NULL, tinyint "2" ]
+) [ "z" NOT NULL, tinyint(2) "2" ]
 
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) group by z
@@ -753,7 +753,7 @@ select ups()
 2
 
 statement ok
-create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end
+create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; return 1; end
 
 query I rowsort
 select ups()
@@ -761,7 +761,7 @@ select ups()
 1
 
 statement ok
-create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end
+create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; return 3; end
 
 query I rowsort
 select ups()
@@ -853,4 +853,31 @@ select nasty()
 3
 
 statement ok
+create view v0(c0) as (select 1)
+
+statement ok
+create view v1(c0) as (select 1 + c0 from v0)
+
+statement error 42000!CREATE OR REPLACE VIEW: cannot replace VIEW 'v0', there are database objects which depend on it
+create or replace view v0(c0) as (select 'nope')
+
+statement ok
 rollback
+
+statement error CREATE FUNCTION: missing return statement
+CREATE FUNCTION wrongfunc() RETURNS INT
+BEGIN
+	WHILE (FALSE) DO
+		RETURN 1;
+	END WHILE;
+END
+
+statement error 42000!Null step size not allowed
+select * from generate_series(timestamp '2010-01-01', timestamp '2010-01-01', null)
+
+statement error
+select json 'iamwrongjson'
+
+statement error
+select inet '192.168.1.0/26 thisstringshouldnotbehere'
+

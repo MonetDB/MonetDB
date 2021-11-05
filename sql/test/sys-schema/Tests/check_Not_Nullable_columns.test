@@ -102,10 +102,6 @@ query ITTTTIIIIIIII rowsort
 SELECT "typewidth", * FROM "sys"."storagemodelinput" WHERE "typewidth" IS NULL
 ----
 
-query II rowsort
-SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL
-----
-
 query IIT rowsort
 SELECT "table_type_id", * FROM "sys"."table_types" WHERE "table_type_id" IS NULL
 ----

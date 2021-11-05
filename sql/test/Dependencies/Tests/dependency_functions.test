@@ -47,9 +47,6 @@ describe_type
 describe_columns
 DEP_FUNC
 dq
-fqn
-DEP_FUNC
-dq
 get_merge_table_partition_expressions
 DEP_FUNC
 dq
@@ -66,9 +63,6 @@ f2
 DEP_FUNC
 f1
 f3
-DEP_FUNC
-fqn
-alter_table
 DEP_FUNC
 fqn
 schema_guard
@@ -117,9 +111,6 @@ describe_type
 describe_columns
 DEP_FUNC
 dq
-fqn
-DEP_FUNC
-dq
 get_merge_table_partition_expressions
 DEP_FUNC
 dq
@@ -127,9 +118,6 @@ prepare_esc
 DEP_FUNC
 dump_table_data
 dump_database
-DEP_FUNC
-fqn
-alter_table
 DEP_FUNC
 fqn
 schema_guard

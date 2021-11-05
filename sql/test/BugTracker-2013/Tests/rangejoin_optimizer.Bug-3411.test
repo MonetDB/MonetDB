@@ -9,9 +9,9 @@ WHERE t2.a between t1.a and t1.b
 ----
 project (
 | join (
-| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ] COUNT ,
-| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
+| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
+| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
+| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
 ) [ "t2"."a" ]
 
 query T nosort
@@ -23,9 +23,9 @@ AND   t2.a <= t1.b
 ----
 project (
 | join (
-| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ] COUNT ,
-| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
+| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
+| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
+| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
 ) [ "t2"."a" ]
 
 query T nosort
@@ -37,9 +37,9 @@ AND   t1.b >= t2.a
 ----
 project (
 | join (
-| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ] COUNT ,
-| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
+| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ],
+| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ]
+| ) [ ("t1"."a") <= ("t2"."a") <= ("t1"."b") ]
 ) [ "t2"."a" ]
 
 statement ok

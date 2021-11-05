@@ -53,7 +53,6 @@
 #define finalizeResult(X,Y,Z)					\
 	do {										\
 		BATsetcount((Y), (Y)->batCount);		\
-		(Y)->theap->dirty |= (Y)->batCount > 0;	\
 		*(X) = (Y)->batCacheid;					\
 		BBPkeepref(*(X));						\
 		BBPunfix((Z)->batCacheid);				\
@@ -1042,7 +1041,6 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKfree(buf);
 	BATsetcount(bn, bn->batCount);
-	bn->theap->dirty |= bn->batCount > 0;
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	for (i = pci->retc; i < pci->argc; i++) {

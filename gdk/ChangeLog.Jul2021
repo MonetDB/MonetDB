@@ -1,10 +1,3 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
-- When appending to a string bat, we made an optimization where the string
-  heap was sometimes copied completely to avoid having to insert strings
-  individually.  This copying was still done too eagerly, so now the
-  string heap is copied less frequently.  In particular, when appending
-  to an empty bat, the string heap is now not always copied whole.
-

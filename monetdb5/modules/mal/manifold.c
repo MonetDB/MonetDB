@@ -344,11 +344,6 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	msg = MANIFOLDjob(&mut);
 	freeInstruction(mut.pci);
 
-	// consolidate the properties
-	if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
-		BATsetcount(mat[0].b,cnt);
-	BATsettrivprop(mat[0].b);
-	BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types
 	for (i = pci->retc; i < pci->argc; i++){
@@ -356,6 +351,15 @@ wrapup:
 			bat_iterator_end(&mat[i].bi);
 			BBPunfix(mat[i].b->batCacheid);
 		}
+	}
+	if (msg) {
+		BBPreclaim(mat[0].b);
+	} else if (!msg) {
+		// consolidate the properties
+		if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
+			BATsetcount(mat[0].b,cnt);
+		BATsettrivprop(mat[0].b);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
 	}
 	GDKfree(mat);
 	return msg;

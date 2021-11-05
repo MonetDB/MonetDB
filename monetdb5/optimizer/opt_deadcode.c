@@ -15,30 +15,29 @@ str
 OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, se,limit, slimit;
-	InstrPtr p=0, *old= mb->stmt;
+	InstrPtr p=0, *old= NULL;
 	int actions = 0;
 	int *varused=0;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
-	(void) pci;
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
 	varused = GDKzalloc(mb->vtop * sizeof(int));
 	if (varused == NULL)
-		return MAL_SUCCEED;
+		goto wrapup;
 
+	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapup;
+		GDKfree(varused);
+		throw(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	//mnstr_printf(cntxt->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -106,25 +105,23 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		}
 	}
+	/* save the free instructions records for later */
 	for(; i<slimit; i++)
-		if( old[i])
-			freeInstruction(old[i]);
-    /* Defense line against incorrect plans */
+		if(old[i]){
+			pushInstruction(mb,old[i]);
+		}
+	/* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
-        // no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);
-    if( actions > 0){
-	msg = chkFlow(mb);
-        if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);
-    newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
-
+		// no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( actions > 0){
+		msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
 wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
+
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
 	return msg;

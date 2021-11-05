@@ -241,7 +241,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
-	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
 	(void) cntxt;														\
 	(void) mb;															\
@@ -249,6 +248,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	b2 = BATdescriptor(*bid2);											\
 	b1i = bat_iterator(b1);												\
 	b2i = bat_iterator(b2);												\
+	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 	if (b1 == NULL || b2 == NULL) {										\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
