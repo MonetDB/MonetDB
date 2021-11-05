@@ -292,103 +292,6 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, const char *prev_schema)
 }
 
 static str
-sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
-{
-	size_t bufsize = 3000, pos = 0;
-	char *buf, *err;
-	sql_schema *s = mvc_bind_schema(sql, "sys");
-	sql_table *t;
-
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-
-	/* 15_querylog.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure sys.querylog_enable(smallint);\n"
-			"create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;\n"
-			"update sys.functions set system = true where system <> true and name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
-			(int) F_PROC);
-
-	/* 17_temporal.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.date_trunc(txt string, t timestamp)\n"
-			"returns timestamp\n"
-			"external name sql.date_trunc;\n"
-			"grant execute on function sys.date_trunc(string, timestamp) to public;\n"
-			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", (int) F_FUNC);
-
-	/* 22_clients.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create procedure sys.setprinttimeout(\"timeout\" integer)\n"
-			"external name clients.setprinttimeout;\n"
-			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", (int) F_PROC);
-
-	/* 26_sysmon.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"grant execute on function sys.queue to public;\n"
-			"grant select on sys.queue to public;\n");
-
-	/* 51_sys_schema_extensions.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"INSERT INTO sys.keywords VALUES ('WINDOW');\n"
-		);
-	t = mvc_bind_table(sql, s, "var_values");
-	t->system = 0;	/* make it non-system else the drop view will fail */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"DROP VIEW sys.var_values;\n"
-			"CREATE VIEW sys.var_values (var_name, value) AS\n"
-			"SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL\n"
-			"SELECT 'current_role', current_role UNION ALL\n"
-			"SELECT 'current_schema', current_schema UNION ALL\n"
-			"SELECT 'current_timezone', current_timezone UNION ALL\n"
-			"SELECT 'current_user', current_user UNION ALL\n"
-			"SELECT 'debug', debug UNION ALL\n"
-			"SELECT 'last_id', last_id UNION ALL\n"
-			"SELECT 'optimizer', optimizer UNION ALL\n"
-			"SELECT 'pi', pi() UNION ALL\n"
-			"SELECT 'rowcnt', rowcnt;\n"
-			"UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
-			"GRANT SELECT ON sys.var_values TO PUBLIC;\n");
-
-	/* 99_system.sql */
-	t = mvc_bind_table(sql, s, "systemfunctions");
-	t->system = 0;
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop table sys.systemfunctions;\n"
-			"create view sys.systemfunctions as select id as function_id from sys.functions where system;\n"
-			"grant select on sys.systemfunctions to public;\n"
-			"update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');\n");
-	/* update type of "query" attribute of tables sys._tables and
-	 * tmp_tables from varchar(2048) to varchar(1048576) */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = '_tables' and t.schema_id in (select id from sys.schemas s where s.name in ('sys', 'tmp')));\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = 'tables' and t.schema_id in (select id from sys.schemas s where s.name = 'sys'));\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	if (err == MAL_SUCCEED) {
-		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
-			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
-
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-		assert(pos < bufsize);
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	}
-
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
 sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema, bool oct2020_upgrade)
 {
 	size_t bufsize = 20000, pos = 0;
@@ -728,63 +631,6 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema, bool oct202
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_apr2019_sp1(Client c)
-{
-	char *err, *qry = "select c.id from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o "
-		"where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 "
-		"and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id);";
-	res_table *output = NULL;
-
-	/* Determine if missing dependency table entry for unique keys
-	 * is required */
-	err = SQLstatementIntern(c, qry, "update", true, false, &output);
-	if (err == NULL) {
-		BAT *b = BATdescriptor(output->cols[0].b);
-		if (b) {
-			if (BATcount(b) > 0) {
-				/* required update for changeset 23e1231ada99 */
-				qry = "insert into sys.dependencies (select c.id as id, k.id as depend_id, dt.dependency_type_id as depend_type from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id));\n";
-				printf("Running database upgrade commands:\n%s\n", qry);
-				err = SQLstatementIntern(c, qry, "update", true, false, NULL);
-			}
-			BBPunfix(b->batCacheid);
-		}
-		res_tables_destroy(output);
-	}
-
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err;
-
-	if (buf == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (!*systabfixed) {
-		sql_fix_system_tables(c, sql, prev_schema);
-		*systabfixed = true;
-	}
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-
-	/* 11_times.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure sys.times();\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
@@ -4277,7 +4123,6 @@ SQLupgrades(Client c, mvc *m)
 	sql_subfunc *f;
 	char *err, *prev_schema = GDKstrdup(get_string_global_var(m, "current_schema"));
 	sql_schema *s = mvc_bind_schema(m, "sys");
-	sql_table *t;
 	bool systabfixed = false;
 
 	if (prev_schema == NULL) {
@@ -4332,61 +4177,6 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m, s->base.name, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
-	} else {
-		m->session->status = 0; /* if the function was not found clean the error */
-		m->errstr[0] = '\0';
-	}
-
-
-	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
-	    t->type == tt_table) {
-		if (!systabfixed &&
-		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
-		systabfixed = true;
-		if ((err = sql_update_apr2019(c, m, prev_schema)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
-	}
-
-	/* when function storagemodel() exists and views tablestorage
-	 * and schemastorage don't, then upgrade storagemodel to match
-	 * 75_storagemodel.sql */
-	if (sql_bind_func(m, s->base.name, "storagemodel", NULL, NULL, F_UNION)
-	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
-	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
-		if ((err = sql_update_storagemodel(c, m, prev_schema, false)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
-	} else {
-		m->session->status = 0; /* if the function was not found clean the error */
-		m->errstr[0] = '\0';
-	}
-
-	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
-	}
-
-	if (sql_bind_func(m, s->base.name, "times", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);
