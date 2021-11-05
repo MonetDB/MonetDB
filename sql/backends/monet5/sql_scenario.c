@@ -474,9 +474,9 @@ SQLinit(Client c)
 		 * if it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
 		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-			sql_schema *s = mvc_bind_schema(m, "sys");
-			sql_trigger *tri = s ? mvc_bind_trigger(m, s, "system_update_tables") : NULL;
-			if (tri == NULL)
+			/* TODO there's a going issue with loading triggers due to system tables,
+			   so at the moment check for existence of 'logging' schema from 81_tracer.sql */
+			if (!mvc_bind_schema(m, "logging"))
 				store->first = 1;
 			msg = mvc_rollback(m, 0, NULL, false);
 		}
