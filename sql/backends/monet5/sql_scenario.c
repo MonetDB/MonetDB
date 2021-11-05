@@ -479,13 +479,13 @@ SQLinit(Client c)
 	/* initialize the database with predefined SQL functions */
 	sqlstore *store = SQLstore;
 	if (store->first == 0) {
-		/* check whether table sys.systemfunctions exists: if
-		 * it doesn't, this is probably a restart of the
+		/* check whether last created object trigger sys.system_update_tables (from 99_system.sql) exists.
+		 * if it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
 		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-			sql_schema *s = mvc_bind_schema(m, "sys");
-			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-			if (t == NULL)
+			/* TODO there's a going issue with loading triggers due to system tables,
+			   so at the moment check for existence of 'logging' schema from 81_tracer.sql */
+			if (!mvc_bind_schema(m, "logging"))
 				store->first = 1;
 			msg = mvc_rollback(m, 0, NULL, false);
 		}
@@ -513,8 +513,6 @@ SQLinit(Client c)
 				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
 				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
 				update sys.functions set system = true; \
-				create view sys.systemfunctions as select id as function_id from sys.functions where system; \
-				grant select on sys.systemfunctions to public; \
 				update sys._tables set system = true; \
 				update sys.schemas set system = true; \
 				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \

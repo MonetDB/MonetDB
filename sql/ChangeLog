@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Nov  4 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Removed deprecated system view sys.systemfunctions. It was marked
+  as deprecated from release Apr2019 (11.33.3).  Use query:
+    select id as function_id from sys.functions where system;
+  to get the same data as the old view.
+
 * Thu Oct 21 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Extended SQL system catalog with lookup table sys.fkey_actions and
   view sys.fkeys to provide user friendly querying of existing foreign
