@@ -19,7 +19,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
-                        args=["--set", "gdk_nr_threads=2", "--forcemito"],
+                        args=["--set", "gdk_nr_threads=2", "--forcemito",
+                              "--loadmodule", "udf"],
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s:

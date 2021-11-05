@@ -44,6 +44,10 @@ dependency_types_dependency_type_name_unique
 0
 dependency_types_dependency_type_name_unique
 1
+fkey_actions_action_id_pkey
+0
+fkey_actions_action_id_pkey
+0
 function_languages_language_id_pkey
 0
 function_languages_language_id_pkey
@@ -122,6 +126,10 @@ dependency_types_dependency_type_name_unique
 0
 dependency_types_dependency_type_name_unique
 1
+fkey_actions_action_id_pkey
+0
+fkey_actions_action_id_pkey
+0
 function_languages_language_id_pkey
 0
 function_languages_language_id_pkey
@@ -207,7 +215,7 @@ PLAN select count(distinct a) from dummyme group by b
 ----
 project (
 | group by (
-| | table("sys"."dummyme") [ "dummyme"."b" ] COUNT 
+| | table("sys"."dummyme") [ "dummyme"."b" ]
 | ) [ "dummyme"."b" ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -222,7 +230,7 @@ plan select count(distinct b) from dummyme
 ----
 project (
 | group by (
-| | table("sys"."dummyme") [ "dummyme"."b" ] COUNT 
+| | table("sys"."dummyme") [ "dummyme"."b" ]
 | ) [  ] [ "sys"."count" unique  no nil ("dummyme"."b") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -237,8 +245,8 @@ PLAN select count(distinct a + 1) from dummyme
 project (
 | group by (
 | | project (
-| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", "sys"."sql_add"("%3"."%3" NOT NULL, bigint "1") NOT NULL as "%2"."%2" ]
+| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ bigint(33)["dummyme"."a" NOT NULL UNIQUE HASHCOL ] NOT NULL as "%3"."%3", "sys"."sql_add"("%3"."%3" NOT NULL, bigint(33) "1") NOT NULL as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -253,8 +261,8 @@ PLAN select count(distinct a + b) from dummyme
 project (
 | group by (
 | | project (
-| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", bigint["dummyme"."b"] as "%4"."%4", "sys"."sql_add"("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
+| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b" ]
+| | ) [ bigint(33)["dummyme"."a" NOT NULL UNIQUE HASHCOL ] NOT NULL as "%3"."%3", bigint(33)["dummyme"."b"] as "%4"."%4", "sys"."sql_add"("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -269,8 +277,8 @@ PLAN select count(distinct abs(a)) from dummyme
 project (
 | group by (
 | | project (
-| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| | ) [ "sys"."abs"("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%2"."%2" ]
+| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ "sys"."abs"("dummyme"."a" NOT NULL UNIQUE HASHCOL ) NOT NULL as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -285,8 +293,8 @@ PLAN select count(abs(a)) from dummyme
 project (
 | group by (
 | | project (
-| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| | ) [ "sys"."abs"("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%2"."%2" ]
+| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ "sys"."abs"("dummyme"."a" NOT NULL UNIQUE HASHCOL ) NOT NULL as "%2"."%2" ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -300,7 +308,7 @@ PLAN select count(a) as x, count(*) as y from dummyme
 ----
 project (
 | group by (
-| | table("sys"."dummyme") [ "dummyme"."%TID%" NOT NULL ] COUNT 
+| | table("sys"."dummyme") [ "dummyme"."%TID%" NOT NULL UNIQUE ]
 | ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1", "%1"."%1" NOT NULL as "%2"."%2" ]
 ) [ "%1"."%1" NOT NULL as "x", "%2"."%2" NOT NULL as "y" ]
 

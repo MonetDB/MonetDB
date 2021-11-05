@@ -43,8 +43,8 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 /*strings */
 #ifdef MEL_STR
 
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 
 /* ARGC = arg-count + ret-count */
 //#define args(RETC,ARGC,...) (mel_arg[ARGC?ARGC:1]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -76,9 +76,8 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 		unsafe:1,
 		retc:6,
 		argc:6;
-//#ifdef NDEBUG
-	//char *comment;
-//#endif
+// comment on MAL instructions should also be available when TRACEing the queries
+	char *comment;
 	fptr imp;
 	const mel_arg *args;
 } mel_func;
@@ -86,11 +85,11 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 #else
 
 //#ifdef NDEBUG
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 //#else
-//#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS }
-//#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS }
+//#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
+//#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
 //#endif
 
 #define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -118,9 +117,8 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 		unsafe:1,
 		retc:6,
 		argc:6;
-//#ifdef NDEBUG
-	//char *comment;
-//#endif
+// comment on MAL instructions should also be available when TRACEing the queries
+	char *comment;
 	fptr imp;
 	mel_arg args[20];
 } mel_func;

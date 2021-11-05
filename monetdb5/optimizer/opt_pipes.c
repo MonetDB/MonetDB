@@ -49,10 +49,10 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();" 
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
@@ -91,7 +91,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -99,6 +98,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 	{"default_fast",
 	 "optimizer.defaultfast()",
@@ -132,7 +132,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -141,6 +140,7 @@ static struct PIPELINES {
 	 "optimizer.oltp();"
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
@@ -171,7 +171,6 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -179,6 +178,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
@@ -214,7 +214,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -222,6 +221,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
@@ -256,7 +256,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
@@ -264,6 +263,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "optimizer.profiler();"
 	 "stable", NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
@@ -519,12 +519,12 @@ compileOptimizer(Client cntxt, const char *name)
 str
 compileAllOptimizers(Client cntxt)
 {
-    int i;
-    str msg = MAL_SUCCEED;
+	int i;
+	str msg = MAL_SUCCEED;
 
-    for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
-        msg =compileOptimizer(cntxt,pipes[i].name);
-    }
+	for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
+		msg =compileOptimizer(cntxt,pipes[i].name);
+	}
 	return msg;
 }
 
@@ -568,7 +568,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			// Not needed at this place typeChecker(cntxt->usermodule, mb, p, j, FALSE);
+			// typecheck to get its internal address typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}

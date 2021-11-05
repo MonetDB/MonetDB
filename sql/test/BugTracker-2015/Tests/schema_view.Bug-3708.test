@@ -55,7 +55,7 @@ query T nosort
 PLAN select * from s1.s4
 ----
 project (
-| table("s1"."s3") [ "s3"."x" ] COUNT 
+| table("s1"."s3") [ "s3"."x" ]
 ) [ "s3"."x" as "s4"."x" ]
 
 statement ok
@@ -65,7 +65,7 @@ query T nosort
 PLAN select * from s1.s4
 ----
 project (
-| table("s1"."s3") [ "s3"."x" ] COUNT 
+| table("s1"."s3") [ "s3"."x" ]
 ) [ "s3"."x" as "s4"."x" ]
 
 statement ok

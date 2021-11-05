@@ -341,7 +341,6 @@ main(int argc, char **av)
 
 	modules[mods++] = "sql";
 	modules[mods++] = "generator";
-	modules[mods++] = "opt_sql_append";
 #ifdef HAVE_GEOM
 	modules[mods++] = "geom";
 #endif
@@ -356,7 +355,6 @@ main(int argc, char **av)
 #ifdef HAVE_CUDF
 	modules[mods++] = "capi";
 #endif
-	modules[mods++] = "udf";
 #ifdef HAVE_FITS
 	modules[mods++] = "fits";
 #endif

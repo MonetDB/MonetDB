@@ -118,7 +118,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *ret = getArgReference_bat(stk,p,0);
 	int	pieces;
-	BAT *b, *bb, *bn, *nb;
+	BAT *b, *bb, *bn;
 	size_t newsize;
 
 	(void) cntxt;
@@ -198,13 +198,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		BBPunfix(bb->batCacheid);
 		b->unused--;
-		if (b->unused == 0) {
-			if (!(nb = BATsetaccess(b, BAT_READ))) {
-				BBPunfix(b->batCacheid);
-				throw(MAL, "mat.pack", GDK_EXCEPTION);
-			}
-			b = nb;
-		}
+		if (b->unused == 0 && (b = BATsetaccess(b, BAT_READ)) == NULL)
+			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		if (b->tnil && b->tnonil) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");

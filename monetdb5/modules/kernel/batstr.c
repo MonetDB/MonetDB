@@ -1449,13 +1449,25 @@ bailout:
 static str
 STRbatLower(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_str(cntxt, mb, stk, pci, "batstr.lower", str_lower);
+	str msg = MAL_SUCCEED;
+
+	if ((msg = str_case_hash_lock(false)))
+		return msg;
+	msg = do_batstr_str(cntxt, mb, stk, pci, "batstr.lower", str_lower);
+	str_case_hash_unlock(false);
+	return msg;
 }
 
 static str
 STRbatUpper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_str(cntxt, mb, stk, pci, "batstr.upper", str_upper);
+	str msg = MAL_SUCCEED;
+
+	if ((msg = str_case_hash_lock(true)))
+		return msg;
+	msg = do_batstr_str(cntxt, mb, stk, pci, "batstr.upper", str_upper);
+	str_case_hash_unlock(true);
+	return msg;
 }
 
 static str

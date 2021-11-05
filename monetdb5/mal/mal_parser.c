@@ -422,13 +422,8 @@ cstToken(Client cntxt, ValPtr cst)
 		/* JSON Literal */
 		break;
 	case '"':
-		cst->vtype = TYPE_str;
 		i = stringLength(cntxt);
-		cst->val.sval = strCopy(cntxt, i);
-		if (cst->val.sval)
-			cst->len = strlen(cst->val.sval);
-		else
-			cst->len = 0;
+		VALset(cst, TYPE_str, strCopy(cntxt, i));
 		return i;
 	case '-':
 		i++;
@@ -969,7 +964,7 @@ parseAtom(Client cntxt)
 		tpe = parseTypeId(cntxt, TYPE_int);
 	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
-			GDKfree(cntxt->curprg->def->errors);
+			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
 	}
 	if( strcmp(modnme,"user"))
@@ -1301,7 +1296,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		if( msg && ! cntxt->curprg->def->errors)
 			cntxt->curprg->def->errors = msg;
 		if(cntxt->curprg->def->errors)
-			GDKfree(cntxt->curprg->def->errors);
+			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;
@@ -1823,9 +1818,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				}
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
-				cst.vtype = TYPE_str;
-				cst.len = strlen(start);
-				if((cst.val.sval = GDKstrdup(start)) == NULL) {
+				if (VALinit(&cst, TYPE_str, start) == NULL) {
 					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
 					continue;
@@ -1836,7 +1829,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 					continue;
 				}
 				getArg(curInstr, 0) = cstidx;
-				clrVarConstant(curBlk, getArg(curInstr, 0));
 				setVarDisabled(curBlk, getArg(curInstr, 0));
 				pushInstruction(curBlk, curInstr);
 			}

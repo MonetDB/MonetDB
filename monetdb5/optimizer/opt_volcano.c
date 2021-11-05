@@ -23,25 +23,24 @@
 str
 OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit;
+	int i, limit, actions = 0;
 	int mvcvar = -1;
 	int count=0;
-	InstrPtr p,q, *old = mb->stmt;
-	char buf[256];
-	lng usec = GDKusec();
+	InstrPtr p,q, *old = NULL;
 	str msg = MAL_SUCCEED;
 
-	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		return MAL_SUCCEED;
+		goto wrapup;
 
+	old = mb->stmt;
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
 		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+	actions = 1;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
@@ -93,19 +92,16 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
-    if( count){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
-    newComment(mb,buf);
-	if( count > 0)
-		addtoMalBlkHistory(mb);
+	/* Defense line against incorrect plans */
+	if( count){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+wrapup:
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }

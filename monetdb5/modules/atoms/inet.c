@@ -803,12 +803,6 @@ mel_func inet_init_funcs[] = {
  command("inet", "abbrev", INETabbrev, false, "Abbreviated display format as text", args(1,2, arg("",str),arg("",inet))),
  command("calc", "inet", INET_inet, false, "Convert a inet to an inet", args(1,2, arg("",inet),arg("s",inet))),
  command("calc", "inet", INET_fromstr, false, "Convert a string to an inet", args(1,2, arg("",inet),arg("s",str))),
- command("calc", "==", INET_comp_EQ, false, "Equality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", "!=", INET_comp_NEQ, false, "Inequality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", "<", INET_comp_LT, false, "Whether v is less than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", ">", INET_comp_GT, false, "Whether v is greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", "<=", INET_comp_LE, false, "Whether v is less than or equal to w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
- command("calc", ">=", INET_comp_GE, false, "Whether v is equal to or greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
  { .imp=NULL }
 };
 #include "mal_import.h"

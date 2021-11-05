@@ -402,11 +402,9 @@ SQLinit(Client c)
 		return MAL_SUCCEED;
 	}
 
-	be_funcs = (backend_functions) {
-		.fcode = &monet5_freecode,
-		.fresolve_function = &monet5_resolve_function,
-		.fhas_module_function = &monet5_has_module,
-	};
+	be_funcs.fcode = &monet5_freecode,
+	be_funcs.fresolve_function = &monet5_resolve_function,
+	be_funcs.fhas_module_function = &monet5_has_module,
 	monet5_user_init(&be_funcs);
 
 	if (debug_str)
@@ -472,13 +470,13 @@ SQLinit(Client c)
 	/* initialize the database with predefined SQL functions */
 	sqlstore *store = SQLstore;
 	if (store->first == 0) {
-		/* check whether table sys.systemfunctions exists: if
-		 * it doesn't, this is probably a restart of the
+		/* check whether last created object trigger sys.system_update_tables (from 99_system.sql) exists.
+		 * if it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
 		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-			sql_schema *s = mvc_bind_schema(m, "sys");
-			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-			if (t == NULL)
+			/* TODO there's a going issue with loading triggers due to system tables,
+			   so at the moment check for existence of 'logging' schema from 81_tracer.sql */
+			if (!mvc_bind_schema(m, "logging"))
 				store->first = 1;
 			msg = mvc_rollback(m, 0, NULL, false);
 		}
@@ -506,8 +504,6 @@ SQLinit(Client c)
 				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
 				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
 				update sys.functions set system = true; \
-				create view sys.systemfunctions as select id as function_id from sys.functions where system; \
-				grant select on sys.systemfunctions to public; \
 				update sys._tables set system = true; \
 				update sys.schemas set system = true; \
 				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
@@ -654,13 +650,18 @@ SQLtrans(mvc *m)
 		}
 		s = m->session;
 		if (!s->schema) {
-			if (monet5_user_get_def_schema(m, m->user_id, &s->schema_name) < 0) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
-			}
-			if (!s->schema_name) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			switch (monet5_user_get_def_schema(m, m->user_id, &s->schema_name)) {
+				case -1:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user was not found in the database, this session is going to terminate");
+				case -3:
+					mvc_cancel_session(m);
+					throw(SQL, "sql.trans", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				default:
+					break;
 			}
 			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
 				mvc_cancel_session(m);
@@ -1172,6 +1173,17 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
+			if (be->subbackend && be->subbackend->check(be->subbackend, r)) {
+				res_table *rt = NULL;
+				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+					if (rt) {
+						rt->next = be->results;
+						be->results = rt;
+					}
+					return NULL;
+				}
+			}
+
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
@@ -1302,6 +1314,8 @@ str
 SQLengine(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
+	if (be && be->subbackend)
+		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
 }
 

@@ -188,8 +188,13 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		restrict_t mode = (restrict_t) b->batRestricted;
+		BBPunfix(b->batCacheid);
+		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+	}
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -250,8 +255,13 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((b = BATsetaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (isVIEW(b)) {
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		restrict_t mode = (restrict_t) b->batRestricted;
+		BBPunfix(b->batCacheid);
+		if (bn == NULL || (b = BATsetaccess(bn, mode)) == NULL)
+			throw(MAL, "bat.append", GDK_EXCEPTION);
+	}
 	derefStr(b, u);
 	if (BUNappend(b, u, force ? *force : false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -601,6 +611,25 @@ BKCgetSize(lng *tot, const bat *bid){
 	return MAL_SUCCEED;
 }
 
+static str
+BKCgetVHeapSize(lng *tot, const bat *bid){
+	BAT *b;
+	lng size = 0;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getVHeapSize", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (ATOMvarsized(b->ttype)) {
+		MT_lock_set(&b->theaplock);
+		if (b->tvheap)
+			size += b->tvheap->size;
+		MT_lock_unset(&b->theaplock);
+	}
+
+	*tot = size;
+	BBPunfix(*bid);
+	return MAL_SUCCEED;
+}
+
 /*
  * Synced BATs
  */
@@ -790,7 +819,7 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		const Type *restrict in = (Type*)bi.base;	\
+		const Type *in = (Type*)bi.base;			\
 		Type *restrict r = (Type*)Tloc(bn, 0);		\
 		for (;p<q; oidx++, p++) {					\
 			if ( o < ol && *o == oidx ){			\
@@ -854,6 +883,11 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		uint16_t width = bi.width;
 
 		switch (width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "bat.shrink", SQLSTATE(42000) "bat.shrink not available for 0 width types");
 		case 1:shrinkloop(bte); break;
 		case 2:shrinkloop(sht); break;
 		case 4:shrinkloop(int); break;
@@ -865,6 +899,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 			const int8_t *restrict src = (int8_t*) bi.base;
 			int8_t *restrict dst = (int8_t*) Tloc(bn, 0);
 
+			assert(b->ttype != TYPE_oid); /* because of 'restrict', the oid case can't fall here */
 			for (;p<q; oidx++, p++) {
 				if (o < ol && *o == oidx) {
 					o++;
@@ -1014,12 +1049,18 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bs->batCacheid);
-				throw(MAL, "bat.shrink", GDK_EXCEPTION);
+				throw(MAL, "bat.reuse", GDK_EXCEPTION);
 			}
 		}
 	} else {
 		BUN n = 0;
 		switch (bi.width) {
+		case 0:
+			bat_iterator_end(&bi);
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bs->batCacheid);
+			throw(MAL, "bat.reuse", SQLSTATE(42000) "bat.reuse not available for 0 width types");
 		case 1:
 			reuseloop(bte);
 			break;
@@ -1212,6 +1253,7 @@ mel_func bat5_init_funcs[] = {
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
  command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
  command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes\nrounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),
+ command("bat", "getVHeapSize", BKCgetVHeapSize, false, "Calculate the vheap size for varsized bats", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getCapacity", BKCgetCapacity, false, "Returns the current allocation size (in max number of elements) of a BAT.", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getColumnType", BKCgetColumnType, false, "Returns the type of the tail column of a BAT, as an integer type number.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getRole", BKCgetRole, false, "Returns the rolename of the head column of a BAT.", args(1,2, arg("",str),batargany("bid",1))),

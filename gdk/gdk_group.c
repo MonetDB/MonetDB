@@ -73,7 +73,7 @@
 		if (ngrp == maxgrps) {					\
 			/* we need to extend extents and histo bats, */	\
 			/* do it at most once */			\
-			maxgrps = BATcount(b);				\
+			maxgrps = bi.count;				\
 			if (extents) {					\
 				BATsetcount(en, ngrp);			\
 				if (BATextend(en, maxgrps) != GDK_SUCCEED) \
@@ -622,7 +622,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN lo = 0;
 	struct canditer ci;
 	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
-	const ValRecord *prop;
 	lng t0 = 0;
 	const char *algomsg = "";
 	bool locked = false;
@@ -699,11 +698,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		else if (BATtrevordered(g))
 			maxgrp = * (oid *) Tloc(g, 0);
 		else {
-			MT_lock_set(&b->theaplock);
-			prop = BATgetprop_nolock(g, GDK_MAX_VALUE);
-			if (prop)
-				maxgrp = prop->val.oval;
-			MT_lock_unset(&b->theaplock);
+			/* group bats are not modified in parallel, so
+			 * no need for locks */
+			if (g->tmaxpos != BUN_NONE)
+				maxgrp = BUNtoid(g, g->tmaxpos);
 			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
 				BATmax(&maxgrp, g, s);
 			}
@@ -758,14 +756,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, false, TRANSIENT);
 			if (gn == NULL)
 				goto error;
-			if (!is_oid_nil(maxgrp)) {
-				prop = BATgetprop(g, GDK_MAX_VALUE);
-				if (prop)
-					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
-				prop = BATgetprop(g, GDK_MAX_POS);
-				if (prop)
-					BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &prop->val.oval);
-			}
 
 			*groups = gn;
 			if (extents) {
@@ -808,8 +798,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
 		MT_lock_set(&b->theaplock);
-		if ((prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL)
-			maxgrps = prop->val.oval;
+		if (b->tunique_est != 0)
+			maxgrps = (BUN) b->tunique_est;
 		else
 			maxgrps = cnt / 10;
 		MT_lock_unset(&b->theaplock);
@@ -975,15 +965,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* byte-sized values, use 256 entry array to keep
 		 * track of doled out group ids; note that we can't
 		 * possibly have more than 256 groups, so the group id
-		 * fits in an unsigned char */
-		unsigned char *restrict bgrps = GDKmalloc(256);
-		const unsigned char *restrict w = (const unsigned char *) bi.base;
-		unsigned char v;
+		 * fits in an uint8_t */
+		uint8_t bgrps[256];
+		const uint8_t *restrict w = (const uint8_t *) bi.base;
+		uint8_t v;
 
 		algomsg = "byte-sized groups -- ";
-		if (bgrps == NULL)
-			goto error1;
-		memset(bgrps, 0xFF, 256);
+		memset(bgrps, 0xFF, sizeof(bgrps));
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
@@ -992,7 +980,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			oid o = canditer_next(&ci);
 			p = o - b->hseqbase;
 			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
-				bgrps[w[p]] = v = (unsigned char) ngrp++;
+				bgrps[w[p]] = v = (uint8_t) ngrp++;
 				maxgrppos = r;
 				if (extents)
 					exts[v] = ci.hseq + r;
@@ -1005,20 +993,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(error));
-		GDKfree(bgrps);
 	} else if (g == NULL && t == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
 		 * track of doled out group ids; note that we can't
 		 * possibly have more than 65536 groups, so the group
-		 * id fits in an unsigned short */
-		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *restrict w = (const unsigned short *) bi.base;
-		unsigned short v;
+		 * id fits in an uint16_t */
+		uint16_t *restrict sgrps = GDKmalloc(65536 * sizeof(short));
+		const uint16_t *restrict w = (const uint16_t *) bi.base;
+		uint16_t v;
 
 		algomsg = "short-sized groups -- ";
 		if (sgrps == NULL)
 			goto error1;
-		memset(sgrps, 0xFF, 65536 * sizeof(short));
+		memset(sgrps, 0xFF, 65536 * sizeof(uint16_t));
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
@@ -1027,7 +1014,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			oid o = canditer_next(&ci);
 			p = o - b->hseqbase;
 			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
-				sgrps[w[p]] = v = (unsigned short) ngrp++;
+				sgrps[w[p]] = v = (uint16_t) ngrp++;
 				maxgrppos = r;
 				if (extents)
 					exts[v] = ci.hseq + r;
@@ -1200,7 +1187,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				const bte *w = (bte *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
-					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
+					(v = ((ulng)grps[r]<<8)|(uint8_t)w[p], hash_lng(hs, &v)),
 					w[p] == w[hb] && grps[r] == grps[q],
 					(void) 0,
 					NOGRPTST);
@@ -1217,7 +1204,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				const sht *w = (sht *) bi.base;
 				GRP_create_partial_hash_table_core(
 					(void) 0,
-					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
+					(v = ((ulng)grps[r]<<16)|(uint16_t)w[p], hash_lng(hs, &v)),
 					w[p] == w[hb] && grps[r] == grps[q],
 					(void) 0,
 					NOGRPTST);
@@ -1307,9 +1294,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
 	gn->tnonil = true;
 	gn->tnil = false;
-	ngrp--;	     /* max value is one less than number of values */
-	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
-	BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &(oid){maxgrppos});
+	gn->tmaxpos = maxgrppos;
 	*groups = gn;
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT

@@ -56,6 +56,7 @@ typedef struct expression {
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,
 	 has_no_nil:1,
+	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
@@ -78,6 +79,7 @@ typedef struct expression {
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
 #define MERGE_LEFT		16 /* used by merge statements */
+#define OUTER_ZERO		32
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
 #define PSM_SET 1
@@ -229,7 +231,10 @@ typedef enum operator_type {
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_anti(e) 		((e)->anti)
+#define is_unique(e)		((e)->unique)
+#define set_unique(e)		(e)->unique = 1
+#define set_not_unique(e)	(e)->unique = 0
+#define is_anti(e) 			((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
@@ -283,7 +288,13 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 used:2;	/* used by rewriters at rel_unnest and rel_dce, so a relation is not modified twice */
+	/*
+	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
+	 * The first two bits are used by rel_unnest modifiers and always reset after.
+	 * The first bit is also used by rel_dce and rel_merge_select_rse optimizers.
+	 * The third bit is used by rel_remote_func only and it's not reset.
+	 */
+	 used:3;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

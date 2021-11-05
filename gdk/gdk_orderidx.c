@@ -76,7 +76,6 @@ BATcheckorderidx(BAT *b)
 
 	if (b == NULL)
 		return false;
-	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */
@@ -93,6 +92,7 @@ BATcheckorderidx(BAT *b)
 				strconcat_len(hp->filename,
 					      sizeof(hp->filename),
 					      nme, ".torderidx", NULL);
+				hp->storage = hp->newstorage = STORE_INVALID;
 
 				/* check whether a persisted orderidx can be found */
 				if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
@@ -139,13 +139,12 @@ createOIDXheap(BAT *b, bool stable)
 {
 	Heap *m;
 	oid *restrict mv;
-	const char *nme;
 
-	nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
-			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
+			  BBP_physical(b->batCacheid), ".torderidx",
+			  NULL) >= sizeof(m->filename) ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
 		GDKfree(m);
 		return NULL;

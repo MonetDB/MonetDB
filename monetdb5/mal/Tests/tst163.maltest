@@ -17,4 +17,5 @@ io.print(i)
 
 statement error
 io.print(j)
-
+----
+nil

@@ -1148,6 +1148,8 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 		} else {
 			while (src[n] && GDKisspace(src[n]))
 				n++;
+			if (f == -0)
+				f = 0;
 			**dst = (flt) f;
 		}
 	}
@@ -1695,6 +1697,7 @@ str
 ATOMunknown_name(int i)
 {
 	assert(i < 0);
+	assert(-i < MAXATOMS);
 	assert(unknown[-i]);
 	return unknown[-i];
 }

@@ -14,9 +14,9 @@ CREATE VIEW sys.dump_create_roles AS
 
 CREATE VIEW sys.dump_create_users AS
   SELECT
-    'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
+    'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||
       sys.sq(sys.password_hash(ui.name)) ||
-      ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;' stmt,
+      ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '"sys"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,
     ui.name user_name
     FROM sys.db_user_info ui, sys.schemas s
    WHERE ui.default_schema = s.id
@@ -25,7 +25,7 @@ CREATE VIEW sys.dump_create_users AS
 
 CREATE VIEW sys.dump_create_schemas AS
   SELECT
-    'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,
+    'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || sys.dq(a.name), ' ') || ';' stmt,
     s.name schema_name
     FROM sys.schemas s, sys.auths a
    WHERE s.authorization = a.id AND s.system = FALSE;
@@ -51,8 +51,7 @@ CREATE VIEW sys.dump_grant_user_privileges AS
 
 CREATE VIEW sys.dump_table_constraint_type AS
   SELECT
-    'ALTER TABLE ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
-      ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
+    'ALTER TABLE ' || sys.FQN(sch, tbl) || ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
       tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ') || ');' stmt,
     sch schema_name,
     tbl table_name,
@@ -63,11 +62,12 @@ CREATE VIEW sys.dump_table_grants AS
   WITH table_grants (sname, tname, grantee, grants, grantor, grantable)
   AS (SELECT s.name, t.name, a.name, sum(p.privileges), g.name, p.grantable
 	FROM sys.schemas s, sys.tables t, sys.auths a, sys.privileges p, sys.auths g
-       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id GROUP BY s.name, t.name, a.name, g.name, p.grantable
+       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id
+       GROUP BY s.name, t.name, a.name, g.name, p.grantable
        ORDER BY s.name, t.name, a.name, g.name, p.grantable)
   SELECT
-    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.dq(sname)
-      || '.' || sys.dq(tname) || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
+    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.FQN(sname, tname)
+      || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
       || CASE WHEN grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     sname schema_name,
     tname table_name,
@@ -76,8 +76,8 @@ CREATE VIEW sys.dump_table_grants AS
 
 CREATE VIEW sys.dump_column_grants AS
   SELECT
-    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON '
-      || sys.dq(s.name) || '.' || sys.dq(t.name) || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
+    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON ' || sys.FQN(s.name, t.name)
+      || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
     t.name table_name,
@@ -110,9 +110,8 @@ CREATE VIEW sys.dump_function_grants AS
   func_args(func_id, func_arg) AS
   (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)
   SELECT
-    'GRANT ' || pc.privilege_code_name || ' ON '
-      || ft.function_type_keyword || ' '
-      || sys.dq(s.name) || '.' || sys.dq(f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
+    'GRANT ' || pc.privilege_code_name || ' ON ' || ft.function_type_keyword || ' '
+      || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
       || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
@@ -136,9 +135,7 @@ CREATE VIEW sys.dump_function_grants AS
 
 CREATE VIEW sys.dump_indices AS
   SELECT
-    'CREATE ' || tpe || ' ' ||
-      sys.DQ(ind) || ' ON ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
-      '(' || GROUP_CONCAT(col) || ');' stmt,
+    'CREATE ' || tpe || ' ' || sys.DQ(ind) || ' ON ' || sys.FQN(sch, tbl) || '(' || GROUP_CONCAT(col) || ');' stmt,
     sch schema_name,
     tbl table_name,
     ind index_name
@@ -153,9 +150,9 @@ CREATE VIEW sys.dump_column_defaults AS
 
 CREATE VIEW sys.dump_foreign_keys AS
   SELECT
-    'ALTER TABLE ' || sys.DQ(fk_s) || '.'|| sys.DQ(fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
+    'ALTER TABLE ' || sys.FQN(fk_s, fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
       'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',') ||') ' ||
-      'REFERENCES ' || sys.DQ(pk_s) || '.' || sys.DQ(pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
+      'REFERENCES ' || sys.FQN(pk_s, pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
       'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
       ';' stmt,
     fk_s foreign_schema_name,
@@ -167,7 +164,7 @@ CREATE VIEW sys.dump_foreign_keys AS
 
 CREATE VIEW sys.dump_partition_tables AS
   SELECT
-    sys.ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+    'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
       CASE 
       WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
       WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
@@ -197,7 +194,7 @@ CREATE VIEW sys.dump_sequences AS
 
 CREATE VIEW sys.dump_start_sequences AS
   SELECT
-    'UPDATE sys.sequences seq SET start = ' || s  ||
+    'UPDATE sys.sequences seq SET start = ' || s ||
       ' WHERE name = ' || sys.SQ(seq) ||
       ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt,
     sch schema_name,
@@ -278,7 +275,7 @@ BEGIN
     SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
 
     IF _cnt > 0 THEN
-      SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
+      SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
 
       DECLARE SELECT_DATA_STMT STRING;
       SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
@@ -295,7 +292,7 @@ BEGIN
       END WHILE;
 
       SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
-      SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
+      SET SELECT_DATA_STMT = SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
 
       insert into sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
 

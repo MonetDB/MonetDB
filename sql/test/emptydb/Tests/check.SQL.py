@@ -14,7 +14,6 @@ sys_pkeys = [
     ('_columns', 'id'),
     ('columns', 'id'),
     ('functions', 'id'),
-    ('systemfunctions', 'function_id'),
     ('args', 'id'),
     ('types', 'id'),
     ('objects', 'id, nr'),

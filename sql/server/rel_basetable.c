@@ -152,12 +152,12 @@ static sql_exp *
 bind_col_exp(mvc *sql, char *name, sql_column *c)
 {
 	prop *p = NULL;
-	sql_exp *e = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+	sql_exp *e = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 	if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 		p->value = c->t->pkey;
-	} else if (c->unique == 1) {
+	} else if (c->unique == 2) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 		p->value = NULL;
 	}
@@ -241,14 +241,14 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 			append(exps, bind_col_exp(sql, name, cn->data));
 	}
 	if ((intern && rel_base_is_used(ba, i)) || list_empty(exps)) /* Add TID column if no column is used */
-		append(exps, exp_column(sql->sa, name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+		append(exps, exp_column(sql->sa, name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
 	i++;
 	if (intern) {
 		for (node *in = ol_first_node(t->idxs); in; in = in->next, i++) {
 			if (rel_base_is_used(ba, i)) {
 				sql_idx *i = in->data;
 				sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
-				int has_nils = 0;
+				int has_nils = 0, unique;
 
 				if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 					continue;
@@ -263,7 +263,8 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 					if (kc->c->null)
 						has_nils = 1;
 				}
-				sql_exp *e = exp_column(sql->sa, name, iname, t, CARD_MULTI, has_nils, 1);
+				unique = list_length(i->columns) == 1 && is_column_unique(((sql_kc*)i->columns->h->data)->c);
+				sql_exp *e = exp_column(sql->sa, name, iname, t, CARD_MULTI, has_nils, unique, 1);
 				if (hash_index(i->type)) {
 					p = e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
 					p->value = i;
@@ -315,7 +316,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 
 	for (cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
 		sql_column *c = cn->data;
-		sql_exp *e = exp_alias(sql->sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		sql_exp *e = exp_alias(sql->sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		if (e == NULL) {
 			rel_destroy(r);
@@ -324,7 +325,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 			p->value = c->t->pkey;
-		} else if (c->unique == 1) {
+		} else if (c->unique == 2) {
 			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 			p->value = NULL;
 		}
@@ -361,7 +362,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 				continue;
 
 			sql_column *c = cn->data;
-			sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			if (e == NULL) {
 				rel_destroy(rel);
@@ -370,7 +371,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 				p->value = c->t->pkey;
-			} else if (c->unique == 1) {
+			} else if (c->unique == 2) {
 				p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 				p->value = NULL;
 			}
@@ -378,7 +379,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			append(rel->exps, e);
 		}
 		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) /* Add TID column if no column is used */
-			append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+			append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
 		i++;
 
 		for (cn = ol_first_node(t->idxs); cn; cn = cn->next, i++) {
@@ -389,7 +390,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			sql_idx *i = cn->data;
 			sql_subtype *t;
 			char *iname = NULL;
-			int has_nils = 0;
+			int has_nils = 0, unique;
 
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
@@ -403,7 +404,8 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 				if (kc->c->null)
 					has_nils = 1;
 			}
-			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, has_nils, 1);
+			unique = list_length(i->columns) == 1 && is_column_unique(((sql_kc*)i->columns->h->data)->c);
+			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, has_nils, unique, 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
 				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
@@ -417,6 +419,72 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 		}
 	}
 	return rel;
+}
+
+sql_rel *
+rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
+{
+	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
+
+	assert(!p->exps);
+	p->exps = sa_list(sql->sa);
+	const char *pname = t->base.name;
+	if (isRemote(t))
+		pname = mapiuri_table(t->query, sql->sa, pname);
+	for (node *n = mt_rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		node *cn = NULL, *ci = NULL;
+		const char *nname = exp_name(e);
+
+		if (nname[0] == '%' && strcmp(nname, TID) == 0) {
+			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
+			rel_base_use_tid(sql, p);
+		} else if (nname[0] != '%' && (cn = ol_find_name(mt->columns, nname))) {
+			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
+
+			/* with name find column in merge table, with colnr find column in member */
+			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
+			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
+				p->value = rc->t->pkey;
+			} else if (rc->unique == 2) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
+				p->value = NULL;
+			}
+			set_basecol(ne);
+			rel_base_use(sql, p, rc->colnr);
+			list_append(p->exps, ne);
+		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {
+			sql_idx *i = ci->data, *ri = NULL;
+
+			/* indexes don't have a number field like 'colnr', so get the index the old way */
+			for (node *nn = mt->idxs->l->h, *mm = t->idxs->l->h; nn && mm ; nn = nn->next, mm = mm->next) {
+				sql_idx *ii = nn->data;
+
+				if (ii->base.id == i->base.id) {
+					ri = mm->data;
+					break;
+				}
+			}
+
+			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
+			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
+			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
+
+			sql_exp *ne = exp_alias(sql->sa, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), is_unique(e), 1);
+			/* index names are prefixed, to make them independent */
+			if (hash_index(ri->type)) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
+				p->value = ri;
+			} else if (ri->type == join_idx) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
+				p->value = ri;
+			}
+			list_append(p->exps, ne);
+		}
+	}
+	rel_base_set_mergetable(p, mt);
+	return p;
 }
 
 void

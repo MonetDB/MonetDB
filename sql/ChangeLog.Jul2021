@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Oct 28 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Number parsing for SQL was fixed.  If a number was immediately followed
+  by letters (i.e. without a space), the number was accepted and the
+  alphanumeric string starting with the letter was interpreted as an alias
+  (if aliases were allowed in that position).
+

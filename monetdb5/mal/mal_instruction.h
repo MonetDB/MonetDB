@@ -22,7 +22,7 @@
 #define DEBUG_MAL_INSTR
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
-#define MAL_VAR_WINDOW  32
+#define MAL_VAR_WINDOW  16 // was 32
 #define MAXLISTING (64*1024)
 
 /* Allocation of space assumes a rather exotic number of
@@ -134,11 +134,10 @@ mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
 mal_export MalBlkPtr newMalBlk(int elements);
-mal_export void resetMalBlk(MalBlkPtr mb, int stop);
-mal_export void resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop);
+mal_export void resetMalBlk(MalBlkPtr mb);
+mal_export void resetMalTypes(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
-mal_export int prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
