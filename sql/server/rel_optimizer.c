@@ -9073,8 +9073,18 @@ _rel_flag_independent_projections(mvc *sql, sql_exp* e, list* projected_from)
 	switch(e->type) {
 	case e_func: // I.e. f() or f(arg) or f(arg1, ..., argn)
 		{
-		list* args = e->l;// The list of actual arguments which can be empty
 		is_independent = true;
+
+		sql_subfunc *f = e->f;
+		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0) {
+			/* the star() function call signals that the parent expression is a function call
+			 * to some window function without column expressions.
+			 * We do not optimize such window functions here.*/
+			is_independent = false;
+			break;
+		}
+
+		list* args = e->l;// The list of actual arguments which can be empty
 		if (args)
 			for (node *en = args->h; en; en = en->next) {
 				sql_exp* arg = en->data;
@@ -9090,6 +9100,9 @@ _rel_flag_independent_projections(mvc *sql, sql_exp* e, list* projected_from)
 		 * since it might be consumed by a following expression. */
 		if (is_independent)
 			e->argument_independence = 1;
+		break;
+	case e_cmp:
+		is_independent = _rel_flag_independent_projections(sql, e->l, projected_from) && _rel_flag_independent_projections(sql, e->r, projected_from);
 		break;
 	case e_atom: // Any atom potentially aliased, e.g. 2 as i
 		is_independent = true;
