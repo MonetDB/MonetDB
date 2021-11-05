@@ -378,7 +378,7 @@ select
    cast(coalesce(ref_8.name,
      cast(nullif(ref_7.column,
        cast(null as clob)) as clob)) as clob) as c0,
-   ref_10.function_id as c1,
+   ref_10.id as c1,
    cast(coalesce(ref_6.action,
      ref_6.id) as int) as c2
 from
@@ -415,7 +415,7 @@ where EXISTS (
            on ((ref_1.att_type is not NULL)
                or (ref_0.id is NULL))
          inner join sys.netcdf_vardim as ref_15
-         on (ref_10.function_id is not NULL)
+         on (ref_10.id is not NULL)
      where ref_0.systemname is NULL)
 limit 77
 ----

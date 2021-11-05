@@ -60,7 +60,7 @@ create view tv as select 'str' as S, 1 as I
 query TTI rowsort
 select tt.name, tv.* from tbls as tt, tv
 ----
-117 values hashing to 7d8047b25d348fd8231594a8ab7e4342
+117 values hashing to 29e9ff8da2c4450a008c873cb14caedb
 
 statement ok
 drop table tbls
