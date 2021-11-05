@@ -1886,7 +1886,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD) {
+	/* Since the strimp pre-filtering of a LIKE query produces a superset of
+	 * the actual result the complement of that set will necessarily reject
+	 * some of the matching entries in the NOT LIKE query.
+	 *
+	 * A better solution is to run the PCRElikeselect as a LIKE query with
+	 * strimps and return the complement of the result.
+	 */
+	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
 			BAT *tmp_s;
 			tmp_s = STRMPfilter(b, s, *pat);
