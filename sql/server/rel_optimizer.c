@@ -9066,51 +9066,59 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 }
 
 static bool
-_rel_flag_independent_projections(sql_exp* e, list* projected_from)
+_rel_flag_independent_projections(mvc *sql, sql_exp* e, list* projected_from)
 {
-	// I.e. f() or f(arg) or f(arg1, ..., argn)
-	if (e -> type == e_func) {
+	bool is_independent = false;
+
+	switch(e->type) {
+	case e_func: // I.e. f() or f(arg) or f(arg1, ..., argn)
+		{
 		list* args = e->l;// The list of actual arguments which can be empty
-		bool is_independent = true;
+		is_independent = true;
 		if (args)
 			for (node *en = args->h; en; en = en->next) {
 				sql_exp* arg = en->data;
-				if (!_rel_flag_independent_projections(arg, projected_from))
+				if (!_rel_flag_independent_projections(sql, arg, projected_from)) {
 					is_independent = false;
+				}
 			}
-		if (is_independent) {
-			/*
-			* This function's arguments are independent
-			* of the available column expression from the project's inner relation.
-			* We have to flag the function with the projectional independence.
-			*/
+		}
+		/* If this function's arguments are independent
+		 * of the available column expression from the project's inner relation,
+		 * we have to flag the function with the projectional independence. 
+		 * Else if this expression has an alias we add it to the projected_from list
+		 * since it might be consumed by a following expression. */
+		if (is_independent)
 			e->argument_independence = 1;
-		}
-		return is_independent;
+		break;
+	case e_atom: // Any atom potentially aliased, e.g. 2 as i
+		is_independent = true;
+		break;
+	case e_convert: // E.g. CAST (i AS BIGINT)
+		is_independent = _rel_flag_independent_projections(sql, e->l, projected_from);
+		break;
+	case e_column:
+		is_independent = !exps_find_exp(projected_from, e);
+		break;
+	default:
+		assert(0);
+		break;
 	}
-	// E.g. CAST (i AS BIGINT)
-	if (e -> type == e_convert)
-		return (_rel_flag_independent_projections(e->l, projected_from));
-	// Any atom potentially aliased, e.g. 2 as i
-	if (e->type == e_atom) {
-		return true;
-	}
-	if (e->type == e_column) {
-		if (!exps_find_exp(projected_from, e)) {
-			return true;
-		}
-	}
-	return false;
+
+	if (!is_independent && e->alias.name)
+		list_append(projected_from, exp_copy(sql, e));
+
+	return is_independent;
 }
 
 
 static bool
-rel_flag_independent_projections(list* projected_to, list* projected_from)
+rel_flag_independent_projections(mvc *sql, list* projected_to, list* projected_from)
 {
 	// TODO: signal changes
 	for (node *en = projected_to->h; en; en = en->next) {
 		sql_exp* e = en->data;
-		(void) _rel_flag_independent_projections(e, projected_from);
+		(void) _rel_flag_independent_projections(sql, e, projected_from);
 	}
 	return true;
 }
@@ -9120,7 +9128,7 @@ rel_optimize_function_calls(visitor *v, sql_rel *rel)
 {
 	if (rel->op == op_project) {
 		list *i = _rel_projections(v->sql, rel->l, NULL, 1, 1, 0);
-		rel_flag_independent_projections(rel->exps, i);
+		rel_flag_independent_projections(v->sql, rel->exps, i);
 		list_destroy(i);
 	}
 	return rel;
