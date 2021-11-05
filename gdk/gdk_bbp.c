@@ -728,6 +728,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		if (buf[nread] != '\n' && buf[nread] != ' ') {
 			BATdestroy(bn);
+#ifdef GDKLIBRARY_HASHASH
+			GDKfree(hbats);
+#endif
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			return GDK_FAIL;
 		}
@@ -736,6 +739,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		if (snprintf(BBP_bak(bid), sizeof(BBP_bak(bid)), "tmp_%o", (unsigned) bid) >= (int) sizeof(BBP_bak(bid))) {
 			BATdestroy(bn);
+#ifdef GDKLIBRARY_HASHASH
+			GDKfree(hbats);
+#endif
 			TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
 			return GDK_FAIL;
 		}
@@ -754,6 +760,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			BBP_logical(bid) = GDKstrdup(logical);
 			if (BBP_logical(bid) == NULL) {
 				BATdestroy(bn);
+#ifdef GDKLIBRARY_HASHASH
+				GDKfree(hbats);
+#endif
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
 				return GDK_FAIL;
 			}
@@ -769,6 +778,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			BBP_options(bid) = GDKstrdup(options);
 			if (BBP_options(bid) == NULL) {
 				BATdestroy(bn);
+#ifdef GDKLIBRARY_HASHASH
+				GDKfree(hbats);
+#endif
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
 				return GDK_FAIL;
 			}
@@ -1424,6 +1436,7 @@ BBPinit(bool first)
 #ifdef GDKLIBRARY_HASHASH
 	bat *hashbats = NULL;
 	bat nhashbats = 0;
+	gdk_return res = GDK_SUCCEED;
 #endif
 
 	/* the maximum number of BATs allowed in the system and the
@@ -1565,6 +1578,9 @@ BBPinit(bool first)
 	if (BBPinithash(0, (bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
 		MT_lock_unset(&BBPnameLock);
+#ifdef GDKLIBRARY_HASHASH
+		GDKfree(hashbats);
+#endif
 		return GDK_FAIL;
 	}
 	MT_lock_unset(&BBPnameLock);
@@ -1575,13 +1591,20 @@ BBPinit(bool first)
 		gdk_return rc = BBPprepare(false);
 		MT_lock_unset(&GDKtmLock);
 		if (rc != GDK_SUCCEED) {
+#ifdef GDKLIBRARY_HASHASH
+			GDKfree(hashbats);
+#endif
 			TRC_CRITICAL(GDK, "cannot properly prepare process %s.", BAKDIR);
 			return rc;
 		}
 	}
 
-	if (BBPcheckbats(bbpversion) != GDK_SUCCEED)
+	if (BBPcheckbats(bbpversion) != GDK_SUCCEED) {
+#ifdef GDKLIBRARY_HASHASH
+		GDKfree(hashbats);
+#endif
 		return GDK_FAIL;
+	}
 
 #ifdef GDKLIBRARY_TAILN
 	char *needstrbatmove;
@@ -1596,6 +1619,9 @@ BBPinit(bool first)
 			if (fd < 0) {
 				TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
 				GDKfree(needstrbatmove);
+#ifdef GDKLIBRARY_HASHASH
+				GDKfree(hashbats);
+#endif
 				return GDK_FAIL;
 			}
 			close(fd);
@@ -1613,6 +1639,9 @@ BBPinit(bool first)
 			} else {
 				GDKsyserror("unexpected error opening %s\n", needstrbatmove);
 				GDKfree(needstrbatmove);
+#ifdef GDKLIBRARY_HASHASH
+				GDKfree(hashbats);
+#endif
 				return GDK_FAIL;
 			}
 		}
@@ -1620,8 +1649,11 @@ BBPinit(bool first)
 #endif
 
 #ifdef GDKLIBRARY_HASHASH
-	if (nhashbats > 0 && fixhashash(hashbats, nhashbats) != GDK_SUCCEED)
-		return GDK_FAIL;
+	if (nhashbats > 0)
+		res = fixhashash(hashbats, nhashbats);
+	GDKfree(hashbats);
+	if (res != GDK_SUCCEED)
+		return res;
 #endif
 
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
