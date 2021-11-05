@@ -139,6 +139,9 @@ next_pair(PairIterator *pi) {
 
 #endif // UTF8STRIMPS
 
+/* Look up a given pair in a strimp. Returns the index of the pair, or
+ * -1 if it is not found. Assumes that there no more than 128 pairs.
+ */
 static int8_t
 STRMPpairLookup(Strimps *s, CharPair *p) {
 	size_t idx = 0;
@@ -406,8 +409,8 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
  * is either 1 (i.e. it exists on disk) or the number of bitstrings
  * computed is the same as the number of elements in the BAT.
  */
-#define STRIMP_COMPLETE(b)			\
-	b->tstrimps != NULL &&			\
+#define STRIMP_COMPLETE(b)						\
+	b->tstrimps != NULL &&						\
 		(b->tstrimps == (Strimps *)1 ||				\
 		 (b->tstrimps->strimps.free - ((char *)b->tstrimps->bitstrings_base - b->tstrimps->strimps.base)) == b->batCount*sizeof(uint64_t))
 
@@ -508,7 +511,7 @@ BATcheckstrimps(BAT *b)
  * list.
  */
 BAT *
-STRMPfilter(BAT *b, BAT *s, char *q)
+STRMPfilter(BAT *b, BAT *s, const str q)
 {
 	BAT *r = NULL;
 	BUN i, ncand;
