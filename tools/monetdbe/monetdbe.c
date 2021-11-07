@@ -1666,9 +1666,7 @@ monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt)
 
 	for (size_t i = 0; i < stmt_internal->res.nparam + 1; i++) {
 		ValPtr data = &stmt_internal->data[i];
-		if (data->vtype == TYPE_str || data->vtype == TYPE_blob) {
-			GDKfree(data->val.pval);
-		}
+		VALclear(data);
 	}
 
 	GDKfree(stmt_internal->data);

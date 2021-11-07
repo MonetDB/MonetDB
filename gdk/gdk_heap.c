@@ -813,6 +813,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		h->base = GDKmalloc(h->size);
 		h->wasempty = true;
 	} else {
+		if (h->free == 0) {
+			int fd = GDKfdlocate(h->farmid, nme, "wb", ext);
+			if (fd >= 0)
+				close(fd);
+			h->wasempty = true;
+		}
 		h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->storage);
 	}
 	if (h->base == NULL)
