@@ -139,7 +139,6 @@
 \dSv sys.sessions
 \dSv sys.storage
 \dSv sys.storagemodel
-\dSv sys.systemfunctions
 \dSv sys.tables
 \dSv sys.tablestorage
 \dSv sys.tablestoragemodel
@@ -508,7 +507,6 @@ SYSTEM VIEW  sys.schemastorage
 SYSTEM VIEW  sys.sessions
 SYSTEM VIEW  sys.storage
 SYSTEM VIEW  sys.storagemodel
-SYSTEM VIEW  sys.systemfunctions
 SYSTEM VIEW  sys.tables
 SYSTEM VIEW  sys.tablestorage
 SYSTEM VIEW  sys.tablestoragemodel
@@ -1089,7 +1087,6 @@ create view sys."schemastorage" as select "schema", count(*) as "storages", sum(
 create view sys.sessions as select * from sys.sessions();
 create view sys."storage" as select * from sys."storage"() where ("schema", "table") in (select sch."name", tbl."name" from sys."tables" as tbl join sys."schemas" as sch on tbl.schema_id = sch.id where tbl."system" = false) order by "schema", "table", "column";
 create view sys.storagemodel as select "schema", "table", "column", "type", "count", sys.columnsize("type", "count") as columnsize, sys.heapsize("type", "count", "distinct", "atomwidth") as heapsize, sys.hashsize("reference", "count") as hashsize, case when isacolumn then sys.imprintsize("type", "count") else 0 end as imprintsize, case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end as orderidxsize, sorted, "unique", isacolumn from sys.storagemodelinput order by "schema", "table", "column";
-create view sys.systemfunctions as select id as function_id from sys.functions where system;
 SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 ELSE (CASE WHEN "commit_action" = 0 THEN "type" ELSE "type" + 20 END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";
 create view sys."tablestorage" as select "schema", "table", max("count") as "rowcount", count(*) as "storages", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashsize, sum("imprints") as imprintsize, sum(orderidx) as orderidxsize from sys."storage" group by "schema", "table" order by "schema", "table";
 create view sys.tablestoragemodel as select "schema", "table", max("count") as "rowcount", count(*) as "storages", sum(sys.columnsize("type", "count")) as columnsize, sum(sys.heapsize("type", "count", "distinct", "atomwidth")) as heapsize, sum(sys.hashsize("reference", "count")) as hashsize, sum(case when isacolumn then sys.imprintsize("type", "count") else 0 end) as imprintsize, sum(case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end) as orderidxsize from sys.storagemodelinput group by "schema", "table" order by "schema", "table";
@@ -1623,7 +1620,6 @@ select 'duplicates in tables', count(*), id from sys.tables group by id having c
 select 'duplicates in _columns', count(*), id from sys._columns group by id having count(*) > 1;
 select 'duplicates in columns', count(*), id from sys.columns group by id having count(*) > 1;
 select 'duplicates in functions', count(*), id from sys.functions group by id having count(*) > 1;
-select 'duplicates in systemfunctions', count(*), function_id from sys.systemfunctions group by function_id having count(*) > 1;
 select 'duplicates in args', count(*), id from sys.args group by id having count(*) > 1;
 select 'duplicates in types', count(*), id from sys.types group by id having count(*) > 1;
 select 'duplicates in objects', count(*), id, nr from sys.objects group by id, nr having count(*) > 1;
@@ -2081,7 +2077,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._tables",	"sys",	"storage",	"create view sys.\"storage\" as select * from sys.\"storage\"() where (\"schema\", \"table\") in (select sch.\"name\", tbl.\"name\" from sys.\"tables\" as tbl join sys.\"schemas\" as sch on tbl.schema_id = sch.id where tbl.\"system\" = false) order by \"schema\", \"table\", \"column\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"storagemodel",	"create view sys.storagemodel as select \"schema\", \"table\", \"column\", \"type\", \"count\", sys.columnsize(\"type\", \"count\") as columnsize, sys.heapsize(\"type\", \"count\", \"distinct\", \"atomwidth\") as heapsize, sys.hashsize(\"reference\", \"count\") as hashsize, case when isacolumn then sys.imprintsize(\"type\", \"count\") else 0 end as imprintsize, case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end as orderidxsize, sorted, \"unique\", isacolumn from sys.storagemodelinput order by \"schema\", \"table\", \"column\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"storagemodelinput",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys._tables",	"sys",	"systemfunctions",	"create view sys.systemfunctions as select id as function_id from sys.functions where system;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"table_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"table_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys._tables",	"sys",	"tables",	"SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -2781,7 +2776,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys._columns",	"storagemodelinput",	"sorted",	"boolean",	1,	0,	NULL,	true,	9,	NULL	]
 [ "sys._columns",	"storagemodelinput",	"unique",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
 [ "sys._columns",	"storagemodelinput",	"isacolumn",	"boolean",	1,	0,	"true",	false,	11,	NULL	]
-[ "sys._columns",	"systemfunctions",	"function_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"table_partitions",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"table_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"table_partitions",	"column_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -4995,7 +4989,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "table used by view",	"sys",	"schemas",	"sys",	"storage",	"VIEW"	]
 [ "table used by view",	"sys",	"tables",	"sys",	"storage",	"VIEW"	]
 [ "table used by view",	"sys",	"storagemodelinput",	"sys",	"storagemodel",	"VIEW"	]
-[ "table used by view",	"sys",	"functions",	"sys",	"systemfunctions",	"VIEW"	]
 [ "table used by view",	"sys",	"_tables",	"sys",	"tables",	"VIEW"	]
 [ "table used by view",	"tmp",	"_tables",	"sys",	"tables",	"VIEW"	]
 [ "table used by view",	"sys",	"storage",	"sys",	"tablestorage",	"VIEW"	]
@@ -5719,8 +5712,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "column used by view",	"sys",	"storagemodelinput",	"table",	"sys",	"storagemodel",	"VIEW"	]
 [ "column used by view",	"sys",	"storagemodelinput",	"type",	"sys",	"storagemodel",	"VIEW"	]
 [ "column used by view",	"sys",	"storagemodelinput",	"unique",	"sys",	"storagemodel",	"VIEW"	]
-[ "column used by view",	"sys",	"functions",	"id",	"sys",	"systemfunctions",	"VIEW"	]
-[ "column used by view",	"sys",	"functions",	"system",	"sys",	"systemfunctions",	"VIEW"	]
 [ "column used by view",	"sys",	"_tables",	"access",	"sys",	"tables",	"VIEW"	]
 [ "column used by view",	"sys",	"_tables",	"commit_action",	"sys",	"tables",	"VIEW"	]
 [ "column used by view",	"sys",	"_tables",	"id",	"sys",	"tables",	"VIEW"	]
@@ -6008,7 +5999,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on table",	"schemas",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"sequences",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"spatial_ref_sys",	"public",	"SELECT",	"monetdb",	0	]
-[ "grant on table",	"systemfunctions",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"table_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"table_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "grant on table",	"tables",	"public",	"SELECT",	NULL,	0	]
@@ -6888,10 +6878,6 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 23,	1,	1 # length
-% .%2,	sys.%1,	sys.systemfunctions # table_name
-% %2,	%1,	function_id # name
-% char,	bigint,	int # type
-% 29,	1,	1 # length
 % .%2,	sys.%1,	sys.args # table_name
 % %2,	%1,	id # name
 % char,	bigint,	int # type

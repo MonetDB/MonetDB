@@ -5,44 +5,6 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 # 08:45:11 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35663 --set xrpc_port=48610 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
 # 08:45:11 >  
 
-# MonetDB server v5.20.0, based on kernel v1.38.0
-# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.754 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35663/
-# MonetDB/SQL module v2.38.0 loaded
-
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 99_system.sql
-
 # 22:28:06 >  
 # 22:28:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10173" "--port=36549"
 # 22:28:06 >  
@@ -58,7 +20,7 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 #	"readonly"      BOOLEAN,
 #	"temporary"     SMALLINT
 #);
-#COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#COPY 39 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
 #2001	"schemas"	2000	NULL	0	true	0	false	0
 #2007	"types"	2000	NULL	0	true	0	false	0
 #2016	"functions"	2000	NULL	0	true	0	false	0
@@ -70,7 +32,7 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 #2068	"_columns"	2000	NULL	0	true	0	false	0
 #2079	"keys"	2000	NULL	0	true	0	false	0
 #2086	"idxs"	2000	NULL	0	true	0	false	0
-[ 40	]
+[ 39	]
 #create table rr (id int);
 #insert into rr values (1),(2),(3);
 [ 3	]
@@ -89,8 +51,8 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 % 1 # length
 [ 1	]
 #drop table rr;
-#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 42;
-#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 42;
+#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 24;
+#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 24;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
