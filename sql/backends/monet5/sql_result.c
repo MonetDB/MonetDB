@@ -688,14 +688,116 @@ has_whitespace(const char *s)
 	return 0;
 }
 
+struct directappend {
+	mvc *mvc;
+	sql_table *t;
+	BAT *all_offsets;
+	BAT *new_offsets;
+	BUN offset;
+};
+
+static void
+directappend_destroy(struct directappend *state)
+{
+	if (state == NULL)
+		return;
+	struct directappend *st = state;
+	if (st->all_offsets)
+		BBPreclaim(st->all_offsets);
+	if (st->new_offsets)
+		BBPreclaim(st->new_offsets);
+}
+
+static str
+directappend_init(struct directappend *state, Client cntxt, sql_table *t)
+{
+	str msg = MAL_SUCCEED;
+	*state = (struct directappend) { 0 };
+	backend *be;
+	mvc *mvc;
+	sql_schema *s;
+
+	msg = checkSQLContext(cntxt);
+	if (msg != MAL_SUCCEED)
+		goto bailout;
+	be = cntxt->sqlcontext;
+	mvc = be->mvc;
+	state->mvc = mvc;
+
+	// temporary: append to table banana2 instead
+	s = t->s;
+	char *tname;
+	tname = "banana2";  // <<=============================================
+	if (NULL == (t = mvc_bind_table(mvc, s, tname))) {
+		msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "Table missing: %s.%s", s->base.name, tname);
+		goto bailout;
+	}
+	if (!isTable(t)) {
+		msg = createException(SQL, "sql.append_from", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+		goto bailout;
+	}
+
+	state->t = t;
+
+	state->all_offsets = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if (state->all_offsets == NULL) {
+		msg = createException(SQL, "sql.append_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	assert(msg == MAL_SUCCEED);
+	return msg;
+
+bailout:
+	assert(msg != MAL_SUCCEED);
+	directappend_destroy(state);
+	return msg;
+}
+
+static str
+directappend_claim(void *state, size_t nrows, size_t ncols, Column *cols[])
+{
+	(void)state;
+	(void)nrows;
+	(void)ncols;
+	(void)cols;
+	throw(SQL, "direct_append", "not implemented yet");
+}
+
+static str
+directappend_append_one(void *state, void *data, Column *col)
+{
+	(void)state;
+	(void)data;
+	(void)col;
+	throw(SQL, "direct_append", "not implemented yet");
+}
+
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, bool append_directly)
 {
 	int i = 0, j;
 	node *n;
 	Tablet as;
 	Column *fmt;
 	str msg = MAL_SUCCEED;
+
+
+	struct directappend directappend_state = { 0 };
+	LoadOps our_loadops = {
+		.state = NULL,
+		.claim = directappend_claim,
+		.append_one = directappend_append_one,
+	};
+	LoadOps *loadops = NULL;
+	if (append_directly) {
+		msg = directappend_init(&directappend_state, cntxt, t);
+		if (msg != MAL_SUCCEED)
+			return msg;
+		our_loadops.state = &directappend_state;
+		loadops = &our_loadops;
+
+	}
 
 	*bats =0;	// initialize the receiver
 
@@ -706,10 +808,13 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		char *stream_msg = mnstr_error(bs->s);
 		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
 		free(stream_msg);
+		directappend_destroy(our_loadops.state);
 		return msg;
 	}
-	if (offset < 0 || offset > (lng) BUN_MAX)
+	if (offset < 0 || offset > (lng) BUN_MAX) {
+		directappend_destroy(our_loadops.state);
 		throw(IO, "sql.copy_from", SQLSTATE(42000) "Offset out of range");
+	}
 
 	if (offset > 0)
 		offset--;
@@ -726,14 +831,27 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			.filename = m->scanner.rs == bs ? NULL : "",
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-		if (fmt == NULL)
+		if (fmt == NULL) {
+			directappend_destroy(our_loadops.state);
 			throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		as.format = fmt;
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
+		// temporary
+		node *n2;
+		n2 = append_directly ? ol_first_node(directappend_state.t->columns) : NULL;
 		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
+			// temporary
+			if (n2 != NULL) {
+				sql_column *col2 = n2->data;
+				assert(strcmp(col->base.name, col2->base.name) == 0);
+				assert(strcmp(col->type.type->base.name, col2->type.type->base.name) == 0);
+				fmt[i].appendcol = col2;
+				n2 = n2->next;
+			}
 
 			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? sep : rsep;
@@ -752,6 +870,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					BBPunfix(fmt[j].c->batCacheid);
 				}
 				GDKfree(fmt[i].data);
+				directappend_destroy(our_loadops.state);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
@@ -771,11 +890,12 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if ((msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape) != BUN_NONE &&
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape, loadops) != BUN_NONE &&
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
 					TABLETdestroy_format(&as);
+					directappend_destroy(our_loadops.state);
 					throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				msg = TABLETcollect(*bats,&as);
@@ -793,6 +913,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		}
 		TABLETdestroy_format(&as);
 	}
+	directappend_destroy(our_loadops.state);
 	return msg;
 }
 

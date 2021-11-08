@@ -50,6 +50,7 @@ typedef struct Column_t {
 	char quote;					/* if set use this character for string quotes */
 	const void *nildata;
 	int size;
+	void *appendcol;			/* temporary, can use Columnt_t.extra in the future */
 } Column;
 
 /*
@@ -69,7 +70,17 @@ typedef struct Table_t {
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
-mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape);
+
+typedef str (*loadfile_claim_fptr)(void *state, size_t nrows, size_t ncols, Column *cols[]);
+typedef str (*loadfile_append_one_fptr)(void *state, void *data, Column *col);
+typedef struct LoadOps {
+	void *state;
+	loadfile_claim_fptr claim;
+	loadfile_append_one_fptr append_one;
+} LoadOps;
+
+
+mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape, LoadOps *loadops);
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);

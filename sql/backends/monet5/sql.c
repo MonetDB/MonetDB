@@ -2932,7 +2932,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, append_directly);
 	} else {
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
@@ -3018,7 +3018,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			close_stream(ss);
 			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
+		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape, append_directly);
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
