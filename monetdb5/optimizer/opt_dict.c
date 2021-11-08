@@ -108,6 +108,14 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb,r);
 					done = 1;
 					break;
+				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
+					/* id = mirror(col) with col = dict.decompress(o,u)
+					 * id = mirror(o) */
+					InstrPtr r = copyInstruction(p);
+					getArg(r, j) = varisdict[k];
+					pushInstruction(mb,r);
+					done = 1;
+					break;
 				} else if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
 						InstrPtr r = newInstructionArgs(mb, dictRef, thetaselectRef, 6);
