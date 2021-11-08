@@ -150,6 +150,12 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 			if (tt != tt_view && cname && cname[0] == '%') {
 				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
 				return -1;
+			} else if (!tp) {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: columns must have a type defined", msg);
+				return -1;
+			} else if (tp->type->eclass == EC_ANY) {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: any type (plain null value) not allowed as a column type, use an explicit cast", msg);
+				return -1;
 			} else if (mvc_bind_column(sql, t, cname)) {
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
@@ -171,21 +177,24 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 			return -1;
 		}
 	} else {
-		node *m;
-
-		for (m = r->exps->h; m; m = m->next) {
+		for (node *m = r->exps->h; m; m = m->next) {
 			sql_exp *e = m->data;
 			const char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
 			sql_column *col = NULL;
 
-			if (tt != tt_view && cname && cname[0] == '%') {
-				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
-				return -1;
-			}
 			if (!cname)
 				cname = "v";
-			if (mvc_bind_column(sql, t, cname)) {
+			if (tt != tt_view && cname[0] == '%') {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
+				return -1;
+			} else if (!tp) {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: columns must have a type defined", msg);
+				return -1;
+			} else if (tp->type->eclass == EC_ANY) {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: any type (plain null value) not allowed as a column type, use an explicit cast", msg);
+				return -1;
+			} else if (mvc_bind_column(sql, t, cname)) {
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
@@ -864,6 +873,9 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		if (!isView(t) && cname && cname[0] == '%') {
 			sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: generated labels not allowed in column names, use an alias instead", (alter)?"ALTER":"CREATE");
 			return SQL_ERR;
+		} else if (ctype->type->eclass == EC_ANY) {
+			sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: any type (plain null value) not allowed as a column type, use an explicit cast", (alter)?"ALTER":"CREATE");
+			return SQL_ERR;
 		} else if ((cs = find_sql_column(t, cname))) {
 			sql_error(sql, 02, SQLSTATE(42S21) "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
@@ -1081,6 +1093,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				sql_error(sql, 02, SQLSTATE(42S21) "%s: a column named '%s' already exists\n", action, oc->base.name);
 				return SQL_ERR;
 			}
+			assert(oc->type.type->eclass != EC_ANY);
 			switch (mvc_create_column(&nc, sql, t, oc->base.name, &oc->type)) {
 				case -1:
 					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
