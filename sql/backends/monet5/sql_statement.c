@@ -3239,7 +3239,10 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	node *n;
 	stmt *o = NULL;
 
-	if (list_length(ops->op4.lval)) {
+	if (rows) {
+		o = rows;
+	}
+	else if (list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;
 
@@ -3277,7 +3280,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			return NULL;
 		mod = sql_func_mod(f->func);
 		fimp = sql_func_imp(f->func);
-		if (((o && o->nrcols > 0) || rows) && f->func->type != F_LOADER && f->func->type != F_PROC) {
+		if ((o && o->nrcols > 0) && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 			fimp = convertMultiplexFcn(fimp);
 			q = NULL;
@@ -3289,7 +3292,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 				if (f->func->type == F_UNION)
 						q = newStmtArgs(mb, batmalRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
 				else {
-					if (ops->argument_independence) {
+					if (rows) {
 						stmt *card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 						q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 7);
 						q = pushArgument(mb, q, card->nr);
@@ -3368,8 +3371,6 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			s->nrcols = o->nrcols;
 			s->key = o->key;
 			s->aggr = o->aggr;
-		} else if (rows) {
-			s->nrcols = rows->nrcols;
 		} else {
 			s->nrcols = 0;
 			s->key = 1;
