@@ -376,6 +376,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 #define DELTAMASK	(1<<13)
 #define LOADMASK	(1<<14)
 #define PUSHCANDMASK	(1<<15)	/* used in opt_pushselect.c */
+#define TAILCHKMASK	(1<<16)	/* check .tail file size during commit */
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
 
