@@ -8842,6 +8842,8 @@
 [ "logging",	"setflushlevel",	"command logging.setflushlevel(X_0:str):void ",	"TRACERset_flush_level;",	"Sets the flush level"	]
 [ "logging",	"setlayerlevel",	"command logging.setlayerlevel(X_0:str, X_1:str):void ",	"TRACERset_layer_level;",	"Sets the log level for a specific layer"	]
 [ "mal",	"manifold",	"pattern mal.manifold(X_0:str, X_1:str, X_2:any...):bat[:any] ",	"MANIFOLDevaluate;",	""	]
+[ "mal",	"multiplex",	"pattern mal.multiplex(X_0:lng, X_1:str, X_2:str):any... ",	"MANIFOLDremapMultiplex;",	""	]
+[ "mal",	"multiplex",	"pattern mal.multiplex(X_0:lng, X_1:str, X_2:str, X_3:any...):any... ",	"MANIFOLDremapMultiplex;",	""	]
 [ "mal",	"multiplex",	"pattern mal.multiplex(X_0:str, X_1:str, X_2:any...):any... ",	"MANIFOLDremapMultiplex;",	""	]
 [ "manual",	"functions",	"pattern manual.functions() (X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:str], X_4:bat[:str]) ",	"MANUALcreateOverview;",	"Produces a table with all MAL functions known"	]
 [ "mapi",	"bind",	"pattern mapi.bind(X_0:int, X_1:str):bat[:any_2] ",	"SERVERbindBAT;",	"Bind a remote variable to a local one."	]
