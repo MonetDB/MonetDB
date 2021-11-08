@@ -2102,8 +2102,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	sql_exp **updates, *e;
 	sql_idx *i;
 	dnode *n;
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
+	char *sname = qname_schema(qname), *tname = qname_schema_object(qname), *s = iname;
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "CREATE INDEX", false)))
 		return NULL;
@@ -2111,6 +2110,12 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: cannot create index on a declared table");
 	if (!mvc_schema_privs(sql, t->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
+	if (!s || !*s) /* add this to be safe */
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot be empty");
+	while (isdigit((unsigned char) *s))
+		s++;
+	if (!*s) /* if an index just contains digit characters, it can be mistaken with a label */
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: indexes cannot contain just digit characters (0 through 9)");
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
 	if (!isTable(t))
