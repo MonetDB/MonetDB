@@ -4239,9 +4239,231 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
+void dump_code(void);
+static struct {
+	MalBlkPtr mb;
+	int pos;
+} dump_code_state;
+
+void
+dump_code(void)
+{
+	stream *s = stderr_wastream();
+	MalBlkPtr mb = dump_code_state.mb;
+	int start = dump_code_state.pos;
+	int stop = mb->stop;
+
+	mnstr_printf(s, "\n");
+	mnstr_printf(s, "Found %d new statements:\n", stop - start);
+	for (int i = start; i < stop; i++) {
+		str line = instruction2str(mb, NULL, getInstrPtr(mb, i), LIST_MAL_ALL);
+		if (line != NULL) {
+			mnstr_printf(s, "%d: %s\n", i, line);
+			GDKfree(line);
+		} else {
+			mnstr_printf(s, "// %d?\n", i);
+		}
+	}
+
+	mnstr_close(s);
+
+	dump_code_state.pos = stop;
+}
+
+static sql_table*
+can_use_appendfrom(sql_rel *rel)
+{
+	if (rel->flag & UPD_NO_CONSTRAINT) {
+		// "no constraint" mode.. don't know what it is but it sounds scary
+		return NULL;
+	}
+
+	if (rel->flag & UPD_COMP) {
+		// special case copied from rel2bin_insert
+		rel = rel->r;
+	}
+	sql_rel *left = rel->l;
+
+	if (left->op != op_basetable)
+		return NULL;
+	sql_table *destination_table = left->l;
+	if (destination_table->s == NULL) {
+		// no schema means DECLAREd table, apparently those can't or don't need
+		// to use sql.claim.
+		return NULL;
+	}
+
+	// We don't yet know how to deal with indices that need to be updated or
+	// constraints that need to be checked.
+	if (destination_table->pkey != NULL)
+		return NULL;
+	if (destination_table->idxs != NULL && list_length(destination_table->idxs->l) > 0)
+		return NULL;
+	if (destination_table->keys != NULL && list_length(destination_table->keys->l) > 0)
+		return NULL;
+	if (destination_table->triggers != NULL && list_length(destination_table->triggers->l) > 0)
+		return NULL;
+
+
+	sql_rel *projection;
+	sql_rel *incoming;
+	sql_rel *p = rel->r;
+	if (p == NULL)
+		return NULL;
+	if (p->op == op_project) {
+		projection = p;
+		incoming = p->l;
+	} else {
+		projection = NULL;
+		incoming = p;
+	}
+
+	if (incoming == NULL) {
+		// happens for example with INSERT INTO foo VALUES (..),
+		// the values are in the projection's exps.
+		return NULL;
+	}
+	if (incoming->op != op_table)
+		return NULL;
+
+	/* this seems to occur around foreign keys and it scares me */
+	if (projection && rel_is_ref(projection))
+		return NULL;
+	if (rel_is_ref(incoming))
+		return NULL;
+
+	if (incoming->flag != TABLE_PROD_FUNC)
+		return NULL;
+	sql_exp *copy_from = incoming->r;
+	if (copy_from->type != e_func)
+		return NULL;
+	sql_subfunc *sf = copy_from->f;
+	if (strcmp(sf->func->mod, "sql") != 0)
+		return NULL;
+	if (strcmp(sf->func->imp, "copy_from") != 0)
+		return NULL;
+
+	list *args = copy_from->l;
+	if (args == NULL)
+		return NULL;
+	node *n = args->h;
+	if (n == NULL)
+		return NULL;
+	sql_exp *arg0 = n->data;
+	assert(arg0 != NULL); // hopefully
+	atom *a = arg0->l;
+	assert(a != NULL);
+	int tp = atom_type(a)->type->localtype;
+	assert(tp == TYPE_ptr);
+	sql_table *template_table = a->data.val.pval;
+
+	// disallow best effort
+	sql_exp *arg7 = n->next->next->next->next->next->next->next->next->data;
+	if (arg7->type != e_atom)
+		return NULL;
+	a = arg7->l;
+	tp = atom_type(a)->type->localtype;
+	assert(tp == TYPE_int);
+	int best_effort = a->data.val.ival;
+	if (best_effort)
+		return NULL;
+
+	// The sql.copy_from operator takes as its first argument a pointer to the
+	// table to be filled.  It uses this to determine the column types, and
+	// maybe also for other things.
+	//
+	// If we have to reorder the columns, for example COPY INTO foo(i,j) FROM
+	// 'data.csv'(j,i), the table pointer cannot point to foo itself because the
+	// column order is wrong. In that case, the sql->rel translator creates a
+	// special temporary table just like foo but with its columns in the right
+	// order.
+	//
+	// For the time being, we'll only support the easy cases without reordering,
+	// recognizable by these tables being identical.
+	if (template_table != destination_table)
+		return NULL;
+
+	// Because of the check above we don't have to worry about generating
+	// default values.
+
+	// If NULL or uniqueness checks have to be generated we'll take the generic path.
+	for (node *n = ol_first_node(destination_table->columns); n != NULL; n = n->next) {
+		sql_column *c = n->data;
+		if (!c->null)
+			return NULL;
+		if (c->unique > 0)
+			return NULL;
+	}
+
+	if (strcmp(destination_table->base.name, "banana") != 0 && strcmp(destination_table->base.name, "dummy") != 0)
+		return NULL;
+
+	return destination_table;
+}
+
+static stmt *
+rel2bin_appendfrom(backend *be, sql_rel *rel, list *refs, sql_table *t)
+{
+	(void)rel;
+	(void)refs;
+	(void)t;
+
+	char *tname = t->base.name;
+	char *sname = t->s->base.name;
+
+	// find the call to sys.copyfrom so we can look at its parameters
+	// duplicated from can_use_appendfrom, these functions should probably
+	// be merged
+	sql_rel *p = rel;
+	if (rel->flag & UPD_COMP)
+		p = p->r;
+	if (p->op == op_project)
+		p = p->l;
+	sql_exp *copy_from = p->r;
+	sql_subfunc *sf = copy_from->f;
+	assert(0 == strcmp(sf->func->imp, "copy_from"));
+	list *args = copy_from->l;
+	sql_exp *arg5 = args->h->next->next->next->next->next->data;
+	assert(arg5->type == e_atom);
+	atom *a = arg5->l;
+	assert(atom_type(a)->type->localtype == TYPE_str);
+	char *filename = a->data.val.pval;
+
+
+	InstrPtr append_instr = newFcnCallArgs(be->mb, sqlRef, "append_from", 3);
+	setDestType(be->mb, append_instr, newBatType(TYPE_oid));
+	append_instr = pushStr(be->mb, append_instr, sname);
+	append_instr = pushStr(be->mb, append_instr, tname);
+	append_instr = pushStr(be->mb, append_instr, filename);
+
+	InstrPtr count_instr = newFcnCallArgs(be->mb, aggrRef, countRef, 1);
+	count_instr = pushArgument(be->mb, count_instr, getDestVar(append_instr));
+
+
+	int destvar = getDestVar(count_instr);
+
+	stmt *s = stmt_none(be);
+	s->nr = destvar;
+
+	be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, s->nr) : s->nr;
+
+	return s;
+}
+
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
+	dump_code_state.mb = be->mb;
+	dump_code_state.pos = 0;
+	dump_code();
+
+	sql_table *tbl = can_use_appendfrom(rel);
+	if (tbl != NULL) {
+		stmt *s = rel2bin_appendfrom(be, rel, refs, tbl);
+		dump_code();
+		return s;
+	}
+
 	mvc *sql = be->mvc;
 	list *l;
 	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
@@ -4276,6 +4498,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!inserts)
 		return NULL;
 
+	/* by now the sql.copy_from has been generated */
+
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
@@ -4303,6 +4527,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 	insert = NULL;
 
+	/* by now the aggr.count has been generated */
+
 	if (t->idxs) {
 		idx_m = m;
 		for (n = ol_first_node(t->idxs); n && m; n = n->next) {
@@ -4327,6 +4553,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (t->s) /* only not declared tables, need this */
 		pos = stmt_claim(be, t, cnt);
+
+	/* by now the sql.claim has been generated */
 
 	if (t->idxs)
 	for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next) {
@@ -4353,6 +4581,10 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		append(l,insert);
 	}
 	be->mvc_var = mvc_var;
+
+	/* by now the appends have been generated */
+
+
 	if (!insert)
 		return NULL;
 
@@ -4363,6 +4595,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	dump_code();
 
 	if (ddl) {
 		ret = ddl;
