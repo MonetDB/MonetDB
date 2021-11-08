@@ -881,3 +881,6 @@ select json 'iamwrongjson'
 statement error
 select inet '192.168.1.0/26 thisstringshouldnotbehere'
 
+statement error 42000!CREATE TABLE: any type (plain null value) not allowed as a column type, use an explicit cast
+create table x as (select null as sname)
+
