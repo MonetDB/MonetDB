@@ -4270,7 +4270,7 @@ dump_code(void)
 	dump_code_state.pos = stop;
 }
 
-static sql_table*
+static sql_exp*
 can_use_appendfrom(sql_rel *rel)
 {
 	if (rel->flag & UPD_NO_CONSTRAINT) {
@@ -4398,56 +4398,7 @@ can_use_appendfrom(sql_rel *rel)
 	if (strcmp(destination_table->base.name, "banana") != 0 && strcmp(destination_table->base.name, "dummy") != 0)
 		return NULL;
 
-	return destination_table;
-}
-
-static stmt *
-rel2bin_appendfrom(backend *be, sql_rel *rel, list *refs, sql_table *t)
-{
-	(void)rel;
-	(void)refs;
-	(void)t;
-
-	char *tname = t->base.name;
-	char *sname = t->s->base.name;
-
-	// find the call to sys.copyfrom so we can look at its parameters
-	// duplicated from can_use_appendfrom, these functions should probably
-	// be merged
-	sql_rel *p = rel;
-	if (rel->flag & UPD_COMP)
-		p = p->r;
-	if (p->op == op_project)
-		p = p->l;
-	sql_exp *copy_from = p->r;
-	sql_subfunc *sf = copy_from->f;
-	assert(0 == strcmp(sf->func->imp, "copy_from"));
-	list *args = copy_from->l;
-	sql_exp *arg5 = args->h->next->next->next->next->next->data;
-	assert(arg5->type == e_atom);
-	atom *a = arg5->l;
-	assert(atom_type(a)->type->localtype == TYPE_str);
-	char *filename = a->data.val.pval;
-
-
-	InstrPtr append_instr = newFcnCallArgs(be->mb, sqlRef, "append_from", 3);
-	setDestType(be->mb, append_instr, newBatType(TYPE_oid));
-	append_instr = pushStr(be->mb, append_instr, sname);
-	append_instr = pushStr(be->mb, append_instr, tname);
-	append_instr = pushStr(be->mb, append_instr, filename);
-
-	InstrPtr count_instr = newFcnCallArgs(be->mb, aggrRef, countRef, 1);
-	count_instr = pushArgument(be->mb, count_instr, getDestVar(append_instr));
-
-
-	int destvar = getDestVar(count_instr);
-
-	stmt *s = stmt_none(be);
-	s->nr = destvar;
-
-	be->rowcount = be->rowcount ? add_to_rowcount_accumulator(be, s->nr) : s->nr;
-
-	return s;
+	return copy_from;
 }
 
 static stmt *
@@ -4457,11 +4408,17 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	dump_code_state.pos = 0;
 	dump_code();
 
-	sql_table *tbl = can_use_appendfrom(rel);
-	if (tbl != NULL) {
-		stmt *s = rel2bin_appendfrom(be, rel, refs, tbl);
-		dump_code();
-		return s;
+	sql_exp *copyfrom = can_use_appendfrom(rel);
+	if (copyfrom != NULL) {
+		// later on we'll do this properly, passing an extra parameter,
+		// for now we adjust an existing parameter
+		list *args = copyfrom->l;
+		sql_exp* arg7 = args->h->next->next->next->next->next->next->next->next->data;
+		assert(arg7->type == e_atom);
+		atom *a = arg7->l;
+		assert(atom_type(a)->type->localtype == TYPE_int);
+		int *best_effort = &a->data.val.ival;
+		*best_effort += 100; // magic
 	}
 
 	mvc *sql = be->mvc;

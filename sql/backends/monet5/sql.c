@@ -2902,7 +2902,13 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *fname = *getArgReference_str(stk, pci, pci->retc + 5);
 	lng sz = *getArgReference_lng(stk, pci, pci->retc + 6);
 	lng offset = *getArgReference_lng(stk, pci, pci->retc + 7);
+	bool append_directly = false;
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 8);
+	if (besteffort >= 100) {
+		besteffort -= 100;
+		append_directly = true;
+	}
+	(void)append_directly;
 	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 10);
 	bool escape = *getArgReference_int(stk, pci, pci->retc + 11);
