@@ -246,7 +246,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* left hand side */
-		if ( (GDKdebug & (1<<15)) &&
+		if ( (GDKdebug & PUSHCANDMASK) &&
 		     isMatJoinOp(p) && p->retc == 2) {
 			int i1 = getArg(p, 2), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -276,7 +276,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* right hand side */
-		if ( (GDKdebug & (1<<15)) &&
+		if ( (GDKdebug & PUSHCANDMASK) &&
 		     isMatJoinOp(p) && p->retc == 2) {
 			int i1 = getArg(p, 3), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -419,7 +419,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
         				p->blk = NULL;
 					actions++;
 				}
-			} else if ( (GDKdebug & (1<<15)) && isMatJoinOp(p) && p->retc == 2) {
+			} else if ( (GDKdebug & PUSHCANDMASK) && isMatJoinOp(p) && p->retc == 2) {
 				int ltid = 0, rtid = 0, done = 0;
 				int range = 0;
 

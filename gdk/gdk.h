@@ -375,6 +375,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 #define PERFMASK	(1<<12)
 #define DELTAMASK	(1<<13)
 #define LOADMASK	(1<<14)
+#define PUSHCANDMASK	(1<<15)	/* used in opt_pushselect.c */
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
 
