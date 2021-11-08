@@ -3252,12 +3252,11 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 				i = canditer_next(ci) - b->hseqbase;	\
 				if (!skip_nils ||			\
 				    !is_##TYPE##_nil(vals[i])) {	\
-					oids[i] = i + b->hseqbase;	\
+					oids[gid++] = i + b->hseqbase;	\
 					nils--;				\
 				}					\
 			}						\
 		} else {						\
-			gid = 0; /* in case gids == NULL */		\
 			while (ncand > 0) {				\
 				ncand--;				\
 				i = canditer_next(ci) - b->hseqbase;	\
@@ -3288,7 +3287,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	    oid min, oid max, struct canditer *restrict ci, BUN ncand,
 	    bool skip_nils, bool gdense)
 {
-	oid gid;
+	oid gid = 0;
 	BUN i, nils;
 	int t;
 	const void *nil;
@@ -3341,15 +3340,16 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				while (ncand > 0) {
 					ncand--;
 					i = canditer_next(ci);
-					oids[i - b->hseqbase] = i;
+					oids[gid++] = i;
 					nils--;
 				}
 			} else {
 				while (ncand > 0) {
 					ncand--;
 					i = canditer_next(ci);
-					if (is_oid_nil(oids[i - b->hseqbase])) {
-						oids[i - b->hseqbase] = i;
+					gid = gids[i - b->hseqbase] - min;
+					if (is_oid_nil(oids[gid])) {
+						oids[gid] = i;
 						nils--;
 					}
 				}
@@ -3366,12 +3366,11 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-					oids[i] = i + b->hseqbase;
+					oids[gid++] = i + b->hseqbase;
 					nils--;
 				}
 			}
 		} else {
-			gid = 0; /* in case gids == NULL */
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
@@ -3413,7 +3412,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	    oid min, oid max, struct canditer *restrict ci, BUN ncand,
 	    bool skip_nils, bool gdense)
 {
-	oid gid;
+	oid gid = 0;
 	BUN i, nils;
 	int t;
 	const void *nil;
@@ -3466,16 +3465,17 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				while (ncand > 0) {
 					ncand--;
 					i = canditer_next(ci);
-					oids[i - b->hseqbase] = i;
+					oids[gid++] = i;
 					nils--;
 				}
 			} else {
 				while (ncand > 0) {
 					ncand--;
 					i = canditer_next(ci);
-					if (is_oid_nil(oids[i - b->hseqbase]))
+					gid = gids[i - b->hseqbase] - min;
+					if (is_oid_nil(oids[gid]))
 						nils--;
-					oids[i - b->hseqbase] = i;
+					oids[gid] = i;
 				}
 			}
 		}
@@ -3490,12 +3490,11 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-					oids[i] = i + b->hseqbase;
+					oids[gid++] = i + b->hseqbase;
 					nils--;
 				}
 			}
 		} else {
-			gid = 0; /* in case gids == NULL */
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(ci) - b->hseqbase;
