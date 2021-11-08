@@ -3678,17 +3678,14 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (s->nrcols == 0){
-			int pushed = 0;
-			if (!predicate && sub) {
-				predicate = stmt_const(be, bin_find_smallest_column(be, sub), sel, stmt_bool(be, 1));
-				pushed = 1;
-			}
+			if (!predicate && sub)
+				predicate = stmt_const(be, bin_find_smallest_column(be, sub), sub->cand, stmt_bool(be, 1));
 			if (e->type != e_cmp) {
 				sql_subtype *bt = sql_bind_localtype("bit");
 
 				s = stmt_convert(be, s, NULL, exp_subtype(e), bt);
 			}
-			sel = stmt_uselect(be, predicate, s, cmp_equal, pushed ? NULL : sel, 0, 0);
+			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0, 0);
 		} else if (e->type != e_cmp) {
 			sel = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
 		} else {
