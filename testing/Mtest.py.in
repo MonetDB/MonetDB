@@ -3154,20 +3154,20 @@ else:
         return os.listdir(os.path.abspath(d))
 
 HOST = 'localhost'
-if 'HOST' in os.environ:
-    HOST = os.environ['HOST']
-#else:
-#    HOST = ''
-elif os.name != "nt":
-    HOST = os.uname()[1]
-elif 'COMPUTERNAME' in os.environ:
-    HOST = os.environ['COMPUTERNAME']
-##else:
-##    HOST = "WIN2000"
-if 'DOMAIN' in os.environ:
-    HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
-else:
-    HOST = HOST.split('.', 1)[0]
+# if 'HOST' in os.environ:
+#     HOST = os.environ['HOST']
+# #else:
+# #    HOST = ''
+# elif os.name != "nt":
+#     HOST = os.uname()[1]
+# elif 'COMPUTERNAME' in os.environ:
+#     HOST = os.environ['COMPUTERNAME']
+# ##else:
+# ##    HOST = "WIN2000"
+# if 'DOMAIN' in os.environ:
+#     HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
+# else:
+#     HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 os.environ['MAPIHOST'] = HOST
 
