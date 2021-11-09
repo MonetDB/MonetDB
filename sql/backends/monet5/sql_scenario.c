@@ -77,13 +77,22 @@ int SQLdebug = 0;
 static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
+/* if 'mod' not NULL, use it otherwise get the module from the client id */
 static void
-monet5_freecode(int clientid, const char *name)
+monet5_freecode(const char *mod, int clientid, const char *name)
 {
-	str msg;
+	Module m = NULL;
+	str msg = MAL_SUCCEED;
 
-	msg = SQLCacheRemove(MCgetClient(clientid), name);
-	if (msg)
+	if (mod) {
+		m = getModule(putName(mod));
+	} else {
+		Client c = MCgetClient(clientid);
+		if (c)
+			m = c->usermodule;
+	}
+
+	if (m && (msg = SQLCacheRemove(m, name)))
 		freeException(msg);	/* do something with error? */
 }
 
@@ -1320,14 +1329,12 @@ SQLengine(Client c)
 }
 
 str
-SQLCacheRemove(Client c, const char *nme)
+SQLCacheRemove(Module m, const char *nme)
 {
-	Symbol s;
-
-	s = findSymbolInModule(c->usermodule, nme);
+	Symbol s = findSymbolInModule(m, nme);
 	if (s == NULL)
 		throw(MAL, "cache.remove", SQLSTATE(42000) "internal error, symbol missing\n");
-	deleteSymbol(c->usermodule, s);
+	deleteSymbol(m, s);
 	return MAL_SUCCEED;
 }
 

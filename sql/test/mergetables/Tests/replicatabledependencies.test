@@ -1,0 +1,132 @@
+statement ok
+start transaction
+
+statement ok
+CREATE REPLICA TABLE parent(a int)
+
+statement ok
+CREATE TABLE child1(a int)
+
+statement ok rowcount 2
+INSERT INTO child1 VALUES (1),(2)
+
+statement ok
+CREATE TABLE child2(a int)
+
+statement ok rowcount 2
+INSERT INTO child2 VALUES (3),(4)
+
+statement ok
+alter table parent add table child1
+
+statement ok
+alter table parent add table child2
+
+statement ok
+create function myfunc() returns table(a int) begin return select a from parent; end
+
+query I rowsort
+SELECT a from myfunc()
+----
+1
+2
+
+statement ok
+alter table parent drop table child1
+
+query I rowsort
+SELECT a from myfunc()
+----
+3
+4
+
+statement ok
+drop table child1
+
+query I rowsort
+SELECT a from myfunc()
+----
+3
+4
+
+statement ok
+CREATE TABLE child3(a int)
+
+statement ok rowcount 2
+INSERT INTO child3 VALUES (5),(6)
+
+statement ok
+alter table parent add table child3
+
+query I rowsort
+SELECT a from myfunc()
+----
+3
+4
+
+statement ok
+alter table parent drop table child2
+
+statement ok
+drop table child2
+
+query I rowsort
+SELECT a from myfunc()
+----
+5
+6
+
+statement ok
+alter table parent drop table child3
+
+statement ok
+savepoint sp1
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+SELECT a from myfunc()
+
+statement ok
+rollback to savepoint sp1
+
+statement ok
+alter table parent add table child3
+
+query I rowsort
+SELECT a from myfunc()
+----
+5
+6
+
+statement ok
+create view myview as (select a from parent)
+
+query I rowsort
+SELECT a from myview
+----
+5
+6
+
+statement ok
+alter table parent drop table child3
+
+statement ok
+savepoint sp2
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+SELECT a from myview
+
+statement ok
+rollback to savepoint sp2
+
+statement ok
+alter table parent add table child3
+
+query I rowsort
+SELECT a from myview
+----
+5
+6
+
+statement ok
+rollback
+
