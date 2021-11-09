@@ -1417,7 +1417,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 							sql_subtype *lt = exp_subtype(l);
 							sql_subtype *rt = exp_subtype(r);
 
-							if (lt->type->scale == SCALE_FIX && rt->scale && strcmp(f->func->imp, "/") == 0) {
+							if (lt->type->scale == SCALE_FIX && rt->scale && strcmp(sql_func_imp(f->func), "/") == 0) {
 								sql_subtype *res = f->res->h->data;
 								unsigned int scale = lt->scale - rt->scale;
 								unsigned int digits = (lt->digits > rt->digits) ? lt->digits : rt->digits;

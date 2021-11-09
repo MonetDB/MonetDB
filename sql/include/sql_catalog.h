@@ -16,6 +16,9 @@
 #include "stream.h"
 #include "matomic.h"
 
+#define sql_shared_module_name "sql"
+#define sql_private_module_name "user"
+
 #define tr_none		0
 #define tr_readonly	1
 #define tr_writable	2
@@ -480,15 +483,16 @@ typedef enum sql_flang {
 typedef struct sql_func {
 	sql_base base;
 
-	char *imp;
 	char *mod;
+	char *imp;
+		/*
+		Backend implementation function after it gets instantiated.
+		During instantiation 'imp' will be set, but look for the 'instantiated' value to check if it's done or not.
+		Note that functions other than SQL and MAL, don't require instantiation and 'imp' is always set.
+		*/
 	sql_ftype type;
 	list *ops;	/* param list */
 	list *res;	/* list of results */
-	int sql;	/* 0 native implementation
-			   1 sql
-			   2 sql instantiated proc
-			*/
 	sql_flang lang;
 	char *query;	/* sql code */
 	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
@@ -496,6 +500,7 @@ typedef struct sql_func {
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
 	bit system;	/* system function */
+	bit instantiated; /* if the function is instantiated */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing

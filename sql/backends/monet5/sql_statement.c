@@ -3296,14 +3296,19 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
+	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
-	int push_cands = (f->func->type == F_FUNC || f->func->type == F_FILT) && (f->func->lang == FUNC_LANG_INT || f->func->lang == FUNC_LANG_MAL) &&
-		((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
-		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
-	int pushed = 0, nrcols = 0, default_nargs;
+	int push_cands, pushed = 0, nrcols = 0, default_nargs;
 	node *n;
 	stmt *o = NULL;
+
+	if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
+		return NULL;
+	mod = sql_func_mod(f->func);
+	fimp = convertMultiplexFcn(sql_func_imp(f->func));
+	push_cands = (f->func->type == F_FUNC || f->func->type == F_FILT) && (f->func->lang == FUNC_LANG_INT || f->func->lang == FUNC_LANG_MAL) &&
+		((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
+		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
 
 	if (list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
@@ -3319,13 +3324,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 				nrcols++;
 		}
 	}
-
 	default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
-
-	if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
-		return NULL;
-	mod = sql_func_mod(f->func);
-	fimp = convertMultiplexFcn(sql_func_imp(f->func));
 	if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 		sql_subtype *res = f->res->h->data;
 
@@ -3437,7 +3436,6 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = "user";
 	prop *p = NULL;
 	sql_allocator *sa = be->mvc->sa;
 	stmt *o = NULL, *s = NULL;
@@ -3458,7 +3456,7 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 		rel->p = p;
 	}
 
-	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
+	if (monet5_create_relational_function(be->mvc, sql_private_module_name, name, rel, ops, NULL, 1) < 0)
 		return NULL;
 
 	if (ops && list_length(ops->op4.lval)) {
@@ -3480,10 +3478,10 @@ stmt_func(backend *be, stmt *ops, stmt *sel, const char *name, sql_rel *rel, int
 	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);
 	else
-		q = newStmt(mb, mod, name);
+		q = newStmt(mb, sql_private_module_name, name);
 	q = relational_func_create_result(be->mvc, mb, q, rel);
 	if (f_union) {
-		q = pushStr(mb, q, mod);
+		q = pushStr(mb, q, sql_private_module_name);
 		q = pushStr(mb, q, name);
 	}
 	if (ops && list_length(ops->op4.lval)) {
@@ -3540,8 +3538,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *cand, stmt *grp, stmt *ext, sql_subfunc 
 		return NULL;
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
-	mod = op->func->mod;
-	aggrfunc = op->func->imp;
+	mod = sql_func_mod(op->func);
+	aggrfunc = sql_func_imp(op->func);
 
 	can_push = (grp && strcmp(mod,"aggr")==0) ||
 		       strcmp(aggrfunc, "avg")==0 || strcmp(aggrfunc, "prod")==0 || strcmp(aggrfunc, "sum")==0 ||

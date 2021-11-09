@@ -247,7 +247,7 @@ statement ok rowcount 9
 INSERT INTO "salesmart" VALUES ('pT펈*1.{'),('1870507234'),('27825'),('/aF⯗u'),('10545346022400.000'),(''),('-1533465369'),(''),('29781')
 
 statement ok
-create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551856816223651236441583023406565189361572265625, 0.5695062)))), null)
+create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551856816223651236441583023406565189361572265625, 0.5695062)))), cast(null as clob))
 
 query I rowsort
 select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and ('0.43353835334391844'))) as res
