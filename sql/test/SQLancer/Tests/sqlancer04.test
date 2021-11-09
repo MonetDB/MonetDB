@@ -688,7 +688,7 @@ create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "i
 
 statement ok
 create view v43(vc0, vc1) as (select distinct cast(case 0.635420284843984273237538218381814658641815185546875 when
-0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), null
+0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), cast(null as clob)
 where ((-1975284152)<=(17772))) with check option
 
 query I rowsort

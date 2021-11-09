@@ -600,6 +600,8 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 		if (columns[i].name && columns[i].name[0] == '%')
 			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+		if (tpe.type->eclass == EC_ANY)
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: any type (plain null value) not allowed as a column type, use an explicit cast");
 		switch (mvc_create_column(&col, sql, t, columns[i].name, &tpe)) {
 			case -1:
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
