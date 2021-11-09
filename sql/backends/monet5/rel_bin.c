@@ -1241,12 +1241,19 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL;
-		int push_cands = can_push_cands(sel, f);
+		const char *mod, *fimp;
 
-		if (f->func->side_effect && left && left->nrcols > 0) {
+		/* attempt to instantiate MAL functions now, so we can know if we can push candidate lists */
+		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
+			return NULL;
+		mod = sql_func_mod(f->func);
+		fimp = sql_func_imp(f->func);
+
+		/* TODO the 'next_value_for' case is an ugly hack, and it will get fixed on 'sequences_7184' branch */
+		if ((f->func->side_effect || (!f->func->s && strcmp(f->func->base.name, "next_value_for") == 0)) && left && left->nrcols > 0) {
 			sql_subfunc *f1 = NULL;
 			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
-			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
+			if (list_empty(exps) && ((!f->func->s && strcmp(f->func->base.name, "rand") == 0) || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
 				if (f1)
 					f = f1;
 				list_append(l, stmt_const(be, bin_find_smallest_column(be, left),
@@ -1258,17 +1265,19 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			sql->errstr[0] = '\0';
 		}
 		assert(!e->r);
-		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)
-			return left->op4.lval->h->data;
-		else if (!list_empty(exps)) {
-			unsigned nrcols = 0;
-
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "case") == 0)
+		if (strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
+			if (strcmp(f->func->base.name, "star") == 0)
+				return left->op4.lval->h->data;
+			if (strcmp(f->func->base.name, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "casewhen") == 0)
+			if (strcmp(f->func->base.name, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
+			if (strcmp(f->func->base.name, "coalesce") == 0)
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
+		}
+		if (!list_empty(exps)) {
+			unsigned nrcols = 0;
+			int push_cands = can_push_cands(sel, mod, fimp);
 
 			assert(list_length(exps) == list_length(f->func->ops) || f->func->type == F_ANALYTIC || f->func->type == F_LOADER || f->func->vararg || f->func->varres);
 			for (en = exps->h; en; en = en->next) {
@@ -1676,10 +1685,11 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 static stmt *
 parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emode)
 {
-	sql_exp *e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL);
-	if (e)
-		return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	return sql_error(be->mvc, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	sql_exp *e = NULL;
+
+	if (!(e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL)))
+		return NULL;
+	return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
 
 static stmt *
@@ -2119,12 +2129,12 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						else
 							getArg(q, 0) = newTmpVariable(be->mb, type);
 					}
+					if (backend_create_subfunc(be, f, ops) < 0)
+		 				return NULL;
 					str mod = sql_func_mod(f->func);
 					str fcn = sql_func_imp(f->func);
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
-					if (backend_create_func(be, f->func, NULL, ops) < 0)
-		 				return NULL;
 					psub = stmt_direct_func(be, q);
 
 					if (ids) /* push input rowids column */
@@ -3881,7 +3891,7 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, s, query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
+	if (rel && (rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }

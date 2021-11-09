@@ -86,6 +86,9 @@ endif(HAVE_SHP)
 if (NOT WIN32)
   set(NOT_WIN32_FALSE "#")
 endif()
+if(NOT ASSERT)
+  set(NOT_ASSERT_FALSE "#")
+endif()
 
 configure_file(Mtest.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py

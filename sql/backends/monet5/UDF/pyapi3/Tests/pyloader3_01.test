@@ -29,7 +29,7 @@ SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHER
 ----
 myfunc
 {@@_emit.emit({'a':42,'d':1})@}@;
-pyapi
+pyapi3
 6
 7
 True

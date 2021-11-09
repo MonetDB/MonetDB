@@ -79,7 +79,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 				" (%d, '%s', '%s', '%s',"
 				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
 				func->base.id, func->base.name,
-				func->imp, func->mod, (int) FUNC_LANG_INT,
+				sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
 				(int) func->type,
 				boolnames[func->side_effect],
 				boolnames[func->varres],
@@ -1084,15 +1084,15 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 {
 	sql_table *t;
 	size_t bufsize = 32768, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
+	char *err = NULL, *buf = NULL;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 	if (!*systabfixed &&
-	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 		return err;
 	*systabfixed = true;
 
-	if (buf == NULL)
+	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1868,8 +1868,12 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 		BATiter bi = bat_iterator_nolock(b);
 		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
 			if (!*systabfixed &&
-				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL) {
+				BBPunfix(b->batCacheid);
+				res_table_destroy(output);
+				GDKfree(buf);
 				return err;
+			}
 			*systabfixed = true;
 
 			pos = 0;
@@ -2024,7 +2028,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		if (BATcount(b) > 0) {
 			if (!*systabfixed &&
 				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
-				return err;
+				goto bailout;
 			*systabfixed = true;
 
 			pos = 0;
@@ -3370,8 +3374,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	/* 25_debug.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
+					"drop function sys.malfunctions();\n"
+					"create function sys.malfunctions()\n"
+					" returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string)\n"
+					" external name \"manual\".\"functions\";\n"
 					"create view sys.malfunctions as select * from sys.malfunctions();\n"
 					"update sys._tables set system = true where system <> true and schema_id = 2000"
+					" and name = 'malfunctions';\n"
+					"update sys.functions set system = true where system <> true and schema_id = 2000"
 					" and name = 'malfunctions';\n");
 
 	/* 21_dependency_views.sql */
@@ -4102,6 +4112,317 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
 
+	/* recreate SQL functions that just need to be recompiled since the
+	 * MAL functions's "unsafe" property was changed */
+	sql_schema *lg = mvc_bind_schema(sql, "logging");
+	t = mvc_bind_table(sql, lg, "compinfo");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "schemastorage");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "tablestorage");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "storage");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "rejects");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "queue");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "optimizers");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "prepared_statements_args");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "prepared_statements");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "sessions");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "querylog_calls");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "querylog_history");
+	t->system = 0;
+	t = mvc_bind_table(sql, s, "querylog_catalog");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+					"drop view logging.compinfo;\n"
+					"drop function logging.compinfo;\n"
+					"drop procedure sys.storagemodelinit();\n"
+					"drop view sys.schemastorage;\n"
+					"drop view sys.tablestorage;\n"
+					"drop view sys.storage;\n"
+					"drop function sys.storage();\n"
+					"drop function wlr.tick;\n"
+					"drop function wlr.clock;\n"
+					"drop function wlc.tick;\n"
+					"drop function wlc.clock;\n"
+					"drop function profiler.getlimit;\n"
+					"drop view sys.rejects;\n"
+					"drop function sys.rejects;\n"
+					"drop function sys.user_statistics;\n"
+					"drop view sys.queue;\n"
+					"drop function sys.queue;\n"
+					"drop function sys.debugflags;\n"
+					"drop function sys.bbp;\n"
+					"drop view sys.optimizers;\n"
+					"drop function sys.optimizers;\n"
+					"drop function sys.querycache;\n"
+					"drop function sys.optimizer_stats;\n"
+					"drop function sys.current_sessionid;\n"
+					"drop view sys.prepared_statements_args;\n"
+					"drop function sys.prepared_statements_args;\n"
+					"drop view sys.prepared_statements;\n"
+					"drop function sys.prepared_statements;\n"
+					"drop view sys.sessions;\n"
+					"drop function sys.sessions;\n"
+					"drop view sys.querylog_history;\n"
+					"drop view sys.querylog_calls;\n"
+					"drop function sys.querylog_calls;\n"
+					"drop view sys.querylog_catalog;\n"
+					"drop function sys.querylog_catalog;\n"
+					"create function sys.querylog_catalog()\n"
+					"returns table(\n"
+					" id oid,\n"
+					" owner string,\n"
+					" defined timestamp,\n"
+					" query string,\n"
+					" pipe string,\n"
+					" \"plan\" string,\n"
+					" mal int,\n"
+					" optimize bigint\n"
+					")\n"
+					"external name sql.querylog_catalog;\n"
+					"create view sys.querylog_catalog as select * from sys.querylog_catalog();\n"
+					"create function sys.querylog_calls()\n"
+					"returns table(\n"
+					" id oid,\n"
+					" \"start\" timestamp,\n"
+					" \"stop\" timestamp,\n"
+					" arguments string,\n"
+					" tuples bigint,\n"
+					" run bigint,\n"
+					" ship bigint,\n"
+					" cpu int,\n"
+					" io int\n"
+					")\n"
+					"external name sql.querylog_calls;\n"
+					"create view sys.querylog_calls as select * from sys.querylog_calls();\n"
+					"create view sys.querylog_history as\n"
+					"select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n"
+					"from sys.querylog_catalog() qd, sys.querylog_calls() ql\n"
+					"where qd.id = ql.id and qd.owner = user;\n"
+					"create function sys.sessions()\n"
+					"returns table(\n"
+					" \"sessionid\" int,\n"
+					" \"username\" string,\n"
+					" \"login\" timestamp,\n"
+					" \"idle\" timestamp,\n"
+					" \"optimizer\" string,\n"
+					" \"sessiontimeout\" int,\n"
+					" \"querytimeout\" int,\n"
+					" \"workerlimit\" int,\n"
+					" \"memorylimit\" int\n"
+					")\n"
+					"external name sql.sessions;\n"
+					"create view sys.sessions as select * from sys.sessions();\n"
+					"create function sys.prepared_statements()\n"
+					"returns table(\n"
+					" \"sessionid\" int,\n"
+					" \"username\" string,\n"
+					" \"statementid\" int,\n"
+					" \"statement\" string,\n"
+					" \"created\" timestamp\n"
+					")\n"
+					"external name sql.prepared_statements;\n"
+					"grant execute on function sys.prepared_statements to public;\n"
+					"create view sys.prepared_statements as select * from sys.prepared_statements();\n"
+					"grant select on sys.prepared_statements to public;\n"
+					"create function sys.prepared_statements_args()\n"
+					"returns table(\n"
+					" \"statementid\" int,\n"
+					" \"type\" string,\n"
+					" \"type_digits\" int,\n"
+					" \"type_scale\" int,\n"
+					" \"inout\" tinyint,\n"
+					" \"number\" int,\n"
+					" \"schema\" string,\n"
+					" \"table\" string,\n"
+					" \"column\" string\n"
+					")\n"
+					"external name sql.prepared_statements_args;\n"
+					"grant execute on function sys.prepared_statements_args to public;\n"
+					"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();\n"
+					"grant select on sys.prepared_statements_args to public;\n"
+					"create function sys.current_sessionid() returns int\n"
+					"external name clients.current_sessionid;\n"
+					"grant execute on function sys.current_sessionid to public;\n"
+					"create function sys.optimizer_stats()\n"
+					" returns table (optname string, count int, timing bigint)\n"
+					" external name inspect.optimizer_stats;\n"
+					"create function sys.querycache()\n"
+					" returns table (query string, count int)\n"
+					" external name sql.dump_cache;\n"
+					"create function sys.optimizers ()\n"
+					" returns table (name string, def string, status string)\n"
+					" external name sql.optimizers;\n"
+					"create view sys.optimizers as select * from sys.optimizers();\n"
+					"create function sys.bbp ()\n"
+					" returns table (id int, name string,\n"
+					" ttype string, count bigint, refcnt int, lrefcnt int,\n"
+					" location string, heat int, dirty string,\n"
+					" status string, kind string)\n"
+					" external name bbp.get;\n"
+					"create function sys.debugflags()\n"
+					" returns table(flag string, val bool)\n"
+					" external name mdb.\"getDebugFlags\";\n"
+					"create function sys.queue()\n"
+					"returns table(\n"
+					" \"tag\" bigint,\n"
+					" \"sessionid\" int,\n"
+					" \"username\" string,\n"
+					" \"started\" timestamp,\n"
+					" \"status\" string,\n"
+					" \"query\" string,\n"
+					" \"finished\" timestamp,\n"
+					" \"maxworkers\" int,\n"
+					" \"footprint\" int\n"
+					")\n"
+					"external name sysmon.queue;\n"
+					"grant execute on function sys.queue to public;\n"
+					"create view sys.queue as select * from sys.queue();\n"
+					"grant select on sys.queue to public;\n"
+					"create function sys.user_statistics()\n"
+					"returns table(\n"
+					" username string,\n"
+					" querycount bigint,\n"
+					" totalticks bigint,\n"
+					" started timestamp,\n"
+					" finished timestamp,\n"
+					" maxticks bigint,\n"
+					" maxquery string\n"
+					")\n"
+					"external name sysmon.user_statistics;\n"
+					"create function sys.rejects()\n"
+					"returns table(\n"
+					" rowid bigint,\n"
+					" fldid int,\n"
+					" \"message\" string,\n"
+					" \"input\" string\n"
+					")\n"
+					"external name sql.copy_rejects;\n"
+					"grant execute on function rejects to public;\n"
+					"create view sys.rejects as select * from sys.rejects();\n"
+					"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
+					"create function wlc.clock() returns string\n"
+					"external name wlc.\"getclock\";\n"
+					"create function wlc.tick() returns bigint\n"
+					"external name wlc.\"gettick\";\n"
+					"create function wlr.clock() returns string\n"
+					"external name wlr.\"getclock\";\n"
+					"create function wlr.tick() returns bigint\n"
+					"external name wlr.\"gettick\";\n"
+					"create function sys.\"storage\"()\n"
+					"returns table (\n"
+					" \"schema\" varchar(1024),\n"
+					" \"table\" varchar(1024),\n"
+					" \"column\" varchar(1024),\n"
+					" \"type\" varchar(1024),\n"
+					" \"mode\" varchar(15),\n"
+					" location varchar(1024),\n"
+					" \"count\" bigint,\n"
+					" typewidth int,\n"
+					" columnsize bigint,\n"
+					" heapsize bigint,\n"
+					" hashes bigint,\n"
+					" phash boolean,\n"
+					" \"imprints\" bigint,\n"
+					" sorted boolean,\n"
+					" revsorted boolean,\n"
+					" \"unique\" boolean,\n"
+					" orderidx bigint\n"
+					")\n"
+					"external name sql.\"storage\";\n"
+					"create view sys.\"storage\" as\n"
+					"select * from sys.\"storage\"()\n"
+					" where (\"schema\", \"table\") in (\n"
+					" select sch.\"name\", tbl.\"name\"\n"
+					" from sys.\"tables\" as tbl join sys.\"schemas\" as sch on tbl.schema_id = sch.id\n"
+					" where tbl.\"system\" = false)\n"
+					"order by \"schema\", \"table\", \"column\";\n"
+					"create view sys.\"tablestorage\" as\n"
+					"select \"schema\", \"table\",\n"
+					" max(\"count\") as \"rowcount\",\n"
+					" count(*) as \"storages\",\n"
+					" sum(columnsize) as columnsize,\n"
+					" sum(heapsize) as heapsize,\n"
+					" sum(hashes) as hashsize,\n"
+					" sum(\"imprints\") as imprintsize,\n"
+					" sum(orderidx) as orderidxsize\n"
+					" from sys.\"storage\"\n"
+					"group by \"schema\", \"table\"\n"
+					"order by \"schema\", \"table\";\n"
+					"create view sys.\"schemastorage\" as\n"
+					"select \"schema\",\n"
+					" count(*) as \"storages\",\n"
+					" sum(columnsize) as columnsize,\n"
+					" sum(heapsize) as heapsize,\n"
+					" sum(hashes) as hashsize,\n"
+					" sum(\"imprints\") as imprintsize,\n"
+					" sum(orderidx) as orderidxsize\n"
+					" from sys.\"storage\"\n"
+					"group by \"schema\"\n"
+					"order by \"schema\";\n"
+					"create procedure sys.storagemodelinit()\n"
+					"begin\n"
+					" delete from sys.storagemodelinput;\n"
+					" insert into sys.storagemodelinput\n"
+					" select \"schema\", \"table\", \"column\", \"type\", typewidth, \"count\",\n"
+					" case when (\"unique\" or \"type\" in ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya'))\n"
+					" then \"count\" else 0 end,\n"
+					" case when \"count\" > 0 and heapsize >= 8192 and \"type\" in ('varchar', 'char', 'clob', 'json', 'url')\n"
+					" then cast((heapsize - 8192) / \"count\" as bigint)\n"
+					" when \"count\" > 0 and heapsize >= 32 and \"type\" in ('blob', 'geometry', 'geometrya')\n"
+					" then cast((heapsize - 32) / \"count\" as bigint)\n"
+					" else typewidth end,\n"
+					" false, case sorted when true then true else false end, \"unique\", true\n"
+					" from sys.\"storage\";\n"
+					" update sys.storagemodelinput\n"
+					" set reference = true\n"
+					" where (\"schema\", \"table\", \"column\") in (\n"
+					" select fkschema.\"name\", fktable.\"name\", fkkeycol.\"name\"\n"
+					" from sys.\"keys\" as fkkey,\n"
+					" sys.\"objects\" as fkkeycol,\n"
+					" sys.\"tables\" as fktable,\n"
+					" sys.\"schemas\" as fkschema\n"
+					" where fktable.\"id\" = fkkey.\"table_id\"\n"
+					" and fkkey.\"id\" = fkkeycol.\"id\"\n"
+					" and fkschema.\"id\" = fktable.\"schema_id\"\n"
+					" and fkkey.\"rkey\" > -1 );\n"
+					" update sys.storagemodelinput\n"
+					" set isacolumn = false\n"
+					" where (\"schema\", \"table\", \"column\") not in (\n"
+					" select sch.\"name\", tbl.\"name\", col.\"name\"\n"
+					" from sys.\"schemas\" as sch,\n"
+					" sys.\"tables\" as tbl,\n"
+					" sys.\"columns\" as col\n"
+					" where sch.\"id\" = tbl.\"schema_id\"\n"
+					" and tbl.\"id\" = col.\"table_id\");\n"
+					"end;\n"
+					"create function logging.compinfo()\n"
+					"returns table(\n"
+					" \"id\" int,\n"
+					" \"component\" string,\n"
+					" \"log_level\" string\n"
+					")\n"
+					"external name logging.compinfo;\n"
+					"grant execute on function logging.compinfo to public;\n"
+					"create view logging.compinfo as select * from logging.compinfo();\n"
+					"grant select on logging.compinfo to public;\n"
+					"update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('schemastorage', 'tablestorage', 'storage', 'rejects', 'queue', 'optimizers', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_history', 'querylog_calls', 'querylog_catalog');\n"
+					"update sys._tables set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';\n"
+					"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('storagemodelinit', 'storage', 'rejects', 'user_statistics', 'queue', 'debugflags', 'bbp', 'optimizers', 'querycache', 'optimizer_stats', 'current_sessionid', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_calls', 'querylog_catalog');\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and name = 'getlimit';\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');\n"
+		);
 	/* 99_system.sql */
 	t = mvc_bind_table(sql, s, "systemfunctions");
 	t->system = 0;
