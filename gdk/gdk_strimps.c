@@ -56,26 +56,29 @@
  *
  * Strimp creation goes as follows:
  *
- * - Construct a histogram of the element (byte or character) pairs for
- *   all the strings in the BAT.
+ * - Construct a histogram of all the element pairs for all the strings
+ *   in the BAT.
  *
- * - Take the 64 most frequent pairs as the Strimp Header.
+ * - Take the np most frequent pairs as the Strimp Header.
  *
- * - For each string in the bat construct a 64 bit mask that encodes
- *   the presence or absence of each member of the header in the string.
+ * - For each string s in the BAT, construct an np-bit mask, m_s that
+ *   encodes the presence or absence of each member of the header in the
+ *   string.
+ *
+ * Filtering with a query string q goes as follows:
+ *
+ * - Use the strimp header to construct an np-bit mask for q encoding
+ *   the presence or absence of each member of the header in q.
+ *
+ * - For each bitmask in the strimp compute the bitwise AND of m_s and
+ *   q. If the result is equal to q, that means that string s contains
+ *   the same strimp header elements as q, so it is kept for more
+ *   detailed examination.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-
-
-#define swp(_a, _i, _j, TPE)			\
-	do {					\
-		TPE _t = ((TPE *)_a)[_i];	\
-		((TPE *) _a)[_i] = ((TPE *) _a)[_j];	\
-		((TPE *) _a)[_j] = _t;			\
-	} while(0)
 
 
 /* Macros for accessing metadada of a strimp. These are recorded in the
@@ -100,9 +103,15 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #else
 /* BytePairs implementation.
  *
- * All the of the following functions and macros up to #endif need to be
+ * The header elemens are pairs of bytes. In this case the histogram is
+ * 256*256=65536 entries long. We use the numeric value of the 2 byte
+ * sequence of the pair as the index to the histogram.
+ *
+ * Note: All the of the following functions and macros up to #endif need to be
  * implemented for the UTF8 case.
  */
+
+/* We disregard spaces, digits and punctuation characters */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
@@ -137,10 +146,20 @@ next_pair(PairIterator *pi) {
 	return true;
 }
 
+/* Returns true if the specified char is ignored.
+ */
+static bool
+ignored(CharPair *p, uint8_t elm) {
+	assert(elm == 0 || elm == 1);
+	return isIgnored(p->pbytes[elm]);
+}
+
 #endif // UTF8STRIMPS
 
-/* Look up a given pair in a strimp. Returns the index of the pair, or
- * -1 if it is not found. Assumes that there no more than 128 pairs.
+/* Looks up a given pair in the strimp header. Returns the index of the
+ * pair, or -1 if it is not found.
+ *
+ * NOTE: This routine assumes that there are no more than 128 pairs.
  */
 static int8_t
 STRMPpairLookup(Strimps *s, CharPair *p) {
@@ -149,7 +168,8 @@ STRMPpairLookup(Strimps *s, CharPair *p) {
 	size_t offset = 0;
 	CharPair sp;
 
-	// The return type implies that we have no more than 128 pairs.
+	// The return type implies that we have no more than 128 pairs
+	// in the header.
 	assert(npairs <= 128);
 
 	for (idx = 0; idx < npairs; idx++) {
@@ -163,17 +183,9 @@ STRMPpairLookup(Strimps *s, CharPair *p) {
 	return -1;
 }
 
-static bool
-ignored(CharPair *p, uint8_t elm) {
-	assert(elm == 0 || elm == 1);
-	return isIgnored(p->pbytes[elm]);
-}
 
-/* Given a strimp header and a string compute the bitstring of which
- * digrams are present in the string. The strimp header is a map from
- * digram to index in the strimp.
+/* Computes the bitstring of a string s with respect to the strimp r.
  *
- * This should probably be inlined.
  */
 static uint64_t
 STRMPmakebitstring(const str s, Strimps *r)
@@ -197,8 +209,15 @@ STRMPmakebitstring(const str s, Strimps *r)
 	return ret;
 }
 
-/* Given a histogram find the indices of the STRIMP_HEADER_SIZE largest
- * counts.
+#define SWAP(_a, _i, _j, TPE)				\
+	do {						\
+		TPE _t = ((TPE *)_a)[_i];		\
+		((TPE *) _a)[_i] = ((TPE *) _a)[_j];	\
+		((TPE *) _a)[_j] = _t;			\
+	} while(0)
+
+/* Finds the indices of the STRIMP_HEADER_SIZE largest counts in a given
+ * a histogram. It returns them in the cp pointer.
  *
  * We make one scan of histogram and every time we find a count that is
  * greater than the current minimum of the STRIMP_HEADER_SIZE, we bubble
@@ -208,12 +227,16 @@ STRMPmakebitstring(const str s, Strimps *r)
  *
  * At the end of this process we have the indices of STRIMP_HEADER_SIZE
  * largest counts in the histogram. This process is O(n) in time since
- * we are doing constant work (at most 63 comparisons and swaps) for
- * each item in the histogram and as such is (theoretically) more
- * efficient than sorting (O(nlog n))and taking the STRIMP_HEADER_SIZE
- * largest elements. This depends on the size of the histogram n. For
- * some small n sorting might be more efficient, but for such inputs the
- * difference should not be noticeable.
+ * we are doing constant work (at most STRIMP_HEADER_SIZE-1 comparisons
+ * and swaps) for each item in the histogram and as such is
+ * (theoretically) more efficient than sorting (O(nlog n))and taking the
+ * STRIMP_HEADER_SIZE largest elements. This depends on the size of the
+ * histogram n. For some small n sorting might be more efficient, but
+ * for such inputs the difference should not be noticeable.
+ *
+ * TODO: Explore if a priority queue (heap construction and 64 extract
+ * maximums) is worth it. The tradeoff here is that it will complicate
+ * the code but might improve performance.
  */
 static void
 STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
@@ -232,8 +255,8 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 			max_counts[cmin_max] = hist[i].cnt;
 			indices[cmin_max] = i;
 			for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
-				swp(max_counts, hidx, hidx-1, uint64_t);
-				swp(indices, hidx, hidx-1, size_t);
+				SWAP(max_counts, hidx, hidx-1, uint64_t);
+				SWAP(indices, hidx, hidx-1, size_t);
 			}
 		}
 	}
@@ -246,6 +269,12 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
 
+/* Given a BAT b and a candidate list s constructs the header elements
+ * of the strimp.
+ *
+ * Initially creates the histogram for the all the pairs in the candidate
+ * and then chooses the STRIMP_HEADER_SIZE most frequent of them.
+ */
 static bool
 STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	lng t0 = 0;
@@ -291,15 +320,18 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 			pi.lim = strlen(pi.s);
 			while (pair_at(pip, cpp)) {
 				if(ignored(cpp, 1)) {
-					/* Skip this and the next pair
-					 * if the next char is ignored.
+					/* Skip this AND the next pair
+					 * if the second char of the
+					 * pair is ignored.
 					 */
 					next_pair(pip);
 				} else if (ignored(cpp, 0)) {
-					/* Skip this pair if the current
+					/* Skip this pair if the first
 					 * char is ignored. This should
 					 * only happen at the beginnig
-					 * of a string.
+					 * of a string, since the pair
+					 * will have been ignored in the
+					 * previous case.
 					 */
 					;
 
@@ -345,7 +377,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
 	return values >= STRIMP_HEADER_SIZE;
 }
 
-/* Create the heap for a string imprint. Returns NULL on failure. This
+/* Creates the heap for a string imprint. Returns NULL on failure. This
  * follows closely the Heap creation for the order index.
  */
 static Strimps *
@@ -544,11 +576,6 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 		goto sfilter_fail;
 	}
 
-	/* TODO: Compare patterns with and without SQL pattern metachars
-	 * (% and _). Theoretically they should produce the same results
-	 * because bitstring creation ignores punctuation characters
-	 * (see the macro isIgnored).
-	 */
 	qbmask = STRMPmakebitstring(q, strmps);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 
