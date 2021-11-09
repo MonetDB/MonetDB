@@ -788,11 +788,12 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			SQLaddQueryToCache(c);
 			msg = SQLoptimizeFunction(c,c->curprg->def);
+			if( msg == MAL_SUCCEED)
+				msg = SQLrun(c,m);
+			resetMalBlk(c->curprg->def);
+			SQLremoveQueryFromCache(c);
 		}
 		rel_destroy(rel);
-		if( msg == MAL_SUCCEED)
-			msg = SQLrun(c,m);
-		resetMalBlk(c->curprg->def);
 	}
 	return RAcommit_statement(be, msg);
 }

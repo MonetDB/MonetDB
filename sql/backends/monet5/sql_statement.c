@@ -3308,9 +3308,9 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod, *fimp;
+	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = can_push_cands(sel, f);
+	int push_cands = 0;
 
 	node *n;
 	stmt *o = NULL;
@@ -3326,7 +3326,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 
 	/* handle nullif */
 	if (list_length(ops->op4.lval) == 2 &&
-		f->func->mod && strcmp(f->func->mod, "") == 0 && f->func->imp && strcmp(f->func->imp, "") == 0) {
+		strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
 		stmt *e1 = ops->op4.lval->h->data;
 		stmt *e2 = ops->op4.lval->h->next->data;
 		int nrcols = 0;
@@ -3347,12 +3347,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = pushNil(mb, q, tt);
 			q = pushArgument(mb, q, e1->nr);
 		}
+		push_cands = can_push_cands(sel, mod, fimp);
 	}
 	if (!q) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
 		fimp = sql_func_imp(f->func);
+		push_cands = can_push_cands(sel, mod, fimp);
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 			fimp = convertMultiplexFcn(fimp);
@@ -3406,7 +3408,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT && push_cands) {
+		if (f->func->type == F_FUNC && push_cands) {
 			for (n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
@@ -3474,7 +3476,6 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = "user";
 	node *n;
 	prop *p = NULL;
 
@@ -3493,16 +3494,16 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		rel->p = p;
 	}
 
-	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
+	if (monet5_create_relational_function(be->mvc, sql_private_module_name, name, rel, ops, NULL, 1) < 0)
 		return NULL;
 
 	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);
 	else
-		q = newStmt(mb, mod, name);
+		q = newStmt(mb, sql_private_module_name, name);
 	q = relational_func_create_result(be->mvc, mb, q, rel);
 	if (f_union) {
-		q = pushStr(mb, q, mod);
+		q = pushStr(mb, q, sql_private_module_name);
 		q = pushStr(mb, q, name);
 	}
 	if (ops) {
@@ -3566,8 +3567,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		return NULL;
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
-	mod = op->func->mod;
-	aggrfunc = op->func->imp;
+	mod = sql_func_mod(op->func);
+	aggrfunc = sql_func_imp(op->func);
 
 	if (strcmp(aggrfunc, "avg") == 0)
 		avg = 1;

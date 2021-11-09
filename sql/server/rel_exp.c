@@ -2844,7 +2844,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	sql_subtype *rt = exp_subtype(r);
 
 	if (lt->type->scale == SCALE_FIX && rt->scale &&
-		strcmp(f->func->imp, "/") == 0) {
+		strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
@@ -2884,7 +2884,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	sql_arg *ares = f->func->res->h->data;
 
-	if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+	if (ares->type.type->scale == SCALE_FIX && strcmp(sql_func_imp(f->func), "*") == 0) {
 		sql_subtype t;
 		sql_subtype *lt = exp_subtype(l);
 		sql_subtype *rt = exp_subtype(r);
