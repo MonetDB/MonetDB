@@ -10,7 +10,7 @@ SELECT "f"."id",
        "a"."number"
 FROM "sys"."args" "a",
      "sys"."functions" "f"
-WHERE "f"."id" NOT IN (SELECT "function_id" FROM "sys"."systemfunctions") AND
+WHERE "f"."id" NOT IN (SELECT id as "function_id" FROM "sys"."functions" WHERE system) AND
       "f"."language" <> 1 AND
       "a"."func_id" = "f"."id"
 ORDER BY "f"."id", "a"."number"

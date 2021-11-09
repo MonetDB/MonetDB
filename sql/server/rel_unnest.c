@@ -3121,7 +3121,9 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 
 			sq = exp_rel_get_rel(v->sql->sa, ie); /* get subquery */
-
+			/* number of expressions in set relations must match the children */
+			if (!is_project(sq->op) || (is_set(sq->op) && list_length(sq->exps) > 1) || (is_simple_project(sq->op) && !list_empty(sq->r)))
+				sq = rel_project(v->sql->sa, sq, rel_projections(v->sql, sq, NULL, 1, 1));
 			le = rel_reduce2one_exp(v->sql, sq);
 			le = exp_ref(v->sql, le);
 			if (is_project(rel->op) && is_freevar(le)) {

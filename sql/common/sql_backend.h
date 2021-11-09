@@ -13,7 +13,7 @@
 #include "sql_catalog.h"
 #include "sql_relation.h"
 
-typedef void (*freecode_fptr) (int clientid, const char *name);
+typedef void (*freecode_fptr) (const char *mod, int clientid, const char *name);
 
 typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, char *schema_path, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
@@ -44,7 +44,7 @@ typedef struct _backend_functions {
 	create_sub_backend sub_backend;
 } backend_functions;
 
-extern void backend_freecode(int clientid, const char *name);
+extern void backend_freecode(const char *mod, int clientid, const char *name);
 
 extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);

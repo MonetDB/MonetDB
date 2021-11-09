@@ -1764,7 +1764,7 @@ old_logger_destroy(old_logger *lg)
 		GDKfree(subcommit);
 		return rc;
 	}
-	if ((rc = logger_create_types_file(lg->lg, lg->filename)) != GDK_SUCCEED) {
+	if ((rc = logger_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		GDKfree(subcommit);
 		return rc;
