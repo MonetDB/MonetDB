@@ -741,13 +741,13 @@ strWrite(const char *a, stream *s, size_t cnt)
 }
 
 static gdk_return
-concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
-	       BUN ngrp, struct canditer *restrict ci, BUN ncand,
+concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid bhseq,
+	       BUN ngrp, struct canditer *restrict ci1, struct canditer *restrict ci2, BUN ncand,
 	       const oid *restrict gids, oid min, oid max, bool skip_nils,
-	       BAT *sep, const char *restrict separator, BUN *has_nils)
+	       BAT *sep, oid shseq, const char *restrict separator, BUN *has_nils)
 {
 	oid gid;
-	BUN i, p, nils = 0;
+	BUN i1, i2, p1, p2, nils = 0;
 	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
 	str *restrict astrings = NULL, s, sl;
 	BATiter bi, bis = (BATiter) {0};
@@ -778,9 +778,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		bool empty = true;
 
 		if (separator) {
-			for (i = 0; i < ncand; i++) {
-				p = canditer_next(ci) - seqb;
-				s = BUNtvar(bi, p);
+			for (BUN i = 0; i < ncand; i++) {
+				p1 = canditer_next(ci1) - bhseq;
+				s = BUNtvar(bi, p1);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -795,10 +795,11 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (i = 0; i < ncand; i++) {
-				p = canditer_next(ci) - seqb;
-				s = BUNtvar(bi, p);
-				sl = BUNtvar(bis, p);
+			for (BUN i = 0; i < ncand; i++) {
+				p1 = canditer_next(ci1) - bhseq;
+				p2 = canditer_next(ci2) - shseq;
+				s = BUNtvar(bi, p1);
+				sl = BUNtvar(bis, p2);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -819,7 +820,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		canditer_reset(ci);
+		canditer_reset(ci1);
+		if (!separator) /* sep case */
+			canditer_reset(ci2);
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
@@ -832,9 +835,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 			empty = true;
 			if (separator) {
-				for (i = 0; i < ncand; i++) {
-					p = canditer_next(ci) - seqb;
-					s = BUNtvar(bi, p);
+				for (BUN i = 0; i < ncand; i++) {
+					p1 = canditer_next(ci1) - bhseq;
+					s = BUNtvar(bi, p1);
 					if (strNil(s))
 						continue;
 					if (!empty) {
@@ -848,10 +851,11 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				for (i = 0; i < ncand; i++) {
-					p = canditer_next(ci) - seqb;
-					s = BUNtvar(bi, p);
-					sl = BUNtvar(bis, p);
+				for (BUN i = 0; i < ncand; i++) {
+					p1 = canditer_next(ci1) - bhseq;
+					p2 = canditer_next(ci2) - shseq;
+					s = BUNtvar(bi, p1);
+					sl = BUNtvar(bis, p2);
 					if (strNil(s))
 						continue;
 					if (!empty && !strNil(sl)) {
@@ -914,18 +918,18 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		/* at first, set astrings[i] to str_nil, then for each
 		 * non-empty group (even if all strings in the group
 		 * are empty), set to NULL */
-		for (i = 0; i < ngrp; i++)
+		for (BUN i = 0; i < ngrp; i++)
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			for (p = 0; p < ncand; p++) {
-				gid = gids[ci->next];
-				i = canditer_next(ci) - seqb;
+			for (BUN p = 0; p < ncand; p++) {
+				gid = gids[ci1->next];
+				i1 = canditer_next(ci1) - bhseq;
 				if (gid >= min && gid <= max) {
 					gid -= min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					s = BUNtvar(bi, i);
+					s = BUNtvar(bi, i1);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s) + separator_length;
 						astrings[gid] = NULL;
@@ -938,15 +942,16 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (p = 0; p < ncand; p++) {
-				gid = gids[ci->next];
-				i = canditer_next(ci) - seqb;
+			for (BUN p = 0; p < ncand; p++) {
+				gid = gids[ci1->next];
+				i1 = canditer_next(ci1) - bhseq;
+				i2 = canditer_next(ci2) - shseq;
 				if (gid >= min && gid <= max) {
 					gid -= min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					s = BUNtvar(bi, i);
-					sl = BUNtvar(bis, i);
+					s = BUNtvar(bi, i1);
+					sl = BUNtvar(bis, i2);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s);
 						if (!strNil(sl)) {
@@ -967,7 +972,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		}
 
 		if (separator) {
-			for (i = 0; i < ngrp; i++) {
+			for (BUN i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
 					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
 						rres = GDK_FAIL;
@@ -980,7 +985,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (i = 0; i < ngrp; i++) {
+			for (BUN i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
 					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - lastseplength[i])) == NULL) {
 						rres = GDK_FAIL;
@@ -992,16 +997,18 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					astrings[i] = NULL;
 			}
 		}
-		canditer_reset(ci);
+		canditer_reset(ci1);
+		if (!separator) /* sep case */
+			canditer_reset(ci2);
 
 		if (separator) {
-			for (p = 0; p < ncand; p++) {
-				gid = gids[ci->next];
-				i = canditer_next(ci) - seqb;
+			for (BUN p = 0; p < ncand; p++) {
+				gid = gids[ci1->next];
+				i1 = canditer_next(ci1) - bhseq;
 				if (gid >= min && gid <= max) {
 					gid -= min;
 					if (astrings[gid]) {
-						s = BUNtvar(bi, i);
+						s = BUNtvar(bi, i1);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]]) {
@@ -1017,14 +1024,15 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			for (p = 0; p < ncand; p++) {
-				gid = gids[ci->next];
-				i = canditer_next(ci) - seqb;
+			for (BUN p = 0; p < ncand; p++) {
+				gid = gids[ci1->next];
+				i1 = canditer_next(ci1) - bhseq;
+				i2 = canditer_next(ci2) - shseq;
 				if (gid >= min && gid <= max) {
 					gid -= min;
 					if (astrings[gid]) {
-						s = BUNtvar(bi, i);
-						sl = BUNtvar(bis, i);
+						s = BUNtvar(bi, i1);
+						sl = BUNtvar(bis, i2);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
@@ -1041,7 +1049,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 
-		for (i = 0; i < ngrp; i++) {
+		for (BUN i = 0; i < ngrp; i++) {
 			if (astrings[i]) {
 				astrings[i][lengths[i]] = '\0';
 				if (BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
@@ -1064,7 +1072,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	GDKfree(lengths);
 	GDKfree(lastseplength);
 	if (astrings) {
-		for (i = 0; i < ngrp; i++) {
+		for (BUN i = 0; i < ngrp; i++) {
 			if (astrings[i] != str_nil)
 				GDKfree(astrings[i]);
 		}
@@ -1077,23 +1085,32 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_nils,
 		    bool abort_on_error, bool nil_if_empty, const char *restrict separator)
 {
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid bhseq = b->hseqbase, shseq = sep ? sep->hseqbase : 0;
 
 	(void) abort_on_error;
 	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
 	res->vtype = TYPE_str;
 
-	ncand = canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci1, b, s1);
 
-	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
-		bat_iterator_end(&bi);
-		sep = NULL;
+	if (sep) {
+		BUN ncand2 = canditer_init(&ci2, sep, s2);
+		if (ncand != ncand2) {
+			GDKerror("b1, b2 must be aligned\n");
+			return GDK_FAIL;
+		}
+		if (ncand2 == 1) { /* Only one element in sep */
+			BATiter bi = bat_iterator(sep);
+			BUN p = canditer_next(&ci2) - shseq;
+			separator = BUNtvar(bi, p);
+			bat_iterator_end(&bi);
+			sep = NULL;
+		}
 	}
 
 	if (ncand == 0 || (separator && strNil(separator))) {
@@ -1102,39 +1119,45 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 		return GDK_SUCCEED;
 	}
 
-	return concat_strings(NULL, res, b, b->hseqbase, 1, &ci, ncand, NULL, 0, 0,
-			      skip_nils, sep, separator, NULL);
+	return concat_strings(NULL, res, b, bhseq, 1, &ci1, &ci2, ncand, NULL, 0, 0,
+			      skip_nils, sep, shseq, separator, NULL);
 }
 
 BAT *
-BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, bool skip_nils,
 			 bool abort_on_error, const char *restrict separator)
 {
 	BAT *bn = NULL;
-	oid min, max;
+	oid min, max, bhseq = b->hseqbase, shseq = sep ? sep->hseqbase : 0;
 	BUN ngrp, ncand, nils = 0;
-	struct canditer ci;
+	struct canditer ci1 = {0}, ci2 = {0};
 	const char *err;
 	gdk_return res;
 
 	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
 	(void) skip_nils;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
-				    &ci, &ncand)) !=NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s1, &min, &max, &ngrp,
+				    &ci1, &ncand)) !=NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
-	if (g == NULL) {
+	if (sep) {
+		BUN ncand2 = canditer_init(&ci2, sep, s2);
+		if (ncand != ncand2 || g == NULL || BATcount(g) != ncand) {
+			GDKerror("b, sep and g must be aligned\n");
+			return NULL;
+		}
+		if (ncand2 == 1) { /* Only one element in sep */
+			BATiter bi = bat_iterator(sep);
+			BUN p = canditer_next(&ci2) - shseq;
+			separator = BUNtvar(bi, p);
+			bat_iterator_end(&bi);
+			sep = NULL;
+		}
+	} else if (g == NULL) {
 		GDKerror("b and g must be aligned\n");
 		return NULL;
-	}
-
-	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		separator = BUNtvar(bi, 0);
-		bat_iterator_end(&bi);
-		sep = NULL;
 	}
 
 	if (ncand == 0 || ngrp == 0 || (separator && strNil(separator))) {
@@ -1146,11 +1169,11 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	if (BATtdense(g) || (g->tkey && g->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, TYPE_str, abort_on_error, 0, 0, 0);
+		return BATconvert(b, s1, TYPE_str, abort_on_error, 0, 0, 0);
 	}
 
-	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci, ncand,
-			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
+	res = concat_strings(&bn, NULL, b, bhseq, ngrp, &ci1, &ci2, ncand,
+			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep, shseq,
 			     separator, &nils);
 	if (res != GDK_SUCCEED)
 		return NULL;
