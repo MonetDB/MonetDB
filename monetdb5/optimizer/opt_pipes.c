@@ -51,8 +51,10 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#ifdef USE_STRIMPS_OPTIMIZERS
 	{"minimal_strimps_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -63,13 +65,12 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.strimps();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
-	 "optimizer.profiler();"
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#endif  // USE_STRIMPS_OPTIMIZERS
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
 	 "stable", NULL, 1},
@@ -116,6 +117,7 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#ifdef USE_STRIMPS_OPTIMIZERS
 	{"strimps_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -142,15 +144,16 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.strimps();"
 	 "optimizer.generator();"
-	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();",
+	 "optimizer.garbageCollector();"
+	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#endif  // USE_STRIMPS_OPTIMIZERS
 	{"default_fast",
 	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
