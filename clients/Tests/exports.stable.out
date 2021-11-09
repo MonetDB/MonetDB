@@ -142,7 +142,7 @@ BAT *BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantil
 BAT *BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
-BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, bool abort_on_error, const char *restrict separator);
+BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, bool skip_nils, bool abort_on_error, const char *restrict separator);
 BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
@@ -192,7 +192,7 @@ void BATsetcapacity(BAT *b, BUN cnt);
 void BATsetcount(BAT *b, BUN cnt);
 BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable) __attribute__((__warn_unused_result__));
-gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *restrict separator);
+gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *restrict separator);
 gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one) __attribute__((__warn_unused_result__));
 BAT *BATsubexist(BAT *l, BAT *g, BAT *e, BAT *s);
 BAT *BATsubnot_exist(BAT *l, BAT *g, BAT *e, BAT *s);
