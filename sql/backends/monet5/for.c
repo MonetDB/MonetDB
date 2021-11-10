@@ -59,23 +59,26 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng minval = *getArgReference_lng(stk, pci, 2);
 
 		b = COLnew(o->hseqbase, TYPE_lng, cnt, PERSISTENT);
-		if (b) {
-			if (o->ttype == TYPE_bte) {
-				lng *ov = Tloc(b, 0);
-				bte *iv = Tloc(o, 0);
-				for(BUN i = 0; i<cnt; i++)
-					ov[i] = minval + iv[i];
-			} else {
-				lng *ov = Tloc(b, 0);
-				sht *iv = Tloc(o, 0);
-				for(BUN i = 0; i<cnt; i++)
-					ov[i] = minval + iv[i];
-			}
+		if (!b) {
+			bat_destroy(o);
+			throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		if (o->ttype == TYPE_bte) {
+			lng *ov = Tloc(b, 0);
+			bte *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = minval + iv[i];
+		} else {
+			lng *ov = Tloc(b, 0);
+			sht *iv = Tloc(o, 0);
+			for(BUN i = 0; i<cnt; i++)
+				ov[i] = minval + iv[i];
+		}
+	} else {
+		bat_destroy(o);
+		throw(SQL, "for.decompress", SQLSTATE(3F000) "unknown offset type");
 	}
 	bat_destroy(o);
-	if (!b)
-		throw(SQL, "for.decompress", SQLSTATE(HY013) "unknown offset type");
 	BATsetcount(b, cnt);
 	BATnegateprops(b);
 	BBPkeepref(*r = b->batCacheid);
