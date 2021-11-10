@@ -885,7 +885,7 @@ directappend_append_one(void *state_, size_t idx, const void *const_data, void *
 	sqlstore *store = state->mvc->session->tr->store;
 
 	// unfortunately, append_col_fptr doesn't take const void*.
-	void *data = (void*)const_data;
+	void *data = ATOMextern(tpe) ? &const_data : (void*)const_data;
 	int	ret = store->storage_api.append_col(state->mvc->session->tr, c, off, NULL, data, 1, tpe);
 	if (ret != LOG_OK) {
 		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", ret == LOG_CONFLICT ? " due to conflict with another transaction" : "");
