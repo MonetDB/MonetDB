@@ -237,7 +237,7 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!c)
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
 	if (c->storage_type)
-		throw(SQL, "dict.compress", SQLSTATE(3F000) "column '%s.%s.%s' allready compressed", sname, tname, cname);
+		throw(SQL, "dict.compress", SQLSTATE(3F000) "column '%s.%s.%s' already compressed", sname, tname, cname);
 
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *o, *u;

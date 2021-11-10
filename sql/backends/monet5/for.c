@@ -42,7 +42,7 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tt != TYPE_hge &&
 #endif
 			tt != TYPE_lng && tt != TYPE_int)
-		throw(SQL, "for.decompress", SQLSTATE(3F000) "for decompress: invalid type");
+		throw(SQL, "for.decompress", SQLSTATE(3F000) "for decompress: invalid offset type");
 
 	BAT *o = BATdescriptor(O), *b = NULL;
 	if (!o) {
@@ -76,7 +76,7 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else {
 		bat_destroy(o);
-		throw(SQL, "for.decompress", SQLSTATE(3F000) "unknown offset type");
+		throw(SQL, "for.decompress", SQLSTATE(3F000) "offset type %s not yet implemented", ATOMname(tt));
 	}
 	bat_destroy(o);
 	BATsetcount(b, cnt);
@@ -109,14 +109,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	}
 
 	BUN cnt = BATcount(b);
-#ifdef HAVE_HGE
-	if (b->ttype == TYPE_hge) {
-		GDKfree(mn);
-		GDKfree(mx);
-		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type hge");
-	} else
-#endif
-	if (b->ttype == TYPE_lng) {
+	if (tt == TYPE_lng) {
 		lng min_val = *(lng*)mn;
 		lng max_val = *(lng*)mx;
 		GDKfree(mn);
@@ -141,14 +134,10 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 				ov[i] = (sht)(iv[i] - min_val);
 		}
 		snprintf(buf, 64, "FOR-" LLFMT, min_val);
-	} else if (b->ttype == TYPE_int) {
-		GDKfree(mn);
-		GDKfree(mx);
-		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type int");
 	} else {
 		GDKfree(mn);
 		GDKfree(mx);
-		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type not yet implemented");
+		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type %s not yet implemented", ATOMname(tt));
 	}
 	if (!(*comp_min_val = GDKstrdup(buf))) {
 		bat_destroy(o);
@@ -199,7 +188,7 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c->null)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: for 'for' compression column's cannot have NULL's");
 	if (c->storage_type)
-		throw(SQL, "for.compress", SQLSTATE(3F000) "column '%s.%s.%s' allready compressed", sname, tname, cname);
+		throw(SQL, "for.compress", SQLSTATE(3F000) "column '%s.%s.%s' already compressed", sname, tname, cname);
 
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *o = NULL;
