@@ -91,6 +91,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	BAT *o = NULL;
 	char buf[64];
 	int tt = b->ttype;
+	ptr mn = NULL, mx = NULL;
 
 	if (
 #ifdef HAVE_HGE
@@ -100,12 +101,18 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: invalid column type");
 
 	/* For now we only handle hge, lng, and int -> sht and bte */
-	ptr mn = BATmin(b, NULL);
-	ptr mx = BATmax(b, NULL);
+	if (!(mn = BATmin(b, NULL)))
+		throw(SQL, "for.compress", GDK_EXCEPTION);
+	if (!(mx = BATmax(b, NULL))) {
+		GDKfree(mn);
+		throw(SQL, "for.compress", GDK_EXCEPTION);
+	}
 
 	BUN cnt = BATcount(b);
 #ifdef HAVE_HGE
 	if (b->ttype == TYPE_hge) {
+		GDKfree(mn);
+		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type hge");
 	} else
 #endif
