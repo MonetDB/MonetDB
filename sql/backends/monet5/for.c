@@ -91,6 +91,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	BAT *o = NULL;
 	char buf[64];
 	int tt = b->ttype;
+	ptr mn = NULL, mx = NULL;
 
 	if (
 #ifdef HAVE_HGE
@@ -99,18 +100,27 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 			tt != TYPE_lng && tt != TYPE_int)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: invalid column type");
 
-	ptr mn = BATmin(NULL, b, NULL);
-	ptr mx = BATmax(NULL, b, NULL);
+	/* For now we only handle hge, lng, and int -> sht and bte */
+	if (!(mn = BATmin(NULL, b, NULL)))
+		throw(SQL, "for.compress", GDK_EXCEPTION);
+	if (!(mx = BATmax(NULL, b, NULL))) {
+		GDKfree(mn);
+		throw(SQL, "for.compress", GDK_EXCEPTION);
+	}
 
 	BUN cnt = BATcount(b);
 #ifdef HAVE_HGE
 	if (b->ttype == TYPE_hge) {
+		GDKfree(mn);
+		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type hge");
 	} else
 #endif
 	if (b->ttype == TYPE_lng) {
 		lng min_val = *(lng*)mn;
 		lng max_val = *(lng*)mx;
+		GDKfree(mn);
+		GDKfree(mx);
 		if ((max_val-min_val) > GDK_sht_max)
 			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: too large value spread for 'for' compression");
 		if ((max_val-min_val) < GDK_bte_max/2) {
@@ -132,8 +142,12 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		}
 		snprintf(buf, 64, "FOR-" LLFMT, min_val);
 	} else if (b->ttype == TYPE_int) {
+		GDKfree(mn);
+		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type int");
 	} else {
+		GDKfree(mn);
+		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type not yet implemented");
 	}
 	if (!(*comp_min_val = GDKstrdup(buf))) {
