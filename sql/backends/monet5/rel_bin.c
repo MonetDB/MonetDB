@@ -4239,18 +4239,18 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
-void dump_code(void);
+void dump_code(int);
 static struct {
 	MalBlkPtr mb;
 	int pos;
 } dump_code_state;
 
 void
-dump_code(void)
+dump_code(int starting_point)
 {
 	stream *s = stderr_wastream();
 	MalBlkPtr mb = dump_code_state.mb;
-	int start = dump_code_state.pos;
+	int start = starting_point >= 0 ? starting_point : dump_code_state.pos;
 	int stop = mb->stop;
 
 	mnstr_printf(s, "\n");
@@ -4405,8 +4405,7 @@ static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	dump_code_state.mb = be->mb;
-	dump_code_state.pos = 0;
-	dump_code();
+	dump_code(0);
 
 	sql_exp *copyfrom = can_use_appendfrom(rel);
 	if (copyfrom != NULL) {
@@ -4553,7 +4552,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && sql_trans_add_dependency_change(be->mvc->session->tr, t->base.id, dml) != LOG_OK)
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	dump_code();
+	dump_code(-1);
 
 	if (ddl) {
 		ret = ddl;
