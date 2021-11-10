@@ -611,7 +611,7 @@ ctz(oid x)
 		if (ci.tpe == cand_dense) {				\
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
 				oid o = canditer_next_dense(&ci);	\
-				p = o - b->hseqbase;			\
+				p = o - hseqb;			\
 				uint##BG##_t x = GV;			\
 				if ((v = sgrps[x]) == (uint##BG##_t) ~0 && ngrp < (1 << BG)) { \
 					sgrps[x] = v = (uint##BG##_t) ngrp++; \
@@ -628,7 +628,7 @@ ctz(oid x)
 		} else {						\
 			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
 				oid o = canditer_next(&ci);		\
-				p = o - b->hseqbase;			\
+				p = o - hseqb;			\
 				uint##BG##_t x = GV;			\
 				if ((v = sgrps[x]) == (uint##BG##_t) ~0 && ngrp < (1 << BG)) { \
 					sgrps[x] = v = (uint##BG##_t) ngrp++; \
