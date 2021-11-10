@@ -113,12 +113,16 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: too large value spread for 'for' compression");
 		if ((max_val-min_val) < GDK_bte_max/2) {
 			o = COLnew(b->hseqbase, TYPE_bte, cnt, PERSISTENT);
+			if (!o)
+				throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			bte *ov = Tloc(o, 0);
 			lng *iv = Tloc(b, 0);
 			for(BUN i = 0; i<cnt; i++)
 				ov[i] = (bte)(iv[i] - min_val);
 		} else {
 			o = COLnew(b->hseqbase, TYPE_sht, cnt, PERSISTENT);
+			if (!o)
+				throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sht *ov = Tloc(o, 0);
 			lng *iv = Tloc(b, 0);
 			for(BUN i = 0; i<cnt; i++)
@@ -130,7 +134,10 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	}
 	if (!o)
 		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*comp_min_val = GDKstrdup(buf);
+	if (!(*comp_min_val = GDKstrdup(buf))) {
+		bat_destroy(o);
+		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	BATsetcount(o, cnt);
 	BATnegateprops(o);
 	*r = o;
@@ -151,6 +158,12 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!sname || !tname || !cname)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: invalid column name");
+	if (strNil(sname))
+		throw(SQL, "for.compress", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "for.compress", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "for.compress", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((msg = getBackendContext(cntxt, &be)) != MAL_SUCCEED)
 		return msg;
 	tr = be->mvc->session->tr;
@@ -161,6 +174,9 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = find_sql_table(tr, s, tname);
 	if (!t)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "table '%s.%s' unknown", sname, tname);
+	if (!isTable(t))
+		throw(SQL, "for.compress", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_column *c = find_sql_column(t, cname);
 	if (!c)
 		throw(SQL, "for.compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
@@ -171,6 +187,8 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *o = NULL;
+	if( b == NULL)
+		throw(SQL,"for.compress", SQLSTATE(HY005) "Cannot access column descriptor");
 
 	char *comp_min_val = NULL;
 	msg = FORcompress_intern(&comp_min_val, &o, b);
@@ -181,8 +199,8 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat_destroy(o);
 			throw(SQL, "for.compress", SQLSTATE(HY013) "alter_storage failed");
 		}
+		GDKfree(comp_min_val);
 		bat_destroy(o);
 	}
-	GDKfree(comp_min_val);
 	return msg;
 }
