@@ -71,6 +71,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			varisdict[k] = getArg(p,1);
 			vardictvalue[k] = getArg(p, 2);
 			dictunique[k] = 1;
+			freeInstruction(p);
 			continue;
 		}
 		int done = 0;
@@ -90,6 +91,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vardictvalue[l] = vardictvalue[k];
 					dictunique[l] = dictunique[k];
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
@@ -98,6 +100,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisdict[l] = varisdict[k];
 					vardictvalue[l] = vardictvalue[k];
 					dictunique[l] = dictunique[k];
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef) {
@@ -106,6 +109,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
@@ -114,6 +118,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (isSelect(p)) {
@@ -173,6 +178,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						t = pushNil(mb, t, TYPE_lng); /* estimate */
 						pushInstruction(mb,t);
 					}
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
@@ -186,6 +192,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j+0) = varisdict[k];
 					getArg(r, j+1) = varisdict[l];
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
@@ -207,6 +214,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = addArgument(mb, r, getArg(p, 6));
 					r = addArgument(mb, r, getArg(p, 7));
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if ((isMapOp(p) || isMap2Op(p)) && allConstExcept(mb, p, j)) {
@@ -224,6 +232,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vardictvalue[l] = vardictvalue[m] = getArg(r,0);
 					dictunique[l] = 0;
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == groupRef &&
@@ -256,6 +265,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = input;
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else {
@@ -280,7 +290,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for(; i<slimit; i++)
 		if (old[i])
-			pushInstruction(mb, old[i]);
+			freeInstruction(old[i]);
 	/* Defense line against incorrect plans */
 	if (actions > 0){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
