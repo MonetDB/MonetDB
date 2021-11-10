@@ -69,6 +69,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			k =  getArg(p,0);
 			varisfor[k] = getArg(p,1);
 			varforvalue[k] = getArg(p, 2);
+			freeInstruction(p);
 			continue;
 		}
 		int done = 0;
@@ -87,6 +88,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisfor[l] = getArg(r,0);
 					varforvalue[l] = varforvalue[k];
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (p->argc == 2 && p->retc == 1 && getFunctionId(p) == NULL) {
@@ -94,6 +96,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					int l = getArg(p, 0);
 					varisfor[l] = varisfor[k];
 					varforvalue[l] = varforvalue[k];
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef) {
@@ -102,6 +105,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else// if (isSelect(p)) {
@@ -181,6 +185,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						pushInstruction(mb,t);
 					}
 #endif
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if ((isMapOp(p) || isMap2Op(p)) && (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef)  && allConstExcept(mb, p, j)) {
@@ -200,6 +205,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisfor[l] = varisfor[m] = varisfor[k];
 					varforvalue[l] = varforvalue[m] = getArg(r,0);
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == groupRef &&
@@ -211,6 +217,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					InstrPtr r = copyInstruction(p);
 					getArg(r, j) = input;
 					pushInstruction(mb,r);
+					freeInstruction(p);
 					done = 1;
 					break;
 				} else {
@@ -223,10 +230,13 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb, r);
 
 					getArg(p, j) = getArg(r, 0);
+					actions++;
 				}
 			}
 		}
-		if (!done)
+		if (done)
+			actions++;
+		else
 			pushInstruction(mb, p);
 	}
 

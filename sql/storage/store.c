@@ -215,6 +215,7 @@ column_destroy(sqlstore *store, sql_column *c)
 	_DELETE(c->min);
 	_DELETE(c->max);
 	_DELETE(c->def);
+	_DELETE(c->storage_type);
 	_DELETE(c->base.name);
 	_DELETE(c);
 }

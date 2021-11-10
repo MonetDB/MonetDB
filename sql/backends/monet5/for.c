@@ -112,6 +112,8 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 	if (b->ttype == TYPE_lng) {
 		lng min_val = *(lng*)mn;
 		lng max_val = *(lng*)mx;
+		GDKfree(mn);
+		GDKfree(mx);
 		if ((max_val-min_val) > GDK_sht_max)
 			throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: too large value spread for 'for' compression");
 		if ((max_val-min_val) < GDK_bte_max/2) {
@@ -133,8 +135,12 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		}
 		snprintf(buf, 64, "FOR-" LLFMT, min_val);
 	} else if (b->ttype == TYPE_int) {
+		GDKfree(mn);
+		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type int");
 	} else {
+		GDKfree(mn);
+		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type not yet implemented");
 	}
 	if (!(*comp_min_val = GDKstrdup(buf))) {
