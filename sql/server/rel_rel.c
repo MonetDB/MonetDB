@@ -1720,7 +1720,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	if (!r)
 		return 0;
 
-	if (rel_is_ref(r) && refs_find_rel(refs, r)) /* allready handled */
+	if (rel_is_ref(r) && refs_find_rel(refs, r)) /* already handled */
 		return 0;
 	switch (r->op) {
 	case op_basetable: {

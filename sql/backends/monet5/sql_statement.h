@@ -134,12 +134,12 @@ typedef struct stmt {
 } stmt;
 
 /* which MAL modules can push candidates */
-#define can_push_cands(sel, f) \
-	(sel && (((strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0))  || \
-			 strcmp(sql_func_mod(f->func), "mmath") == 0 || \
-			 strcmp(sql_func_mod(f->func), "mtime") == 0 || \
-			 strcmp(sql_func_mod(f->func), "blob") == 0 || \
-			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
+#define can_push_cands(sel, mod, fimp) \
+	(sel && (((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0)) || \
+			 strcmp(mod, "mmath") == 0 || \
+			 strcmp(mod, "mtime") == 0 || \
+			 strcmp(mod, "blob") == 0 || \
+			 (strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp))))
 
 extern int stmt_key(stmt *s);
 
@@ -206,6 +206,8 @@ extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rc
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
+extern stmt *stmt_dict(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_for(backend *be, stmt *op1, stmt *minval);
 
 extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);

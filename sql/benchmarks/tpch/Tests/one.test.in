@@ -199,6 +199,96 @@ select count(*) from lineitem
 ----
 60175
 
+statement ok
+create procedure sys.dict_compress( sname string, tname string, cname string, ordered_values bool) external name dict.compress;
+
+statement ok
+call dict_compress('sys', 'region', 'r_regionkey', true);
+
+statement ok
+call dict_compress('sys', 'nation', 'n_nationkey', true);
+
+statement ok
+call dict_compress('sys', 'nation', 'n_regionkey', true);
+
+statement ok
+call dict_compress('sys', 'supplier', 's_nationkey', true);
+
+statement ok
+call dict_compress('sys', 'customer', 'c_nationkey', true);
+
+statement ok
+call dict_compress('sys', 'customer', 'c_mktsegment', true);
+
+statement ok
+call dict_compress('sys', 'part', 'p_mfgr', true);
+
+statement ok
+call dict_compress('sys', 'part', 'p_brand', true);
+
+statement ok
+call dict_compress('sys', 'part', 'p_type', true);
+
+statement ok
+call dict_compress('sys', 'part', 'p_size', true);
+
+statement ok
+call dict_compress('sys', 'part', 'p_container', true);
+
+statement ok
+call dict_compress('sys', 'part', 'p_retailprice', true);
+
+statement ok
+call dict_compress('sys', 'partsupp', 'ps_availqty', true);
+
+statement ok
+call dict_compress('sys', 'orders', 'o_orderstatus', true);
+
+statement ok
+call dict_compress('sys', 'orders', 'o_orderdate', true);
+
+statement ok
+call dict_compress('sys', 'orders', 'o_orderpriority', true);
+
+statement ok
+call dict_compress('sys', 'orders', 'o_clerk', true);
+
+statement ok
+call dict_compress('sys', 'orders', 'o_shippriority', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_linenumber', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_quantity', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_discount', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_tax', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_returnflag', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_linestatus', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_shipdate', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_commitdate', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_shipinstruct', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_receiptdate', true);
+
+statement ok
+call dict_compress('sys', 'lineitem', 'l_shipmode', true);
+
 query ITT rowsort
 select * from region   order by r_regionkey limit 9
 ----

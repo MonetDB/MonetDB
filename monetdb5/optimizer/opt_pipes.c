@@ -46,7 +46,10 @@ static struct PIPELINES {
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.bincopyfrom();"
+	 "optimizer.emptybind();"
 	 "optimizer.deadcode();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
@@ -94,6 +97,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
@@ -298,6 +303,8 @@ static struct PIPELINES {
 	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+	 "optimizer.for();"
+	 "optimizer.dict();"
 	 "optimizer.mergetable();"
 	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"

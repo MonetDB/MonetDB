@@ -352,7 +352,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	int res = SQL_ERR;
 
 	if (isDeclared && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT: constraints on declared tables are not supported\n");
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT: constraints on declared tables are not supported");
 		return res;
 	}
 	switch (s->token) {
@@ -360,12 +360,23 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	case SQL_PRIMARY_KEY: {
 		key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
 		sql_key *k;
+		const char *ns = name;
 
 		if (kt == pkey && t->pkey) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY");
 			return res;
 		}
-		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
+		if (!ns || !*ns) { /* add this to be safe */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key name name cannot be empty", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return res;
+		}
+		while (isdigit((unsigned char) *ns))
+			ns++;
+		if (!*ns) { /* if a key name just contains digit characters, the generated index name can be mistaken with a label */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key name cannot contain just digit characters (0 through 9)", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE");
+			return res;
+		}
+		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
@@ -414,6 +425,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		list *cols;
 		sql_key *rk = NULL;
 		sql_kc *kc;
+		const char *ns = name;
 
 		assert(n->next->next->next->type == type_int);
 		rt = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", false);
@@ -423,9 +435,19 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			sql->session->status = 0;
 			rt = t;
 		}
-		if (!rt) {
+		if (!rt)
 			return SQL_ERR;
-		} else if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
+		if (!ns || !*ns) { /* add this to be safe */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
+			return res;
+		}
+		while (isdigit((unsigned char) *ns))
+			ns++;
+		if (!*ns) { /* if a key name just contains digit characters, the generated index name can be mistaken with a label */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name cannot contain just digit characters (0 through 9)");
+			return res;
+		}
+		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -441,17 +463,17 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			rk = &rt->pkey->k;
 		}
 		if (!rk) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rsname, rtname);
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s", rsname, rtname);
 			return res;
 		}
 		if (list_length(rk->columns) != 1) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled");
 			return res;
 		}
 		kc = rk->columns->h->data;
 		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
 			str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s",
 							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 			return res;
 		}
@@ -514,7 +536,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		res = SQL_OK;
 	} 	break;
 	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported\n");
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
 		return SQL_ERR;
 	} 	break;
 	default:{
@@ -522,7 +544,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	}
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (%p)->token = %s\n", s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (%p)->token = %s", s, token2string(s->token));
 	}
 	return res;
 }
@@ -587,7 +609,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					}
 					r = symbol2string(sql, s->data.sym, 0, &err);
 					if (!r) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
+						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
 						return SQL_ERR;
 					} else {
 						switch (mvc_default(sql, cs, r)) {
@@ -626,7 +648,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					}
 				} 	break;
 				default: {
-					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
+					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
 					return SQL_ERR;
 				}
 			}
@@ -636,11 +658,12 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 }
 
 static int
-table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
+table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	dnode *n = s->data.lval->h;
 	char *rsname = qname_schema(n->data.lval);
 	char *rtname = qname_schema_object(n->data.lval);
+	const char *ns = name;
 	sql_table *ft = NULL;
 
 	ft = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", false);
@@ -660,8 +683,18 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
-		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
-			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+		if (!ns || !*ns) { /* add this to be safe */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name name cannot be empty");
+			return SQL_ERR;
+		}
+		while (isdigit((unsigned char) *ns))
+			ns++;
+		if (!*ns) { /* if a key name just contains digit characters, the generated index name can be mistaken with a label */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key name cannot contain just digit characters (0 through 9)");
+			return SQL_ERR;
+		}
+		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -678,7 +711,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			rk = &ft->pkey->k;
 		}
 		if (!rk) {
-			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'", ft->base.name);
 			return SQL_ERR;
 		}
 		switch (mvc_create_fkey(&fk, sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255)) {
@@ -699,12 +732,12 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_kc *kc = fnms->data;
 
 			if (!cs) {
-				sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
+				(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'", nm, t->base.name);
 				return SQL_ERR;
 			}
 			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
 				str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s",
 								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 				return SQL_ERR;
 			}
@@ -721,7 +754,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			}
 		}
 		if (nms || fnms) {
-			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled");
 			return SQL_ERR;
 		}
 		switch (mvc_create_key_done(sql, (sql_key*)fk)) {
@@ -740,7 +773,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 }
 
 static int
-table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	int res = SQL_OK;
 
@@ -750,14 +783,24 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
+		const char *ns = name;
 
 		if (kt == pkey && t->pkey) {
-			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY");
 			return SQL_ERR;
 		}
-		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
-			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists",
-					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
+		if (!ns || !*ns) { /* add this to be safe */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key name name cannot be empty", kt == pkey ? "PRIMARY KEY" : "UNIQUE");
+			return SQL_ERR;
+		}
+		while (isdigit((unsigned char) *ns))
+			ns++;
+		if (!*ns) { /* if a key name just contains digit characters, the generated index name can be mistaken with a label */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key name cannot contain just digit characters (0 through 9)", kt == pkey ? "PRIMARY KEY" : "UNIQUE");
+			return SQL_ERR;
+		}
+		if (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name)) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
 
@@ -777,7 +820,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT %s: no such column '%s' for table '%s'",
+				(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT %s: no such column '%s' for table '%s'",
 						kt == pkey ? "PRIMARY KEY" : "UNIQUE",
 						nm, t->base.name);
 				return SQL_ERR;
@@ -810,14 +853,14 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
 	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported\n");
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
 		return SQL_ERR;
 	} 	break;
 	default:
 		res = SQL_ERR;
 	}
 	if (res != SQL_OK) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (%p) = %s\n", s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (%p) = %s", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -841,7 +884,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	}
 
 	if (res != SQL_OK) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint: wrong token (%p) = %s\n", s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint: wrong token (%p) = %s", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -859,7 +902,7 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 	(void) ss;
 	if (alter && !(isTable(t) || ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0))) {
-		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
+		(void) sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s",
 				  TABLE_TYPE_DESCRIPTION(t->type, t->properties),
 				  t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
@@ -871,22 +914,22 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_column *cs = NULL;
 
 		if (!isView(t) && cname && cname[0] == '%') {
-			sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: generated labels not allowed in column names, use an alias instead", (alter)?"ALTER":"CREATE");
+			(void) sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: generated labels not allowed in column names, use an alias instead", (alter)?"ALTER":"CREATE");
 			return SQL_ERR;
 		} else if (ctype->type->eclass == EC_ANY) {
-			sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: any type (plain null value) not allowed as a column type, use an explicit cast", (alter)?"ALTER":"CREATE");
+			(void) sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: any type (plain null value) not allowed as a column type, use an explicit cast", (alter)?"ALTER":"CREATE");
 			return SQL_ERR;
 		} else if ((cs = find_sql_column(t, cname))) {
-			sql_error(sql, 02, SQLSTATE(42S21) "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
+			(void) sql_error(sql, 02, SQLSTATE(42S21) "%s TABLE: a column named '%s' already exists", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
 		switch (mvc_create_column(&cs, sql, t, cname, ctype)) {
 			case -1:
-				sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				(void) sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return SQL_ERR;
 			case -2:
 			case -3:
-				sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: transaction conflict detected", (alter)?"ALTER":"CREATE");
+				(void) sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: transaction conflict detected", (alter)?"ALTER":"CREATE");
 				return SQL_ERR;
 			default:
 				break;
@@ -2114,8 +2157,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot be empty");
 	while (isdigit((unsigned char) *s))
 		s++;
-	if (!*s) /* if an index just contains digit characters, it can be mistaken with a label */
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: indexes cannot contain just digit characters (0 through 9)");
+	if (!*s) /* if an index name just contains digit characters, it can be mistaken with a label */
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot contain just digit characters (0 through 9)");
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
 	if (!isTable(t))
