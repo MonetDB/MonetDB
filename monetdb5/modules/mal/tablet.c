@@ -818,7 +818,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	/* include testing on the terminating null byte !! */
 	if (s == 0) {
 		adt = fmt->nildata;
-		fmt->c->tnonil = false;
+		if (fmt->c)
+			fmt->c->tnonil = false;
 	} else {
 		if (task->escape) {
 			size_t slen = strlen(s) + 1;
@@ -891,7 +892,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		err = NULL;
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->tnonil = false;
+		if (fmt->c)
+			fmt->c->tnonil = false;
 	}
 	if (task->loadops) {
 		str msg = task->loadops->append_one(task->loadops->state, idx, adt, fmt->appendcol);
@@ -902,7 +904,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 
 	/* failure */
 	if (task->rowerror) {
-		lng row = BATcount(fmt->c);
+		lng row = BATcount(task->loadops ? task->loadops->get_offsets(task->loadops->state) : fmt->c);
 		MT_lock_set(&errorlock);
 		if (task->cntxt->error_row == NULL ||
 			BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
