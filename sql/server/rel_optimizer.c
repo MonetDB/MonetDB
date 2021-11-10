@@ -8694,8 +8694,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 							/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
 							if (!cmin && !cmax && first_attempt) {
 								char *min = NULL, *max = NULL;
-								(void) sql_trans_ranges(v->sql->session->tr, col, &min, &max);
-								if (min && max) {
+								if (sql_trans_ranges(v->sql->session->tr, col, &min, &max) && min && max) {
 									cmin = atom_general(v->sql->sa, &col->type, min);
 									cmax = atom_general(v->sql->sa, &col->type, max);
 								}
