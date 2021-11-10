@@ -346,7 +346,7 @@ DICTdecompress_(BAT *o, BAT *u)
 		} else {
 			BATloop(o, p, q) {
 				BUN up = op[p];
-			 if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
