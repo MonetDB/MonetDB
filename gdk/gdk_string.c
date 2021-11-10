@@ -1101,7 +1101,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_ni
 	if (sep) {
 		BUN ncand2 = canditer_init(&ci2, sep, s2);
 		if (ncand != ncand2) {
-			GDKerror("b1, b2 must be aligned\n");
+			GDKerror("b and sep must be aligned\n");
 			return GDK_FAIL;
 		}
 		if (ncand2 == 1) { /* Only one element in sep */
