@@ -3186,7 +3186,7 @@ clear_col(sql_trans *tr, sql_column *c, bool renew)
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
 	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL)) == NULL)
-		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 	if (delta)
@@ -3203,7 +3203,7 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL)) == NULL)
-		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 	if (delta)
