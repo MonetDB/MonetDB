@@ -2363,8 +2363,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* Handle projection */
-		if (match > 0 && getModuleId(p) == algebraRef &&
-			getFunctionId(p) == projectionRef &&
+		if (match > 0 &&
+				((getModuleId(p) == algebraRef &&
+			getFunctionId(p) == projectionRef) ||
+				(getModuleId(p) == dictRef &&
+			getFunctionId(p) == decompressRef)) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
 			if(mat_projection(mb, p, &ml, m, n)) {
@@ -2466,6 +2469,25 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) &&
 			is_bat_nil(getVarConstant(mb,getArg(p,2)).val.bval)) {
 			if (mat_apply1(mb, p, &ml, m, fm)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+
+		/* handle dict select */
+		if ((match == 1 || match == bats-1) && p->retc == 1 && isSelect(p) && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
+		/* handle dict renumber */
+		if (match == 1 && match == bats-1 && p->retc == 1 && getFunctionId(p) == renumberRef && getModuleId(p) == dictRef) {
+			if(mat_apply(mb, p, &ml, match)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}

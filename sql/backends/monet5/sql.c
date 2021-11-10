@@ -4867,6 +4867,12 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
+	if (strNil(sname))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
@@ -4979,6 +4985,12 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
+	if (strNil(sname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
@@ -5024,6 +5036,12 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
+	if (strNil(sname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
@@ -5051,6 +5069,8 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
+#include "for.h"
+#include "dict.h"
 #include "mel.h"
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
@@ -5181,6 +5201,17 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "prepared_statements_args", SQLsession_prepared_statements_args, false, "Available prepared statements' arguments in the current session", args(9,9, batarg("statementid",int),batarg("type",str),batarg("digits",int),batarg("scale",int),batarg("inout",bte),batarg("number",int),batarg("schema",str),batarg("table",str),batarg("column",str))),
  pattern("sql", "copy_rejects", COPYrejects, false, "", args(4,4, batarg("rowid",lng),batarg("fldid",int),batarg("msg",str),batarg("inp",str))),
  pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
+ pattern("for", "compress", FORcompress_col, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
+ pattern("for", "decompress", FORdecompress, false, "decompress a for compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), argany("minval", 1))),
+ pattern("dict", "compress", DICTcompress, false, "dict compress a bat", args(2, 3, batargany("o", 0), batargany("v", 1), batargany("b", 1))),
+ pattern("dict", "compress", DICTcompress_col, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
+ pattern("dict", "compress", DICTcompress_col, false, "compress a sql column", args(0, 4, arg("schema", str), arg("table", str), arg("column", str), arg("ordered", bit))),
+ pattern("dict", "decompress", DICTdecompress, false, "decompress a dictionary compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), batargany("u", 1))),
+ pattern("dict", "convert", DICTconvert, false, "convert candidate list into compressed offsets", args(1, 2, batargany("", 1), batargany("o", 0))),
+ pattern("dict", "join", DICTjoin, false, "join 2 dictionaries", args(2, 10, batarg("r0", oid), batarg("r1", oid), batargany("lo", 0), batargany("lv", 1), batargany("ro", 0), batargany("rv", 1), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng))),
+ pattern("dict", "thetaselect", DICTthetaselect, false, "thetaselect on a dictionary", args(1, 6, batarg("r0", oid), batargany("lo", 0), batarg("lc", oid), batargany("lv", 1), argany("val",1), arg("op", str))),
+ pattern("dict", "renumber", DICTrenumber, false, "renumber offsets", args(1, 3, batargany("n", 1), batargany("o", 1), batargany("r", 1))),
+ pattern("dict", "select", DICTselect, false, "value - range select on a dictionary", args(1, 10, batarg("r0", oid), batargany("lo", 0), batarg("lc", oid), batargany("lv", 1), argany("l", 1), argany("h", 1), arg("li", bit), arg("hi", bit), arg("anti", bit),  arg("unknown", bit))),
  command("calc", "dec_round", bte_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",bte),arg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,4, batarg("",bte),batarg("v",bte),arg("r",bte),batarg("s",oid))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap_cst, false, "round off the value v to nearests multiple of r", args(1,4, batarg("",bte),arg("v",bte),batarg("r",bte),batarg("s",oid))),

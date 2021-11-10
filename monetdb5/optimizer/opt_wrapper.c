@@ -41,6 +41,8 @@
 #include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mask.h"
+#include "opt_for.h"
+#include "opt_dict.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -81,6 +83,8 @@ struct{
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"mask", &OPTmaskImplementation,0,0},
+	{"for", &OPTforImplementation,0,0},
+	{"dict", &OPTdictImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"minimalfast", &OPTminimalfastImplementation,0,0},
@@ -106,7 +110,7 @@ static
 void fillcodehash(void)
 {
 	int i, idx;
-		
+
 	for( i=0;  i< 256; i++)
 		codehash[i] = -1;
 	for (i=0; codes[i].nme; i++){

@@ -143,6 +143,7 @@ typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef int (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets);
 typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
+
 /*
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
@@ -195,6 +196,14 @@ typedef int (*drop_del_fptr) (sql_trans *tr, sql_table *t);
 
 typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
+typedef enum storage_type {
+	ST_DEFAULT = 0,
+	ST_DICT,
+	ST_FOR,
+} storage_type;
+
+typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, storage_type st, BAT *offsets, BAT *vals);
+
 /*
 -- update_table rollforward the changes made from table ft to table tt
 -- returns LOG_OK, LOG_ERR
@@ -246,6 +255,7 @@ typedef struct store_functions {
 	drop_del_fptr drop_del;
 
 	clear_table_fptr clear_table;
+	col_compress_fptr col_compress;
 
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
@@ -523,5 +533,11 @@ extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
 extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp);
 sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
+
+/* later move intop dict.h on this level */
+extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz);
+extern BAT *DICTdecompress_(BAT *o, BAT *u);
+extern int DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict);
+extern int DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict);
 
 #endif /*SQL_STORAGE_H */
