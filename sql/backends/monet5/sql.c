@@ -3382,6 +3382,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
@@ -3428,6 +3429,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
