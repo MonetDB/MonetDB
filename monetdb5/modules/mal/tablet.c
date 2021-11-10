@@ -636,6 +636,7 @@ typedef struct {
 	int besteffort;
 	bte *rowerror;
 	int errorcnt;
+	LoadOps *loadops;
 } READERtask;
 
 static void
@@ -892,9 +893,16 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->tnonil = false;
 	}
+	if (task->loadops) {
+		str msg = task->loadops->append_one(task->loadops->state, idx, adt, fmt->appendcol);
+		if (msg != MAL_SUCCEED)
+			goto failure;
+	}
+
 	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
 		return ret;
 
+failure:
 	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
@@ -1546,7 +1554,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
-	BUN firstcol;
+	BAT *countbat;
+	// BUN firstcol;
 	BUN i, attr;
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
@@ -1564,6 +1573,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		.from_stdin = from_stdin,
 		.as = as,
 		.escape = escape,		/* TODO: implement feature!!! */
+		// .loadops = loadops,
+		.loadops = loadops,
 	};
 
 	/* create the reject tables */
@@ -1712,13 +1723,23 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 	mlock(task.b->buf, task.b->size);
 #endif
-	for (firstcol = 0; firstcol < task.as->nr_attrs; firstcol++)
-		if (task.as->format[firstcol].c != NULL)
-			break;
+	countbat = NULL;
+	if (loadops) {
+		countbat = loadops->get_offsets(loadops->state);
+	} else {
+		for (BUN i = 0; i < task.as->nr_attrs; i++) {
+			if (task.as->format[i].c != NULL) {
+				countbat = task.as->format[i].c;
+				break;
+			}
+		}
+	}
+	assert(countbat != NULL);
+
 	while (res == 0 && cnt < task.maxrow) {
 
 		// track how many elements are in the aggregated BATs
-		cntstart = BATcount(task.as->format[firstcol].c);
+		cntstart = BATcount(countbat);
 		/* block until the producer has data available */
 		MT_sema_down(&task.consumer);
 		cnt += task.top[task.cur];
@@ -1745,6 +1766,19 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				MT_sema_up(&ptask[j].sema);
 			}
 		}
+
+		if (task.top[task.cur] && loadops) {
+			/* while the worker threads are working, allocate rows */
+			str msg = loadops->claim(loadops->state, task.top[task.cur], 0, NULL);
+			if (msg != MAL_SUCCEED) {
+				tablet_error(&task, BATcount(countbat), lng_nil, lng_nil, msg, "SQLload_file");
+				res = -1;
+				for (j = 0; j < threads; j++)
+					MT_sema_down(&ptask[j].reply);
+				break;
+			}
+		}
+
 		if (task.top[task.cur]) {
 			/* await completion of row break phase */
 			for (j = 0; j < threads; j++) {
@@ -1807,7 +1841,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 /*		TRC_DEBUG(MAL_SERVER, "Trim bbest '%d' table size " BUNFMT " - rows found so far " BUNFMT "\n",
 					 best, BATcount(as->format[firstcol].c), task.cnt); */
 
-		if (best && BATcount(as->format[firstcol].c)) {
+		if (best && BATcount(countbat)) {
 			BUN limit;
 			int width;
 
@@ -1872,7 +1906,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 
 /*	TRC_DEBUG(MAL_SERVER, "End of block stream eof=%d - res=%d\n", task.ateof, res);*/
 
-	cnt = BATcount(task.as->format[firstcol].c);
+	cnt = BATcount(countbat);
 
 	task.ateof = true;
 	task.state = ENDOFCOPY;
