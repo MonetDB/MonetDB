@@ -9065,88 +9065,6 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 	return nrel;
 }
 
-static bool
-_rel_flag_independent_projections(mvc *sql, sql_exp* e, list* projected_from)
-{
-	bool is_independent = false;
-
-	switch(e->type) {
-	case e_func: // I.e. f() or f(arg) or f(arg1, ..., argn)
-		{
-		is_independent = true;
-
-		sql_subfunc *f = e->f;
-		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0) {
-			/* the star() function call signals that the parent expression is a function call
-			 * to some window function without column expressions.
-			 * We do not optimize such window functions here.*/
-			is_independent = false;
-			break;
-		}
-
-		list* args = e->l;// The list of actual arguments which can be empty
-		if (args)
-			for (node *en = args->h; en; en = en->next) {
-				sql_exp* arg = en->data;
-				if (!_rel_flag_independent_projections(sql, arg, projected_from)) {
-					is_independent = false;
-				}
-			}
-		}
-		/* If this function's arguments are independent
-		 * of the available column expression from the project's inner relation,
-		 * we have to flag the function with the projectional independence. 
-		 * Else if this expression has an alias we add it to the projected_from list
-		 * since it might be consumed by a following expression. */
-		if (is_independent)
-			e->argument_independence = 1;
-		break;
-	case e_cmp:
-		is_independent = _rel_flag_independent_projections(sql, e->l, projected_from) && _rel_flag_independent_projections(sql, e->r, projected_from);
-		break;
-	case e_atom: // Any atom potentially aliased, e.g. 2 as i
-		is_independent = true;
-		break;
-	case e_convert: // E.g. CAST (i AS BIGINT)
-		is_independent = _rel_flag_independent_projections(sql, e->l, projected_from);
-		break;
-	case e_column:
-		is_independent = !exps_find_exp(projected_from, e);
-		break;
-	default:
-		assert(0);
-		break;
-	}
-
-	if (!is_independent && e->alias.name)
-		list_append(projected_from, exp_copy(sql, e));
-
-	return is_independent;
-}
-
-
-static bool
-rel_flag_independent_projections(mvc *sql, list* projected_to, list* projected_from)
-{
-	// TODO: signal changes
-	for (node *en = projected_to->h; en; en = en->next) {
-		sql_exp* e = en->data;
-		(void) _rel_flag_independent_projections(sql, e, projected_from);
-	}
-	return true;
-}
-
-static sql_rel *
-rel_optimize_function_calls(visitor *v, sql_rel *rel)
-{
-	if (rel->op == op_project) {
-		list *i = _rel_projections(v->sql, rel->l, NULL, 1, 1, 0);
-		rel_flag_independent_projections(v->sql, rel->exps, i);
-		list_destroy(i);
-	}
-	return rel;
-}
-
 /* rewrite merge tables into union of base tables */
 static sql_rel *
 rel_merge_table_rewrite(visitor *v, sql_rel *rel)
@@ -9593,7 +9511,7 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_basecount(visitor *v, sql_rel *rel)
 {
-	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->l && list_empty(rel->r) && 
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->l && list_empty(rel->r) &&
 		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *bt = rel->l;
 		sql_exp *e = rel->exps->h->data;
@@ -9845,8 +9763,6 @@ optimize_rel(visitor *v, sql_rel *rel, global_props *gp)
 	/* Some merge table rewrites require two tree iterations. Later I could improve this to use only one iteration */
 	if (gp->needs_mergetable_rewrite)
 		rel = rel_visitor_topdown(v, rel, &rel_merge_table_rewrite);
-
-	rel = rel_visitor_topdown(v, rel, &rel_optimize_function_calls);
 
 	return rel;
 }
