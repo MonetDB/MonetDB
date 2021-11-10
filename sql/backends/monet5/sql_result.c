@@ -755,22 +755,156 @@ bailout:
 }
 
 static str
-directappend_claim(void *state, size_t nrows, size_t ncols, Column *cols[])
+directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 {
-	(void)state;
-	(void)nrows;
+	str msg = MAL_SUCCEED;
+
 	(void)ncols;
 	(void)cols;
-	throw(SQL, "direct_append", "not implemented yet");
+
+	assert(state_ != NULL);
+	struct directappend *state = state_;
+
+	if (state->new_offsets != NULL) {
+		// leftover from previous round. logic below counts on it not being present.
+		// we can change that but have to do so carefully.
+		// for now just drop it
+		BBPreclaim(state->new_offsets);
+		state->new_offsets = NULL;
+	}
+
+	// Allocate room for this batch
+	BUN dummy_offset = 424242424242;
+	state->offset = dummy_offset;
+	sql_trans *tr = state->mvc->session->tr;
+	sqlstore *store = tr->store;
+	int ret = store->storage_api.claim_tab(tr, state->t, nrows, &state->offset, &state->new_offsets);
+	// int ret = mvc_claim_slots(state->mvc->session->tr, state->t, nrows, &state->offset, &state->new_offsets);
+	if (ret != LOG_OK) {
+		msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "Could not claim slots");
+		goto bailout;
+	}
+
+	// Append the batch to all_offsets
+	if (state->new_offsets != NULL) {
+		if (BATappend(state->all_offsets, state->new_offsets, NULL, false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "BATappend failed");
+			goto bailout;
+		}
+	} else {
+		// is there a BATfunction for this?
+		BUN oldcount = BATcount(state->all_offsets);
+		BUN newcount = oldcount + nrows;
+		if (BATcapacity(state->all_offsets) < newcount) {
+			if (BATextend(state->all_offsets, newcount) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.append_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		}
+		oid * oo = Tloc(state->all_offsets, oldcount);
+		for (BUN i = 0; i < nrows; i++)
+			*oo++ = state->offset + i;
+		BATsetcount(state->all_offsets, newcount);
+	}
+
+	// The protocol for mvc_claim is that it returns either a consecutive block,
+	// by setting *offset, or a BAT of positions by setting *offsets. However,
+	// it is possible and even likely that only the first few items of the BAT
+	// are actually scattered positions, while the rest is still a consecutive
+	// block at the end. Appending at the end is much cheaper so we peel the
+	// consecutive elements off the back of the BAT and treat them separately.
+	//
+	// In the remainder of the function, 'state->newoffsets' holds 'front_count'
+	// positions if it exists, while another 'back_count' positions start at
+	// 'back_offset'.
+	size_t front_count;
+	size_t back_count;
+	BUN back_offset;
+	if (state->new_offsets != NULL) {
+		if (state->new_offsets->tsorted) {
+			assert(BATcount(state->new_offsets) >= 1);
+			BUN start = BATcount(state->new_offsets) - 1;
+			oid at_start = *(oid*)Tloc(state->new_offsets, start);
+			while (start > 0) {
+				oid below_start = *(oid*)Tloc(state->new_offsets, start - 1);
+				if (at_start != below_start + 1)
+					break;
+				start = start - 1;
+				at_start = below_start;
+			}
+			front_count = start;
+			back_count = nrows - start;
+			back_offset = at_start;
+			BATsetcount(state->new_offsets, start);
+		} else {
+			front_count = nrows;
+			back_count = 0;
+			back_offset = dummy_offset;
+		}
+	} else {
+		front_count = 0;
+		back_count = nrows;
+		back_offset = state->offset;
+	}
+
+	// debugging
+	if (front_count > 0) {
+		for (size_t j = 0; j < front_count; j++) {
+			BUN pos = (BUN)*(oid*)Tloc(state->new_offsets, j);
+			fprintf(stderr, "scattered offset[%zu] = " BUNFMT "\n", j, pos);
+		}
+	}
+	if (back_count > 0) {
+		BUN start = back_offset;
+		BUN end = start + (BUN)back_count - 1;
+		fprintf(stderr, "consecutive offsets: " BUNFMT " .. " BUNFMT"\n", start, end);
+	}
+
+	state->offset = back_offset;
+
+	assert(msg == MAL_SUCCEED);
+	return msg;
+
+bailout:
+	assert(msg != MAL_SUCCEED);
+	return msg;
+}
+
+static BAT*
+directappend_get_offsets_bat(void *state_)
+{
+	assert(state_);
+	struct directappend *state = state_;
+	return state->all_offsets;
 }
 
 static str
-directappend_append_one(void *state, void *data, Column *col)
+directappend_append_one(void *state_, size_t idx, const void *const_data, void *col)
 {
-	(void)state;
-	(void)data;
-	(void)col;
-	throw(SQL, "direct_append", "not implemented yet");
+	struct directappend *state = state_;
+	BAT *scattered_offsets = state->new_offsets;
+	BUN scattered_count = scattered_offsets ? BATcount(scattered_offsets) : 0;
+	BUN off;
+	if (idx < scattered_count) {
+		off = *(oid*)Tloc(scattered_offsets, idx);
+		fprintf(stderr, "Took offset " BUNFMT " from position %zu of the offsets BAT\n", off, idx);
+	} else {
+		off = state->offset + (idx - scattered_count);
+		fprintf(stderr, "Took offset " BUNFMT " as %zu plus base " BUNFMT "\n", off, idx, state->offset);
+	}
+
+	sql_column *c = col;
+	int tpe = c->type.type->localtype;
+	sqlstore *store = state->mvc->session->tr->store;
+
+	// unfortunately, append_col_fptr doesn't take const void*.
+	void *data = (void*)const_data;
+	int	ret = store->storage_api.append_col(state->mvc->session->tr, c, off, NULL, data, 1, tpe);
+	if (ret != LOG_OK) {
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", ret == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
+	return MAL_SUCCEED;
 }
 
 str
@@ -788,6 +922,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		.state = NULL,
 		.claim = directappend_claim,
 		.append_one = directappend_append_one,
+		.get_offsets = directappend_get_offsets_bat,
 	};
 	LoadOps *loadops = NULL;
 	if (append_directly) {
@@ -849,6 +984,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				sql_column *col2 = n2->data;
 				assert(strcmp(col->base.name, col2->base.name) == 0);
 				assert(strcmp(col->type.type->base.name, col2->type.type->base.name) == 0);
+				assert( (n->next == NULL) == (n2->next == NULL)  );
 				fmt[i].appendcol = col2;
 				n2 = n2->next;
 			}
@@ -913,6 +1049,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		}
 		TABLETdestroy_format(&as);
 	}
+
 	directappend_destroy(our_loadops.state);
 	return msg;
 }

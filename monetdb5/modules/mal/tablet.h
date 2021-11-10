@@ -72,11 +72,13 @@ typedef struct Table_t {
 
 
 typedef str (*loadfile_claim_fptr)(void *state, size_t nrows, size_t ncols, Column *cols[]);
-typedef str (*loadfile_append_one_fptr)(void *state, void *data, Column *col);
+typedef str (*loadfile_append_one_fptr)(void *state, size_t idx, const void *data, void *col);
+typedef BAT *(*loadfile_get_offsets_bat_fptr)(void *state);
 typedef struct LoadOps {
 	void *state;
 	loadfile_claim_fptr claim;
 	loadfile_append_one_fptr append_one;
+	loadfile_get_offsets_bat_fptr get_offsets;
 } LoadOps;
 
 
