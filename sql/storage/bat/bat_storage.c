@@ -1730,6 +1730,7 @@ update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_ne
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
+	int res = LOG_OK;
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
@@ -1746,9 +1747,10 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
-	int res =  update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat);
+	if ((res = update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat)) != LOG_OK)
+		return res;
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
-		sql_trans_alter_storage(tr, c, NULL);
+		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
 }
 
@@ -1954,6 +1956,7 @@ append_col_execute(sql_trans *tr, sql_delta *delta, sqlid id, BUN offset, BAT *o
 static int
 append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN cnt, int tpe)
 {
+	int res = LOG_OK;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
 	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
@@ -1965,9 +1968,10 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *i, BUN 
 	if ((!inTransaction(tr, c->t) && (odelta != delta || !segments_in_transaction(tr, c->t) || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 
-	int res = append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe == TYPE_bat);
+	if ((res = append_col_execute(tr, delta, c->base.id, offset, offsets, i, cnt, tpe == TYPE_bat)) != LOG_OK)
+		return res;
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
-		sql_trans_alter_storage(tr, c, NULL);
+		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
 }
 
