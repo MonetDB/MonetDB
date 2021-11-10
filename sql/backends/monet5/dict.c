@@ -563,17 +563,20 @@ DICTjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *ro = BATdescriptor(RO);
 	BAT *rv = BATdescriptor(RV);
 
-	if (!lo || !lv || !ro || !rv) {
-		bat_destroy(lo);
-		bat_destroy(lv);
-		bat_destroy(ro);
-		bat_destroy(rv);
-		throw(SQL, "dict.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
 	if (!is_bat_nil(RC))
 		rc = BATdescriptor(RC);
+	if (!lo || !lv || !ro || !rv || (!is_bat_nil(LC) && !lc) || (!is_bat_nil(RC) && !rc)) {
+		bat_destroy(lo);
+		bat_destroy(lv);
+		bat_destroy(ro);
+		bat_destroy(rv);
+		bat_destroy(lc);
+		bat_destroy(rc);
+		throw(SQL, "dict.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
 	/* if both are the same, continue with join on indices */
 	if (lv->batCacheid != rv->batCacheid) {
 		/* first join values of the dicts */
@@ -636,13 +639,15 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *lo = BATdescriptor(LO);
 	BAT *lv = BATdescriptor(LV);
 
-	if (!lo || !lv) {
-		bat_destroy(lo);
-		bat_destroy(lv);
-		throw(SQL, "dict.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
+	if (!lo || !lv || (!is_bat_nil(LC) && !lc)) {
+		bat_destroy(lo);
+		bat_destroy(lv);
+		bat_destroy(lc);
+		throw(SQL, "dict.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
 	BUN max_cnt = lv->ttype == TYPE_bte?256:(64*1024);
 	if ((lv->tkey && (op[0] == '=' || op[0] == '!')) || ((op[0] == '<' || op[0] == '>') && lv->tsorted && BATcount(lv) < (max_cnt/2))) {
 		BUN p = BUN_NONE;
@@ -687,7 +692,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(lv);
 	bat_destroy(lc);
 	if (!bn)
-		throw(SQL, "dict.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "dict.thetaselect", GDK_EXCEPTION);
 	BBPkeepref(*R0 = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -719,13 +724,14 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *lo = BATdescriptor(LO);
 	BAT *lv = BATdescriptor(LV);
 
-	if (!lo || !lv) {
-		bat_destroy(lo);
-		bat_destroy(lv);
-		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 	if (!is_bat_nil(LC))
 		lc = BATdescriptor(LC);
+	if (!lo || !lv || (!is_bat_nil(LC) && !lc)) {
+		bat_destroy(lo);
+		bat_destroy(lv);
+		bat_destroy(lc);
+		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	if (ATOMvarsized(lv->ttype)) {
 		l = *(ptr*)l;
@@ -789,7 +795,7 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(lv);
 	bat_destroy(lc);
 	if (!bn)
-		throw(SQL, "dict.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "dict.select", GDK_EXCEPTION);
 	BBPkeepref(*R0 = bn->batCacheid);
 	return MAL_SUCCEED;
 }
