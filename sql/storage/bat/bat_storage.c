@@ -1840,11 +1840,14 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 
 	lock_column(tr->store, id);
 	if (bat->cs.st == ST_DICT) {
-		oi = i = dict_append_bat(&bat->cs, i);
-		if (!oi) {
+		BAT *ni = dict_append_bat(&bat->cs, i);
+		if (oi != i) /* oi and i will be replaced, so destroy possible unmask reference */
+			bat_destroy(oi);
+		if (!ni) {
 			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
+		oi = i = ni;
 	}
 
 	b = temp_descriptor(bat->cs.bid);
@@ -2965,7 +2968,7 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, sqlid id)
 	sqlstore *store = tr->store;
 	if (!GDKinmemory(0) && b && b->cs.bid)
 		ok = log_bat_transient(store->logger, id);
-	if (!GDKinmemory(0) && b && b->cs.ebid)
+	if (ok == GDK_SUCCEED && !GDKinmemory(0) && b && b->cs.ebid)
 		ok = log_bat_transient(store->logger, -id);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -3136,21 +3139,31 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 		if (b) {
 			sz += BATcount(b);
 			if (cs->st == ST_DICT) {
-				bat bid = cs->ebid;
-				cs->ebid = temp_copy(bid, true, temp); /* create empty copy */
-				temp_destroy(bid);
-
-				bid = cs->bid;
+				bat nebid = temp_copy(cs->ebid, true, temp); /* create empty copy */
 				BAT *n = COLnew(0, TYPE_bte, 0, PERSISTENT);
+
+				if (nebid == BID_NIL || !n) {
+					temp_destroy(nebid);
+					bat_destroy(n);
+					return BUN_NONE;
+				}
+				temp_destroy(cs->ebid);
+				cs->ebid = nebid;
 				if (!temp)
 					bat_set_access(n, BAT_READ);
+				temp_destroy(cs->bid);
 				cs->bid = temp_create(n); /* create empty copy */
 				bat_destroy(n);
 			} else {
-				bat bid = cs->bid;
-				cs->bid = temp_copy(bid, true, temp); /* create empty copy */
-				temp_destroy(bid);
+				bat nbid = temp_copy(cs->bid, true, temp); /* create empty copy */
+
+				if (nbid == BID_NIL)
+					return BUN_NONE;
+				temp_destroy(cs->bid);
+				cs->bid = nbid;
 			}
+		} else {
+			return BUN_NONE;
 		}
 	}
 	if (cs->uibid) {
@@ -3303,7 +3316,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 		bat_set_access(ins, BAT_READ);
 		ok = log_bat_persists(store->logger, ins, id);
 		bat_destroy(ins);
-		if (cs->ebid) {
+		if (ok == GDK_SUCCEED && cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
 			if (!ins)
 				return LOG_ERR;
