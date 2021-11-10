@@ -34,6 +34,8 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 {
 	MSresetInstructions(be->mb, oldstop);
 	freeVariables(be->client, be->mb, NULL, oldvtop, oldvid);
+	be->mvc->session->status = 0; /* clean possible generated error */
+	be->mvc->errstr[0] = '\0';
 }
 
 static int
@@ -2545,7 +2547,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			(void) equality_only;
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
 			/* generate a relational join (releqjoin) which does a multi attribute (equi) join */
-			for( en = jexps->h; en; en = en->next ) {
+			for( en = jexps->h; en && !used_hash; en = en->next ) {
 				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
@@ -2556,20 +2558,24 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					break;
 
 				/* handle possible index lookups, expressions are in index order! */
-				if (!join &&
-					(p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
+				if (!join && (p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 					sql_idx *i = p->value;
+					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 					join = s = rel2bin_hash_lookup(be, rel, left, right, i, en);
 					if (s) {
 						list_append(lje, s->op1);
 						list_append(rje, s->op2);
 						list_append(exps, NULL);
-						used_hash = 1;
+						used_hash = 1; /* uses hash, all jexps were consumed */
+					} else {
+						/* hash lookup cannot be used, clean leftover mal statements */
+						clean_mal_statements(be, oldstop, oldvtop, oldvid);
 					}
 				}
 
-				s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
+				if (!s)
+					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
 				if (!s) {
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
@@ -3637,8 +3643,12 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_idx *i = p->value;
+			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
-			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
+			if ((sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en)))
+				goto done;
+			/* hash lookup cannot be used, clean leftover mal statements */
+			clean_mal_statements(be, oldstop, oldvtop, oldvid);
 		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
@@ -3665,6 +3675,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
+done:
 	if (sub && sel) {
 		sub = stmt_list(be, sub->op4.lval); /* protect against references */
 		sub->cand = sel;
