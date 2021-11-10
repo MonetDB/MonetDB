@@ -833,17 +833,19 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 	}
 
 	// debugging
-	if (front_count > 0) {
-		for (size_t j = 0; j < front_count; j++) {
-			BUN pos = (BUN)*(oid*)Tloc(state->new_offsets, j);
-			fprintf(stderr, "scattered offset[%zu] = " BUNFMT "\n", j, pos);
-		}
-	}
-	if (back_count > 0) {
-		BUN start = back_offset;
-		BUN end = start + (BUN)back_count - 1;
-		fprintf(stderr, "consecutive offsets: " BUNFMT " .. " BUNFMT"\n", start, end);
-	}
+	(void)front_count;
+	(void)back_count;
+	// if (front_count > 0) {
+	// 	for (size_t j = 0; j < front_count; j++) {
+	// 		BUN pos = (BUN)*(oid*)Tloc(state->new_offsets, j);
+	// 		fprintf(stderr, "scattered offset[%zu] = " BUNFMT "\n", j, pos);
+	// 	}
+	// }
+	// if (back_count > 0) {
+	// 	BUN start = back_offset;
+	// 	BUN end = start + (BUN)back_count - 1;
+	// 	fprintf(stderr, "consecutive offsets: " BUNFMT " .. " BUNFMT"\n", start, end);
+	// }
 
 	state->offset = back_offset;
 
@@ -872,10 +874,10 @@ directappend_append_one(void *state_, size_t idx, const void *const_data, void *
 	BUN off;
 	if (idx < scattered_count) {
 		off = *(oid*)Tloc(scattered_offsets, idx);
-		fprintf(stderr, "Took offset " BUNFMT " from position %zu of the offsets BAT\n", off, idx);
+		// fprintf(stderr, "Took offset " BUNFMT " from position %zu of the offsets BAT\n", off, idx);
 	} else {
 		off = state->offset + (idx - scattered_count);
-		fprintf(stderr, "Took offset " BUNFMT " as %zu plus base " BUNFMT "\n", off, idx, state->offset);
+		// fprintf(stderr, "Took offset " BUNFMT " as %zu plus base " BUNFMT "\n", off, idx, state->offset);
 	}
 
 	sql_column *c = col;
