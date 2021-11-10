@@ -214,7 +214,7 @@ seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng *start, lng 
 		if ((i+1) < cnt)
 			s->cur += seq->increment;
 	}
-	*end = s->cur;
+	nr = *end = s->cur;
 	if (save || nr >= s->cached) {
 		while(s->cached <= nr)
 			s->cached += seq->cacheinc*seq->increment;
