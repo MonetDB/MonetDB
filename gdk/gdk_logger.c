@@ -774,34 +774,36 @@ la_bat_create(logger *lg, logaction *la)
 }
 
 static gdk_return
-logger_write_new_types(logger *lg, FILE *fp)
+logger_write_new_types(logger *lg, FILE *fp, bool append)
 {
 	bte id = 0;
 
 	/* write types and insert into bats */
 	/* first the fixed sized types */
-	for (int i=0;i<GDKatomcnt; i++) {
+	for (int i = 0; i < GDKatomcnt; i++) {
 		if (ATOMvarsized(i))
 			continue;
-		if (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED ||
-		    fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0) {
+		if (append &&
+		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
 			return GDK_FAIL;
-		}
+		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
+			return GDK_FAIL;
 		id++;
 	}
 	/* second the var sized types */
-	id=-127; /* start after nil */
-	for (int i=0;i<GDKatomcnt; i++) {
+	id = -127; /* start after nil */
+	for (int i = 0; i < GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
-		if (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
-		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED ||
-		    fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0) {
+		if (append &&
+		    (BUNappend(lg->type_id, &id, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nme, BATatoms[i].name, false) != GDK_SUCCEED ||
+		     BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED))
 			return GDK_FAIL;
-		}
+		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
+			return GDK_FAIL;
 		id++;
 	}
 	return GDK_SUCCEED;
@@ -957,7 +959,7 @@ logger_read_types_file(logger *lg, FILE *fp)
 
 
 gdk_return
-logger_create_types_file(logger *lg, const char *filename)
+logger_create_types_file(logger *lg, const char *filename, bool append)
 {
 	FILE *fp;
 
@@ -972,7 +974,7 @@ logger_create_types_file(logger *lg, const char *filename)
 		return GDK_FAIL;
 	}
 
-	if (logger_write_new_types(lg, fp) != GDK_SUCCEED) {
+	if (logger_write_new_types(lg, fp, append) != GDK_SUCCEED) {
 		fclose(fp);
 		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
@@ -1306,7 +1308,7 @@ logger_commit(logger *lg)
 }
 
 static gdk_return
-check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const char *filename)
+check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const char *filename, bool *needsnew)
 {
 	int version = 0;
 
@@ -1335,6 +1337,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 			return GDK_FAIL;
 		}
+		*needsnew = false; /* already written a new log file */
 		return GDK_SUCCEED;
 	} else if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
@@ -1346,11 +1349,13 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 			fclose(fp);
 			return GDK_FAIL;
 		}
+		*needsnew = true;	/* we need to write a new log file */
 	} else {
-		lg->postfuncp = NULL;	 /* don't call */
+		lg->postfuncp = NULL;	/* don't call */
+		*needsnew = false;	/* log file already up-to-date */
 	}
-	if (fgetc(fp) != '\n' ||	 /* skip \n */
-	    fgetc(fp) != '\n') {	 /* skip \n */
+	if (fgetc(fp) != '\n' ||	/* skip \n */
+	    fgetc(fp) != '\n') {	/* skip \n */
 		GDKerror("Badly formatted log file");
 		fclose(fp);
 		return GDK_FAIL;
@@ -1771,6 +1776,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	bool needcommit = false;
 	int dbg = GDKdebug;
 	bool readlogs = false;
+	bool needsnew = false;	/* need to write new log file? */
 
 	/* refactor */
 	if (!LOG_DISABLED(lg)) {
@@ -1873,7 +1879,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 				GDKerror("cannot create directory for log file %s\n", filename);
 				goto error;
 			}
-			if (logger_create_types_file(lg, filename) != GDK_SUCCEED)
+			if (logger_create_types_file(lg, filename, true) != GDK_SUCCEED)
 				goto error;
 		}
 
@@ -1905,7 +1911,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 		if (fp != NULL) {
 			/* check_version always closes fp */
-			if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) {
+			if (check_version(lg, fp, fn, logdir, filename, &needsnew) != GDK_SUCCEED) {
 				fp = NULL;
 				goto error;
 			}
@@ -2019,6 +2025,16 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		}
 		if (lg->postfuncp && (*lg->postfuncp)(lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
+		if (needsnew) {
+			if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
+				TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
+				return GDK_FAIL;
+			}
+			if (logger_create_types_file(lg, filename, false) != GDK_SUCCEED) {
+				TRC_CRITICAL(GDK, "couldn't write new log\n");
+				return GDK_FAIL;
+			}
+		}
 		dbg = GDKdebug;
 		GDKdebug &= ~(CHECKMASK|PROPMASK);
 		if (logger_commit(lg) != GDK_SUCCEED) {
@@ -2027,6 +2043,11 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		GDKdebug = dbg;
 		for( ; log_id <= lg->saved_id; log_id++)
 			(void)logger_cleanup(lg, log_id);  /* ignore error of removing file */
+		if (needsnew &&
+		    GDKunlink(0, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "couldn't remove old log.bak file\n");
+			return GDK_FAIL;
+		}
 	} else {
 		lg->id = lg->saved_id+1;
 	}

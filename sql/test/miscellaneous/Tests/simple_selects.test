@@ -804,18 +804,6 @@ select ups()
 statement ok
 rollback
 
-statement error
-create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
-
-statement error
-select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
-
-statement error
-create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
-
-statement error
-select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
-
 statement ok
 create table thisnamewontconflict(y int, z int)
 
@@ -884,3 +872,28 @@ select inet '192.168.1.0/26 thisstringshouldnotbehere'
 statement error 42000!CREATE TABLE: any type (plain null value) not allowed as a column type, use an explicit cast
 create table x as (select null as sname)
 
+statement ok
+create function dosomething() returns int begin return 1; end
+
+query I rowsort
+select dosomething()
+----
+1
+
+statement ok
+start transaction
+
+statement ok
+drop function dosomething
+
+statement ok
+rollback
+
+# make sure the function has backend set if the transaction has to rollback
+query I rowsort
+select dosomething()
+----
+1
+
+statement ok
+drop function dosomething

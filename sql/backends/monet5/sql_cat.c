@@ -957,7 +957,6 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	sql_func *nf;
 	sql_subfunc *sf;
 	sql_schema *s = NULL;
-	int clientid = sql->clientid;
 	char *F = NULL, *fn = NULL, *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
 	FUNC_TYPE_STR(f->type, F, fn)
@@ -967,8 +966,6 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		throw(SQL,"sql.create_func", SQLSTATE(3F000) "%s %s: no such schema '%s'", base, F, sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: access denied for %s to schema '%s'", base, F, get_string_global_var(sql, "current_user"), s->base.name);
-	if (strlen(fname) >= IDLENGTH)
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: name '%s' too large for the backend", base, F, fname);
 
 	if (replace) {
 		list *tl = sa_list(sql->sa);
@@ -982,31 +979,17 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 
 		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type)) != NULL) {
 			sql_func *sff = sf->func;
-			bool backend_ok = true;
-			char *fimp = NULL;
 
 			if (!sff->s || sff->system)
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
 
-			if (sff->lang == FUNC_LANG_MAL && mal_function_find_implementation_address(&fimp, sql, sff) < 0) {
-				backend_ok = false;
-				sql->session->status = 0; /* clean the error */
-				sql->errstr[0] = '\0';
-			}
-
 			/* if all function parameters are the same, return */
-			if (backend_ok && sff->lang == f->lang && sff->type == f->type &&
+			if (sff->lang == f->lang && sff->type == f->type &&
 				sff->varres == f->varres && sff->vararg == f->vararg &&
-				strcmp(sff->s->base.name, s->base.name) == 0 &&
-				((!sff->mod && !f->mod) || (sff->mod && f->mod && strcmp(sff->mod, f->mod) == 0)) &&
-				(sff->lang != FUNC_LANG_MAL || strcmp(fimp, f->imp) == 0) &&
 				((!sff->query && !f->query) || (sff->query && f->query && strcmp(sff->query, f->query) == 0)) &&
 				list_cmp(sff->res, f->res, (fcmp) &args_cmp) == 0 &&
-				list_cmp(sff->ops, f->ops, (fcmp) &args_cmp) == 0) {
-				_DELETE(fimp);
+				list_cmp(sff->ops, f->ops, (fcmp) &args_cmp) == 0)
 				return MAL_SUCCEED;
-			}
-			_DELETE(fimp);
 
 			if (mvc_check_dependency(sql, sff->base.id, !IS_PROC(sff) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: there are database objects dependent on %s %s;", base, F, fn, sff->base.name);
@@ -1024,8 +1007,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->errstr[0] = '\0';
 		}
 	}
-
-	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system)) {
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
 		case -1:
 			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:
@@ -1035,12 +1017,9 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			break;
 	}
 	switch (nf->lang) {
-	case FUNC_LANG_INT:
-	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
-		if (!backend_resolve_function(&clientid, nf))
-			throw(SQL,"sql.create_func", SQLSTATE(3F000) "%s %s: external name %s.%s not bound", base, F, nf->mod, nf->base.name);
-		if (nf->query == NULL)
-			break;
+	case FUNC_LANG_MAL:
+		assert(nf->imp);
+		nf->instantiated = TRUE; /* MAL functions get instantiated while being created */
 		/* fall through */
 	case FUNC_LANG_SQL: {
 		char *buf;

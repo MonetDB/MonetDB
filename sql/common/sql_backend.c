@@ -28,10 +28,10 @@
 backend_functions be_funcs;
 
 void
-backend_freecode(int clientid, const char *name)
+backend_freecode(const char *mod, int clientid, const char *name)
 {
 	if (be_funcs.fcode != NULL)
-		be_funcs.fcode(clientid, name);
+		be_funcs.fcode(mod, clientid, name);
 }
 
 char *

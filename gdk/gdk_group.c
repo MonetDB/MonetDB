@@ -598,6 +598,54 @@ ctz(oid x)
 	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
+#define GRP_small_values(BG, BV, GV)					\
+	do {								\
+		uint##BG##_t sgrps[1 << BG];				\
+		const uint##BV##_t *restrict w = (const uint##BV##_t *) bi.base; \
+		uint##BG##_t v;						\
+		memset(sgrps, 0xFF, sizeof(sgrps));			\
+		if (histo)						\
+			memset(cnts, 0, maxgrps * sizeof(lng));		\
+		ngrp = 0;						\
+		gn->tsorted = true;					\
+		if (ci.tpe == cand_dense) {				\
+			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
+				oid o = canditer_next_dense(&ci);	\
+				p = o - hseqb;			\
+				uint##BG##_t x = GV;			\
+				if ((v = sgrps[x]) == (uint##BG##_t) ~0 && ngrp < (1 << BG)) { \
+					sgrps[x] = v = (uint##BG##_t) ngrp++; \
+					maxgrppos = r;			\
+					if (extents)			\
+						exts[v] = o;		\
+				}					\
+				ngrps[r] = v;				\
+				if (r > 0 && v < ngrps[r - 1])		\
+					gn->tsorted = false;		\
+				if (histo)				\
+					cnts[v]++;			\
+			}						\
+		} else {						\
+			TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {		\
+				oid o = canditer_next(&ci);		\
+				p = o - hseqb;			\
+				uint##BG##_t x = GV;			\
+				if ((v = sgrps[x]) == (uint##BG##_t) ~0 && ngrp < (1 << BG)) { \
+					sgrps[x] = v = (uint##BG##_t) ngrp++; \
+					maxgrppos = r;			\
+					if (extents)			\
+						exts[v] = o;		\
+				}					\
+				ngrps[r] = v;				\
+				if (r > 0 && v < ngrps[r - 1])		\
+					gn->tsorted = false;		\
+				if (histo)				\
+					cnts[v]++;			\
+			}						\
+		}							\
+		TIMEOUT_CHECK(timeoffset,				\
+			      GOTO_LABEL_TIMEOUT_HANDLER(error));	\
+	} while (0)
 
 gdk_return
 BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
@@ -691,9 +739,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	assert(!BATtdense(b));
 	if (g) {
-		if (BATtdense(g))
-			maxgrp = g->tseqbase + BATcount(g);
-		else if (BATtordered(g))
+		assert(!BATtdense(g));
+		if (BATtordered(g))
 			maxgrp = * (oid *) Tloc(g, BATcount(g) - 1);
 		else if (BATtrevordered(g))
 			maxgrp = * (oid *) Tloc(g, 0);
@@ -814,8 +861,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = GROUPBATINCR;
 	bi = bat_iterator(b);
 
-	if (bi.width <= 2)
+	if (bi.width <= 2) {
 		maxgrps = (BUN) 1 << (8 * bi.width);
+		if (bi.width == 1 && maxgrp < 256)
+			maxgrps *= maxgrp;
+	}
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
@@ -860,7 +910,26 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 
-	if (subsorted ||
+	if (g == NULL && t == TYPE_bte) {
+		/* byte-sized values, use 256 entry array to keep
+		 * track of doled out group ids; note that we can't
+		 * possibly have more than 256 groups, so the group id
+		 * fits in a uint8_t */
+		GRP_small_values(8, 8, w[p]);
+	} else if (t == TYPE_bte && maxgrp < 256) {
+		/* subgrouping byte-sized values with a limited number
+		 * of groups, use 65536 entry array to keep track of
+		 * doled out group ids; note that we can't possibly have
+		 * more than 65536 goups, so the group id fits in a
+		 * uint16_t */
+		GRP_small_values(16, 8, (uint16_t) (w[p] | (grps[p] << 8)));
+	} else if (g == NULL && t == TYPE_sht) {
+		/* short-sized values, use 65536 entry array to keep
+		 * track of doled out group ids; note that we can't
+		 * possibly have more than 65536 groups, so the group
+		 * id fits in a uint16_t */
+		GRP_small_values(16, 16, w[p]);
+	} else if (subsorted ||
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
@@ -961,73 +1030,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 
 		GDKfree(pgrp);
-	} else if (g == NULL && t == TYPE_bte) {
-		/* byte-sized values, use 256 entry array to keep
-		 * track of doled out group ids; note that we can't
-		 * possibly have more than 256 groups, so the group id
-		 * fits in an uint8_t */
-		uint8_t bgrps[256];
-		const uint8_t *restrict w = (const uint8_t *) bi.base;
-		uint8_t v;
-
-		algomsg = "byte-sized groups -- ";
-		memset(bgrps, 0xFF, sizeof(bgrps));
-		if (histo)
-			memset(cnts, 0, maxgrps * sizeof(lng));
-		ngrp = 0;
-		gn->tsorted = true;
-		TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {
-			oid o = canditer_next(&ci);
-			p = o - b->hseqbase;
-			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
-				bgrps[w[p]] = v = (uint8_t) ngrp++;
-				maxgrppos = r;
-				if (extents)
-					exts[v] = o;
-			}
-			ngrps[r] = v;
-			if (r > 0 && v < ngrps[r - 1])
-				gn->tsorted = false;
-			if (histo)
-				cnts[v]++;
-		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(error));
-	} else if (g == NULL && t == TYPE_sht) {
-		/* short-sized values, use 65536 entry array to keep
-		 * track of doled out group ids; note that we can't
-		 * possibly have more than 65536 groups, so the group
-		 * id fits in an uint16_t */
-		uint16_t *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const uint16_t *restrict w = (const uint16_t *) bi.base;
-		uint16_t v;
-
-		algomsg = "short-sized groups -- ";
-		if (sgrps == NULL)
-			goto error1;
-		memset(sgrps, 0xFF, 65536 * sizeof(uint16_t));
-		if (histo)
-			memset(cnts, 0, maxgrps * sizeof(lng));
-		ngrp = 0;
-		gn->tsorted = true;
-		TIMEOUT_LOOP_IDX(r, cnt, timeoffset) {
-			oid o = canditer_next(&ci);
-			p = o - b->hseqbase;
-			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
-				sgrps[w[p]] = v = (uint16_t) ngrp++;
-				maxgrppos = r;
-				if (extents)
-					exts[v] = o;
-			}
-			ngrps[r] = v;
-			if (r > 0 && v < ngrps[r - 1])
-				gn->tsorted = false;
-			if (histo)
-				cnts[v]++;
-		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(error));
-		GDKfree(sgrps);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
 		    (!b->batTransient &&
