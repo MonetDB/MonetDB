@@ -715,7 +715,6 @@ directappend_init(struct directappend *state, Client cntxt, sql_table *t)
 	*state = (struct directappend) { 0 };
 	backend *be;
 	mvc *mvc;
-	sql_schema *s;
 
 	msg = checkSQLContext(cntxt);
 	if (msg != MAL_SUCCEED)
@@ -723,20 +722,6 @@ directappend_init(struct directappend *state, Client cntxt, sql_table *t)
 	be = cntxt->sqlcontext;
 	mvc = be->mvc;
 	state->mvc = mvc;
-
-	// temporary: append to table banana2 instead
-	s = t->s;
-	char *tname;
-	tname = "banana2";  // <<=============================================
-	if (NULL == (t = mvc_bind_table(mvc, s, tname))) {
-		msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "Table missing: %s.%s", s->base.name, tname);
-		goto bailout;
-	}
-	if (!isTable(t)) {
-		msg = createException(SQL, "sql.append_from", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
-		goto bailout;
-	}
-
 	state->t = t;
 
 	state->all_offsets = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -1040,13 +1025,21 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					break;
 			}
 
-			*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+			size_t nreturns = loadops ? 1 : as.nr_attrs;
+			*bats = (BAT**) GDKzalloc(sizeof(BAT *) * nreturns);
 			if ( *bats == NULL) {
 				TABLETdestroy_format(&as);
 				directappend_destroy(our_loadops.state);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			msg = TABLETcollect(*bats,&as);
+			if (loadops) {
+				BAT *oids_bat = directappend_state.all_offsets;
+				directappend_state.all_offsets = NULL; // or we'd try to reclaim it later
+				BBPfix(oids_bat->batCacheid);
+				(*bats)[0] = oids_bat;
+			} else {
+				msg = TABLETcollect(*bats,&as);
+			}
 
 		} while (false);
 
