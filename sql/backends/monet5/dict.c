@@ -1083,7 +1083,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			}
 			if (!f) {
 				if (BATcount(dict) >= (64*1024)-1) {
-						assert(0);
+					assert(0);
 					GDKfree(n);
 					return -2;
 				} else {
