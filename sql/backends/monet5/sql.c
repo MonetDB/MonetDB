@@ -924,6 +924,57 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
+str
+mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *be = NULL;
+	str msg;
+	sql_schema *s;
+	sql_sequence *seq;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	BUN card = *(BUN*)getArgReference_lng(stk, pci, 1);
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *seqname = *getArgReference_str(stk, pci, 3);
+	BAT *r = NULL;
+
+	(void)mb;
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+		return msg;
+	if (!(s = mvc_bind_schema(be->mvc, sname)))
+		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(be->mvc, s))
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(be->mvc, "current_user"), s->base.name);
+	if (!(seq = find_sql_sequence(be->mvc->session->tr, s, seqname)))
+		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
+	if (!(r = COLnew(0, TYPE_lng, card, TRANSIENT)))
+		throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	lng start, inc, minv, maxv, end;
+
+	if (seqbulk_next_value(be->mvc->session->tr->store, seq, card, &start, &inc, &minv, &maxv, &end)) {
+		be->last_id = end;
+		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
+		lng c = start;
+		for(BUN i = 0; i<card; i++) {
+			if (c > maxv && minv && maxv)
+			   c = minv;
+			if (c > maxv && !minv)
+				break;
+			if (BUNappend(r, &c, false) != GDK_SUCCEED) {
+				BBPreclaim(r);
+				throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if ((i+1) < card)
+				c += inc;
+		}
+		(void)end;
+		assert(c == end);
+		BBPkeepref( *res = r->batCacheid );
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
+}
+
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
 str
 mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -947,129 +998,8 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (seq_get_value(m->session->tr->store, seq, res))
 		return MAL_SUCCEED;
+
 	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
-}
-
-static str
-mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int (*bulk_func)(seqbulk *, lng *), const char *call, const char *action)
-{
-	mvc *m = NULL;
-	str msg = MAL_SUCCEED, sname = NULL, seqname = NULL;
-	BAT *b = NULL, *c = NULL, *r = NULL, *it;
-	BUN p, q;
-	sql_schema *s = NULL;
-	sql_sequence *seq = NULL;
-	seqbulk *sb = NULL;
-	BATiter bi =  (BATiter) { .b = NULL }, ci =  (BATiter) { .b = NULL };
-	bat *res = getArgReference_bat(stk, pci, 0);
-	bat schid = 0, seqid = 0;
-
-	if (isaBatType(getArgType(mb, pci, 1)))
-		schid = *getArgReference_bat(stk, pci, 1);
-	else
-		sname = *getArgReference_str(stk, pci, 1);
-	if (isaBatType(getArgType(mb, pci, 2)))
-		seqid = *getArgReference_bat(stk, pci, 2);
-	else
-		seqname = *getArgReference_str(stk, pci, 2);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	sqlstore *store = m->session->tr->store;
-
-	if (schid && !(b = BATdescriptor(schid))) {
-		msg = createException(SQL, call, SQLSTATE(HY005) "Cannot access column descriptor");
-		goto bailout;
-	}
-	if (seqid && !(c = BATdescriptor(seqid))) {
-		msg = createException(SQL, call, SQLSTATE(HY005) "Cannot access column descriptor");
-		goto bailout;
-	}
-	assert(b || c);
-	it = b ? b : c; /* Either b or c must be set */
-
-	if (!(r = COLnew(it->hseqbase, TYPE_lng, BATcount(it), TRANSIENT))) {
-		msg = createException(SQL, call, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	if (!BATcount(it))
-		goto bailout; /* Success case */
-
-	bi = bat_iterator(b);
-	ci = bat_iterator(c);
-
-	BATloop(it, p, q) {
-		str nsname, nseqname;
-		lng l;
-
-		if (b)
-			nsname = BUNtvar(bi, p);
-		else
-			nsname = sname;
-		if (c)
-			nseqname = BUNtvar(ci, p);
-		else
-			nseqname = seqname;
-
-		if (!s || strcmp(s->base.name, nsname) != 0 || !seq || strcmp(seq->base.name, nseqname) != 0) {
-			if (sb) {
-				seqbulk_destroy(store, sb);
-				sb = NULL;
-			}
-			seq = NULL;
-			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
-				msg = createException(SQL, call, SQLSTATE(3F000) "Cannot find the schema %s", nsname);
-				goto bailout1;
-			}
-			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
-				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-				goto bailout1;
-			}
-			if (!(seq = find_sql_sequence(m->session->tr, s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
-				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
-				goto bailout1;
-			}
-		}
-		if (!bulk_func(sb, &l)) {
-			msg = createException(SQL, call, SQLSTATE(HY050) "Cannot %s sequence value %s.%s", action, nsname, nseqname);
-			goto bailout1;
-		}
-		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
-			msg = createException(SQL, call, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout1;
-		}
-	}
-bailout1:
-	bat_iterator_end(&bi);
-	bat_iterator_end(&ci);
-
-bailout:
-	if (sb)
-		seqbulk_destroy(store, sb);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (c)
-		BBPunfix(c->batCacheid);
-	if (msg)
-		BBPreclaim(r);
-	else
-		BBPkeepref(*res = r->batCacheid);
-	return msg;
-}
-
-str
-mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return mvc_bat_next_get_value(cntxt, mb, stk, pci, seqbulk_next_value, "sql.next_value", "generate next");
-}
-
-str
-mvc_bat_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return mvc_bat_next_get_value(cntxt, mb, stk, pci, seqbulk_get_value, "sql.get_value", "get");
 }
 
 str
@@ -1130,157 +1060,6 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*res = start;
 	}
 	return MAL_SUCCEED;
-}
-
-str
-mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg = MAL_SUCCEED, sname = NULL, seqname = NULL;
-	BAT *b = NULL, *c = NULL, *d = NULL, *r = NULL, *it;
-	BUN p, q;
-	sql_schema *s = NULL;
-	sql_sequence *seq = NULL;
-	seqbulk *sb = NULL;
-	BATiter bi, ci, di;
-	bat *res = getArgReference_bat(stk, pci, 0);
-	bat schid = 0, seqid = 0, startid = 0;
-	lng start = 0, *dptr = NULL;
-
-	if (isaBatType(getArgType(mb, pci, 1)))
-		schid = *getArgReference_bat(stk, pci, 1);
-	else
-		sname = *getArgReference_str(stk, pci, 1);
-	if (isaBatType(getArgType(mb, pci, 2)))
-		seqid = *getArgReference_bat(stk, pci, 2);
-	else
-		seqname = *getArgReference_str(stk, pci, 2);
-	if (isaBatType(getArgType(mb, pci, 3)))
-		startid = *getArgReference_bat(stk, pci, 3);
-	else
-		start = *getArgReference_lng(stk, pci, 3);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	sqlstore *store = m->session->tr->store;
-	if (schid && !(b = BATdescriptor(schid))) {
-		msg = createException(SQL, "sql.restart", SQLSTATE(HY005) "Cannot access column descriptor");
-		goto bailout;
-	}
-	if (seqid && !(c = BATdescriptor(seqid))) {
-		msg = createException(SQL, "sql.restart", SQLSTATE(HY005) "Cannot access column descriptor");
-		goto bailout;
-	}
-	if (startid && !(d = BATdescriptor(startid))) {
-		msg = createException(SQL, "sql.restart", SQLSTATE(HY005) "Cannot access column descriptor");
-		goto bailout;
-	}
-	assert(b || c || d);
-	it = b ? b : c ? c : d; /* Either b, c or d must be set */
-
-	if (!(r = COLnew(it->hseqbase, TYPE_lng, BATcount(it), TRANSIENT))) {
-		msg = createException(SQL, "sql.restart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	if (!BATcount(it))
-		goto bailout; /* Success case */
-
-	bi = bat_iterator(b);
-	ci = bat_iterator(c);
-	di = bat_iterator(d);
-	if (d)
-		dptr = (lng *) di.base;
-
-	BATloop(it, p, q) {
-		str nsname, nseqname;
-		lng nstart;
-
-		if (b)
-			nsname = BUNtvar(bi, p);
-		else
-			nsname = sname;
-		if (c)
-			nseqname = BUNtvar(ci, p);
-		else
-			nseqname = seqname;
-		if (dptr)
-			nstart = dptr[p];
-		else
-			nstart = start;
-
-		if (!s || strcmp(s->base.name, nsname) != 0 || !seq || strcmp(seq->base.name, nseqname) != 0) {
-			if (sb) {
-				seqbulk_destroy(store, sb);
-				sb = NULL;
-			}
-			seq = NULL;
-			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
-				msg = createException(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", nsname);
-				goto bailout1;
-			}
-			if (!mvc_schema_privs(m, s)) {
-				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-				goto bailout1;
-			}
-			if (!(seq = find_sql_sequence(m->session->tr, s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
-				msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
-				goto bailout1;
-			}
-		}
-		if (is_lng_nil(nstart)) {
-			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
-			goto bailout1;
-		}
-		if (seq->minvalue && nstart < seq->minvalue) {
-			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
-			goto bailout1;
-		}
-		if (seq->maxvalue && nstart > seq->maxvalue) {
-			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
-			goto bailout1;
-		}
-		switch (sql_trans_seqbulk_restart(m->session->tr, sb, nstart)) {
-			case -1:
-				msg = createException(SQL,"sql.restart",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout1;
-			case -2:
-			case -3:
-				msg = createException(SQL,"sql.restart",SQLSTATE(42000) "RESTART SEQUENCE: transaction conflict detected");
-				goto bailout1;
-			case -4:
-				msg = createException(SQL,"sql.restart",SQLSTATE(HY050) "Cannot restart sequence %s.%s", nsname, nseqname);
-				goto bailout1;
-			default:
-				break;
-		}
-		if (BUNappend(r, &nstart, false) != GDK_SUCCEED) {
-			msg = createException(SQL, "sql.restart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout1;
-		}
-	}
-bailout1:
-	bat_iterator_end(&bi);
-	bat_iterator_end(&ci);
-	bat_iterator_end(&di);
-
-bailout:
-	if (sb)
-		seqbulk_destroy(store, sb);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (c)
-		BBPunfix(c->batCacheid);
-	if (d)
-		BBPunfix(d->batCacheid);
-	if (msg)
-		BBPreclaim(r);
-	else
-		BBPkeepref(*res = r->batCacheid);
-	return msg;
 }
 
 BAT *
@@ -5290,21 +5069,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "getVariable", getVariable, false, "Get the value of a session variable", args(1,4, argany("",1),arg("mvc",int),arg("sname",str),arg("varname",str))),
  pattern("sql", "logfile", mvc_logfile, true, "Enable/disable saving the sql statement traces", args(1,2, arg("",void),arg("filename",str))),
  pattern("sql", "next_value", mvc_next_value, false, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("batsql", "next_value", mvc_bat_next_value, false, "return the next value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
- pattern("batsql", "next_value", mvc_bat_next_value, false, "return the next value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),
- pattern("batsql", "next_value", mvc_bat_next_value, false, "return the next value of sequences", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
+ pattern("batsql", "next_value", mvc_next_value_bulk, false, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
- pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),
- pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of sequences", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
  pattern("sql", "restart", mvc_restart_seq, true, "restart the sequence with value start", args(1,4, arg("",lng),arg("sname",str),arg("sequence",str),arg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),arg("sequence",str),arg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),batarg("sequence",str),arg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),arg("sequence",str),batarg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),batarg("sequence",str),arg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),arg("sequence",str),batarg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),batarg("sequence",str),batarg("start",lng))),
- pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("start",lng))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),

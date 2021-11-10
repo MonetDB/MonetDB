@@ -404,7 +404,6 @@ extern int sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *n
 extern int sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern int sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
 extern int sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
-extern int sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
 extern sql_session * sql_session_create(struct sqlstore *store, sql_allocator *sa, int autocommit);
 extern void sql_session_destroy(sql_session *s);
