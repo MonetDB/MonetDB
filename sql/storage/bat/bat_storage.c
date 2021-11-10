@@ -3214,7 +3214,8 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 static int
 clear_storage(sql_trans *tr, sql_table *t, storage *s)
 {
-	clear_cs(tr, &s->cs, true, isTempTable(t));
+	if (clear_cs(tr, &s->cs, true, isTempTable(t)) == BUN_NONE)
+		return LOG_ERR;
 	s->cs.cleared = 1;
 	if (s->segs)
 		destroy_segments(s->segs);
@@ -3533,13 +3534,15 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE) {
 				if (!delta->cs.merged)
 					ok = merge_delta(delta);
-			} else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-				clear_cs(tr, &delta->cs, true, isTempTable(c->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			}
 		} else { /* rollback */
-			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/)
+			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/) {
 				ok = rollback_delta(tr, delta, c->type.type->localtype);
-			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-				clear_cs(tr, &delta->cs, true, isTempTable(c->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			}
 		}
 		if (!tr->parent)
 			c->t->base.new = c->base.new = 0;
@@ -3643,13 +3646,15 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE) {
 				if (!delta->cs.merged)
 					ok = merge_delta(delta);
-			} else /* CA_DELETE as CA_DROP's are gone already */
-				clear_cs(tr, &delta->cs, true, isTempTable(i->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
+			}
 		} else { /* rollback */
-			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/)
+			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/) {
 				ok = rollback_delta(tr, delta, type);
-			else /* CA_DELETE as CA_DROP's are gone already */
-				clear_cs(tr, &delta->cs, true, isTempTable(i->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
+			}
 		}
 		if (!tr->parent)
 			i->t->base.new = i->base.new = 0;
