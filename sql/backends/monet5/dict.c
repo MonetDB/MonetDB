@@ -87,9 +87,9 @@ static str
 DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool smallest_type)
 {
 	/* for now use all rows */
-	BAT *u = BATunique(b, NULL);
+	BAT *u = BATunique(b, NULL), *uu = NULL;
 	if (!u)
-		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "dict.compress", GDK_EXCEPTION);
 	assert(u->tkey);
 
 	BUN cnt = BATcount(u);
@@ -104,33 +104,34 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "dict compress: too many values");
 	}
 	BAT *uv = BATproject(u, b); /* get values */
-	uv->tkey = true;
 	bat_destroy(u);
 	if (!uv)
-		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-    BAT *uu = NULL;
+		throw(SQL, "dict.compress", GDK_EXCEPTION);
+	uv->tkey = true;
+
 	if (ordered) {
-			if (BATsort(&uu, NULL, NULL, uv, NULL, NULL, false, false, false) != GDK_SUCCEED) {
-				bat_destroy(uv);
-				throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+		if (BATsort(&uu, NULL, NULL, uv, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 			bat_destroy(uv);
-			uv = uu;
+			throw(SQL, "dict.compress", GDK_EXCEPTION);
+		}
+		bat_destroy(uv);
+		uv = uu;
 	}
 	u = uv;
 	if (persists) {
 		uu = COLcopy(uv, uv->ttype, true, PERSISTENT);
 		bat_destroy(uv);
-		assert(uu->tkey);
 		if (!uu)
-			throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "dict.compress", GDK_EXCEPTION);
+		assert(uu->tkey);
 		u = uu;
 	}
 
 	BAT *o = COLnew(b->hseqbase, tt, BATcount(b), persists?PERSISTENT:TRANSIENT);
 	if (!o || BAThash(u) != GDK_SUCCEED) {
+		bat_destroy(o);
 		bat_destroy(u);
-		throw(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "dict.compress", GDK_EXCEPTION);
 	}
 
 	BUN p, q;
@@ -246,10 +247,31 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = DICTcompress_intern(&o, &u, b, ordered, true, true);
 	bat_destroy(b);
 	if (msg == MAL_SUCCEED) {
-		if (sql_trans_alter_storage(tr, c, "DICT") != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_compress(tr, c, ST_DICT, o, u) != LOG_OK) {
-			bat_destroy(u);
-			bat_destroy(o);
-			throw(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
+		switch (sql_trans_alter_storage(tr, c, "DICT")) {
+			case -1:
+				msg = createException(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			case -2:
+			case -3:
+				msg = createException(SQL, "dict.compress", SQLSTATE(42000) "transaction conflict detected");
+				break;
+			default:
+				break;
+		}
+		if (msg == MAL_SUCCEED && !(c = get_newcolumn(tr, c)))
+			msg = createException(SQL, "dict.compress", SQLSTATE(HY013) "alter_storage failed");
+		if (msg == MAL_SUCCEED) {
+			switch (store->storage_api.col_compress(tr, c, ST_DICT, o, u)) {
+				case -1:
+					msg = createException(SQL, "dict.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				case -2:
+				case -3:
+					msg = createException(SQL, "dict.compress", SQLSTATE(42000) "transaction conflict detected");
+					break;
+				default:
+					break;
+			}
 		}
 		bat_destroy(u);
 		bat_destroy(o);

@@ -131,9 +131,9 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		snprintf(buf, 64, "FOR-" LLFMT, min_val);
 	} else if (b->ttype == TYPE_int) {
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: implement type int");
+	} else {
+		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type not yet implemented");
 	}
-	if (!o)
-		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (!(*comp_min_val = GDKstrdup(buf))) {
 		bat_destroy(o);
 		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -194,10 +194,31 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = FORcompress_intern(&comp_min_val, &o, b);
 	bat_destroy(b);
 	if (msg == MAL_SUCCEED) {
-		if (sql_trans_alter_storage(tr, c, comp_min_val) != LOG_OK || (c=get_newcolumn(tr, c)) == NULL || store->storage_api.col_compress(tr, c, ST_FOR, o, NULL) != LOG_OK) {
-			GDKfree(comp_min_val);
-			bat_destroy(o);
-			throw(SQL, "for.compress", SQLSTATE(HY013) "alter_storage failed");
+		switch (sql_trans_alter_storage(tr, c, comp_min_val)) {
+			case -1:
+				msg = createException(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			case -2:
+			case -3:
+				msg = createException(SQL, "for.compress", SQLSTATE(42000) "transaction conflict detected");
+				break;
+			default:
+				break;
+		}
+		if (msg == MAL_SUCCEED && !(c = get_newcolumn(tr, c)))
+			msg = createException(SQL, "for.compress", SQLSTATE(HY013) "alter_storage failed");
+		if (msg == MAL_SUCCEED) {
+			switch (store->storage_api.col_compress(tr, c, ST_FOR, o, NULL)) {
+				case -1:
+					msg = createException(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				case -2:
+				case -3:
+					msg = createException(SQL, "for.compress", SQLSTATE(42000) "transaction conflict detected");
+					break;
+				default:
+					break;
+			}
 		}
 		GDKfree(comp_min_val);
 		bat_destroy(o);
