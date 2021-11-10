@@ -1025,18 +1025,31 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
-		if ((msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape, loadops) != BUN_NONE &&
-				(best || !as.error))) {
-				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
-				if ( *bats == NULL){
-					TABLETdestroy_format(&as);
-					directappend_destroy(our_loadops.state);
-					throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-				msg = TABLETcollect(*bats,&as);
+
+		// do .. while (false) allows us to use 'break' to drop out at any point
+		do {
+			msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz));
+			if (msg != MAL_SUCCEED)
+				break;
+
+			if (sz != 0) {
+				BUN count = SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape, loadops);
+				if (count == BUN_NONE)
+					break;
+				if (as.error && !best)
+					break;
 			}
-		}
+
+			*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+			if ( *bats == NULL) {
+				TABLETdestroy_format(&as);
+				directappend_destroy(our_loadops.state);
+				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			msg = TABLETcollect(*bats,&as);
+
+		} while (false);
+
 		if (as.error) {
 			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
 			freeException(as.error);
