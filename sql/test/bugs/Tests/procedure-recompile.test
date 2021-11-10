@@ -33,7 +33,7 @@ select a from x
 2
 3
 
-statement error primary key violation
+statement error 40002!INSERT INTO: PRIMARY KEY constraint 'x.mycon' violated
 call myproc()
 
 query I rowsort

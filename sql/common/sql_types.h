@@ -55,7 +55,6 @@ extern sql_subfunc *sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, s
 
 extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);
-extern int is_sqlfunc(sql_func *f);
 
 extern void types_init(sql_allocator *sa);
 

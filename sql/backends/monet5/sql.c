@@ -600,6 +600,8 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 		if (columns[i].name && columns[i].name[0] == '%')
 			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+		if (tpe.type->eclass == EC_ANY)
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: any type (plain null value) not allowed as a column type, use an explicit cast");
 		switch (mvc_create_column(&col, sql, t, columns[i].name, &tpe)) {
 			case -1:
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4854,6 +4856,12 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
+	if (strNil(sname))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
@@ -4966,6 +4974,12 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
+	if (strNil(sname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
@@ -5011,6 +5025,12 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 
+	if (strNil(sname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
@@ -5038,26 +5058,28 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
+#include "for.h"
+#include "dict.h"
 #include "mel.h"
 static mel_func sql_init_funcs[] = {
- pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
- pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
- pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",int),arg("force",bit))),
- pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",bte))),
- pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",sht))),
- pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",int))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",int),arg("force",bit))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",bte))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",sht))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",int))),
  pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
  pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
  pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
  pattern("sql", "commit", SQLcommit, true, "Trigger the commit operation for a MAL block", noargs),
  pattern("sql", "abort", SQLabort, true, "Trigger the abort operation for a MAL block", noargs),
- pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
- pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement (and optionaly set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
- pattern("sql", "include", SQLinclude, false, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
- pattern("sql", "evalAlgebra", RAstatement, false, "Compile and execute a single 'relational algebra' statement", args(1,3, arg("",void),arg("cmd",str),arg("optimize",bit))),
- pattern("sql", "register", RAstatement2, false, "", args(1,5, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str))),
- pattern("sql", "register", RAstatement2, false, "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)", args(1,6, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str),arg("typ",str))),
- pattern("sql", "deregister", RAstatementEnd, false, "Finish running transaction", args(1,1, arg("",int))),
+ pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
+ pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionaly set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
+ pattern("sql", "include", SQLinclude, true, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
+ pattern("sql", "evalAlgebra", RAstatement, true, "Compile and execute a single 'relational algebra' statement", args(1,3, arg("",void),arg("cmd",str),arg("optimize",bit))),
+ pattern("sql", "register", RAstatement2, true, "", args(1,5, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str))),
+ pattern("sql", "register", RAstatement2, true, "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)", args(1,6, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str),arg("typ",str))),
+ pattern("sql", "deregister", RAstatementEnd, true, "Finish running transaction", args(1,1, arg("",int))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
@@ -5068,8 +5090,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "setVariable", setVariable, true, "Set the value of a session variable", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("varname",str),argany("value",1))),
  pattern("sql", "getVariable", getVariable, false, "Get the value of a session variable", args(1,4, argany("",1),arg("mvc",int),arg("sname",str),arg("varname",str))),
  pattern("sql", "logfile", mvc_logfile, true, "Enable/disable saving the sql statement traces", args(1,2, arg("",void),arg("filename",str))),
- pattern("sql", "next_value", mvc_next_value, false, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("batsql", "next_value", mvc_next_value_bulk, false, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
+ pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("sql", "restart", mvc_restart_seq, true, "restart the sequence with value start", args(1,4, arg("",lng),arg("sname",str),arg("sequence",str),arg("start",lng))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
@@ -5156,6 +5178,17 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "prepared_statements_args", SQLsession_prepared_statements_args, false, "Available prepared statements' arguments in the current session", args(9,9, batarg("statementid",int),batarg("type",str),batarg("digits",int),batarg("scale",int),batarg("inout",bte),batarg("number",int),batarg("schema",str),batarg("table",str),batarg("column",str))),
  pattern("sql", "copy_rejects", COPYrejects, false, "", args(4,4, batarg("rowid",lng),batarg("fldid",int),batarg("msg",str),batarg("inp",str))),
  pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
+ pattern("for", "compress", FORcompress_col, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
+ pattern("for", "decompress", FORdecompress, false, "decompress a for compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), argany("minval", 1))),
+ pattern("dict", "compress", DICTcompress, false, "dict compress a bat", args(2, 3, batargany("o", 0), batargany("v", 1), batargany("b", 1))),
+ pattern("dict", "compress", DICTcompress_col, false, "compress a sql column", args(0, 3, arg("schema", str), arg("table", str), arg("column", str))),
+ pattern("dict", "compress", DICTcompress_col, false, "compress a sql column", args(0, 4, arg("schema", str), arg("table", str), arg("column", str), arg("ordered", bit))),
+ pattern("dict", "decompress", DICTdecompress, false, "decompress a dictionary compressed (sub)column", args(1, 3, batargany("", 1), batargany("o", 0), batargany("u", 1))),
+ pattern("dict", "convert", DICTconvert, false, "convert candidate list into compressed offsets", args(1, 2, batargany("", 1), batargany("o", 0))),
+ pattern("dict", "join", DICTjoin, false, "join 2 dictionaries", args(2, 10, batarg("r0", oid), batarg("r1", oid), batargany("lo", 0), batargany("lv", 1), batargany("ro", 0), batargany("rv", 1), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng))),
+ pattern("dict", "thetaselect", DICTthetaselect, false, "thetaselect on a dictionary", args(1, 6, batarg("r0", oid), batargany("lo", 0), batarg("lc", oid), batargany("lv", 1), argany("val",1), arg("op", str))),
+ pattern("dict", "renumber", DICTrenumber, false, "renumber offsets", args(1, 3, batargany("n", 1), batargany("o", 1), batargany("r", 1))),
+ pattern("dict", "select", DICTselect, false, "value - range select on a dictionary", args(1, 10, batarg("r0", oid), batargany("lo", 0), batarg("lc", oid), batargany("lv", 1), argany("l", 1), argany("h", 1), arg("li", bit), arg("hi", bit), arg("anti", bit),  arg("unknown", bit))),
  command("calc", "dec_round", bte_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",bte),arg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",bte),batarg("v",bte),arg("r",bte))),
  pattern("batcalc", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,4, batarg("",bte),batarg("v",bte),arg("r",bte),batarg("s",oid))),
@@ -5829,17 +5862,17 @@ static mel_func sql_init_funcs[] = {
  pattern("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,5, batarg("",bit),batargany("b",0),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
  pattern("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,6, batarg("",bit),batargany("b",0),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
  /* wlr */
- pattern("wlr", "master", WLRmaster, false, "Initialize the replicator thread", args(0,1, arg("dbname",str))),
- pattern("wlr", "stop", WLRstop, false, "Stop the replicator thread", noargs),
- pattern("wlr", "accept", WLRaccept, false, "Accept failing transaction", noargs),
- pattern("wlr", "replicate", WLRreplicate, false, "Continue to keep the replica in sink", noargs),
- pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to an up-to-date clone", args(0,1, arg("ts",timestamp))),
- pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",bte))),
- pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",sht))),
- pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",int))),
- pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",lng))),
+ pattern("wlr", "master", WLRmaster, true, "Initialize the replicator thread", args(0,1, arg("dbname",str))),
+ pattern("wlr", "stop", WLRstop, true, "Stop the replicator thread", noargs),
+ pattern("wlr", "accept", WLRaccept, true, "Accept failing transaction", noargs),
+ pattern("wlr", "replicate", WLRreplicate, true, "Continue to keep the replica in sink", noargs),
+ pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to an up-to-date clone", args(0,1, arg("ts",timestamp))),
+ pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",bte))),
+ pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",sht))),
+ pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",int))),
+ pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",lng))),
  pattern("wlr", "getMaster", WLRgetmaster, false, "What is the current master database", args(1,1, arg("",str))),
- pattern("wlr", "setbeat", WLRsetbeat, false, "Threshold (in seconds) for re-running queries", args(0,1, arg("dur",int))),
+ pattern("wlr", "setbeat", WLRsetbeat, true, "Threshold (in seconds) for re-running queries", args(0,1, arg("dur",int))),
  pattern("wlr", "getclock", WLRgetclock, false, "Timestamp of last replicated transaction.", args(1,1, arg("",str))),
  pattern("wlr", "gettick", WLRgettick, false, "Transaction identifier of the last replicated transaction.", args(1,1, arg("",lng))),
  pattern("wlr", "transaction", WLRtransaction, false, "Mark the beginning of the work unit which can be a compound transaction", args(0,3, arg("tid",lng),arg("started",str),arg("user",str))),
@@ -6098,9 +6131,9 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
 #endif
- pattern("sql", "vacuum", SQLstr_column_vacuum, false, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
- pattern("sql", "vacuum", SQLstr_column_auto_vacuum, false, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
- pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, false, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_column_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_column_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
+ pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -24,6 +24,7 @@
 typedef struct global_props {
 	int cnt[ddl_maxops];
 	uint8_t
+		instantiate:1,
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1;
@@ -227,134 +228,24 @@ kc_column_cmp(sql_kc *kc, sql_column *c)
 	return !(c == kc->c);
 }
 
-static void psm_exps_properties(mvc *sql, global_props *gp, list *exps);
-static void rel_properties(mvc *sql, global_props *gp, sql_rel *rel);
-
-static void
-psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
+static sql_rel *
+rel_properties(visitor *v, sql_rel *rel)
 {
-	/* only functions need fix up */
-	switch(e->type) {
-	case e_column:
-		break;
-	case e_atom:
-		if (e->f)
-			psm_exps_properties(sql, gp, e->f);
-		break;
-	case e_convert:
-		psm_exp_properties(sql, gp, e->l);
-		break;
-	case e_aggr:
-	case e_func:
-		psm_exps_properties(sql, gp, e->l);
-		assert(!e->r);
-		break;
-	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			psm_exps_properties(sql, gp, e->l);
-			psm_exps_properties(sql, gp, e->r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			psm_exp_properties(sql, gp, e->l);
-			psm_exps_properties(sql, gp, e->r);
-		} else {
-			psm_exp_properties(sql, gp, e->l);
-			psm_exp_properties(sql, gp, e->r);
-			if (e->f)
-				psm_exp_properties(sql, gp, e->f);
-		}
-		break;
-	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
-			psm_exp_properties(sql, gp, e->l);
-		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			psm_exp_properties(sql, gp, e->l);
-			psm_exps_properties(sql, gp, e->r);
-			if (e->flag == PSM_IF && e->f)
-				psm_exps_properties(sql, gp, e->f);
-		} else if (e->flag & PSM_REL && e->l) {
-			rel_properties(sql, gp, e->l);
-		}
-		break;
-	}
-}
+	global_props *gp = (global_props*)v->data;
 
-static void
-psm_exps_properties(mvc *sql, global_props *gp, list *exps)
-{
-	node *n;
-
-	if (!exps)
-		return;
-	for (n = exps->h; n; n = n->next)
-		psm_exp_properties(sql, gp, n->data);
-}
-
-static void
-rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
-{
-	if (!rel)
-		return;
-
+	/* Don't flag any changes here! */
 	gp->cnt[(int)rel->op]++;
-	switch (rel->op) {
-	case op_basetable:
-	case op_table: {
-		if (is_basetable(rel->op)) {
-			sql_table *t = (sql_table *) rel->l;
-			sql_part *pt;
+	gp->needs_distinct |= need_distinct(rel);
+	if (gp->instantiate && is_basetable(rel->op)) {
+		mvc *sql = v->sql;
+		sql_table *t = (sql_table *) rel->l;
+		sql_part *pt;
 
-			/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
-			gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
-			gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
-		}
-		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER)
-			rel_properties(sql, gp, rel->l);
-	} break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-
-	case op_semi:
-	case op_anti:
-
-	case op_union:
-	case op_inter:
-	case op_except:
-
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_merge:
-		if (rel->l)
-			rel_properties(sql, gp, rel->l);
-		if (rel->r)
-			rel_properties(sql, gp, rel->r);
-		break;
-	case op_project:
-	case op_select:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-	case op_truncate:
-		gp->needs_distinct |= need_distinct(rel);
-		if (rel->l)
-			rel_properties(sql, gp, rel->l);
-		break;
-	case op_ddl:
-		if (rel->flag == ddl_psm && rel->exps)
-			psm_exps_properties(sql, gp, rel->exps);
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
-			if (rel->l)
-				rel_properties(sql, gp, rel->l);
-		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
-			if (rel->l)
-				rel_properties(sql, gp, rel->l);
-			if (rel->r)
-				rel_properties(sql, gp, rel->r);
-		}
-		break;
+		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
+		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
+		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
 	}
+	return rel;
 }
 
 static sql_rel * rel_join_order(visitor *v, sql_rel *rel) ;
@@ -2962,7 +2853,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 			}
 		}
-		if (!f->func->s && list_length(l) == 2 && str_ends_with(f->func->imp, "_no_nil") == 0) {
+		if (!f->func->s && list_length(l) == 2 && str_ends_with(sql_func_imp(f->func), "_no_nil") == 0) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 
@@ -8803,8 +8694,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 							/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
 							if (!cmin && !cmax && first_attempt) {
 								char *min = NULL, *max = NULL;
-								(void) sql_trans_ranges(v->sql->session->tr, col, &min, &max);
-								if (min && max) {
+								if (sql_trans_ranges(v->sql->session->tr, col, &min, &max) && min && max) {
 									cmin = atom_general(v->sql->sa, &col->type, min);
 									cmax = atom_general(v->sql->sa, &col->type, max);
 								}
@@ -9803,51 +9693,54 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-/* if only merge table rewrite is needed return 1, else return 2 */
+/* if only merge table rewrite is needed return 1, everything return 2, nothing 0 */
 static int
-need_optimization(mvc *sql, sql_rel *rel)
+need_optimization(mvc *sql, sql_rel *rel, int instantiate)
 {
 	if (rel && rel->card <= CARD_ATOM) {
 		if (is_insert(rel->op)) {
 			int opt = 0;
 			sql_rel *l = (sql_rel *) rel->l;
 
-			if (is_basetable(l->op)) {
+			if (is_basetable(l->op) && instantiate) {
 				sql_table *t = (sql_table *) l->l;
 				sql_part *pt;
 
-				/* I don't expect inserts on remote or replica tables yet*/
+				/* I don't expect inserts on remote or replica tables yet */
 				assert(!isRemote(t) && !isReplicaTable(t));
 				/* If the plan has a merge table or a child of a partitioned one, then optimization cannot be skipped */
 				if (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))))
 					opt = 1;
 			}
-			return rel->r ? MAX(need_optimization(sql, rel->r), opt) : opt;
+			return rel->r ? MAX(need_optimization(sql, rel->r, instantiate), opt) : opt;
 		}
 		if (is_simple_project(rel->op))
-			return rel->l ? need_optimization(sql, rel->l) : 0;
+			return rel->l ? need_optimization(sql, rel->l, instantiate) : 0;
 	}
 	return 2;
 }
 
+/* 'instantiate' means to rewrite logical tables: (merge, remote, replica tables) */
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	int level = 0, opt;
+	int level = 0, opt = 0;
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level, .changes = 1 };
-	global_props gp = (global_props) {.cnt = {0},};
-
-	if (!(opt = need_optimization(sql, rel)))
-		return rel;
+	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate};
 
 	rel = rel_keep_renames(sql, rel);
+	if (!rel || !(opt = need_optimization(sql, rel, instantiate)))
+		return rel;
+
 	for( ;rel && level < 20 && v.changes; level++) {
 		v.changes = 0;
-		gp = (global_props) {.cnt = {0},};
-		rel_properties(sql, &gp, rel); /* collect relational tree properties */
+		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate};
+		v.data = &gp;
+		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
+		v.data = &level;
 		if (opt == 2) {
 			rel = optimize_rel(&v, rel, &gp);
-		} else { /* the merge table rewriter may have to run */
+		} else if (gp.needs_mergetable_rewrite) { /* the merge table rewriter may have to run */
 			rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
 		}
 	}
@@ -9859,7 +9752,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int instantiate, int value_based_opt, int 
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_select_up);
 
 	/* merge table rewrites may introduce remote or replica tables */
-	if (instantiate && (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite)) {
+	if (gp.needs_mergetable_rewrite || gp.needs_remote_replica_rewrite) {
 		v.data = NULL;
 		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_remote);
 		v.data = NULL;
