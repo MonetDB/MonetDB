@@ -584,6 +584,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
 		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+		if (!b)
+			return NULL;
 		tt = b->ttype;
 	}
 	if (access == RD_UPD_ID) {

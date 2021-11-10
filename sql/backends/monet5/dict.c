@@ -213,6 +213,12 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!sname || !tname || !cname)
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "dict compress: invalid column name");
+	if (strNil(sname))
+		throw(SQL, "dict.compress", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tname))
+		throw(SQL, "dict.compress", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(cname))
+		throw(SQL, "dict.compress", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((msg = getBackendContext(cntxt, &be)) != MAL_SUCCEED)
 		return msg;
 	tr = be->mvc->session->tr;
@@ -223,6 +229,9 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = find_sql_table(tr, s, tname);
 	if (!t)
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "table '%s.%s' unknown", sname, tname);
+	if (!isTable(t))
+		throw(SQL, "dict.compress", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_column *c = find_sql_column(t, cname);
 	if (!c)
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "column '%s.%s.%s' unknown", sname, tname, cname);
@@ -231,6 +240,8 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *o, *u;
+	if( b == NULL)
+		throw(SQL,"dict.compress", SQLSTATE(HY005) "Cannot access column descriptor");
 
 	msg = DICTcompress_intern(&o, &u, b, ordered, true, true);
 	bat_destroy(b);
