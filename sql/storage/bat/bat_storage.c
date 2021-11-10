@@ -1840,11 +1840,14 @@ delta_append_bat(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offse
 
 	lock_column(tr->store, id);
 	if (bat->cs.st == ST_DICT) {
-		oi = i = dict_append_bat(&bat->cs, i);
-		if (!oi) {
+		BAT *ni = dict_append_bat(&bat->cs, i);
+		if (oi != i) /* oi and i will be replaced, so destroy possible unmask reference */
+			bat_destroy(oi);
+		if (!ni) {
 			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
+		oi = i = ni;
 	}
 
 	b = temp_descriptor(bat->cs.bid);
@@ -2965,7 +2968,7 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, sqlid id)
 	sqlstore *store = tr->store;
 	if (!GDKinmemory(0) && b && b->cs.bid)
 		ok = log_bat_transient(store->logger, id);
-	if (!GDKinmemory(0) && b && b->cs.ebid)
+	if (ok == GDK_SUCCEED && !GDKinmemory(0) && b && b->cs.ebid)
 		ok = log_bat_transient(store->logger, -id);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -3136,21 +3139,31 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 		if (b) {
 			sz += BATcount(b);
 			if (cs->st == ST_DICT) {
-				bat bid = cs->ebid;
-				cs->ebid = temp_copy(bid, true, temp); /* create empty copy */
-				temp_destroy(bid);
-
-				bid = cs->bid;
+				bat nebid = temp_copy(cs->ebid, true, temp); /* create empty copy */
 				BAT *n = COLnew(0, TYPE_bte, 0, PERSISTENT);
+
+				if (nebid == BID_NIL || !n) {
+					temp_destroy(nebid);
+					bat_destroy(n);
+					return BUN_NONE;
+				}
+				temp_destroy(cs->ebid);
+				cs->ebid = nebid;
 				if (!temp)
 					bat_set_access(n, BAT_READ);
+				temp_destroy(cs->bid);
 				cs->bid = temp_create(n); /* create empty copy */
 				bat_destroy(n);
 			} else {
-				bat bid = cs->bid;
-				cs->bid = temp_copy(bid, true, temp); /* create empty copy */
-				temp_destroy(bid);
+				bat nbid = temp_copy(cs->bid, true, temp); /* create empty copy */
+
+				if (nbid == BID_NIL)
+					return BUN_NONE;
+				temp_destroy(cs->bid);
+				cs->bid = nbid;
 			}
+		} else {
+			return BUN_NONE;
 		}
 	}
 	if (cs->uibid) {
@@ -3173,7 +3186,7 @@ clear_col(sql_trans *tr, sql_column *c, bool renew)
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
 	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL)) == NULL)
-		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isTempTable(c->t)?NULL:&log_update_col);
 	if (delta)
@@ -3190,7 +3203,7 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL)) == NULL)
-		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isTempTable(i->t)?NULL:&log_update_idx);
 	if (delta)
@@ -3201,7 +3214,8 @@ clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 static int
 clear_storage(sql_trans *tr, sql_table *t, storage *s)
 {
-	clear_cs(tr, &s->cs, true, isTempTable(t));
+	if (clear_cs(tr, &s->cs, true, isTempTable(t)) == BUN_NONE)
+		return LOG_ERR;
 	s->cs.cleared = 1;
 	if (s->segs)
 		destroy_segments(s->segs);
@@ -3303,7 +3317,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 		bat_set_access(ins, BAT_READ);
 		ok = log_bat_persists(store->logger, ins, id);
 		bat_destroy(ins);
-		if (cs->ebid) {
+		if (ok == GDK_SUCCEED && cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
 			if (!ins)
 				return LOG_ERR;
@@ -3520,13 +3534,15 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE) {
 				if (!delta->cs.merged)
 					ok = merge_delta(delta);
-			} else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-				clear_cs(tr, &delta->cs, true, isTempTable(c->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			}
 		} else { /* rollback */
-			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/)
+			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/) {
 				ok = rollback_delta(tr, delta, c->type.type->localtype);
-			else /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-				clear_cs(tr, &delta->cs, true, isTempTable(c->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			}
 		}
 		if (!tr->parent)
 			c->t->base.new = c->base.new = 0;
@@ -3630,13 +3646,15 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE) {
 				if (!delta->cs.merged)
 					ok = merge_delta(delta);
-			} else /* CA_DELETE as CA_DROP's are gone already */
-				clear_cs(tr, &delta->cs, true, isTempTable(i->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
+			}
 		} else { /* rollback */
-			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/)
+			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/) {
 				ok = rollback_delta(tr, delta, type);
-			else /* CA_DELETE as CA_DROP's are gone already */
-				clear_cs(tr, &delta->cs, true, isTempTable(i->t));
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
+			}
 		}
 		if (!tr->parent)
 			i->t->base.new = i->base.new = 0;
