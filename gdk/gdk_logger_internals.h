@@ -96,6 +96,6 @@ struct old_logger {
 	BAT *del;		/* bat ids of bats being deleted by upgrade */
 };
 
-gdk_return logger_create_types_file(logger *lg, const char *filename);
+gdk_return logger_create_types_file(logger *lg, const char *filename, bool append);
 
 #endif /* _LOGGER_INTERNALS_H_ */

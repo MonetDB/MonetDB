@@ -9,8 +9,6 @@ create trigger system_update_tables after update on sys._tables for each stateme
 
 -- only system functions until now
 update sys.functions set system = true;
-create view sys.systemfunctions as select id as function_id from sys.functions where system;
-grant select on sys.systemfunctions to public;
 
 -- only system tables until now
 update sys._tables set system = true;

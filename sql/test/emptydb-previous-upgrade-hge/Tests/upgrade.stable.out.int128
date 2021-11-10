@@ -3169,7 +3169,7 @@ insert into sys.functions values (839, 'pi', 'pi', 'mmath', 0, 1, false, false, 
 insert into sys.args values (10487, 839, 'res_0', 'double', 53, 0, 0, 0);
 insert into sys.functions values (840, 'rand', 'rand', 'mmath', 0, 1, true, false, false, 2000, true, true);
 insert into sys.args values (10488, 840, 'res_0', 'int', 32, 0, 0, 0);
-insert into sys.functions values (841, 'rand', 'sqlrand', 'mmath', 0, 1, true, false, false, 2000, true, true);
+insert into sys.functions values (841, 'rand', 'sqlrand', 'mmath', 0, 1, false, false, false, 2000, true, true);
 insert into sys.args values (10489, 841, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (10490, 841, 'arg_1', 'int', 32, 0, 1, 1);
 insert into sys.functions values (842, 'curdate', 'current_date', 'mtime', 0, 1, false, false, false, 2000, true, false);
@@ -3455,7 +3455,7 @@ insert into sys.args values (10683, 928, 'arg_1', 'sec_interval', 13, 0, 1, 1);
 insert into sys.functions values (929, 'epoch_ms', 'epoch_ms', 'mtime', 0, 1, false, false, false, 2000, true, false);
 insert into sys.args values (10684, 929, 'res_0', 'decimal', 18, 3, 0, 0);
 insert into sys.args values (10685, 929, 'arg_1', 'sec_interval', 13, 0, 1, 1);
-insert into sys.functions values (930, 'next_value_for', 'next_value', 'sql', 0, 1, true, false, false, 2000, true, true);
+insert into sys.functions values (930, 'next_value_for', 'next_value', 'sql', 0, 1, false, false, false, 2000, true, true);
 insert into sys.args values (10686, 930, 'res_0', 'bigint', 64, 0, 0, 0);
 insert into sys.args values (10687, 930, 'arg_1', 'clob', 0, 0, 1, 1);
 insert into sys.args values (10688, 930, 'arg_2', 'clob', 0, 0, 1, 2);
@@ -3676,7 +3676,7 @@ insert into sys.args values (10848, 984, 'arg_2', 'clob', 0, 0, 1, 2);
 insert into sys.args values (10849, 984, 'arg_3', 'int', 32, 0, 1, 3);
 insert into sys.args values (10850, 984, 'arg_4', 'int', 32, 0, 1, 4);
 insert into sys.args values (10851, 984, 'arg_5', 'int', 32, 0, 1, 5);
-insert into sys.functions values (985, 'next_value_for', 'next_value', 'sql', 0, 1, true, false, false, 2000, true, true);
+insert into sys.functions values (985, 'next_value_for', 'next_value', 'sql', 0, 1, false, false, false, 2000, true, true);
 insert into sys.args values (10852, 985, 'res_0', 'bigint', 64, 0, 0, 0);
 insert into sys.args values (10853, 985, 'arg_1', 'varchar', 0, 0, 1, 1);
 insert into sys.args values (10854, 985, 'arg_2', 'varchar', 0, 0, 1, 2);
@@ -3897,7 +3897,7 @@ insert into sys.args values (11014, 1039, 'arg_2', 'varchar', 0, 0, 1, 2);
 insert into sys.args values (11015, 1039, 'arg_3', 'int', 32, 0, 1, 3);
 insert into sys.args values (11016, 1039, 'arg_4', 'int', 32, 0, 1, 4);
 insert into sys.args values (11017, 1039, 'arg_5', 'int', 32, 0, 1, 5);
-insert into sys.functions values (1040, 'next_value_for', 'next_value', 'sql', 0, 1, true, false, false, 2000, true, true);
+insert into sys.functions values (1040, 'next_value_for', 'next_value', 'sql', 0, 1, false, false, false, 2000, true, true);
 insert into sys.args values (11018, 1040, 'res_0', 'bigint', 64, 0, 0, 0);
 insert into sys.args values (11019, 1040, 'arg_1', 'char', 0, 0, 1, 1);
 insert into sys.args values (11020, 1040, 'arg_2', 'char', 0, 0, 1, 2);
@@ -4118,7 +4118,7 @@ insert into sys.args values (11180, 1094, 'arg_2', 'char', 0, 0, 1, 2);
 insert into sys.args values (11181, 1094, 'arg_3', 'int', 32, 0, 1, 3);
 insert into sys.args values (11182, 1094, 'arg_4', 'int', 32, 0, 1, 4);
 insert into sys.args values (11183, 1094, 'arg_5', 'int', 32, 0, 1, 5);
-insert into sys.functions values (1095, 'copyfrom', 'copy_from', 'sql', 0, 5, false, true, false, 2000, true, true);
+insert into sys.functions values (1095, 'copyfrom', 'copy_from', 'sql', 0, 5, true, true, false, 2000, true, true);
 insert into sys.args values (11184, 1095, 'res_0', 'table', 0, 0, 0, 0);
 insert into sys.args values (11185, 1095, 'arg_1', 'ptr', 0, 0, 1, 1);
 insert into sys.args values (11186, 1095, 'arg_2', 'clob', 0, 0, 1, 2);
@@ -4132,13 +4132,13 @@ insert into sys.args values (11193, 1095, 'arg_9', 'int', 32, 0, 1, 9);
 insert into sys.args values (11194, 1095, 'arg_10', 'clob', 0, 0, 1, 10);
 insert into sys.args values (11195, 1095, 'arg_11', 'int', 32, 0, 1, 11);
 insert into sys.args values (11196, 1095, 'arg_12', 'int', 32, 0, 1, 12);
-insert into sys.functions values (1096, 'copyfrom', 'importTable', 'sql', 0, 5, false, true, false, 2000, true, true);
+insert into sys.functions values (1096, 'copyfrom', 'importTable', 'sql', 0, 5, true, true, false, 2000, true, true);
 insert into sys.args values (11197, 1096, 'res_0', 'table', 0, 0, 0, 0);
 insert into sys.args values (11198, 1096, 'arg_1', 'clob', 0, 0, 1, 1);
 insert into sys.args values (11199, 1096, 'arg_2', 'clob', 0, 0, 1, 2);
 insert into sys.args values (11200, 1096, 'arg_3', 'int', 32, 0, 1, 3);
-insert into sys.functions values (1097, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, false, false, false, 2000, true, true);
-insert into sys.functions values (1098, 'sys_update_tables', 'update_tables', 'sql', 0, 2, false, false, false, 2000, true, true);
+insert into sys.functions values (1097, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, true, false, false, 2000, true, true);
+insert into sys.functions values (1098, 'sys_update_tables', 'update_tables', 'sql', 0, 2, true, false, false, 2000, true, true);
 set schema "sys";
 
 Running database upgrade commands:
@@ -5135,8 +5135,13 @@ external name mtime.epoch;
 grant execute on function sys.epoch (DECIMAL(18,3)) to public;
 update sys.functions set system = true where system <> true and name in ('epoch') and schema_id = 2000 and type = 1;
 set schema "sys";
+drop function sys.malfunctions();
+create function sys.malfunctions()
+ returns table("module" string, "function" string, "signature" string, "address" string, "comment" string)
+ external name "manual"."functions";
 create view sys.malfunctions as select * from sys.malfunctions();
 update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'malfunctions';
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'malfunctions';
 drop view sys.dependencies_vw;
 drop view sys.ids;
 CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS
@@ -5197,13 +5202,19 @@ drop view sys.describe_partition_tables;
 drop view sys.describe_privileges;
 drop view sys.describe_comments;
 drop view sys.describe_tables;
+drop function sys.schema_guard(string, string, string);
 drop function sys.get_remote_table_expressions(string, string);
 drop function sys.get_merge_table_partition_expressions(int);
 drop view sys.describe_constraints;
 drop function sys.alter_table(string, string);
+drop function sys.FQN(string, string);
 drop function sys.sq(string);
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
-CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t); END;
+CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"."' || sys.replace(t,'"','""') || '"'; END;
+CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
+RETURN
+    SELECT sys.replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');
+END;
 CREATE VIEW sys.describe_constraints AS
 	SELECT
 		s.name sch,
@@ -5427,7 +5438,7 @@ CREATE VIEW sys.describe_functions AS
 		JOIN sys.function_types ft ON f.type = ft.function_type_id
 		LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
 	WHERE s.name <> 'tmp' AND NOT f.system;
-update sys.functions set system = true where system <> true and name in ('sq', 'alter_table', 'get_merge_table_partition_expressions', 'get_remote_table_expressions') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('sq', 'fqn', 'get_merge_table_partition_expressions', 'get_remote_table_expressions', 'schema_guard') and schema_id = 2000 and type = 1;
 update sys._tables set system = true where name in ('describe_constraints', 'describe_tables', 'describe_comments', 'describe_privileges', 'describe_partition_tables', 'describe_functions') AND schema_id = 2000;
 CREATE VIEW sys.dump_create_roles AS
   SELECT
@@ -5471,8 +5482,7 @@ CREATE VIEW sys.dump_grant_user_privileges AS
    WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 CREATE VIEW sys.dump_table_constraint_type AS
   SELECT
-    'ALTER TABLE ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
-      ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
+    'ALTER TABLE ' || sys.FQN(sch, tbl) || ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
       tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ') || ');' stmt,
     sch schema_name,
     tbl table_name,
@@ -5482,11 +5492,12 @@ CREATE VIEW sys.dump_table_grants AS
   WITH table_grants (sname, tname, grantee, grants, grantor, grantable)
   AS (SELECT s.name, t.name, a.name, sum(p.privileges), g.name, p.grantable
 	FROM sys.schemas s, sys.tables t, sys.auths a, sys.privileges p, sys.auths g
-       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id GROUP BY s.name, t.name, a.name, g.name, p.grantable
+       WHERE p.obj_id = t.id AND p.auth_id = a.id AND t.schema_id = s.id AND t.system = FALSE AND p.grantor = g.id
+       GROUP BY s.name, t.name, a.name, g.name, p.grantable
        ORDER BY s.name, t.name, a.name, g.name, p.grantable)
   SELECT
-    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.dq(sname)
-      || '.' || sys.dq(tname) || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
+    'GRANT ' || pc.privilege_code_name || ' ON TABLE ' || sys.FQN(sname, tname)
+      || ' TO ' || ifthenelse(grantee = 'public', 'PUBLIC', sys.dq(grantee))
       || CASE WHEN grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     sname schema_name,
     tname table_name,
@@ -5494,8 +5505,8 @@ CREATE VIEW sys.dump_table_grants AS
     FROM table_grants LEFT OUTER JOIN sys.privilege_codes pc ON grants = pc.privilege_code_id;
 CREATE VIEW sys.dump_column_grants AS
   SELECT
-    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON '
-      || sys.dq(s.name) || '.' || sys.dq(t.name) || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
+    'GRANT ' || pc.privilege_code_name || '(' || sys.dq(c.name) || ') ON ' || sys.FQN(s.name, t.name)
+      || ' TO ' || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
     t.name table_name,
@@ -5527,9 +5538,8 @@ CREATE VIEW sys.dump_function_grants AS
   func_args(func_id, func_arg) AS
   (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)
   SELECT
-    'GRANT ' || pc.privilege_code_name || ' ON '
-      || ft.function_type_keyword || ' '
-      || sys.dq(s.name) || '.' || sys.dq(f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
+    'GRANT ' || pc.privilege_code_name || ' ON ' || ft.function_type_keyword || ' '
+      || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
       || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
       || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
     s.name schema_name,
@@ -5552,9 +5562,7 @@ CREATE VIEW sys.dump_function_grants AS
    ORDER BY s.name, f.name, a.name, g.name, p.grantable;
 CREATE VIEW sys.dump_indices AS
   SELECT
-    'CREATE ' || tpe || ' ' ||
-      sys.DQ(ind) || ' ON ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
-      '(' || GROUP_CONCAT(col) || ');' stmt,
+    'CREATE ' || tpe || ' ' || sys.DQ(ind) || ' ON ' || sys.FQN(sch, tbl) || '(' || GROUP_CONCAT(col) || ');' stmt,
     sch schema_name,
     tbl table_name,
     ind index_name
@@ -5567,9 +5575,9 @@ CREATE VIEW sys.dump_column_defaults AS
     FROM sys.describe_column_defaults;
 CREATE VIEW sys.dump_foreign_keys AS
   SELECT
-    'ALTER TABLE ' || sys.DQ(fk_s) || '.'|| sys.DQ(fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
+    'ALTER TABLE ' || sys.FQN(fk_s, fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
       'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',') ||') ' ||
-      'REFERENCES ' || sys.DQ(pk_s) || '.' || sys.DQ(pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
+      'REFERENCES ' || sys.FQN(pk_s, pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
       'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
       ';' stmt,
     fk_s foreign_schema_name,
@@ -5580,7 +5588,7 @@ CREATE VIEW sys.dump_foreign_keys AS
     FROM sys.describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 CREATE VIEW sys.dump_partition_tables AS
   SELECT
-    sys.ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+    'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
       CASE 
       WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
       WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
@@ -5777,4 +5785,285 @@ JOIN sys.fkey_actions upd ON fks.update_action_id = upd.action_id
 JOIN sys.fkey_actions del ON fks.delete_action_id = del.action_id;
 GRANT SELECT ON sys.fkeys TO PUBLIC;
 update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;
+drop view logging.compinfo;
+drop function logging.compinfo;
+drop procedure sys.storagemodelinit();
+drop view sys.schemastorage;
+drop view sys.tablestorage;
+drop view sys.storage;
+drop function sys.storage();
+drop function wlr.tick;
+drop function wlr.clock;
+drop function wlc.tick;
+drop function wlc.clock;
+drop function profiler.getlimit;
+drop view sys.rejects;
+drop function sys.rejects;
+drop function sys.user_statistics;
+drop view sys.queue;
+drop function sys.queue;
+drop function sys.debugflags;
+drop function sys.bbp;
+drop view sys.optimizers;
+drop function sys.optimizers;
+drop function sys.querycache;
+drop function sys.optimizer_stats;
+drop function sys.current_sessionid;
+drop view sys.prepared_statements_args;
+drop function sys.prepared_statements_args;
+drop view sys.prepared_statements;
+drop function sys.prepared_statements;
+drop view sys.sessions;
+drop function sys.sessions;
+drop view sys.querylog_history;
+drop view sys.querylog_calls;
+drop function sys.querylog_calls;
+drop view sys.querylog_catalog;
+drop function sys.querylog_catalog;
+create function sys.querylog_catalog()
+returns table(
+ id oid,
+ owner string,
+ defined timestamp,
+ query string,
+ pipe string,
+ "plan" string,
+ mal int,
+ optimize bigint
+)
+external name sql.querylog_catalog;
+create view sys.querylog_catalog as select * from sys.querylog_catalog();
+create function sys.querylog_calls()
+returns table(
+ id oid,
+ "start" timestamp,
+ "stop" timestamp,
+ arguments string,
+ tuples bigint,
+ run bigint,
+ ship bigint,
+ cpu int,
+ io int
+)
+external name sql.querylog_calls;
+create view sys.querylog_calls as select * from sys.querylog_calls();
+create view sys.querylog_history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
+from sys.querylog_catalog() qd, sys.querylog_calls() ql
+where qd.id = ql.id and qd.owner = user;
+create function sys.sessions()
+returns table(
+ "sessionid" int,
+ "username" string,
+ "login" timestamp,
+ "idle" timestamp,
+ "optimizer" string,
+ "sessiontimeout" int,
+ "querytimeout" int,
+ "workerlimit" int,
+ "memorylimit" int
+)
+external name sql.sessions;
+create view sys.sessions as select * from sys.sessions();
+create function sys.prepared_statements()
+returns table(
+ "sessionid" int,
+ "username" string,
+ "statementid" int,
+ "statement" string,
+ "created" timestamp
+)
+external name sql.prepared_statements;
+grant execute on function sys.prepared_statements to public;
+create view sys.prepared_statements as select * from sys.prepared_statements();
+grant select on sys.prepared_statements to public;
+create function sys.prepared_statements_args()
+returns table(
+ "statementid" int,
+ "type" string,
+ "type_digits" int,
+ "type_scale" int,
+ "inout" tinyint,
+ "number" int,
+ "schema" string,
+ "table" string,
+ "column" string
+)
+external name sql.prepared_statements_args;
+grant execute on function sys.prepared_statements_args to public;
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
+grant select on sys.prepared_statements_args to public;
+create function sys.current_sessionid() returns int
+external name clients.current_sessionid;
+grant execute on function sys.current_sessionid to public;
+create function sys.optimizer_stats()
+ returns table (optname string, count int, timing bigint)
+ external name inspect.optimizer_stats;
+create function sys.querycache()
+ returns table (query string, count int)
+ external name sql.dump_cache;
+create function sys.optimizers ()
+ returns table (name string, def string, status string)
+ external name sql.optimizers;
+create view sys.optimizers as select * from sys.optimizers();
+create function sys.bbp ()
+ returns table (id int, name string,
+ ttype string, count bigint, refcnt int, lrefcnt int,
+ location string, heat int, dirty string,
+ status string, kind string)
+ external name bbp.get;
+create function sys.debugflags()
+ returns table(flag string, val bool)
+ external name mdb."getDebugFlags";
+create function sys.queue()
+returns table(
+ "tag" bigint,
+ "sessionid" int,
+ "username" string,
+ "started" timestamp,
+ "status" string,
+ "query" string,
+ "finished" timestamp,
+ "maxworkers" int,
+ "footprint" int
+)
+external name sysmon.queue;
+grant execute on function sys.queue to public;
+create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
+create function sys.user_statistics()
+returns table(
+ username string,
+ querycount bigint,
+ totalticks bigint,
+ started timestamp,
+ finished timestamp,
+ maxticks bigint,
+ maxquery string
+)
+external name sysmon.user_statistics;
+create function sys.rejects()
+returns table(
+ rowid bigint,
+ fldid int,
+ "message" string,
+ "input" string
+)
+external name sql.copy_rejects;
+grant execute on function rejects to public;
+create view sys.rejects as select * from sys.rejects();
+create function profiler.getlimit() returns integer external name profiler.getlimit;
+create function wlc.clock() returns string
+external name wlc."getclock";
+create function wlc.tick() returns bigint
+external name wlc."gettick";
+create function wlr.clock() returns string
+external name wlr."getclock";
+create function wlr.tick() returns bigint
+external name wlr."gettick";
+create function sys."storage"()
+returns table (
+ "schema" varchar(1024),
+ "table" varchar(1024),
+ "column" varchar(1024),
+ "type" varchar(1024),
+ "mode" varchar(15),
+ location varchar(1024),
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create view sys."storage" as
+select * from sys."storage"()
+ where ("schema", "table") in (
+ select sch."name", tbl."name"
+ from sys."tables" as tbl join sys."schemas" as sch on tbl.schema_id = sch.id
+ where tbl."system" = false)
+order by "schema", "table", "column";
+create view sys."tablestorage" as
+select "schema", "table",
+ max("count") as "rowcount",
+ count(*) as "storages",
+ sum(columnsize) as columnsize,
+ sum(heapsize) as heapsize,
+ sum(hashes) as hashsize,
+ sum("imprints") as imprintsize,
+ sum(orderidx) as orderidxsize
+ from sys."storage"
+group by "schema", "table"
+order by "schema", "table";
+create view sys."schemastorage" as
+select "schema",
+ count(*) as "storages",
+ sum(columnsize) as columnsize,
+ sum(heapsize) as heapsize,
+ sum(hashes) as hashsize,
+ sum("imprints") as imprintsize,
+ sum(orderidx) as orderidxsize
+ from sys."storage"
+group by "schema"
+order by "schema";
+create procedure sys.storagemodelinit()
+begin
+ delete from sys.storagemodelinput;
+ insert into sys.storagemodelinput
+ select "schema", "table", "column", "type", typewidth, "count",
+ case when ("unique" or "type" in ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya'))
+ then "count" else 0 end,
+ case when "count" > 0 and heapsize >= 8192 and "type" in ('varchar', 'char', 'clob', 'json', 'url')
+ then cast((heapsize - 8192) / "count" as bigint)
+ when "count" > 0 and heapsize >= 32 and "type" in ('blob', 'geometry', 'geometrya')
+ then cast((heapsize - 32) / "count" as bigint)
+ else typewidth end,
+ false, case sorted when true then true else false end, "unique", true
+ from sys."storage";
+ update sys.storagemodelinput
+ set reference = true
+ where ("schema", "table", "column") in (
+ select fkschema."name", fktable."name", fkkeycol."name"
+ from sys."keys" as fkkey,
+ sys."objects" as fkkeycol,
+ sys."tables" as fktable,
+ sys."schemas" as fkschema
+ where fktable."id" = fkkey."table_id"
+ and fkkey."id" = fkkeycol."id"
+ and fkschema."id" = fktable."schema_id"
+ and fkkey."rkey" > -1 );
+ update sys.storagemodelinput
+ set isacolumn = false
+ where ("schema", "table", "column") not in (
+ select sch."name", tbl."name", col."name"
+ from sys."schemas" as sch,
+ sys."tables" as tbl,
+ sys."columns" as col
+ where sch."id" = tbl."schema_id"
+ and tbl."id" = col."table_id");
+end;
+create function logging.compinfo()
+returns table(
+ "id" int,
+ "component" string,
+ "log_level" string
+)
+external name logging.compinfo;
+grant execute on function logging.compinfo to public;
+create view logging.compinfo as select * from logging.compinfo();
+grant select on logging.compinfo to public;
+update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('schemastorage', 'tablestorage', 'storage', 'rejects', 'queue', 'optimizers', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_history', 'querylog_calls', 'querylog_catalog');
+update sys._tables set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('storagemodelinit', 'storage', 'rejects', 'user_statistics', 'queue', 'debugflags', 'bbp', 'optimizers', 'querycache', 'optimizer_stats', 'current_sessionid', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_calls', 'querylog_catalog');
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and name = 'getlimit';
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');
+drop view sys.systemfunctions;
 

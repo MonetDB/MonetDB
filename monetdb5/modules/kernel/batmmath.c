@@ -41,8 +41,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	}
 
 	ncand = canditer_init(&ci, b, s);
-	off = ci.hseq;
-	bn = COLnew(off, b->ttype, ncand, TRANSIENT);
+	off = b->hseqbase;
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL || ncand == 0) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -183,27 +183,27 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	if (b2)
 		canditer_init(&ci2, b2, s2);
 	ncand = b1 ? ci1.ncand : ci2.ncand;
-	off1 = ci1.hseq;
-	off2 = ci2.hseq;
+	off1 = b1 ? b1->hseqbase : 0;
+	off2 = b2 ? b2->hseqbase : 0;
 
 	if (b1 == NULL &&
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 1)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 1)].val.dval))) {
-		bn = BATconstant(off2, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
+		bn = BATconstant(ci2.hseq, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
 	if (b2 == NULL &&
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 2)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 2)].val.dval))) {
-		bn = BATconstant(off1, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
+		bn = BATconstant(ci1.hseq, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
 	if (b1)
-		bn = COLnew(off1, tp1, ncand, TRANSIENT);
+		bn = COLnew(ci1.hseq, tp1, ncand, TRANSIENT);
 	else
-		bn = COLnew(off2, tp1, ncand, TRANSIENT);
+		bn = COLnew(ci2.hseq, tp1, ncand, TRANSIENT);
 	if (bn == NULL || ncand == 0)
 		goto doreturn;
 

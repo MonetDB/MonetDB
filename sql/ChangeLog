@@ -1,6 +1,22 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Nov  9 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- The method to compute the 'side_effect' effect property was changed
+  for SQL functions defined in the backend engine (eg. ``CREATE FUNCTION 
+  ... EXTERNAL NAME "module"."function"''). It was changed from being
+  computed by the SQL layer to the backend engine itself. As a consequence,
+  the computed 'side_effect' value may be different, thus bringing
+  incompatibilities. After an upgrade, if a 'side_effect' incompatibility
+  arises, either the 'side_effect' value in the backend should be changed or
+  the function should be re-created in SQL.
+
+* Thu Nov  4 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Removed deprecated system view sys.systemfunctions. It was marked
+  as deprecated from release Apr2019 (11.33.3).  Use query:
+    select id as function_id from sys.functions where system;
+  to get the same data as the old view.
+
 * Thu Oct 21 2021 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Extended SQL system catalog with lookup table sys.fkey_actions and
   view sys.fkeys to provide user friendly querying of existing foreign

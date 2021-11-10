@@ -34,6 +34,8 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 {
 	MSresetInstructions(be->mb, oldstop);
 	freeVariables(be->client, be->mb, NULL, oldvtop, oldvid);
+	be->mvc->session->status = 0; /* clean possible generated error */
+	be->mvc->errstr[0] = '\0';
 }
 
 static int
@@ -1241,23 +1243,31 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL;
-		int push_cands = can_push_cands(sel, f);
+		const char *mod, *fimp;
+
+		/* attempt to instantiate MAL functions now, so we can know if we can push candidate lists */
+		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
+			return NULL;
+		mod = sql_func_mod(f->func);
+		fimp = sql_func_imp(f->func);
 
 		if (f->func->side_effect && left && left->nrcols > 0 && f->func->type != F_LOADER && exps_card(exps) < CARD_MULTI) {
 			rows = bin_find_smallest_column(be, left);
 		}
 		assert(!e->r);
-		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)
-			return left->op4.lval->h->data;
-		else if (!list_empty(exps)) {
-			unsigned nrcols = 0;
-
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "case") == 0)
+		if (strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
+			if (strcmp(f->func->base.name, "star") == 0)
+				return left->op4.lval->h->data;
+			if (strcmp(f->func->base.name, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "casewhen") == 0)
+			if (strcmp(f->func->base.name, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
-			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
+			if (strcmp(f->func->base.name, "coalesce") == 0)
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
+		}
+		if (!list_empty(exps)) {
+			unsigned nrcols = 0;
+			int push_cands = can_push_cands(sel, mod, fimp);
 
 			assert(list_length(exps) == list_length(f->func->ops) || f->func->type == F_ANALYTIC || f->func->type == F_LOADER || f->func->vararg || f->func->varres);
 			for (en = exps->h; en; en = en->next) {
@@ -1557,6 +1567,12 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
+		if (c->storage_type && c->storage_type[0] == 'D') {
+			stmt *v = stmt_bat(be, c, RD_EXT, part);
+			sc = stmt_dict(be, sc, v);
+		} else if (c->storage_type && c->storage_type[0] == 'F') {
+			sc = stmt_for(be, sc, stmt_atom(be, atom_general( be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/)));
+		}
 		sc = stmt_project_delta(be, sc, u);
 		if (del)
 			sc = stmt_project(be, del, sc);
@@ -1667,10 +1683,11 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 static stmt *
 parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emode)
 {
-	sql_exp *e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL);
-	if (e)
-		return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	return sql_error(be->mvc, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	sql_exp *e = NULL;
+
+	if (!(e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL)))
+		return NULL;
+	return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
 
 static stmt *
@@ -2110,12 +2127,12 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						else
 							getArg(q, 0) = newTmpVariable(be->mb, type);
 					}
+					if (backend_create_subfunc(be, f, ops) < 0)
+		 				return NULL;
 					str mod = sql_func_mod(f->func);
 					str fcn = sql_func_imp(f->func);
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
-					if (backend_create_func(be, f->func, NULL, ops) < 0)
-		 				return NULL;
 					psub = stmt_direct_func(be, q);
 
 					if (ids) /* push input rowids column */
@@ -2520,7 +2537,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			(void) equality_only;
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
 			/* generate a relational join (releqjoin) which does a multi attribute (equi) join */
-			for( en = jexps->h; en; en = en->next ) {
+			for( en = jexps->h; en && !used_hash; en = en->next ) {
 				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
@@ -2531,20 +2548,24 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					break;
 
 				/* handle possible index lookups, expressions are in index order! */
-				if (!join &&
-					(p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
+				if (!join && (p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 					sql_idx *i = p->value;
+					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
 					join = s = rel2bin_hash_lookup(be, rel, left, right, i, en);
 					if (s) {
 						list_append(lje, s->op1);
 						list_append(rje, s->op2);
 						list_append(exps, NULL);
-						used_hash = 1;
+						used_hash = 1; /* uses hash, all jexps were consumed */
+					} else {
+						/* hash lookup cannot be used, clean leftover mal statements */
+						clean_mal_statements(be, oldstop, oldvtop, oldvid);
 					}
 				}
 
-				s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
+				if (!s)
+					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
 				if (!s) {
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
@@ -3612,8 +3633,12 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_idx *i = p->value;
+			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
-			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
+			if ((sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en)))
+				goto done;
+			/* hash lookup cannot be used, clean leftover mal statements */
+			clean_mal_statements(be, oldstop, oldvtop, oldvid);
 		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
@@ -3640,6 +3665,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
+done:
 	if (sub && sel) {
 		sub = stmt_list(be, sub->op4.lval); /* protect against references */
 		sub->cand = sel;
@@ -3872,7 +3898,7 @@ sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, s, query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
+	if (rel && (rel = sql_processrelation(be->mvc, rel, 1, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }
