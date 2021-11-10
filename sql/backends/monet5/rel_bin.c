@@ -4402,6 +4402,60 @@ can_use_appendfrom(sql_rel *rel)
 }
 
 static stmt *
+rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
+{
+	(void)be;
+	(void)rel;
+	(void)refs;
+	(void)copyfrom;
+	mvc *mvc = be->mvc;
+	MalBlkPtr mb = be->mb;
+
+	// We're about to emit a custom sql.copy_from invocation.
+	// Temporarily, until we learn how to do that properly.
+
+	// First emit statements for all copyfrom's arguments.
+	list *args = copyfrom->l;
+	list *l = sa_list(mvc->sa);
+	for (node *n = args->h; n; n = n->next) {
+		sql_exp *arg = n->data;
+		stmt *arg_stmt = exp_bin(be, arg, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		list_append(l, arg_stmt);
+	}
+
+	// Then we emit the call. Maybe there's a stmt_function for that..
+	InstrPtr append_instr = newFcnCallArgs(mb, sqlRef, copy_fromRef, 100);
+	setDestType(mb, append_instr, newBatType(TYPE_oid));
+	for (node *n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		int varnr = s->nr;
+		append_instr = pushArgument(mb, append_instr, varnr);
+	}
+
+	// Then we manually count.
+	InstrPtr count_instr = newFcnCallArgs(be->mb, aggrRef, countRef, 1);
+	count_instr = pushArgument(be->mb, count_instr, getDestVar(append_instr));
+
+	int destvar = getDestVar(count_instr);
+	stmt *s = stmt_none(be);
+	s->nr = destvar;
+
+	// I'm assuming that attaching the stmt list to op4.lval
+	// will make some else free the arg_stmt's we created here.
+	s->op4.lval = l;
+
+	be->rowcount = be->rowcount
+		? add_to_rowcount_accumulator(be, s->nr)
+		: s->nr;
+
+	dump_code(-1);
+	return s;
+
+	// snprintf(be->mvc->errstr, sizeof(be->mvc->errstr), "banana");
+	// return NULL;
+}
+
+static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	dump_code_state.mb = be->mb;
@@ -4418,6 +4472,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		assert(atom_type(a)->type->localtype == TYPE_int);
 		int *best_effort = &a->data.val.ival;
 		*best_effort += 100; // magic
+
+		return rel2bin_directappend(be, rel, refs, copyfrom);
 	}
 
 	mvc *sql = be->mvc;
