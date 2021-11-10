@@ -1357,12 +1357,14 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sel, i
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
-	int k, pushed = 0, push_cands = (f->func->type == F_FUNC || f->func->type == F_FILT) &&
-		(f->func->lang == FUNC_LANG_INT || f->func->lang == FUNC_LANG_MAL) && strcmp(mod, "algebra") == 0;
+	const char *mod, *fimp;
+	int k, pushed = 0, push_cands;
 
 	if (backend_create_subfunc(be, f, NULL) < 0)
 		return NULL;
+	mod = sql_func_mod(f->func);
+	fimp = sql_func_imp(f->func);
+	push_cands = strcmp(mod, "algebra") == 0;
 
 	if (!push_cands && sel) {
 		for (node *n = lops->op4.lval->h; n; n = n->next) {
@@ -3384,8 +3386,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = convertMultiplexFcn(sql_func_imp(f->func));
-	push_cands = (f->func->type == F_FUNC || f->func->type == F_FILT) && (f->func->lang == FUNC_LANG_INT || f->func->lang == FUNC_LANG_MAL) &&
-		((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
+	push_cands = ((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
 		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
 
 	if (list_length(ops->op4.lval)) {
