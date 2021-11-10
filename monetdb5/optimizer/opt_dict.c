@@ -268,10 +268,13 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb, r);
 
 					getArg(p, j) = getArg(r, 0);
+					actions++;
 				}
 			}
 		}
-		if (!done)
+		if (done)
+			actions++;
+		else
 			pushInstruction(mb, p);
 	}
 
