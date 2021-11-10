@@ -1013,9 +1013,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 		// do .. while (false) allows us to use 'break' to drop out at any point
 		do {
-			msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz));
-			if (msg != MAL_SUCCEED)
-				break;
+			if (!loadops) {
+				msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz));
+				if (msg != MAL_SUCCEED)
+					break;
+			}
 
 			if (sz != 0) {
 				BUN count = SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape, loadops);

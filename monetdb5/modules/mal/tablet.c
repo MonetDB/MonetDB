@@ -895,14 +895,11 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	}
 	if (task->loadops) {
 		str msg = task->loadops->append_one(task->loadops->state, idx, adt, fmt->appendcol);
-		if (msg != MAL_SUCCEED)
-			goto failure;
-	}
-
-	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
+		if (msg == MAL_SUCCEED)
+			return ret;
+	} else if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
 		return ret;
 
-failure:
 	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
@@ -929,8 +926,16 @@ SQLworker_column(READERtask *task, int col)
 	int i;
 	Column *fmt = task->as->format;
 
-	if (fmt[col].c == NULL)
+	if (fmt[col].skip)
 		return 0;
+
+	if (task->loadops) {
+		for (i = 0; i < task->top[task->cur]; i++) {
+			if (SQLinsert_val(task, col, i) < 0)
+				return -1;
+		}
+		return 0;
+	}
 
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock);
