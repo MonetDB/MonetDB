@@ -19,6 +19,8 @@ target_sources(optimizer
   opt_constants.c opt_constants.h
   opt_costModel.c opt_costModel.h
   opt_dataflow.c opt_dataflow.h
+  opt_dict.c opt_dict.h
+  opt_for.c opt_for.h
   opt_deadcode.c opt_deadcode.h
   opt_emptybind.c opt_emptybind.h
   opt_evaluate.c opt_evaluate.h

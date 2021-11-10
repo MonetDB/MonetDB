@@ -556,6 +556,9 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
+	if (access == RD_EXT)
+		partition = 0;
+
 	/* for read access tid.project(col) */
 	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
@@ -577,6 +580,12 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = newStmtArgs(mb, sqlRef, bindRef, 9);
 	if (q == NULL)
 		return NULL;
+	if (c->storage_type && access != RD_EXT && access != RD_UPD_ID) {
+		sql_trans *tr = be->mvc->session->tr;
+		sqlstore *store = tr->store;
+		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+		tt = b->ttype;
+	}
 	if (access == RD_UPD_ID) {
 		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 	} else {
@@ -2249,6 +2258,73 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 		s->nrcols = 2;
 		s->nr = getDestVar(q);
 		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_dict(backend *be, stmt *op1, stmt *op2)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (op1->nr < 0 || op2->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, dictRef, decompressRef);
+	q = pushArgument(mb, q, op1->nr);
+	q = pushArgument(mb, q, op2->nr);
+
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_join);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->op1 = op1;
+		s->op2 = op2;
+		s->flag = cmp_project;
+		s->key = 0;
+		s->nrcols = MAX(op1->nrcols,op2->nrcols);
+		s->nr = getDestVar(q);
+		s->q = q;
+		s->tname = op1->tname;
+		s->cname = op1->cname;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_for(backend *be, stmt *op1, stmt *min_val)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (op1->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, forRef, decompressRef);
+	q = pushArgument(mb, q, op1->nr);
+	q = pushArgument(mb, q, min_val->nr);
+
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_join);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->op1 = op1;
+		s->flag = cmp_project;
+		s->key = 0;
+		s->nrcols = op1->nrcols;
+		s->nr = getDestVar(q);
+		s->q = q;
+		s->tname = op1->tname;
+		s->cname = op1->cname;
 		return s;
 	}
 	return NULL;
