@@ -1080,7 +1080,7 @@ static BAT *
 dict_append_bat(column_storage *cs, BAT *i)
 {
 	BAT *newoffsets = NULL;
-	BAT *u = temp_descriptor(cs->ebid);
+	BAT *u = temp_descriptor(cs->ebid), *b = NULL, *n = NULL;
 
 	if (!u)
 		return NULL;
@@ -1091,16 +1091,19 @@ dict_append_bat(column_storage *cs, BAT *i)
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
 		if (BATcount(u) >= max_cnt) {
 			if (max_cnt == 64*1024) { /* decompress */
-				BAT *b = temp_descriptor(cs->bid);
+				if (!(b = temp_descriptor(cs->bid))) {
+					bat_destroy(u);
+					return NULL;
+				}
 				if (cs->ucnt) {
 					BAT *ui = NULL, *uv = NULL;
 					BAT *nb = COLcopy(b, b->ttype, true, TRANSIENT);
+					bat_destroy(b);
 					if (!nb || cs_real_update_bats(cs, &ui, &uv) != LOG_OK) {
-						bat_destroy(b);
+						bat_destroy(nb);
 						bat_destroy(u);
 						return NULL;
 					}
-					bat_destroy(b);
 					b = nb;
 					if (BATupdate(b, ui, uv, true) != GDK_SUCCEED) {
 						bat_destroy(ui);
@@ -1111,12 +1114,11 @@ dict_append_bat(column_storage *cs, BAT *i)
 					bat_destroy(ui);
 					bat_destroy(uv);
 				}
-				BAT *n = b?DICTdecompress_(b , u):NULL;
+				n = DICTdecompress_(b, u);
 				bat_destroy(b);
 				assert(newoffsets == NULL);
 				if (!n) {
 					bat_destroy(u);
-					bat_destroy(n);
 					return NULL;
 				}
 				if (cs->bid)
@@ -1135,18 +1137,22 @@ dict_append_bat(column_storage *cs, BAT *i)
 				cs->st = ST_DEFAULT;
 				cs->cleared = true;
 			} else {
-				BAT *b = temp_descriptor(cs->bid);
-				BAT *n = b?DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i)):NULL;
+				if (!(b = temp_descriptor(cs->bid))) {
+					bat_destroy(newoffsets);
+					bat_destroy(u);
+					return NULL;
+				}
+				n = DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i));
 				bat_destroy(b);
 				if (!n) {
 					bat_destroy(newoffsets);
 					bat_destroy(u);
-					bat_destroy(n);
 					return NULL;
 				}
 				if (cs->bid)
 					temp_destroy(cs->bid);
 				cs->bid = temp_create(n);
+				bat_destroy(n);
 				cs->cleared = true;
 				i = newoffsets;
 			}
@@ -1196,10 +1202,13 @@ cs_update_bat( sql_trans *tr, column_storage *cs, sql_table *t, BAT *tids, BAT *
 		/* possibly a new array is returned */
 		updates = dict_append_bat(cs, updates);
 		if (oupdates != updates)
-				bat_destroy(oupdates);
+			bat_destroy(oupdates);
 		oupdates = updates;
-		if (!updates)
+		if (!updates) {
+			if (otids != tids)
+				bat_destroy(otids);
 			return LOG_ERR;
+		}
 	}
 
 	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
@@ -1489,25 +1498,27 @@ static void *
 dict_append_val(column_storage *cs, void *i, BUN cnt)
 {
 	void *newoffsets = NULL;
-	BAT *u = temp_descriptor(cs->ebid);
+	BAT *u = temp_descriptor(cs->ebid), *b = NULL, *n = NULL;
 
 	if (!u)
 		return NULL;
 	BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
 	if (DICTprepare4append_vals(&newoffsets, i, cnt, u) < 0) {
-				assert(0);
+		assert(0);
 	} else {
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
 		if (BATcount(u) >= max_cnt) {
 			if (max_cnt == 64*1024) { /* decompress */
-				BAT *b = temp_descriptor(cs->bid);
-				BAT *n = b?DICTdecompress_(b , u):NULL;
+				if (!(b = temp_descriptor(cs->bid))) {
+					bat_destroy(u);
+					return NULL;
+				}
+				n = DICTdecompress_(b, u);
 				/* TODO also decrompress updates if any */
 				bat_destroy(b);
 				assert(newoffsets == NULL);
 				if (!n) {
 					bat_destroy(u);
-					bat_destroy(n);
 					return NULL;
 				}
 				/* TODO change storage type */
@@ -1521,18 +1532,22 @@ dict_append_val(column_storage *cs, void *i, BUN cnt)
 				cs->st = ST_DEFAULT;
 				cs->cleared = true;
 			} else {
-				BAT *b = temp_descriptor(cs->bid);
-				BAT *n = b?DICTenlarge(b, BATcount(b), BATcount(b) + cnt):NULL;
+				if (!(b = temp_descriptor(cs->bid))) {
+					GDKfree(newoffsets);
+					bat_destroy(u);
+					return NULL;
+				}
+				n = DICTenlarge(b, BATcount(b), BATcount(b) + cnt);
 				bat_destroy(b);
 				if (!n) {
 					GDKfree(newoffsets);
 					bat_destroy(u);
-					bat_destroy(n);
 					return NULL;
 				}
 				if (cs->bid)
 					temp_destroy(cs->bid);
 				cs->bid = temp_create(n);
+				bat_destroy(n);
 				cs->cleared = true;
 				i = newoffsets;
 			}
