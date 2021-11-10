@@ -2082,11 +2082,11 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 						}
 					}
 					if (!found) {
-						TRC_WARNING(GDK, "file %s not found (expected size %zu)\n", fname, free);
+						TRC_WARNING(GDK, "file %s not found (expected size %" PRIu64 ")\n", fname, free);
 					} else {
 						assert((uint64_t) stb.st_size >= free);
 						if ((uint64_t) stb.st_size < free)
-							TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, free, (size_t) stb.st_size);
+							TRC_WARNING(GDK, "file %s too small (expected %" PRIu64 ", actual %zu)\n", fname, free, (size_t) stb.st_size);
 					}
 					GDKfree(fname);
 					if (vfree == 0)
@@ -2114,7 +2114,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 					}
 					assert((uint64_t) stb.st_size >= vfree);
 					if ((uint64_t) stb.st_size < vfree)
-						TRC_WARNING(GDK, "file %s too small (expected %zu, actual %zu)\n", fname, vfree, (size_t) stb.st_size);
+						TRC_WARNING(GDK, "file %s too small (expected %" PRIu64 ", actual %zu)\n", fname, vfree, (size_t) stb.st_size);
 					GDKfree(fname);
 					break;
 				}
