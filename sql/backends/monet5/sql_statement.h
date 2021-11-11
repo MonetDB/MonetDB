@@ -120,7 +120,8 @@ typedef struct stmt {
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
 	 reduce:1,		/* used to reduce number of rows (also for joins) */
-	 loop:1;		/* cond statement is looping */
+	 loop:1,		/* cond statement is looping */
+	 argument_independence:1; /*list statement represents a list of function call arguments which are independent of the inner project relation. */
 
 	struct stmt *cand;	/* optional candidate list */
 
@@ -238,7 +239,7 @@ extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, st
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
-extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op);
+extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* rows);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
