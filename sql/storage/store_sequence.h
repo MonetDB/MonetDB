@@ -18,19 +18,6 @@ extern int seq_get_value(sql_store store, sql_sequence *seq, lng *val);
 extern int seq_next_value(sql_store store, sql_sequence *seq, lng *val);
 extern int seq_restart(sql_store store, sql_sequence *seq, lng start);
 
-/* for bulk calls, the API is split in 3 parts */
-
-typedef struct seqbulk {
-	void *internal_seq;
-	sql_sequence *seq;
-	BUN cnt;
-	int save;
-} seqbulk;
-
-extern seqbulk *seqbulk_create(sql_store store, sql_sequence *seq, BUN cnt);
-extern int seqbulk_get_value(seqbulk *seq, lng *val);
-extern int seqbulk_next_value(seqbulk *seq, lng *val);
-extern int seqbulk_restart(sql_store store, seqbulk *seq, lng start);
-extern void seqbulk_destroy(sql_store store, seqbulk *seq);
+extern int seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng *start, lng *inc, lng *minv, lng *maxv, lng *end);
 
 #endif /* STORE_SEQ_H */

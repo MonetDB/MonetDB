@@ -1251,20 +1251,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		mod = sql_func_mod(f->func);
 		fimp = sql_func_imp(f->func);
 
-		/* TODO the 'next_value_for' case is an ugly hack, and it will get fixed on 'sequences_7184' branch */
-		if ((f->func->side_effect || (!f->func->s && strcmp(f->func->base.name, "next_value_for") == 0)) && left && left->nrcols > 0) {
-			sql_subfunc *f1 = NULL;
-			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
-			if (list_empty(exps) && ((!f->func->s && strcmp(f->func->base.name, "rand") == 0) || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
-				if (f1)
-					f = f1;
-				list_append(l, stmt_const(be, bin_find_smallest_column(be, left),
-										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
-			} else if (exps_card(exps) < CARD_MULTI) {
-				rows = bin_find_smallest_column(be, left);
-			}
-			sql->session->status = 0; /* if the function was not found clean the error */
-			sql->errstr[0] = '\0';
+		if (f->func->side_effect && left && left->nrcols > 0 && f->func->type != F_LOADER && exps_card(exps) < CARD_MULTI) {
+			rows = bin_find_smallest_column(be, left);
 		}
 		assert(!e->r);
 		if (strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
@@ -1288,8 +1276,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (!es)
 					return NULL;
-				if (rows && en == exps->h && f->func->type != F_LOADER)
-					es = stmt_const(be, rows, es);
+				/*if (rows && en == exps->h && f->func->type != F_LOADER)
+					es = stmt_const(be, rows, es);*/
 				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
 					if (en == exps->h && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es); /* ensure the first argument is a column */
@@ -1302,7 +1290,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f)))
+		stmt* args = stmt_list(be, l);
+		args->argument_independence = e->argument_independence;
+		if (!(s = stmt_Nop(be, args, sel, f, rows)))
 			return NULL;
 	} 	break;
 	case e_aggr: {
@@ -1546,7 +1536,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							list_append(args, l);
 							list_append(args, r);
 							list_append(args, stmt_bool(be, 1));
-							s = stmt_Nop(be, stmt_list(be, args), sel, f);
+							s = stmt_Nop(be, stmt_list(be, args), sel, f, NULL);
 						}
 					} else {
 						s = stmt_binop(be, l, r, sel, f);
@@ -1686,7 +1676,7 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 	}
 
 	if ((f = sql_bind_func_(sql, "sys", fname, tl, F_FUNC)))
-		return stmt_Nop(be, stmt_list(be, sl), NULL, f);
+		return stmt_Nop(be, stmt_list(be, sl), NULL, f, NULL);
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 }
 
@@ -2286,7 +2276,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, tail_type(s));
 
 			h = stmt_Nop(be, stmt_list(be, list_append( list_append(
-				list_append(sa_list(sql->sa), h), bits), s)), NULL, xor);
+				list_append(sa_list(sql->sa), h), bits), s)), NULL, xor, false);
 			semantics = 1;
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, tail_type(s));
@@ -2322,7 +2312,7 @@ join_hash_key( backend *be, list *l )
 		if (h) {
 			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, tail_type(s));
 
-			h = stmt_Nop(be, stmt_list(be, list_append( list_append( list_append(sa_list(sql->sa), h), bits), s )), NULL, xor);
+			h = stmt_Nop(be, stmt_list(be, list_append( list_append( list_append(sa_list(sql->sa), h), bits), s )), NULL, xor, NULL);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, tail_type(s));
 			h = stmt_unop(be, s, NULL, hf);
@@ -2388,7 +2378,7 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, int need_
 		}
 		if (semantics)
 			list_append(ops, stmt_bool(be, 1));
-		cmp = stmt_Nop(be, stmt_list(be, ops), NULL, f);
+		cmp = stmt_Nop(be, stmt_list(be, ops), NULL, f, NULL);
 		cmp = stmt_uselect(be, cmp, stmt_bool(be, 1), cmp_equal, NULL, 0, 0);
 		l = stmt_project(be, cmp, l );
 		r = stmt_project(be, cmp, r );
@@ -4961,7 +4951,7 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 			h = stmt_Nop(be, stmt_list( be, list_append( list_append(
 				list_append(sa_list(sql->sa), h),
 				stmt_atom_int(be, bits)),  upd)), NULL,
-				xor);
+				xor, false);
 		} else if (h)  {
 			stmt *h2;
 			sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, lng, 2, lng, it);
