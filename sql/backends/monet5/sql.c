@@ -3328,16 +3328,12 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *urib = NULL;
-	BAT *unameb = NULL;
-	BAT *hashb = NULL;
+	BAT *urib = NULL, *unameb = NULL, *hashb = NULL;
 	bat *uri = getArgReference_bat(stk, pci, 0);
 	bat *uname = getArgReference_bat(stk, pci, 1);
 	bat *hash = getArgReference_bat(stk, pci, 2);
 	str *table = getArgReference_str(stk, pci, 3);
-	str uris = NULL;
-	str unames = NULL;
-	str hashs = NULL;
+	str uris = NULL, unames = NULL, hashs = NULL;
 	str msg = MAL_SUCCEED;
 	(void)mb;
 	(void)cntxt;
@@ -3366,14 +3362,18 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*uname = unameb->batCacheid);
 	BBPkeepref(*hash = hashb->batCacheid);
 
-	if (hashs) GDKfree(hashs);
+	GDKfree(uris);
+	GDKfree(unames);
+	GDKfree(hashs);
 	return MAL_SUCCEED;
 
   lbailout:
 	MT_lock_unset(&mal_contextLock);
 	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
   bailout:
-	if (hashs) GDKfree(hashs);
+	GDKfree(uris);
+	GDKfree(unames);
+	GDKfree(hashs);
 	if (urib) BBPunfix(urib->batCacheid);
 	if (unameb) BBPunfix(unameb->batCacheid);
 	if (hashb) BBPunfix(hashb->batCacheid);

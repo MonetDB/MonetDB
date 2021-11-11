@@ -320,14 +320,9 @@ RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 static str
 RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *local_table;
-	char *remoteuser = NULL;
-	char *passwd = NULL;
-	char *uri = NULL;
-	char *tmp;
-	char *ret;
-	str scen;
-	str msg;
+	char *local_table = NULL, *tmp = NULL, *ret = NULL,
+		 *remoteuser = NULL, *passwd = NULL, *uri = NULL;
+	str scen, msg;
 	ValPtr v;
 
 	(void)mb;
@@ -344,20 +339,29 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		remoteuser = GDKstrdup("");
 	if (!passwd)
 		passwd = GDKstrdup("");
+	if (!remoteuser || !passwd) {
+		GDKfree(uri);
+		GDKfree(remoteuser);
+		GDKfree(passwd);
+		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
 	/* The password we just got is hashed. Add the byte \1 in front to
 	 * signal this fact to the mapi. */
 	size_t pwlen = strlen(passwd);
 	char *pwhash = (char*)GDKmalloc(pwlen + 2);
 	if (pwhash == NULL) {
+		GDKfree(uri);
 		GDKfree(remoteuser);
 		GDKfree(passwd);
 		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(pwhash, pwlen + 2, "\1%s", passwd);
+	GDKfree(passwd);
 
 	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen, NULL);
-
-	GDKfree(passwd);
+	GDKfree(uri);
+	GDKfree(remoteuser);
 	GDKfree(pwhash);
 
 	if (msg == MAL_SUCCEED) {
