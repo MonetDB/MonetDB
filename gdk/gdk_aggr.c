@@ -3326,11 +3326,10 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 				i = canditer_next(ci) - hseq;		\
 				if (!skip_nils ||			\
 				    !is_##TYPE##_nil(vals[i])) {	\
-					oids[gid++] = i + hseq;		\
+					oids[gid] = i + hseq;		\
 					nils--;				\
-				} else {				\
-					gid++;				\
 				}					\
+				gid++;					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
 				      TIMEOUT_HANDLER(BUN_NONE));	\
@@ -3449,9 +3448,10 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(*bi, i), nil) != 0) {
-					oids[gid++] = i + hseq;
+					oids[gid] = i + hseq;
 					nils--;
 				}
+				gid++;
 			}
 			TIMEOUT_CHECK(timeoffset,
 				      TIMEOUT_HANDLER(BUN_NONE));
@@ -3578,9 +3578,10 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(*bi, i), nil) != 0) {
-					oids[gid++] = i + hseq;
+					oids[gid] = i + hseq;
 					nils--;
 				}
+				gid++;
 			}
 			TIMEOUT_CHECK(timeoffset,
 				      TIMEOUT_HANDLER(BUN_NONE));
