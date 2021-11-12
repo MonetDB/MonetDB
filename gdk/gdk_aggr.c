@@ -3328,6 +3328,8 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 				    !is_##TYPE##_nil(vals[i])) {	\
 					oids[gid++] = i + hseq;		\
 					nils--;				\
+				} else {				\
+					gid++;				\
 				}					\
 			}						\
 			TIMEOUT_CHECK(timeoffset,			\
