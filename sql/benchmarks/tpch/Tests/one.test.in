@@ -203,6 +203,9 @@ statement ok
 create procedure sys.dict_compress( sname string, tname string, cname string, ordered_values bool) external name dict.compress;
 
 statement ok
+create procedure sys.for_compress( sname string, tname string, cname string) external name "for".compress;
+
+statement ok
 call dict_compress('sys', 'region', 'r_regionkey', true);
 
 statement ok
@@ -265,8 +268,11 @@ call dict_compress('sys', 'lineitem', 'l_quantity', true);
 statement ok
 call dict_compress('sys', 'lineitem', 'l_discount', true);
 
+# testing l_tax now with for compression.
+# not dict call dict_compress('sys', 'lineitem', 'l_tax', true);
+# 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_tax', true);
+call for_compress('sys', 'lineitem', 'l_tax');
 
 statement ok
 call dict_compress('sys', 'lineitem', 'l_returnflag', true);
