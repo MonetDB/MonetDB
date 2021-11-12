@@ -50,7 +50,7 @@ typedef struct Column_t {
 	char quote;					/* if set use this character for string quotes */
 	const void *nildata;
 	int size;
-	void *appendcol;			/* temporary, can use Columnt_t.extra in the future */
+	void *appendcol;			/* temporary, can probably use Columnt_t.extra in the future */
 } Column;
 
 /*
@@ -70,7 +70,8 @@ typedef struct Table_t {
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
-
+// Callback interface to append the data directly instead of storing it in intermediate BATs.
+// SQLload_file doesn't know how to manipulate the sql transaction bookkeeping, caller does.
 typedef str (*loadfile_claim_fptr)(void *state, size_t nrows, size_t ncols, Column *cols[]);
 typedef str (*loadfile_append_one_fptr)(void *state, size_t idx, const void *data, void *col);
 typedef BAT *(*loadfile_get_offsets_bat_fptr)(void *state);
