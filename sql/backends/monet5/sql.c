@@ -951,7 +951,7 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(r = COLnew(0, TYPE_lng, card, TRANSIENT)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	lng start, inc, minv, maxv, end;
+	lng start, inc, minv, maxv, end, *restrict rb = Tloc(r, 0);
 
 	if (seqbulk_next_value(be->mvc->session->tr->store, seq, card, &start, &inc, &minv, &maxv, &end)) {
 		be->last_id = end;
@@ -959,21 +959,23 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng c = start;
 		for(BUN i = 0; i<card; i++) {
 			if (c > maxv && minv && maxv)
-			   c = minv;
+				c = minv;
 			if (c > maxv && !minv)
 				break;
-			if (BUNappend(r, &c, false) != GDK_SUCCEED) {
-				BBPreclaim(r);
-				throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			rb[i] = c;
 			if ((i+1) < card)
 				c += inc;
 		}
-		(void)end;
 		assert(c == end);
-		BBPkeepref( *res = r->batCacheid );
+		BATsetcount(r, card);
+		r->tnonil = true;
+		r->tnil = false;
+		/* TODO set the min/max, tsorted/trevsorted and tkey properties based on the sequence values */
+		r->tsorted = r->trevsorted = r->tkey = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPreclaim(r);
 	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
