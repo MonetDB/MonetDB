@@ -3252,9 +3252,10 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 				i = canditer_next(ci) - b->hseqbase;	\
 				if (!skip_nils ||			\
 				    !is_##TYPE##_nil(vals[i])) {	\
-					oids[gid++] = i + b->hseqbase;	\
+					oids[gid] = i + b->hseqbase;	\
 					nils--;				\
 				}					\
+				gid++;					\
 			}						\
 		} else {						\
 			while (ncand > 0) {				\
@@ -3366,9 +3367,10 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-					oids[gid++] = i + b->hseqbase;
+					oids[gid] = i + b->hseqbase;
 					nils--;
 				}
+				gid++;
 			}
 		} else {
 			while (ncand > 0) {
@@ -3490,9 +3492,10 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - b->hseqbase;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-					oids[gid++] = i + b->hseqbase;
+					oids[gid] = i + b->hseqbase;
 					nils--;
 				}
+				gid++;
 			}
 		} else {
 			while (ncand > 0) {
