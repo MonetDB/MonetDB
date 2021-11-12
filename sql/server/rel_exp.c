@@ -2217,6 +2217,16 @@ exp_rel_update_exps(mvc *sql, list *exps)
 	return exps;
 }
 
+static sql_exp *
+exp_rel_update_exp_(mvc *sql, sql_exp *e)
+{
+	if (exp_has_rel(e))
+		e = exp_rel_update_exp(sql, e);
+	else if (!exp_is_atom(e))
+		exp_rel_update_set_freevar(e);
+	return e;
+}
+
 sql_exp *
 exp_rel_update_exp(mvc *sql, sql_exp *e)
 {
@@ -2241,12 +2251,12 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 			if (exps_have_rel_exp(e->r))
 				e->r = exp_rel_update_exps(sql, e->r);
 		} else {
-			if (exp_has_rel(e->l))
-				e->l = exp_rel_update_exp(sql, e->l);
-			if (exp_has_rel(e->r))
-				e->r = exp_rel_update_exp(sql, e->r);
-			if (e->f && exp_has_rel(e->f))
-				e->f = exp_rel_update_exp(sql, e->f);
+			//if (exp_has_rel(e->l))
+				e->l = exp_rel_update_exp_(sql, e->l);
+			//if (exp_has_rel(e->r))
+				e->r = exp_rel_update_exp_(sql, e->r);
+			if (e->f /*&& exp_has_rel(e->f)*/)
+				e->f = exp_rel_update_exp_(sql, e->f);
 		}
 		return e;
 	case e_convert:
