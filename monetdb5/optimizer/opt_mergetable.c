@@ -2249,7 +2249,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match > 0 &&
 				((getModuleId(p) == algebraRef &&
 			getFunctionId(p) == projectionRef) ||
-				(getModuleId(p) == dictRef &&
+				((getModuleId(p) == dictRef || getModuleId(p) == forRef) &&
 			getFunctionId(p) == decompressRef)) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
