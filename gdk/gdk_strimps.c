@@ -726,7 +726,7 @@ STRMPcreate(BAT *b, BAT *s) {
 	return GDK_SUCCEED;
 }
 
-/* Parallel creation */
+/* Parallel creation. does not wok*/
 #if 0
 /* Creates the heap for a string imprint. Returns NULL on failure. This
  * follows closely the Heap creation for the order index.
