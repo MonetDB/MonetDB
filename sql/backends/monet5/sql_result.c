@@ -688,12 +688,15 @@ has_whitespace(const char *s)
 	return 0;
 }
 
+// Callback functions and state struct to be passed to SQLload_file as LoadOps.
+// This is the code that claims row space and writes to it.
+// SQLload_file can call it if available but doesn't know how it works.
 struct directappend {
 	mvc *mvc;
 	sql_table *t;
-	BAT *all_offsets;
-	BAT *new_offsets;
-	BUN offset;
+	BAT *all_offsets; // all offsets ever generated
+	BAT *new_offsets; // as most recently returned by mvc_claim_slots.
+	BUN offset;	      // as most recently returned by mvc_claim_slots.
 };
 
 static void
@@ -744,6 +747,10 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 {
 	str msg = MAL_SUCCEED;
 
+	// these parameters aren't used right now, useful if we ever also move the
+	// old bunfastapp-on-temporary-bats scheme to the callback interface
+	// too, making SQLload_file fully mechanism agnostic.
+	// Then again, maybe just drop them instead.
 	(void)ncols;
 	(void)cols;
 
@@ -751,9 +758,8 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 	struct directappend *state = state_;
 
 	if (state->new_offsets != NULL) {
-		// leftover from previous round. logic below counts on it not being present.
-		// we can change that but have to do so carefully.
-		// for now just drop it
+		// Leftover from previous round, the logic below counts on it not being present.
+		// We can change that but have to do so carefully. for now just drop it.
 		BBPreclaim(state->new_offsets);
 		state->new_offsets = NULL;
 	}
@@ -770,14 +776,16 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 		goto bailout;
 	}
 
-	// Append the batch to all_offsets
+	// Append the batch to all_offsets.
 	if (state->new_offsets != NULL) {
 		if (BATappend(state->all_offsets, state->new_offsets, NULL, false) != GDK_SUCCEED) {
 			msg = createException(SQL, "sql.append_from", SQLSTATE(3F000) "BATappend failed");
 			goto bailout;
 		}
 	} else {
-		// is there a BATfunction for this?
+		// Help, there must be a BATfunction for this.
+		// Also, maybe we should try to make state->all_offsets a void BAT and only
+		// switch to materialized oid's if necessary.
 		BUN oldcount = BATcount(state->all_offsets);
 		BUN newcount = oldcount + nrows;
 		if (BATcapacity(state->all_offsets) < newcount) {
@@ -802,6 +810,9 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 	// In the remainder of the function, 'state->newoffsets' holds 'front_count'
 	// positions if it exists, while another 'back_count' positions start at
 	// 'back_offset'.
+	//
+	// TODO this code has become a little convoluted as it evolved.
+	// Needs straightening out.
 	size_t front_count;
 	size_t back_count;
 	BUN back_offset;
@@ -831,6 +842,7 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 		back_count = nrows;
 		back_offset = state->offset;
 	}
+	state->offset = back_offset;
 
 	// debugging
 	(void)front_count;
@@ -847,7 +859,6 @@ directappend_claim(void *state_, size_t nrows, size_t ncols, Column *cols[])
 	// 	fprintf(stderr, "consecutive offsets: " BUNFMT " .. " BUNFMT"\n", start, end);
 	// }
 
-	state->offset = back_offset;
 
 	assert(msg == MAL_SUCCEED);
 	return msg;
@@ -865,6 +876,8 @@ directappend_get_offsets_bat(void *state_)
 	return state->all_offsets;
 }
 
+// Currently we're appending the values one by one but we need to switch to
+// a bulk interface.
 static str
 directappend_append_one(void *state_, size_t idx, const void *const_data, void *col)
 {
@@ -1037,8 +1050,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			if (loadops) {
+				// Return a single result, the all_offsets BAT.
 				BAT *oids_bat = directappend_state.all_offsets;
-				directappend_state.all_offsets = NULL; // or we'd try to reclaim it later
+				directappend_state.all_offsets = NULL; // otherwise we'll try to reclaim it later
 				BBPfix(oids_bat->batCacheid);
 				(*bats)[0] = oids_bat;
 			} else {

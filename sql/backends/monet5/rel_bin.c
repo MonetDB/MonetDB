@@ -4239,12 +4239,12 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
+// Call this from the debugger at any time to see how code generation proceeds.
 void dump_code(int);
 static struct {
 	MalBlkPtr mb;
 	int pos;
 } dump_code_state;
-
 void
 dump_code(int starting_point)
 {
@@ -4270,6 +4270,9 @@ dump_code(int starting_point)
 	dump_code_state.pos = stop;
 }
 
+// This is basically a long list of reasons not to use the new direct append
+// code. The idea is that we'll gradually add support for more cases and shorten
+// this list until it disappears.
 static sql_exp*
 can_use_appendfrom(sql_rel *rel)
 {
@@ -4317,6 +4320,9 @@ can_use_appendfrom(sql_rel *rel)
 		projection = NULL;
 		incoming = p;
 	}
+	/* this seems to occur around foreign keys and it scares me */
+	if (projection && rel_is_ref(projection))
+		return NULL;
 
 	if (incoming == NULL) {
 		// happens for example with INSERT INTO foo VALUES (..),
@@ -4325,15 +4331,11 @@ can_use_appendfrom(sql_rel *rel)
 	}
 	if (incoming->op != op_table)
 		return NULL;
-
-	/* this seems to occur around foreign keys and it scares me */
-	if (projection && rel_is_ref(projection))
-		return NULL;
 	if (rel_is_ref(incoming))
 		return NULL;
-
 	if (incoming->flag != TABLE_PROD_FUNC)
 		return NULL;
+
 	sql_exp *copy_from = incoming->r;
 	if (copy_from->type != e_func)
 		return NULL;
@@ -4401,6 +4403,8 @@ can_use_appendfrom(sql_rel *rel)
 	return copy_from;
 }
 
+// Temporarily emit the MAL to call to sql.copy_from and aggr.count directly
+// from rel2bin_insert. This needs to move to rel2bin_exp.
 static stmt *
 rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 {
@@ -4423,7 +4427,7 @@ rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		list_append(l, arg_stmt);
 	}
 
-	// Then we emit the call. Maybe there's a stmt_function for that..
+	// Then emit the call. Maybe there's a stmt_function for that..
 	InstrPtr append_instr = newFcnCallArgs(mb, sqlRef, copy_fromRef, 100);
 	setDestType(mb, append_instr, newBatType(TYPE_oid));
 	for (node *n = l->h; n; n = n->next) {
@@ -4444,6 +4448,7 @@ rel2bin_directappend(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	// will make some else free the arg_stmt's we created here.
 	s->op4.lval = l;
 
+	// Accumulate row counts.
 	be->rowcount = be->rowcount
 		? add_to_rowcount_accumulator(be, s->nr)
 		: s->nr;
@@ -4461,10 +4466,13 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	dump_code_state.mb = be->mb;
 	// dump_code(0);
 
+	// If can_use_appendfrom doesn't return NULL, short circuit to
+	// the temporary dedicated code generator
 	sql_exp *copyfrom = can_use_appendfrom(rel);
 	if (copyfrom != NULL) {
 		// later on we'll do this properly, passing an extra parameter,
-		// for now we adjust an existing parameter
+		// for now we adjust an existing parameter.
+		// Very ugly, sorry
 		list *args = copyfrom->l;
 		sql_exp* arg7 = args->h->next->next->next->next->next->next->next->next->data;
 		assert(arg7->type == e_atom);

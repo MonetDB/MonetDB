@@ -2905,6 +2905,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool append_directly = false;
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 8);
 	if (besteffort >= 100) {
+		// this matches the temporary ugliness in rel2bin_insert
 		besteffort -= 100;
 		append_directly = true;
 	}

@@ -1570,7 +1570,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	char name[MT_NAME_LEN];
 
-	threads = 1;
+	// threads = 1;
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
@@ -1580,7 +1580,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		.from_stdin = from_stdin,
 		.as = as,
 		.escape = escape,		/* TODO: implement feature!!! */
-		// .loadops = loadops,
 		.loadops = loadops,
 	};
 
@@ -1775,7 +1774,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		}
 
 		if (task.top[task.cur] && loadops) {
-			/* while the worker threads are working, allocate rows */
+			/* claim rows in the table while waiting for the workers to finish,  */
 			str msg = loadops->claim(loadops->state, task.top[task.cur], 0, NULL);
 			if (msg != MAL_SUCCEED) {
 				tablet_error(&task, BATcount(countbat), lng_nil, lng_nil, msg, "SQLload_file");
