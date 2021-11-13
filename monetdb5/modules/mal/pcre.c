@@ -2214,6 +2214,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	BAT *result1 = NULL, *result2 = NULL;
 	char *msg = MAL_SUCCEED, *esc = "";
 	bit ci;
+	BATiter bi;
 
 	if ((left = BATdescriptor(lid)) == NULL)
 		goto fail;
@@ -2252,10 +2253,6 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 		msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the escape input at pcre join");
 		goto fail;
 	}
-	BATiter bi;
-	bi = bat_iterator(escape);
-	esc = BUNtvar(bi, 0);
-	bat_iterator_end(&bi);
 	if (BATcount(caseignore) != 1) {
 		msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the case ignore input at pcre join");
 		goto fail;
@@ -2263,7 +2260,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	bi = bat_iterator(caseignore);
 	ci = *(bit*)BUNtail(bi, 0);
 	bat_iterator_end(&bi);
+	bi = bat_iterator(escape);
+	esc = BUNtvar(bi, 0);
 	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci, anti);
+	bat_iterator_end(&bi);
 	if (msg)
 		goto fail;
 	*r1 = result1->batCacheid;

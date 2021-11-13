@@ -201,6 +201,11 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	MalBlkPtr nmb;
 	MALfcn fcn;
 
+	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
+		// TODO: trivial case
+		return NULL;
+	}
+
 	if (pci->retc >1 || pci->argc > 8 || getModuleId(pci) == NULL) // limitation on MANIFOLDjob
 		return NULL;
 	// We need a private MAL context to resolve the function call
@@ -379,6 +384,8 @@ MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #include "mel.h"
 mel_func manifold_init_funcs[] = {
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("a",0))),
+ pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("card", lng), arg("mod",str),arg("fcn",str))),
+ pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,5, varargany("",0),arg("card", lng), arg("mod",str),arg("fcn",str),varargany("a",0))),
  pattern("batmal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("a",0))),
  pattern("mal", "manifold", MANIFOLDevaluate, false, "", args(1,4, batargany("",0),arg("mod",str),arg("fcn",str),varargany("a",0))),
  { .imp=NULL }

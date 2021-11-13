@@ -1111,6 +1111,7 @@ backend_create_mal_func(mvc *m, sql_func *f)
 	if (!f->instantiated) {
 		char *F = NULL, *fn = NULL;
 		bit side_effect = f->side_effect;
+		int clientid = m->clientid;
 
 		FUNC_TYPE_STR(f->type, F, fn)
 		(void) F;
@@ -1123,7 +1124,7 @@ backend_create_mal_func(mvc *m, sql_func *f)
 			unlock_function(m->store, f->base.id);
 			return -1;
 		}
-		if (!backend_resolve_function(&(m->clientid), f)) {
+		if (!backend_resolve_function(&clientid, f)) {
 			(void) sql_error(m, 02, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
 			_DELETE(f->imp);
 			unlock_function(m->store, f->base.id);
