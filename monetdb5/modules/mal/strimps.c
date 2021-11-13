@@ -148,7 +148,7 @@ mel_func strimp_init_funcs[] = {
  /* String imprints */
  // pattern("bat", "strimpNDigrams", PATstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
  // pattern("bat", "strimpHistogram", PATstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
- pattern("strimps", "mkstrimp", PATstrimpCreate, false, "construct the strimp a BAT", args(1,3,arg("",void),batarg("b",str),batarg("s",oid))),
+ pattern("strimps", "mkstrimp", PATstrimpCreate, true, "construct the strimp a BAT", args(1,3,arg("",void),batarg("b",str),batarg("s",oid))),
  pattern("strimps", "strimpfilter", PATstrimpFilter, false, "", args(1,3,arg("",bit),arg("b",str),arg("q",str))),
  pattern("strimps", "strimpfilterselect", PATstrimpFilterSelect, false, "", args(1,5,batarg("",oid),batarg("b",str),batarg("s",oid),arg("q",str),arg("a",bit))),
  pattern("strimps", "strimpfilterjoin", PATstrimpFilter, false, "", args(2,8,batarg("",oid),batarg("b",str),arg("q",str))),
