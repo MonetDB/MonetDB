@@ -716,6 +716,7 @@ STRMPcreate(BAT *b, BAT *s) {
 			}
 			bat_iterator_end(&bi);
 
+			r->strimps.free += ncand*sizeof(uint64_t);
 			pb->tstrimps = r;
 			pb->batDirtydesc = true;
 			persistStrimp(pb);
@@ -723,6 +724,48 @@ STRMPcreate(BAT *b, BAT *s) {
                 MT_lock_unset(&pb->batIdxLock);
         }
         TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+	return GDK_SUCCEED;
+}
+
+gdk_return
+STRMPappendBitstring(BAT *b, const str s) {
+	lng t0 = 0;
+	BAT *pb;
+
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	if (ATOMstorage(b->ttype) != TYPE_str) {
+		GDKerror("Cannot manipulate strimps index for non string bats\n");
+		return GDK_FAIL;
+	}
+
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	if (!BATcheckstrimps(pb)) {
+		GDKerror("Strimp missing, cannot append value\n");
+		return GDK_FAIL;
+	}
+	MT_lock_set(&pb->batIdxLock);
+	// Check that there is space in the heap
+	if (pb->tstrimps->strimps.free < pb->tstrimps->strimps.size + sizeof(uint64_t)) {
+		pb->tstrimps->strimps.base[pb->tstrimps->strimps.free] = STRMPmakebitstring(s, pb->tstrimps);
+		pb->tstrimps->strimps.free += sizeof(uint64_t);
+	}
+	else {
+		// TODO reallocate buffer
+	}
+
+	// TODO increase reconstruction counter if
+	// reconstruction counter is larger than a threshold
+	// recompute the strimp from scratch.
+
+	MT_lock_unset(&pb->batIdxLock);
+
+	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 }
 
