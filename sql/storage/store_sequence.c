@@ -170,7 +170,7 @@ seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng *start, lng 
 	lng nr = 0;
 	node *n = NULL;
 	store_sequence *s;
-	int save = 0;
+	boot save = false;
 
 	store_lock(store);
 	for ( n = sql_seqs->h; n; n = n ->next ) {
@@ -194,8 +194,7 @@ seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng *start, lng 
 	s->called = 1;
 	*start = s->cur;
 	*inc = seq->increment;
-	if (seq->cycle)
-		*minv = seq->minvalue;
+	*minv = seq->cycle ? seq->minvalue : 0;
 	*maxv = seq->maxvalue;
 	for(lng i = 0; i < cnt; i++) {
 		/* handle min/max and cycle */
@@ -205,7 +204,7 @@ seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng *start, lng 
 			if (seq->cycle) {
 				/* cycle to the min value again */
 				s->cur = seq->minvalue;
-				save = 1;
+				save = true;
 			} else { /* we're out of numbers */
 				store_unlock(store);
 				return 0;
