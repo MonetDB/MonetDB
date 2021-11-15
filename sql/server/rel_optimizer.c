@@ -9401,7 +9401,7 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_basecount(visitor *v, sql_rel *rel)
 {
-	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->l && list_empty(rel->r) && 
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->l && list_empty(rel->r) &&
 		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *bt = rel->l;
 		sql_exp *e = rel->exps->h->data;

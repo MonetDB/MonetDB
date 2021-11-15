@@ -2683,6 +2683,8 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					l = rel->l;
 					if (l && on_right && (!is_join(l->op) || (is_project(rel->op) && lsq->card <= CARD_ATOM && rsq->card <= CARD_ATOM)))
 						on_right = 0;
+					if (l && on_right && exp_has_freevar(sql, le))
+						set_dependent(l);
 				}
 				if (rsq) {
 					if (on_right) {

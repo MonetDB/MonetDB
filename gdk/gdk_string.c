@@ -1091,9 +1091,12 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_ni
 	BUN ncand;
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid bhseq = b->hseqbase, shseq = sep ? sep->hseqbase : 0;
+	gdk_return r = GDK_SUCCEED;
+	bool free_nseparator = false;
+	char *nseparator = (char *)separator;
 
 	(void) abort_on_error;
-	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	res->vtype = TYPE_str;
 
 	ncand = canditer_init(&ci1, b, s1);
@@ -1107,20 +1110,28 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s1, BAT *sep, BAT *s2, bool skip_ni
 		if (ncand2 == 1) { /* Only one element in sep */
 			BATiter bi = bat_iterator(sep);
 			BUN p = canditer_next(&ci2) - shseq;
-			separator = BUNtvar(bi, p);
+			nseparator = GDKstrdup(BUNtvar(bi, p));
 			bat_iterator_end(&bi);
+			if (!nseparator)
+				return GDK_FAIL;
+			free_nseparator = true;
 			sep = NULL;
 		}
 	}
 
-	if (ncand == 0 || (separator && strNil(separator))) {
+	if (ncand == 0 || (nseparator && strNil(nseparator))) {
 		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
-			return GDK_FAIL;
-		return GDK_SUCCEED;
+			r = GDK_FAIL;
+		if (free_nseparator)
+			GDKfree(nseparator);
+		return r;
 	}
 
-	return concat_strings(NULL, res, b, bhseq, 1, &ci1, &ci2, ncand, NULL, 0, 0,
-			      skip_nils, sep, shseq, separator, NULL);
+	r = concat_strings(NULL, res, b, bhseq, 1, &ci1, &ci2, ncand, NULL, 0, 0,
+			      skip_nils, sep, shseq, nseparator, NULL);
+	if (free_nseparator)
+		GDKfree(nseparator);
+	return r;
 }
 
 BAT *
@@ -1133,8 +1144,10 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 	struct canditer ci1 = {0}, ci2 = {0};
 	const char *err;
 	gdk_return res;
+	bool free_nseparator = false;
+	char *nseparator = (char *)separator;
 
-	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s1, &min, &max, &ngrp,
@@ -1151,8 +1164,11 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 		if (ncand2 == 1) { /* Only one element in sep */
 			BATiter bi = bat_iterator(sep);
 			BUN p = canditer_next(&ci2) - shseq;
-			separator = BUNtvar(bi, p);
+			nseparator = GDKstrdup(BUNtvar(bi, p));
 			bat_iterator_end(&bi);
+			if (!nseparator)
+				return GDK_FAIL;
+			free_nseparator = true;
 			sep = NULL;
 		}
 	} else if (g == NULL) {
@@ -1160,24 +1176,29 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s1, BAT *sep, BAT *s2, boo
 		return NULL;
 	}
 
-	if (ncand == 0 || ngrp == 0 || (separator && strNil(separator))) {
+	if (ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+		goto done;
 	}
 
 	if (BATtdense(g) || (g->tkey && g->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s1, TYPE_str, abort_on_error, 0, 0, 0);
+		bn = BATconvert(b, s1, TYPE_str, abort_on_error, 0, 0, 0);
+		goto done;
 	}
 
 	res = concat_strings(&bn, NULL, b, bhseq, ngrp, &ci1, &ci2, ncand,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep, shseq,
-			     separator, &nils);
+			     nseparator, &nils);
 	if (res != GDK_SUCCEED)
-		return NULL;
+		bn = NULL;
 
+done:
+	if (free_nseparator)
+		GDKfree(nseparator);
 	return bn;
 }
 

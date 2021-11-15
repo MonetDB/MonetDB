@@ -507,6 +507,7 @@ takeOid(oid id, str *val)
 {
 	int i, depth;
 	str parts[MAX_TKNZR_DEPTH];
+	BATiter iters[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
 
@@ -520,16 +521,18 @@ takeOid(oid id, str *val)
 	id = GET_h(id);
 
 	for (i = depth - 1; i >= 0; i--) {
-		BATiter bi = bat_iterator(tokenBAT[i].val);
-		parts[i] = (str) BUNtvar(bi, id);
-		bat_iterator_end(&bi);
+		iters[i] = bat_iterator(tokenBAT[i].val);
+		parts[i] = (str) BUNtvar(iters[i], id);
 		id = BUNtoid(tokenBAT[i].idx, id);
 		lngth += strlen(parts[i]);
 	}
 
 	*val = (str) GDKmalloc(lngth+depth+1);
-	if( *val == NULL)
+	if (*val == NULL) {
+		for (i = 0; i < depth; i++)
+			bat_iterator_end(&iters[i]);
 		throw(MAL, "tokenizer.takeOid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	s = *val;
 
 	for (i = 0; i < depth; i++) {
@@ -538,6 +541,8 @@ takeOid(oid id, str *val)
 		*s++ = '/';
 	}
 	*s = '\0';
+	for (i = 0; i < depth; i++)
+		bat_iterator_end(&iters[i]);
 
 	return MAL_SUCCEED;
 }

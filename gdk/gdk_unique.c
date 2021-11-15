@@ -31,7 +31,7 @@ BATunique(BAT *b, BAT *s)
 	const char *vals;
 	const char *vars;
 	int width;
-	oid i, o;
+	oid i, o, hseq;
 	const char *nme;
 	Hash *hs = NULL;
 	BUN hb;
@@ -102,6 +102,7 @@ BATunique(BAT *b, BAT *s)
 		vars = NULL;
 	width = bi.width;
 	cmp = ATOMcompare(bi.type);
+	hseq = b->hseqbase;
 
 	if (ATOMbasetype(bi.type) == TYPE_bte ||
 	    (bi.width == 1 &&
@@ -114,7 +115,7 @@ BATunique(BAT *b, BAT *s)
 		memset(seen, 0, sizeof(seen));
 		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
-			val = ((const uint8_t *) vals)[o - b->hseqbase];
+			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
 			if (!(seen[val >> 5] & m)) {
 				seen[val >> 5] |= m;
@@ -140,7 +141,7 @@ BATunique(BAT *b, BAT *s)
 		memset(seen, 0, sizeof(seen));
 		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
-			val = ((const uint16_t *) vals)[o - b->hseqbase];
+			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
 			if (!(seen[val >> 5] & m)) {
 				seen[val >> 5] |= m;
@@ -160,7 +161,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: sorted";
 		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
-			v = VALUE(o - b->hseqbase);
+			v = VALUE(o - hseq);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 					goto bunins_failed;
@@ -174,13 +175,11 @@ BATunique(BAT *b, BAT *s)
 		    cnt == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
 		BUN lo = 0;
-		oid seq;
 
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
 		algomsg = "unique: existing hash";
-		seq = b->hseqbase;
 		MT_rwlock_rdlock(&b->thashlock);
 		hs = b->thash;
 		if (hs == NULL) {
@@ -191,14 +190,14 @@ BATunique(BAT *b, BAT *s)
 			BUN p;
 
 			o = canditer_next(&ci);
-			p = o - seq;
+			p = o - hseq;
 			v = VALUE(p);
 			for (hb = HASHgetlink(hs, p + lo);
 			     hb != BUN_NONE && hb >= lo;
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p + lo);
 				if (cmp(v, BUNtail(bi, hb)) == 0 &&
-				    canditer_contains(&ci, hb - lo + seq)) {
+				    canditer_contains(&ci, hb - lo + hseq)) {
 					/* we've seen this value
 					 * before */
 					break;
@@ -251,7 +250,7 @@ BATunique(BAT *b, BAT *s)
 		}
 		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
 			o = canditer_next(&ci);
-			v = VALUE(o - b->hseqbase);
+			v = VALUE(o - hseq);
 			prb = HASHprobe(hs, v);
 			for (hb = HASHget(hs, prb);
 			     hb != BUN_NONE;
@@ -260,7 +259,7 @@ BATunique(BAT *b, BAT *s)
 					break;
 			}
 			if (hb == BUN_NONE) {
-				p = o - b->hseqbase;
+				p = o - hseq;
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 					goto bunins_failed;
 				/* enter into hash table */
