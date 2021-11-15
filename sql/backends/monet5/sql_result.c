@@ -1052,6 +1052,12 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			if (loadops) {
 				// Return a single result, the all_offsets BAT.
 				BAT *oids_bat = directappend_state.all_offsets;
+				oids_bat->tnil = false;
+				oids_bat->tnonil = true;
+				oids_bat->tsorted = true;
+				oids_bat->trevsorted = false;
+				oids_bat->tkey = true;
+				oids_bat->tseqbase = oid_nil;
 				directappend_state.all_offsets = NULL; // otherwise we'll try to reclaim it later
 				BBPfix(oids_bat->batCacheid);
 				(*bats)[0] = oids_bat;
