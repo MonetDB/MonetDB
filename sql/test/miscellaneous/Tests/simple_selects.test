@@ -928,4 +928,30 @@ select next value for ups from generate_series(1,20)
 9
 
 statement ok
+create sequence ups2 INCREMENT BY 1 MINVALUE -10 MAXVALUE 0 CYCLE
+
+query I nosort
+select next value for ups2 from generate_series(1,20)
+----
+-10
+-9
+-8
+-7
+-6
+-5
+-4
+-3
+-2
+-1
+0
+-10
+-9
+-8
+-7
+-6
+-5
+-4
+-3
+
+statement ok
 rollback
