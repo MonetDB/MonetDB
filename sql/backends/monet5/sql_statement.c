@@ -40,14 +40,6 @@ convertMultiplexFcn(const char *op)
 	return op;
 }
 
-static const char *
-convertOperator(const char *op)
-{
-	if (strcmp(op, "=") == 0)
-		return "==";
-	return op;
-}
-
 static InstrPtr
 multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int rtype)
 {
@@ -1369,7 +1361,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		node *n;
 
 		op = sa_strconcat(be->mvc->sa, op, selectRef);
-		q = newStmtArgs(mb, mod, convertOperator(op), 9);
+		q = newStmtArgs(mb, mod, convertMultiplexFcn(op), 9);
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
@@ -1472,7 +1464,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
 
-		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL)
+		if ((q = multiplex2(mb, mod, convertMultiplexFcn(op), l, r, TYPE_bit)) == NULL)
 			return NULL;
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
@@ -3312,16 +3304,16 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = sql_func_imp(f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = 0;
-
-	node *n;
-	stmt *o = NULL;
+	int push_cands = 0, default_nargs;
+	stmt *o = NULL, *card = NULL;
 
 	if (rows) {
+		if (sel) /* if there's a candidate list, use it instead of 'rows' */
+			rows = sel;
 		o = rows;
-	}
-	else if (list_length(ops->op4.lval)) {
-		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
+	} else if (list_length(ops->op4.lval)) {
+		o = ops->op4.lval->h->data;
+		for (node *n = ops->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 
 			if (c && o->nrcols < c->nrcols)
@@ -3358,40 +3350,38 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
-		fimp = sql_func_imp(f->func);
+		fimp = convertMultiplexFcn(sql_func_imp(f->func));
 		push_cands = can_push_cands(sel, mod, fimp);
+		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
+		if (rows) {
+			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+			default_nargs++;
+		}
+
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
-			fimp = convertMultiplexFcn(fimp);
-			q = NULL;
-			if (strcmp(fimp, "rotate_xor_hash") == 0 &&
-				strcmp(mod, calcRef) == 0 &&
-				(q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef)) == NULL)
-				return NULL;
-			if (!q) {
-				if (f->func->type == F_UNION)
-					q = newStmtArgs(mb, batmalRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
-				else {
-					if (rows) {
-						stmt *card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-						q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 7);
-						q = pushArgument(mb, q, card->nr);
-					}
-					else
-						q = newStmtArgs(mb, malRef, multiplexRef, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 6);
-				}
+
+			if (strcmp(fimp, "rotate_xor_hash") == 0 && strcmp(mod, calcRef) == 0) {
+				q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef);
 				if (q == NULL)
 					return NULL;
-				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+			} else {
+				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+				if (q == NULL)
+					return NULL;
+				if (rows)
+					q = pushArgument(mb, q, card->nr);
 				q = pushStr(mb, q, mod);
 				q = pushStr(mb, q, fimp);
-			} else {
-				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 			}
+			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
-			fimp = convertOperator(fimp);
-			q = newStmtArgs(mb, mod, fimp, (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + 4);
+			q = newStmtArgs(mb, mod, fimp, default_nargs);
+			if (q == NULL)
+				return NULL;
 
+			if (rows)
+				q = pushArgument(mb, q, card->nr);
 			if (f->res && list_length(f->res)) {
 				sql_subtype *res = f->res->h->data;
 
@@ -3415,13 +3405,13 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (list_length(ops->op4.lval))
 			tpe = tail_type(ops->op4.lval->h->data);
 
-		for (n = ops->op4.lval->h; n; n = n->next) {
+		for (node *n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
 		if (f->func->type == F_FUNC && push_cands) {
-			for (n = ops->op4.lval->h; n; n = n->next) {
+			for (node *n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
