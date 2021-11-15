@@ -170,7 +170,7 @@ seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng *start, lng 
 	lng nr = 0;
 	node *n = NULL;
 	store_sequence *s;
-	boot save = false;
+	bool save = false;
 
 	store_lock(store);
 	for ( n = sql_seqs->h; n; n = n ->next ) {
