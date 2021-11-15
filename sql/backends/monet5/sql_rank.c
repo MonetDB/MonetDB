@@ -1097,10 +1097,10 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 {
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
-	const void *restrict default_value;
+	void *restrict default_value;
 	gdk_return (*gdk_call)(BAT *, BAT *, BAT *, BUN, const void* restrict, int) = func;
 	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
-	bool tp2_is_a_bat;
+	bool tp2_is_a_bat, free_default_value = false;
 	str msg = MAL_SUCCEED;
 	bat *res = NULL;
 
@@ -1144,6 +1144,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		tp3 = getArgType(mb, pci, 3);
 		if (isaBatType(tp3)) {
 			BATiter bpi;
+			size_t default_size;
+			const void *p;
 
 			tp3 = getBatType(tp3);
 			if (!(d = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
@@ -1151,8 +1153,17 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 				goto bailout;
 			}
 			bpi = bat_iterator(d);
-			default_value = BUNtail(bpi, 0);
+			p = BUNtail(bpi, 0);
+			default_size = ATOMlen(tp3, p);
+			default_value = GDKmalloc(default_size);
+			if (default_value)
+				memcpy(default_value, p, default_size);
 			bat_iterator_end(&bpi);
+			if (!default_value) {
+				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			free_default_value = true;
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);
@@ -1162,7 +1173,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		int tpe = tp1;
 		if (isaBatType(tpe))
 			tpe = getBatType(tp1);
-		default_value = ATOMnilptr(tpe);
+		default_value = (void *)ATOMnilptr(tpe);
 	}
 
 	assert(default_value); //default value must be set
@@ -1209,6 +1220,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	}
 
 bailout:
+	if (free_default_value)
+		GDKfree(default_value);
 	unfix_inputs(4, b, p, l, d);
 	finalize_output(res, r, msg);
 	return msg;

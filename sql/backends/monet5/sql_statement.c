@@ -3359,7 +3359,7 @@ stmt_nullif(backend *be, stmt *s1, stmt *s2, stmt *sel, sql_subfunc *op)
 stmt *
 stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op)
 {
-	return stmt_Nop(be, stmt_list(be, list_append(sa_list(be->mvc->sa), op1)), sel, op);
+	return stmt_Nop(be, stmt_list(be, list_append(sa_list(be->mvc->sa), op1)), sel, op, NULL);
 }
 
 stmt *
@@ -3368,29 +3368,34 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	list_append(ops, op2);
-	return stmt_Nop(be, stmt_list(be, ops), sel, op);
+	return stmt_Nop(be, stmt_list(be, ops), sel, op, NULL);
 }
 
 stmt *
-stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
+stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt *rows)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
-	int push_cands, pushed = 0, nrcols = 0, default_nargs;
-	node *n;
-	stmt *o = NULL;
+	int push_cands = 0, pushed = 0, nrcols = 0, default_nargs;
+	stmt *o = NULL, *card = NULL;
 
 	if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = convertMultiplexFcn(sql_func_imp(f->func));
-	push_cands = ((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
-		(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
 
-	if (list_length(ops->op4.lval)) {
-		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
+	if (rows) {
+		if (sel) /* if there's a candidate list, use it instead of 'rows' */
+			rows = sel;
+		o = rows;
+	} else if (list_length(ops->op4.lval)) {
+		push_cands = ((strcmp(mod, "calc") == 0 && strcmp(fimp, "ifthenelse") != 0) || strcmp(mod, "mmath") == 0 || strcmp(mod, "mtime") == 0 || strcmp(mod, "mkey") == 0 ||
+			(strcmp(mod, "str") == 0 && batstr_func_has_candidates(fimp)) || strcmp(mod, "algebra") == 0 || strcmp(mod, "blob") == 0);
+
+		o = ops->op4.lval->h->data;
+		for (node *n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
 			if (!push_cands && sel && op->nrcols > 0 && !op->cand){ /* don't push cands twice */
@@ -3403,7 +3408,12 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 				nrcols++;
 		}
 	}
+
 	default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
+	if (rows) {
+		card = stmt_aggr(be, rows, NULL, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+		default_nargs++;
+	}
 	if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 		sql_subtype *res = f->res->h->data;
 
@@ -3413,6 +3423,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 			q = newStmtArgs(mb, batmodule, fimp, default_nargs);
 		} else {
 			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+			if (rows)
+				q = pushArgument(mb, q, card->nr);
 			q = pushStr(mb, q, mod);
 			q = pushStr(mb, q, fimp);
 		}
@@ -3420,6 +3432,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	} else {
 		q = newStmtArgs(mb, mod, fimp, default_nargs);
 
+		if (rows)
+			q = pushArgument(mb, q, card->nr);
 		if (f->res && list_length(f->res)) {
 			sql_subtype *res = f->res->h->data;
 
@@ -3443,13 +3457,13 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 	if (list_length(ops->op4.lval))
 		tpe = tail_type(ops->op4.lval->h->data);
 
-	for (n = ops->op4.lval->h; n; n = n->next) {
+	for (node *n = ops->op4.lval->h; n; n = n->next) {
 		stmt *op = n->data;
 		q = pushArgument(mb, q, op->nr);
 	}
 	/* push candidate lists if that's the case */
 	if (push_cands) {
-		for (n = ops->op4.lval->h; n; n = n->next) {
+		for (node *n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
 			if (op->nrcols > 0) {

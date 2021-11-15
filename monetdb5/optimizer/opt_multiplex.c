@@ -50,10 +50,10 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isAnyExpression(getArgType(mb, pci, i)))
 			throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Target type is missing");
 	}
-
-	mod = VALget(&getVar(mb, getArg(pci, pci->retc))->value);
+	int plus_one = getArgType(mb, pci, pci->retc) == TYPE_lng ? 1 : 0;
+	mod = VALget(&getVar(mb, getArg(pci, pci->retc + plus_one))->value);
 	mod = putName(mod);
-	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
+	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1 + plus_one))->value);
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -66,7 +66,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #endif
 
-	/* search the iterator bat */
+	if (plus_one) {
+		q = newFcnCallArgs(mb, batRef, putName("densebat"), 2);
+		q = pushArgument(mb, q, getArg(pci, pci->retc));
+		iter = getArg(q,0);
+	}
+	else /* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
@@ -112,7 +117,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pushArgument(mb,q,iter);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
-	for (i = pci->retc+2; i < pci->argc; i++) {
+	for (i = pci->retc+2+plus_one; i < pci->argc; i++) {
 		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getBatType(getArgType(mb, pci, i)));
@@ -123,7 +128,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* cr:= mod.CMD($1,...,$n); */
-	q = newFcnCallArgs(mb, mod, fcn, pci->argc - 2);
+	q = newFcnCallArgs(mb, mod, fcn, pci->argc - 2 - plus_one);
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {
@@ -138,7 +143,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q, 0) = nvar;
 	}
 
-	for (i = pci->retc+2; i < pci->argc; i++) {
+	for (i = pci->retc+2+plus_one; i < pci->argc; i++) {
 		if (getArg(pci, i) == iter) {
 			q = pushArgument(mb, q, tvar);
 		} else if (isaBatType(getArgType(mb, pci, i))) {

@@ -108,6 +108,16 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
+				} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
+					/* id = mirror(col) with col = for.decompress(o,min_val)
+					 * id = mirror(o) */
+					InstrPtr r = copyInstruction(p);
+					getArg(r, j) = varisfor[k];
+					pushInstruction(mb,r);
+					freeInstruction(p);
+					done = 1;
+					break;
+				} else if (isSelect(p)) {
 				} else// if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
 						/* pos = thetaselect(col, cand, l, ...) with col = for.decompress(o, minval)
@@ -242,7 +252,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for(; i<slimit; i++)
 		if (old[i])
-			pushInstruction(mb, old[i]);
+			freeInstruction(old[i]);
 	/* Defense line against incorrect plans */
 	if (actions > 0){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
