@@ -752,7 +752,8 @@ STRMPappendBitstring(BAT *b, const str s) {
 	MT_lock_set(&pb->batIdxLock);
 	// Check that there is space in the heap
 	if (pb->tstrimps->strimps.free < pb->tstrimps->strimps.size + sizeof(uint64_t)) {
-		pb->tstrimps->strimps.base[pb->tstrimps->strimps.free] = STRMPmakebitstring(s, pb->tstrimps);
+		uint64_t *dh = (uint64_t *)pb->tstrimps->strimps.base + pb->tstrimps->strimps.free;
+		*dh = STRMPmakebitstring(s, pb->tstrimps);
 		pb->tstrimps->strimps.free += sizeof(uint64_t);
 	}
 	else {
