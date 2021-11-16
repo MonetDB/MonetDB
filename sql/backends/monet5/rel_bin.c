@@ -2276,7 +2276,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			sql_subfunc *xor = sql_bind_func_result(sql, "sys", "rotate_xor_hash", F_FUNC, lng, 3, lng, it, tail_type(s));
 
 			h = stmt_Nop(be, stmt_list(be, list_append( list_append(
-				list_append(sa_list(sql->sa), h), bits), s)), NULL, xor, false);
+				list_append(sa_list(sql->sa), h), bits), s)), NULL, xor, NULL);
 			semantics = 1;
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql, "sys", "hash", F_FUNC, lng, 1, tail_type(s));
@@ -2324,7 +2324,6 @@ join_hash_key( backend *be, list *l )
 static stmt *
 releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, int need_left, int is_semantics )
 {
-	mvc *sql = be->mvc;
 	node *n1 = l1->h, *n2 = l2->h, *n3 = NULL;
 	stmt *l, *r, *res;
 	sql_exp *e;
@@ -2361,25 +2360,14 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, int need_
 		stmt *rd = n2->data;
 		stmt *le = stmt_project(be, l, ld );
 		stmt *re = stmt_project(be, r, rd );
+		stmt *cmp;
 		/* intentional both tail_type's of le (as re sometimes is a find for bulk loading */
-		sql_subfunc *f = NULL;
-		stmt * cmp;
-		list *ops;
 
-		f = sql_bind_func(sql, "sys", "=", tail_type(le), tail_type(le), F_FUNC);
-		assert(f);
-
-		ops = sa_list(be->mvc->sa);
-		list_append(ops, le);
-		list_append(ops, re);
 		if (!semantics && exps) {
 			e = n3->data;
 			semantics = is_semantics(e);
 		}
-		if (semantics)
-			list_append(ops, stmt_bool(be, 1));
-		cmp = stmt_Nop(be, stmt_list(be, ops), NULL, f, NULL);
-		cmp = stmt_uselect(be, cmp, stmt_bool(be, 1), cmp_equal, NULL, 0, 0);
+		cmp = stmt_uselect(be, le, re, cmp_equal, NULL, 0, semantics);
 		l = stmt_project(be, cmp, l );
 		r = stmt_project(be, cmp, r );
 	}
@@ -2537,7 +2525,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			(void) equality_only;
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
 			/* generate a relational join (releqjoin) which does a multi attribute (equi) join */
-			for( en = jexps->h; en && !used_hash; en = en->next ) {
+			for( en = jexps->h; en ; en = en->next ) {
 				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
@@ -2557,15 +2545,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 						list_append(lje, s->op1);
 						list_append(rje, s->op2);
 						list_append(exps, NULL);
-						used_hash = 1; /* uses hash, all jexps were consumed */
+						used_hash = 1;
 					} else {
 						/* hash lookup cannot be used, clean leftover mal statements */
 						clean_mal_statements(be, oldstop, oldvtop, oldvid);
 					}
 				}
 
-				if (!s)
-					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
+				s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
 				if (!s) {
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
@@ -3635,10 +3622,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			sql_idx *i = p->value;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
-			if ((sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en)))
-				goto done;
-			/* hash lookup cannot be used, clean leftover mal statements */
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {
+				/* hash lookup cannot be used, clean leftover mal statements */
+				clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			}
 		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
@@ -3665,7 +3652,6 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-done:
 	if (sub && sel) {
 		sub = stmt_list(be, sub->op4.lval); /* protect against references */
 		sub->cand = sel;
@@ -5202,7 +5188,7 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 			h = stmt_Nop(be, stmt_list( be, list_append( list_append(
 				list_append(sa_list(sql->sa), h),
 				stmt_atom_int(be, bits)),  upd)), NULL,
-				xor, false);
+				xor, NULL);
 		} else if (h)  {
 			stmt *h2;
 			sql_subfunc *lsh = sql_bind_func_result(sql, "sys", "left_shift", F_FUNC, lng, 2, lng, it);
