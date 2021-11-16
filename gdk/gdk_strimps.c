@@ -788,6 +788,60 @@ STRMPappendBitstring(BAT *b, const str s)
 	return GDK_SUCCEED;
 }
 
+void
+STRMPdecref(Strimps *strimps, bool remove)
+{
+	strimps->strimps.remove |= remove;
+	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
+		ATOMIC_DESTROY(&strimps->strimps.refs);
+		HEAPfree(&strimps->strimps, strimps->strimps.remove);
+		GDKfree(strimps);
+	}
+}
+
+void
+STRMPdestroy(BAT *b)
+{
+	if (b && b->tstrimps) {
+		MT_lock_set(&b->batIdxLock);
+		if (b->tstrimps == (Strimps *)1) {
+			b->tstrimps = NULL;
+			GDKunlink(BBPselectfarm(b->batRole, b->ttype, strimpheap),
+				  BATDIR,
+				  BBP_physical(b->batCacheid),
+				  "tstrimps");
+		} else if (b->tstrimps != NULL) {
+			STRMPdecref(b->tstrimps, b->tstrimps->strimps.parentid == b->batCacheid);
+			b->tstrimps = NULL;
+		}
+		MT_lock_unset(&b->batIdxLock);
+	}
+}
+
+void
+STRMPfree(BAT *b)
+{
+	if (b && b->tstrimps) {
+		Strimps *s;
+		MT_lock_set(&b->batIdxLock);
+		if ((s = b->tstrimps) != NULL && s != (Strimps *)1) {
+			if (GDKinmemory(s->strimps.farmid)) {
+				b->tstrimps = NULL;
+				STRMPdecref(s, s->strimps.parentid == b->batCacheid);
+			}
+			else {
+				if (s->strimps.parentid == b->batCacheid)
+					b->tstrimps = (Strimps *)1;
+				else
+					b->tstrimps = NULL;
+				STRMPdecref(s, false);
+			}
+
+		}
+		MT_lock_unset(&b->batIdxLock);
+	}
+}
+
 /* Parallel creation. does not wok*/
 #if 0
 /* Creates the heap for a string imprint. Returns NULL on failure. This
