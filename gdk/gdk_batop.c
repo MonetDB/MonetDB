@@ -693,6 +693,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
+	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	MT_lock_set(&b->theaplock);
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
@@ -906,6 +907,7 @@ BATdel(BAT *b, BAT *d)
 	OIDXdestroy(b);
 	HASHdestroy(b);
 	PROPdestroy(b);
+	STRMPdestroy(b);
 	if (BATtdense(d)) {
 		oid o = d->tseqbase;
 		BUN c = BATcount(d);
@@ -1107,6 +1109,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 	OIDXdestroy(b);
 	IMPSdestroy(b);
+	STRMPdestroy(b);
 	MT_lock_set(&b->theaplock);
 	if (ni.count > BATcount(b) / GDK_UNIQUE_ESTIMATE_KEEP_FRACTION) {
 		b->tunique_est = 0;

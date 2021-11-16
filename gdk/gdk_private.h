@@ -229,6 +229,12 @@ void IMPSincref(Imprints *imprints)
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
+void STRMPdecref(Strimps *strimps, bool remove)
+	__attribute__((__visibility__("hidden")));
+void STRMPdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
+void STRMPfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mmap(const char *path, int mode, size_t len)
