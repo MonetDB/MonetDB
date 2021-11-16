@@ -116,21 +116,24 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
 inline static bool
-pair_equal(CharPair *p1, CharPair *p2) {
+pair_equal(CharPair *p1, CharPair *p2)
+{
 	return p1->pbytes[0] == p2->pbytes[0] &&
 		p1->pbytes[1] == p2->pbytes[1];
 
 }
 
 inline static size_t
-histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p) {
+histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
+{
 	(void) hist;
 	(void) hsize;
 	return pairToIndex(p->pbytes[0], p->pbytes[1]);
 }
 
 inline static bool
-pair_at(PairIterator *pi, CharPair *p) {
+pair_at(PairIterator *pi, CharPair *p)
+{
 	if (pi->pos >= pi->lim)
 		return false;
 	p->pbytes = (uint8_t*)pi->s + pi->pos;
@@ -139,7 +142,8 @@ pair_at(PairIterator *pi, CharPair *p) {
 }
 
 inline static bool
-next_pair(PairIterator *pi) {
+next_pair(PairIterator *pi)
+{
 	if (pi->pos >= pi->lim)
 		return false;
 	pi->pos++;
@@ -149,7 +153,8 @@ next_pair(PairIterator *pi) {
 /* Returns true if the specified char is ignored.
  */
 inline static bool
-ignored(CharPair *p, uint8_t elm) {
+ignored(CharPair *p, uint8_t elm)
+{
 	assert(elm == 0 || elm == 1);
 	return isIgnored(p->pbytes[elm]);
 }
@@ -162,7 +167,8 @@ ignored(CharPair *p, uint8_t elm) {
  * NOTE: This routine assumes that there are no more than 128 pairs.
  */
 static int8_t
-STRMPpairLookup(Strimps *s, CharPair *p) {
+STRMPpairLookup(Strimps *s, CharPair *p)
+{
 	size_t idx = 0;
 	size_t npairs = NPAIRS(((uint64_t *)s->strimps.base)[0]);
 	size_t offset = 0;
@@ -277,7 +283,8 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
  * and then chooses the STRIMP_HEADER_SIZE most frequent of them.
  */
 static bool
-STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs) {
+STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
+{
 	lng t0 = 0;
 	BATiter bi;
 	str cs;
@@ -665,7 +672,8 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 }
 
 gdk_return
-STRMPcreate(BAT *b, BAT *s) {
+STRMPcreate(BAT *b, BAT *s)
+{
 	lng t0 = 0;
 	BAT *pb;
 
@@ -729,7 +737,8 @@ STRMPcreate(BAT *b, BAT *s) {
 }
 
 gdk_return
-STRMPappendBitstring(BAT *b, const str s) {
+STRMPappendBitstring(BAT *b, const str s)
+{
 	lng t0 = 0;
 	BAT *pb;
 	uint64_t *dh;
