@@ -876,8 +876,6 @@ directappend_get_offsets_bat(void *state_)
 	return state->all_offsets;
 }
 
-// Currently we're appending the values one by one but we need to switch to
-// a bulk interface.
 static str
 directappend_append_one(void *state_, size_t idx, const void *const_data, void *col)
 {
@@ -907,6 +905,46 @@ directappend_append_one(void *state_, size_t idx, const void *const_data, void *
 	return MAL_SUCCEED;
 }
 
+static str
+directappend_append_batch(void *state_, const void *const_data, BUN count, int width, void *col)
+{
+	struct directappend *state = state_;
+	sqlstore *store = state->mvc->session->tr->store;
+	sql_column *c = col;
+	int tpe = c->type.type->localtype;
+
+	(void)width;
+	assert(width== ATOMsize(tpe));
+
+	BUN scattered_count = state->new_offsets ? BATcount(state->new_offsets) : 0;
+
+	int ret = LOG_OK;
+
+	if (scattered_count > 0) {
+		BUN dummy_offset = GDK_oid_max;
+		ret = store->storage_api.append_col(
+					state->mvc->session->tr, c,
+					dummy_offset, state->new_offsets,
+					(void*)const_data, scattered_count, tpe
+		);
+	}
+
+	if (ret == LOG_OK && count > scattered_count) {
+		char *remaining_data = (char*)const_data + scattered_count * width;
+		BUN remaining_count = count - scattered_count;
+		ret = store->storage_api.append_col(
+					state->mvc->session->tr, c,
+					state->offset, NULL,
+					remaining_data, remaining_count, tpe
+		);
+	}
+	if (ret != LOG_OK) {
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", ret == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	}
+
+	return MAL_SUCCEED;
+}
+
 str
 mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, bool append_directly)
 {
@@ -922,6 +960,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		.state = NULL,
 		.claim = directappend_claim,
 		.append_one = directappend_append_one,
+		.append_batch = directappend_append_batch,
 		.get_offsets = directappend_get_offsets_bat,
 	};
 	LoadOps *loadops = NULL;

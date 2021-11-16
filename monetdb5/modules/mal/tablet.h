@@ -74,11 +74,13 @@ typedef struct Table_t {
 // SQLload_file doesn't know how to manipulate the sql transaction bookkeeping, caller does.
 typedef str (*loadfile_claim_fptr)(void *state, size_t nrows, size_t ncols, Column *cols[]);
 typedef str (*loadfile_append_one_fptr)(void *state, size_t idx, const void *data, void *col);
+typedef str (*loadfile_append_batch_fptr)(void *state, const void *data, BUN count, int width, void *col);
 typedef BAT *(*loadfile_get_offsets_bat_fptr)(void *state);
 typedef struct LoadOps {
 	void *state;
 	loadfile_claim_fptr claim;
 	loadfile_append_one_fptr append_one;
+	loadfile_append_batch_fptr append_batch;
 	loadfile_get_offsets_bat_fptr get_offsets;
 } LoadOps;
 
