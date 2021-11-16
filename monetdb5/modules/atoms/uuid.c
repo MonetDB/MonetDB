@@ -19,7 +19,7 @@
 #endif
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal_atom.h"			/* for malAtomSize */
+#include "mal_interpreter.h"
 
 #if !defined(HAVE_UUID) && !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
 static inline bool
@@ -109,19 +109,27 @@ isaUUID(const char *s)
 }
 
 static str
-UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
+UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL, *bn = NULL;
 	BUN n = 0;
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
+	bat *ret = getArgReference_bat(stk, pci, 0);
 
-	if ((b = BBPquickdesc(*bid)) == NULL)	{
-		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+	(void) cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		if (!(b = BBPquickdesc(*bid))) {
+			msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		n = BATcount(b);
+	} else {
+		n = (BUN) *getArgReference_lng(stk, pci, 1);
 	}
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_uuid, n, TRANSIENT)) == NULL) {
+
+	if ((bn = COLnew(b ? b->hseqbase : 0, TYPE_uuid, n, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -454,7 +462,8 @@ bailout:
 mel_func uuid_init_funcs[] = {
  command("uuid", "new", UUIDgenerateUuid, true, "Generate a new uuid", args(1,1, arg("",uuid))),
  command("uuid", "new", UUIDgenerateUuidInt, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
- command("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
+ pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
+ pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),arg("card",lng))), /* version with cardinality input */
  command("uuid", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
  command("uuid", "str", UUIDuuid2str, false, "Coerce a uuid to its string type", args(1,2, arg("",str),arg("u",uuid))),
  command("uuid", "isaUUID", UUIDisaUUID, false, "Test a string for a UUID format", args(1,2, arg("",bit),arg("u",str))),
