@@ -805,25 +805,32 @@ readInt( char *r, int *pos)
 }
 
 static char *
-readAtomString( char *r, int *pos)
+readAtomString(mvc *sql, char *r, int *pos)
 {
-	char *st = NULL, *parsed;
+	char *res = NULL, *begin = NULL;
+	size_t nbytes = 0;
+	int firstpos = 0;
 
-	assert(r[*pos] == '"');
+	assert(r[*pos] == '"'); /* skip first '"' */
 	(*pos)++;
-	st = parsed = r+*pos;
-	while (r[*pos] != '"') {
-		if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
-			*parsed++ = r[*pos + 1];
+
+	firstpos = *pos;
+	begin = r + firstpos;
+	while (r[*pos] != '"') { /* compute end of atom string */
+		if (r[*pos] == '\\')
 			(*pos)+=2;
-		} else {
-			*parsed++ = r[*pos];
+		else
 			(*pos)++;
-		}
 	}
-	*parsed = '\0';
+
+	nbytes = (size_t)(*pos - firstpos);
+	assert(r[*pos] == '"'); /* skip second '"' */
 	(*pos)++;
-	return st;
+
+	res = sa_alloc(sql->sa, nbytes + 1); /* add null terminator */
+	if (GDKstrFromStr((unsigned char *) res, (unsigned char *) begin, nbytes) < 0) /* also read non printable characters with GDKstrFromStr */
+		return NULL;
+	return res;
 }
 
 static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp);
@@ -956,7 +963,9 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		(*pos)+= (int) strlen("NULL");
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
 	} else {
-		char *st = readAtomString(r,pos);
+		char *st = readAtomString(sql, r, pos);
+		if (!st)
+			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
 	}
 }
