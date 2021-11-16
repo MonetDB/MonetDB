@@ -820,6 +820,8 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 		adt = fmt->nildata;
 		if (fmt->c)
 			fmt->c->tnonil = false;
+		if (fmt->data)
+			memcpy(fmt->data, adt, fmt->len);
 	} else {
 		if (task->escape) {
 			size_t slen = strlen(s) + 1;
