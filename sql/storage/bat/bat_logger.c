@@ -2804,10 +2804,9 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* the functions we need to change to FALSE */
-		BAT *funcs = COLnew(0, TYPE_str, 2, TRANSIENT);
+		BAT *funcs = COLnew(0, TYPE_str, 1, TRANSIENT);
 		if (funcs == NULL ||
-			BUNappend(funcs, "sqlrand", false) != GDK_SUCCEED ||
-			BUNappend(funcs, "next_value", false) != GDK_SUCCEED) {
+			BUNappend(funcs, "sqlrand", false) != GDK_SUCCEED) {
 			bat_destroy(cands);
 			bat_destroy(func_se);
 			bat_destroy(func_func);
@@ -2815,7 +2814,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* select * from sys.functions where schema_id = 2000 and func in (...) */
-		b = BATintersect(func_func, funcs, cands, NULL, false, false, 4);
+		b = BATintersect(func_func, funcs, cands, NULL, false, false, 1);
 		bat_destroy(funcs);
 		if (b == NULL) {
 			bat_destroy(cands);
@@ -2876,10 +2875,11 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* the functions we need to change to TRUE */
-		funcs = COLnew(0, TYPE_str, 4, TRANSIENT);
+		funcs = COLnew(0, TYPE_str, 5, TRANSIENT);
 		if (funcs == NULL ||
 			BUNappend(funcs, "copy_from", false) != GDK_SUCCEED ||
 			BUNappend(funcs, "importTable", false) != GDK_SUCCEED ||
+			BUNappend(funcs, "next_value", false) != GDK_SUCCEED ||
 			BUNappend(funcs, "update_schemas", false) != GDK_SUCCEED ||
 			BUNappend(funcs, "update_tables", false) != GDK_SUCCEED) {
 			bat_destroy(cands);
@@ -2889,7 +2889,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* select * from sys.functions where schema_id = 2000 and func in (...) */
-		b = BATintersect(func_func, funcs, cands, NULL, false, false, 4);
+		b = BATintersect(func_func, funcs, cands, NULL, false, false, 7);
 		bat_destroy(funcs);
 		bat_destroy(cands);
 		bat_destroy(func_func);
