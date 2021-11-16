@@ -4397,9 +4397,6 @@ can_use_appendfrom(sql_rel *rel)
 			return NULL;
 	}
 
-	if (strcmp(destination_table->base.name, "banana") != 0 && strcmp(destination_table->base.name, "dummy") != 0)
-		return NULL;
-
 	return copy_from;
 }
 
