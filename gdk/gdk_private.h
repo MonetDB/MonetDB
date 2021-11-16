@@ -415,6 +415,9 @@ struct Strimps {
 	uint8_t *sizes_base;	/* pointer into strimps heap (pair sizes)  */
 	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
 	void *bitstrings_base;	/* pointer into strimps heap (bitstrings start) */
+	size_t rec_cnt;		/* reconstruction counter: how many
+				   bitstrings were added after header
+				   construction */
 	/* bitstrings_base is a pointer to uint64_t */
 };
 
