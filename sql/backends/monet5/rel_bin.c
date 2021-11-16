@@ -2605,7 +2605,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			(void) equality_only;
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
 			/* generate a relational join (releqjoin) which does a multi attribute (equi) join */
-			for( en = jexps->h; en && !used_hash; en = en->next ) {
+			for( en = jexps->h; en ; en = en->next ) {
 				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
@@ -2625,15 +2625,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 						list_append(lje, s->op1);
 						list_append(rje, s->op2);
 						list_append(exps, NULL);
-						used_hash = 1; /* uses hash, all jexps were consumed */
+						used_hash = 1;
 					} else {
 						/* hash lookup cannot be used, clean leftover mal statements */
 						clean_mal_statements(be, oldstop, oldvtop, oldvid);
 					}
 				}
 
-				if (!s)
-					s = exp_bin(be, e, left, right, 0, 1, 0);
+				s = exp_bin(be, e, left, right, 0, 1, 0);
 				if (!s) {
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
@@ -3669,10 +3668,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			sql_idx *i = p->value;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
-			if ((sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en)))
-				return create_rel_bin_stmt(sql->sa, rel, sub->cols, sel);
-			/* hash lookup cannot be used, clean leftover mal statements */
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {
+				/* hash lookup cannot be used, clean leftover mal statements */
+				clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			}
 		}
 	}
 	if (sub && !sel)
