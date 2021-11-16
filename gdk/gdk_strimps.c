@@ -658,6 +658,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		}
 		r->bitstrings_base = h2;
 		r->strimps.free = sz;
+		r->rec_cnt = 0;
 
 	}
 	return r;
@@ -771,10 +772,7 @@ STRMPappendBitstring(BAT *b, const str s) {
 	*dh = STRMPmakebitstring(s, strmp);
 	strmp->strimps.free += sizeof(uint64_t);
 
-	// TODO increase reconstruction counter if
-	// reconstruction counter is larger than a threshold
-	// recompute the strimp from scratch.
-
+	strmp->rec_cnt++;
 	MT_lock_unset(&pb->batIdxLock);
 
 	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
