@@ -806,7 +806,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
  * either case an entry is added to the error table.
  */
 static inline int
-SQLinsert_val(READERtask *task, int col, int idx)
+SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 {
 	Column *fmt = task->as->format + col;
 	const void *adt;
@@ -896,6 +896,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			fmt->c->tnonil = false;
 	}
 	if (task->loadops) {
+		if (!one_by_one)
+			return ret;
+		// Simple fixed size types will be appended in bulk.
+		// Here we deal with the more messy ones
 		str msg = task->loadops->append_one(task->loadops->state, idx, adt, fmt->appendcol);
 		if (msg == MAL_SUCCEED)
 			return ret;
@@ -923,6 +927,65 @@ SQLinsert_val(READERtask *task, int col, int idx)
 }
 
 static int
+SQLworker_directappend_column(READERtask *task, int col)
+{
+	Column *c = &task->as->format[col];
+	int count = task->top[task->cur];
+
+	int type = c->adt;
+	size_t width = ATOMsize(type);
+	bool batch_mode = !ATOMvarsized(type);
+
+	if (!batch_mode) {
+		for (int i = 0; i < count; i++) {
+			if (SQLinsert_val(task, col, i, true) < 0)
+				return -1;
+		}
+		return 0;
+	}
+
+	size_t allocation_size = count * width;
+	GDKfree(c->data);
+	c->data = GDKmalloc(allocation_size);
+	if (c->data) {
+		c->len = allocation_size;
+	} else {
+		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+		return -1;
+	}
+
+	char * const allocation = c->data;
+	char *cursor = c->data;
+	for (int i = 0; i < count; i++) {
+		// We have to be careful here, c->data is not pointing at the beginning
+		// of a malloc'ed area, but into the middle. If SQLinsert_val tries to
+		// reallocate it we're screwed. However, c->len is sufficient so it
+		// shouldn't try to reallocate.
+		c->data = cursor;
+		c->len = width;
+		if (SQLinsert_val(task, col, i, false) < 0) {
+			// We don't free our allocation here, it can probably be reused for the next block.
+			c->data = allocation;
+			c->len = allocation_size;
+			return -1;
+		}
+		cursor += width;
+	}
+	// We don't free our allocation here, it can probably be reused for the next block.
+	c->data = allocation;
+	c->len = allocation_size;
+
+	// Now insert it.
+	str msg = task->loadops->append_batch(task->loadops->state, c->data, count, width, c->appendcol);
+	if (msg != MAL_SUCCEED) {
+		tablet_error(task, lng_nil, lng_nil, col, "bulk insert failed", msg);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
 SQLworker_column(READERtask *task, int col)
 {
 	int i;
@@ -932,11 +995,7 @@ SQLworker_column(READERtask *task, int col)
 		return 0;
 
 	if (task->loadops) {
-		for (i = 0; i < task->top[task->cur]; i++) {
-			if (SQLinsert_val(task, col, i) < 0)
-				return -1;
-		}
-		return 0;
+		return SQLworker_directappend_column(task, col);
 	}
 
 	/* watch out for concurrent threads */
@@ -951,7 +1010,7 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (i = 0; i < task->top[task->cur]; i++) {
-		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0) {
+		if (!fmt[col].skip && SQLinsert_val(task, col, i, true) < 0) {
 			BATsetcount(fmt[col].c, BATcount(fmt[col].c));
 			return -1;
 		}
