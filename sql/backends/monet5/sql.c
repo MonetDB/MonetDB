@@ -957,13 +957,14 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		be->last_id = end;
 		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
 		lng c = start;
-		for(BUN i = 0; i<card; i++) {
-			if (c > maxv && minv && maxv)
+		for(BUN i = 0; i<card; ) {
+			if (maxv && c > maxv) {
+				if (!seq->cycle)
+					break;
 				c = minv;
-			if (c > maxv && !minv)
-				break;
-			rb[i] = c;
-			if ((i+1) < card)
+			}
+			rb[i++] = c;
+			if (i < card)
 				c += inc;
 		}
 		assert(c == end);
