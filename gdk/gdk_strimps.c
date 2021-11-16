@@ -731,6 +731,9 @@ gdk_return
 STRMPappendBitstring(BAT *b, const str s) {
 	lng t0 = 0;
 	BAT *pb;
+	uint64_t *dh;
+	Strimps *strmp;
+	const float extend_factor = 1.5;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	if (ATOMstorage(b->ttype) != TYPE_str) {
@@ -750,15 +753,23 @@ STRMPappendBitstring(BAT *b, const str s) {
 		return GDK_FAIL;
 	}
 	MT_lock_set(&pb->batIdxLock);
-	// Check that there is space in the heap
-	if (pb->tstrimps->strimps.free < pb->tstrimps->strimps.size + sizeof(uint64_t)) {
-		uint64_t *dh = (uint64_t *)pb->tstrimps->strimps.base + pb->tstrimps->strimps.free;
-		*dh = STRMPmakebitstring(s, pb->tstrimps);
-		pb->tstrimps->strimps.free += sizeof(uint64_t);
+	strmp = pb->tstrimps;
+	/* Extend heap if there is not enough space */
+	if (strmp->strimps.free >= strmp->strimps.size + sizeof(uint64_t)) {
+		size_t sizes_offset = (char *)strmp->sizes_base - strmp->strimps.base;
+		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
+		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
+		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) == GDK_FAIL) {
+			GDKerror("Cannot extend heap\n");
+			return GDK_FAIL;
+		}
+		strmp->sizes_base = (uint8_t *)strmp->strimps.base + sizes_offset;
+		strmp->pairs_base = (uint8_t *)strmp->strimps.base + pairs_offset;
+		strmp->bitstrings_base = strmp->strimps.base + bitstrings_offset;
 	}
-	else {
-		// TODO reallocate buffer
-	}
+	dh = (uint64_t *)strmp->strimps.base + pb->tstrimps->strimps.free;
+	*dh = STRMPmakebitstring(s, strmp);
+	strmp->strimps.free += sizeof(uint64_t);
 
 	// TODO increase reconstruction counter if
 	// reconstruction counter is larger than a threshold
