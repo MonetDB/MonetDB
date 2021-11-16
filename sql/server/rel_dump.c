@@ -816,12 +816,14 @@ readAtomString(mvc *sql, char *r, int *pos)
 
 	firstpos = *pos;
 	begin = r + firstpos;
-	while (r[*pos] != '"') { /* compute end of atom string */
+	while (r[*pos] && r[*pos] != '"') { /* compute end of atom string */
 		if (r[*pos] == '\\')
 			(*pos)+=2;
 		else
 			(*pos)++;
 	}
+	if (!r[*pos])
+		return NULL;
 
 	nbytes = (size_t)(*pos - firstpos);
 	assert(r[*pos] == '"'); /* skip second '"' */
