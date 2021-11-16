@@ -509,15 +509,19 @@ SQLinit(Client c)
 		}
 		/* 99_system.sql */
 		if (!msg) {
-			const char *createdb_inline = " \
-				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
-				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
-				update sys.functions set system = true; \
-				update sys._tables set system = true; \
-				update sys.schemas set system = true; \
-				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
-				UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
-				";
+			const char *createdb_inline =
+				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+				"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
+				/* only system functions until now */
+				"update sys.functions set system = true;\n"
+				/* only system tables until now */
+				"update sys._tables set system = true;\n"
+				/* only system schemas until now */
+				"update sys.schemas set system = true;\n"
+				/* correct invalid FK schema ids, set them to schema id 2000
+				 * (the "sys" schema) */
+				"update sys.types set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n"
+				"update sys.functions set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
