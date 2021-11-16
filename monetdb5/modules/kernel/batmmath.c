@@ -385,20 +385,26 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int *restrict vals;
 	str msg = MAL_SUCCEED;
 	struct canditer ci = {0};
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
-		*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0);
 
 	(void) cntxt;
-	(void) mb;
-	if (!(b = BBPquickdesc(*bid))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1), *sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+		if (!(b = BBPquickdesc(*bid))) {
+			msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
+			msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, bs);
+		if (bs)
+			BBPunfix(bs->batCacheid);
+	} else {
+		q = (BUN) *getArgReference_lng(stk, pci, 1);
 	}
-	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
-		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	q = canditer_init(&ci, b, bs);
+
 	if (!(bn = COLnew(ci.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -416,8 +422,6 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 
 bailout:
-	if (bs)
-		BBPunfix(bs->batCacheid);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = false;
@@ -520,6 +524,7 @@ mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
  pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,3, batarg("",int),batargany("v",0),batarg("s",oid))),
+ pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,2, batarg("",int),arg("card",lng))), /* version with cardinality input */
  { .imp=NULL }
 };
 #include "mal_import.h"
