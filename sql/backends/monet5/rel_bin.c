@@ -4322,6 +4322,32 @@ can_use_directappend(sql_rel *rel)
 	if (incoming->flag != TABLE_PROD_FUNC)
 		return NULL;
 
+	// Does anything scary happen in the projection?
+	if (projection) {
+		list *p_exps = projection->exps;
+		list *i_exps = incoming->exps;
+		node *np = p_exps->h;
+		node *ni = i_exps->h;
+		for (; np && ni; np = np->next, ni = ni->next) {
+			// exps are the same
+			sql_exp *p = np->data;
+			sql_exp *i = ni->data;
+			if (p->type != e_column)
+				return NULL;
+			if (i->type != e_column)
+				return NULL;
+			// compare relation name
+			if (p->l == NULL || i->l == NULL || strcmp((char*)p->l, (char*)i->l) != 0)
+				return NULL;
+			// compare column name
+			if (p->r == NULL || i->r == NULL || strcmp((char*)p->r, (char*)i->r) != 0)
+				return NULL;
+		}
+		// lists are same length
+		if ((np == NULL) != (ni == NULL))
+			return NULL;
+	}
+
 	sql_exp *copy_from = incoming->r;
 	if (copy_from->type != e_func)
 		return NULL;
