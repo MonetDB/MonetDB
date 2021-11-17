@@ -600,3 +600,8 @@ select (case when false then v100.vc1 when true then (values (2)) end) in (3) fr
 ----
 False
 False
+
+query T nosort
+SELECT ((SELECT 5) INTERSECT (SELECT 9)) = ALL(SELECT 4) >= TRUE
+----
+NULL
