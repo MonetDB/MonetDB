@@ -770,8 +770,10 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 	BIG value = *dec;
 	int scale = *sc;
 
+	if (is_int_nil(scale))
+		throw(SQL, "calc.dec2second_interval", SQLSTATE(42000) "Scale cannot be NULL");
 	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0]))
-		throw(SQL, "calc.dec2second_interval", SQLSTATE(42000) "Digits out of bounds");
+		throw(SQL, "calc.dec2second_interval", SQLSTATE(42000) "Scale out of bounds");
 
 	(void) ek;
 	(void) sk;
@@ -808,8 +810,12 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if (is_int_nil(sc)) {
+		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(42000) "Scale cannot be NULL");
+		goto bailout;
+	}
 	if (sc < 0 || (size_t) sc >= sizeof(scales) / sizeof(scales[0])) {
-		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(42000) "Digits out of bounds");
+		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(42000) "Scale out of bounds");
 		goto bailout;
 	}
 	if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
