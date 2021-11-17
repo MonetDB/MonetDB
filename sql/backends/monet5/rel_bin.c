@@ -4260,7 +4260,7 @@ dump_code(int starting_point)
 // code. The idea is that we'll gradually add support for more cases and shorten
 // this list until it disappears.
 static sql_exp*
-can_use_appendfrom(sql_rel *rel)
+can_use_directappend(sql_rel *rel)
 {
 	if (rel->flag & UPD_NO_CONSTRAINT) {
 		// "no constraint" mode.. don't know what it is but it sounds scary
@@ -4321,6 +4321,32 @@ can_use_appendfrom(sql_rel *rel)
 		return NULL;
 	if (incoming->flag != TABLE_PROD_FUNC)
 		return NULL;
+
+	// Does anything scary happen in the projection?
+	if (projection) {
+		list *p_exps = projection->exps;
+		list *i_exps = incoming->exps;
+		node *np = p_exps->h;
+		node *ni = i_exps->h;
+		for (; np && ni; np = np->next, ni = ni->next) {
+			// exps are the same
+			sql_exp *p = np->data;
+			sql_exp *i = ni->data;
+			if (p->type != e_column)
+				return NULL;
+			if (i->type != e_column)
+				return NULL;
+			// compare relation name
+			if (p->l == NULL || i->l == NULL || strcmp((char*)p->l, (char*)i->l) != 0)
+				return NULL;
+			// compare column name
+			if (p->r == NULL || i->r == NULL || strcmp((char*)p->r, (char*)i->r) != 0)
+				return NULL;
+		}
+		// lists are same length
+		if ((np == NULL) != (ni == NULL))
+			return NULL;
+	}
 
 	sql_exp *copy_from = incoming->r;
 	if (copy_from->type != e_func)
@@ -4449,7 +4475,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	// If can_use_appendfrom doesn't return NULL, short circuit to
 	// the temporary dedicated code generator
-	sql_exp *copyfrom = can_use_appendfrom(rel);
+	sql_exp *copyfrom = can_use_directappend(rel);
 	if (copyfrom != NULL) {
 		// later on we'll do this properly, passing an extra parameter,
 		// for now we adjust an existing parameter.
