@@ -447,6 +447,8 @@ BATcheckstrimps(BAT *b)
 						hp->bitstrings_base = hp->strimps.base + hsize;        /* bitmasks just after the pairs */
 
 						close(fd);
+						ATOMIC_INIT(&hp->strimps.refs, 1);
+						// STRMPincref(hp);
 						hp->strimps.parentid = b->batCacheid;
 						b->tstrimps = hp;
 						TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
@@ -499,12 +501,16 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 		BAT *pb = BBP_cache(VIEWtparent(b));
 		if (!BATcheckstrimps(pb))
 			goto sfilter_fail;
+		MT_lock_set(&pb->batIdxLock);
 		strmps = pb->tstrimps;
+		MT_lock_unset(&pb->batIdxLock);
 	}
 	else {
 		if (!BATcheckstrimps(b))
 			goto sfilter_fail;
+		MT_lock_set(&b->batIdxLock);
 		strmps = b->tstrimps;
+		MT_lock_unset(&b->batIdxLock);
 	}
 
 	ncand = canditer_init(&ci, b, s);
@@ -666,7 +672,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->bitstrings_base = h2;
 		r->strimps.free = sz;
 		r->rec_cnt = 0;
-
+		ATOMIC_INIT(&r->strimps.refs, 1);
 	}
 	return r;
 }
@@ -677,6 +683,7 @@ STRMPcreate(BAT *b, BAT *s)
 	lng t0 = 0;
 	BAT *pb;
 
+	MT_thread_setalgorithm("create strimp index");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	if (ATOMstorage(b->ttype) != TYPE_str) {
 		GDKerror("Cannot create strimps index for non string bats\n");
@@ -709,7 +716,6 @@ STRMPcreate(BAT *b, BAT *s)
                                 MT_lock_unset(&b->batIdxLock);
 				return GDK_FAIL;
                         }
-			HEAPincref(&r->strimps);
 			dh = (uint64_t *)r->bitstrings_base;
 
 			/* Compute bitstrings */
@@ -789,20 +795,82 @@ STRMPappendBitstring(BAT *b, const str s)
 }
 
 void
+STRMPbatdecref(BAT *b, bool remove)
+{
+	Strimps *strimps;
+	BAT *pb = NULL;
+
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	MT_lock_set(&pb->batIdxLock);
+	if (pb && pb->tstrimps && pb->tstrimps != (Strimps *)1) {
+		strimps = pb->tstrimps;
+	} else {
+		MT_lock_unset(&pb->batIdxLock);
+		return;
+	}
+	STRMPdecref(strimps, remove);
+	MT_lock_unset(&pb->batIdxLock);
+}
+
+void
+STRMPbatincref(BAT *b)
+{
+	Strimps *strimps;
+	BAT *pb = NULL;
+
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	MT_lock_set(&pb->batIdxLock);
+	if (pb && pb->tstrimps && pb->tstrimps != (Strimps *)1) {
+		strimps = pb->tstrimps;
+	} else {
+		MT_lock_unset(&pb->batIdxLock);
+		return;
+	}
+	STRMPincref(strimps);
+	MT_lock_unset(&pb->batIdxLock);
+
+}
+
+void
 STRMPdecref(Strimps *strimps, bool remove)
 {
+	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " ULLFMT "\n",
+		  strimps->strimps.filename, ATOMIC_GET(&strimps->strimps.refs) - 1);
 	strimps->strimps.remove |= remove;
 	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
 		HEAPfree(&strimps->strimps, strimps->strimps.remove);
 		GDKfree(strimps);
 	}
+
+}
+
+void
+STRMPincref(Strimps *strimps)
+{
+	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " ULLFMT "\n",
+		  strimps->strimps.filename, ATOMIC_GET(&strimps->strimps.refs) + 1);
+	(void)ATOMIC_INC(&strimps->strimps.refs);
+
 }
 
 void
 STRMPdestroy(BAT *b)
 {
 	if (b && b->tstrimps) {
+		TRC_DEBUG(ACCELERATOR, "Destroying strimp %s\n", b->tstrimps->strimps.filename);
 		MT_lock_set(&b->batIdxLock);
 		if (b->tstrimps == (Strimps *)1) {
 			b->tstrimps = NULL;
@@ -822,6 +890,7 @@ void
 STRMPfree(BAT *b)
 {
 	if (b && b->tstrimps) {
+		TRC_DEBUG(ACCELERATOR, "Freeing strimp for BAT %s\n", b->tstrimps->strimps.filename);
 		Strimps *s;
 		MT_lock_set(&b->batIdxLock);
 		if ((s = b->tstrimps) != NULL && s != (Strimps *)1) {
