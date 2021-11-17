@@ -1,0 +1,33 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace procedure "sys"."dict_compress"(sname string, tname string, cname string) external name "dict"."compress"
+
+statement ok
+create or replace procedure "sys"."dict_compress"(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress"
+
+statement ok
+create or replace procedure "sys"."for_compress"(sname string, tname string, cname string) external name "for"."compress"
+
+
+statement ok
+CREATE TABLE "mct20" ("c0" INTERVAL DAY,"c1" BIGINT,CONSTRAINT "mct20_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+INSERT INTO "mct20" VALUES (INTERVAL '0' SECOND, 0), (INTERVAL '777600' SECOND, 1), (INTERVAL '604800' SECOND, 2)
+
+statement ok
+CREATE TABLE "mct21" ("c0" INTERVAL DAY,"c1" BIGINT,CONSTRAINT "mct21_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+INSERT INTO "mct21" VALUES (INTERVAL '-2' SECOND, -6), (INTERVAL '86400' SECOND, 7), (INTERVAL '-2' SECOND, 8)
+
+statement ok
+CALL "sys"."for_compress"('sys','mct20','c1')
+
+statement error GDK reported error: BATsubcross: more than one match
+UPDATE mct20 SET c1 = mct20.c1 FROM mct21
+
+statement ok
+ROLLBACK
