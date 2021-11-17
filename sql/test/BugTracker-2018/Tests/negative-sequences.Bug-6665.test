@@ -28,7 +28,7 @@ insert into "testme" ("col2") values (1)
 query I rowsort
 select get_value_for('sys', 'other_seq')
 ----
--360
+-340
 
 query I rowsort
 select next_value_for('sys', 'other_seq')
@@ -72,7 +72,7 @@ select "col1", "col2" from "testme"
 query I rowsort
 select get_value_for('sys', 'other_seq')
 ----
--460
+-440
 
 query I rowsort
 select next_value_for('sys', 'other_seq')
@@ -106,7 +106,7 @@ select "col1", "col2" from "testme"
 query I rowsort
 select get_value_for('sys', 'other_seq')
 ----
--580
+-560
 
 query I rowsort
 select next_value_for('sys', 'other_seq')

@@ -285,8 +285,6 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 	if (nlen == 0)
 		return atend ? haystack + strlen(haystack) : haystack;
 
-	size_t hlen = strlen(haystack);
-
 	while (*haystack) {
 		size_t i;
 		size_t h;
@@ -312,7 +310,6 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 		if (i == nlen && (!atend || haystack[h] == 0))
 			return haystack;
 		haystack += step;
-		hlen -= step;
 	}
 	return NULL;
 }

@@ -2397,7 +2397,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 			else if (b && b->ttype == TYPE_sht)
 				de = 2;
 		}
-	} else if (col && ATOMIC_PTR_GET(&col->data)) {
+	} else if (col && ATOMstorage(col->type.type->localtype) == TYPE_str && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b && ATOMstorage(b->ttype) == TYPE_str) { /* check double elimination */

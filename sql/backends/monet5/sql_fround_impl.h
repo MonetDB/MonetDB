@@ -355,7 +355,9 @@ round_wrap(TYPE *res, const TYPE *v, const bte *r)
 	assert(res && v && r);
 	bte rr = *r;
 
-	if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
+	if (is_bte_nil(rr))
+		throw(MAL, "round", SQLSTATE(42000) "Number of digits cannot be NULL");
+	if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
 		throw(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 	*res = (ISNIL(TYPE)(*v)) ? NIL(TYPE) : round_body(*v, rr);
 	if (isinf(*res))
@@ -380,7 +382,11 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	if (is_bte_nil(r) || (size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
+	if (is_bte_nil(r)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Number of digits cannot be NULL");
+		goto bailout;
+	}
+	if ((size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
 		msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -491,7 +497,10 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			r = src[p1];
 
-			if (is_bte_nil(r) || (size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
+			if (is_bte_nil(r)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Number of digits cannot be NULL");
+				goto bailout1;
+			} else if ((size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
@@ -510,7 +519,10 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1);
 			r = src[p1];
 
-			if (is_bte_nil(r) || (size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
+			if (is_bte_nil(r)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Number of digits cannot be NULL");
+				goto bailout1;
+			} else if ((size_t) abs(r) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
@@ -592,7 +604,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			x = src1[p1];
 			rr = src2[p2];
 
-			if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0])) {
+			if (is_bte_nil(rr)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Number of digits cannot be NULL");
+				goto bailout1;
+			} else if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
@@ -612,7 +627,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			x = src1[p1];
 			rr = src2[p2];
 
-			if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0])) {
+			if (is_bte_nil(rr)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Number of digits cannot be NULL");
+				goto bailout1;
+			} else if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0])) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 				goto bailout1;
 			} else if (ISNIL(TYPE)(x)) {
@@ -641,6 +659,9 @@ str
 trunc_wrap(TYPE *res, const TYPE *v, const int *r)
 {
 	int rr = *r;
+
+	if (is_int_nil(rr))
+		throw(MAL, "trunc", SQLSTATE(42000) "Number of digits cannot be NULL");
 	if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
 		throw(MAL, "trunc", SQLSTATE(42000) "Digits out of bounds");
 
