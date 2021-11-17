@@ -447,6 +447,8 @@ BATcheckstrimps(BAT *b)
 						hp->bitstrings_base = hp->strimps.base + hsize;        /* bitmasks just after the pairs */
 
 						close(fd);
+						ATOMIC_INIT(&hp->strimps.refs, 1);
+						// STRMPincref(hp);
 						hp->strimps.parentid = b->batCacheid;
 						b->tstrimps = hp;
 						TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
@@ -666,7 +668,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->bitstrings_base = h2;
 		r->strimps.free = sz;
 		r->rec_cnt = 0;
-
+		ATOMIC_INIT(&r->strimps.refs, 1);
 	}
 	return r;
 }
@@ -677,6 +679,7 @@ STRMPcreate(BAT *b, BAT *s)
 	lng t0 = 0;
 	BAT *pb;
 
+	MT_thread_setalgorithm("create strimp index");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	if (ATOMstorage(b->ttype) != TYPE_str) {
 		GDKerror("Cannot create strimps index for non string bats\n");
@@ -709,7 +712,6 @@ STRMPcreate(BAT *b, BAT *s)
                                 MT_lock_unset(&b->batIdxLock);
 				return GDK_FAIL;
                         }
-			HEAPincref(&r->strimps);
 			dh = (uint64_t *)r->bitstrings_base;
 
 			/* Compute bitstrings */
@@ -810,6 +812,7 @@ void
 STRMPdestroy(BAT *b)
 {
 	if (b && b->tstrimps) {
+		TRC_DEBUG(ACCELERATOR, "Destroying strimp %s\n", b->tstrimps->strimps.filename);
 		MT_lock_set(&b->batIdxLock);
 		if (b->tstrimps == (Strimps *)1) {
 			b->tstrimps = NULL;
@@ -829,6 +832,7 @@ void
 STRMPfree(BAT *b)
 {
 	if (b && b->tstrimps) {
+		TRC_DEBUG(ACCELERATOR, "Freeing strimp for BAT %s\n", b->tstrimps->strimps.filename);
 		Strimps *s;
 		MT_lock_set(&b->batIdxLock);
 		if ((s = b->tstrimps) != NULL && s != (Strimps *)1) {
