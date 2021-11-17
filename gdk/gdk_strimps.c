@@ -797,6 +797,13 @@ STRMPdecref(Strimps *strimps, bool remove)
 		HEAPfree(&strimps->strimps, strimps->strimps.remove);
 		GDKfree(strimps);
 	}
+void
+STRMPincref(Strimps *strimps)
+{
+	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " ULLFMT "\n",
+		  strimps->strimps.filename, ATOMIC_GET(&strimps->strimps.refs) + 1);
+	(void)ATOMIC_INC(&strimps->strimps.refs);
+
 }
 
 void
