@@ -4341,8 +4341,7 @@ can_use_appendfrom(sql_rel *rel)
 	assert(arg0 != NULL); // hopefully
 	atom *a = arg0->l;
 	assert(a != NULL);
-	int tp = atom_type(a)->type->localtype;
-	assert(tp == TYPE_ptr);
+	assert(atom_type(a)->type->localtype == TYPE_ptr);
 	sql_table *template_table = a->data.val.pval;
 
 	// disallow best effort
@@ -4350,8 +4349,7 @@ can_use_appendfrom(sql_rel *rel)
 	if (arg7->type != e_atom)
 		return NULL;
 	a = arg7->l;
-	tp = atom_type(a)->type->localtype;
-	assert(tp == TYPE_int);
+	assert(atom_type(a)->type->localtype == TYPE_int);
 	int best_effort = a->data.val.ival;
 	if (best_effort)
 		return NULL;
