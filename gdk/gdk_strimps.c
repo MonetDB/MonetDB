@@ -795,6 +795,55 @@ STRMPappendBitstring(BAT *b, const str s)
 }
 
 void
+STRMPbatdecref(BAT *b, bool remove)
+{
+	Strimps *strimps;
+	BAT *pb = NULL;
+
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	MT_lock_set(&pb->batIdxLock);
+	if (pb && pb->tstrimps && pb->tstrimps != (Strimps *)1) {
+		strimps = pb->tstrimps;
+	} else {
+		MT_lock_unset(&pb->batIdxLock);
+		return;
+	}
+	STRMPdecref(strimps, remove);
+	MT_lock_unset(&pb->batIdxLock);
+}
+
+void
+STRMPbatincref(BAT *b)
+{
+	Strimps *strimps;
+	BAT *pb = NULL;
+
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	MT_lock_set(&pb->batIdxLock);
+	if (pb && pb->tstrimps && pb->tstrimps != (Strimps *)1) {
+		strimps = pb->tstrimps;
+	} else {
+		MT_lock_unset(&pb->batIdxLock);
+		return;
+	}
+	STRMPincref(strimps);
+	MT_lock_unset(&pb->batIdxLock);
+
+}
+
+void
 STRMPdecref(Strimps *strimps, bool remove)
 {
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " ULLFMT "\n",
