@@ -1102,7 +1102,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(type);
 
 		if (ATOMextern(type))
-			p = *(str *)value;
+			p = *(ptr *)value;
 
 		val = ATOMformat(type, p);
 		if (val == NULL) {

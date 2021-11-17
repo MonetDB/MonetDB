@@ -348,7 +348,6 @@ char *
 atom2string(sql_allocator *sa, atom *a)
 {
 	char buf[BUFSIZ], *p = NULL;
-	void *v;
 
 	if (a->isnull)
 		return sa_strdup(sa, "NULL");
@@ -390,10 +389,7 @@ atom2string(sql_allocator *sa, atom *a)
 		assert(a->data.val.sval);
 		return sa_strdup(sa, a->data.val.sval);
 	default:
-		v = &a->data.val.ival;
-		if (ATOMvarsized(a->data.vtype))
-			v = a->data.val.pval;
-		if ((p = ATOMformat(a->data.vtype, v)) == NULL) {
+		if ((p = ATOMformat(a->data.vtype, VALget(&a->data))) == NULL) {
 			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
