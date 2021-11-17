@@ -2391,7 +2391,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	const char *sequences2 =
 		"SELECT s.name, "
 		     "seq.name, "
-		     "get_value_for(s.name, seq.name), "
+		     "peak_next_value_for(s.name, seq.name), "
 		     "seq.\"minvalue\", "
 		     "seq.\"maxvalue\", "
 		     "seq.\"increment\", "
