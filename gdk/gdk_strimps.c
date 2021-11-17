@@ -501,12 +501,16 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 		BAT *pb = BBP_cache(VIEWtparent(b));
 		if (!BATcheckstrimps(pb))
 			goto sfilter_fail;
+		MT_lock_set(&pb->batIdxLock);
 		strmps = pb->tstrimps;
+		MT_lock_unset(&pb->batIdxLock);
 	}
 	else {
 		if (!BATcheckstrimps(b))
 			goto sfilter_fail;
+		MT_lock_set(&b->batIdxLock);
 		strmps = b->tstrimps;
+		MT_lock_unset(&b->batIdxLock);
 	}
 
 	ncand = canditer_init(&ci, b, s);
@@ -793,12 +797,17 @@ STRMPappendBitstring(BAT *b, const str s)
 void
 STRMPdecref(Strimps *strimps, bool remove)
 {
+	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " ULLFMT "\n",
+		  strimps->strimps.filename, ATOMIC_GET(&strimps->strimps.refs) - 1);
 	strimps->strimps.remove |= remove;
 	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
 		HEAPfree(&strimps->strimps, strimps->strimps.remove);
 		GDKfree(strimps);
 	}
+
+}
+
 void
 STRMPincref(Strimps *strimps)
 {
