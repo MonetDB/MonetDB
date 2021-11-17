@@ -543,7 +543,7 @@ select next_value_for('sys', 'tst20210325')
 query I rowsort
 select get_value_for('sys', 'tst20210325')
 ----
-2
+1
 
 statement ok
 drop sequence tst20210325
