@@ -167,6 +167,10 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("6",)])
     cli.execute("SELECT upper(count(*)) FROM rt3;") \
         .assertSucceeded().assertDataResultMatch([("6",)])
+    cli.execute("SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("d\\\x06VW",)])
+    cli.execute("SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("d\\\x06VW",)])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN
@@ -335,28 +339,6 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("3",),("8ጮk|1*",),("27",),("Vrx^qA齀",),("J",),("18",),(">*4嘁pAP",),("+Jm*W0{",),(">V鷓",),
         ("BW5z",),(".#OJruk",),("lU1覃Nlm",),(None,),("968786590",)])
     cli.execute("ROLLBACK;")
-
-    cli.execute("DELETE FROM t3 where t3.c0 <> 1;") # Just one row in the output
-    # This is SELECT r'd\VW' FROM t3;
-    INPUT = b"\x53\x45\x4C\x45\x43\x54\x20\x72\x27\x64\x5C\x06\x56\x57\x27\x20\x46\x52\x4F\x4D\x20\x74\x33\x3B\x0A"
-    with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
-        out, err = c.communicate(INPUT)
-        retcode = c.returncode
-
-        if retcode != 0:
-            sys.stderr.write("It should have succeeded, but got error %s" % str(err))
-        if "[ \"d\\\\\\\\\\\\006VW\"\\t]" not in str(out):
-            sys.stderr.write("[ \"d\\\\\\\\\\\\006VW\"\\t] not in the output")
-    # This is SELECT r'd\VW' FROM rt3;
-    INPUT = b"\x53\x45\x4C\x45\x43\x54\x20\x72\x27\x64\x5C\x06\x56\x57\x27\x20\x46\x52\x4F\x4D\x20\x72\x74\x33\x3B\x0A"
-    with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
-        out, err = c.communicate(INPUT)
-        retcode = c.returncode
-
-        if retcode != 0:
-            sys.stderr.write("It should have succeeded, but got error %s" % str(err))
-        if "[ \"d\\\\\\\\\\\\006VW\"\\t]" not in str(out):
-            sys.stderr.write("[ \"d\\\\\\\\\\\\006VW\"\\t] not in the output")
 
     cli.execute("""
     START TRANSACTION;
