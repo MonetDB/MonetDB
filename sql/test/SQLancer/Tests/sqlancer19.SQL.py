@@ -1,12 +1,7 @@
-import os, sys
+import os
 from decimal import Decimal
 
 from MonetDBtesting.sqltest import SQLTestCase
-
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
 
 port = os.environ['MAPIPORT']
 db = os.environ['TSTDB']
