@@ -1550,7 +1550,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
 	int threads = (maxrow< 0 || maxrow > (1 << 16)) && GDKnr_threads > 1 ? (GDKnr_threads < MAXWORKERS ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
-	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
+	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
@@ -1722,8 +1722,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		if (task.ateof && !task.top[task.cur])
 			break;
 		t1 = GDKusec() - t1;
-		total += t1;
-		iototal += tio;
 /*		TRC_DEBUG(MAL_SERVER, "Break: %d rows\n", task.top[task.cur]);*/
 
 		t1 = GDKusec();
@@ -1757,7 +1755,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n",
 			task.top[task.cur], task.cnt, BATcapacity(as->format[task.cur].c));*/
 
-		lio += GDKusec() - t1;	/* row break done */
 		if (task.top[task.cur]) {
 			if (res == 0) {
 				SQLworkdivider(&task, ptask, (int) as->nr_attrs, threads);
