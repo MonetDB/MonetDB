@@ -598,7 +598,7 @@ MCreadClient(Client c)
 		in->pos++;
 
 	if (in->pos >= in->len || in->mode) {
-		ssize_t rd, sum = 0;
+		ssize_t rd;
 
 		if (in->eof || !isa_block_stream(c->fdout)) {
 			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
@@ -607,7 +607,6 @@ MCreadClient(Client c)
 			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
-			sum += rd;
 			if (!in->mode) /* read one line at a time in line mode */
 				break;
 		}
