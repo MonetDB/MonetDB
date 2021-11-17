@@ -847,7 +847,7 @@ void
 STRMPdecref(Strimps *strimps, bool remove)
 {
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " ULLFMT "\n",
-		  strimps->strimps.filename, ATOMIC_GET(&strimps->strimps.refs) - 1);
+		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) - 1));
 	strimps->strimps.remove |= remove;
 	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
@@ -861,7 +861,7 @@ void
 STRMPincref(Strimps *strimps)
 {
 	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " ULLFMT "\n",
-		  strimps->strimps.filename, ATOMIC_GET(&strimps->strimps.refs) + 1);
+		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) + 1));
 	(void)ATOMIC_INC(&strimps->strimps.refs);
 
 }
