@@ -3323,7 +3323,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
 
-	(void) systabfixed;
 	sql_find_subtype(&tp, "bigint", 0, 0);
 	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -3334,6 +3333,10 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
 
 	pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
 
