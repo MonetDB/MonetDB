@@ -795,6 +795,8 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 	return line;
 }
 
+static void report_append_failed(READERtask *task, Column *fmt, int idx, lng col);
+
 /*
  * The parsing of the individual values is straightforward. If the value represents
  * the null-replacement string then we grab the underlying nil.
@@ -908,6 +910,14 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 	} else if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
 		return ret;
 
+	report_append_failed(task, fmt, idx, col);
+	return -1;
+}
+
+static void
+report_append_failed(READERtask *task, Column *fmt, int idx, lng col)
+{
+	char *err;
 	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(task->loadops ? task->loadops->get_offsets(task->loadops->state) : fmt->c);
@@ -916,7 +926,7 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 			BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_msg, "insert failed", false) != GDK_SUCCEED ||
-			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
+			(err = SQLload_error(task, idx, task->as->nr_attrs)) == NULL ||
 			BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED)
 			task->besteffort = 0;
 		GDKfree(err);
@@ -925,7 +935,7 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 		MT_lock_unset(&errorlock);
 	}
 	task->besteffort = 0;		/* no longer best effort */
-	return -1;
+
 }
 
 static int
