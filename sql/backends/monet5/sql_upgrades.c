@@ -2774,7 +2774,7 @@ sql_update_jul2021(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"        s.name as sch,\n"
 					"        seq.name as seq,\n"
 					"        seq.\"start\" s,\n"
-					"        get_value_for(s.name, seq.name) AS rs,\n"
+					"        sys.peak_next_value_for(s.name, seq.name) AS rs,\n"
 					"        seq.\"minvalue\" mi,\n"
 					"        seq.\"maxvalue\" ma,\n"
 					"        seq.\"increment\" inc,\n"

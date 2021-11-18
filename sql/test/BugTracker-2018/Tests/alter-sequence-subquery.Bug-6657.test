@@ -4,6 +4,11 @@ create sequence "testme" as integer start with 2
 query I rowsort
 select get_value_for('sys', 'testme')
 ----
+NULL
+
+query I rowsort
+select peak_next_value_for('sys', 'testme')
+----
 2
 
 statement ok
@@ -11,6 +16,11 @@ alter sequence "testme" restart with (select count(*))
 
 query I rowsort
 select get_value_for('sys', 'testme')
+----
+NULL
+
+query I rowsort
+select peak_next_value_for('sys', 'testme')
 ----
 1
 
@@ -20,7 +30,7 @@ alter sequence "testme" restart with (select 1 union select 2)
 query I rowsort
 select get_value_for('sys', 'testme')
 ----
-1
+NULL
 
 statement ok
 drop sequence "testme"
