@@ -796,6 +796,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 }
 
 static void report_append_failed(READERtask *task, Column *fmt, int idx, lng col);
+static int report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s);
 
 /*
  * The parsing of the individual values is straightforward. If the value represents
@@ -814,7 +815,6 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 	const void *adt;
 	char buf[BUFSIZ];
 	char *s = task->fields[col][idx];
-	char *err = NULL;
 	int ret = 0;
 
 	/* include testing on the terminating null byte !! */
@@ -839,66 +839,17 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 			adt = fmt->frstr(fmt, fmt->adt, s);
 	}
 
-	/* col is zero-based, but for error messages it needs to be
-	 * one-based, and from here on, we only use col anymore to produce
-	 * error messages */
-	col++;
+	/* col is zero-based, but for error messages it needs to be one-based. */
+	lng colno = col + 1;
 
 	if (adt == NULL) {
-		lng row = task->cnt + idx + 1;
-		snprintf(buf, sizeof(buf), "'%s' expected", fmt->type);
-		err = SQLload_error(task, idx, task->as->nr_attrs);
-		if (task->rowerror) {
-			if (s) {
-				size_t slen = mystrlen(s);
-				char *scpy = GDKmalloc(slen + 1);
-				if ( scpy == NULL){
-					task->rowerror[idx]++;
-					task->errorcnt++;
-					task->besteffort = 0; /* no longer best effort */
-					if (task->cntxt->error_row == NULL ||
-						BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_msg, SQLSTATE(HY013) MAL_MALLOC_FAIL, false) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
-						;		/* ignore error here: we're already not best effort */
-					}
-					GDKfree(err);
-					return -1;
-				}
-				mycpstr(scpy, s);
-				s = scpy;
-			}
-			MT_lock_set(&errorlock);
-			snprintf(buf, sizeof(buf),
-					 "line " LLFMT " field %s '%s' expected%s%s%s",
-					 task->startlineno[task->cur][idx], fmt->name ? fmt->name : "", fmt->type,
-					 s ? " in '" : "", s ? s : "", s ? "'" : "");
-			GDKfree(s);
-			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
-				task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			task->rowerror[idx]++;
-			task->errorcnt++;
-			if (task->cntxt->error_row == NULL ||
-				BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
-				BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
-				BUNappend(task->cntxt->error_msg, buf, false) != GDK_SUCCEED ||
-				BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
-				GDKfree(err);
-				task->besteffort = 0; /* no longer best effort */
-				MT_lock_unset(&errorlock);
-				return -1;
-			}
-			MT_lock_unset(&errorlock);
-		}
-		ret = -!task->besteffort; /* yep, two unary operators ;-) */
-		GDKfree(err);
-		err = NULL;
+		ret = report_conversion_failed(task, fmt, idx, colno, s);
 		/* replace it with a nil */
 		adt = fmt->nildata;
 		if (fmt->c)
 			fmt->c->tnonil = false;
 	}
+
 	if (task->loadops) {
 		if (!one_by_one)
 			return ret;
@@ -910,8 +861,62 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 	} else if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
 		return ret;
 
-	report_append_failed(task, fmt, idx, col);
+	report_append_failed(task, fmt, idx, colno);
 	return -1;
+}
+
+static int
+report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s)
+{
+	char buf[1024];
+	lng row = task->cnt + idx + 1;
+	snprintf(buf, sizeof(buf), "'%s' expected", fmt->type);
+	char *err = SQLload_error(task, idx, task->as->nr_attrs);
+	if (task->rowerror) {
+		if (s) {
+			size_t slen = mystrlen(s);
+			char *scpy = GDKmalloc(slen + 1);
+			if ( scpy == NULL){
+				task->rowerror[idx]++;
+				task->errorcnt++;
+				task->besteffort = 0; /* no longer best effort */
+				if (task->cntxt->error_row == NULL ||
+					BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+					BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
+					BUNappend(task->cntxt->error_msg, SQLSTATE(HY013) MAL_MALLOC_FAIL, false) != GDK_SUCCEED ||
+					BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
+					;		/* ignore error here: we're already not best effort */
+				}
+				GDKfree(err);
+				return -1;
+			}
+			mycpstr(scpy, s);
+			s = scpy;
+		}
+		MT_lock_set(&errorlock);
+		snprintf(buf, sizeof(buf),
+					"line " LLFMT " field %s '%s' expected%s%s%s",
+					task->startlineno[task->cur][idx], fmt->name ? fmt->name : "", fmt->type,
+					s ? " in '" : "", s ? s : "", s ? "'" : "");
+		GDKfree(s);
+		if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
+			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		task->rowerror[idx]++;
+		task->errorcnt++;
+		if (task->cntxt->error_row == NULL ||
+			BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_msg, buf, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
+			GDKfree(err);
+			task->besteffort = 0; /* no longer best effort */
+			MT_lock_unset(&errorlock);
+			return -1;
+		}
+		MT_lock_unset(&errorlock);
+	}
+	GDKfree(err);
+	return task->besteffort ? 0 : -1;
 }
 
 static void
