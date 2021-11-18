@@ -1870,6 +1870,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
+	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no");
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1881,6 +1882,26 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	}
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	/* Since the strimp pre-filtering of a LIKE query produces a superset of
+	 * the actual result the complement of that set will necessarily reject
+	 * some of the matching entries in the NOT LIKE query.
+	 *
+	 * A better solution is to run the PCRElikeselect as a LIKE query with
+	 * strimps and return the complement of the result.
+	 */
+	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
+			BAT *tmp_s;
+			tmp_s = STRMPfilter(b, s, *pat);
+			if (tmp_s && s) {
+				BBPunfix(s->batCacheid);
+				s = tmp_s;
+			}
+		} /* If we cannot create the strimp just continue normally */
+
+	}
+
 	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
 		goto bailout;
 

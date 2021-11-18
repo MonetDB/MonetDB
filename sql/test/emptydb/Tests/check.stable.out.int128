@@ -370,6 +370,8 @@
 \dSf sys."str_to_date"
 \dSf sys."str_to_time"
 \dSf sys."str_to_timestamp"
+\dSf sys."strimp_create"
+\dSf sys."strimp_filter"
 \dSf sys."suspend_log_flushing"
 \dSf sys."text"
 \dSf sys."time_to_str"
@@ -920,6 +922,8 @@ SYSTEM PROCEDURE        sys.storagemodelinit
 SYSTEM FUNCTION         sys.str_to_date
 SYSTEM FUNCTION         sys.str_to_time
 SYSTEM FUNCTION         sys.str_to_timestamp
+SYSTEM PROCEDURE        sys.strimp_create
+SYSTEM FILTER FUNCTION  sys.strimp_filter
 SYSTEM FUNCTION         sys.strings
 SYSTEM FUNCTION         sys.substr
 SYSTEM FUNCTION         sys.substring
@@ -1487,6 +1491,8 @@ create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput;
 create function str_to_date(s string, format string) returns date external name mtime."str_to_date";
 create function str_to_time(s string, format string) returns time with time zone external name mtime."str_to_time";
 create function str_to_timestamp(s string, format string) returns timestamp with time zone external name mtime."str_to_timestamp";
+create procedure sys.strimp_create(sch string, tab string, col string) external name sql.createstrimps;
+create filter function sys.strimp_filter(strs string, q string) external name strimps.strimpfilter;
 create procedure sys.suspend_log_flushing() external name sql.suspend_log_flushing;
 create function "text" (p inet) returns clob external name inet."text";
 create function time_to_str(d time with time zone, format string) returns string external name mtime."time_to_str";
@@ -4260,6 +4266,8 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "sys.functions",	"sys",	"str_to_date",	"SYSTEM",	"create function str_to_date(s string, format string) returns date external name mtime.\"str_to_date\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"date",	0,	0,	"out",	"s",	"clob",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"str_to_time",	"SYSTEM",	"create function str_to_time(s string, format string) returns time with time zone external name mtime.\"str_to_time\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"timetz",	1,	0,	"out",	"s",	"clob",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"str_to_timestamp",	"SYSTEM",	"create function str_to_timestamp(s string, format string) returns timestamp with time zone external name mtime.\"str_to_timestamp\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"timestamptz",	7,	0,	"out",	"s",	"clob",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"strimp_create",	"SYSTEM",	"create procedure sys.strimp_create(sch string, tab string, col string) external name sql.createstrimps;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sch",	"clob",	0,	0,	"in",	"tab",	"clob",	0,	0,	"in",	"col",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"strimp_filter",	"SYSTEM",	"create filter function sys.strimp_filter(strs string, q string) external name strimps.strimpfilter;",	"strimps",	"MAL",	"Filter function",	false,	false,	false,	true,	"strs",	"clob",	0,	0,	"in",	"q",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"strings",	"SYSTEM",	"strings",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"strings",	"SYSTEM",	"strings",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"strings",	"SYSTEM",	"strings",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -6333,6 +6341,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 [ "grant on function",	"sys",	"str_to_date",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"str_to_time",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"str_to_timestamp",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"strimp_filter",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"text",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"time_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"timestamp_to_str",	"public",	"EXECUTE",	"monetdb",	0	]

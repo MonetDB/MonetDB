@@ -131,6 +131,7 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("oltp", "Inject the OLTP locking primitives"),
  optwrapper_pattern("wlc", "Inject the workload capture-replay primitives"),
  optwrapper_pattern("postfix", "Postfix the plan,e.g. pushing projections"),
+ optwrapper_pattern("strimps", "Use strimps index if appropriate"),
  optwrapper_pattern("for", "Push for decompress down"),
  optwrapper_pattern("dict", "Push dict decompress down"),
  pattern("optimizer", "mask", OPTwrapper, false, "", args(1,1, arg("",str))),

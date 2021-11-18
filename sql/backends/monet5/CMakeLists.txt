@@ -106,7 +106,8 @@ set(include_sql_files
   75_storagemodel
   76_dump
   80_statistics
-  81_tracer)
+  81_tracer
+  90_strimps)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
@@ -144,6 +145,7 @@ target_sources(sql
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
+  sql_strimps.c sql_strimps.h
   sql_time.c
   sql_bincopyfrom.c
   wlr.c wlr.h
