@@ -494,30 +494,32 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 	oid x;
 	struct canditer ci;
 	lng t0 = 0;
+	BAT *pb;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (isVIEW(b)) {
-		BAT *pb = BBP_cache(VIEWtparent(b));
-		if (!BATcheckstrimps(pb))
-			goto sfilter_fail;
-		MT_lock_set(&pb->batIdxLock);
-		strmps = pb->tstrimps;
-		MT_lock_unset(&pb->batIdxLock);
+		pb = BBP_cache(VIEWtparent(b));
 	}
 	else {
-		if (!BATcheckstrimps(b))
-			goto sfilter_fail;
-		MT_lock_set(&b->batIdxLock);
-		strmps = b->tstrimps;
-		MT_lock_unset(&b->batIdxLock);
+		pb = b;
 	}
 
-	ncand = canditer_init(&ci, b, s);
-	if (ncand == 0)
+	if (!BATcheckstrimps(pb))
+		goto sfilter_fail;
+	MT_lock_set(&pb->batIdxLock);
+	strmps = pb->tstrimps;
+	STRMPincref(strmps);
+	MT_lock_unset(&pb->batIdxLock);
+
+        ncand = canditer_init(&ci, b, s);
+	if (ncand == 0) {
+		STRMPdecref(strmps, false);
 		return BATdense(b->hseqbase, 0, 0);
+	}
 	r = COLnew(b->hseqbase, TYPE_oid, ncand, TRANSIENT);
 	if (r == NULL) {
+		STRMPdecref(strmps, false);
 		goto sfilter_fail;
 	}
 
@@ -529,6 +531,7 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 		if ((bitstring_array[x] & qbmask) == qbmask) {
 			if (BUNappend(r, &x, false) != GDK_SUCCEED) {
 				BBPunfix(r->batCacheid);
+				STRMPdecref(strmps, false);
 				goto sfilter_fail;
 			}
 		}
@@ -544,6 +547,7 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 		  " items (%.2f%%).\n", ncand, GDKusec()-t0, r->batCount,
 		  100*r->batCount/(double)ncand);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
+	STRMPdecref(strmps, false);
 	return virtualize(r);
 
  sfilter_fail:
@@ -792,55 +796,6 @@ STRMPappendBitstring(BAT *b, const str s)
 
 	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
-}
-
-void
-STRMPbatdecref(BAT *b, bool remove)
-{
-	Strimps *strimps;
-	BAT *pb = NULL;
-
-	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
-	} else {
-		pb = b;
-	}
-
-	MT_lock_set(&pb->batIdxLock);
-	if (pb && pb->tstrimps && pb->tstrimps != (Strimps *)1) {
-		strimps = pb->tstrimps;
-	} else {
-		MT_lock_unset(&pb->batIdxLock);
-		return;
-	}
-	STRMPdecref(strimps, remove);
-	MT_lock_unset(&pb->batIdxLock);
-}
-
-void
-STRMPbatincref(BAT *b)
-{
-	Strimps *strimps;
-	BAT *pb = NULL;
-
-	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
-	} else {
-		pb = b;
-	}
-
-	MT_lock_set(&pb->batIdxLock);
-	if (pb && pb->tstrimps && pb->tstrimps != (Strimps *)1) {
-		strimps = pb->tstrimps;
-	} else {
-		MT_lock_unset(&pb->batIdxLock);
-		return;
-	}
-	STRMPincref(strimps);
-	MT_lock_unset(&pb->batIdxLock);
-
 }
 
 void
