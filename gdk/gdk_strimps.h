@@ -34,15 +34,6 @@ typedef struct {
 } PairHistogramElem;
 
 
-/* typedef struct { */
-/* 	uint8_t *sizes; */
-/* 	uint8_t *pairs; */
-/* } StrimpHeader; */
-
-// gdk_export gdk_return STRMPndigrams(BAT *b, size_t *n); // Remove?
-// gdk_export gdk_return STRMPmakehistogramBP(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins); // make static
-// gdk_export gdk_return STRMP_make_header(StrimpHeader *h, uint64_t *hist, size_t hist_size); // make static
-// gdk_export gdk_return STRMP_make_header(BAT *b);
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
 gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const str q);
 gdk_export gdk_return STRMPappendBitstring(BAT *b, const str s);
