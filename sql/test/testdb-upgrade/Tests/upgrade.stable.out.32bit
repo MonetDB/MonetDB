@@ -669,6 +669,12 @@ JOIN sys.fkey_actions upd ON fks.update_action_id = upd.action_id
 JOIN sys.fkey_actions del ON fks.delete_action_id = del.action_id;
 GRANT SELECT ON sys.fkeys TO PUBLIC;
 update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;
+CREATE FILTER FUNCTION sys.strimp_filter(strs STRING, q STRING) EXTERNAL NAME strimps.strimpfilter;
+GRANT EXECUTE ON FILTER FUNCTION sys.strimp_filter TO PUBLIC;
+CREATE PROCEDURE sys.strimp_create(sch string, tab string, col string)
+ EXTERNAL NAME sql.createstrimps;
+update sys.functions set system = true where system <> true and name = 'strimp_filter' and schema_id = 2000 and type = 4;
+update sys.functions set system = true where system <> true and name = 'strimp_create' and schema_id = 2000 and type = 2;
 drop view logging.compinfo;
 drop function logging.compinfo;
 drop procedure sys.storagemodelinit();
