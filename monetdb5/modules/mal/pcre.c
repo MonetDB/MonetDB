@@ -1892,10 +1892,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 */
 	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			STRMPbatincref(b);
 			BAT *tmp_s;
 			tmp_s = STRMPfilter(b, s, *pat);
-			STRMPbatdecref(b, false);
 			if (tmp_s && s) {
 				BBPunfix(s->batCacheid);
 				s = tmp_s;
