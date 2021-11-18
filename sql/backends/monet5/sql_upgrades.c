@@ -3315,7 +3315,7 @@ sql_update_jul2021_5(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_subtype tp;
 	size_t bufsize = 65536, pos = 0;
@@ -4649,7 +4649,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_jan2022(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
