@@ -846,7 +846,7 @@ STRMPbatincref(BAT *b)
 void
 STRMPdecref(Strimps *strimps, bool remove)
 {
-	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " ULLFMT "\n",
+	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " BUNFMT "\n",
 		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) - 1));
 	strimps->strimps.remove |= remove;
 	if (ATOMIC_DEC(&strimps->strimps.refs) == 0) {
@@ -860,7 +860,7 @@ STRMPdecref(Strimps *strimps, bool remove)
 void
 STRMPincref(Strimps *strimps)
 {
-	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " ULLFMT "\n",
+	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s to " BUNFMT "\n",
 		  strimps->strimps.filename, (BUN) (ATOMIC_GET(&strimps->strimps.refs) + 1));
 	(void)ATOMIC_INC(&strimps->strimps.refs);
 
