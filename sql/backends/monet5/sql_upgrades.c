@@ -4112,6 +4112,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
 
+	/* 90_strimps.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"CREATE FILTER FUNCTION sys.strimp_filter(strs STRING, q STRING) EXTERNAL NAME strimps.strimpfilter;\n"
+					"GRANT EXECUTE ON FILTER FUNCTION sys.strimp_filter TO PUBLIC;\n"
+					"CREATE PROCEDURE sys.strimp_create(sch string, tab string, col string)\n"
+					" EXTERNAL NAME sql.createstrimps;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where system <> true and name = 'strimp_filter' and schema_id = 2000 and type = %d;\n"
+					"update sys.functions set system = true where system <> true and name = 'strimp_create' and schema_id = 2000 and type = %d;\n",
+					F_FILT, F_PROC);
+
 	/* recreate SQL functions that just need to be recompiled since the
 	 * MAL functions's "unsafe" property was changed */
 	sql_schema *lg = mvc_bind_schema(sql, "logging");
