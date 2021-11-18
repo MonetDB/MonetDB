@@ -12692,6 +12692,7 @@
 [ "sql",	"optimizer_updates",	"pattern sql.optimizer_updates():void ",	"SQLoptimizersUpdate;",	""	]
 [ "sql",	"optimizers",	"command sql.optimizers() (X_0:bat[:str], X_1:bat[:str], X_2:bat[:str]) ",	"getPipeCatalog;",	""	]
 [ "sql",	"password",	"pattern sql.password(X_0:str):str ",	"db_password_wrap;",	"Return password hash of user"	]
+[ "sql",	"peak_next_value",	"pattern sql.peak_next_value(X_0:str, X_1:str):lng ",	"mvc_peak_next_value;",	"Peaks at the next value of the sequence"	]
 [ "sql",	"percent_rank",	"pattern sql.percent_rank(X_0:any_1, X_1:bit, X_2:bit):dbl ",	"SQLpercent_rank;",	"return the percentage into the total number of groups for each row"	]
 [ "sql",	"prelude",	"pattern sql.prelude():void ",	"SQLprelude;",	""	]
 [ "sql",	"prepared_statements",	"pattern sql.prepared_statements() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:int], X_3:bat[:str], X_4:bat[:timestamp]) ",	"SQLsession_prepared_statements;",	"Available prepared statements in the current session"	]
