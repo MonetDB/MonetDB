@@ -71,6 +71,60 @@ with SQLTestCase() as mdb1:
         mdb1.connect(username="monetdb", password="monetdb")
         mdb2.connect(username="monetdb", password="monetdb")
 
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('create merge table parent(a int, b int);').assertSucceeded()
+        mdb1.execute('create table child1(a int, b int);').assertSucceeded()
+        mdb1.execute("insert into child1 values (1,1);").assertSucceeded()
+        mdb1.execute('create table child2(a int, b int);').assertSucceeded()
+        mdb1.execute("insert into child2 values (2,2);").assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("alter table parent add table child1;").assertSucceeded()
+        mdb2.execute('alter table child1 add column data int;').assertSucceeded() # number of columns must match
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
+        mdb1.execute('select * from parent;').assertDataResultMatch([(1,1)])
+        mdb2.execute('select * from parent;').assertDataResultMatch([(1,1)])
+
+        mdb1.execute("alter table parent drop table child1;").assertSucceeded()
+        mdb1.execute("alter table parent add table child2;").assertSucceeded()
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("alter table parent add table child1;").assertSucceeded()
+        mdb2.execute('alter table child1 alter column a set not null;').assertSucceeded() # null constraints must match
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
+        mdb1.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
+        mdb2.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
+
+        mdb1.execute('alter table parent drop table child1;').assertSucceeded()
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb2.execute('start transaction;').assertSucceeded()
+        mdb1.execute("alter table parent add table child1;").assertSucceeded()
+        mdb2.execute('alter table child1 drop column b;').assertSucceeded() # number of columns must match
+        mdb1.execute('commit;').assertSucceeded()
+        mdb2.execute('commit;').assertFailed(err_code="40000", err_message="COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead")
+
+        mdb1.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
+        mdb2.execute('select * from parent;').assertDataResultMatch([(1,1),(2,2)])
+
+        mdb1.execute('start transaction;').assertSucceeded()
+        mdb1.execute('alter table parent drop table child1;').assertSucceeded()
+        mdb1.execute('alter table parent drop table child2;').assertSucceeded()
+        mdb1.execute('drop table parent;').assertSucceeded()
+        mdb1.execute('drop table child1;').assertSucceeded()
+        mdb1.execute('drop table child2;').assertSucceeded()
+        mdb1.execute('commit;').assertSucceeded()
+
+with SQLTestCase() as mdb1:
+    with SQLTestCase() as mdb2:
+        mdb1.connect(username="monetdb", password="monetdb")
+        mdb2.connect(username="monetdb", password="monetdb")
+
         # Test different instantiations of SQL functions and views on different transactions
         mdb1.execute('start transaction;').assertSucceeded()
         mdb1.execute('CREATE MERGE TABLE parent(a int)').assertSucceeded()
