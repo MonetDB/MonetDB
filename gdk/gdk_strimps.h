@@ -46,6 +46,4 @@ typedef struct {
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
 gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const str q);
 gdk_export gdk_return STRMPappendBitstring(BAT *b, const str s);
-gdk_export void STRMPbatdecref(BAT *, bool);
-gdk_export void STRMPbatincref(BAT *);
 #endif /* _GDK_STRIMPS_H_ */
