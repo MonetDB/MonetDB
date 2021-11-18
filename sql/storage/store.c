@@ -3279,6 +3279,9 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
+		return res;
+
 	if (isDeclaredTable(i->t))
 		if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 			if ((res = store->storage_api.create_idx(tr, ni))) {
@@ -3381,6 +3384,9 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		col->storage_type = SA_STRDUP(tr->sa, c->storage_type);
 
 	if ((res = ol_add(t->columns, &col->base)))
+		return res;
+
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
 		return res;
 
 	ATOMIC_PTR_INIT(&col->data, NULL);
@@ -6408,8 +6414,10 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 
 	ATOMIC_PTR_INIT(&ni->data, NULL);
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
-		if ((res = store->storage_api.create_idx(tr, ni)))
+		if ((res = store->storage_api.create_idx(tr, ni))) {
+			ATOMIC_PTR_DESTROY(&ni->data);
 			return res;
+		}
 	if (!isDeclaredTable(t))
 		if ((res = store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, &ni->base.name))) {
 			ATOMIC_PTR_DESTROY(&ni->data);
