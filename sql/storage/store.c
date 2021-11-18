@@ -3279,6 +3279,9 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 
+	/* this dependency is needed for merge tables */
+	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl)))
+		return res;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
 		return res;
 
@@ -3386,6 +3389,9 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if ((res = ol_add(t->columns, &col->base)))
 		return res;
 
+	/* this dependency is needed for merge tables */
+	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl)))
+		return res;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
 		return res;
 
@@ -3406,11 +3412,16 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
-		if (c->type.type->s) /* column depends on type */
+		if (c->type.type->s) { /* column depends on type */
 			if ((res = sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY))) {
 				ATOMIC_PTR_DESTROY(&col->data);
 				return res;
 			}
+			if (!isNew(c->type.type) && (res = sql_trans_add_dependency(tr, c->type.type->base.id, ddl))) {
+				ATOMIC_PTR_DESTROY(&col->data);
+				return res;
+			}
+		}
 	}
 	if (cres)
 		*cres = col;
@@ -5895,6 +5906,9 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		dup->null = isnull;
 
 		/* disallow concurrent updates on the column if not null is set */
+		/* this dependency is needed for merge tables */
+		if (!isNew(col) && (res = sql_trans_add_dependency(tr, col->t->base.id, ddl)))
+			return res;
 		if (!isnull && !isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
 			return res;
 	}
