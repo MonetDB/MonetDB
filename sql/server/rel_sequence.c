@@ -101,12 +101,13 @@ rel_create_seq(
 				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
 	/* generate defaults */
-	if (is_lng_nil(start)) start = 1;
 	if (is_lng_nil(inc)) inc = 1;
-	if (is_lng_nil(min)) min = 0;
-	if (cycle && (!is_lng_nil(max) && max < 0)) cycle = 0;
-	if (is_lng_nil(max)) max = 0;
+	if (is_lng_nil(min)) min = inc > 0 ? 0 : GDK_lng_min;
+	if (is_lng_nil(max)) max = inc > 0 ? GDK_lng_max : 0;
+	if (is_lng_nil(start)) start = inc > 0 ? 1 : -1;
 	if (is_lng_nil(cache)) cache = 1;
+
+	// TODO: check that min < max and min <= start <= max and inc != 0 and inc * cache > 0 does not overflow?
 
 	seq = create_sql_sequence(sql->store, sql->sa, s, name, start, min, max, inc, cache, cycle);
 	seq->bedropped = bedropped;

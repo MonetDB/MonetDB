@@ -42,7 +42,7 @@ create function f(i int, j int, k int) returns int begin return 45; end;
 create function f(i int, j int, k int, l int) returns int begin return 45; end;
 create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
-ALTER SEQUENCE "foo"."counter" RESTART WITH 1 NO CYCLE;
+ALTER SEQUENCE "foo"."counter" RESTART WITH 1 MAXVALUE 9223372036854775807 NO CYCLE;
 SET SCHEMA "sys";
 COMMIT;
 '''

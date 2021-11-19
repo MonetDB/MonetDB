@@ -3315,7 +3315,7 @@ sql_update_jul2021_5(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jan2022(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_subtype tp;
 	size_t bufsize = 65536, pos = 0;
@@ -3323,7 +3323,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
 
-	(void) systabfixed;
 	sql_find_subtype(&tp, "bigint", 0, 0);
 	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -3334,6 +3333,10 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
 
 	pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
 
@@ -4112,6 +4115,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where name in ('fkey_actions', 'fkeys') AND schema_id = 2000;\n");
 
+	/* 90_strimps.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"CREATE FILTER FUNCTION sys.strimp_filter(strs STRING, q STRING) EXTERNAL NAME strimps.strimpfilter;\n"
+					"GRANT EXECUTE ON FILTER FUNCTION sys.strimp_filter TO PUBLIC;\n"
+					"CREATE PROCEDURE sys.strimp_create(sch string, tab string, col string)\n"
+					" EXTERNAL NAME sql.createstrimps;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where system <> true and name = 'strimp_filter' and schema_id = 2000 and type = %d;\n"
+					"update sys.functions set system = true where system <> true and name = 'strimp_create' and schema_id = 2000 and type = %d;\n",
+					F_FILT, F_PROC);
+
 	/* recreate SQL functions that just need to be recompiled since the
 	 * MAL functions's "unsafe" property was changed */
 	sql_schema *lg = mvc_bind_schema(sql, "logging");
@@ -4635,7 +4649,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_jan2022(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
