@@ -193,7 +193,7 @@ seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng* dest)
 		}
 		for(lng i = start_index; i < cnt; i++) {
 			if ((GDK_lng_max - inc < cur) || ((cur += inc) > max)) {
-				// overrflow
+				// overflow
 				assert(seq->cycle);
 				cur = min;
 			}
