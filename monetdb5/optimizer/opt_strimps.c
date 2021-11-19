@@ -27,8 +27,6 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bool needed = false;
 	// int mvcvar = -1;
 	InstrPtr p, q, *old = mb->stmt;
-	char buf[256];
-	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 	int res;
 
@@ -94,20 +92,17 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			freeInstruction(old[i]);
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
-    if (actions){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-        	msg = chkFlow(mb);
-	if (!msg)
-        	msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+	/* Defense line against incorrect plans */
+	if (actions){
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+	}
+	/* keep all actions taken as a post block comment */
 bailout:
-	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","strimps",actions,usec);
-	newComment(mb,buf);
-	if( actions > 0)
-		addtoMalBlkHistory(mb);
+	/* keep actions taken as a fake argument*/
+	(void) pushInt(mb, pci, actions);
 	return msg;
 }
