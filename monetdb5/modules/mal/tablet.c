@@ -637,6 +637,9 @@ typedef struct {
 	bte *rowerror;
 	int errorcnt;
 	LoadOps *loadops;
+	char scratch_buffer[3];
+	char *scratch;
+	size_t scratch_len;
 } READERtask;
 
 static void
@@ -798,6 +801,70 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 static void report_append_failed(READERtask *task, Column *fmt, int idx, lng col);
 static int report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s);
 
+static inline void
+make_it_nil(Column *fmt)
+{
+	if (fmt->data == NULL)
+		return;
+	assert(fmt->len >= fmt->nil_len);
+	memcpy(fmt->data, fmt->nildata, fmt->nil_len);
+	if (fmt->c)
+		fmt->c->tnonil = false;
+}
+
+
+static inline int
+SQLconvert_val(READERtask *task, int col, int idx) {
+	Column *fmt = &task->as->format[col];
+	char *s = task->fields[col][idx];
+
+	if (s == NULL) {
+		make_it_nil(fmt);
+		return 0;
+	}
+	size_t slen = strlen(s);
+
+	char *unescaped;
+	if (!task->escape) {
+		unescaped = s;
+	} else {
+		// reallocate scratch space if necessary
+		size_t needed = slen + 1;
+		if (needed > task->scratch_len) {
+			// add some margin
+			size_t new_len = needed + needed / 2;
+			if (task->scratch != NULL && task->scratch != task->scratch_buffer)
+				GDKfree(task->scratch);
+			task->scratch = GDKmalloc(new_len);
+			if (!task->scratch) {
+				task->scratch = task->scratch_buffer;
+				task->scratch_len = sizeof(task->scratch_buffer);
+				int ret = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
+				make_it_nil(fmt);
+				return ret;
+			}
+			task->scratch_len = new_len;
+		}
+		// unescape into the scratch space
+		if (GDKstrFromStr((unsigned char*)task->scratch, (unsigned char*)s, slen) < 0) {
+			int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
+			make_it_nil(fmt);
+			return ret;
+		}
+		unescaped = task->scratch;
+	}
+
+	// Now parse the value into fmt->data.
+	void *p = fmt->frstr(fmt, fmt->adt, unescaped);
+	if (p == NULL) {
+		int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
+		make_it_nil(fmt);
+		return ret;
+	}
+
+	return 0;
+}
+
 /*
  * The parsing of the individual values is straightforward. If the value represents
  * the null-replacement string then we grab the underlying nil.
@@ -813,55 +880,26 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 {
 	Column *fmt = task->as->format + col;
 	const void *adt;
-	char buf[BUFSIZ];
-	char *s = task->fields[col][idx];
-	int ret = 0;
 
-	/* include testing on the terminating null byte !! */
-	if (s == 0) {
-		adt = fmt->nildata;
-		if (fmt->c)
-			fmt->c->tnonil = false;
-		if (fmt->data)
-			memcpy(fmt->data, adt, fmt->len);
-	} else {
-		if (task->escape) {
-			size_t slen = strlen(s) + 1;
-			char *data = slen <= sizeof(buf) ? buf : GDKmalloc(strlen(s) + 1);
-			if (data == NULL ||
-				GDKstrFromStr((unsigned char *) data, (unsigned char *) s, strlen(s)) < 0)
-				adt = NULL;
-			else
-				adt = fmt->frstr(fmt, fmt->adt, data);
-			if (data != buf)
-				GDKfree(data);
-		} else
-			adt = fmt->frstr(fmt, fmt->adt, s);
-	}
+	void *orig = fmt->data;
+	if (SQLconvert_val(task, col, idx) < 0)
+		return -1;
+	assert(one_by_one || fmt->data == orig);
 
-	/* col is zero-based, but for error messages it needs to be one-based. */
-	lng colno = col + 1;
-
-	if (adt == NULL) {
-		ret = report_conversion_failed(task, fmt, idx, colno, s);
-		/* replace it with a nil */
-		adt = fmt->nildata;
-		if (fmt->c)
-			fmt->c->tnonil = false;
-	}
+	adt = fmt->data ? fmt->data : fmt->nildata;
 
 	if (task->loadops) {
 		if (!one_by_one)
-			return ret;
+			return 0;
 		// Simple fixed size types will be appended in bulk.
 		// Here we deal with the more messy ones
 		str msg = task->loadops->append_one(task->loadops->state, idx, adt, fmt->appendcol);
 		if (msg == MAL_SUCCEED)
-			return ret;
+			return 0;
 	} else if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
-		return ret;
+		return 0;
 
-	report_append_failed(task, fmt, idx, colno);
+	report_append_failed(task, fmt, idx, col + 1);
 	return -1;
 }
 
@@ -1790,6 +1828,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			for (j = 0; j < threads; j++)
 				ptask[j].workers = threads;
 		}
+		ptask[j].scratch = ptask[j].scratch_buffer;
+		ptask[j].scratch_len = sizeof(ptask[j].scratch_buffer);
 	}
 	if (threads == 0) {
 		/* no threads started */
@@ -2071,6 +2111,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	GDKfree(task.rowerror);
 	for (i = 0; i < MAXWORKERS; i++)
 		GDKfree(ptask[i].cols);
+	for (int t = 0; t < threads; t++) {
+		char *scratch = ptask[t].scratch;
+		if (scratch != NULL && scratch != ptask[t].scratch_buffer)
+			GDKfree(scratch);
+	}
 #ifdef MLOCK_TST
 	munlockall();
 #endif
