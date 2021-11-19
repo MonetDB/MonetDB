@@ -181,9 +181,9 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	SETFLAGS;															\
 	bn->tkey = false;													\
 bailout: 																\
@@ -297,9 +297,9 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\
@@ -378,9 +378,9 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\
@@ -455,9 +455,9 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
+	BATsetcount(bn, n);													\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
-	BATsetcount(bn, n);													\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\
