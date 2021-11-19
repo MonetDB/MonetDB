@@ -298,15 +298,15 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	struct canditer ci;
 	size_t values = 0;
 
-
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
-		return false;
-	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0) {
+		return false;
+	}
+
+	hlen = STRIMP_HISTSIZE;
+	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		return false;
 	}
 
@@ -357,6 +357,13 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 					if (hist[hidx].p == NULL) {
 						values++;
 						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
+						if (!hist[hidx].p) {
+							bat_iterator_end(&bi);
+							for (hidx = 0; hidx < hlen; hidx++)
+								GDKfree(hist[hidx].p);
+							GDKfree(hist);
+							return false;
+						}
 						hist[hidx].p->psize = cpp->psize;
 						hist[hidx].p->pbytes = cpp->pbytes;
 					}
@@ -512,7 +519,7 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 	STRMPincref(strmps);
 	MT_lock_unset(&pb->batIdxLock);
 
-        ncand = canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0) {
 		STRMPdecref(strmps, false);
 		return BATdense(b->hseqbase, 0, 0);
@@ -636,8 +643,8 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	CharPair hpairs[STRIMP_HEADER_SIZE];
 	const char *nme;
 
-        if ((r = b->tstrimps) == NULL &&
-	    STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
+	if ((r = b->tstrimps) == NULL &&
+		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
 						 the result in hpairs */
 		sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and
 						the pair sizes */
