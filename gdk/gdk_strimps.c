@@ -487,6 +487,16 @@ BATcheckstrimps(BAT *b)
 	return ret;
 }
 
+#define STRMPfilterloop(next) \
+	do { \
+		for (i = 0; i < ncand; i++) { \
+			x = next(&ci); \
+			if ((bitstring_array[x] & qbmask) == qbmask) { \
+				rvals[j++] = x; \
+			} \
+		} \
+	} while (0)
+
 /* Filter a BAT b using a string q. Return the result as a candidate
  * list.
  */
@@ -494,11 +504,11 @@ BAT *
 STRMPfilter(BAT *b, BAT *s, const str q)
 {
 	BAT *r = NULL;
-	BUN i, ncand;
+	BUN i, ncand, j = 0;
 	uint64_t qbmask;
 	uint64_t *bitstring_array;
 	Strimps *strmps;
-	oid x;
+	oid x, *restrict rvals;
 	struct canditer ci;
 	lng t0 = 0;
 	BAT *pb;
@@ -532,18 +542,15 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 
 	qbmask = STRMPmakebitstring(q, strmps);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
+	rvals = Tloc(r, 0);
 
-	for (i = 0; i < ncand; i++) {
-		x = canditer_next(&ci);
-		if ((bitstring_array[x] & qbmask) == qbmask) {
-			if (BUNappend(r, &x, false) != GDK_SUCCEED) {
-				BBPunfix(r->batCacheid);
-				STRMPdecref(strmps, false);
-				goto sfilter_fail;
-			}
-		}
+	if (ci.tpe == cand_dense) {
+		STRMPfilterloop(canditer_next_dense);
+	} else {
+		STRMPfilterloop(canditer_next);
 	}
 
+	BATsetcount(r, j);
 	r->tkey = true;
 	r->tsorted = true;
 	r->trevsorted = BATcount(r) <= 1;
