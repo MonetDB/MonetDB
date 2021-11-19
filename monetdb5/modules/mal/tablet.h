@@ -49,6 +49,7 @@ typedef struct Column_t {
 	bit ws;						/* if set we need to skip white space */
 	char quote;					/* if set use this character for string quotes */
 	const void *nildata;
+	size_t nil_len;
 	int size;
 	void *appendcol;			/* temporary, can probably use Columnt_t.extra in the future */
 } Column;

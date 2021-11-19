@@ -1054,6 +1054,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].nullstr = ns;
 			fmt[i].null_length = strlen(ns);
 			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
+			fmt[i].nil_len = ATOMlen(fmt[i].adt, fmt[i].nildata);
 			fmt[i].skip = (col->base.name[0] == '%');
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
