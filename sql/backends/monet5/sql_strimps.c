@@ -27,14 +27,24 @@ sql_load_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BAT **b)
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
 
+	if (strNil(sch))
+		throw(SQL, "sql.createstrimps", SQLSTATE(42000) "Schema name cannot be NULL");
+	if (strNil(tbl))
+		throw(SQL, "sql.createstrimps", SQLSTATE(42000) "Table name cannot be NULL");
+	if (strNil(col))
+		throw(SQL, "sql.createstrimps", SQLSTATE(42000) "Column name cannot be NULL");
+
 	if (!(s = mvc_bind_schema(m, sch)))
 		throw(SQL, "sql.createstrimps", SQLSTATE(3FOOO) "Unknown schema %s", sch);
 
 	if (!mvc_schema_privs(m, s))
 		throw(SQL, "sql.createstrimps", SQLSTATE(42000) "Access denied for %s to schema '%s'",
 			  get_string_global_var(m, "current_user"), s->base.name);
-	if (!(t = mvc_bind_table(m, s, tbl)) || !isTable(t))
+	if (!(t = mvc_bind_table(m, s, tbl)))
 		throw(SQL, "sql.createstrimps", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
+	if (!isTable(t))
+		throw(SQL, "sql.createstrimps", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (!(c = mvc_bind_column(m, t, col)))
 		throw(SQL, "sql.createstrimps", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 
@@ -51,16 +61,22 @@ str
 sql_createstrimps(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b, *s;
+	gdk_return res;
 
 	if (sql_load_bat(cntxt, mb, stk, pci, &b) != MAL_SUCCEED)
 		throw(SQL, "sql.createstrimps", SQLSTATE(HY002) OPERATION_FAILED);
 
-	s = BATdense(0, 0, b->batCount);
+	if (!(s = BATdense(0, 0, b->batCount))) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.createstrimps", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
-	if (STRMPcreate(b, s) != GDK_SUCCEED)
-		throw(SQL, "sql.createstrimps", SQLSTATE(HY002) OPERATION_FAILED);
-
+	res = STRMPcreate(b, s);
 	BBPunfix(b->batCacheid);
+	BBPunfix(s->batCacheid);
+	if (res != GDK_SUCCEED)
+		throw(SQL, "sql.createstrimps", GDK_EXCEPTION);
+
 	return MAL_SUCCEED;
 }
 

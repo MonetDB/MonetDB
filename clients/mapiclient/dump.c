@@ -1506,15 +1506,15 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		goto bailout;
 
 	snprintf(query, maxquerylen,
-		"SELECT s.name, "							/* 0 */
-		       "seq.name, "							/* 1 */
-		       "get_value_for(s.name, seq.name), "	/* 2 */
-		       "seq.\"minvalue\", "					/* 3 */
-		       "seq.\"maxvalue\", "					/* 4 */
-		       "seq.\"increment\", "				/* 5 */
-		       "seq.\"cycle\", "					/* 6 */
-		       "seq.\"cacheinc\", "					/* 7 */
-		       "rem.\"remark\" "					/* 8 */
+		"SELECT s.name, "									/* 0 */
+		       "seq.name, "									/* 1 */
+		       "peak_next_value_for(s.name, seq.name), "	/* 2 */
+		       "seq.\"minvalue\", "							/* 3 */
+		       "seq.\"maxvalue\", "							/* 4 */
+		       "seq.\"increment\", "						/* 5 */
+		       "seq.\"cycle\", "							/* 6 */
+		       "seq.\"cacheinc\", "							/* 7 */
+		       "rem.\"remark\" "							/* 8 */
 		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "

@@ -80,7 +80,9 @@ static str
 PATstrimpCreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid, sid;
-	BAT *b, *s;
+	BAT *b, *s = NULL;
+	gdk_return res;
+
 	(void)cntxt;
 	(void)mb;
 
@@ -89,11 +91,17 @@ PATstrimpCreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "strimps.strimpCreate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	sid = *getArgReference_bat(stk, pci, 2);
-	if ((s = BATdescriptor(sid)) == NULL)
+	if (sid && !is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
+		BBPunfix(b->batCacheid);
 		throw(MAL, "strimps.strimpCreate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
-	if(STRMPcreate(b, s) != GDK_SUCCEED)
-		throw(MAL, "strimps.strimpCreate", SQLSTATE(HY002) OPERATION_FAILED);
+	res = STRMPcreate(b, s);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (res != GDK_SUCCEED)
+		throw(MAL, "strimps.strimpCreate", GDK_EXCEPTION);
 
 	// *getArgReference_lng(stk, pci, 0) = 0;
 	return MAL_SUCCEED;
@@ -112,7 +120,7 @@ static str
 PATstrimpFilterSelect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid, sid;
-	BAT *b, *s, *ob;
+	BAT *b, *s = NULL, *ob;
 	str pat;
 
 	(void)cntxt;
@@ -123,19 +131,27 @@ PATstrimpFilterSelect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "strimps.strimpfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	sid = *getArgReference_bat(stk, pci, 2);
-	if ((s = BATdescriptor(sid)) == NULL)
+	if (sid && !is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
+		BBPunfix(b->batCacheid);
 		throw(MAL, "strimps.strimpfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
-	assert(s->ttype == TYPE_void);
+	assert(!s || s->ttype == TYPE_void);
 
-	if(STRMPcreate(b, s) != GDK_SUCCEED)
-		throw(MAL, "strimps.strimpfilter", SQLSTATE(HY002) "strimp creation failed");
+	if (STRMPcreate(b, s) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, "strimps.strimpfilter", GDK_EXCEPTION);
+	}
 
 	pat = *getArgReference_str(stk, pci, 3);
-	if ((ob = STRMPfilter(b, s, pat)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "strimps.strimpfilter", SQLSTATE(HY002) "filtering failed");
-	}
+	ob = STRMPfilter(b, s, pat);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (ob == NULL)
+		throw(MAL, "strimps.strimpfilter", GDK_EXCEPTION);
 
 	*getArgReference_bat(stk, pci, 0) = ob->batCacheid;
 	BBPkeepref(ob->batCacheid);
