@@ -1868,7 +1868,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 {
 	BAT *b, *s = NULL, *bn = NULL;
 	str msg = MAL_SUCCEED;
-	char *ppat = NULL;
+	char *ppat = NULL, buf[64];
+	const char *with_strimps = "";
 	bool use_re = false, use_strcmp = false, empty = false;
 	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no");
 
@@ -1883,6 +1884,9 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
+	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
+		goto bailout;
+
 	/* Since the strimp pre-filtering of a LIKE query produces a superset of
 	 * the actual result the complement of that set will necessarily reject
 	 * some of the matching entries in the NOT LIKE query.
@@ -1890,23 +1894,21 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * A better solution is to run the PCRElikeselect as a LIKE query with
 	 * strimps and return the complement of the result.
 	 */
-	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
-		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			BAT *tmp_s;
-			tmp_s = STRMPfilter(b, s, *pat);
-			if (tmp_s && s) {
+	if (!empty && use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
+		BAT *tmp_s = NULL;
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED && (tmp_s = STRMPfilter(b, s, *pat))) {
+			if (s)
 				BBPunfix(s->batCacheid);
-				s = tmp_s;
-			}
-		} /* If we cannot create the strimp just continue normally */
-
+			s = tmp_s;
+			with_strimps = " with strimps";
+		} else { /* If we cannot create the strimp just continue normally */
+			GDKclrerr();
+		}
 	}
 
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
-		goto bailout;
-
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
-						   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
+	snprintf(buf, sizeof(buf), "%s%s", empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
+			 use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre", with_strimps);
+	MT_thread_setalgorithm(buf);
 
 	if (empty) {
 		if (!(bn = BATdense(0, 0, 0)))
