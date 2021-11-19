@@ -3547,13 +3547,18 @@ merge_notequal(mvc *sql, list *exps, int *changes)
 		for (node *n = inequality_groups->h; n; n = n->next) {
 			list *next = n->data;
 			sql_exp *first = (sql_exp*) next->h->data;
-			list *notin = new_exp_list(sql->sa);
 
-			for (node *m = next->h; m; m = m->next) {
-				sql_exp *e = m->data;
-				list_append(notin, e->r);
+			if (list_length(next) > 1) {
+				list *notin = new_exp_list(sql->sa);
+
+				for (node *m = next->h; m; m = m->next) {
+					sql_exp *e = m->data;
+					list_append(notin, e->r);
+				}
+				list_append(nexps, exp_in(sql->sa, first->l, notin, cmp_notin));
+			} else {
+				list_append(nexps, first);
 			}
-			list_append(nexps, exp_in(sql->sa, first->l, notin, cmp_notin));
 		}
 
 		for (node *n = exps->h; n; n = n->next) {

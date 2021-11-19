@@ -2931,18 +2931,18 @@ STRprelude(void *ret)
 			fp[i] = UTF8_toUpper[i].from;
 			tp[i] = UTF8_toUpper[i].to;
 		}
+		BATsetcount(UTF8_toUpperFrom, i);
 		UTF8_toUpperFrom->tkey = true;
 		UTF8_toUpperFrom->tsorted = true;
 		UTF8_toUpperFrom->trevsorted = false;
 		UTF8_toUpperFrom->tnil = false;
 		UTF8_toUpperFrom->tnonil = true;
-		BATsetcount(UTF8_toUpperFrom, i);
+		BATsetcount(UTF8_toUpperTo, i);
 		UTF8_toUpperTo->tkey = false;
 		UTF8_toUpperTo->tsorted = false;
 		UTF8_toUpperTo->trevsorted = false;
 		UTF8_toUpperTo->tnil = false;
 		UTF8_toUpperTo->tnonil = true;
-		BATsetcount(UTF8_toUpperTo, i);
 
 		fp = (int *) Tloc(UTF8_toLowerFrom, 0);
 		tp = (int *) Tloc(UTF8_toLowerTo, 0);
@@ -2950,18 +2950,18 @@ STRprelude(void *ret)
 			fp[i] = UTF8_toLower[i].from;
 			tp[i] = UTF8_toLower[i].to;
 		}
+		BATsetcount(UTF8_toLowerFrom, i);
 		UTF8_toLowerFrom->tkey = true;
 		UTF8_toLowerFrom->tsorted = true;
 		UTF8_toLowerFrom->trevsorted = false;
 		UTF8_toLowerFrom->tnil = false;
 		UTF8_toLowerFrom->tnonil = true;
-		BATsetcount(UTF8_toLowerFrom, i);
+		BATsetcount(UTF8_toLowerTo, i);
 		UTF8_toLowerTo->tkey = false;
 		UTF8_toLowerTo->tsorted = false;
 		UTF8_toLowerTo->trevsorted = false;
 		UTF8_toLowerTo->tnil = false;
 		UTF8_toLowerTo->tnonil = true;
-		BATsetcount(UTF8_toLowerTo, i);
 
 		if (BBPrename(UTF8_toUpperFrom->batCacheid, "monet_unicode_upper_from") != 0 ||
 			BBPrename(UTF8_toUpperTo->batCacheid, "monet_unicode_upper_to") != 0 ||
