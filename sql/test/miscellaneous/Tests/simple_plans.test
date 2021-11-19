@@ -144,6 +144,16 @@ project (
 | ) [ "tab0"."col1" notin (int "1", int "81") ]
 ) [ tinyint "1" ]
 
+# don't rewrite col2 <> 10 into notin
+query T nosort
+plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and col2 <> 10
+----
+project (
+| select (
+| | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ "tab0"."col2" != int "10", "tab0"."col1" notin (int "1", int "81") ]
+) [ tinyint "1" ]
+
 query T nosort
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0)
 ----
