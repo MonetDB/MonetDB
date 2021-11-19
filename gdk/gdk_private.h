@@ -18,6 +18,9 @@
 /* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
+/* persist strimp heaps for persistent BATs */
+#define PERSISTENTSTRIMP 1
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -25,7 +28,8 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
-	orderidxheap
+	orderidxheap,
+	strimpheap
 };
 
 gdk_return ATOMheap(int id, Heap *hp, size_t cap)
@@ -225,6 +229,14 @@ void IMPSincref(Imprints *imprints)
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
+void STRMPincref(Strimps *strimps)
+	__attribute__((__visibility__("hidden")));
+void STRMPdecref(Strimps *strimps, bool remove)
+	__attribute__((__visibility__("hidden")));
+void STRMPdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
+void STRMPfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mmap(const char *path, int mode, size_t len)
@@ -404,6 +416,17 @@ struct Imprints {
 	void *dict;		/* pointer into imprints heap (dictionary)    */
 	BUN impcnt;		/* counter for imprints                       */
 	BUN dictcnt;		/* counter for cache dictionary               */
+};
+
+struct Strimps {
+	Heap strimps;
+	uint8_t *sizes_base;	/* pointer into strimps heap (pair sizes)  */
+	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
+	void *bitstrings_base;	/* pointer into strimps heap (bitstrings start) */
+	size_t rec_cnt;		/* reconstruction counter: how many
+				   bitstrings were added after header
+				   construction */
+	/* bitstrings_base is a pointer to uint64_t */
 };
 
 typedef struct {

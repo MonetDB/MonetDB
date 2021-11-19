@@ -804,18 +804,20 @@ readInt( char *r, int *pos)
 	return res;
 }
 
-static char *
-readAtomString(mvc *sql, char *r, int *pos)
+static void *
+readAtomString(int localtype, char *r, int *pos)
 {
-	char *res = NULL, *begin = NULL;
+	void *res = NULL;
 	size_t nbytes = 0;
-	int firstpos = 0;
+	int firstpos = 0, rtype = ATOMstorage(localtype) == TYPE_str ? TYPE_str : localtype;
 
+	/* TODO I had issues with the 'external' flag on the JSONfromString function, maybe something is missing there? */
 	assert(r[*pos] == '"'); /* skip first '"' */
 	(*pos)++;
 
 	firstpos = *pos;
-	begin = r + firstpos;
+	if (rtype == TYPE_str) /* string reads require double quotes at the beginning */
+		firstpos--;
 	while (r[*pos] && r[*pos] != '"') { /* compute end of atom string */
 		if (r[*pos] == '\\')
 			(*pos)+=2;
@@ -825,13 +827,15 @@ readAtomString(mvc *sql, char *r, int *pos)
 	if (!r[*pos])
 		return NULL;
 
-	nbytes = (size_t)(*pos - firstpos);
 	assert(r[*pos] == '"'); /* skip second '"' */
+	if (rtype != TYPE_str) /* string reads require double quotes at the end */
+		r[*pos] = '\0';
 	(*pos)++;
 
-	res = sa_alloc(sql->sa, nbytes + 1); /* add null terminator */
-	if (GDKstrFromStr((unsigned char *) res, (unsigned char *) begin, nbytes) < 0) /* also read non printable characters with GDKstrFromStr */
+	if (ATOMfromstr(rtype, &res, &nbytes, r + firstpos, true) < 0) {
+		GDKfree(res);
 		return NULL;
+	}
 	return res;
 }
 
@@ -965,10 +969,12 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		(*pos)+= (int) strlen("NULL");
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
 	} else {
-		char *st = readAtomString(sql, r, pos);
-		if (!st)
+		void *ptr = readAtomString(tpe->type->localtype, r, pos);
+		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
-		return exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+		sql_exp *res = exp_atom(sql->sa, atom_general_ptr(sql->sa, tpe, ptr));
+		GDKfree(ptr);
+		return res;
 	}
 }
 

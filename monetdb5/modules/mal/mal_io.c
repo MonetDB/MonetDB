@@ -120,8 +120,8 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (hd)
 		mnstr_printf(fp, "%s", hd);
 
-	if (ATOMvarsized(tpe))
-		ATOMprint(tpe, *(str *) val, fp);
+	if (ATOMextern(tpe))
+		ATOMprint(tpe, *(ptr *) val, fp);
 	else
 		ATOMprint(tpe, val, fp);
 

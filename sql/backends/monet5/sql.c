@@ -951,23 +951,11 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(r = COLnew(0, TYPE_lng, card, TRANSIENT)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	lng start, inc, minv, maxv, end, *restrict rb = Tloc(r, 0);
+	lng *restrict rb = Tloc(r, 0);
 
-	if (seqbulk_next_value(be->mvc->session->tr->store, seq, card, &start, &inc, &minv, &maxv, &end)) {
-		be->last_id = end;
+	if (seqbulk_next_value(be->mvc->session->tr->store, seq, card, rb)) {
+		be->last_id = rb[card-1];
 		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
-		lng c = start;
-		for(BUN i = 0; i<card; ) {
-			if (maxv && c > maxv) {
-				if (!seq->cycle)
-					break;
-				c = minv;
-			}
-			rb[i++] = c;
-			if (i < card)
-				c += inc;
-		}
-		assert(c == end);
 		BATsetcount(r, card);
 		r->tnonil = true;
 		r->tnil = false;
@@ -1005,6 +993,33 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 
 	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
+}
+
+/* str mvc_peak_next_value(lng *res, str *sname, str *seqname); */
+str
+mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg;
+	sql_schema *s;
+	sql_sequence *seq;
+	lng *res = getArgReference_lng(stk, pci, 0);
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *seqname = *getArgReference_str(stk, pci, 2);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.peak_next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!(seq = find_sql_sequence(m->session->tr, s, seqname)))
+		throw(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
+
+	if (seq_peak_next_value(m->session->tr->store, seq, res))
+		return MAL_SUCCEED;
+
+	throw(SQL, "sql.peak_next_value", SQLSTATE(HY050) "Cannot peak at next sequence value %s.%s", sname, seqname);
 }
 
 str
@@ -5066,6 +5081,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "sql_assert.h"
 #include "sql_execute.h"
 #include "sql_orderidx.h"
+#include "sql_strimps.h"
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
@@ -5104,6 +5120,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("sql", "peak_next_value", mvc_peak_next_value, false, "Peaks at the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("sql", "restart", mvc_restart_seq, true, "restart the sequence with value start", args(1,4, arg("",lng),arg("sname",str),arg("sequence",str),arg("start",lng))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
@@ -5176,6 +5193,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular column", args(17,20, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "createorderindex", sql_createorderindex, true, "Instantiate the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  pattern("sql", "droporderindex", sql_droporderindex, true, "Drop the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "createstrimps", sql_createstrimps, true, "Instantiate the strimps index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
  command("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
  pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,4, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid))),

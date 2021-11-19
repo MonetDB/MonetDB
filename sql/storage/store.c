@@ -3412,6 +3412,12 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
 
+	/* this dependency is needed for merge tables */
+	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl)))
+		return res;
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
+		return res;
+
 	if (isDeclaredTable(i->t))
 		if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 			if ((res = store->storage_api.create_idx(tr, ni))) {
@@ -3518,6 +3524,12 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if ((res = ol_add(t->columns, &col->base)))
 		return res;
 
+	/* this dependency is needed for merge tables */
+	if (!isNew(t) && (res = sql_trans_add_dependency(tr, t->base.id, ddl)))
+		return res;
+	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
+		return res;
+
 	ATOMIC_PTR_INIT(&col->data, NULL);
 	if (isDeclaredTable(c->t))
 		if (isTable(t))
@@ -3535,11 +3547,16 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
-		if (c->type.type->s) /* column depends on type */
+		if (c->type.type->s) { /* column depends on type */
 			if ((res = sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY))) {
 				ATOMIC_PTR_DESTROY(&col->data);
 				return res;
 			}
+			if (!isNew(c->type.type) && (res = sql_trans_add_dependency(tr, c->type.type->base.id, ddl))) {
+				ATOMIC_PTR_DESTROY(&col->data);
+				return res;
+			}
+		}
 	}
 	if (cres)
 		*cres = col;
@@ -6056,6 +6073,9 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		dup->null = isnull;
 
 		/* disallow concurrent updates on the column if not null is set */
+		/* this dependency is needed for merge tables */
+		if (!isNew(col) && (res = sql_trans_add_dependency(tr, col->t->base.id, ddl)))
+			return res;
 		if (!isnull && !isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
 			return res;
 		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
@@ -6184,7 +6204,7 @@ int
 sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
-	if (col && isTable(col->t) && ATOMstorage(col->type.type->localtype) == TYPE_str && store->storage_api.double_elim_col)
+	if (col && isTable(col->t) && store->storage_api.double_elim_col)
 		return store->storage_api.double_elim_col(tr, col);
 	return 0;
 }
@@ -6582,8 +6602,10 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 
 	ATOMIC_PTR_INIT(&ni->data, NULL);
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
-		if ((res = store->storage_api.create_idx(tr, ni)))
+		if ((res = store->storage_api.create_idx(tr, ni))) {
+			ATOMIC_PTR_DESTROY(&ni->data);
 			return res;
+		}
 	if (!isDeclaredTable(t))
 		if ((res = store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, &ni->base.name))) {
 			ATOMIC_PTR_DESTROY(&ni->data);
