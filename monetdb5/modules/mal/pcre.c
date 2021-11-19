@@ -1948,6 +1948,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			bn->tsorted = true;
 			bn->trevsorted = bn->batCount <= 1;
 			bn->tkey = true;
+			bn->tnil = false;
+			bn->tnonil = true;
 			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 || rcnt == b->batCount ? b->hseqbase : oid_nil;
 		}
 	}
@@ -2140,10 +2142,14 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	r1->tkey = true;
 	r1->tsorted = true;
 	r1->trevsorted = true;
+	r1->tnil = false;
+	r1->tnonil = true;
 	if (r2) {
 		r2->tkey = true;
 		r2->tsorted = true;
 		r2->trevsorted = true;
+		r2->tnil = false;
+		r2->tnonil = true;
 	}
 
 	if (anti) {
