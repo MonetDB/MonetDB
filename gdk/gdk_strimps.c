@@ -707,7 +707,7 @@ STRMPcreate(BAT *b, BAT *s)
 
 	if (pb->tstrimps == NULL) {
 		MT_lock_set(&pb->batIdxLock);
-                if (pb->tstrimps == NULL) {
+		if (pb->tstrimps == NULL) {
 			Strimps *r;
 			BATiter bi;
 			BUN i, ncand;
@@ -716,10 +716,10 @@ STRMPcreate(BAT *b, BAT *s)
 			str cs;
 			uint64_t *dh;
 
-                        if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
-                                MT_lock_unset(&b->batIdxLock);
+			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
+				MT_lock_unset(&b->batIdxLock);
 				return GDK_FAIL;
-                        }
+			}
 			dh = (uint64_t *)r->bitstrings_base;
 
 			/* Compute bitstrings */
@@ -739,10 +739,10 @@ STRMPcreate(BAT *b, BAT *s)
 			pb->tstrimps = r;
 			pb->batDirtydesc = true;
 			persistStrimp(pb);
-                }
-                MT_lock_unset(&pb->batIdxLock);
-        }
-        TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+		}
+		MT_lock_unset(&pb->batIdxLock);
+	}
+	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 }
 
