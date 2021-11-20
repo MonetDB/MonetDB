@@ -884,7 +884,7 @@ SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
 	void *orig = fmt->data;
 	if (SQLconvert_val(task, col, idx) < 0)
 		return -1;
-	assert(one_by_one || fmt->data == orig);
+	assert(one_by_one || fmt->data == orig); (void)orig;
 
 	adt = fmt->data ? fmt->data : fmt->nildata;
 
@@ -960,7 +960,7 @@ report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *
 static void
 report_append_failed(READERtask *task, Column *fmt, int idx, lng col)
 {
-	char *err;
+	char *err = NULL;
 	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(task->loadops ? task->loadops->get_offsets(task->loadops->state) : fmt->c);
