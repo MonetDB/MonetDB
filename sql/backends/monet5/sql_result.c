@@ -1478,7 +1478,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 int
 mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
 {
-	backend b;
+	backend b = {0};
 	b.mvc = m;
 	b.results = t;
 	b.reloptimizer = 0;
@@ -1765,7 +1765,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	/* row count, min(count, reply_size) */
 	/* the columnar protocol ignores the reply size by fetching the entire resultset at once, so don't set it */
-	if (mvc_send_int(s, (b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
+	if (mvc_send_int(s, (b->client && b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
 		return -4;
 
 	// export query id
