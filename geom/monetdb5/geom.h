@@ -83,13 +83,19 @@ typedef struct CartPoint
 
 /* Geographic functions */
 str wkbDistanceGeographic(dbl* out, wkb** a, wkb** b);
-str wkbDWithinGeographic(bit* out, wkb** a, wkb** b, dbl *distance);
 str wkbIntersectsGeographic(bit* out, wkb** a, wkb** b);
 str wkbCoversGeographic(bit* out, wkb** a, wkb** b);
 
 str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
 str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 str wkbCollectAggr (wkb **out, const bat *bid);
+
+str wkbDistanceGeographic_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id);
+str wkbDistanceGeographic_bat_cand(bat *out_id, bat *a_id, bat *b_id, bat *s1_id, bat *s2_id);
+
+str wkbDWithinGeographic(bit* out, wkb** a, wkb** b, dbl *distance);
+//str wkbDWithinGeographicSelect(bat* out, const bat *aid, const bat *bid, dbl *d, const bat *s1_id, const bat *s2_id, const bit *anti);
+//str wkbDWithinGeographicJoin(bat *lres, bat *rres, const bat *lwkb, const bat *rwkb, const bat *lsid, const bat *rsid, const bit *nil_matches, const lng *estimate);
 
 /** 
 * 

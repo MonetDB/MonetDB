@@ -4,6 +4,26 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 
+-------------------------------------------------------------------------
+------------------------- Geography functions ---------------------------
+-------------------------------------------------------------------------
+CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
+GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
+--CREATE FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) RETURNS boolean EXTERNAL NAME geom."DWithinGeographic";
+--GRANT EXECUTE ON FUNCTION ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
+CREATE FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."IntersectsGeographic";
+GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
+CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
+GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;
+
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
+
+CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
+
+-------------------------------------------------------------------------
+------------------------- Geography functions ---------------------------
+-------------------------------------------------------------------------
+
 -- make sure you load the geom module before loading this sql module
 
 CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom."hasZ";
@@ -4578,18 +4598,3 @@ GRANT EXECUTE ON FUNCTION ST_DumpPoints(Geometry) TO PUBLIC;
 -------------------------------------------------------------------------
 CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
 GRANT EXECUTE ON FUNCTION Contains(Geometry, double, double) TO PUBLIC;
-
-
--------------------------------------------------------------------------
-------------------------- Geography functions ---------------------------
--------------------------------------------------------------------------
-CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
-GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
-CREATE FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) RETURNS boolean EXTERNAL NAME geom."DWithinGeographic";
-GRANT EXECUTE ON FUNCTION ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
-CREATE FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."IntersectsGeographic";
-GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
-CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
-GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;
-
-CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";

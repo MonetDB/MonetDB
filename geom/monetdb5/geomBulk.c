@@ -12,6 +12,165 @@
 
 #include "geom.h"
 
+/********** Geo Update **********/
+
+//TODO: Rename these functions with Stefanos
+str
+wkbDistanceGeographic_bat(bat *out_id, bat *a_id, bat *b_id)
+{
+	BAT *out = NULL, *a = NULL, *b = NULL;
+	BATiter a_iter, b_iter;
+	str msg = MAL_SUCCEED;
+
+	//get the BATs
+	if ((a = BATdescriptor(*a_id)) == NULL || (b = BATdescriptor(*b_id)) == NULL) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto clean;
+	}
+	//check if the BATs are aligned
+	if (a->hseqbase != b->hseqbase || BATcount(a) != BATcount(b)) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(38000) "Columns must be aligned");
+		goto clean;
+	}
+	//create a new BAT for the output
+	if ((out = COLnew(a->hseqbase, ATOMindex("dbl"), BATcount(a), TRANSIENT)) == NULL) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto clean;
+	}
+
+	//iterator over the BATs
+	a_iter = bat_iterator(a);
+	b_iter = bat_iterator(b);
+
+	for (BUN i = 0; i < BATcount(a); i++) {
+		double distanceVal = 0;
+		wkb *aWKB = (wkb *) BUNtvar(a_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(b_iter, i);
+
+		/*if (i < 1000) {
+			char *geomSTR1, *geomSTR2;
+			wkbAsText(&geomSTR1, &aWKB, NULL);
+			wkbAsText(&geomSTR2, &bWKB, NULL);
+			printf("i: %zu -> (%s %s)\n",i,geomSTR1,geomSTR2);
+			fflush(stdout);
+		}*/
+		
+
+		if ((msg = wkbDistanceGeographic(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPreclaim(out);
+			goto bailout;
+		}
+		if (BUNappend(out, &distanceVal, false) != GDK_SUCCEED) {
+			BBPreclaim(out);
+			msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+
+	BBPkeepref(*out_id = out->batCacheid);
+
+  bailout:
+	bat_iterator_end(&a_iter);
+	bat_iterator_end(&b_iter);
+  clean:
+	if (a)
+		BBPunfix(a->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
+
+	return msg;	
+}
+
+str
+wkbDistanceGeographic_bat_cand(bat *out_id, bat *a_id, bat *b_id, bat *s1_id, bat *s2_id)
+{
+	BAT *out = NULL, *a = NULL, *b = NULL, *s1 = NULL, *s2 = NULL;
+	BATiter a_iter, b_iter;
+	BUN count = 0;
+	str msg = MAL_SUCCEED;
+	struct canditer ci1, ci2;
+	oid off1, off2;
+
+	//get the BATs
+	if ((a = BATdescriptor(*a_id)) == NULL || (b = BATdescriptor(*b_id)) == NULL) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto clean;
+	}
+	//check if the BATs are aligned
+	if (a->hseqbase != b->hseqbase || BATcount(a) != BATcount(b)) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(38000) "Columns must be aligned");
+		goto clean;
+	}
+	//check for candidate lists
+	if (s1_id && !is_bat_nil(*s1_id) && !(s1 = BATdescriptor(*s1_id))) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto clean;
+	}
+	if (s2_id && !is_bat_nil(*s2_id) && !(s2 = BATdescriptor(*s2_id))) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		if (s1)
+			BBPunfix(s1->batCacheid);
+		goto clean;
+	}
+	count = canditer_init(&ci1, a, s1);
+	canditer_init(&ci2, b, s2);
+
+	//create a new BAT for the output
+	if ((out = COLnew(ci1.hseq, ATOMindex("dbl"), count, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (s1)
+			BBPunfix(s1->batCacheid);
+		if (s2)
+			BBPunfix(s2->batCacheid);
+		goto clean;
+	}
+
+	off1 = a->hseqbase;
+	off2 = b->hseqbase;
+
+	//iterator over the BATs
+	a_iter = bat_iterator(a);
+	b_iter = bat_iterator(b);
+
+	for (BUN i = 0; i < count; i++) {
+		double distanceVal = 0;
+		oid p1 = (canditer_next(&ci1) - off1);
+		oid p2 = (canditer_next(&ci2) - off2);
+		wkb *aWKB = (wkb *) BUNtvar(a_iter, p1);
+		wkb *bWKB = (wkb *) BUNtvar(b_iter, p2);
+
+		if ((msg = wkbDistanceGeographic(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPreclaim(out);
+			goto bailout;
+		}
+		if (BUNappend(out, &distanceVal, false) != GDK_SUCCEED) {
+			BBPreclaim(out);
+			msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+
+	BBPkeepref(*out_id = out->batCacheid);
+
+  bailout:
+	bat_iterator_end(&a_iter);
+	bat_iterator_end(&b_iter);
+	if (s1)
+		BBPunfix(s1->batCacheid);
+	if (s2)
+		BBPunfix(s2->batCacheid);
+  clean:
+	if (a)
+		BBPunfix(a->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
+
+	return msg;
+
+}
+
+/********** Geo Update **********/
+
 /*******************************/
 /********** One input **********/
 /*******************************/
