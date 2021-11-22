@@ -596,6 +596,43 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 #define SYNCBAT 3
 #define ENDOFCOPY 4
 
+struct scratch_buffer {
+	void *data;
+	size_t len;
+	char backing[3]; // small for testing purposes, should be larger
+};
+
+static void
+initialize_scratch_buffer(struct scratch_buffer *buf)
+{
+	buf->len = sizeof(buf->backing);
+	buf->data = buf->backing;
+}
+
+static void *
+adjust_scratch_buffer(struct scratch_buffer *buf, size_t min_size, size_t margin)
+{
+	if (buf->len >= min_size) {
+		return buf->data;
+	}
+	size_t size = min_size + margin;
+	// realloc(NULL) is equivalent to alloc()
+	void *old_data = buf->data == buf->backing ? NULL : buf->data;
+	void *new_data = GDKrealloc(old_data, size);
+	if (!new_data)
+		return NULL;
+	buf->data = new_data;
+	buf->len = size;
+	return buf->data;
+}
+
+static void
+destroy_scratch_buffer(struct scratch_buffer *buf)
+{
+	if (buf->data != buf->backing)
+		GDKfree(buf->data);
+}
+
 typedef struct {
 	Client cntxt;
 	int id;						/* for self reference */
@@ -637,9 +674,7 @@ typedef struct {
 	bte *rowerror;
 	int errorcnt;
 	LoadOps *loadops;
-	char scratch_buffer[3];
-	char *scratch;
-	size_t scratch_len;
+	struct scratch_buffer scratch;
 } READERtask;
 
 static void
@@ -830,28 +865,18 @@ SQLconvert_val(READERtask *task, int col, int idx) {
 	} else {
 		// reallocate scratch space if necessary
 		size_t needed = slen + 1;
-		if (needed > task->scratch_len) {
-			// add some margin
-			size_t new_len = needed + needed / 2;
-			if (task->scratch != NULL && task->scratch != task->scratch_buffer)
-				GDKfree(task->scratch);
-			task->scratch = GDKmalloc(new_len);
-			if (!task->scratch) {
-				task->scratch = task->scratch_buffer;
-				task->scratch_len = sizeof(task->scratch_buffer);
-				int ret = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
-				make_it_nil(fmt);
-				return ret;
-			}
-			task->scratch_len = new_len;
+		if (adjust_scratch_buffer(&task->scratch, needed, needed / 2) == NULL) {
+			int ret = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
+			make_it_nil(fmt);
+			return ret;
 		}
 		// unescape into the scratch space
-		if (GDKstrFromStr((unsigned char*)task->scratch, (unsigned char*)s, slen) < 0) {
+		if (GDKstrFromStr((unsigned char*)task->scratch.data, (unsigned char*)s, slen) < 0) {
 			int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
 			make_it_nil(fmt);
 			return ret;
 		}
-		unescaped = task->scratch;
+		unescaped = task->scratch.data;
 	}
 
 	// Now parse the value into fmt->data.
@@ -1825,8 +1850,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			for (j = 0; j < threads; j++)
 				ptask[j].workers = threads;
 		}
-		ptask[j].scratch = ptask[j].scratch_buffer;
-		ptask[j].scratch_len = sizeof(ptask[j].scratch_buffer);
+		initialize_scratch_buffer(&ptask[j].scratch);
 	}
 	if (threads == 0) {
 		/* no threads started */
@@ -2089,9 +2113,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
 	for (int t = 0; t < threads; t++) {
-		char *scratch = ptask[t].scratch;
-		if (scratch != NULL && scratch != ptask[t].scratch_buffer)
-			GDKfree(scratch);
+		destroy_scratch_buffer(&ptask[t].scratch);
 	}
 #ifdef MLOCK_TST
 	munlockall();
@@ -2114,9 +2136,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (i = 0; i < MAXWORKERS; i++)
 		GDKfree(ptask[i].cols);
 	for (int t = 0; t < threads; t++) {
-		char *scratch = ptask[t].scratch;
-		if (scratch != NULL && scratch != ptask[t].scratch_buffer)
-			GDKfree(scratch);
+		destroy_scratch_buffer(&ptask[t].scratch);
 	}
 #ifdef MLOCK_TST
 	munlockall();
