@@ -187,8 +187,8 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 		if (size <= (11 + strlen(field_definitions[i].fieldName) + strlen(temp_buf)))
 		{
 			size = 2 * size;
-			buf = realloc(buf, size);
-			temp_buf = realloc(temp_buf, size);
+			buf = GDKrealloc(buf, size);
+			temp_buf = GDKrealloc(temp_buf, size);
 		}
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
