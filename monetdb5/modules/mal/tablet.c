@@ -881,7 +881,7 @@ SQLconvert_val(READERtask *task, int col, int idx) {
 	}
 
 	// Now parse the value into fmt->data.
-	void *p = fmt->frstr(fmt, fmt->adt, unescaped);
+	void *p = fmt->frstr(fmt, fmt->adt, &fmt->data, &fmt->len, unescaped);
 	if (p == NULL) {
 		int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
 		make_it_nil(fmt);
