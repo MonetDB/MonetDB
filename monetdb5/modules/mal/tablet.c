@@ -675,6 +675,7 @@ typedef struct {
 	int errorcnt;
 	LoadOps *loadops;
 	struct scratch_buffer scratch;
+	struct scratch_buffer primary;
 } READERtask;
 
 static void
@@ -1851,6 +1852,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				ptask[j].workers = threads;
 		}
 		initialize_scratch_buffer(&ptask[j].scratch);
+		initialize_scratch_buffer(&ptask[j].primary);
 	}
 	if (threads == 0) {
 		/* no threads started */
@@ -2114,6 +2116,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	MT_sema_destroy(&task.consumer);
 	for (int t = 0; t < threads; t++) {
 		destroy_scratch_buffer(&ptask[t].scratch);
+		destroy_scratch_buffer(&ptask[t].primary);
 	}
 #ifdef MLOCK_TST
 	munlockall();
@@ -2137,6 +2140,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		GDKfree(ptask[i].cols);
 	for (int t = 0; t < threads; t++) {
 		destroy_scratch_buffer(&ptask[t].scratch);
+		destroy_scratch_buffer(&ptask[t].primary);
 	}
 #ifdef MLOCK_TST
 	munlockall();
