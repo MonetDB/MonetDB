@@ -676,6 +676,7 @@ typedef struct {
 	LoadOps *loadops;
 	struct scratch_buffer scratch;
 	struct scratch_buffer primary;
+	struct scratch_buffer secondary;
 } READERtask;
 
 static void
@@ -1029,6 +1030,59 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 }
 
 static int
+SQLworker_str_column(READERtask *task, int col)
+{
+	Column *c = &task->as->format[col];
+	int count = task->top[task->cur];
+
+	int type = c->adt;
+	size_t width = ATOMsize(type);
+	size_t primary_size = count * width;
+
+	size_t secondary_size = 0;
+	for (int i = 0; i < count; i++) {
+		size_t max_field_size = c->nil_len;
+		char *s = task->fields[col][i];
+		if (s) {
+			max_field_size += strlen(s) + 1;
+		}
+		secondary_size += max_field_size;
+	}
+
+	if (adjust_scratch_buffer(&task->primary, primary_size, 0) == NULL) {
+		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+		return -1;
+	}
+	if (adjust_scratch_buffer(&task->secondary, secondary_size, 0) == NULL) {
+		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+		return -1;
+	}
+
+	char **p = task->primary.data;
+	void *s = task->secondary.data;
+	void *s_end = (char*)s + task->secondary.len;
+	for (int i = 0; i < count; i++) {
+		assert(s <= s_end);
+		size_t len = (char*)s_end - (char*)s;
+		void *orig = s;
+		if (SQLconvert_val(task, col, i, &s, &len) < 0)
+			return -1;
+		assert(s == orig); (void)orig;
+		*p++ = s;
+		s = (char*)s + strlen(s) + 1;
+	}
+
+	// Now insert it.
+	str msg = task->loadops->append_batch(task->loadops->state, task->primary.data, count, width, c->appendcol);
+	if (msg != MAL_SUCCEED) {
+		tablet_error(task, lng_nil, lng_nil, col, "bulk insert failed", msg);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
 SQLworker_bat_column(READERtask *task, int col)
 {
 	Column *c = &task->as->format[col];
@@ -1075,9 +1129,8 @@ SQLworker_column(READERtask *task, int col)
 		return SQLworker_bat_column(task, col);
 
 	switch (fmt->adt) {
-		// future work:
-		// case TYPE_str:
-		// 	return SQLworker_str_column(task, fmt);
+		case TYPE_str:
+			return SQLworker_str_column(task, col);
 		default:
 			if (ATOMvarsized(fmt->adt))
 				return SQLworker_onebyone_column(task, col);
@@ -1694,7 +1747,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
 
-	// threads = 1;
+	threads = 1;
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
@@ -1840,6 +1893,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		}
 		initialize_scratch_buffer(&ptask[j].scratch);
 		initialize_scratch_buffer(&ptask[j].primary);
+		initialize_scratch_buffer(&ptask[j].secondary);
 	}
 	if (threads == 0) {
 		/* no threads started */
@@ -2104,6 +2158,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (int t = 0; t < threads; t++) {
 		destroy_scratch_buffer(&ptask[t].scratch);
 		destroy_scratch_buffer(&ptask[t].primary);
+		destroy_scratch_buffer(&ptask[t].secondary);
 	}
 #ifdef MLOCK_TST
 	munlockall();
@@ -2128,6 +2183,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (int t = 0; t < threads; t++) {
 		destroy_scratch_buffer(&ptask[t].scratch);
 		destroy_scratch_buffer(&ptask[t].primary);
+		destroy_scratch_buffer(&ptask[t].secondary);
 	}
 #ifdef MLOCK_TST
 	munlockall();
