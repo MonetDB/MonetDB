@@ -865,44 +865,6 @@ SQLconvert_val(READERtask *task, int col, int idx) {
 	return 0;
 }
 
-/*
- * The parsing of the individual values is straightforward. If the value represents
- * the null-replacement string then we grab the underlying nil.
- * If the string starts with the quote identified from SQL, we locate the tail
- * and interpret the body.
- *
- * If inserting fails, we return -1; if the value cannot be parsed, we
- * return -1 if besteffort is not set, otherwise we return 0, but in
- * either case an entry is added to the error table.
- */
-static inline int
-SQLinsert_val(READERtask *task, int col, int idx, bool one_by_one)
-{
-	Column *fmt = task->as->format + col;
-	const void *adt;
-
-	void *orig = fmt->data;
-	if (SQLconvert_val(task, col, idx) < 0)
-		return -1;
-	assert(one_by_one || fmt->data == orig); (void)orig;
-
-	adt = fmt->data ? fmt->data : fmt->nildata;
-
-	if (task->loadops) {
-		if (!one_by_one)
-			return 0;
-		// Simple fixed size types will be appended in bulk.
-		// Here we deal with the more messy ones
-		str msg = task->loadops->append_one(task->loadops->state, idx, adt, fmt->appendcol);
-		if (msg == MAL_SUCCEED)
-			return 0;
-	} else if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
-		return 0;
-
-	report_append_failed(task, fmt, idx, col + 1);
-	return -1;
-}
-
 static int
 report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s)
 {
@@ -984,11 +946,18 @@ report_append_failed(READERtask *task, Column *fmt, int idx, lng col)
 static int
 SQLworker_onebyone_column(READERtask *task, int col)
 {
+	Column *fmt = &task->as->format[col];
 	int count = task->top[task->cur];
 
 	for (int i = 0; i < count; i++) {
-		if (SQLinsert_val(task, col, i, true) < 0)
+		if (SQLconvert_val(task, col, i) < 0)
 			return -1;
+		const void *value = fmt->data ? fmt->data : fmt->nildata;
+		str msg = task->loadops->append_one(task->loadops->state, i, value, fmt->appendcol);
+		if (msg != MAL_SUCCEED) {
+			report_append_failed(task, fmt, i, col + 1);
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -1003,30 +972,33 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 	size_t width = ATOMsize(type);
 
 	size_t allocation_size = count * width;
-	GDKfree(c->data);
-	c->data = GDKmalloc(allocation_size);
-	if (c->data) {
-		c->len = allocation_size;
-	} else {
-		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
-		return -1;
+	if (c->len < allocation_size) {
+		GDKfree(c->data);
+		c->data = GDKmalloc(allocation_size);
+		if (c->data) {
+			c->len = allocation_size;
+		} else {
+			tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+			return -1;
+		}
 	}
 
 	char * const allocation = c->data;
 	char *cursor = c->data;
 	for (int i = 0; i < count; i++) {
 		// We have to be careful here, c->data is not pointing at the beginning
-		// of a malloc'ed area, but into the middle. If SQLinsert_val tries to
+		// of a malloc'ed area, but into the middle. If SQLconvert_val tries to
 		// reallocate it we're screwed. However, c->len is sufficient so it
 		// shouldn't try to reallocate.
 		c->data = cursor;
 		c->len = width;
-		if (SQLinsert_val(task, col, i, false) < 0) {
+		if (SQLconvert_val(task, col, i) < 0) {
 			// We don't free our allocation here, it can probably be reused for the next block.
 			c->data = allocation;
 			c->len = allocation_size;
 			return -1;
 		}
+		assert(c->data == cursor); // should not have attempted to reallocate!
 		cursor += width;
 	}
 	// We don't free our allocation here, it can probably be reused for the next block.
@@ -1061,10 +1033,17 @@ SQLworker_bat_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (int i = 0; i < task->top[task->cur]; i++) {
-		if (!c->skip && SQLinsert_val(task, col, i, true) < 0) {
+		if (SQLconvert_val(task, col, i) < 0) {
 			ret = -1;
 			break;
 		}
+		const char *value = c->data ? c->data : c->nildata;
+		if (bunfastapp(c->c, value) != GDK_SUCCEED) {
+			report_append_failed(task, c, i, col + 1);
+			ret = -1;
+			break;
+		}
+
 	}
 	BATsetcount(c->c, BATcount(c->c));
 	c->c->theap->dirty |= BATcount(c->c) > 0;
