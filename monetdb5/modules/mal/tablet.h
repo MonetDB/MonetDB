@@ -41,7 +41,7 @@ typedef struct Column_t {
 	int fieldwidth;
 	int scale, precision;
 	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type, const void *a);
-	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
+	void *(*frstr)(struct Column_t *fmt, int type, void **dst, size_t *dst_len, const char *s);
 	void *extra;
 	void *data;
 	int skip;					/* only skip to the next field */

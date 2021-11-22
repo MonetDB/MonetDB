@@ -498,11 +498,8 @@ bat_max_length(hge, hge)
 		}																\
 		if (*s)															\
 			return NULL;												\
-		r = c->data;													\
-		if (r == NULL &&												\
-		    (r = GDKzalloc(sizeof(X))) == NULL)							\
-			return NULL;												\
-		c->data = r;													\
+		assert(*dst_len >= sizeof(X));									\
+		r = *dst;													\
 		if (neg)														\
 			*r = -res;													\
 		else															\
@@ -511,7 +508,7 @@ bat_max_length(hge, hge)
 	} while (0)
 
 static void *
-dec_frstr(Column *c, int type, const char *s)
+dec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 {
 	/* support dec map to bte, sht, int and lng */
 	if( strcmp(s,"nil")== 0)
@@ -533,13 +530,15 @@ dec_frstr(Column *c, int type, const char *s)
 }
 
 static void *
-sec_frstr(Column *c, int type, const char *s)
+sec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 {
 	/* read a sec_interval value
 	 * this knows that the stored scale is always 3 */
 	unsigned int i, neg = 0;
 	lng *r;
 	lng res = 0;
+
+	assert(*dst_len >= sizeof(lng));
 
 	(void) c;
 	(void) type;
@@ -575,10 +574,7 @@ sec_frstr(Column *c, int type, const char *s)
 	for (; i < 3; i++) {
 		res *= 10;
 	}
-	r = c->data;
-	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
-		return NULL;
-	c->data = r;
+	r = *dst;
 	if (neg)
 		*r = -res;
 	else
@@ -588,11 +584,11 @@ sec_frstr(Column *c, int type, const char *s)
 
 /* Literal parsing for SQL all pass through this routine */
 static void *
-_ASCIIadt_frStr(Column *c, int type, const char *s)
+_ASCIIadt_frStr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 {
 	ssize_t len;
 
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	len = (*BATatoms[type].atomFromStr) (s, dst_len, dst, false);
 	if (len < 0)
 		return NULL;
 	switch (type) {
@@ -609,7 +605,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 				while (s[len] == '0')
 					len++;
 				if (s[len] == 0)
-					return c->data;
+					return *dst;
 			}
 			return NULL;
 		}
@@ -618,10 +614,10 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		sql_column *col = (sql_column *) c->extra;
 		int slen;
 
-		s = c->data;
+		s = *dst;
 		slen = strNil(s) ? int_nil : UTF8_strlen(s);
 		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
-			len = STRwidth(c->data);
+			len = STRwidth(*dst);
 			if (len > (ssize_t) col->type.digits)
 				return NULL;
 		}
@@ -630,7 +626,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 	default:
 		break;
 	}
-	return c->data;
+	return *dst;
 }
 
 
