@@ -62,9 +62,10 @@ sql_createstrimps(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b, *s;
 	gdk_return res;
+	str msg = MAL_SUCCEED;
 
-	if (sql_load_bat(cntxt, mb, stk, pci, &b) != MAL_SUCCEED)
-		throw(SQL, "sql.createstrimps", SQLSTATE(HY002) OPERATION_FAILED);
+	if ((msg = sql_load_bat(cntxt, mb, stk, pci, &b)) != MAL_SUCCEED)
+		return msg;
 
 	if (!(s = BATdense(0, 0, b->batCount))) {
 		BBPunfix(b->batCacheid);

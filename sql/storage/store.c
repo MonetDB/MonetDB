@@ -30,18 +30,6 @@ store_function_counter(sqlstore *store)
 	return ts;
 }
 
-void
-lock_function(sqlstore *store, sqlid id)
-{
-	MT_lock_set(&store->function_locks[id&(NR_FUNCTION_LOCKS-1)]);
-}
-
-void
-unlock_function(sqlstore *store, sqlid id)
-{
-	MT_lock_unset(&store->function_locks[id&(NR_FUNCTION_LOCKS-1)]);
-}
-
 static ulng
 store_timestamp(sqlstore *store)
 {
@@ -128,6 +116,8 @@ func_destroy(sqlstore *store, sql_func *f)
 		/* clean backend code */
 		backend_freecode(sql_shared_module_name, 0, f->imp);
 	}
+	if (f->lang == FUNC_LANG_SQL || f->lang == FUNC_LANG_MAL)
+		MT_lock_destroy(&f->function_lock);
 	if (f->res)
 		list_destroy2(f->res, store);
 	list_destroy2(f->ops, store);
@@ -948,6 +938,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
 	t->sa = tr->sa;
+	if (!t->instantiated)
+		MT_lock_init(&t->function_lock, "function_lock");
 	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -2102,8 +2094,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
-	for(int i = 0; i<NR_FUNCTION_LOCKS; i++)
-		MT_lock_init(&store->function_locks[i], "sqlstore_function");
 	for(int i = 0; i<NR_TABLE_LOCKS; i++)
 		MT_lock_init(&store->table_locks[i], "sqlstore_table");
 	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
@@ -3225,6 +3215,7 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->query = (of->query)?SA_STRDUP(sa, of->query):NULL;
 	f->s = s;
 	f->sa = sa;
+	MT_lock_init(&f->function_lock, "function_lock");
 
 	f->ops = SA_LIST(sa, (fdestroy) &arg_destroy);
 	for (node *n=of->ops->h; n; n = n->next)
@@ -4848,6 +4839,8 @@ create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args
 	t->fix_scale = SCALE_EQ;
 	t->s = NULL;
 	t->system = system;
+	if (!t->instantiated)
+		MT_lock_init(&t->function_lock, "function_lock");
 	return t;
 }
 
@@ -4885,6 +4878,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	}
 	t->query = (query)?SA_STRDUP(tr->sa, query):NULL;
 	t->s = s;
+	if (!t->instantiated)
+		MT_lock_init(&t->function_lock, "function_lock");
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;

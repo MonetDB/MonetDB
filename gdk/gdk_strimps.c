@@ -297,11 +297,13 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	CharPair cp, *cpp;
 	struct canditer ci;
 	size_t values = 0;
+	bool res;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0) {
+		GDKerror("Not enough distinct values to create strimp index\n");
 		return false;
 	}
 
@@ -389,7 +391,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
-	return values >= STRIMP_HEADER_SIZE;
+	if (!(res = values >= STRIMP_HEADER_SIZE))
+		GDKerror("Not enough distinct values to create strimp index\n");
+	return res;
 }
 
 static bool
@@ -731,7 +735,7 @@ STRMPcreate(BAT *b, BAT *s)
 			uint64_t *dh;
 
 			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
-				MT_lock_unset(&b->batIdxLock);
+				MT_lock_unset(&pb->batIdxLock);
 				return GDK_FAIL;
 			}
 			dh = (uint64_t *)r->bitstrings_base;
