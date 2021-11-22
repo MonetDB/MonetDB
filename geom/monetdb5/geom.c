@@ -778,6 +778,53 @@ wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl *d)
 	return err;
 }
 
+/*
+str
+wkbDWithinGeographicSelect(bat* outid, const bat *aid, const bat *bid, dbl *d, const bat *s1_id, const bat *s2_id, const bit *anti)
+{
+	(void) anti; (void) d;
+	BAT *out = NULL, *a = NULL, *b = NULL, *s1 = NULL, *s2 = NULL;
+	BATiter a_iter, b_iter;
+	str msg = MAL_SUCCEED;
+	BUN count = 0;
+	struct canditer ci1, ci2;
+
+	//get the BATs
+	if ((a = BATdescriptor(*aid)) == NULL || (b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	//check for candidate lists
+	if (s1_id && !is_bat_nil(*s1_id) && !(s1 = BATdescriptor(*s1_id))) {
+		msg = createException(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (s2_id && !is_bat_nil(*s2_id) && !(s2 = BATdescriptor(*s2_id))) {
+		msg = createException(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		if (s1)
+			BBPunfix(s1->batCacheid);
+	}
+	count = canditer_init(&ci1, a, s1);
+	canditer_init(&ci2, b, s2);
+
+	//create a new BAT for the output
+	if ((out = COLnew(a->hseqbase, ATOMindex("oid"), BATcount(a), TRANSIENT)) == NULL) {
+		msg = createException(MAL, "geom.wkbDWithinGeographicSelect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the BATs
+	a_iter = bat_iterator(a);
+	b_iter = bat_iterator(b);
+	return MAL_SUCCEED;
+}
+
+str
+wkbDWithinGeographicJoin(bat *lres, bat *rres, const bat *lwkb, const bat *rwkb, const bat *lsid, const bat *rsid, const bit *nil_matches, const lng *estimate)
+{
+	(void) lres; (void) rres; (void) lwkb; (void) rwkb; (void) lsid; (void) rsid; (void) nil_matches; (void) estimate;
+	return MAL_SUCCEED;
+}
+*/
+
 /**
 * Intersects
 * 
@@ -7595,14 +7642,14 @@ static mel_atom geom_init_atoms[] = {
 static mel_func geom_init_funcs[] = {
  //TODO Fill in descriptions 
  command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
- command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
  command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
  command("geom", "CoversGeographic", wkbCoversGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
  
  command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat, false, "TODO", args(1, 3, batarg("", dbl), batarg("a", wkb), batarg("b", wkb))),
  command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat_cand, false, "TODO", args(1, 5, batarg("", dbl), batarg("a", wkb), batarg("b", wkb), batarg("s1", oid), batarg("s2", oid))),
- 
- //command("geom", "DWithinGeographicselect", wkbDWithinGeographicSelect, false, "TODO", args(1, 6, batarg("", oid), batarg("a", wkb), batarg("b", wkb), arg("d", dbl), batarg("cand",oid),arg("anti",bit))),
+  
+ command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
+ //command("geom", "DWithinGeographicselect", wkbDWithinGeographicSelect, false, "TODO", args(1, 7, batarg("", oid), batarg("a", wkb), batarg("b", wkb), arg("d", dbl), batarg("s1", oid), batarg("s2", oid),arg("anti",bit))),
  //command("geom", "DWithinGeographicjoin", wkbDWithinGeographicJoin, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), arg("d", dbl), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
 
  command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
