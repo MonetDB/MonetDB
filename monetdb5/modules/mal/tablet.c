@@ -2091,6 +2091,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
+	for (int t = 0; t < threads; t++) {
+		char *scratch = ptask[t].scratch;
+		if (scratch != NULL && scratch != ptask[t].scratch_buffer)
+			GDKfree(scratch);
+	}
 #ifdef MLOCK_TST
 	munlockall();
 #endif
