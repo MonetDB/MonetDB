@@ -731,7 +731,7 @@ STRMPcreate(BAT *b, BAT *s)
 			uint64_t *dh;
 
 			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
-				MT_lock_unset(&b->batIdxLock);
+				MT_lock_unset(&pb->batIdxLock);
 				return GDK_FAIL;
 			}
 			dh = (uint64_t *)r->bitstrings_base;
