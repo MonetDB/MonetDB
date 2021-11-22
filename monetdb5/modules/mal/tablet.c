@@ -838,24 +838,26 @@ static void report_append_failed(READERtask *task, Column *fmt, int idx, lng col
 static int report_conversion_failed(READERtask *task, Column *fmt, int idx, lng col, char *s);
 
 static inline void
-make_it_nil(Column *fmt)
+make_it_nil(Column *fmt, void **dst, size_t *dst_len)
 {
-	if (fmt->data == NULL)
-		return;
-	assert(fmt->len >= fmt->nil_len);
-	memcpy(fmt->data, fmt->nildata, fmt->nil_len);
 	if (fmt->c)
 		fmt->c->tnonil = false;
+	if (*dst_len >= fmt->nil_len)
+		memcpy(*dst, fmt->nildata, fmt->nil_len);
+	else {
+		GDKfree(*dst);
+		*dst_len = 0;
+	}
 }
 
 
 static inline int
-SQLconvert_val(READERtask *task, int col, int idx) {
+SQLconvert_val(READERtask *task, int col, int idx, void **dst, size_t *dst_len) {
 	Column *fmt = &task->as->format[col];
 	char *s = task->fields[col][idx];
 
 	if (s == NULL) {
-		make_it_nil(fmt);
+		make_it_nil(fmt, dst, dst_len);
 		return 0;
 	}
 	size_t slen = strlen(s);
@@ -868,23 +870,23 @@ SQLconvert_val(READERtask *task, int col, int idx) {
 		size_t needed = slen + 1;
 		if (adjust_scratch_buffer(&task->scratch, needed, needed / 2) == NULL) {
 			int ret = report_conversion_failed(task, fmt, idx, col + 1, "ALLOCATION FAILURE");
-			make_it_nil(fmt);
+			make_it_nil(fmt, dst, dst_len);
 			return ret;
 		}
 		// unescape into the scratch space
 		if (GDKstrFromStr((unsigned char*)task->scratch.data, (unsigned char*)s, slen) < 0) {
 			int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
-			make_it_nil(fmt);
+			make_it_nil(fmt, dst, dst_len);
 			return ret;
 		}
 		unescaped = task->scratch.data;
 	}
 
-	// Now parse the value into fmt->data.
-	void *p = fmt->frstr(fmt, fmt->adt, &fmt->data, &fmt->len, unescaped);
+	// Now parse the value
+	void *p = fmt->frstr(fmt, fmt->adt, dst, dst_len, unescaped);
 	if (p == NULL) {
 		int ret = report_conversion_failed(task, fmt, idx, col + 1, s);
-		make_it_nil(fmt);
+		make_it_nil(fmt, dst, dst_len);
 		return ret;
 	}
 
@@ -976,7 +978,7 @@ SQLworker_onebyone_column(READERtask *task, int col)
 	int count = task->top[task->cur];
 
 	for (int i = 0; i < count; i++) {
-		if (SQLconvert_val(task, col, i) < 0)
+		if (SQLconvert_val(task, col, i, &fmt->data, &fmt->len) < 0)
 			return -1;
 		const void *value = fmt->data ? fmt->data : fmt->nildata;
 		str msg = task->loadops->append_one(task->loadops->state, i, value, fmt->appendcol);
@@ -996,43 +998,28 @@ SQLworker_fixedwidth_column(READERtask *task, int col)
 
 	int type = c->adt;
 	size_t width = ATOMsize(type);
-
 	size_t allocation_size = count * width;
-	if (c->len < allocation_size) {
-		GDKfree(c->data);
-		c->data = GDKmalloc(allocation_size);
-		if (c->data) {
-			c->len = allocation_size;
-		} else {
-			tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
-			return -1;
-		}
+
+	if (adjust_scratch_buffer(&task->primary, allocation_size, 0) == NULL) {
+		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
+		return -1;
 	}
 
-	char * const allocation = c->data;
-	char *cursor = c->data;
+	void *cursor = task->primary.data;
+	size_t w = width;
 	for (int i = 0; i < count; i++) {
-		// We have to be careful here, c->data is not pointing at the beginning
+		// We have to be careful here, 'cursor' is not pointing at the beginning
 		// of a malloc'ed area, but into the middle. If SQLconvert_val tries to
-		// reallocate it we're screwed. However, c->len is sufficient so it
-		// shouldn't try to reallocate.
-		c->data = cursor;
-		c->len = width;
-		if (SQLconvert_val(task, col, i) < 0) {
-			// We don't free our allocation here, it can probably be reused for the next block.
-			c->data = allocation;
-			c->len = allocation_size;
+		// reallocate it we're screwed.
+		if (SQLconvert_val(task, col, i, &cursor, &w) < 0) {
 			return -1;
 		}
-		assert(c->data == cursor); // should not have attempted to reallocate!
-		cursor += width;
+		assert(w == width); // should not have attempted to reallocate!
+		cursor = (char*)cursor + width;
 	}
-	// We don't free our allocation here, it can probably be reused for the next block.
-	c->data = allocation;
-	c->len = allocation_size;
 
 	// Now insert it.
-	str msg = task->loadops->append_batch(task->loadops->state, c->data, count, width, c->appendcol);
+	str msg = task->loadops->append_batch(task->loadops->state, task->primary.data, count, width, c->appendcol);
 	if (msg != MAL_SUCCEED) {
 		tablet_error(task, lng_nil, lng_nil, col, "bulk insert failed", msg);
 		return -1;
@@ -1059,7 +1046,7 @@ SQLworker_bat_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (int i = 0; i < task->top[task->cur]; i++) {
-		if (SQLconvert_val(task, col, i) < 0) {
+		if (SQLconvert_val(task, col, i, &c->data, &c->len) < 0) {
 			ret = -1;
 			break;
 		}
