@@ -117,7 +117,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					freeInstruction(p);
 					done = 1;
 					break;
-				} else if (isSelect(p)) {
+				//} else if (isSelect(p)) {
 				} else// if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
 						/* pos = thetaselect(col, cand, l, ...) with col = for.decompress(o, minval)

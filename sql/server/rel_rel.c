@@ -179,7 +179,8 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		rel_base_copy(sql, i, rel);
 		break;
 	case op_table:
-		rel->l = i->l;
+		if ((IS_TABLE_PROD_FUNC(i->flag) || i->flag == TABLE_FROM_RELATION) && i->l)
+			rel->l = rel_copy(sql, i->l, deep);
 		rel->r = i->r;
 		break;
 	case op_project:
@@ -195,7 +196,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+		if (i->flag == ddl_output || i->flag == ddl_create_seq || i->flag == ddl_alter_seq || i->flag == ddl_alter_table || i->flag == ddl_create_table || i->flag == ddl_create_view) {
 			if (i->l)
 				rel->l = rel_copy(sql, i->l, deep);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -212,10 +213,6 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-
 	case op_join:
 	case op_left:
 	case op_right:
@@ -226,6 +223,10 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_union:
 	case op_inter:
 	case op_except:
+
+	case op_insert:
+	case op_update:
+	case op_delete:
 	case op_merge:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
