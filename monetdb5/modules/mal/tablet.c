@@ -982,22 +982,25 @@ report_append_failed(READERtask *task, Column *fmt, int idx, lng col)
 }
 
 static int
-SQLworker_directappend_column(READERtask *task, int col)
+SQLworker_onebyone_column(READERtask *task, int col)
+{
+	int count = task->top[task->cur];
+
+	for (int i = 0; i < count; i++) {
+		if (SQLinsert_val(task, col, i, true) < 0)
+			return -1;
+	}
+	return 0;
+}
+
+static int
+SQLworker_fixedwidth_column(READERtask *task, int col)
 {
 	Column *c = &task->as->format[col];
 	int count = task->top[task->cur];
 
 	int type = c->adt;
 	size_t width = ATOMsize(type);
-	bool batch_mode = !ATOMvarsized(type);
-
-	if (!batch_mode) {
-		for (int i = 0; i < count; i++) {
-			if (SQLinsert_val(task, col, i, true) < 0)
-				return -1;
-		}
-		return 0;
-	}
 
 	size_t allocation_size = count * width;
 	GDKfree(c->data);
@@ -1041,22 +1044,15 @@ SQLworker_directappend_column(READERtask *task, int col)
 }
 
 static int
-SQLworker_column(READERtask *task, int col)
+SQLworker_bat_column(READERtask *task, int col)
 {
-	int i;
-	Column *fmt = task->as->format;
+	Column *c = &task->as->format[col];
+	int ret = 0;
 
-	if (fmt[col].skip)
-		return 0;
-
-	if (task->loadops) {
-		return SQLworker_directappend_column(task, col);
-	}
-
-	/* watch out for concurrent threads */
+	/* do we really need this lock? don't think so */
 	MT_lock_set(&mal_copyLock);
-	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
-		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) != GDK_SUCCEED) {
+	if (BATcapacity(c->c) < BATcount(c->c) + task->next) {
+		if (BATextend(c->c, BATgrows(c->c) + task->limit) != GDK_SUCCEED) {
 			tablet_error(task, lng_nil, lng_nil, col, "Failed to extend the BAT\n", "SQLworker_column");
 			MT_lock_unset(&mal_copyLock);
 			return -1;
@@ -1064,16 +1060,38 @@ SQLworker_column(READERtask *task, int col)
 	}
 	MT_lock_unset(&mal_copyLock);
 
-	for (i = 0; i < task->top[task->cur]; i++) {
-		if (!fmt[col].skip && SQLinsert_val(task, col, i, true) < 0) {
-			BATsetcount(fmt[col].c, BATcount(fmt[col].c));
-			return -1;
+	for (int i = 0; i < task->top[task->cur]; i++) {
+		if (!c->skip && SQLinsert_val(task, col, i, true) < 0) {
+			ret = -1;
+			break;
 		}
 	}
-	BATsetcount(fmt[col].c, BATcount(fmt[col].c));
-	fmt[col].c->theap->dirty |= BATcount(fmt[col].c) > 0;
+	BATsetcount(c->c, BATcount(c->c));
+	c->c->theap->dirty |= BATcount(c->c) > 0;
 
-	return 0;
+	return ret;
+}
+
+static int
+SQLworker_column(READERtask *task, int col)
+{
+	Column *fmt = &task->as->format[col];
+	if (fmt->skip)
+		return 0;
+
+	if (!task->loadops)
+		return SQLworker_bat_column(task, col);
+
+	switch (fmt->adt) {
+		// future work:
+		// case TYPE_str:
+		// 	return SQLworker_str_column(task, fmt);
+		default:
+			if (ATOMvarsized(fmt->adt))
+				return SQLworker_onebyone_column(task, col);
+			else
+				return SQLworker_fixedwidth_column(task, col);
+	}
 }
 
 /*
