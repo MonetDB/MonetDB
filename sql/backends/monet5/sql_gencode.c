@@ -1107,7 +1107,7 @@ backend_create_mal_func(mvc *m, sql_func *f)
 {
 	if (f->instantiated)
 		return 0;
-	lock_function(m->store, f->base.id);
+	MT_lock_set(&f->function_lock);
 	if (!f->instantiated) {
 		char *F = NULL, *fn = NULL;
 		bit side_effect = f->side_effect;
@@ -1117,29 +1117,29 @@ backend_create_mal_func(mvc *m, sql_func *f)
 		(void) F;
 		if (strlen(f->mod) >= IDLENGTH) {
 			(void) sql_error(m, 01, SQLSTATE(42000) "MAL module name '%s' too large for the backend", f->mod);
-			unlock_function(m->store, f->base.id);
+			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 		if (mal_function_find_implementation_address(m, f) < 0) {
-			unlock_function(m->store, f->base.id);
+			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 		if (!backend_resolve_function(&clientid, f)) {
 			(void) sql_error(m, 02, SQLSTATE(3F000) "MAL external name %s.%s not bound (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
 			_DELETE(f->imp);
-			unlock_function(m->store, f->base.id);
+			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 		if (side_effect != f->side_effect) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "Side-effect value from the SQL %s %s.%s doesn't match the MAL definition %s.%s\n"
 							 "Either re-create the %s, or fix the MAL definition and restart the database", fn, f->s->base.name, f->base.name, f->mod, f->imp, fn);
 			_DELETE(f->imp);
-			unlock_function(m->store, f->base.id);
+			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 		f->instantiated = TRUE; /* make sure 'instantiated' gets set after 'imp' */
 	}
-	unlock_function(m->store, f->base.id);
+	MT_lock_unset(&f->function_lock);
 	return 0;
 }
 
@@ -1153,7 +1153,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (f->instantiated || (m->forward && m->forward->base.id == f->base.id))
 		return res;
 
-	lock_function(m->store, f->base.id);
+	MT_lock_set(&f->function_lock);
 	if (!f->instantiated) {
 		MalBlkPtr curBlk = NULL;
 		InstrPtr curInstr = NULL;
@@ -1171,7 +1171,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		if (r)
 			r = sql_processrelation(m, r, 1, 1, 0);
 		if (!r) {
-			unlock_function(m->store, f->base.id);
+			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 
@@ -1179,7 +1179,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		/* for debug builds we keep the SQL function name in the MAL function name to make it easy to debug */
 		if (strlen(f->base.name) + 21 >= IDLENGTH) { /* 20 bits for u64 number + '%' */
 			(void) sql_error(m, 01, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->base.name);
-			unlock_function(m->store, f->base.id);
+			MT_lock_unset(&f->function_lock);
 			return -1;
 		}
 		(void) snprintf(befname, IDLENGTH, "%%" LLFMT "%s", store_function_counter(m->store), f->base.name);
@@ -1334,7 +1334,7 @@ cleanup:
 		memcpy(be, &bebackup, sizeof(backend));
 		c->curprg = symbackup;
 	}
-	unlock_function(m->store, f->base.id);
+	MT_lock_unset(&f->function_lock);
 	return res;
 }
 

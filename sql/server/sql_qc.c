@@ -154,6 +154,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	*f = (sql_func) {
 		.mod = sql_private_module_name,
 		.type = F_PROC,
+		.lang = FUNC_LANG_INT,
 		.query = cmd,
 		.ops = params,
 		.res = res,
