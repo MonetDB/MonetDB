@@ -77,12 +77,16 @@ rel_create_seq(
 	sql_subtype *tpe,
 	lng start,
 	lng inc,
-	lng min,
-	lng max,
+	symbol* s_min,
+	symbol* s_max,
 	lng cache,
 	bit cycle,
 	bit bedropped)
 {
+	bit nomin = s_min && s_min ->type == type_int ? 1: 0;
+	bit nomax = s_max && s_max ->type == type_int ? 1: 0;
+	lng min = s_min ? s_min->data.l_val : lng_nil;
+	lng max = s_max ? s_max->data.l_val : lng_nil;
 	sql_rel *res = NULL;
 	sql_sequence *seq = NULL;
 	char *sname = qname_schema(qname);
@@ -102,11 +106,13 @@ rel_create_seq(
 
 	/* generate defaults */
 	if (is_lng_nil(inc)) inc = 1;
-	if (is_lng_nil(start)) start = !is_lng_nil(min) ? min : inc > 0 ? 1 : -1; /* if start value not set, set it to the minimum if available */
+	if (nomin) min = GDK_lng_min;
+	if (nomax) max = GDK_lng_max;
 	if (is_lng_nil(min)) min = inc > 0 ? 0 : GDK_lng_min;
 	if (is_lng_nil(max)) max = inc > 0 ? GDK_lng_max : 0;
+	if (is_lng_nil(start)) {if (inc > 0) start = nomin ? 1 : min ? min : 1; else if (inc < 0) start = nomax ? -1 : max ? max : -1;}
 	if (is_lng_nil(cache)) cache = 1;
-	if (is_bit_nil(cycle)) cycle = 1;
+	if (is_bit_nil(cycle)) cycle = 0;
 
 	if (inc == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: INCREMENT cannot be 0");
@@ -151,7 +157,8 @@ list_create_seq(
 {
 	dnode *n;
 	sql_subtype *t = NULL;
-	lng start = lng_nil, inc = lng_nil, min = lng_nil, max = lng_nil, cache = lng_nil;
+	lng start = lng_nil, inc = lng_nil, cache = lng_nil;
+	symbol* min = NULL,* max = NULL;
 	unsigned int used = 0;
 	bit cycle = 0;
 
@@ -199,17 +206,25 @@ list_create_seq(
 				if ((used&(1<<SEQ_MIN)))
 					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
 				used |= (1<<SEQ_MIN);
-				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MINVALUE must not be null");
-				min = s->data.l_val;
+				if (s->type == type_lng) {
+					 if (is_lng_nil(s->data.l_val))
+					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MINVALUE must not be null");
+				}
+				assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
+				// int_nil signals NO MINVALUE
+				min = s;
 				break;
 			case SQL_MAXVALUE:
 				if ((used&(1<<SEQ_MAX)))
 					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
 				used |= (1<<SEQ_MAX);
-				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE must be non-NULL");
-				max = s->data.l_val;
+				if (s->type == type_lng) {
+					 if (is_lng_nil(s->data.l_val))
+					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE must not be null");
+				}
+				assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
+				// int_nil signals NO MAXVALUE
+				max = s;
 				break;
 			case SQL_CYCLE:
 				if ((used&(1<<SEQ_CYCLE)))
@@ -240,11 +255,15 @@ rel_alter_seq(
 		sql_subtype *tpe,
 		dlist* start_list,
 		lng inc,
-		lng min,
-		lng max,
+		symbol* s_min,
+		symbol* s_max,
 		lng cache,
 		bit cycle)
 {
+	bit nomin = s_min && s_min ->type == type_int ? 1: 0;
+	bit nomax = s_max && s_max ->type == type_int ? 1: 0;
+	lng min = s_min ? s_min->data.l_val : lng_nil;
+	lng max = s_max ? s_max->data.l_val : lng_nil;
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *name = qname_schema_object(qname);
@@ -263,6 +282,8 @@ rel_alter_seq(
 
 	/* if not being modified, use existing values */
 	if (is_lng_nil(inc)) inc = seq->increment;
+	if (nomin) min = GDK_lng_min;
+	if (nomax) max = GDK_lng_max;
 	if (is_lng_nil(min)) min = seq->minvalue;
 	if (is_lng_nil(max)) max = seq->maxvalue;
 	if (is_lng_nil(cache)) cache = seq->cacheinc;
@@ -316,7 +337,8 @@ list_alter_seq(
 	mvc *sql = query->sql;
 	dnode *n;
 	sql_subtype* t = NULL;
-	lng inc = lng_nil, min = lng_nil, max = lng_nil, cache = lng_nil;
+	lng inc = lng_nil, cache = lng_nil;
+	symbol* min = NULL,* max = NULL;
 	dlist *start = NULL;
 	unsigned int used = 0;
 	bit cycle = 0;
@@ -352,17 +374,25 @@ list_alter_seq(
 			if ((used&(1<<SEQ_MIN)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
 			used |= (1<<SEQ_MIN);
-			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MINVALUE must be non-NULL");
-			min = s->data.l_val;
+			if (s->type == type_lng) {
+				if (is_lng_nil(s->data.l_val))
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MINVALUE must not be null");
+			}
+			assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
+			min = s;
+			// int_nil signals NO MINVALUE
 			break;
 		case SQL_MAXVALUE:
 			if ((used&(1<<SEQ_MAX)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
 			used |= (1<<SEQ_MAX);
-			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE must be non-NULL");
-			max = s->data.l_val;
+			if (s->type == type_lng) {
+				if (is_lng_nil(s->data.l_val))
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE must not be null");
+			}
+			assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
+			// int_nil signals NO MAXVALUE
+			max = s;
 			break;
 		case SQL_CYCLE:
 			if ((used&(1<<SEQ_CYCLE)))

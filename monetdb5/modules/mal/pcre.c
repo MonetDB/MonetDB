@@ -1868,10 +1868,9 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 {
 	BAT *b, *s = NULL, *bn = NULL;
 	str msg = MAL_SUCCEED;
-	char *ppat = NULL, buf[64];
-	const char *with_strimps = "";
+	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no");
+	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no"), with_strimps = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1900,15 +1899,16 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			if (s)
 				BBPunfix(s->batCacheid);
 			s = tmp_s;
-			with_strimps = " with strimps";
+			with_strimps = true;
 		} else { /* If we cannot create the strimp just continue normally */
 			GDKclrerr();
 		}
 	}
 
-	snprintf(buf, sizeof(buf), "%s%s", empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
-			 use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre", with_strimps);
-	MT_thread_setalgorithm(buf);
+	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" :
+		use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : "pcrelike: pattern matching using strcmp") :
+		use_re ? (with_strimps ? "pcrelike: pattern matching using RE with strimps" : "pcrelike: pattern matching using RE") :
+		(with_strimps ? "pcrelike: pattern matching using pcre with strimps" : "pcrelike: pattern matching using pcre"));
 
 	if (empty) {
 		if (!(bn = BATdense(0, 0, 0)))
