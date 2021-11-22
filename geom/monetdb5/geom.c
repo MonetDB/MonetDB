@@ -237,6 +237,7 @@ cartPointFromXYZ(double x, double y, double z)
 	return cart;
 }
 
+//TODO Move this to first-level functions
 /* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
 static str 
 wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
@@ -252,7 +253,7 @@ wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
 	(*gb) = wkb2geos(*b);
 	if ((*ga) == NULL || (*gb) == NULL)
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
-	//TODO Uncomment this, this is just for the October demo
+	//TODO Uncomment this
 	/*else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
 		GEOSGeom_destroy(*ga);
 		GEOSGeom_destroy(*gb);
@@ -540,12 +541,14 @@ geoDistanceLineLine(GeoLines line1, GeoLines line2)
 			return 0;
 	}
 	for (int i = 0; i < line2.pointCount; i++) {
-		distance = geoDistancePointLine(line2.points[i], line1);
-		if (distance < min_distance)
-			min_distance = distance;
-		//Shortcut, if the geometries are already at their minimum distance
-		if (min_distance == 0)
-			return 0;
+		for (int j = 0; j < line1.pointCount - 1; j++) {
+			distance = calculatePerpendicularDistance(line2.points[i],line1.points[j],line1.points[j+1]);
+			if (distance < min_distance)
+				min_distance = distance;
+			//Shortcut, if the geometries are already at their minimum distance
+			if (min_distance == 0)
+				return 0;
+		}
 	}
 	return min_distance;
 }
@@ -743,11 +746,11 @@ wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
-	if (ga && gb)
+	if (ga && gb) {
 		(*out) = geoDistanceInternal(ga, gb);
-
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
+		GEOSGeom_destroy(ga);
+		GEOSGeom_destroy(gb);
+	}
 
 	return err;
 }
@@ -802,9 +805,12 @@ wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 static bool 
 geoPolygonCoversLine(GeoPolygon polygon, GeoLines lines)
 {
-	for (int i = 0; i < lines.pointCount; i++)
-		if (pointWithinPolygon(polygon, lines.points[i]) == false)
+	for (int i = 0; i < lines.pointCount; i++) {
+		if (pointWithinPolygon(polygon, lines.points[i]) == false) 
 			return false;
+	}
+
+		
 	return true;
 }
 
@@ -7584,11 +7590,18 @@ static mel_atom geom_init_atoms[] = {
  { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
 };
 static mel_func geom_init_funcs[] = {
- //TODO Fill in descriptions
+ //TODO Fill in descriptions 
+ command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
  command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
  command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
- command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
- command("geom", "CoversGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+ command("geom", "CoversGeographic", wkbCoversGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+ 
+ command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat, false, "TODO", args(1, 3, batarg("", dbl), batarg("a", wkb), batarg("b", wkb))),
+ command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat_cand, false, "TODO", args(1, 5, batarg("", dbl), batarg("a", wkb), batarg("b", wkb), batarg("s1", oid), batarg("s2", oid))),
+ 
+ //command("geom", "DWithinGeographicselect", wkbDWithinGeographicSelect, false, "TODO", args(1, 6, batarg("", oid), batarg("a", wkb), batarg("b", wkb), arg("d", dbl), batarg("cand",oid),arg("anti",bit))),
+ //command("geom", "DWithinGeographicjoin", wkbDWithinGeographicJoin, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), arg("d", dbl), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+
  command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
  command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
  command("aggr", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
