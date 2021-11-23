@@ -6810,7 +6810,8 @@ sql_session_reset(sql_session *s, int ac)
 	s->schema_name = def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
-	s->level = ISO_SERIALIZABLE;
+	s->level &= ~tr_snapshot;
+	s->level |= tr_serializable;
 	return 1;
 }
 
