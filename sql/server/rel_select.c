@@ -5489,7 +5489,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		}
 		rel = rel_orderby(sql, rel);
 		set_processed(rel);
-		obe = rel_order_by(query, &rel, sn->orderby, sn->distinct != NULL, sql_orderby | group_totals);
+		obe = rel_order_by(query, &rel, sn->orderby, sn->distinct, sql_orderby | group_totals);
 		if (!obe)
 			return NULL;
 		rel->r = obe;
