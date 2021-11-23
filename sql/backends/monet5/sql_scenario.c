@@ -222,7 +222,7 @@ SQLepilogue(void *ret)
 		if (!res)
 			res = msab_retreatScenario(s);
 		if (res != NULL) {
-			char *err = createException(MAL, "sql.start", "%s", res);
+			char *err = createException(MAL, "sql.epilogue", "%s", res);
 			free(res);
 			return err;
 		}
