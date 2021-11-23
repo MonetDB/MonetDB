@@ -36,7 +36,7 @@ create sequence seq0 CYCLE
 
 query TIIIIII rowsort
 select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
-where name in ('seq', 'seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7', 'seq8', 'seq9', 'seq0')
+where name in ('seq')
 ----
 seq
 1
@@ -45,6 +45,11 @@ seq
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq0')
+----
 seq0
 1
 0
@@ -52,6 +57,11 @@ seq0
 1
 1
 1
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq1')
+----
 seq1
 1
 0
@@ -59,6 +69,11 @@ seq1
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq2')
+----
 seq2
 2
 0
@@ -66,6 +81,11 @@ seq2
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq3')
+----
 seq3
 1
 0
@@ -73,6 +93,11 @@ seq3
 3
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq4')
+----
 seq4
 4
 4
@@ -80,13 +105,23 @@ seq4
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq5')
+----
 seq5
 1
-0
+-9223372036854775807
 9223372036854775807
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq6')
+----
 seq6
 1
 0
@@ -94,13 +129,23 @@ seq6
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq7')
+----
 seq7
 1
 0
-0
+9223372036854775807
 1
 1
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq8')
+----
 seq8
 1
 0
@@ -108,6 +153,11 @@ seq8
 1
 8
 0
+
+query TIIIIII rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq9')
+----
 seq9
 1
 0

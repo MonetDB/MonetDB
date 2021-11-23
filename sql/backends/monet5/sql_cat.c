@@ -793,12 +793,19 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 	if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
 			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle))
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
-	if (seq->minvalue && seq->start < seq->minvalue)
+	if (seq->start < seq->minvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->start, seq->minvalue);
-	if (seq->maxvalue && seq->start > seq->maxvalue)
+	if (seq->start > seq->maxvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
-	if (seq->minvalue && seq->maxvalue && seq->maxvalue < seq->minvalue)
+	if (seq->maxvalue < seq->minvalue)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
+	if (seq->increment == 0)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence increment cannot be 0");
+	if (seq->cacheinc <= 0)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence cache must be positive");
+	lng calc = llabs(seq->increment) * seq->cacheinc;
+	if (calc < llabs(seq->increment) || calc < seq->cacheinc)
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: The specified range of cached values cannot be set. Either reduce increment or cache value");
 	switch (sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped)) {
 		case -1:
 			throw(SQL,"sql.create_seq",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -835,14 +842,21 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 		default:
 			break;
 	}
-	if (nseq->minvalue && nseq->maxvalue && nseq->maxvalue < seq->minvalue)
-		throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
+	if (nseq->maxvalue < nseq->minvalue)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
+	if (nseq->increment == 0)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence increment cannot be 0");
+	if (nseq->cacheinc <= 0)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence cache must be positive");
+	lng calc = llabs(nseq->increment) * nseq->cacheinc;
+	if (calc < llabs(nseq->increment) || calc < nseq->cacheinc)
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: The specified range of cached values cannot be set. Either reduce increment or cache value");
 	if (val) {
 		if (is_lng_nil(*val))
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
-		if (nseq->minvalue && *val < nseq->minvalue)
+		if (*val < nseq->minvalue)
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value lesser than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
-		if (nseq->maxvalue && *val > nseq->maxvalue)
+		if (*val > nseq->maxvalue)
 			throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value higher than the maximum ("LLFMT" > "LLFMT")", *val, nseq->maxvalue);
 		switch (sql_trans_sequence_restart(sql->session->tr, nseq, *val)) {
 			case -1:

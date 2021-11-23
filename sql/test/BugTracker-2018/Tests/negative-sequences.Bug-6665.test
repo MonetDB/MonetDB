@@ -7,6 +7,11 @@ create sequence "other_seq" as integer start with -300 increment by -20 minvalue
 query I rowsort
 select get_value_for('sys', 'other_seq')
 ----
+NULL
+
+query I rowsort
+select peak_next_value_for('sys', 'other_seq')
+----
 -300
 
 query I rowsort
@@ -18,6 +23,11 @@ query I rowsort
 select next value for "other_seq"
 ----
 -320
+
+query I rowsort
+select peak_next_value_for('sys', 'other_seq')
+----
+-340
 
 statement ok
 create table "testme" ("col1" int default next value for "other_seq", "col2" int)
@@ -45,6 +55,11 @@ alter sequence "other_seq" restart with (select -400)
 
 query I rowsort
 select get_value_for('sys', 'other_seq')
+----
+NULL
+
+query I rowsort
+select peak_next_value_for('sys', 'other_seq')
 ----
 -400
 

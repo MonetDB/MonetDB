@@ -1870,7 +1870,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
-	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no");
+	bool use_strimps = !GDKgetenv_istext("gdk_use_strimps", "no"), with_strimps = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1883,6 +1883,9 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
+	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
+		goto bailout;
+
 	/* Since the strimp pre-filtering of a LIKE query produces a superset of
 	 * the actual result the complement of that set will necessarily reject
 	 * some of the matching entries in the NOT LIKE query.
@@ -1890,23 +1893,22 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 	 * A better solution is to run the PCRElikeselect as a LIKE query with
 	 * strimps and return the complement of the result.
 	 */
-	if (use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
-		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			BAT *tmp_s;
-			tmp_s = STRMPfilter(b, s, *pat);
-			if (tmp_s && s) {
+	if (!empty && use_strimps && BATcount(b) >= STRIMP_CREATION_THRESHOLD && !*anti) {
+		BAT *tmp_s = NULL;
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED && (tmp_s = STRMPfilter(b, s, *pat))) {
+			if (s)
 				BBPunfix(s->batCacheid);
-				s = tmp_s;
-			}
-		} /* If we cannot create the strimp just continue normally */
-
+			s = tmp_s;
+			with_strimps = true;
+		} else { /* If we cannot create the strimp just continue normally */
+			GDKclrerr();
+		}
 	}
 
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
-		goto bailout;
-
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
-						   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
+	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" :
+		use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : "pcrelike: pattern matching using strcmp") :
+		use_re ? (with_strimps ? "pcrelike: pattern matching using RE with strimps" : "pcrelike: pattern matching using RE") :
+		(with_strimps ? "pcrelike: pattern matching using pcre with strimps" : "pcrelike: pattern matching using pcre"));
 
 	if (empty) {
 		if (!(bn = BATdense(0, 0, 0)))
@@ -1946,6 +1948,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 			bn->tsorted = true;
 			bn->trevsorted = bn->batCount <= 1;
 			bn->tkey = true;
+			bn->tnil = false;
+			bn->tnonil = true;
 			bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 || rcnt == b->batCount ? b->hseqbase : oid_nil;
 		}
 	}
@@ -2138,10 +2142,14 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 	r1->tkey = true;
 	r1->tsorted = true;
 	r1->trevsorted = true;
+	r1->tnil = false;
+	r1->tnonil = true;
 	if (r2) {
 		r2->tkey = true;
 		r2->tsorted = true;
 		r2->trevsorted = true;
+		r2->tnil = false;
+		r2->tnonil = true;
 	}
 
 	if (anti) {
