@@ -959,7 +959,7 @@ query I rowsort
 SELECT
     DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
-ORDER BY SUM(TotalSales)
+ORDER BY CAST(SUM(TotalSales) as BIGINT)
 ----
 100
 1200
