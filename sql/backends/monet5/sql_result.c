@@ -498,8 +498,8 @@ bat_max_length(hge, hge)
 		}																\
 		if (*s)															\
 			return NULL;												\
-		assert(*dst_len >= sizeof(X));									\
-		r = *dst;													\
+		assert(*dst_len >= sizeof(X));(void)dst_len;					\
+		r = *dst;														\
 		if (neg)														\
 			*r = -res;													\
 		else															\
@@ -538,7 +538,7 @@ sec_frstr(Column *c, int type, void **dst, size_t *dst_len, const char *s)
 	lng *r;
 	lng res = 0;
 
-	assert(*dst_len >= sizeof(lng));
+	assert(*dst_len >= sizeof(lng));(void)dst_len;
 
 	(void) c;
 	(void) type;
