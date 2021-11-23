@@ -297,16 +297,18 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	CharPair cp, *cpp;
 	struct canditer ci;
 	size_t values = 0;
-
+	bool res;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
-		return false;
-	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0) {
+		GDKerror("Not enough distinct values to create strimp index\n");
+		return false;
+	}
+
+	hlen = STRIMP_HISTSIZE;
+	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		return false;
 	}
 
@@ -357,6 +359,13 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 					if (hist[hidx].p == NULL) {
 						values++;
 						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
+						if (!hist[hidx].p) {
+							bat_iterator_end(&bi);
+							for (hidx = 0; hidx < hlen; hidx++)
+								GDKfree(hist[hidx].p);
+							GDKfree(hist);
+							return false;
+						}
 						hist[hidx].p->psize = cpp->psize;
 						hist[hidx].p->pbytes = cpp->pbytes;
 					}
@@ -382,7 +391,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
-	return values >= STRIMP_HEADER_SIZE;
+	if (!(res = values >= STRIMP_HEADER_SIZE))
+		GDKerror("Not enough distinct values to create strimp index\n");
+	return res;
 }
 
 static bool
@@ -480,6 +491,16 @@ BATcheckstrimps(BAT *b)
 	return ret;
 }
 
+#define STRMPfilterloop(next) \
+	do { \
+		for (i = 0; i < ncand; i++) { \
+			x = next(&ci); \
+			if ((bitstring_array[x] & qbmask) == qbmask) { \
+				rvals[j++] = x; \
+			} \
+		} \
+	} while (0)
+
 /* Filter a BAT b using a string q. Return the result as a candidate
  * list.
  */
@@ -487,11 +508,11 @@ BAT *
 STRMPfilter(BAT *b, BAT *s, const str q)
 {
 	BAT *r = NULL;
-	BUN i, ncand;
+	BUN i, ncand, j = 0;
 	uint64_t qbmask;
 	uint64_t *bitstring_array;
 	Strimps *strmps;
-	oid x;
+	oid x, *restrict rvals;
 	struct canditer ci;
 	lng t0 = 0;
 	BAT *pb;
@@ -512,7 +533,7 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 	STRMPincref(strmps);
 	MT_lock_unset(&pb->batIdxLock);
 
-        ncand = canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0) {
 		STRMPdecref(strmps, false);
 		return BATdense(b->hseqbase, 0, 0);
@@ -525,18 +546,15 @@ STRMPfilter(BAT *b, BAT *s, const str q)
 
 	qbmask = STRMPmakebitstring(q, strmps);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
+	rvals = Tloc(r, 0);
 
-	for (i = 0; i < ncand; i++) {
-		x = canditer_next(&ci);
-		if ((bitstring_array[x] & qbmask) == qbmask) {
-			if (BUNappend(r, &x, false) != GDK_SUCCEED) {
-				BBPunfix(r->batCacheid);
-				STRMPdecref(strmps, false);
-				goto sfilter_fail;
-			}
-		}
+	if (ci.tpe == cand_dense) {
+		STRMPfilterloop(canditer_next_dense);
+	} else {
+		STRMPfilterloop(canditer_next);
 	}
 
+	BATsetcount(r, j);
 	r->tkey = true;
 	r->tsorted = true;
 	r->trevsorted = BATcount(r) <= 1;
@@ -636,8 +654,8 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	CharPair hpairs[STRIMP_HEADER_SIZE];
 	const char *nme;
 
-        if ((r = b->tstrimps) == NULL &&
-	    STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
+	if ((r = b->tstrimps) == NULL &&
+		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
 						 the result in hpairs */
 		sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and
 						the pair sizes */
@@ -707,7 +725,7 @@ STRMPcreate(BAT *b, BAT *s)
 
 	if (pb->tstrimps == NULL) {
 		MT_lock_set(&pb->batIdxLock);
-                if (pb->tstrimps == NULL) {
+		if (pb->tstrimps == NULL) {
 			Strimps *r;
 			BATiter bi;
 			BUN i, ncand;
@@ -716,10 +734,10 @@ STRMPcreate(BAT *b, BAT *s)
 			str cs;
 			uint64_t *dh;
 
-                        if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
-                                MT_lock_unset(&b->batIdxLock);
+			if ((r = STRMPcreateStrimpHeap(pb, s)) == NULL) {
+				MT_lock_unset(&pb->batIdxLock);
 				return GDK_FAIL;
-                        }
+			}
 			dh = (uint64_t *)r->bitstrings_base;
 
 			/* Compute bitstrings */
@@ -739,10 +757,10 @@ STRMPcreate(BAT *b, BAT *s)
 			pb->tstrimps = r;
 			pb->batDirtydesc = true;
 			persistStrimp(pb);
-                }
-                MT_lock_unset(&pb->batIdxLock);
-        }
-        TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+		}
+		MT_lock_unset(&pb->batIdxLock);
+	}
+	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	return GDK_SUCCEED;
 }
 
@@ -780,6 +798,7 @@ STRMPappendBitstring(BAT *b, const str s)
 		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
 		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
 		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) == GDK_FAIL) {
+			MT_lock_unset(&pb->batIdxLock);
 			GDKerror("Cannot extend heap\n");
 			return GDK_FAIL;
 		}

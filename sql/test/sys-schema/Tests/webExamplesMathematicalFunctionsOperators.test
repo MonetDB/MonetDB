@@ -533,6 +533,16 @@ create sequence tst20210325
 query I rowsort
 select get_value_for('sys', 'tst20210325')
 ----
+NULL
+
+query I rowsort
+select peak_next_value_for('sys', 'tst20210325')
+----
+1
+
+query I rowsort
+select peak_next_value_for('sys', 'tst20210325')
+----
 1
 
 query I rowsort
@@ -544,6 +554,21 @@ query I rowsort
 select get_value_for('sys', 'tst20210325')
 ----
 1
+
+query I rowsort
+select get_value_for('sys', 'tst20210325')
+----
+1
+
+query I rowsort
+select peak_next_value_for('sys', 'tst20210325')
+----
+2
+
+query I rowsort
+select peak_next_value_for('sys', 'tst20210325')
+----
+2
 
 statement ok
 drop sequence tst20210325

@@ -136,9 +136,9 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bnt = Tloc(bn, 0);
 	for (BUN i = 0 ; i < n ; i++)
 		UUIDgenerateUuid_internal(&(bnt[i]));
+	BATsetcount(bn, n);
 	bn->tnonil = true;
 	bn->tnil = false;
-	BATsetcount(bn, n);
 	bn->tsorted = n <= 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = n <= 1;
@@ -181,9 +181,9 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	for (BUN p = 0 ; p < q ; p++)
 		dst[p] = isaUUID(BUNtvar(bi, p));
 	bat_iterator_end(&bi);
+	BATsetcount(bn, q);
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
-	BATsetcount(bn, q);
 	bn->tsorted = bn->trevsorted = q < 2;
 	bn->tkey = false;
 bailout:
