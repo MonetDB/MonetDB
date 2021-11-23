@@ -6,8 +6,9 @@ cursor1 = client1.cursor()
 cursor2 = client2.cursor()
 
 MAX_ITERATIONS = 1000
+EXPECTED_SUM = sum(range(0, MAX_ITERATIONS))
 
-cursor1.execute("CREATE TABLE T (k int PRIMARY KEY, v int);")
+cursor1.execute("CREATE TABLE T (k INT PRIMARY KEY, v INT);")
 
 class TestClient(threading.Thread):
 
@@ -18,7 +19,7 @@ class TestClient(threading.Thread):
     def run(self):
         for i in range(0, MAX_ITERATIONS):
             try:
-                self._cursor.execute("INSERT INTO t values (%d,%s)" % (i, i))
+                self._cursor.execute("INSERT INTO t VALUES (%d,%d);" % (i, i))
             except pymonetdb.exceptions.IntegrityError:
                 pass
 
@@ -30,9 +31,9 @@ thread2.start()
 thread1.join()
 thread2.join()
 
-cursor1.execute("SELECT COUNT(*) from T")
-if cursor1.fetchall() != [(MAX_ITERATIONS,)]:
-    sys.stderr.write("[(%s,)] expected" % (MAX_ITERATIONS,))
+cursor1.execute("SELECT COUNT(*), COUNT(DISTINCT k), SUM(k) from T;")
+if cursor1.fetchall() != [(MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM)]:
+    sys.stderr.write("[(%d,%d,%d)] expected" % (MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM))
 cursor1.execute("DROP TABLE T;")
 
 cursor1.close()
