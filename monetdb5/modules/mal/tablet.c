@@ -1747,7 +1747,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
 
-	threads = 1;
+	// threads = 1;
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
