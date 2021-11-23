@@ -34,3 +34,4 @@ groupby-subquery.Bug-7180
 grouping-sets-aliases.Bug-7185
 copyinto-copyfrom.Bug-7186
 concurrent-add-column.Bug-7196
+unique-idx.Bug-7201
