@@ -226,43 +226,6 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg;
-	(void) stk;
-	(void) pci;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if (sql->session->auto_commit != 0)
-		throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT not allowed in auto commit mode");
-	return mvc_commit(sql, 0, 0, false);
-}
-
-str
-SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg;
-	(void) stk;
-	(void) pci;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if (sql->session->tr->active) {
-		msg = mvc_rollback(sql, 0, NULL, false);
-	}
-	return msg;
-}
-
 static str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -5091,9 +5054,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",int))),
  pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
  pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
- pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
- pattern("sql", "commit", SQLcommit, true, "Trigger the commit operation for a MAL block", noargs),
- pattern("sql", "abort", SQLabort, true, "Trigger the abort operation for a MAL block", noargs),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionaly set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
  pattern("sql", "include", SQLinclude, true, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
@@ -6004,7 +5964,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "transaction_commit", SQLtransaction_commit, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_rollback", SQLtransaction_rollback, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_begin", SQLtransaction_begin, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
 #ifdef HAVE_HGE
  /* sql_hge */
  command("calc", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),

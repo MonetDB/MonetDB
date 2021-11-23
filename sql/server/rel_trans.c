@@ -58,7 +58,15 @@ rel_transactions(sql_query *query, symbol *s)
 	} 	break;
 	case TR_START:
 	case TR_MODE:
-		assert(s->type == type_int);
+		assert(s->type == type_int && (s->data.i_val & tr_append) == 0);
+
+		if ((s->data.i_val & tr_none) == tr_none)
+			return sql_error(sql, 01, SQLSTATE(42000) "Transaction diagnostic not supported");
+		if ((s->data.i_val & tr_readonly) == tr_readonly)
+			return sql_error(sql, 01, SQLSTATE(42000) "Readonly transactions not supported");
+		if ((s->data.i_val & tr_snapshot) == tr_snapshot && (s->data.i_val & tr_serializable) == tr_serializable)
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot set multiple ISO levels on the same transaction");
+		s->data.i_val &= ~tr_writable; /* all transactions are writable by default */
 		ret = rel_trans(sql, ddl_trans, s->data.i_val, NULL);
 		break;
 	default:

@@ -2389,17 +2389,16 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
-		"SELECT s.name, "
-		     "seq.name, "
-		     "peak_next_value_for(s.name, seq.name), "
-		     "seq.\"minvalue\", "
-		     "seq.\"maxvalue\", "
-		     "seq.\"increment\", "
-		     "seq.\"cycle\" "
-		"FROM sys.sequences seq, "
-		     "sys.schemas s "
-		"WHERE s.id = seq.schema_id "
-		"ORDER BY s.name, seq.name";
+		"SELECT "
+		     "sch, "
+		     "seq, "
+		     "rs, "
+		     "rmi, "
+		     "rma, "
+		     "inc, "
+		     "cycle "
+		"FROM sys.describe_sequences "
+		"ORDER BY sch, seq";
 	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
 	const char *tables_views_functions_triggers =
 		"with vft (sname, name, id, query, remark, type) AS ("
@@ -2874,6 +2873,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			if (sname != NULL && strcmp(schema, sname) != 0)
 				continue;
 
+			// sleep(7);
+
 			mnstr_printf(toConsole,
 				     "ALTER SEQUENCE ");
 			dquoted_print(toConsole, schema, ".");
@@ -2881,9 +2882,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			mnstr_printf(toConsole, " RESTART WITH %s", restart);
 			if (strcmp(increment, "1") != 0)
 				mnstr_printf(toConsole, " INCREMENT BY %s", increment);
-			if (strcmp(minvalue, "0") != 0)
+			if (minvalue)
 				mnstr_printf(toConsole, " MINVALUE %s", minvalue);
-			if (strcmp(maxvalue, "0") != 0)
+			if (maxvalue)
 				mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
 			mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 			if (mnstr_errnr(toConsole)) {

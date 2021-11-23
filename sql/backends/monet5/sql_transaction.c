@@ -120,36 +120,3 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
-
-str
-SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg;
-
-	(void) stk;
-	(void) pci;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (sql->session->auto_commit == 0)
-		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->tr->active)
-		msg = mvc_rollback(sql, 0, NULL, false);
-	sql->session->auto_commit = 0;
-	sql->session->ac_on_commit = 1;
-	sql->session->level = 0;
-	if (msg)
-		return msg;
-	switch (mvc_trans(sql)) {
-		case -1:
-			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		case -3:
-			throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this transaction won't start");
-		default:
-			break;
-	}
-	return MAL_SUCCEED;
-}

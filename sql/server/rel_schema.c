@@ -1821,12 +1821,14 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	if (te->token == SQL_ALTER_TABLE) {
 		int state = te->data.i_val;
 
-		if (state == tr_readonly)
+		if (state == tr_readonly) {
 			state = TABLE_READONLY;
-		else if (state == tr_append)
+		} else if (state == tr_append) {
 			state = TABLE_APPENDONLY;
-		else
+		} else {
+			assert(state == tr_writable);
 			state = TABLE_WRITABLE;
+		}
 		return rel_alter_table(sql->sa, ddl_alter_table_set_access, sname, tname, NULL, NULL, state);
 	}
 
