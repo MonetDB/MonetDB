@@ -37,6 +37,7 @@
 
 #include "monetdb_config.h"
 #include "tablet.h"
+#include "str.h"
 #include "mapi_prompt.h"
 
 #include <string.h>
@@ -1042,9 +1043,9 @@ SQLworker_str_column(READERtask *task, int col)
 	size_t secondary_size = 0;
 	for (int i = 0; i < count; i++) {
 		size_t max_field_size = c->nil_len;
-		char *s = task->fields[col][i];
-		if (s) {
-			max_field_size += strlen(s) + 1;
+		char *v = task->fields[col][i];
+		if (v) {
+			max_field_size += strlen(v) + 1;
 		}
 		secondary_size += max_field_size;
 	}
@@ -1063,13 +1064,48 @@ SQLworker_str_column(READERtask *task, int col)
 	void *s_end = (char*)s + task->secondary.len;
 	for (int i = 0; i < count; i++) {
 		assert(s <= s_end);
-		size_t len = (char*)s_end - (char*)s;
-		void *orig = s;
-		if (SQLconvert_val(task, col, i, &s, &len) < 0)
-			return -1;
-		assert(s == orig); (void)orig;
+		size_t s_len = (char*)s_end - (char*)s;
+
+		char *v = task->fields[col][i];
+		if (v == NULL) {
+			make_it_nil(c, &s, &s_len);
+			*p++ = s;
+			s = (char*)s + c->nil_len; // includes trailing NUL byte
+			continue;
+		}
+
+		// Copy or unescape directly into the secondary buffer.
+		size_t len = strlen(v);
+		if (!task->escape) {
+			memcpy(s, v, len + 1);
+		} else if (GDKstrFromStr((unsigned char*)s, (unsigned char *)v, len) >= 0) {
+			len = strlen(s);
+		} else {
+			// GDKstrFromStr failed. How bad is it?
+			int ret = report_conversion_failed(task, c, i, col + 1, v);
+			make_it_nil(c, &s, &s_len);
+			if (ret < 0)
+				return ret;
+			len = c->nil_len - 1; // trailing NUL byte will be accounted for later
+		}
+
+		// Validate against the column's length restriction.
+		// Assumes strlen(s) >= UTF8_strlen(s) >= strPrintWidth(s)
+		if (c->maxwidth > 0 && len > c->maxwidth && !strNil(s)) {
+			if ((unsigned int)UTF8_strlen(s) > c->maxwidth) {
+				if ((unsigned int)strPrintWidth(s) > c->maxwidth) {
+					int ret = report_conversion_failed(task, c, i, col + 1, v);
+					make_it_nil(c, &s, &s_len);
+					if (ret < 0)
+						return ret;
+					len = c->nil_len - 1; // trailing NUL byte will be accounted for later
+				}
+			}
+		}
+
+		// Store it in primary and advance secondary
 		*p++ = s;
-		s = (char*)s + strlen(s) + 1;
+		s = (char*)s + len + 1; // + 1 because of trailing NUL byte
 	}
 
 	// Now insert it.
