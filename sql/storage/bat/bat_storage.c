@@ -4377,16 +4377,12 @@ swap_bats(sql_trans *tr, sql_column *col)
 	if ((!inTransaction(tr, col->t) && (odelta != d || isTempTable(col->t)) && isGlobal(col->t)) || (!isNew(col->t) && isLocalTemp(col->t)))
 		trans_add(tr, &col->base, d, &tc_gc_col, &commit_update_col, &log_update_col);
 
-	lock_column(tr->store, col->base.id);
-	if (!(b = temp_descriptor(d->cs.bid))) {
-		unlock_column(tr->store, col->base.id);
+	if (!(b = temp_descriptor(d->cs.bid)))
 		return LOG_ERR;
-	}
 	// TODO check for num of updates on the BAT against some threshold
 	// and decide whether to proceed
 	if (!(bn = COLcopy(b, b->ttype, true, b->batRole))) {
 		bat_destroy(b);
-		unlock_column(tr->store, col->base.id);
 		return LOG_ERR;
 	}
 	bat_destroy(b);
@@ -4403,7 +4399,6 @@ swap_bats(sql_trans *tr, sql_column *col)
 	d->cs.cleared = 0;
 	d->cs.ts = tr->tid;
 	d->cs.refcnt = 1;
-	unlock_column(tr->store, col->base.id);
 	return LOG_OK;
 }
 
