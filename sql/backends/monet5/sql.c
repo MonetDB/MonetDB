@@ -4787,35 +4787,18 @@ finalize:
 }
 
 static str
-do_str_column_vacuum(sql_trans *tr, sql_column *c, int access, char *sname, char *tname, char *cname) {
+do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, char *cname)
+{
 	int res;
-	BAT* b = NULL;
-	BAT* bn = NULL;
 	sqlstore *store = tr->store;
 
-	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
-		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
-	// vacuum only string bats
-	if (ATOMstorage(b->ttype) == TYPE_str) {
-		// TODO check for num of updates on the BAT against some threshold
-		// and decide whether to proceed
-		if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
-		}
-		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
-			BBPreclaim(bn);
-			BBPunfix(b->batCacheid);
-			if (res == LOG_CONFLICT)
-				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			if (res == LOG_ERR)
-				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-		}
+	if ((res = store->storage_api.swap_bats(tr, c)) != LOG_OK) {
+		if (res == LOG_CONFLICT)
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		if (res == LOG_ERR)
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+		throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
 	}
-	BBPunfix(b->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -4824,7 +4807,6 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
-	int access = 0;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *cname = *getArgReference_str(stk, pci, 3);
@@ -4855,7 +4837,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
-	return do_str_column_vacuum(tr, c, access, sname, tname, cname);
+	return do_str_column_vacuum(tr, c, sname, tname, cname);
 }
 
 
@@ -4870,7 +4852,6 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
-	int access = 0;
 	char *msg;
 	gdk_return res = GDK_SUCCEED;
 
@@ -4913,7 +4894,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 			break;
 		}
 
-		if((msg=do_str_column_vacuum(session->tr, c, access, sname, tname, cname)) != MAL_SUCCEED) {
+		if((msg=do_str_column_vacuum(session->tr, c, sname, tname, cname)) != MAL_SUCCEED) {
 			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
 			res = GDK_FAIL;
 		}
