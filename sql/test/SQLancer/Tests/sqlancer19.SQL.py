@@ -166,6 +166,12 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("d\\\x06VW",)])
     cli.execute("SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("d\\\x06VW",)])
+    cli.execute("""SELECT 1 FROM t1 INNER JOIN (SELECT greatest('a', NULL), INTERVAL '4' DAY FROM t3 where t3.c0 = 1) AS q(c0,c1) ON INTERVAL '3' DAY
+            BETWEEN sql_sub(CAST(INTERVAL '3' SECOND AS INTERVAL DAY), INTERVAL '2' DAY) AND q.c1;""") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute("""SELECT 1 FROM t1 INNER JOIN (SELECT greatest('a', NULL), INTERVAL '4' DAY FROM rt3 where rt3.c0 = 1) AS q(c0,c1) ON INTERVAL '3' DAY
+            BETWEEN sql_sub(CAST(INTERVAL '3' SECOND AS INTERVAL DAY), INTERVAL '2' DAY) AND q.c1;""") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN
