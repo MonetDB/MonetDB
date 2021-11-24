@@ -898,6 +898,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				fmt[i].frstr = &sec_frstr;
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
+			fmt[i].maxwidth = col->type.digits;
 		}
 
 		// do .. while (false) allows us to use 'break' to drop out at any point
