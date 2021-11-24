@@ -4364,7 +4364,7 @@ swap_bats(sql_trans *tr, sql_column *col)
 	int in_transaction = 0;
 	sql_delta *d = NULL, *odelta;
 
-	if (ATOMstorage(col->type.type->localtype) != TYPE_str) /* only swap strings */
+	if (!ATOMvarsized(col->type.type->localtype)) /* only varsized types */
 		return LOG_OK;
 
 	if ((in_transaction = segments_in_transaction(tr, col->t)))
