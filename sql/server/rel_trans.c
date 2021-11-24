@@ -57,18 +57,21 @@ rel_transactions(sql_query *query, symbol *s)
 		ret= rel_trans(sql, ddl_rollback, n->data.i_val, n->next->data.sval);
 	} 	break;
 	case TR_START:
-	case TR_MODE:
-		assert(s->type == type_int && (s->data.i_val & tr_append) == 0);
+	case TR_MODE: {
+		int tr_mode = s->data.i_val;
 
-		if ((s->data.i_val & tr_none) == tr_none)
+		assert(s->type == type_int && (tr_mode & tr_append) == 0);
+		if ((tr_mode & tr_none) == tr_none)
 			return sql_error(sql, 01, SQLSTATE(42000) "Transaction diagnostic not supported");
-		if ((s->data.i_val & tr_readonly) == tr_readonly)
+		if ((tr_mode & tr_readonly) == tr_readonly)
 			return sql_error(sql, 01, SQLSTATE(42000) "Readonly transactions not supported");
-		if ((s->data.i_val & tr_snapshot) == tr_snapshot && (s->data.i_val & tr_serializable) == tr_serializable)
+		if ((tr_mode & tr_snapshot) == tr_snapshot && (tr_mode & tr_serializable) == tr_serializable)
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot set multiple ISO levels on the same transaction");
-		s->data.i_val &= ~tr_writable; /* all transactions are writable by default */
-		ret = rel_trans(sql, ddl_trans, s->data.i_val, NULL);
-		break;
+		if ((tr_mode & tr_snapshot) == 0 && (tr_mode & tr_serializable) == 0)
+			tr_mode |= tr_serializable; /* set serializable level by default */
+		tr_mode &= ~tr_writable; /* all transactions are writable by default */
+		ret = rel_trans(sql, ddl_trans, tr_mode, NULL);
+	} 	break;
 	default:
 		return sql_error(sql, 01, SQLSTATE(42000) "Transaction unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
