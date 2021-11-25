@@ -804,26 +804,39 @@ readInt( char *r, int *pos)
 	return res;
 }
 
-static char *
-readAtomString( char *r, int *pos)
+static void *
+readAtomString(int localtype, char *r, int *pos)
 {
-	char *st = NULL, *parsed;
+	void *res = NULL;
+	size_t nbytes = 0;
+	int firstpos = 0, rtype = ATOMstorage(localtype) == TYPE_str ? TYPE_str : localtype;
 
-	assert(r[*pos] == '"');
+	/* TODO I had issues with the 'external' flag on the JSONfromString function, maybe something is missing there? */
+	assert(r[*pos] == '"'); /* skip first '"' */
 	(*pos)++;
-	st = parsed = r+*pos;
-	while (r[*pos] != '"') {
-		if (r[*pos] == '\\' && (r[*pos + 1] == '"' || r[*pos + 1] == '\\')) {
-			*parsed++ = r[*pos + 1];
+
+	firstpos = *pos;
+	if (rtype == TYPE_str) /* string reads require double quotes at the beginning */
+		firstpos--;
+	while (r[*pos] && r[*pos] != '"') { /* compute end of atom string */
+		if (r[*pos] == '\\')
 			(*pos)+=2;
-		} else {
-			*parsed++ = r[*pos];
+		else
 			(*pos)++;
-		}
 	}
-	*parsed = '\0';
+	if (!r[*pos])
+		return NULL;
+
+	assert(r[*pos] == '"'); /* skip second '"' */
+	if (rtype != TYPE_str) /* string reads require double quotes at the end */
+		r[*pos] = '\0';
 	(*pos)++;
-	return st;
+
+	if (ATOMfromstr(rtype, &res, &nbytes, r + firstpos, true) < 0) {
+		GDKfree(res);
+		return NULL;
+	}
+	return res;
 }
 
 static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp);
@@ -956,8 +969,12 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		(*pos)+= (int) strlen("NULL");
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
 	} else {
-		char *st = readAtomString(r,pos);
-		return exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+		void *ptr = readAtomString(tpe->type->localtype, r, pos);
+		if (!ptr)
+			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
+		sql_exp *res = exp_atom(sql->sa, atom_general_ptr(sql->sa, tpe, ptr));
+		GDKfree(ptr);
+		return res;
 	}
 }
 

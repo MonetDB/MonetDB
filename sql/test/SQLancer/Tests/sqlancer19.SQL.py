@@ -78,9 +78,9 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute('SELECT 3 > (rt2.c0 ^ CAST(2 AS TINYINT)) * rt2.c0 FROM rt2;') \
         .assertSucceeded().assertDataResultMatch([(False,),(True,),(False,),(False,),(False,),(False,),(True,),(False,),(False,),(False,)])
-    cli.execute("SELECT r'\"', r'\\', ' ', '' as \"'\", '''' as \" \" from t3 where t3.c0 = 1;") \
+    cli.execute("SELECT U&'&+000022' UESCAPE '&', U&'&+00005C' UESCAPE '&', ' ', '' as \"'\", '''' as \" \" from t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("\"","\\"," ","","'")])
-    cli.execute("SELECT r'\"', r'\\', ' ', '' as \"'\", '''' as \" \" from rt3 where rt3.c0 = 1;") \
+    cli.execute("SELECT U&'&+000022' UESCAPE '&', U&'&+00005C' UESCAPE '&', ' ', '' as \"'\", '''' as \" \" from rt3 where rt3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([("\"","\\"," ","","'")])
     cli.execute("SELECT 1 as \"ups\\\", 2 as \"\\\", 3 as \"\"\"\", 4 as \"\"\"\\\", 5 as \"\\\"\"\" from t3 where t3.c0 = 1;") \
         .assertSucceeded().assertDataResultMatch([(1,2,3,4,5)])
@@ -162,6 +162,16 @@ with SQLTestCase() as cli:
         .assertSucceeded().assertDataResultMatch([("6",)])
     cli.execute("SELECT upper(count(*)) FROM rt3;") \
         .assertSucceeded().assertDataResultMatch([("6",)])
+    cli.execute("SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from t3 where t3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("d\\\x06VW",)])
+    cli.execute("SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from rt3 where rt3.c0 = 1;") \
+        .assertSucceeded().assertDataResultMatch([("d\\\x06VW",)])
+    cli.execute("""SELECT 1 FROM t1 INNER JOIN (SELECT greatest('a', NULL), INTERVAL '4' DAY FROM t3 where t3.c0 = 1) AS q(c0,c1) ON INTERVAL '3' DAY
+            BETWEEN sql_sub(CAST(INTERVAL '3' SECOND AS INTERVAL DAY), INTERVAL '2' DAY) AND q.c1;""") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
+    cli.execute("""SELECT 1 FROM t1 INNER JOIN (SELECT greatest('a', NULL), INTERVAL '4' DAY FROM rt3 where rt3.c0 = 1) AS q(c0,c1) ON INTERVAL '3' DAY
+            BETWEEN sql_sub(CAST(INTERVAL '3' SECOND AS INTERVAL DAY), INTERVAL '2' DAY) AND q.c1;""") \
+        .assertSucceeded().assertDataResultMatch([(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,),(1,)])
     cli.execute("""
     CREATE FUNCTION testremote(a int) RETURNS INT
     BEGIN

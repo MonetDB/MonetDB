@@ -222,7 +222,7 @@ SQLepilogue(void *ret)
 		if (!res)
 			res = msab_retreatScenario(s);
 		if (res != NULL) {
-			char *err = createException(MAL, "sql.start", "%s", res);
+			char *err = createException(MAL, "sql.epilogue", "%s", res);
 			free(res);
 			return err;
 		}
@@ -484,8 +484,8 @@ SQLinit(Client c)
 		 * server after an incomplete initialization */
 		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
 			/* TODO there's a going issue with loading triggers due to system tables,
-			   so at the moment check for existence of 'logging' schema from 81_tracer.sql */
-			if (!mvc_bind_schema(m, "logging"))
+			   so at the moment check for existence of 'json' schema from 40_json.sql */
+			if (!mvc_bind_schema(m, "json"))
 				store->first = 1;
 			msg = mvc_rollback(m, 0, NULL, false);
 		}

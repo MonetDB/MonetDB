@@ -133,6 +133,8 @@ VIEWcreate(oid seq, BAT *b)
 	bn->timprints = NULL;
 	/* Order OID index */
 	bn->torderidx = NULL;
+	/* Only the parent should have a pointer to the strimp */
+	bn->tstrimps = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp) {
 			BBPunshare(tp);
@@ -377,6 +379,7 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	STRMPdestroy(b);
 	PROPdestroy(b);
 	VIEWunlink(b);
 

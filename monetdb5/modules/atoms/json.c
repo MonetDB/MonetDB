@@ -1230,6 +1230,9 @@ static str
 JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 {
 	char expr[BUFSIZ], *s = expr;
+
+	if (index < 0)
+		throw(MAL,"json.filter", SQLSTATE(42000) "Filter index cannot be negative");
 	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
 	return JSONfilterInternal(ret, js, &s, other);
 }
@@ -1237,48 +1240,88 @@ JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 static str
 JSONfilterArray_bte(json *ret, json *js, bte *index)
 {
+	if (strNil(*js) || is_bte_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
 {
+	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 static str
 JSONfilterArray_sht(json *ret, json *js, sht *index)
 {
+	if (strNil(*js) || is_sht_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
 {
+	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 static str
 JSONfilterArray_int(json *ret, json *js, int *index)
 {
+	if (strNil(*js) || is_int_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
 {
+	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 static str
 JSONfilterArray_lng(json *ret, json *js, lng *index)
 {
+	if (strNil(*js) || is_lng_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
 static str
 JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 {
+	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
@@ -1286,6 +1329,11 @@ JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 static str
 JSONfilterArray_hge(json *ret, json *js, hge *index)
 {
+	if (strNil(*js) || is_hge_nil(*index)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
 		throw(MAL, "json.filter", "index out of range");
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
@@ -1294,6 +1342,11 @@ JSONfilterArray_hge(json *ret, json *js, hge *index)
 static str
 JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 {
+	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
 		throw(MAL, "json.filter", "index out of range");
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
@@ -1303,6 +1356,11 @@ JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 static str
 JSONfilter(json *ret, json *js, str *expr)
 {
+	if (strNil(*js) || strNil(*expr)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	return JSONfilterInternal(ret, js, expr, 0);
 }
 

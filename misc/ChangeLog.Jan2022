@@ -1,0 +1,11 @@
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
+
+* Wed Aug 11 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Reliance on the OpenSSL library has been removed.  OpenSSL was used
+  for the hash algorithms it contained (e.g. SHA512 and RIPEMD160) and
+  for producing random numbers.  The hash functions have been replaced
+  by the original published functions, and random numbers are generated
+  using system-specific random sources (i.e. not simply pseudo-random
+  number generators).
+
